@@ -1,6 +1,6 @@
 <section id="body">
   <section>
-    <form onsubmit="search(searchBox.value)">
+    <form (onsubmit)="search(searchBox.value)">
       <mat-form-field id="searchbox">
         <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
       </mat-form-field>
