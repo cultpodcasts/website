@@ -1,0 +1,24 @@
+<section id="body">
+  <section>
+    <form onsubmit="search(searchBox.value)">
+      <mat-form-field id="searchbox">
+        <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
+      </mat-form-field>
+      <button (click)="search(searchBox.value)" mat-flat-button color="primary" id="searchcta">Search</button>
+    </form>
+  </section>
+  <section id="results">
+    <div *ngFor="let result of results" class="result">
+      <h3>{{result.Title}}</h3>
+      <p>{{result.Podcast}}, {{result.Released}} [{{result.Length}}]</p>
+      <p>{{result.Description}}</p>
+      <ul>
+        <li *ngIf="result.Spotify"><a href="{{result.Spotify}}">Spotify</a></li>
+        <li *ngIf="result.Apple"><a href="{{result.Apple}}">Apple</a></li>
+        <li *ngIf="result.YouTube"><a href="{{result.YouTube}}">YouTube</a></li>
+      </ul>
+    </div>
+
+  </section>
+</section>
+
