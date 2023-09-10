@@ -12,6 +12,7 @@ import {FormsModule} from '@angular/forms';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import { HttpClientModule } from '@angular/common/http';
 import {MatCardModule} from '@angular/material/card';
+import { MatExpansionModule} from '@angular/material/expansion';
 
 
 @NgModule({
@@ -28,7 +29,8 @@ import {MatCardModule} from '@angular/material/card';
     FormsModule,
     NgIf,
     HttpClientModule,
-    MatCardModule
+    MatCardModule,
+    MatExpansionModule
   ],
   providers: [],
   bootstrap: [AppComponent]
