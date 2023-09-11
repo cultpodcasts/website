@@ -1,10 +1,15 @@
+<p>
+  <mat-toolbar color="secondary">
+    <span>Cult Podcasts</span>
+  </mat-toolbar>
+</p>
 <section id="body">
   <section>
     <form (onsubmit)="search(searchBox.value)">
       <mat-form-field id="searchbox">
         <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
       </mat-form-field>
-      <button (click)="search(searchBox.value)" mat-flat-button color="primary" id="searchcta">Search</button>
+      <button (click)="search(searchBox.value)" mat-flat-button color="secondary" id="searchcta">Search</button>
     </form>
   </section>
   <section id="results">
