@@ -13,7 +13,7 @@
     </form>
   </section>
   <section id="results">
-    <mat-card *ngFor="let result of results" class="result">
+    <mat-card *ngFor="let result of Results | async" class="result">
       <mat-card-header>
         <mat-card-title>{{result.Title}}</mat-card-title>
         <mat-card-subtitle>{{result.Podcast}}, {{result.Released}} [{{result.Length}}]</mat-card-subtitle>
