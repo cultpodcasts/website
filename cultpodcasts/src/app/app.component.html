@@ -1,10 +1,16 @@
-<p>
-  <mat-toolbar color="secondary">
-    <span>Cult Podcasts</span>
-  </mat-toolbar>
-  <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
-</p>
 <section id="body">
+  <section id="header">
+    <mat-toolbar color="secondary">
+      <span>Cult Podcasts</span>
+    </mat-toolbar>
+    <div id="progresswrapper">
+      <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+    </div>
+  </section>
+  <section id="notices">
+    Cult Podcasts has an index of over 4,000 podcasts on the subject of Cults.<br />
+    Please note the site is currently in a very early form and there are bugs!
+  </section>
   <section>
     <form (onsubmit)="search(searchBox.value)">
       <mat-form-field id="searchbox">
