@@ -8,15 +8,15 @@
     </div>
   </section>
   <section id="notices">
-    Cult Podcasts has an index of over 4,000 podcasts on the subject of Cults.<br />
-    Please note the site is currently in a very early form and there are bugs!
+    <p>Cult Podcasts has an index of over 5,750 podcasts on the subject of Cults.</p>
+    <p>Please note the site is currently in a very early form and there are bugs!</p>
   </section>
   <section>
-    <form (onsubmit)="search(searchBox.value)">
+    <form (onsubmit)="search(searchBox)">
       <mat-form-field id="searchbox">
         <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
       </mat-form-field>
-      <button (click)="search(searchBox.value)" mat-flat-button color="secondary" id="searchcta">Search</button>
+      <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
     </form>
   </section>
   <section id="results">
