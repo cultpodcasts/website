@@ -1,14 +1,14 @@
 <section id="body">
   <section id="header">
     <mat-toolbar color="secondary">
-      <span>Cult Podcasts</span>
+      <span>Cult Podcasts</span>&nbsp;<span class="beta"> pre-release</span>
     </mat-toolbar>
     <div id="progresswrapper">
       <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
     </div>
   </section>
   <section id="notices">
-    <p>Cult Podcasts has an index of over 5,750 podcasts on the subject of Cults.</p>
+    <p>Cult Podcasts has an index of nearly 6,000 podcasts on the subject of Cults.</p>
     <p>Please note the site is currently in a very early form and there are bugs!</p>
   </section>
   <section>
@@ -20,6 +20,7 @@
     </form>
   </section>
   <section id="results">
+    <h3>{{resultsHeading}}</h3>
     <mat-card *ngFor="let result of results" class="result">
       <mat-card-header>
         <mat-card-title>{{result.Title}}</mat-card-title>
