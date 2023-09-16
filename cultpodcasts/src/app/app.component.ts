@@ -30,7 +30,7 @@ export class AppComponent {
         if (this.results.length===0) {
           this.resultsHeading= "0 Results. Time taken "+requestTime+" seconds."
         } else if (this.results.length===1) {
-          this.resultsHeading= "1 Results. Time taken "+requestTime+" seconds."
+          this.resultsHeading= "1 Result. Time taken "+requestTime+" seconds."
         } else {
           this.resultsHeading= this.results.length+" Results. Time taken "+requestTime+" seconds."
         } 
