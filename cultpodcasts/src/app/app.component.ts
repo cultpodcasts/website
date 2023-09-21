@@ -20,10 +20,12 @@ export class AppComponent {
   searched: boolean= false;
 
   ngOnInit() {
+    this.isLoading= true;
     let homepage= this.http.get("https://api.cultpodcasts.com/api/homepage")
       .subscribe(data=>{
         this.homepage= data;
       });
+    this.isLoading= false;
   }
 
   search= (input:HTMLInputElement) => {
