@@ -8,7 +8,7 @@
     </div>
   </section>
   <section id="notices">
-    <p>Cult Podcasts has an index of {{ homepage.episodeCount }} podcasts on the subject of Cults.</p>
+    <p>Cult Podcasts has an index of {{ homepage?.episodeCount ?? "6000" }} podcasts on the subject of Cults.</p>
     <p>Please note the site is currently in a very early form and there are bugs!</p>
   </section>
   <section>
@@ -21,7 +21,7 @@
   </section>
   <section id="homepage" *ngIf="!searched">
     <h3>This weeks new releases</h3>
-    <mat-card *ngFor="let item of homepage.recentEpisodes" class="result">
+    <mat-card *ngFor="let item of homepage?.recentEpisodes" class="result">
       <mat-card-header>
         <mat-card-title>{{item.episodeTitle}}</mat-card-title>
         <mat-card-subtitle>{{item.podcastName}}, {{item.release | date:'dd MMM yyyy'}} [{{item.length}}]</mat-card-subtitle>

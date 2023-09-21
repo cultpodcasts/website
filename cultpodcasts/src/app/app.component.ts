@@ -10,7 +10,7 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 })
 
 export class AppComponent {
-  isLoading= false;
+  isLoading= true;
   constructor(private http: HttpClient) {}
 
   results: any;
