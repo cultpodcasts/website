@@ -24,7 +24,7 @@
     <mat-card *ngFor="let item of homepage.recentEpisodes" class="result">
       <mat-card-header>
         <mat-card-title>{{item.episodeTitle}}</mat-card-title>
-        <mat-card-subtitle>{{item.podcastName}}, {{item.release}} [{{item.length}}]</mat-card-subtitle>
+        <mat-card-subtitle>{{item.podcastName}}, {{item.release | date:'dd MMM yyyy'}} [{{item.length}}]</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
         <p>{{item.episodeDescription}}</p>
