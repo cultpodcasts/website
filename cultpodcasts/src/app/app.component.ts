@@ -14,14 +14,24 @@ export class AppComponent {
   constructor(private http: HttpClient) {}
 
   results: any;
+  homepage: any;
   title = 'cultpodcasts';
   resultsHeading: string= "";
+  searched: boolean= false;
+
+  ngOnInit() {
+    let homepage= this.http.get("https://api.cultpodcasts.com/api/homepage")
+      .subscribe(data=>{
+        this.homepage= data;
+      });
+  }
 
   search= (input:HTMLInputElement) => {
     input.blur();
     this.isLoading= true;
     let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(input.value);
     let currentTime= Date.now();
+    this.searched= true;
     this.http.get(url)
       .subscribe(data => {
         this.results= data;

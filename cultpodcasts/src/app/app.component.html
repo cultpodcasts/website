@@ -8,7 +8,7 @@
     </div>
   </section>
   <section id="notices">
-    <p>Cult Podcasts has an index of nearly 6,000 podcasts on the subject of Cults.</p>
+    <p>Cult Podcasts has an index of {{ homepage.episodeCount }} podcasts on the subject of Cults.</p>
     <p>Please note the site is currently in a very early form and there are bugs!</p>
   </section>
   <section>
@@ -18,6 +18,23 @@
       </mat-form-field>
       <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
     </form>
+  </section>
+  <section id="homepage" *ngIf="!searched">
+    <h3>This weeks new releases</h3>
+    <mat-card *ngFor="let item of homepage.recentEpisodes" class="result">
+      <mat-card-header>
+        <mat-card-title>{{item.episodeTitle}}</mat-card-title>
+        <mat-card-subtitle>{{item.podcastName}}, {{item.release}} [{{item.length}}]</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="resultdescription">
+        <p>{{item.episodeDescription}}</p>
+      </mat-card-content>
+      <mat-card-actions>
+        <a mat-button *ngIf="item.spotify" href="{{item.spotify}}">Spotify</a>
+        <a mat-button *ngIf="item.apple" href="{{item.apple}}">Apple</a>
+        <a mat-button *ngIf="item.youtube" href="{{item.youtube}}">You Tube</a>
+      </mat-card-actions>
+    </mat-card>
   </section>
   <section id="results">
     <h3>{{resultsHeading}}</h3>
