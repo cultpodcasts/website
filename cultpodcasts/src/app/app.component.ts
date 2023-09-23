@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {MatAccordion, MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
+import { IHomepage } from './IHomepage';
+import { ISearchResult } from './ISearchResult';
 
 @Component({
   selector: 'app-root',
@@ -10,22 +12,22 @@ import {MatProgressBarModule} from '@angular/material/progress-bar';
 })
 
 export class AppComponent {
-  isLoading= true;
+  isLoading= false;
   constructor(private http: HttpClient) {}
 
   results: any;
-  homepage: any;
+  homepage: IHomepage|undefined;
+  totalDuration: string="";
   title = 'cultpodcasts';
   resultsHeading: string= "";
   searched: boolean= false;
 
   ngOnInit() {
-    this.isLoading= true;
-    let homepage= this.http.get("https://api.cultpodcasts.com/api/homepage")
+    let homepage= this.http.get<IHomepage>("https://api.cultpodcasts.com/api/homepage")
       .subscribe(data=>{
         this.homepage= data;
+        this.totalDuration= data.totalDuration.split(".")[0]+" days";
       });
-    this.isLoading= false;
   }
 
   search= (input:HTMLInputElement) => {
@@ -34,7 +36,7 @@ export class AppComponent {
     let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(input.value);
     let currentTime= Date.now();
     this.searched= true;
-    this.http.get(url)
+    this.http.get<ISearchResult[]>(url)
       .subscribe(data => {
         this.results= data;
         this.isLoading= false;
@@ -46,7 +48,9 @@ export class AppComponent {
         } else {
           this.resultsHeading= this.results.length+" Results. Time taken "+requestTime+" seconds."
         } 
-      }, error=>{this.isLoading= false});
+      }, error=>{
+        this.isLoading= false;
+        this.resultsHeading= "Something went wrong. Please try again.";
+      });
   };
 }
-
