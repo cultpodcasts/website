@@ -1,12 +1,12 @@
 export interface ISearchResult {
-  Podcast: string;
-  Publisher: string;
-  Title: string;
-  Description: string;
-  Released: Date;
-  Length: string;
-  Explicit: boolean;
-  Spotify: URL | undefined;
-  Apple: URL | undefined;
-  YouTube: URL | undefined;
+  podcastName: string;
+  publisher: string;
+  episodeTitle: string;
+  episodeDescription: string;
+  length: string;
+  release: Date;
+  explicit: boolean;
+  spotify: URL | undefined;
+  apple: URL | undefined;
+  youtube: URL | undefined;
 }

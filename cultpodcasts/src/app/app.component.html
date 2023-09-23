@@ -40,16 +40,16 @@
     <h3>{{resultsHeading}}</h3>
     <mat-card *ngFor="let result of results" class="result">
       <mat-card-header>
-        <mat-card-title>{{result.Title}}</mat-card-title>
-        <mat-card-subtitle>{{result.Podcast}}, {{result.Released  | date:'dd MMM yyyy'}} [{{result.Length}}]</mat-card-subtitle>
+        <mat-card-title>{{result.episodeTitle}}</mat-card-title>
+        <mat-card-subtitle>{{result.podcastName}}, {{result.release  | date:'dd MMM yyyy'}} [{{result.length}}]</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
-        <p>{{result.Description}}</p>
+        <p>{{result.episodeDescription}}</p>
       </mat-card-content>
       <mat-card-actions>
-        <a mat-button *ngIf="result.Spotify" href="{{result.Spotify}}">Spotify</a>
-        <a mat-button *ngIf="result.Apple" href="{{result.Apple}}">Apple</a>
-        <a mat-button *ngIf="result.YouTube" href="{{result.YouTube}}">You Tube</a>
+        <a mat-button *ngIf="result.spotify" href="{{result.spotify}}">Spotify</a>
+        <a mat-button *ngIf="result.apple" href="{{result.apple}}">Apple</a>
+        <a mat-button *ngIf="result.youTube" href="{{result.youtube}}">You Tube</a>
       </mat-card-actions>
     </mat-card>
 
