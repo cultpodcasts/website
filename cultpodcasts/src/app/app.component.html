@@ -1,7 +1,7 @@
 <section id="body">
   <section id="header">
     <mat-toolbar color="secondary">
-      <span>Cult Podcasts</span>&nbsp;<span class="beta"> pre-release</span>
+      <a routerLink="/" id="site"><span>Cult Podcasts</span>&nbsp;<span class="beta"> pre-release</span></a>
     </mat-toolbar>
     <div id="progresswrapper">
       <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
@@ -19,40 +19,6 @@
       <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
     </form>
   </section>
-  <section id="homepage" *ngIf="!searched">
-    <h3>This weeks new releases</h3>
-    <mat-card *ngFor="let item of homepage?.recentEpisodes" class="result">
-      <mat-card-header>
-        <mat-card-title>{{item.episodeTitle}}</mat-card-title>
-        <mat-card-subtitle>{{item.podcastName}}, {{item.release | date:'dd MMM yyyy'}} [{{item.length}}]</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content class="resultdescription">
-        <p>{{item.episodeDescription}}</p>
-      </mat-card-content>
-      <mat-card-actions>
-        <a mat-button *ngIf="item.spotify" href="{{item.spotify}}">Spotify</a>
-        <a mat-button *ngIf="item.apple" href="{{item.apple}}">Apple</a>
-        <a mat-button *ngIf="item.youtube" href="{{item.youtube}}">You Tube</a>
-      </mat-card-actions>
-    </mat-card>
-  </section>
-  <section id="results">
-    <h3>{{resultsHeading}}</h3>
-    <mat-card *ngFor="let result of results" class="result">
-      <mat-card-header>
-        <mat-card-title>{{result.episodeTitle}}</mat-card-title>
-        <mat-card-subtitle>{{result.podcastName}}, {{result.release  | date:'dd MMM yyyy'}} [{{result.length}}]</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content class="resultdescription">
-        <p>{{result.episodeDescription}}</p>
-      </mat-card-content>
-      <mat-card-actions>
-        <a mat-button *ngIf="result.spotify" href="{{result.spotify}}">Spotify</a>
-        <a mat-button *ngIf="result.apple" href="{{result.apple}}">Apple</a>
-        <a mat-button *ngIf="result.youtube" href="{{result.youtube}}">You Tube</a>
-      </mat-card-actions>
-    </mat-card>
-
-  </section>
+  <router-outlet></router-outlet>
 </section>
 

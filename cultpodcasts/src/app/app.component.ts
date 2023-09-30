@@ -4,6 +4,8 @@ import {MatAccordion, MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { IHomepage } from './IHomepage';
 import { ISearchResult } from './ISearchResult';
+import { HomeComponent } from './home/home.component';
+import { SearchComponent } from './search/search.component';
 
 @Component({
   selector: 'app-root',
