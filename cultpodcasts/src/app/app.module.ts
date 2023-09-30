@@ -16,6 +16,7 @@ import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { SearchComponent } from './search/search.component';
 import { HomeComponent } from './home/home.component';
+import {MatMenuModule} from '@angular/material/menu';
 
 
 @NgModule({
@@ -37,7 +38,8 @@ import { HomeComponent } from './home/home.component';
     MatCardModule,
     MatExpansionModule,
     MatToolbarModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatMenuModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

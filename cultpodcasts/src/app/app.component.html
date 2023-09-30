@@ -7,6 +7,27 @@
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="image" class="socialbutton"></a>
         <a href="https://github.com/cultpodcasts"><img src="/assets/github.svg" alt="image" class="socialbutton"></a>
       </div>
+      <button id="menu" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
+          <mat-icon svgIcon="reddit"></mat-icon>
+          <span>Reddit</span>
+        </a>
+        <a href="https://twitter.com/cultpodcasts" mat-menu-item>
+          <mat-icon svgIcon="twitter"></mat-icon>
+          <span>Twitter</span>
+        </a>
+        <a href="https://github.com/cultpodcasts" mat-menu-item>
+          <mat-icon svgIcon="github"></mat-icon>
+          <span>Github</span>
+        </a>
+      </mat-menu>
+      
+
+
+
     </mat-toolbar>
   </section>
   <section id="searchbar">
