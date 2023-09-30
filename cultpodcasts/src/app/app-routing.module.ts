@@ -7,7 +7,6 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'search/:query', component: SearchComponent },
-  { path: 'search/:query/:page', component: SearchComponent },
 ];
 
 @NgModule({
