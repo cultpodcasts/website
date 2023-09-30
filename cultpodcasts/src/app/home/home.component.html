@@ -13,9 +13,15 @@
         <p>{{item.episodeDescription}}</p>
       </mat-card-content>
       <mat-card-actions>
-        <a mat-button *ngIf="item.spotify" href="{{item.spotify}}">Spotify</a>
-        <a mat-button *ngIf="item.apple" href="{{item.apple}}">Apple</a>
-        <a mat-button *ngIf="item.youtube" href="{{item.youtube}}">You Tube</a>
+        <a *ngIf="item.youtube"  href="{{item.youtube}}" mat-icon-button>
+          <mat-icon svgIcon="youtube"></mat-icon>
+        </a>
+        <a *ngIf="item.spotify"  href="{{item.spotify}}" mat-icon-button>
+          <mat-icon svgIcon="spotify"></mat-icon>
+        </a>
+        <a *ngIf="item.apple"  href="{{item.apple}}" mat-icon-button>
+          <mat-icon svgIcon="apple-podcasts"></mat-icon>
+        </a>
       </mat-card-actions>
     </mat-card>
   </section>
