@@ -1,6 +1,9 @@
+<section id="notices">
+  <p>Cult Podcasts has an index of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? "6000" }}</span> podcasts on the subject of Cults.</p>
+  <p>Please note the site is currently in a very early form and there are bugs!</p>
+</section>
 <section id="homepage">
-    HOME
-    <!-- <h3>This weeks new releases</h3>
+    <h3>This weeks new releases</h3>
     <mat-card *ngFor="let item of homepage?.recentEpisodes" class="result">
       <mat-card-header>
         <mat-card-title>{{item.episodeTitle}}</mat-card-title>
@@ -14,5 +17,5 @@
         <a mat-button *ngIf="item.apple" href="{{item.apple}}">Apple</a>
         <a mat-button *ngIf="item.youtube" href="{{item.youtube}}">You Tube</a>
       </mat-card-actions>
-    </mat-card> -->
+    </mat-card>
   </section>

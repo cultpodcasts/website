@@ -1,6 +1,8 @@
 <section id="results">
-    SEARCH
-    <!-- <h3>{{resultsHeading}}</h3>
+  <div id="progresswrapper">
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+  </div>
+    <h3>{{resultsHeading}}</h3>
     <mat-card *ngFor="let result of results" class="result">
       <mat-card-header>
         <mat-card-title>{{result.episodeTitle}}</mat-card-title>
@@ -14,5 +16,5 @@
         <a mat-button *ngIf="result.apple" href="{{result.apple}}">Apple</a>
         <a mat-button *ngIf="result.youtube" href="{{result.youtube}}">You Tube</a>
       </mat-card-actions>
-    </mat-card> -->
+    </mat-card>
   </section>

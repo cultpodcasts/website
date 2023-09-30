@@ -3,15 +3,8 @@
     <mat-toolbar color="secondary">
       <a routerLink="/" id="site"><span>Cult Podcasts</span>&nbsp;<span class="beta"> pre-release</span></a>
     </mat-toolbar>
-    <div id="progresswrapper">
-      <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
-    </div>
   </section>
-  <section id="notices">
-    <p>Cult Podcasts has an index of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? "6000" }}</span> podcasts on the subject of Cults.</p>
-    <p>Please note the site is currently in a very early form and there are bugs!</p>
-  </section>
-  <section>
+  <section id="searchbar">
     <form (onsubmit)="search(searchBox)">
       <mat-form-field id="searchbox">
         <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
