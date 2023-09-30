@@ -2,7 +2,26 @@
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
-  <h3>{{resultsHeading}}</h3>
+  <section id="resultsheading">
+    <h2>{{resultsHeading}}</h2>
+    <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #sort="matMenu">
+      <button mat-menu-item id="dateasc" (click)="setSort('dateasc')" [ngClass]="sortMode=='dateasc'?'selected':''">
+        <mat-icon>arrow_upward</mat-icon>
+        <span>Date ascending</span>
+      </button>
+      <button mat-menu-item id="datedesc" (click)="setSort('datedesc')" [ngClass]="sortMode=='datedesc'?'selected':''">
+        <mat-icon>arrow_downward</mat-icon>
+        <span>Date descending</span>
+      </button>
+      <button mat-menu-item id="rank" (click)="setSort('rank')" [ngClass]="sortMode=='rank'?'selected':''">
+        <mat-icon></mat-icon>
+        <span>Rank</span>
+      </button>
+    </mat-menu>  
+  </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
       <mat-card-title>{{result.episodeTitle}}</mat-card-title>
