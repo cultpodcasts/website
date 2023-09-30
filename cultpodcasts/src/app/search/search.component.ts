@@ -27,11 +27,11 @@ export class SearchComponent {
           this.results= data;
           var requestTime= (Date.now() - currentTime)/1000;
           if (this.results.length===0) {
-            this.resultsHeading= "0 Results. Time taken "+requestTime+" seconds."
+            this.resultsHeading= `Found 0 results for "${query}". Time taken ${requestTime} seconds.`;
           } else if (this.results.length===1) {
-            this.resultsHeading= "1 Result. Time taken "+requestTime+" seconds."
+            this.resultsHeading= `Found 1 result for "${query}". Time taken ${requestTime} seconds.`;
           } else {
-            this.resultsHeading= this.results.length+" Results. Time taken "+requestTime+" seconds."
+            this.resultsHeading= `Found ${this.results.length} results for "${query}". Time taken ${requestTime} seconds.`;
           } 
           this.isLoading= false;
         }, error=>{
