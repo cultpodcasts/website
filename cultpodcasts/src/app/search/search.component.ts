@@ -10,17 +10,37 @@ import { ActivatedRoute } from '@angular/router';
 })
 
 export class SearchComponent {
+  query: string="";
+  order: string|undefined;
+  prevPage: number=0;
+  nextPage: number=0;
   constructor(private http: HttpClient) {}
   private activatedRoute = inject(ActivatedRoute);
   
   results: any;
   resultsHeading: string= "";
   isLoading: boolean= true;
+  showPagingPrevious:boolean=false;
+  showPagingNext:boolean=false;
 
   ngOnInit() {
-    this.activatedRoute.params.subscribe(({query}) =>{
+    this.activatedRoute.params.subscribe(({query, page, order}) =>{
       this.isLoading= true;
+      this.query= query;
+      if (!page) {
+        page= 1;
+      }
+
+      if (page) {
+        this.prevPage= parseInt(page) - 1;
+        this.nextPage=  parseInt(page) + 1;
+      }
+
+      this.order= order;
       let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(query);
+      if (page && parseInt(page)>1) {
+        url= url+"?page="+parseInt(page);
+      }
       let currentTime= Date.now();
       this.http.get<ISearchResult[]>(url)
         .subscribe(data => {
@@ -34,12 +54,12 @@ export class SearchComponent {
             this.resultsHeading= `Found ${this.results.length} results for "${query}". Time taken ${requestTime} seconds.`;
           } 
           this.isLoading= false;
+          this.showPagingPrevious= page > 1;
+          this.showPagingNext= this.results.length==100;
         }, error=>{
           this.resultsHeading= "Something went wrong. Please try again.";
           this.isLoading= false;
         });
     });
-
-
   }
 }
