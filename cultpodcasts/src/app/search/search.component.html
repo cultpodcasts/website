@@ -18,8 +18,9 @@
     </mat-card-actions>
   </mat-card>
 </section>
-<section *ngIf="showPagingPrevious || showPagingNext" id="paging">
-  <a mat-button id="previous" *ngIf="showPagingPrevious" [routerLink]="['/search', this.query, this.prevPage]" [queryParams]="{ order: this.order}">Previous</a>
-  <a mat-button id="next" *ngIf="showPagingNext" [routerLink]="['/search', this.query, this.nextPage]" [queryParams]="{ order: this.order}">Next</a>
+<section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
+  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/search', this.query]">Previous</a>
+  <a mat-button id="previous" *ngIf="showPagingPrevious" [routerLink]="['/search', this.query, {page:this.prevPage}]">Previous</a>
+  <a mat-button id="next" *ngIf="showPagingNext" [routerLink]="['/search', this.query, {page:this.nextPage}]">Next</a>
 </section>
 
