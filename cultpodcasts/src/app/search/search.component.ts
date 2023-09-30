@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Data, Params } from '@angular/router';
+import { ActivatedRoute, Data, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 
 @Component({
@@ -15,7 +15,8 @@ export class SearchComponent {
   prevPage: number=0;
   nextPage: number=0;
   page:number|undefined;
-  constructor(private http: HttpClient) {}
+  sortMode: string="rank";
+  constructor(private http: HttpClient, private router: Router) {}
   private route = inject(ActivatedRoute);
   
   results: any;
@@ -48,9 +49,20 @@ export class SearchComponent {
         this.page= undefined;
       }
 
+      let inQueryString:boolean= false;
       let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(this.query);
       if (this.page) {
-        url= url+"?page="+this.page;
+        url+= `?page=${this.page}`;
+        inQueryString= true;
+      }
+      if (this.sortMode!="rank") {
+        url+= inQueryString?"&":"?";
+        url+=`order=`;
+        if (this.sortMode=="dateasc") {
+          url+="date";
+        } else {
+          url+= "date-desc";
+        }
       }
 
       let currentTime= Date.now();
@@ -75,4 +87,15 @@ export class SearchComponent {
         });
     });
   }
+
+  setSort(sort: string) {
+    this.sortMode= sort;
+    var url= `/search/${this.query}`;
+    if (this.page && this.page>1) {
+      url+=`;page=${this.page}`;
+    }
+    url+=`;page=${this.sortMode}`;
+    this.router.navigateByUrl(url)
+  }
+    
 }
