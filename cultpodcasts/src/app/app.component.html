@@ -1,7 +1,7 @@
 <section id="body">
   <section id="header">
     <mat-toolbar color="secondary">
-      <a routerLink="/" id="site"><span>Cult Podcasts</span>&nbsp;<span class="beta"> pre-release</span></a>
+      <a routerLink="/" id="site" (click)="searchBox.value=''"><span>Cult Podcasts</span>&nbsp;<span class="beta">beta</span></a>
       <div id="socialbuttons">
         <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="image" class="socialbutton"></a>
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="image" class="socialbutton"></a>
@@ -24,14 +24,10 @@
           <span>Github</span>
         </a>
       </mat-menu>
-      
-
-
-
     </mat-toolbar>
   </section>
-  <section id="searchbar">
-    <form (onsubmit)="search(searchBox)">
+  <section id="searchcontainer">
+    <form (onsubmit)="search(searchBox)" id="searchbar">
       <mat-form-field id="searchbox">
         <input type="text" matInput placeholder="Search" id="searchtext" #searchBox>
       </mat-form-field>

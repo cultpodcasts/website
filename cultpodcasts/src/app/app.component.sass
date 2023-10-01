@@ -1,25 +1,16 @@
 @media screen and (max-width: 200px)
     #body
         width: 160px
-    #searchbox
-        max-width: 160px
-        width: 160px
     #socialbuttons
         display: none
 @media screen and (max-width: 300px)
     #body
         width: 260px
-    #searchbox
-        width: 260px
-        max-width: 260px
     #socialbuttons
         display: none
 @media screen and (max-width: 400px)
     #body
         width: 360px
-    #searchbox
-        width: 360px
-        max-width: 360px
     #socialbuttons
         display: none
 @media screen and (max-width: 599px)
@@ -32,8 +23,6 @@
 @media screen and (min-width: 600px)
     #body
         width: 600px
-    #searchbox
-        max-width: 500px
     #menu
         display: none
     #socialbuttons
@@ -42,7 +31,7 @@
         justify-content: flex-end
 #header
     .beta
-        color: #999
+        color: #aaa
     #site
         text-decoration: none
         color: #000
@@ -50,13 +39,19 @@
         width: 40px
         height: 40px
         padding-left: 20px
-#searchbar
-    margin-top: 10px
-#searchbox 
-    width: 70%
-#searchcta
-    margin-left: 10px
 #body
     margin: 10px auto
 #results, #homepage
     margin-top: 5px
+#searchbar
+    align-items: baseline
+    margin-top: 10px
+    display: -webkit-flex
+    display: flex
+    list-style-type: none
+    padding: 0
+    justify-content: flex-end
+    #searchbox
+        flex-grow: 1
+    #searchcta
+        margin-right: auto
