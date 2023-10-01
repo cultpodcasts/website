@@ -49,6 +49,11 @@ export class SearchComponent {
         this.page= undefined;
       }
 
+      if (params["sort"]) {
+        this.sortMode= params["sort"];
+        console.log(`Sort=${this.sortMode}`);
+      }
+
       let inQueryString:boolean= false;
       let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(this.query);
       if (this.page) {
@@ -89,13 +94,11 @@ export class SearchComponent {
   }
 
   setSort(sort: string) {
-    this.sortMode= sort;
     var url= `/search/${this.query}`;
     if (this.page && this.page>1) {
       url+=`;page=${this.page}`;
     }
-    url+=`;page=${this.sortMode}`;
+    url+=`;sort=${sort}`;
     this.router.navigateByUrl(url)
-  }
-    
+  }    
 }
