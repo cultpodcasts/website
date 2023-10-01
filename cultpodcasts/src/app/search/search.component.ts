@@ -1,8 +1,16 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Data, Params, Router } from '@angular/router';
+import { ActivatedRoute, Data, Params, QueryParamsHandling, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+
+const pageSize:number = 20;
+const sortParamRank:string = "rank";
+const sortParam:string = "sort";
+const sortParamDateAsc:string = "date-asc";
+const sortParamDateDesc:string = "date-desc";
+const pageParam:string = "page";
+const queryParam:string = "query";
 
 @Component({
   selector: 'app-search',
@@ -15,7 +23,13 @@ export class SearchComponent {
   prevPage: number=0;
   nextPage: number=0;
   page:number|undefined;
-  sortMode: string="rank";
+  sortMode: string=sortParamRank;
+  
+  sortParamRank: string= sortParamRank;
+  sortParamDateAsc: string = sortParamDateAsc;
+  sortParamDateDesc : string = sortParamDateDesc;
+
+
   constructor(private http: HttpClient, private router: Router) {}
   private route = inject(ActivatedRoute);
   
@@ -29,19 +43,19 @@ export class SearchComponent {
   ngOnInit() {
     combineLatest(
       this.route.params,
-      this.route.data,
-      (params: Params, data: Data) => ({
+      this.route.queryParams,
+      (params: Params, queryParams: Params) => ({
         params,
-        data,
+        queryParams,
       })
-    ).subscribe((res: { params: Params; data: Data }) => {
-      const { params, data} = res;
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const { params, queryParams} = res;
 
       this.isLoading= true;
-      this.query= params["query"];
+      this.query= params[queryParam];
 
-      if (params["page"]) {
-        this.page= parseInt(params["page"]);
+      if (queryParams[pageParam]) {
+        this.page= parseInt(queryParams[pageParam]);
         this.prevPage= this.page - 1;
         this.nextPage=  this.page + 1;
       } else {
@@ -49,9 +63,8 @@ export class SearchComponent {
         this.page= undefined;
       }
 
-      if (params["sort"]) {
-        this.sortMode= params["sort"];
-        console.log(`Sort=${this.sortMode}`);
+      if (queryParams[sortParam]) {
+        this.sortMode= queryParams[sortParam];
       }
 
       let inQueryString:boolean= false;
@@ -60,10 +73,10 @@ export class SearchComponent {
         url+= `?page=${this.page}`;
         inQueryString= true;
       }
-      if (this.sortMode!="rank") {
+      if (this.sortMode!=sortParamRank) {
         url+= inQueryString?"&":"?";
         url+=`order=`;
-        if (this.sortMode=="dateasc") {
+        if (this.sortMode==sortParamDateAsc) {
           url+="date";
         } else {
           url+= "date-desc";
@@ -76,16 +89,18 @@ export class SearchComponent {
           this.results= data;
           var requestTime= (Date.now() - currentTime)/1000;
           if (this.results.length===0) {
-            this.resultsHeading= `Found 0 results for "${this.query}". Time taken ${requestTime} seconds.`;
+            this.resultsHeading= `Found 0 results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
           } else if (this.results.length===1) {
-            this.resultsHeading= `Found 1 result for "${this.query}". Time taken ${requestTime} seconds.`;
+            this.resultsHeading= `Found 1 result for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
+          } else if (this.results.length==pageSize) {
+            this.resultsHeading= `Found ${this.results.length}+ results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
           } else {
-            this.resultsHeading= `Found ${this.results.length} results for "${this.query}". Time taken ${requestTime} seconds.`;
+            this.resultsHeading= `Found ${this.results.length} results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
           } 
           this.isLoading= false;
           this.showPagingPrevious= this.page!=undefined && this.page > 2;
           this.showPagingPreviousInit= this.page!=undefined && this.page == 2;
-          this.showPagingNext= this.results.length==100;
+          this.showPagingNext= this.results.length==pageSize;
         }, error=>{
           this.resultsHeading= "Something went wrong. Please try again.";
           this.isLoading= false;
@@ -95,10 +110,16 @@ export class SearchComponent {
 
   setSort(sort: string) {
     var url= `/search/${this.query}`;
-    if (this.page && this.page>1) {
-      url+=`;page=${this.page}`;
+    var inQueryString= false;
+    this.sortMode= sort;
+    if (sort!=sortParamRank) {
+      if (inQueryString) {
+        url+="&";
+      } else {
+        url+="?";
+      }
+      url+=`${sortParam}=${sort}`;
     }
-    url+=`;sort=${sort}`;
     this.router.navigateByUrl(url)
   }    
 }

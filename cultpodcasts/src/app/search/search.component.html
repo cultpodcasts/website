@@ -8,15 +8,15 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      <button mat-menu-item id="dateasc" (click)="setSort('dateasc')" [ngClass]="sortMode=='dateasc'?'selected':''">
+      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)" [ngClass]="sortMode==sortParamDateAsc?'selected':''">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
       </button>
-      <button mat-menu-item id="datedesc" (click)="setSort('datedesc')" [ngClass]="sortMode=='datedesc'?'selected':''">
+      <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)" [ngClass]="sortMode==sortParamDateDesc?'selected':''">
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      <button mat-menu-item id="rank" (click)="setSort('rank')" [ngClass]="sortMode=='rank'?'selected':''">
+      <button mat-menu-item id="rank" (click)="setSort(sortParamRank)" [ngClass]="sortMode==sortParamRank?'selected':''">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>
@@ -45,7 +45,7 @@
 </section>
 <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
   <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/search', this.query]">Previous</a>
-  <a mat-button id="previous" *ngIf="showPagingPrevious" [routerLink]="['/search', this.query, {page:this.prevPage}]">Previous</a>
-  <a mat-button id="next" *ngIf="showPagingNext" [routerLink]="['/search', this.query, {page:this.nextPage}]">Next</a>
+  <a mat-button id="previous" *ngIf="showPagingPrevious" [routerLink]="['/search', this.query]" [queryParams]="{page:this.prevPage}">Previous</a>
+  <a mat-button id="next" *ngIf="showPagingNext" [routerLink]="['/search', this.query]" [queryParams]="{page:this.nextPage}">Next</a>
 </section>
 

@@ -24,6 +24,5 @@ export class AppComponent {
   search= (input:HTMLInputElement) => {
     input.blur();
     this.router.navigate(['/search/'+input.value]);
-    input.value="";
   };
 }
