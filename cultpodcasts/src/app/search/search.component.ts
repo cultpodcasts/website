@@ -1,8 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Data, Params, QueryParamsHandling, Router } from '@angular/router';
+import { ActivatedRoute, Data, NavigationExtras, Params, QueryParamsHandling, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { SiteService } from '../SiteService';
 
 const pageSize:number = 20;
 const sortParamRank:string = "rank";
@@ -29,8 +30,8 @@ export class SearchComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc : string = sortParamDateDesc;
 
-
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private siteService: SiteService) {
+  }
   private route = inject(ActivatedRoute);
   
   results: any;
@@ -53,6 +54,7 @@ export class SearchComponent {
 
       this.isLoading= true;
       this.query= params[queryParam];
+      this.siteService.setQuery(this.query);
 
       if (queryParams[pageParam]) {
         this.page= parseInt(queryParams[pageParam]);
@@ -65,6 +67,8 @@ export class SearchComponent {
 
       if (queryParams[sortParam]) {
         this.sortMode= queryParams[sortParam];
+      } else {
+        this.sortMode= sortParamRank;
       }
 
       let inQueryString:boolean= false;
