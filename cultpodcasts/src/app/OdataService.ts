@@ -34,7 +34,7 @@ export class ODataService {
      */
      getEntities<T>(url: string, searchRequest: ISearchRequest,sortMode:string, queryKey:string): Observable<ODataEntitiesResponse<T>> {
         url+=`&search=`+encodeURIComponent(searchRequest.search);
-        url+=`&skip=${searchRequest.skip}`
+        url+=`&$skip=${searchRequest.skip}`
         url+=`&$top=${searchRequest.top}`
         url+=`&$count=${searchRequest.count}`
         url+=`&queryType=${searchRequest.queryType}`
