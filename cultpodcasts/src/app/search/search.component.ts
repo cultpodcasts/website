@@ -1,8 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Data, Params, QueryParamsHandling, Router } from '@angular/router';
+import { ActivatedRoute, Data, NavigationExtras, Params, QueryParamsHandling, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { SiteService } from '../SiteService';
 
 const pageSize:number = 20;
 const sortParamRank:string = "rank";
@@ -22,15 +23,15 @@ export class SearchComponent {
   query: string="";
   prevPage: number=0;
   nextPage: number=0;
-  page:number|undefined;
+  page:number=1;
   sortMode: string=sortParamRank;
   
   sortParamRank: string= sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc : string = sortParamDateDesc;
 
-
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router, private siteService: SiteService) {
+  }
   private route = inject(ActivatedRoute);
   
   results: any;
@@ -53,6 +54,7 @@ export class SearchComponent {
 
       this.isLoading= true;
       this.query= params[queryParam];
+      this.siteService.setQuery(this.query);
 
       if (queryParams[pageParam]) {
         this.page= parseInt(queryParams[pageParam]);
@@ -60,11 +62,13 @@ export class SearchComponent {
         this.nextPage=  this.page + 1;
       } else {
         this.nextPage= 2;
-        this.page= undefined;
+        this.page= 1;
       }
 
       if (queryParams[sortParam]) {
         this.sortMode= queryParams[sortParam];
+      } else {
+        this.sortMode= sortParamRank;
       }
 
       let inQueryString:boolean= false;
@@ -110,16 +114,24 @@ export class SearchComponent {
 
   setSort(sort: string) {
     var url= `/search/${this.query}`;
-    var inQueryString= false;
-    this.sortMode= sort;
+    var params:Params= {};
     if (sort!=sortParamRank) {
-      if (inQueryString) {
-        url+="&";
-      } else {
-        url+="?";
-      }
-      url+=`${sortParam}=${sort}`;
+      params[sortParam]= sort;
     }
-    this.router.navigateByUrl(url)
+    this.router.navigate([url], {queryParams:params} );
   }    
+  
+  setPage(page:number){
+    var url= `/search/${this.query}`;
+    this.page+= page;
+    var params:Params= {};
+    if (this.page!=null && this.page > 1) {
+      params["page"]= this.page;
+    }
+    if (this.sortMode!=sortParamRank) {
+      params[sortParam]= this.sortMode;
+    }
+    this.router.navigate([url], {queryParams:params} );
+
+  }
 }
