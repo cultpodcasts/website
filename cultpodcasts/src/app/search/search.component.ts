@@ -79,7 +79,7 @@ export class SearchComponent {
 
       let currentTime= Date.now();
       this.oDataService.getEntities<ISearchResult>(
-        'https://cultpodcasts.search.windows.net/indexes/cosmosdb-index/docs/search?api-version=2016-09-01',
+        'https://cultpodcasts.search.windows.net/indexes/cosmosdb-index/docs?api-version=2016-09-01',
         {
           search: this.searchState.query,
           searchMode: 'any',
@@ -87,8 +87,9 @@ export class SearchComponent {
           count: true,
           skip:(this.searchState.page-1) * pageSize,
           top: pageSize,
-          facets: ["podcastName,count:10,sort:count"]
+          facet: "podcastName,count:10,sort:count"
         },
+        this.searchState.sort,
         'TBapMt2RTuulXdyMMICzPK5Jk2HyHNUXKhWX9Sex9IAzSeBS5J1Z').subscribe(data=>{
           this.results= data.entities;
           var requestTime= (Date.now() - currentTime)/1000;

@@ -4,6 +4,6 @@ export interface ISearchRequest {
     top: number;
     searchMode: string;
     queryType: string;
-    facets: string[];
+    facet: string;
     search: string;
 }

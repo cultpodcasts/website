@@ -32,11 +32,24 @@ export class ODataService {
      * @param url - URL for an OData-enabled enpoint
      * @returns Response containing metadata and entities
      */
-     getEntities<T>(url: string, searchRequest: ISearchRequest, queryKey:string): Observable<ODataEntitiesResponse<T>> {
+     getEntities<T>(url: string, searchRequest: ISearchRequest,sortMode:string, queryKey:string): Observable<ODataEntitiesResponse<T>> {
+        url+=`&search=`+encodeURIComponent(searchRequest.search);
+        url+=`&skip=${searchRequest.skip}`
+        url+=`&$top=${searchRequest.top}`
+        url+=`&$count=${searchRequest.count}`
+        url+=`&queryType=${searchRequest.queryType}`
+        url+=`&searchMode=${searchRequest.searchMode}`
+        url+=`&facet=${searchRequest.facet}`
+        switch (sortMode) {
+            case "date-asc": url+="&$orderby=release asc";
+                            break;
+            case "date-desc": url+="&$orderby=release desc";
+                            break;
+        }
         let headers = new HttpHeaders();
         headers = headers.set('api-key', queryKey);
         return this.httpClient
-            .post<any>(url, searchRequest, {headers: headers, observe: 'response' } )
+            .get<any>(url, {headers: headers, observe: 'response' } )
             .pipe(map(response => new ODataEntitiesResponse<T>(response)));
     }
 }
