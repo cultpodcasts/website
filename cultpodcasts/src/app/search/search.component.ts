@@ -4,14 +4,17 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Data, NavigationExtras, Params, QueryParamsHandling, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
-
+import { ISearchState } from '../ISearchState';
+import { ODataService } from '../OdataService'
 const pageSize:number = 20;
-const sortParamRank:string = "rank";
+
 const sortParam:string = "sort";
-const sortParamDateAsc:string = "date-asc";
-const sortParamDateDesc:string = "date-desc";
 const pageParam:string = "page";
 const queryParam:string = "query";
+
+const sortParamRank:string = "rank";
+const sortParamDateAsc:string = "date-asc";
+const sortParamDateDesc:string = "date-desc";
 
 @Component({
   selector: 'app-search',
@@ -20,17 +23,20 @@ const queryParam:string = "query";
 })
 
 export class SearchComponent {
-  query: string="";
+  searchState:ISearchState= {
+    query:"",
+    page:1,
+    sort:sortParamRank
+  }
+
   prevPage: number=0;
   nextPage: number=0;
-  page:number=1;
-  sortMode: string=sortParamRank;
   
   sortParamRank: string= sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc : string = sortParamDateDesc;
 
-  constructor(private http: HttpClient, private router: Router, private siteService: SiteService) {
+  constructor(private http: HttpClient, private router: Router, private siteService: SiteService, private oDataService: ODataService) {
   }
   private route = inject(ActivatedRoute);
   
@@ -53,57 +59,50 @@ export class SearchComponent {
       const { params, queryParams} = res;
 
       this.isLoading= true;
-      this.query= params[queryParam];
-      this.siteService.setQuery(this.query);
+      this.searchState.query= params[queryParam];
+      this.siteService.setQuery(this.searchState.query);
 
       if (queryParams[pageParam]) {
-        this.page= parseInt(queryParams[pageParam]);
-        this.prevPage= this.page - 1;
-        this.nextPage=  this.page + 1;
+        this.searchState.page= parseInt(queryParams[pageParam]);
+        this.prevPage= this.searchState.page - 1;
+        this.nextPage=  this.searchState.page + 1;
       } else {
         this.nextPage= 2;
-        this.page= 1;
+        this.searchState.page= 1;
       }
 
       if (queryParams[sortParam]) {
-        this.sortMode= queryParams[sortParam];
+        this.searchState.sort= queryParams[sortParam];
       } else {
-        this.sortMode= sortParamRank;
-      }
-
-      let inQueryString:boolean= false;
-      let url= "https://api.cultpodcasts.com/api/episode_search/"+encodeURIComponent(this.query);
-      if (this.page) {
-        url+= `?page=${this.page}`;
-        inQueryString= true;
-      }
-      if (this.sortMode!=sortParamRank) {
-        url+= inQueryString?"&":"?";
-        url+=`order=`;
-        if (this.sortMode==sortParamDateAsc) {
-          url+="date";
-        } else {
-          url+= "date-desc";
-        }
+        this.searchState.sort= sortParamRank;
       }
 
       let currentTime= Date.now();
-      this.http.get<ISearchResult[]>(url)
-        .subscribe(data => {
-          this.results= data;
+      this.oDataService.getEntities<ISearchResult>(
+        'https://api.cultpodcasts.com/api/?',
+        {
+          search: this.searchState.query,
+          searchMode: 'any',
+          queryType: 'simple',
+          count: true,
+          skip:(this.searchState.page-1) * pageSize,
+          top: pageSize,
+          facet: "podcastName,count:10,sort:count"
+        },
+        this.searchState.sort).subscribe(data=>{
+          this.results= data.entities;
           var requestTime= (Date.now() - currentTime)/1000;
-          if (this.results.length===0) {
-            this.resultsHeading= `Found 0 results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } else if (this.results.length===1) {
-            this.resultsHeading= `Found 1 result for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } else if (this.results.length==pageSize) {
-            this.resultsHeading= `Found ${this.results.length}+ results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
+          const count= data.metadata.get("count");
+          if (count===0) {
+            this.resultsHeading= `Found 0 results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
+          } else if (count===1) {
+            this.resultsHeading= `Found 1 result for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
           } else {
-            this.resultsHeading= `Found ${this.results.length} results for "${this.query}". Time taken ${requestTime.toFixed(1)}s.`;
+            this.resultsHeading= `Found ${count} results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
           } 
           this.isLoading= false;
-          this.showPagingPrevious= this.page!=undefined && this.page > 2;
-          this.showPagingPreviousInit= this.page!=undefined && this.page == 2;
+          this.showPagingPrevious= this.searchState.page!=undefined && this.searchState.page > 2;
+          this.showPagingPreviousInit= this.searchState.page!=undefined && this.searchState.page == 2;
           this.showPagingNext= this.results.length==pageSize;
         }, error=>{
           this.resultsHeading= "Something went wrong. Please try again.";
@@ -113,7 +112,7 @@ export class SearchComponent {
   }
 
   setSort(sort: string) {
-    var url= `/search/${this.query}`;
+    var url= `/search/${this.searchState.query}`;
     var params:Params= {};
     if (sort!=sortParamRank) {
       params[sortParam]= sort;
@@ -122,14 +121,14 @@ export class SearchComponent {
   }    
   
   setPage(page:number){
-    var url= `/search/${this.query}`;
-    this.page+= page;
+    var url= `/search/${this.searchState.query}`;
+    this.searchState.page+= page;
     var params:Params= {};
-    if (this.page!=null && this.page > 1) {
-      params["page"]= this.page;
+    if (this.searchState.page!=null && this.searchState.page > 1) {
+      params["page"]= this.searchState.page;
     }
-    if (this.sortMode!=sortParamRank) {
-      params[sortParam]= this.sortMode;
+    if (this.searchState.sort!=sortParamRank) {
+      params[sortParam]= this.searchState.sort;
     }
     this.router.navigate([url], {queryParams:params} );
 

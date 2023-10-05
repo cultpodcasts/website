@@ -1,9 +1,8 @@
 export interface ISearchResult {
   podcastName: string;
-  publisher: string;
   episodeTitle: string;
   episodeDescription: string;
-  length: string;
+  duration: string;
   release: Date;
   explicit: boolean;
   spotify: URL | undefined;
