@@ -16,7 +16,7 @@ export class HomeComponent {
 
   ngOnInit() {
     this.siteService.setQuery("");
-    let homepage= this.http.get<IHomepage>("https://api.cultpodcasts.com/api/homepage")
+    let homepage= this.http.get<IHomepage>("https://api.cultpodcasts.com/homepage")
       .subscribe(data=>{
         this.homepage= data;
         this.totalDuration= data.totalDuration.split(".")[0]+" days";
