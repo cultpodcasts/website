@@ -45,7 +45,7 @@
 </section>
 <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
   <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/search', this.query]">Previous</a>
-  <a mat-button id="previous" *ngIf="showPagingPrevious" [routerLink]="['/search', this.query]" [queryParams]="{page:this.prevPage}">Previous</a>
-  <a mat-button id="next" *ngIf="showPagingNext" [routerLink]="['/search', this.query]" [queryParams]="{page:this.nextPage}">Next</a>
+  <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
+  <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
 

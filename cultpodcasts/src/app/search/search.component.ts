@@ -23,7 +23,7 @@ export class SearchComponent {
   query: string="";
   prevPage: number=0;
   nextPage: number=0;
-  page:number|undefined;
+  page:number=1;
   sortMode: string=sortParamRank;
   
   sortParamRank: string= sortParamRank;
@@ -62,7 +62,7 @@ export class SearchComponent {
         this.nextPage=  this.page + 1;
       } else {
         this.nextPage= 2;
-        this.page= undefined;
+        this.page= 1;
       }
 
       if (queryParams[sortParam]) {
@@ -114,16 +114,24 @@ export class SearchComponent {
 
   setSort(sort: string) {
     var url= `/search/${this.query}`;
-    var inQueryString= false;
-    this.sortMode= sort;
+    var params:Params= {};
     if (sort!=sortParamRank) {
-      if (inQueryString) {
-        url+="&";
-      } else {
-        url+="?";
-      }
-      url+=`${sortParam}=${sort}`;
+      params[sortParam]= sort;
     }
-    this.router.navigateByUrl(url)
+    this.router.navigate([url], {queryParams:params} );
   }    
+  
+  setPage(page:number){
+    var url= `/search/${this.query}`;
+    this.page+= page;
+    var params:Params= {};
+    if (this.page!=null && this.page > 1) {
+      params["page"]= this.page;
+    }
+    if (this.sortMode!=sortParamRank) {
+      params[sortParam]= this.sortMode;
+    }
+    this.router.navigate([url], {queryParams:params} );
+
+  }
 }

@@ -5,7 +5,6 @@ import { BehaviorSubject } from 'rxjs';
 @Injectable()
 export class SiteService {
  
-
     private _siteData:ISiteData= {
         query: ""
     };
