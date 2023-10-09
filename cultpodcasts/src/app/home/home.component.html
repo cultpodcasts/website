@@ -1,5 +1,5 @@
 <section id="notices">
-  <p>Cult Podcasts has an index of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? "6000" }}</span> podcasts on the subject of Cults.</p>
+  <p>Cult Podcasts has an index of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? "9000" }}</span> podcasts on the subject of Cults.</p>
   <p>Please note the site is currently in a very early form and there are bugs!</p>
 </section>
 <section id="homepage">
@@ -7,7 +7,7 @@
     <mat-card *ngFor="let item of homepage?.recentEpisodes" class="result">
       <mat-card-header>
         <mat-card-title [innerHTML]="item.episodeTitle"></mat-card-title>
-        <mat-card-subtitle>{{item.podcastName}}, {{item.release | date:'dd MMM yyyy'}} [{{item.length}}]</mat-card-subtitle>
+        <mat-card-subtitle>{{item.podcastName}}, {{item.release | date:'d MMM yyyy'}} [{{item.length}}]</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
         <p>{{item.episodeDescription}}</p>
