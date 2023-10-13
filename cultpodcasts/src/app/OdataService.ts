@@ -41,7 +41,9 @@ export class ODataService {
         url+=`&searchMode=${searchRequest.searchMode}`
         url+=`&facet=${searchRequest.facet}`
         if (searchRequest.filter) {
-            url+=`&$filter=${searchRequest.filter}`
+            var filter= searchRequest.filter;
+            filter= filter.replace("&", "%26");
+            url+=`&$filter=${filter}`
         }
         switch (sortMode) {
             case "date-asc": url+="&$orderby=release asc";
