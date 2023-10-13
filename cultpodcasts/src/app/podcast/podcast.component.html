@@ -22,7 +22,7 @@
       <mat-card-header>
         <mat-card-title [innerHTML]="result.episodeTitle"></mat-card-title>
         <mat-card-subtitle>
-          <a [routerLink]="['/podcast/*']" [queryParams]="{filter: '(podcastName eq \''+result.podcastName+'\')'}" fragment="education">
+          <a [routerLink]="['/podcast', podcastName]">
             {{result.podcastName}}
           </a>
         </mat-card-subtitle>
@@ -45,7 +45,7 @@
     </mat-card>
   </section>
   <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
-    <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/search', this.searchState.query]">Previous</a>
+    <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/podcast', this.podcastName]">Previous</a>
     <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
     <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
   </section>

@@ -109,7 +109,7 @@ export class PodcastComponent {
           this.isLoading= false;
           this.showPagingPrevious= this.searchState.page!=undefined && this.searchState.page > 2;
           this.showPagingPreviousInit= this.searchState.page!=undefined && this.searchState.page == 2;
-          this.showPagingNext= this.results.length==pageSize;
+          this.showPagingNext= (this.searchState.page * pageSize) < count;
         }, error=>{
           this.resultsHeading= "Something went wrong. Please try again.";
           this.isLoading= false;
@@ -120,12 +120,14 @@ export class PodcastComponent {
   setSort(sort: string) {
     var url= `/podcast/${this.podcastName}`;
     var params:Params= {};
-    params[sortParam]= sort;
+    if (sort!=sortParamDateDesc) {
+      params[sortParam]= sort;
+    }
     this.router.navigate([url], {queryParams:params} );
   }    
   
   setPage(page:number){
-    var url= `/search/${this.searchState.query}`;
+    var url= `/podcast/${this.podcastName}`;
     this.searchState.page+= page;
     var params:Params= {};
     if (this.searchState.page!=null && this.searchState.page > 1) {

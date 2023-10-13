@@ -112,7 +112,7 @@ export class SearchComponent {
           this.isLoading= false;
           this.showPagingPrevious= this.searchState.page!=undefined && this.searchState.page > 2;
           this.showPagingPreviousInit= this.searchState.page!=undefined && this.searchState.page == 2;
-          this.showPagingNext= this.results.length==pageSize;
+          this.showPagingNext= (this.searchState.page * pageSize) < count;
         }, error=>{
           this.resultsHeading= "Something went wrong. Please try again.";
           this.isLoading= false;
