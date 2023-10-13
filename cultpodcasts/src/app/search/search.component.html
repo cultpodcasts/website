@@ -26,7 +26,7 @@
     <mat-card-header>
       <mat-card-title [innerHTML]="result.episodeTitle"></mat-card-title>
       <mat-card-subtitle>
-        <a [routerLink]="['/podcast/'+result.podcastName]">
+        <a [routerLink]="['/podcast',result.podcastName]">
           {{result.podcastName}}
         </a>
     </mat-card-subtitle>
