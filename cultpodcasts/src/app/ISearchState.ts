@@ -1,5 +1,6 @@
 export interface ISearchState {
+    filter: string | null;
     page: number,
-    query: string,
+    query: string | null,
     sort: string
 }

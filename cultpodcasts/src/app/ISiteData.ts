@@ -1,3 +1,4 @@
 export interface ISiteData {
-    query: string;
+    filter: string| null;
+    query: string | null;
 }

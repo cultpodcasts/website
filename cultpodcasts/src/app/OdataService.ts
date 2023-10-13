@@ -33,13 +33,16 @@ export class ODataService {
      * @returns Response containing metadata and entities
      */
      getEntities<T>(url: string, searchRequest: ISearchRequest,sortMode:string): Observable<ODataEntitiesResponse<T>> {
-        url+=`search=`+encodeURIComponent(searchRequest.search);
+        url+=`search=`+encodeURIComponent(searchRequest.search??"");
         url+=`&$skip=${searchRequest.skip}`
         url+=`&$top=${searchRequest.top}`
         url+=`&$count=${searchRequest.count}`
         url+=`&queryType=${searchRequest.queryType}`
         url+=`&searchMode=${searchRequest.searchMode}`
         url+=`&facet=${searchRequest.facet}`
+        if (searchRequest.filter) {
+            url+=`&$filter=${searchRequest.filter}`
+        }
         switch (sortMode) {
             case "date-asc": url+="&$orderby=release asc";
                             break;

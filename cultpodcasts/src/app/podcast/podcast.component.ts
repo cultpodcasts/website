@@ -13,28 +13,30 @@ const pageParam:string = "page";
 const queryParam:string = "query";
 const filterParam:string = "filter";
 
-const sortParamRank:string = "rank";
 const sortParamDateAsc:string = "date-asc";
 const sortParamDateDesc:string = "date-desc";
 
 @Component({
-  selector: 'app-search',
-  templateUrl: './search.component.html',
-  styleUrls: ['./search.component.sass']
+  selector: 'app-podcast',
+  templateUrl: './podcast.component.html',
+  styleUrls: ['./podcast.component.sass']
 })
 
-export class SearchComponent {
+export class PodcastComponent {
   searchState:ISearchState= {
     query:"",
     page:1,
-    sort:sortParamRank,
+    sort:sortParamDateDesc,
     filter:null
   }
+
+  podcastName: string="";
+  count: number=0;
 
   prevPage: number=0;
   nextPage: number=0;
   
-  sortParamRank: string= sortParamRank;
+  sortParamRank: string= sortParamDateDesc;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc : string = sortParamDateDesc;
 
@@ -61,8 +63,8 @@ export class SearchComponent {
       const { params, queryParams} = res;
 
       this.isLoading= true;
-      this.searchState.query= params[queryParam];
-      this.siteService.setQuery(params[queryParam]);
+      this.searchState.query= null;
+      this.siteService.setQuery(this.searchState.query);
 
       if (queryParams[pageParam]) {
         this.searchState.page= parseInt(queryParams[pageParam]);
@@ -76,14 +78,13 @@ export class SearchComponent {
       if (queryParams[sortParam]) {
         this.searchState.sort= queryParams[sortParam];
       } else {
-        this.searchState.sort= sortParamRank;
+        this.searchState.sort= sortParamDateDesc;
       }
 
-      if (queryParams[filterParam]) {
-        this.searchState.filter= queryParams[filterParam];
-      } else {
-        this.searchState.filter= null;
-      }
+      this.podcastName= params["podcastName"];
+
+      this.searchState.filter= `(podcastName eq '${this.podcastName}')`;
+      this.siteService.setFilter(this.searchState.filter);
 
       let currentTime= Date.now();
       this.oDataService.getEntities<ISearchResult>(
@@ -102,13 +103,9 @@ export class SearchComponent {
           this.results= data.entities;
           var requestTime= (Date.now() - currentTime)/1000;
           const count= data.metadata.get("count");
-          if (count===0) {
-            this.resultsHeading= `Found 0 results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } else if (count===1) {
-            this.resultsHeading= `Found 1 result for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } else {
-            this.resultsHeading= `Found ${count} results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } 
+
+          this.count= count;
+
           this.isLoading= false;
           this.showPagingPrevious= this.searchState.page!=undefined && this.searchState.page > 2;
           this.showPagingPreviousInit= this.searchState.page!=undefined && this.searchState.page == 2;
@@ -121,11 +118,9 @@ export class SearchComponent {
   }
 
   setSort(sort: string) {
-    var url= `/search/${this.searchState.query}`;
+    var url= `/podcast/${this.podcastName}`;
     var params:Params= {};
-    if (sort!=sortParamRank) {
-      params[sortParam]= sort;
-    }
+    params[sortParam]= sort;
     this.router.navigate([url], {queryParams:params} );
   }    
   
@@ -136,7 +131,7 @@ export class SearchComponent {
     if (this.searchState.page!=null && this.searchState.page > 1) {
       params["page"]= this.searchState.page;
     }
-    if (this.searchState.sort!=sortParamRank) {
+    if (this.searchState.sort!=sortParamDateDesc) {
       params[sortParam]= this.searchState.sort;
     }
     this.router.navigate([url], {queryParams:params} );
