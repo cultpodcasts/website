@@ -5,5 +5,6 @@ export interface ISearchRequest {
     searchMode: string;
     queryType: string;
     facet: string;
-    search: string;
+    search: string | null;
+    filter: string|null
 }

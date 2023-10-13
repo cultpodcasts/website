@@ -15,7 +15,8 @@ import { ISiteData } from './ISiteData';
 
 export class AppComponent {
   siteData: ISiteData= {
-    query: ""
+    query: "",
+    filter:null
   };
 
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef|undefined;

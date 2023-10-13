@@ -18,13 +18,15 @@ import { SearchComponent } from './search/search.component';
 import { HomeComponent } from './home/home.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { SiteService } from './SiteService';
+import { PodcastComponent } from './podcast/podcast.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
     SearchComponent,
-    HomeComponent
+    HomeComponent,
+    PodcastComponent
   ],
   imports: [
     BrowserModule,
