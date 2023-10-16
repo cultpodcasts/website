@@ -63,7 +63,7 @@ export class PodcastComponent {
       const { params, queryParams} = res;
 
       this.isLoading= true;
-      this.searchState.query= null;
+      this.searchState.query= "";
       this.siteService.setQuery(this.searchState.query);
 
       if (queryParams[pageParam]) {

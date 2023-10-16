@@ -102,13 +102,19 @@ export class SearchComponent {
           this.results= data.entities;
           var requestTime= (Date.now() - currentTime)/1000;
           const count= data.metadata.get("count");
+          let presentableQuery:string= this.searchState.query;
+          if ((presentableQuery.startsWith("'") && presentableQuery.endsWith("'")) || 
+              (presentableQuery.startsWith("\"") && presentableQuery.endsWith("\""))) {
+                presentableQuery= presentableQuery.substring(1, presentableQuery.length-1);
+              }
+          let resultsSummary: String= `${count} results`;
           if (count===0) {
-            this.resultsHeading= `Found 0 results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
+            resultsSummary= `0 results`;
           } else if (count===1) {
-            this.resultsHeading= `Found 1 result for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } else {
-            this.resultsHeading= `Found ${count} results for "${this.searchState.query}". Time taken ${requestTime.toFixed(1)}s.`;
-          } 
+            resultsSummary=  `1 result`;
+          }
+          this.resultsHeading= `Found ${resultsSummary} for "${presentableQuery}". Time taken ${requestTime.toFixed(1)}s.`;
+
           this.isLoading= false;
           this.showPagingPrevious= this.searchState.page!=undefined && this.searchState.page > 2;
           this.showPagingPreviousInit= this.searchState.page!=undefined && this.searchState.page == 2;
