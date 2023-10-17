@@ -46,5 +46,6 @@ export class AppComponent {
   top= ()=>{
     const element = document.querySelector('body');
     element?.scrollIntoView();
+    return true;
   };
 }
