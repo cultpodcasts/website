@@ -42,4 +42,9 @@ export class AppComponent {
     input.blur();
     this.router.navigate(['/search/'+input.value]);
   };
+
+  top= ()=>{
+    const element = document.querySelector('body');
+    element?.scrollIntoView();
+  };
 }
