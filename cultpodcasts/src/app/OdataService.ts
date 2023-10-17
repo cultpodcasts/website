@@ -42,15 +42,6 @@ export class ODataService {
         url+=`&facet=${searchRequest.facet}`
         if (searchRequest.filter) {
             var filter= searchRequest.filter;
-            filter= filter.replaceAll("&", encodeURIComponent("&"));
-            filter= filter.replaceAll(";", encodeURIComponent(";"));
-            filter= filter.replaceAll("/", encodeURIComponent("/"));
-            filter= filter.replaceAll("?", encodeURIComponent("?"));
-            filter= filter.replaceAll(":", encodeURIComponent(":"));
-            filter= filter.replaceAll("@", encodeURIComponent("@"));
-            filter= filter.replaceAll("=", encodeURIComponent("="));
-            filter= filter.replaceAll("+", encodeURIComponent("+"));
-            filter= filter.replaceAll(",", encodeURIComponent(","));
             url+=`&$filter=${filter}`
         }
         switch (sortMode) {
