@@ -12,7 +12,6 @@ import { ISiteData } from './ISiteData';
   styleUrls: ['./app.component.sass'],
 })
 
-
 export class AppComponent {
   siteData: ISiteData= {
     query: "",
@@ -20,7 +19,7 @@ export class AppComponent {
   };
 
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef|undefined;
-
+  
   constructor(private http: HttpClient, private router: Router, private iconRegistry:MatIconRegistry,
     private domSanitizer: DomSanitizer, private siteService: SiteService) {
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
@@ -35,12 +34,17 @@ export class AppComponent {
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value= siteData.query;
-      }
+      };
     })
   }
 
   search= (input:HTMLInputElement) => {
     input.blur();
     this.router.navigate(['/search/'+input.value]);
+  };
+
+  top= ()=>{
+    const element = document.querySelector('body');
+    element?.scrollIntoView();
   };
 }
