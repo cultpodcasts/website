@@ -2,17 +2,18 @@
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? 11000 | number}}</span> podcasts on the subject of Cults.</p>
   <p>Please note the site is currently in a very early form and there are bugs!</p>
 </section>
-<section id="homepage">
-    <h2>This weeks new releases</h2>
-    <mat-card *ngFor="let item of homepage?.recentEpisodes" class="result">
+<section id="thisweek">
+  <h2>This weeks new releases</h2>
+  <div *ngFor="let dateItems of grouped | keyvalue: descDate">
+    <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}} {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
+    <mat-card *ngFor="let item of dateItems.value" class="result">
       <mat-card-header>
         <mat-card-title [innerHTML]="item.episodeTitle"></mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
-            {{item.podcastName}}
-          </a>
+            {{item.podcastName}}</a>
+          <span class="duration">[{{item.length.substring(1)}}]</span>
         </mat-card-subtitle>
-          <mat-card-subtitle>{{item.release | date:'d MMM yyyy'}} [{{item.length.substring(1)}}]</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
         <p>{{item.episodeDescription}}</p>
@@ -29,4 +30,5 @@
         </a>
       </mat-card-actions>
     </mat-card>
-  </section>
+  </div>
+</section>
