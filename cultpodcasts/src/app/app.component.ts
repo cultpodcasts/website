@@ -43,9 +43,10 @@ export class AppComponent {
     this.router.navigate(['/search/'+input.value]);
   };
 
-  top= ()=>{
+  top(event:any){
     const element = document.querySelector('body');
     element?.scrollIntoView();
+    event.stopPropagation();
     return true;
   };
 }
