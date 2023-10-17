@@ -83,7 +83,19 @@ export class PodcastComponent {
 
       this.podcastName= params["podcastName"];
 
-      this.searchState.filter= `(podcastName eq '${this.podcastName}')`;
+      let escapedPodcastName= this.podcastName
+        .replaceAll("'", "''").replaceAll("'", encodeURIComponent("'"))
+        .replaceAll("&", encodeURIComponent("&"))
+        .replaceAll(";", encodeURIComponent(";"))
+        .replaceAll("/", encodeURIComponent("/"))
+        .replaceAll("?", encodeURIComponent("?"))
+        .replaceAll(":", encodeURIComponent(":"))
+        .replaceAll("@", encodeURIComponent("@"))
+        .replaceAll("=", encodeURIComponent("="))
+        .replaceAll("+", encodeURIComponent("+"))
+        .replaceAll(",", encodeURIComponent(","));
+                ;
+      this.searchState.filter= `(podcastName eq '${escapedPodcastName}')`;
       this.siteService.setFilter(this.searchState.filter);
 
       let currentTime= Date.now();
