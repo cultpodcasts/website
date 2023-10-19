@@ -6,7 +6,7 @@ import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
 import { ISearchState } from '../ISearchState';
 import { ODataService } from '../OdataService'
-const pageSize:number = 20;
+const pageSize:number = 10;
 
 const sortParam:string = "sort";
 const pageParam:string = "page";
