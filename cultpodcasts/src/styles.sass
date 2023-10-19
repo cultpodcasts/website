@@ -1,13 +1,31 @@
 /* You can add global styles to this file, and also import other style files */
-@import '~@angular/material/prebuilt-themes/deeppurple-amber.css'
+@use '@angular/material' as mat
 
+@import '@angular/material/theming'
+@import "@material/theme/mdc-theme"
+@import "@material/theme/mixins"
+
+@include mat-core()
+$my-palette: mat.$indigo-palette
+$primary: mat-palette($mat-indigo)
+$accent: mat-palette($mat-pink, A200, A100, A400)
+$warn: mat-palette($mat-red)
+
+@include angular-material-theme(mat-light-theme($primary, $accent, $warn))
+@media (prefers-color-scheme: dark)
+    @include angular-material-theme(mat-dark-theme($primary, $accent, $warn))
+@media (prefers-color-scheme: light)
+    @include angular-material-theme(mat-light-theme($primary, $accent, $warn))
+
+body.color-scheme-dark
+    background-color: --mdc-theme-background
 
 mat-card-subtitle
     font-size: 1.4em !important
     margin-top: 10px
     margin-bottom: 10px
     a
-        color: rgba(0, 0, 0, 0.54)
+        color: var(--mdc-theme-text-secondary)
         text-decoration: dashed underline 1px
         text-underline-offset: 5px
         line-height: 1.5em
@@ -18,3 +36,4 @@ mat-card-subtitle
 p
     font-size: 18px
     line-height: 1.3em
+
