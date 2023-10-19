@@ -1,9 +1,11 @@
 <section id="notices">
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? 11000 | number}}</span> podcasts on the subject of Cults.</p>
-  <p>Please note the site is currently in a very early form and there are bugs!</p>
 </section>
+<div id="progresswrapper">
+  <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+</div>
 <section id="thisweek">
-  <h2>This weeks new releases</h2>
+  <h2>This weeks new releases. <span *ngIf="podcastCount">{{podcastCount}} Podcasts.</span></h2>
   <div *ngFor="let dateItems of grouped | keyvalue: descDate">
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}} {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
     <mat-card *ngFor="let item of dateItems.value" class="result">
@@ -31,4 +33,9 @@
       </mat-card-actions>
     </mat-card>
   </div>
+</section>
+<section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
+  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/']">Previous</a>
+  <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
+  <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
