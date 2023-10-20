@@ -55,5 +55,19 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
+  ],
+  "description": "Listen to quality podcasts on the subject of Cults.",
+  "dir": "ltr",
+  "lang": "en",
+  "orientation": "any",
+  "display_override": [
+    "window-controls-overlay",
+    "fullscreen",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "categories": [
+    "education"
   ]
 }
