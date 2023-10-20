@@ -17,8 +17,9 @@ $warn: mat-palette($mat-red)
 @media (prefers-color-scheme: light)
     @include angular-material-theme(mat-light-theme($primary, $accent, $warn))
 
-body.color-scheme-dark
-    background-color: --mdc-theme-background
+body
+    margin: 0
+    padding: 0
 
 mat-card-subtitle
     font-size: 1.4em !important
@@ -46,5 +47,3 @@ p
     margin-bottom: 25px
     #previous
         margin-right: auto
-
-
