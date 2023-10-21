@@ -62,7 +62,6 @@
   "orientation": "any",
   "display_override": [
     "window-controls-overlay",
-    "fullscreen",
     "standalone",
     "minimal-ui",
     "browser"
