@@ -1,8 +1,8 @@
 {
   "name": "Cult Podcasts",
   "short_name": "cultpodcasts",
-  "theme_color": "##303030",
-  "background_color": "##303030",
+  "theme_color": "#303030",
+  "background_color": "#303030",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
