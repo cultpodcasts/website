@@ -1,11 +1,10 @@
 <section id="body">
   <section id="header">
     <mat-toolbar color="secondary">
-      <a routerLink="/" id="site" (click)="searchBox.value=''"><span>Cult Podcasts</span></a>
+      <a routerLink="/" id="site" (click)="searchBox.value=''"><img src="/assets/cultpodcasts.svg" alt="image"><span>Cult Podcasts</span></a>
       <div id="socialbuttons">
         <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="image" class="socialbutton"></a>
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="image" class="socialbutton"></a>
-        <a href="https://github.com/cultpodcasts"><img src="/assets/github.svg" alt="image" class="socialbutton"></a>
       </div>
       <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
@@ -18,10 +17,6 @@
         <a href="https://twitter.com/cultpodcasts" mat-menu-item>
           <mat-icon svgIcon="twitter"></mat-icon>
           <span>Twitter</span>
-        </a>
-        <a href="https://github.com/cultpodcasts" mat-menu-item>
-          <mat-icon svgIcon="github"></mat-icon>
-          <span>Github</span>
         </a>
       </mat-menu>
     </mat-toolbar>
