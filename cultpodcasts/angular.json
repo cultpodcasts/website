@@ -31,7 +31,10 @@
               "src/manifest.webmanifest",
               "src/manifest-dark.webmanifest",
               "src/dark-mode-toggle.mjs",
-              "src/darkmode.js"
+              "src/darkmode.js",
+              "src/robots.txt",
+              "src/sitemap.xml",
+              "src/_headers"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
