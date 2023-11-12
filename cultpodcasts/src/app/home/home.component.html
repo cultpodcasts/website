@@ -1,5 +1,5 @@
 <section id="notices">
-  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? 11000 | number}}</span> podcasts on the subject of Cults.</p>
+  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? 14000 | number}}</span> podcasts on the subject of Cults.</p>
 </section>
 <div id="progresswrapper">
   <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
@@ -31,6 +31,7 @@
           <mat-icon svgIcon="apple-podcasts"></mat-icon>
         </a>
       </mat-card-actions>
+      <mat-card-footer>{{item.subject}}</mat-card-footer>
     </mat-card>
   </div>
 </section>

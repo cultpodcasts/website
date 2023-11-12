@@ -9,4 +9,5 @@ export interface IHomepageItem {
   spotify: URL | undefined;
   apple: URL | undefined;
   youtube: URL | undefined;
+  subject: string | undefined;
 }
