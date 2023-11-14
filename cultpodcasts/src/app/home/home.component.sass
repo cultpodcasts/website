@@ -31,11 +31,20 @@ a[mat-icon-button]
             color: var(--mdc-theme-text-secondary)
         a
             color: var(--mdc-theme-text-secondary)
-    mat-card-title
-        line-height: 1.4em
-    mat-card-footer
+            mat-card-title
+            line-height: 1.4em
+    mat-card-footer.subjects
         text-align: right
         padding-right: 2px
+        margin-left: auto
+        span.subject
+            padding-left: 8px
+            a
+                color: var(--mdc-theme-text-secondary)
+                text-decoration: dashed underline 1px
+                text-underline-offset: 5px
+            a:hover
+                text-decoration: none
     .result
         border: 1px black solid
         margin-bottom: 10px

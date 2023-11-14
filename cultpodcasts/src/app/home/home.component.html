@@ -30,8 +30,12 @@
         <a *ngIf="item.apple" href="{{item.apple}}" mat-icon-button>
           <mat-icon svgIcon="apple-podcasts"></mat-icon>
         </a>
+        <mat-card-footer class="subjects">
+          <span *ngFor="let subject of item.subjects" class="subject">
+            <a [routerLink]="['/search', subject]">{{subject}}</a>
+          </span>
+        </mat-card-footer>
       </mat-card-actions>
-      <mat-card-footer>{{item.subject}}</mat-card-footer>
     </mat-card>
   </div>
 </section>
