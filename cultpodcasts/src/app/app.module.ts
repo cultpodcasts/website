@@ -20,6 +20,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { SiteService } from './SiteService';
 import { PodcastComponent } from './podcast/podcast.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
+import { SubjectComponent } from './subject/subject.component';
 
 
 @NgModule({
@@ -27,7 +28,8 @@ import { ServiceWorkerModule } from '@angular/service-worker';
     AppComponent,
     SearchComponent,
     HomeComponent,
-    PodcastComponent
+    PodcastComponent,
+    SubjectComponent
   ],
   imports: [
     BrowserModule,
