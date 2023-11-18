@@ -81,10 +81,9 @@ export class PodcastComponent {
         this.searchState.sort= sortParamDateDesc;
       }
 
-      this.podcastName= params["podcastName"]
-        .replaceAll("'", "''");
+      this.podcastName= params["podcastName"];
 
-      this.searchState.filter= `(podcastName eq '${this.podcastName}')`;
+      this.searchState.filter= `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
 
       let currentTime= Date.now();
