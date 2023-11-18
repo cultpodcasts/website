@@ -81,7 +81,8 @@ export class SubjectComponent {
         this.searchState.sort= sortParamDateDesc;
       }
 
-      this.subjectName= params["subjectName"];
+      this.subjectName= params["subjectName"]
+        .replaceAll("'", "''");
 
       this.searchState.filter= `subjects/any(s: s eq '${this.subjectName}')`;
       this.siteService.setFilter(this.searchState.filter);
