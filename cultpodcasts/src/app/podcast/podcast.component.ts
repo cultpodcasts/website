@@ -81,7 +81,8 @@ export class PodcastComponent {
         this.searchState.sort= sortParamDateDesc;
       }
 
-      this.podcastName= params["podcastName"];
+      this.podcastName= params["podcastName"]
+        .replaceAll("'", "''");
 
       this.searchState.filter= `(podcastName eq '${this.podcastName}')`;
       this.siteService.setFilter(this.searchState.filter);
