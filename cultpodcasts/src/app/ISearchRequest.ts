@@ -4,7 +4,8 @@ export interface ISearchRequest {
     top: number;
     searchMode: string;
     queryType: string;
-    facet: string;
+    facets: string[];
     search: string | null;
-    filter: string|null
+    filter: string|null;
+    orderby: string;
 }

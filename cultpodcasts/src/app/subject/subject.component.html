@@ -3,7 +3,7 @@
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
   <section id="resultsheading">
-    <h2>{{resultsHeading}}</h2>
+    <h2>{{subjectName}} has {{count}} indexed episodes</h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
@@ -16,10 +16,6 @@
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      <button mat-menu-item id="rank" (click)="setSort(sortParamRank)" [ngClass]="searchState.sort==sortParamRank?'selected':''">
-        <mat-icon></mat-icon>
-        <span>Rank</span>
-      </button>
     </mat-menu>  
   </section>
   <mat-card *ngFor="let result of results" class="result">
@@ -29,7 +25,7 @@
         <a [routerLink]="['/podcast', result.podcastName]">
           {{result.podcastName}}
         </a>
-    </mat-card-subtitle>
+      </mat-card-subtitle>
       <mat-card-subtitle>{{result.release  | date:'d MMM yyyy'}} [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
@@ -54,8 +50,7 @@
   </mat-card>
 </section>
 <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
-  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/search', this.searchState.query]">Previous</a>
+  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/podcast', this.subjectName]">Previous</a>
   <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
-

@@ -86,6 +86,14 @@ export class SearchComponent {
       }
 
       let currentTime= Date.now();
+
+      var sort: string= "";
+      if (this.searchState.sort=="date-asc") {
+        sort= "release asc";
+      } else if (this.searchState.sort=="date-desc") {
+        sort= "release desc";
+      }
+
       this.oDataService.getEntities<ISearchResult>(
         'https://api.cultpodcasts.com/api/?',
         {
@@ -96,9 +104,9 @@ export class SearchComponent {
           count: true,
           skip:(this.searchState.page-1) * pageSize,
           top: pageSize,
-          facet: "podcastName,count:10,sort:count"
-        },
-        this.searchState.sort).subscribe(data=>{
+          facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
+          orderby: sort
+        }).subscribe(data=>{
           this.results= data.entities;
           var requestTime= (Date.now() - currentTime)/1000;
           const count= data.metadata.get("count");

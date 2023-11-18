@@ -17,12 +17,12 @@ const sortParamDateAsc:string = "date-asc";
 const sortParamDateDesc:string = "date-desc";
 
 @Component({
-  selector: 'app-podcast',
-  templateUrl: './podcast.component.html',
-  styleUrls: ['./podcast.component.sass']
+  selector: 'app-subject',
+  templateUrl: './subject.component.html',
+  styleUrls: ['./subject.component.sass']
 })
 
-export class PodcastComponent {
+export class SubjectComponent {
   searchState:ISearchState= {
     query:"",
     page:1,
@@ -30,7 +30,7 @@ export class PodcastComponent {
     filter:null
   }
 
-  podcastName: string="";
+  subjectName: string="";
   count: number=0;
 
   prevPage: number=0;
@@ -81,12 +81,13 @@ export class PodcastComponent {
         this.searchState.sort= sortParamDateDesc;
       }
 
-      this.podcastName= params["podcastName"];
+      this.subjectName= params["subjectName"];
 
-      this.searchState.filter= `(podcastName eq '${this.podcastName}')`;
+      this.searchState.filter= `subjects/any(s: s eq '${this.subjectName}')`;
       this.siteService.setFilter(this.searchState.filter);
 
       let currentTime= Date.now();
+
       var sort: string= "";
       if (this.searchState.sort=="date-asc") {
         sort= "release asc";
@@ -125,7 +126,7 @@ export class PodcastComponent {
   }
 
   setSort(sort: string) {
-    var url= `/podcast/${this.podcastName}`;
+    var url= `/subject/${this.subjectName}`;
     var params:Params= {};
     if (sort!=sortParamDateDesc) {
       params[sortParam]= sort;
@@ -134,7 +135,7 @@ export class PodcastComponent {
   }    
   
   setPage(page:number){
-    var url= `/podcast/${this.podcastName}`;
+    var url= `/subject/${this.subjectName}`;
     this.searchState.page+= page;
     var params:Params= {};
     if (this.searchState.page!=null && this.searchState.page > 1) {
