@@ -50,7 +50,7 @@
   </mat-card>
 </section>
 <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
-  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/podcast', this.subjectName]">Previous</a>
+  <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/subject', this.subjectName]">Previous</a>
   <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
