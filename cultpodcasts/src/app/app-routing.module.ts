@@ -12,7 +12,7 @@ const siteTitle= "Cult Podcasts";
 class QueryTitle implements Resolve<string> {
   constructor() { }
   resolve(route: ActivatedRouteSnapshot) {
-    return `${siteTitle} | Search | ${route.params['query']}`;
+    return `${route.params['query']} Search Results - ${siteTitle}`;
   }
 }
 
@@ -20,7 +20,7 @@ class QueryTitle implements Resolve<string> {
 class PodcastTitle implements Resolve<string> {
   constructor() { }
   resolve(route: ActivatedRouteSnapshot) {
-    return `${siteTitle} | Podcasts | ${route.params['podcastName']}`;
+    return `${route.params['podcastName']} - ${siteTitle}`;
   }
 }
 
@@ -28,7 +28,7 @@ class PodcastTitle implements Resolve<string> {
 class SubjectTitle implements Resolve<string> {
   constructor() { }
   resolve(route: ActivatedRouteSnapshot) {
-    return `${siteTitle} | Subject | ${route.params['subjectName']}`;
+    return `${route.params['subjectName']} - ${siteTitle}`;
   }
 }
 
