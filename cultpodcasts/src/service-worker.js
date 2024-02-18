@@ -7,13 +7,13 @@ self.addEventListener('fetch', event => {
             const formData = await event.request.formData();
             const link = formData.get('link') || '';
 
-            if (!event.clientId) return Response.redirect("/no-client-id", 500);
+            if (!event.clientId) return Response.redirect("/no-client-id", 510);
 
             // Get the client.
             const client = await self.clients.get(event.clientId);
             // Exit early if we don't get the client.
             // Eg, if it closed.
-            if (!client) return Response.redirect("/no-client", 500);
+            if (!client) return Response.redirect("/no-client", 511);
 
             // Send a message to the client.
             client.postMessage({
@@ -23,5 +23,7 @@ self.addEventListener('fetch', event => {
 
             return Response.redirect("/", 303);
         })());
+    } else {
+        return Response.redirect("/", 512)
     }
 });
