@@ -5,6 +5,8 @@ import { MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { SiteService } from './SiteService';
 import { ISiteData } from './ISiteData';
+import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
+import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
 
 @Component({
   selector: 'app-root',
@@ -21,8 +23,9 @@ export class AppComponent {
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef|undefined;
   
   constructor(private http: HttpClient, private router: Router, private iconRegistry:MatIconRegistry,
-    private domSanitizer: DomSanitizer, private siteService: SiteService) {
+    private domSanitizer: DomSanitizer, private siteService: SiteService, private dialog: MatDialog) {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
+    this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
     this.iconRegistry.addSvgIcon(`twitter`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/twitter.svg"));
     this.iconRegistry.addSvgIcon(`github`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/github.svg"));
@@ -36,7 +39,13 @@ export class AppComponent {
       if (this.searchBox) {
         this.searchBox.nativeElement.value= siteData.query;
       };
-    })
+    });
+    const myServiceWorker = new Worker('my-service-worker.js');
+    myServiceWorker.addEventListener('message', this.onSwMessage);
+  }
+
+  onSwMessage(message:any) {
+    console.log('WS send to Component', message.data);
   }
 
   search= (input:HTMLInputElement) => {
@@ -50,4 +59,16 @@ export class AppComponent {
     const element = document.querySelector('body');
     element?.scrollIntoView();
   };
+
+  openSubmitPodcast() {
+    const dialogConfig = new MatDialogConfig();
+
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+
+    this.dialog
+      .open(SubmitPodcastComponent, dialogConfig)
+      .afterClosed()
+      .subscribe(result  => console.log(result.url));
+  }
 }

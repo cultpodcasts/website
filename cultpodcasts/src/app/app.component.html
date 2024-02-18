@@ -3,13 +3,19 @@
     <mat-toolbar color="secondary">
       <a routerLink="/" id="site" (click)="searchBox.value=''"><img src="/assets/cultpodcasts.svg" alt="image"><span>Cult Podcasts</span></a>
       <div id="socialbuttons">
-        <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="image" class="socialbutton"></a>
-        <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="image" class="socialbutton"></a>
+        <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
+        <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
+        <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter" class="socialbutton"></a>
       </div>
       <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
+        <a href="#" (click)="openSubmitPodcast()">
+          <mat-icon svgIcon="add-podcast"></mat-icon>
+          <span>Add Podcast</span>
+        </a>
+
         <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
           <mat-icon svgIcon="reddit"></mat-icon>
           <span>Reddit</span>

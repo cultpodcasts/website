@@ -34,7 +34,8 @@
               "src/darkmode.js",
               "src/robots.txt",
               "src/sitemap.xml",
-              "src/_headers"
+              "src/_headers",
+              "src/my-service-worker.js"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",

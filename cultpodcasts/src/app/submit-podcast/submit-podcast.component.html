@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Add Podcast</h2>
+
+<mat-dialog-content [formGroup]="form">
+  
+    <mat-form-field>
+        <input matInput
+            placeholder="Podcast Url"
+            formControlName="url">
+    </mat-form-field>
+ 
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Close</button>
+    <button mat-raised-button class="mat-primary"(click)="save()">Save</button>
+</mat-dialog-actions>
