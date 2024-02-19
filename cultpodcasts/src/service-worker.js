@@ -16,11 +16,7 @@ self.addEventListener('fetch', event => {
 
             return Response.redirect("/", 303);
         })());
-    } else {
-        return Response.redirect("/", 512)
     }
-
-
 });
 
 importScripts('./ngsw-worker.js');
