@@ -3,17 +3,15 @@ self.addEventListener('fetch', event => {
     if (event.request.method === 'POST' && url.pathname === '/share') {
         event.respondWith((async () => {
             const formData =  await event.request.formData();
-            const link = formData.get('url') || '';
-            const title = formData.get('title') || '';
             const text = formData.get('text') || '';
-            const clientId= event.clientId;
+            const clientId= event.resultingClientId || event.clientId;
 
             const client = await self.clients.get(clientId);
             if (!client) return Response.redirect("/?no-client", 511);
 
             client.postMessage({
                 msg: "podcast-share",
-                url: link,
+                url: text,
             });
 
             return Response.redirect("/", 303);
