@@ -25,8 +25,8 @@ self.addEventListener('fetch', event => {
     //     return Response.redirect("/", 512)
     // }
 
-    if ((e.request.url.endsWith('/share')) && (e.request.method === 'POST')) {
-        return e.respondWith((async () => {
+    if ((event.request.url.endsWith('/share')) && (event.request.method === 'POST')) {
+        return event.respondWith((async () => {
             // This function is async.
             const formData = await fetchEvent.request.formData();
             // Do something with the URL…
