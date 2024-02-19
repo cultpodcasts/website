@@ -16,6 +16,8 @@ self.addEventListener('fetch', event => {
 
             return Response.redirect("/", 303);
         })());
+    } else {
+        return;
     }
 });
 
