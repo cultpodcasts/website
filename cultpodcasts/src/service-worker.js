@@ -1,5 +1,3 @@
-importScripts('./ngsw-worker.js');
-
 self.addEventListener('fetch', event => {
     // const url = new URL(event.request.url);
     // if (event.request.method === 'POST' && url.pathname === '/share') {
@@ -40,3 +38,5 @@ self.addEventListener('fetch', event => {
         })())
     }
 });
+
+importScripts('./ngsw-worker.js');
