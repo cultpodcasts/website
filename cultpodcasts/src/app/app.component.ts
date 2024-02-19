@@ -45,6 +45,7 @@ export class AppComponent {
   }
 
   onSwMessage(message:any) {
+    alert("Message recieved: "+JSON.stringify(message.data));
     console.log('WS send to Component', message.data);
   }
 
