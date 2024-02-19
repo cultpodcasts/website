@@ -50,7 +50,7 @@ import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.componen
     MatProgressBarModule,
     MatMenuModule,
     MatDialogModule,
-    ServiceWorkerModule.register('my-service-worker.js', {
+    ServiceWorkerModule.register('service-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
     }),
