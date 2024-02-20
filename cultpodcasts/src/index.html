@@ -1,6 +1,26 @@
 <!doctype html>
 <html lang="en">
+
 <head>
+  <script>
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+      if (!registrations.length) {
+        console.log('No serviceWorker registrations found.')
+        return
+      }
+      for (let registration of registrations) {
+        registration.unregister().then(function (boolean) {
+          console.log(
+            (boolean ? 'Successfully unregistered' : 'Failed to unregister'), 'ServiceWorkerRegistration\n' +
+            (registration.installing ? '  .installing.scriptURL = ' + registration.installing.scriptURL + '\n' : '') +
+            (registration.waiting ? '  .waiting.scriptURL = ' + registration.waiting.scriptURL + '\n' : '') +
+            (registration.active ? '  .active.scriptURL = ' + registration.active.scriptURL + '\n' : '') +
+            '  .scope: ' + registration.scope + '\n'
+          )
+        })
+      }
+    })
+  </script>
   <meta charset="utf-8">
   <title data-title>Cult Podcasts</title>
   <base href="/">
@@ -20,17 +40,20 @@
   <meta data-title property="og:title" content="Cult Podcasts">
   <meta data-description property="og:description" content="Find your Cult Podcasts!">
 
-  <link rel="manifest" href="/manifest.webmanifest" data-href-light="/manifest.webmanifest" data-href-dark="/manifest-dark.webmanifest">
+  <link rel="manifest" href="/manifest.webmanifest" data-href-light="/manifest.webmanifest"
+    data-href-dark="/manifest-dark.webmanifest">
 
   <meta name="supported-color-schemes" content="dark light">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="">
 
-  <script type="module" src="dark-mode-toggle.mjs"></script>    
-  <script defer src="/darkmode.js"></script> 
+  <script type="module" src="dark-mode-toggle.mjs"></script>
+  <script defer src="/darkmode.js"></script>
 </head>
+
 <body class="mat-typography mat-app-background">
   <dark-mode-toggle appearance="toggle"></dark-mode-toggle>
   <app-root></app-root>
 </body>
+
 </html>
