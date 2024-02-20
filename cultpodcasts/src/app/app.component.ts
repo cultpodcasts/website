@@ -94,6 +94,10 @@ export class AppComponent {
     this.dialog
       .open(SubmitPodcastComponent, dialogConfig)
       .afterClosed()
-      .subscribe(result => this.sendPodcast(new URL(result.url)));
+      .subscribe(result => {
+        if (result?.url) {
+          this.sendPodcast(new URL(result.url))
+        }
+      });
   }
 }
