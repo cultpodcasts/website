@@ -48,7 +48,7 @@ export class AppComponent {
         this.searchBox.nativeElement.value = siteData.query;
       };
     });
-    navigator.serviceWorker.addEventListener('message', this.onSwMessage);
+    navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
   }
 
   onSwMessage(message: any) {
