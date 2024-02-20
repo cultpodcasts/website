@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 })
 
 export class SendPodcastComponent {
-  submitted:boolean= false;
+  submitted: boolean = false;
   isSending: boolean = false;
   urlError: boolean = false;
   submitError: boolean = false;
@@ -33,7 +33,6 @@ export class SendPodcastComponent {
           url = new URL(match[0]);
         } else {
           this.urlError = true;
-
         }
       } else if (this.youtube.test(submitedUrl.toString())) {
         let match = submitedUrl.toString().match(this.youtube);
@@ -54,12 +53,10 @@ export class SendPodcastComponent {
         const body = { url: url.toString() };
         http.post("https://api.cultpodcasts.com/submit", body).subscribe(
           data => {
-            console.log('success', data);
-            this.submitted= true;
+            this.submitted = true;
             this.close();
           },
           error => {
-            console.log('Error submitting Url', error);
             this.isSending = false;
             this.submitError = true;
           });

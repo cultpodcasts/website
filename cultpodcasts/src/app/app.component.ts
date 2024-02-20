@@ -66,7 +66,6 @@ export class AppComponent {
       .open(SendPodcastComponent, dialogConfig)
       .afterClosed()
       .subscribe(result => {
-        console.log(JSON.stringify(result))
         if (result && result.submitted) {
           let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
         }
@@ -94,6 +93,10 @@ export class AppComponent {
     this.dialog
       .open(SubmitPodcastComponent, dialogConfig)
       .afterClosed()
-      .subscribe(result => this.sendPodcast(new URL(result.url)));
+      .subscribe(result => {
+        if (result?.url) {
+          this.sendPodcast(new URL(result.url))
+        }
+      });
   }
 }
