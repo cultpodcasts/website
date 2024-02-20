@@ -31,9 +31,9 @@
           <mat-icon svgIcon="apple-podcasts"></mat-icon>
         </a>
         <mat-card-footer class="subjects">
-          <span *ngFor="let subject of item.subjects" class="subject">
+          <div *ngFor="let subject of item.subjects" class="subject">
             <a [routerLink]="['/subject', subject]">{{subject}}</a>
-          </span>
+          </div>
         </mat-card-footer>
       </mat-card-actions>
     </mat-card>
