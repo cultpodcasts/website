@@ -1,4 +1,4 @@
-import { NgModule,Component, isDevMode } from '@angular/core';
+import { NgModule, Component, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -7,7 +7,7 @@ import { NgIf } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { HttpClientModule } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
@@ -21,7 +21,11 @@ import { SiteService } from './SiteService';
 import { PodcastComponent } from './podcast/podcast.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { SubjectComponent } from './subject/subject.component';
-
+import { MatDialogModule } from "@angular/material/dialog";
+import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
+import { SendPodcastComponent } from './send-podcast/send-podcast.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   declarations: [
@@ -29,7 +33,9 @@ import { SubjectComponent } from './subject/subject.component';
     SearchComponent,
     HomeComponent,
     PodcastComponent,
-    SubjectComponent
+    SubjectComponent,
+    SubmitPodcastComponent,
+    SendPodcastComponent
   ],
   imports: [
     BrowserModule,
@@ -39,6 +45,7 @@ import { SubjectComponent } from './subject/subject.component';
     MatIconModule,
     MatButtonModule,
     FormsModule,
+    ReactiveFormsModule,
     NgIf,
     HttpClientModule,
     MatCardModule,
@@ -46,12 +53,13 @@ import { SubjectComponent } from './subject/subject.component';
     MatToolbarModule,
     MatProgressBarModule,
     MatMenuModule,
-    ServiceWorkerModule.register('ngsw-worker.js', {
+    MatDialogModule,
+    ServiceWorkerModule.register('service-worker.js', {
       enabled: !isDevMode(),
-      // Register the ServiceWorker as soon as the application is stable
-      // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
     }),
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   providers: [SiteService],
   bootstrap: [AppComponent]

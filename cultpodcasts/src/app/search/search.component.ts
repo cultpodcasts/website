@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Data, NavigationExtras, Params, QueryParamsHandling, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
@@ -38,7 +37,7 @@ export class SearchComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc : string = sortParamDateDesc;
 
-  constructor(private http: HttpClient, private router: Router, private siteService: SiteService, private oDataService: ODataService) {
+  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) {
   }
   private route = inject(ActivatedRoute);
   
