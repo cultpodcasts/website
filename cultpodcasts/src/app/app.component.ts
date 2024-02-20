@@ -44,8 +44,8 @@ export class AppComponent {
   }
 
   onSwMessage(message:any) {
-    if (message.msg=="podcast-share") {
-      alert("Podcast Shared! "+message.url);
+    if (message!=null && message.data !=null && message.data.msg=="podcast-share") {
+      alert("Podcast Shared! "+message.data.url);
     }
   }
 
