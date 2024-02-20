@@ -44,7 +44,7 @@ export class AppComponent {
 
   ngOnInit() {
     this.removeInitialSw();
-    
+
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value = siteData.query;
