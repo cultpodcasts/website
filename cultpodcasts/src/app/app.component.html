@@ -11,11 +11,10 @@
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
-        <a href="#" (click)="openSubmitPodcast()">
-          <mat-icon svgIcon="add-podcast"></mat-icon>
+        <a href="#" (click)="openSubmitPodcast()" mat-menu-item>
+          <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
           <span>Add Podcast</span>
         </a>
-
         <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
           <mat-icon svgIcon="reddit"></mat-icon>
           <span>Reddit</span>
