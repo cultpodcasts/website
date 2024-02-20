@@ -28,7 +28,6 @@ export class SubmitPodcastComponent  implements OnInit {
   }
   
   save() {
-    console.log(this.form)
     if (this.form.valid) {
       this.dialogRef.close(this.form.value);
     }

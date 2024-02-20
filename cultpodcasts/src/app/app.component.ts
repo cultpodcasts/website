@@ -66,7 +66,6 @@ export class AppComponent {
       .open(SendPodcastComponent, dialogConfig)
       .afterClosed()
       .subscribe(result => {
-        console.log(JSON.stringify(result))
         if (result && result.submitted) {
           let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
         }
