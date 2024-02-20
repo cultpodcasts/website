@@ -25,11 +25,11 @@ export class AppComponent {
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
 
   constructor(
-    private http: HttpClient, 
-    private router: Router, 
+    private http: HttpClient,
+    private router: Router,
     private iconRegistry: MatIconRegistry,
-    private domSanitizer: DomSanitizer, 
-    private siteService: SiteService, 
+    private domSanitizer: DomSanitizer,
+    private siteService: SiteService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar) {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
@@ -68,8 +68,8 @@ export class AppComponent {
       .subscribe(result => {
         console.log(JSON.stringify(result))
         if (result && result.submitted) {
-          let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", {duration: 3000});
-          }
+          let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
+        }
       });
   }
 
