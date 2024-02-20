@@ -40,8 +40,7 @@ export class AppComponent {
         this.searchBox.nativeElement.value= siteData.query;
       };
     });
-    const myServiceWorker = new Worker('service-worker.js');
-    myServiceWorker.addEventListener('message', this.onSwMessage);
+    navigator.serviceWorker.addEventListener('message', this.onSwMessage);
   }
 
   onSwMessage(message:any) {
