@@ -9,6 +9,7 @@ import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { IShare, ShareMode } from './IShare';
 
 @Component({
   selector: 'app-root',
@@ -55,15 +56,15 @@ export class AppComponent {
 
   onSwMessage(message: any) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      this.sendPodcast(new URL(message.data.url))
+      this.sendPodcast({url:message.data.url, shareMode: ShareMode.Share});
     }
   }
 
-  sendPodcast(url: URL) {
+  sendPodcast(share: IShare) {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = { url: url }
+    dialogConfig.data = share;
     this.dialog
       .open(SendPodcastComponent, dialogConfig)
       .afterClosed()
@@ -97,7 +98,7 @@ export class AppComponent {
       .afterClosed()
       .subscribe(result => {
         if (result?.url) {
-          this.sendPodcast(new URL(result.url))
+          this.sendPodcast({url: result.url, shareMode: ShareMode.Text});
         }
       });
   }

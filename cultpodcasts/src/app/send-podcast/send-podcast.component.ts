@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { IShare, ShareMode } from '../IShare';
 
 @Component({
   selector: 'app-send-podcast',
@@ -12,41 +13,40 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class SendPodcastComponent {
   submitted: boolean = false;
   isSending: boolean = false;
-  urlError: boolean = false;
+  urlShareError: boolean = false;
+  urlTextError: boolean = false;
+  unknownError: boolean = false;
   submitError: boolean = false;
-  spotify: RegExp = /https:\/\/open.spotify.com\/episode\/[A-Za-z\d]+/;
-  youtube: RegExp = /https:\/\/www.youtube.com\/\?v=\/[A-Za-z\d]+/;
-  apple: RegExp = /https:\/\/podcasts.apple.com\/(\w+\/)?podcast\/[a-z\-]+\/id\d+\?i=\d+/
+  spotify: RegExp = /https:\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
+  youtube: RegExp = /https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z\d]+/;
+  apple: RegExp = /https:\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
 
   constructor(
-    private http: HttpClient,
+    http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any) {
-    const submitedUrl: URL = data.url;
-    if (this.spotify.test(submitedUrl.toString()) || this.youtube.test(submitedUrl.toString()) || this.apple.test(submitedUrl.toString())) {
+    @Inject(MAT_DIALOG_DATA) public data: IShare) {
+
+    let url: URL | undefined;
+
+    if (this.spotify.test(data.url.toString()) ||
+      this.youtube.test(data.url.toString()) ||
+      this.apple.test(data.url.toString())) {
       this.isSending = true;
 
-      let url: URL | undefined;
-      if (this.spotify.test(submitedUrl.toString())) {
-        let match = submitedUrl.toString().match(this.spotify);
+      if (this.spotify.test(data.url.toString())) {
+        let match = data.url.toString().match(this.spotify);
         if (match != null) {
           url = new URL(match[0]);
-        } else {
-          this.urlError = true;
         }
-      } else if (this.youtube.test(submitedUrl.toString())) {
-        let match = submitedUrl.toString().match(this.youtube);
+      } else if (this.youtube.test(data.url.toString())) {
+        let match = data.url.toString().match(this.youtube);
         if (match != null) {
           url = new URL(match[0]);
-        } else {
-          this.urlError = true;
         }
-      } else if (this.apple.test(submitedUrl.toString())) {
-        let match = submitedUrl.toString().match(this.apple);
+      } else if (this.apple.test(data.url.toString())) {
+        let match = data.url.toString().match(this.apple);
         if (match != null) {
           url = new URL(match[0]);
-        } else {
-          this.urlError = true;
         }
       }
       if (url) {
@@ -61,12 +61,19 @@ export class SendPodcastComponent {
             this.submitError = true;
           });
       }
-    } else {
-      this.urlError = true;
+    }
+    if (!url) {
+      if (data.shareMode == ShareMode.Share) {
+        this.urlShareError = true;
+      } else if (data.shareMode == ShareMode.Text) {
+        this.urlTextError = true;
+      } else {
+        this.unknownError = true;
+      }
     }
   }
 
-  ngOnInit() { }
+
 
   close() {
     this.dialogRef.close({ submitted: this.submitted });
