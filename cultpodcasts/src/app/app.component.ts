@@ -44,8 +44,9 @@ export class AppComponent {
   }
 
   onSwMessage(message:any) {
-    alert("Message recieved: "+JSON.stringify(message.data));
-    console.log('WS send to Component', message.data);
+    if (message.msg=="podcast-share") {
+      alert("Podcast Shared! "+message.url);
+    }
   }
 
   search= (input:HTMLInputElement) => {
