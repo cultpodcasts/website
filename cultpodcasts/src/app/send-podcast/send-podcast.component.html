@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Sending Podcast</h2>
+
+<mat-dialog-content>
+
+    <mat-spinner  style="margin:0 auto;" mode="indeterminate"  *ngIf="isSending"></mat-spinner>
+    <div *ngIf="urlError">
+        <p>Unrecognised url. Please share from Spotify, Apple Podcasts or YouTube</p>
+    </div>
+    <div *ngIf="submitError">
+        <p>Error sending Url to CultPodcasts.com</p>
+    </div>
+    
+</mat-dialog-content>
+
+<mat-dialog-actions *ngIf="urlError || submitError">
+    <button mat-raised-button (click)="close()">Close</button>
+</mat-dialog-actions>

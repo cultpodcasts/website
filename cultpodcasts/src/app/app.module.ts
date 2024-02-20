@@ -1,4 +1,4 @@
-import { NgModule,Component, isDevMode } from '@angular/core';
+import { NgModule, Component, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -23,6 +23,9 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { SubjectComponent } from './subject/subject.component';
 import { MatDialogModule } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
+import { SendPodcastComponent } from './send-podcast/send-podcast.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   declarations: [
@@ -31,7 +34,8 @@ import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.componen
     HomeComponent,
     PodcastComponent,
     SubjectComponent,
-    SubmitPodcastComponent
+    SubmitPodcastComponent,
+    SendPodcastComponent
   ],
   imports: [
     BrowserModule,
@@ -54,6 +58,8 @@ import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.componen
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
     }),
+    MatProgressSpinnerModule,
+    MatSnackBarModule
   ],
   providers: [SiteService],
   bootstrap: [AppComponent]

@@ -12,7 +12,6 @@ self.addEventListener('fetch', event => {
 
             setTimeout(async () => {
                 const client = await self.clients.get(clientId);
-                if (!client) return Response.redirect("/?no-client", 511);
 
                 client.postMessage({
                     msg: "podcast-share",
