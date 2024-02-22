@@ -24,4 +24,4 @@ self.addEventListener('fetch', event => {
     }
 });
 
-importScripts('./ngsw-worker.js');
+importScripts('./ngsw-worker-dist.js');
