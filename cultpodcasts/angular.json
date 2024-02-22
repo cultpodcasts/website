@@ -35,7 +35,8 @@
               "src/robots.txt",
               "src/sitemap.xml",
               "src/_headers",
-              "src/service-worker.js"
+              "src/service-worker.js",
+              "src/ngsw-worker.js"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
