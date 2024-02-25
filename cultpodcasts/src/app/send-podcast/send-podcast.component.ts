@@ -18,7 +18,7 @@ export class SendPodcastComponent {
   unknownError: boolean = false;
   submitError: boolean = false;
   spotify: RegExp = /https:\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
-  youtube: RegExp = /https:\/\/(?:www\.youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z\d\-]+/;
+  youtube: RegExp = /https:\/\/(?:(?:www\.)?youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z\d\-]+/;
   apple: RegExp = /https:\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
 
   constructor(
