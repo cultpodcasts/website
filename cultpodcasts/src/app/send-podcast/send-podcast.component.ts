@@ -17,6 +17,7 @@ export class SendPodcastComponent {
   urlTextError: boolean = false;
   unknownError: boolean = false;
   submitError: boolean = false;
+  shareUrl: URL | undefined;
   spotify: RegExp = /https:\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
   youtube: RegExp = /https:\/\/(?:www\.youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z\d\-]+/;
   apple: RegExp = /https:\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
@@ -65,8 +66,10 @@ export class SendPodcastComponent {
     if (!url) {
       if (data.shareMode == ShareMode.Share) {
         this.urlShareError = true;
+        this.shareUrl= data.url;
       } else if (data.shareMode == ShareMode.Text) {
         this.urlTextError = true;
+        this.shareUrl= data.url;
       } else {
         this.unknownError = true;
       }
