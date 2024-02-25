@@ -15,6 +15,7 @@
     <div *ngIf="submitError">
         <p>Error sending Url to CultPodcasts.com</p>
     </div>
+    <p *ngIf="urlShareError || urlTextError">URL: {{shareUrl}}</p>
 
 </mat-dialog-content>
 
