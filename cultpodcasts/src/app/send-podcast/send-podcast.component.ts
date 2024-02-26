@@ -18,15 +18,16 @@ export class SendPodcastComponent {
   unknownError: boolean = false;
   submitError: boolean = false;
   shareUrl: URL | undefined;
-  spotify: RegExp = /https:\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
-  youtube: RegExp = /https:\/\/(?:(?:www\.)?youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z\d\-]+/;
-  apple: RegExp = /https:\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
+  spotify: RegExp = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
+  youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
+  apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
 
   constructor(
     http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
     @Inject(MAT_DIALOG_DATA) public data: IShare) {
 
+    let matchedUrl: string | undefined;
     let url: URL | undefined;
 
     if (this.spotify.test(data.url.toString()) ||
@@ -34,42 +35,57 @@ export class SendPodcastComponent {
       this.apple.test(data.url.toString())) {
       this.isSending = true;
 
+
       if (this.spotify.test(data.url.toString())) {
         let match = data.url.toString().match(this.spotify);
         if (match != null) {
-          url = new URL(match[0]);
+          matchedUrl = match[0];
         }
       } else if (this.youtube.test(data.url.toString())) {
         let match = data.url.toString().match(this.youtube);
         if (match != null) {
-          url = new URL(match[0]);
+          matchedUrl = match[0];
         }
       } else if (this.apple.test(data.url.toString())) {
         let match = data.url.toString().match(this.apple);
         if (match != null) {
-          url = new URL(match[0]);
+          matchedUrl = match[0];
         }
       }
-      if (url) {
-        const body = { url: url.toString() };
-        http.post("https://api.cultpodcasts.com/submit", body).subscribe(
-          data => {
-            this.submitted = true;
-            this.close();
-          },
-          error => {
-            this.isSending = false;
-            this.submitError = true;
-          });
+
+      if (matchedUrl) {
+        try {
+          url = new URL(matchedUrl);
+        } catch {
+          if (!/^\w+\:\/\//.test(matchedUrl)) {
+            try {
+              url = new URL("https://" + matchedUrl);
+            } catch { }
+          }
+        }
+
+        if (url) {
+          const body = { url: url.toString() };
+          http.post("https://api.cultpodcasts.com/submit", body).subscribe(
+            data => {
+              this.submitted = true;
+              this.close();
+            },
+            error => {
+              this.isSending = false;
+              this.submitError = true;
+            });
+        }
       }
     }
-    if (!url) {
+
+    if (!matchedUrl || !url) {
       if (data.shareMode == ShareMode.Share) {
         this.urlShareError = true;
-        this.shareUrl= data.url;
+        this.shareUrl = data.url;
       } else if (data.shareMode == ShareMode.Text) {
         this.urlTextError = true;
-        this.shareUrl= data.url;
+        this.shareUrl = data.url;
       } else {
         this.unknownError = true;
       }
