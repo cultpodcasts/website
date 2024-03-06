@@ -36,6 +36,7 @@ const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent, title: QueryTitle },
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
+  { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
   { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
 ];
 

@@ -69,6 +69,7 @@ export class HomeComponent {
       const { params, queryParams} = res;
 
       this.siteService.setQuery("");
+      this.siteService.setPodcast(null);
 
       this.currentPage=1;
       if (queryParams[pageParam]) {

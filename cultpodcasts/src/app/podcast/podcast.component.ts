@@ -62,8 +62,10 @@ export class PodcastComponent {
       const { params, queryParams} = res;
 
       this.isLoading= true;
-      this.searchState.query= "";
+      this.searchState.query= params["query"]??"";
       this.siteService.setQuery(this.searchState.query);
+      this.podcastName= params["podcastName"];
+      this.siteService.setPodcast(this.podcastName);
 
       if (queryParams[pageParam]) {
         this.searchState.page= parseInt(queryParams[pageParam]);
@@ -80,7 +82,6 @@ export class PodcastComponent {
         this.searchState.sort= sortParamDateDesc;
       }
 
-      this.podcastName= params["podcastName"];
 
       this.searchState.filter= `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);

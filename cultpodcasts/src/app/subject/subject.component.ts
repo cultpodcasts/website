@@ -65,6 +65,7 @@ export class SubjectComponent {
       this.isLoading= true;
       this.searchState.query= "";
       this.siteService.setQuery(this.searchState.query);
+      this.siteService.setPodcast(null);
 
       if (queryParams[pageParam]) {
         this.searchState.page= parseInt(queryParams[pageParam]);
