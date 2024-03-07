@@ -8,4 +8,5 @@ export interface ISearchResult {
   spotify: URL | undefined;
   apple: URL | undefined;
   youtube: URL | undefined;
+  subjects: string[] | undefined
 }

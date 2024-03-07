@@ -47,10 +47,13 @@ export class AppComponent {
         this.searchBox.nativeElement.value = siteData.query;
         if (siteData.podcast != null) {
           this.searchChip = siteData.podcast;
-          this.searchBoxMode = SearchBoxMode.Podcast
+          this.searchBoxMode = SearchBoxMode.Podcast;
         } else if (siteData.subject != null) {
           this.searchChip = siteData.subject;
-          this.searchBoxMode = SearchBoxMode.Subject
+          this.searchBoxMode = SearchBoxMode.Subject;
+        } else {
+          this.searchChip= null;
+          this.searchBoxMode = SearchBoxMode.Default;
         }
       };
     });

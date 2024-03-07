@@ -38,11 +38,10 @@ export class SubjectComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  constructor(private http: HttpClient, private router: Router, private siteService: SiteService, private oDataService: ODataService) {
-  }
+  constructor(private http: HttpClient, private router: Router, private siteService: SiteService, private oDataService: ODataService) { }
   private route = inject(ActivatedRoute);
 
-  results: any;
+  results: ISearchResult[] = [];
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
