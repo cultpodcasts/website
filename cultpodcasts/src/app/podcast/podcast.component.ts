@@ -126,6 +126,10 @@ export class PodcastComponent {
 
   setSort(sort: string) {
     var url = `/podcast/${this.podcastName}`;
+    var query = this.siteService.getSiteData().query;
+    if (query && query != "") {
+      url = `${url}/${query}`;
+    }
     var params: Params = {};
     if (sort != sortParamDateDesc) {
       params[sortParam] = sort;
