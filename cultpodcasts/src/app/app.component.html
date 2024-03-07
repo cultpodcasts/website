@@ -36,7 +36,8 @@
             {{searchChip}}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
-          <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext" #searchBox>
+          <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext" #searchBox
+            (keydown.enter)="search(searchBox)">
         </mat-chip-grid>
       </mat-form-field>
       <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
