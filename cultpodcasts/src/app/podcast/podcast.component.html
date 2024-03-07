@@ -3,7 +3,8 @@
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
   <section id="resultsheading">
-    <h2>{{podcastName}} has {{count}} indexed episodes</h2>
+    <h2>{{podcastName}} has {{count}} episodes<span *ngIf="this.searchState.query && this.searchState.query!=''">
+        matching "{{this.searchState.query}}"</span></h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
