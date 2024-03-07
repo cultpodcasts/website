@@ -1,17 +1,15 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
+import { MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { SiteService } from './SiteService';
-import { ISiteData } from './ISiteData';
 import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IShare, ShareMode } from './IShare';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { SearchBoxMode } from './SearchBoxMode';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +21,7 @@ export class AppComponent {
 
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
   searchChip: string | null = null;
+  searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
 
   constructor(
     private http: HttpClient,
@@ -46,7 +45,13 @@ export class AppComponent {
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value = siteData.query;
-        this.searchChip = siteData.podcast;
+        if (siteData.podcast != null) {
+          this.searchChip = siteData.podcast;
+          this.searchBoxMode = SearchBoxMode.Podcast
+        } else if (siteData.subject != null) {
+          this.searchChip = siteData.subject;
+          this.searchBoxMode = SearchBoxMode.Subject
+        }
       };
     });
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
@@ -76,7 +81,11 @@ export class AppComponent {
   search = (input: HTMLInputElement) => {
     input.blur();
     if (this.searchChip) {
-      this.router.navigate(['/podcast/' + this.searchChip + "/" + input.value]);
+      if (this.searchBoxMode == SearchBoxMode.Podcast) {
+        this.router.navigate(['/podcast/' + this.searchChip + "/" + input.value]);
+      } else if (this.searchBoxMode == SearchBoxMode.Subject) {
+        this.router.navigate(['/subject/' + this.searchChip + "/" + input.value]);
+      }
     } else {
       this.router.navigate(['/search/' + input.value]);
     }
@@ -107,20 +116,20 @@ export class AppComponent {
 
   removeSearchChip() {
     this.searchChip = null;
-    var query= this.siteService.getSiteData().query;
-    if (query && query!="") {
-      const url = `/search/`+query;
-      this.router.navigate([url] );
+    var query = this.siteService.getSiteData().query;
+    if (query && query != "") {
+      const url = `/search/` + query;
+      this.router.navigate([url]);
     } else {
       const url = `/`;
-      this.router.navigate([url] );
+      this.router.navigate([url]);
     }
   }
 
   searchChipDisplay() {
     if (this.searchChip) {
-      if (this.searchChip.length>10) {
-        return this.searchChip.substring(0,9)+"…";
+      if (this.searchChip.length > 10) {
+        return this.searchChip.substring(0, 9) + "…";
       } else {
         return this.searchChip;
       }

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { ActivatedRoute, Data, NavigationExtras, Params, QueryParamsHandling, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
 import { ISearchState } from '../ISearchState';
@@ -9,8 +9,6 @@ const pageSize: number = 10;
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
-const queryParam: string = "query";
-const filterParam: string = "filter";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -66,6 +64,7 @@ export class PodcastComponent {
       this.siteService.setQuery(this.searchState.query);
       this.podcastName = params["podcastName"];
       this.siteService.setPodcast(this.podcastName);
+      this.siteService.setSubject(null);
 
       if (queryParams[pageParam]) {
         this.searchState.page = parseInt(queryParams[pageParam]);

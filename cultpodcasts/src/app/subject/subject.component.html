@@ -3,20 +3,23 @@
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
   <section id="resultsheading">
-    <h2>{{subjectName}} has {{count}} indexed episodes</h2>
+    <h2>{{subjectName}} has {{count}} episodes<span *ngIf="this.searchState.query && this.searchState.query!=''">
+        matching "{{this.searchState.query}}"</span></h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)" [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
+      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
+        [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
       </button>
-      <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)" [ngClass]="searchState.sort==sortParamDateDesc?'selected':''">
+      <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
+        [ngClass]="searchState.sort==sortParamDateDesc?'selected':''">
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-    </mat-menu>  
+    </mat-menu>
   </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
@@ -26,19 +29,20 @@
           {{result.podcastName}}
         </a>
       </mat-card-subtitle>
-      <mat-card-subtitle>{{result.release  | date:'d MMM yyyy'}} [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
+      <mat-card-subtitle>{{result.release | date:'d MMM yyyy'}}
+        [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
       <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <a *ngIf="result.youtube"  href="{{result.youtube}}" mat-icon-button>
+      <a *ngIf="result.youtube" href="{{result.youtube}}" mat-icon-button>
         <mat-icon svgIcon="youtube"></mat-icon>
       </a>
-      <a *ngIf="result.spotify"  href="{{result.spotify}}" mat-icon-button>
+      <a *ngIf="result.spotify" href="{{result.spotify}}" mat-icon-button>
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="result.apple"  href="{{result.apple}}" mat-icon-button>
+      <a *ngIf="result.apple" href="{{result.apple}}" mat-icon-button>
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
       <mat-card-footer class="subjects">
@@ -46,7 +50,7 @@
           <a [routerLink]="['/subject', subject]">{{subject}}</a>
         </div>
       </mat-card-footer>
-  </mat-card-actions>
+    </mat-card-actions>
   </mat-card>
 </section>
 <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
