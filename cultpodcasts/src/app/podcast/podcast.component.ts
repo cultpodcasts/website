@@ -41,7 +41,7 @@ export class PodcastComponent {
   }
   private route = inject(ActivatedRoute);
 
-  results: any;
+  results: ISearchResult[] = [];
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;

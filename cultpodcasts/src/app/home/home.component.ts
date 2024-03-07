@@ -68,7 +68,7 @@ export class HomeComponent {
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
-      this.siteService.setQuery("");
+      this.siteService.setQuery(null);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
