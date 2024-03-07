@@ -33,7 +33,7 @@
       <mat-form-field id="searchbox">
         <mat-chip-grid #chips>
           <mat-chip *ngIf="searchChip" (removed)="removeSearchChip()">
-            {{searchChip}}
+            {{searchChipDisplay()}}
             <mat-icon matChipRemove>cancel</mat-icon>
           </mat-chip>
           <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext" #searchBox

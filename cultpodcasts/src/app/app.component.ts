@@ -20,11 +20,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 })
 
 export class AppComponent {
-  siteData: ISiteData = {
-    query: "",
-    filter: null,
-    podcast: null
-  };
 
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
   searchChip: string | null = null;
@@ -81,7 +76,7 @@ export class AppComponent {
   search = (input: HTMLInputElement) => {
     input.blur();
     if (this.searchChip) {
-      this.router.navigate(['/podcast/'+this.searchChip+"/" + input.value]);
+      this.router.navigate(['/podcast/' + this.searchChip + "/" + input.value]);
     } else {
       this.router.navigate(['/search/' + input.value]);
     }
@@ -111,7 +106,27 @@ export class AppComponent {
   }
 
   removeSearchChip() {
-    this.searchChip= null;
-   }
-   
+    this.searchChip = null;
+    var query= this.siteService.getSiteData().query;
+    if (query && query!="") {
+      const url = `/search/`+query;
+      this.router.navigate([url] );
+    } else {
+      const url = `/`;
+      this.router.navigate([url] );
+    }
+  }
+
+  searchChipDisplay() {
+    if (this.searchChip) {
+      if (this.searchChip.length>10) {
+        return this.searchChip.substring(0,9)+"…";
+      } else {
+        return this.searchChip;
+      }
+    } else {
+      return null;
+    }
+  }
+
 }
