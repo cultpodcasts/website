@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { MatIconRegistry } from "@angular/material/icon";
+import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { SiteService } from './SiteService';
 import { ISiteData } from './ISiteData';
@@ -10,20 +10,19 @@ import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.componen
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IShare, ShareMode } from './IShare';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.sass'],
+  styleUrls: ['./app.component.sass']
 })
 
 export class AppComponent {
-  siteData: ISiteData = {
-    query: "",
-    filter: null
-  };
 
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
+  searchChip: string | null = null;
 
   constructor(
     private http: HttpClient,
@@ -47,6 +46,7 @@ export class AppComponent {
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value = siteData.query;
+        this.searchChip = siteData.podcast;
       };
     });
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
@@ -54,7 +54,7 @@ export class AppComponent {
 
   onSwMessage(message: any) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      this.sendPodcast({url:message.data.url, shareMode: ShareMode.Share});
+      this.sendPodcast({ url: message.data.url, shareMode: ShareMode.Share });
     }
   }
 
@@ -75,7 +75,11 @@ export class AppComponent {
 
   search = (input: HTMLInputElement) => {
     input.blur();
-    this.router.navigate(['/search/' + input.value]);
+    if (this.searchChip) {
+      this.router.navigate(['/podcast/' + this.searchChip + "/" + input.value]);
+    } else {
+      this.router.navigate(['/search/' + input.value]);
+    }
   };
 
   top(event: any) {
@@ -96,8 +100,33 @@ export class AppComponent {
       .afterClosed()
       .subscribe(result => {
         if (result?.url) {
-          this.sendPodcast({url: result.url, shareMode: ShareMode.Text});
+          this.sendPodcast({ url: result.url, shareMode: ShareMode.Text });
         }
       });
   }
+
+  removeSearchChip() {
+    this.searchChip = null;
+    var query= this.siteService.getSiteData().query;
+    if (query && query!="") {
+      const url = `/search/`+query;
+      this.router.navigate([url] );
+    } else {
+      const url = `/`;
+      this.router.navigate([url] );
+    }
+  }
+
+  searchChipDisplay() {
+    if (this.searchChip) {
+      if (this.searchChip.length>10) {
+        return this.searchChip.substring(0,9)+"…";
+      } else {
+        return this.searchChip;
+      }
+    } else {
+      return null;
+    }
+  }
+
 }

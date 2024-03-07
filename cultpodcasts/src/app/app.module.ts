@@ -26,6 +26,7 @@ import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.componen
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatChipsModule } from '@angular/material/chips';
 
 @NgModule({
   declarations: [
@@ -59,7 +60,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
     }),
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatChipsModule
   ],
   providers: [SiteService],
   bootstrap: [AppComponent]

@@ -62,6 +62,7 @@ export class SearchComponent {
       this.isLoading= true;
       this.searchState.query= params[queryParam];
       this.siteService.setQuery(params[queryParam]);
+      this.siteService.setPodcast(null);
 
       if (queryParams[pageParam]) {
         this.searchState.page= parseInt(queryParams[pageParam]);
