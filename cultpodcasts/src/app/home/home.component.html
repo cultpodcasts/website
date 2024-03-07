@@ -1,5 +1,7 @@
 <section id="notices">
-  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span title="{{totalDuration}}">{{ homepage?.episodeCount ?? 17000 | number}}</span> podcasts on the subject of Cults.</p>
+  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span
+      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 18000 | number}}</span> podcasts on the subject of Cults.
+  </p>
 </section>
 <div id="progresswrapper">
   <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
@@ -7,7 +9,8 @@
 <section id="thisweek">
   <h2>This weeks new releases. <span *ngIf="podcastCount">{{podcastCount}} Podcasts.</span></h2>
   <div *ngFor="let dateItems of grouped | keyvalue: descDate">
-    <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}} {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
+    <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
+      {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
     <mat-card *ngFor="let item of dateItems.value" class="result">
       <mat-card-header>
         <mat-card-title [innerHTML]="item.episodeTitle"></mat-card-title>

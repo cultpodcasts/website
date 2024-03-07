@@ -6,7 +6,7 @@ import { PodcastComponent } from './podcast/podcast.component';
 import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
 import { SubjectComponent } from './subject/subject.component';
 
-const siteTitle= "Cult Podcasts";
+const siteTitle = "Cult Podcasts";
 
 @Injectable({ providedIn: 'root' })
 class QueryTitle implements Resolve<string> {
@@ -38,10 +38,11 @@ const routes: Routes = [
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
   { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
+  { path: 'subject/:subjectName/:query', component: SubjectComponent, title: SubjectTitle },
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { scrollPositionRestoration: 'enabled'})],
+  imports: [RouterModule.forRoot(routes, { scrollPositionRestoration: 'enabled' })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

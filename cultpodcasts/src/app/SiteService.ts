@@ -7,7 +7,8 @@ export class SiteService {
     private _siteData: ISiteData = {
         query: "",
         filter: null,
-        podcast: null
+        podcast: null,
+        subject: null
     };
 
     setFilter(filter: string | null) {
@@ -24,6 +25,11 @@ export class SiteService {
 
     setPodcast(podcast: string | null) {
         this._siteData.podcast = podcast;
+        this.messageSource.next(this._siteData);
+    }
+
+    setSubject(subject: string | null) {
+        this._siteData.subject = subject;
         this.messageSource.next(this._siteData);
     }
 
