@@ -20,6 +20,10 @@
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
+      <button *ngIf="searchState.query" mat-menu-item id="rank" (click)="setSort(sortParamRank)" [ngClass]="searchState.sort==sortParamRank?'selected':''">
+        <mat-icon></mat-icon>
+        <span>Rank</span>
+      </button>
     </mat-menu>
   </section>
   <mat-card *ngFor="let result of results" class="result">
@@ -54,9 +58,7 @@
     </mat-card-actions>
   </mat-card>
 </section>
-<section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
-  <a mat-button id="previous" *ngIf="showPagingPreviousInit"
-    [routerLink]="['/podcast', this.podcastName, this.searchState.query]">Previous</a>
+<section *ngIf="showPagingPrevious || showPagingNext" id="paging">
   <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>

@@ -45,7 +45,6 @@ export class SearchComponent {
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
-  showPagingPreviousInit: boolean = false;
   showPagingNext: boolean = false;
 
   ngOnInit() {
@@ -122,11 +121,10 @@ export class SearchComponent {
           } else if (count === 1) {
             resultsSummary = `1 result`;
           }
-          this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}". Time taken ${requestTime.toFixed(1)}s.`;
+          this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
 
           this.isLoading = false;
-          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 2;
-          this.showPagingPreviousInit = this.searchState.page != undefined && this.searchState.page == 2;
+          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
           this.showPagingNext = (this.searchState.page * pageSize) < count;
         }, error => {
           this.resultsHeading = "Something went wrong. Please try again.";
