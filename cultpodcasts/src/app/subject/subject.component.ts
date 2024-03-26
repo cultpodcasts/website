@@ -11,6 +11,7 @@ const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 
+const sortParamRank: string = "rank";
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
 
@@ -34,7 +35,7 @@ export class SubjectComponent {
   prevPage: number = 0;
   nextPage: number = 0;
 
-  sortParamRank: string = sortParamDateDesc;
+  sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
@@ -45,7 +46,6 @@ export class SubjectComponent {
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
-  showPagingPreviousInit: boolean = false;
   showPagingNext: boolean = false;
 
   ngOnInit() {
@@ -79,9 +79,12 @@ export class SubjectComponent {
       if (queryParams[sortParam]) {
         this.searchState.sort = queryParams[sortParam];
       } else {
-        this.searchState.sort = sortParamDateDesc;
+        if (this.searchState.query) {
+          this.searchState.sort = sortParamRank;
+        } else {
+          this.searchState.sort = sortParamDateDesc;
+        }
       }
-
 
       this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
@@ -115,8 +118,7 @@ export class SubjectComponent {
           this.count = count;
 
           this.isLoading = false;
-          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 2;
-          this.showPagingPreviousInit = this.searchState.page != undefined && this.searchState.page == 2;
+          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
           this.showPagingNext = (this.searchState.page * pageSize) < count;
         }, error => {
           this.resultsHeading = "Something went wrong. Please try again.";
@@ -132,8 +134,14 @@ export class SubjectComponent {
       url = `${url}/${query}`;
     }
     var params: Params = {};
-    if (sort != sortParamDateDesc) {
-      params[sortParam] = sort;
+    if (this.searchState.query) {
+      if (sort != sortParamRank) {
+        params[sortParam] = sort;
+      }
+    } else {
+      if (sort != sortParamDateDesc) {
+        params[sortParam] = sort;
+      }
     }
     this.router.navigate([url], { queryParams: params });
   }
@@ -148,10 +156,15 @@ export class SubjectComponent {
     if (this.searchState.page != null && this.searchState.page > 1) {
       params["page"] = this.searchState.page;
     }
-    if (this.searchState.sort != sortParamDateDesc) {
-      params[sortParam] = this.searchState.sort;
+    if (this.searchState.query){
+      if (this.searchState.sort != sortParamRank) {
+        params[sortParam] = this.searchState.sort;
+      }  
+    } else {
+      if (this.searchState.sort != sortParamDateDesc) {
+        params[sortParam] = this.searchState.sort;
+      }  
     }
     this.router.navigate([url], { queryParams: params });
-
   }
 }
