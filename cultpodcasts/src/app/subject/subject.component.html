@@ -1,4 +1,4 @@
-<section id="results">
+<section id="results" *ngIf="count > 0">
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
@@ -62,3 +62,9 @@
   <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
+<section *ngIf="count === 0">
+  <h2>There were no results for "{{subjectName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span></h2>
+  <div style="text-align: center; margin-bottom: 1rem;">
+    <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
+  </div>
+</section> 

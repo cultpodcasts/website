@@ -164,6 +164,13 @@ export class PodcastComponent {
       }  
      }
     this.router.navigate([url], { queryParams: params });
-
   }
+
+  search() {
+    let url=`search/${this.podcastName}`;
+    if (this.searchState.query) {
+      url+= ` ${this.searchState.query}`;
+    }
+    this.router.navigate([url]);
+  }    
 }
