@@ -167,4 +167,12 @@ export class SubjectComponent {
     }
     this.router.navigate([url], { queryParams: params });
   }
+
+  search() {
+    let url=`search/${this.subjectName}`;
+    if (this.searchState.query) {
+      url+= ` ${this.searchState.query}`;
+    }
+    this.router.navigate([url]);
+  }    
 }
