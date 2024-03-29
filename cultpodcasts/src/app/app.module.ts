@@ -27,6 +27,7 @@ import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
+import { provideAuth0 } from '@auth0/auth0-angular';
 
 @NgModule({
   declarations: [
@@ -63,7 +64,15 @@ import { MatChipsModule } from '@angular/material/chips';
     MatSnackBarModule,
     MatChipsModule
   ],
-  providers: [SiteService],
+  providers: [
+    SiteService, 
+    provideAuth0({
+      domain: 'dev-q3x2z6aofdzbjkkf.us.auth0.com',
+      clientId: 'sJKkpr6HaOJhKpcTwjVVHzqvwSxa122P',
+      authorizationParams: {
+        redirect_uri: window.location.origin
+      }
+    })],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
