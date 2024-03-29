@@ -8,8 +8,10 @@ import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { IShare, ShareMode } from './IShare';
+import { IShare } from './IShare';
+import { ShareMode } from "./ShareMode";
 import { SearchBoxMode } from './SearchBoxMode';
+import { AuthService } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-root',
@@ -30,7 +32,8 @@ export class AppComponent {
     private domSanitizer: DomSanitizer,
     private siteService: SiteService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar) {
+    private snackBar: MatSnackBar,
+    protected auth: AuthService) {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
     this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
