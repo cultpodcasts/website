@@ -8,14 +8,24 @@
         <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
             class="socialbutton"></a>
-        <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton">
-          <img (click)="this.auth.logout()" src="{{user.picture}}" style="border-radius: 50%;" alt="Profile"
-            class="socialbutton button">
-        </ng-container>
+        <div *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton" class="socialbutton button">
+          <img src="{{user.picture}}" style="border-radius: 50%; height: 40px" [matMenuTriggerFor]="profile">
+        </div>
         <ng-template #unAuthenticatedButton>
-          <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"
-            (click)="this.auth.loginWithRedirect()">
+          <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"  [matMenuTriggerFor]="loggedOutProfile">
         </ng-template>
+        <mat-menu #loggedOutProfile="matMenu">
+          <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
+            <mat-icon>login</mat-icon>
+            <span>Login</span>
+          </a>  
+        </mat-menu>
+        <mat-menu #profile="matMenu">
+          <a (click)="this.auth.logout()" mat-menu-item>
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </a>  
+        </mat-menu>
       </div>
       <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
@@ -35,14 +45,14 @@
         </a>
         <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedMenuItem">
           <a (click)="this.auth.logout()" mat-menu-item>
-            <img class="mat-icon" src="{{user.picture}}" style="width:24px; height: 24px; border-radius: 50%">
-            <span>Profile</span>
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
           </a>
         </ng-container>
         <ng-template #unAuthenticatedMenuItem>
           <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
-            <mat-icon svgIcon="profile" style="color:black"></mat-icon>
-            <span mat-mdc-menu-item-text>Profile</span>
+            <mat-icon>login</mat-icon>
+            <span mat-mdc-menu-item-text>Login</span>
           </a>
         </ng-template>
       </mat-menu>
