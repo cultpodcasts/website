@@ -28,6 +28,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { provideAuth0 } from '@auth0/auth0-angular';
+import { environment } from './../environments/environment';
 
 @NgModule({
   declarations: [
@@ -67,8 +68,8 @@ import { provideAuth0 } from '@auth0/auth0-angular';
   providers: [
     SiteService, 
     provideAuth0({
-      domain: 'dev-q3x2z6aofdzbjkkf.us.auth0.com',
-      clientId: 'sJKkpr6HaOJhKpcTwjVVHzqvwSxa122P',
+      domain: environment.auth0.domain,
+      clientId: environment.auth0.clientId,
       authorizationParams: {
         redirect_uri: window.location.origin
       }
