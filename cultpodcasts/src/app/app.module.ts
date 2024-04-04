@@ -31,6 +31,7 @@ import { provideAuth0 } from '@auth0/auth0-angular';
 import { environment } from './../environments/environment';
 import { ContentComponent } from './content/content.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
+import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
 
 @NgModule({
   declarations: [
@@ -42,7 +43,8 @@ import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.componen
     SubmitPodcastComponent,
     SendPodcastComponent,
     ContentComponent,
-    PrivacyPolicyComponent
+    PrivacyPolicyComponent,
+    TermsAndConditionsComponent
   ],
   imports: [
     BrowserModule,

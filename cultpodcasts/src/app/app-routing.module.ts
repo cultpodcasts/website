@@ -40,7 +40,10 @@ class ContentTitle implements Resolve<string> {
     let title: string = "";
     switch (route.params['path']) {
       case "privacy-poicy":
-        title = "Privacy Police";
+        title = "Privacy Policy";
+        break;
+      case "terms-and-conditions":
+        title= "Terms and Conditions";
         break;
       default:
         break;

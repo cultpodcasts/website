@@ -2,5 +2,8 @@
     <ng-container *ngSwitchCase="'privacy-policy'">
         <privacy-policy/>
     </ng-container>
-    <div *ngSwitchDefault>Default</div>
+    <ng-container *ngSwitchCase="'terms-and-conditions'">
+        <terms-and-conditions/>
+    </ng-container>
+    <h1 *ngSwitchDefault>Not Found!</h1>
 </ng-container>
