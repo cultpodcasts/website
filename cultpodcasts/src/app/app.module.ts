@@ -29,6 +29,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { environment } from './../environments/environment';
+import { ContentComponent } from './content/content.component';
+import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 
 @NgModule({
   declarations: [
@@ -38,7 +40,9 @@ import { environment } from './../environments/environment';
     PodcastComponent,
     SubjectComponent,
     SubmitPodcastComponent,
-    SendPodcastComponent
+    SendPodcastComponent,
+    ContentComponent,
+    PrivacyPolicyComponent
   ],
   imports: [
     BrowserModule,

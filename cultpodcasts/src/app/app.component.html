@@ -9,7 +9,7 @@
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
             class="socialbutton"></a>
         <div *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton" class="socialbutton button">
-          <img src="{{user.picture}}" style="border-radius: 50%; height: 40px" [matMenuTriggerFor]="profile">
+          <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
         </div>
         <ng-template #unAuthenticatedButton>
           <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"  [matMenuTriggerFor]="loggedOutProfile">
