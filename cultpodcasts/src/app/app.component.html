@@ -8,24 +8,27 @@
         <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
             class="socialbutton"></a>
-        <div *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton" class="socialbutton button">
-          <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
-        </div>
-        <ng-template #unAuthenticatedButton>
-          <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"  [matMenuTriggerFor]="loggedOutProfile">
-        </ng-template>
-        <mat-menu #loggedOutProfile="matMenu">
-          <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
-            <mat-icon>login</mat-icon>
-            <span>Login</span>
-          </a>  
-        </mat-menu>
-        <mat-menu #profile="matMenu">
-          <a (click)="this.auth.logout()" mat-menu-item>
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </a>  
-        </mat-menu>
+        <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
+          <div *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton" class="socialbutton button">
+            <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
+          </div>
+          <ng-template #unAuthenticatedButton>
+            <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"
+              [matMenuTriggerFor]="loggedOutProfile">
+          </ng-template>
+          <mat-menu #loggedOutProfile="matMenu">
+            <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
+              <mat-icon>login</mat-icon>
+              <span>Login</span>
+            </a>
+          </mat-menu>
+          <mat-menu #profile="matMenu">
+            <a (click)="this.auth.logout()" mat-menu-item>
+              <mat-icon>logout</mat-icon>
+              <span>Logout</span>
+            </a>
+          </mat-menu>
+        </ng-container>
       </div>
       <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
@@ -43,18 +46,20 @@
           <mat-icon svgIcon="twitter"></mat-icon>
           <span>Twitter</span>
         </a>
-        <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedMenuItem">
-          <a (click)="this.auth.logout()" mat-menu-item>
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </a>
+        <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
+          <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedMenuItem">
+            <a (click)="this.auth.logout()" mat-menu-item>
+              <mat-icon>logout</mat-icon>
+              <span>Logout</span>
+            </a>
+          </ng-container>
+          <ng-template #unAuthenticatedMenuItem>
+            <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
+              <mat-icon>login</mat-icon>
+              <span mat-mdc-menu-item-text>Login</span>
+            </a>
+          </ng-template>
         </ng-container>
-        <ng-template #unAuthenticatedMenuItem>
-          <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
-            <mat-icon>login</mat-icon>
-            <span mat-mdc-menu-item-text>Login</span>
-          </a>
-        </ng-template>
       </mat-menu>
     </mat-toolbar>
   </section>

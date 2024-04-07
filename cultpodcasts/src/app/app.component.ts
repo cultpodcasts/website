@@ -12,6 +12,8 @@ import { IShare } from './IShare';
 import { ShareMode } from "./ShareMode";
 import { SearchBoxMode } from './SearchBoxMode';
 import { AuthService } from '@auth0/auth0-angular';
+import { FeatureSwtichService } from './FeatureSwitchService';
+import { FeatureSwitch } from './FeatureSwitch';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +27,8 @@ export class AppComponent {
   searchChip: string | null = null;
   searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
 
+  public FeatureSwitch = FeatureSwitch;
+
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -33,7 +37,8 @@ export class AppComponent {
     private siteService: SiteService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    protected auth: AuthService) {
+    protected auth: AuthService,
+    protected featureSwtichService: FeatureSwtichService) {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
     this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
@@ -56,7 +61,7 @@ export class AppComponent {
           this.searchChip = siteData.subject;
           this.searchBoxMode = SearchBoxMode.Subject;
         } else {
-          this.searchChip= null;
+          this.searchChip = null;
           this.searchBoxMode = SearchBoxMode.Default;
         }
       };
@@ -144,5 +149,4 @@ export class AppComponent {
       return null;
     }
   }
-
 }
