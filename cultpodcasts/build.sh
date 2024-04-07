@@ -1,5 +1,5 @@
 #!/bin/bash
-npx ng build
+npx ng build --configuration $env
 echo build complete
 cp ./dist/cultpodcasts/ngsw-worker.js ./dist/cultpodcasts/ngsw-worker-dist.js
 echo switched ngsw-worker.js -> ngsw-worker-dist.js

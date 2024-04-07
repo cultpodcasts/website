@@ -8,8 +8,12 @@ import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from './submit-podcast/submit-podcast.component';
 import { SendPodcastComponent } from './send-podcast/send-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { IShare, ShareMode } from './IShare';
+import { IShare } from './IShare';
+import { ShareMode } from "./ShareMode";
 import { SearchBoxMode } from './SearchBoxMode';
+import { AuthService } from '@auth0/auth0-angular';
+import { FeatureSwtichService } from './FeatureSwitchService';
+import { FeatureSwitch } from './FeatureSwitch';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +27,8 @@ export class AppComponent {
   searchChip: string | null = null;
   searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
 
+  public FeatureSwitch = FeatureSwitch;
+
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -30,7 +36,9 @@ export class AppComponent {
     private domSanitizer: DomSanitizer,
     private siteService: SiteService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar) {
+    private snackBar: MatSnackBar,
+    protected auth: AuthService,
+    protected featureSwtichService: FeatureSwtichService) {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
     this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
@@ -39,6 +47,7 @@ export class AppComponent {
     this.iconRegistry.addSvgIcon(`spotify`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/spotify.svg"));
     this.iconRegistry.addSvgIcon(`youtube`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/youtube.svg"));
     this.iconRegistry.addSvgIcon(`apple-podcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/apple-podcasts.svg"));
+    this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/profile.svg"));
   }
 
   ngOnInit() {
@@ -52,7 +61,7 @@ export class AppComponent {
           this.searchChip = siteData.subject;
           this.searchBoxMode = SearchBoxMode.Subject;
         } else {
-          this.searchChip= null;
+          this.searchChip = null;
           this.searchBoxMode = SearchBoxMode.Default;
         }
       };
@@ -140,5 +149,4 @@ export class AppComponent {
       return null;
     }
   }
-
 }

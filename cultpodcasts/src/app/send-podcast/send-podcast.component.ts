@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { IShare, ShareMode } from '../IShare';
+import { IShare } from '../IShare';
+import { ShareMode } from "../ShareMode";
 
 @Component({
   selector: 'app-send-podcast',
