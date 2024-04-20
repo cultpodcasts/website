@@ -3,9 +3,9 @@
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
   <section id="resultsheading">
-    <h2>{{podcastName}} has {{count}} episode<span *ngIf="count>1 || count==0">s</span><span
+    <h2>{{podcastName}} has {{count}} episode<ng-container *ngIf="count>1 || count==0">s</ng-container><ng-container
         *ngIf="this.searchState.query && this.searchState.query!=''">
-        matching "{{this.searchState.query}}"</span></h2>
+        matching "{{this.searchState.query}}"</ng-container> found by CultPodcasts.com</h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
