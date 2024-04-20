@@ -103,13 +103,6 @@ export class AppComponent {
     }
   };
 
-  top(event: any) {
-    event.stopPropagation();
-    event.preventDefault()
-    const element = document.querySelector('body');
-    element?.scrollIntoView();
-  };
-
   openSubmitPodcast() {
     const dialogConfig = new MatDialogConfig();
 
