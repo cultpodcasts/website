@@ -14,12 +14,14 @@ $warn: mat-palette($mat-red)
 @include angular-material-theme(mat-light-theme($primary, $accent, $warn))
 @media (prefers-color-scheme: dark)
     @include angular-material-theme(mat-dark-theme($primary, $accent, $warn))
-@media (prefers-color-scheme: light)
-    @include angular-material-theme(mat-light-theme($primary, $accent, $warn))
+
+html
+    height: 100% !important
 
 body
     margin: 0
     padding: 0
+    height: 100% !important
 
 mat-card-subtitle
     font-size: 1.4em !important
@@ -68,3 +70,31 @@ mat-card-footer.subjects
 #try-search
     text-align: center
     margin-bottom: 1rem
+
+@media screen and (max-width: 599px)
+    footer
+        width: 100%
+        max-width: 580px
+        margin: 0 auto
+@media screen and (min-width: 600px)
+    footer
+        width: 580px
+        margin: 0 auto
+
+footer
+    position: sticky
+    bottom: 0
+    background-color: var(--mat-toolbar-container-background-color)
+    height: 1.7em
+    padding-top: 5px
+    margin-bottom: 3px
+    text-align: right
+    font-size: 1.3em
+    z-index: 10
+    .mat-icon
+        vertical-align: bottom
+        padding-left: 10px
+        padding-right: 5px
+    a
+        text-decoration: none
+        color: var(--mat-toolbar-container-text-color)

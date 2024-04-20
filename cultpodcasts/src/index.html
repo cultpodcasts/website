@@ -30,11 +30,24 @@
 
   <script type="module" src="dark-mode-toggle.mjs"></script>
   <script defer src="/darkmode.js"></script>
+  <script type="text/javascript">
+    function goTop() {
+      event.stopPropagation();
+      event.preventDefault()
+      const element = document.querySelector('body');
+      element?.scrollIntoView();
+    }
+  </script>
 </head>
 
 <body class="mat-typography mat-app-background">
   <dark-mode-toggle appearance="toggle"></dark-mode-toggle>
   <app-root></app-root>
+  <footer>
+    <a href="#" onclick="goTop()">
+      <span>Go to top</span>
+      <mat-icon role="img" fonticon="arrow_upward" class="mat-icon notranslate material-icons mat-ligature-font mat-icon-no-color" aria-hidden="true" data-mat-icon-type="font" data-mat-icon-name="arrow_upward"></mat-icon>
+    </a>
+  </footer>
 </body>
-
 </html>
