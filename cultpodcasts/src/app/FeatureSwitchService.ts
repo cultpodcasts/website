@@ -8,7 +8,7 @@ export class FeatureSwtichService {
     public IsEnabled(featureSwitch: FeatureSwitch): boolean {
         switch (featureSwitch) {
             case FeatureSwitch.auth0:
-                return false;
+                return true;
             default:
                 return false;
         }
