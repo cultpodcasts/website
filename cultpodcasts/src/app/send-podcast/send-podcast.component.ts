@@ -1,11 +1,11 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Component } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
 import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { environment } from './../../environments/environment';
-import { Observable, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-send-podcast',
