@@ -1,8 +1,11 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Component } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
+import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
+import { environment } from './../../environments/environment';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-send-podcast',
@@ -23,10 +26,16 @@ export class SendPodcastComponent {
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
 
   constructor(
-    http: HttpClient,
+    private http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: IShare) {
+    private auth: AuthService) {
+  }
 
+  close() {
+    this.dialogRef.close({ submitted: this.submitted });
+  }
+
+  public async submit(data: IShare) {
     let matchedUrl: string | undefined;
     let url: URL | undefined;
 
@@ -34,7 +43,6 @@ export class SendPodcastComponent {
       this.youtube.test(data.url.toString()) ||
       this.apple.test(data.url.toString())) {
       this.isSending = true;
-
 
       if (this.spotify.test(data.url.toString())) {
         let match = data.url.toString().match(this.spotify);
@@ -66,36 +74,47 @@ export class SendPodcastComponent {
 
         if (url) {
           const body = { url: url.toString() };
-          http.post("https://api.cultpodcasts.com/submit", body).subscribe(
-            data => {
+
+          let headers: HttpHeaders = new HttpHeaders();
+          if (this.auth.isAuthenticated$) {
+            const accessTokenOptions: GetTokenSilentlyOptions = {
+              authorizationParams: {
+                audience: `https://api.cultpodcasts.com/`,
+                scope: 'submit'
+              }
+            };
+            let token: string | undefined;
+            try {
+              token = await firstValueFrom( this.auth.getAccessTokenSilently(accessTokenOptions));
+            } catch (e) {
+              console.log(e);
+            }
+            if (token) {
+              headers = headers.set("Authorization", "Bearer " + token);
+            }
+            try {
+              await firstValueFrom(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers }));
               this.submitted = true;
               this.close();
-            },
-            error => {
+            } catch (error) {
               this.isSending = false;
               this.submitError = true;
-            });
+            }
+          }
+        }
+      }
+
+      if (!matchedUrl || !url) {
+        if (data.shareMode == ShareMode.Share) {
+          this.urlShareError = true;
+          this.shareUrl = data.url;
+        } else if (data.shareMode == ShareMode.Text) {
+          this.urlTextError = true;
+          this.shareUrl = data.url;
+        } else {
+          this.unknownError = true;
         }
       }
     }
-
-    if (!matchedUrl || !url) {
-      if (data.shareMode == ShareMode.Share) {
-        this.urlShareError = true;
-        this.shareUrl = data.url;
-      } else if (data.shareMode == ShareMode.Text) {
-        this.urlTextError = true;
-        this.shareUrl = data.url;
-      } else {
-        this.unknownError = true;
-      }
-    }
   }
-
-
-
-  close() {
-    this.dialogRef.close({ submitted: this.submitted });
-  }
-
 }
