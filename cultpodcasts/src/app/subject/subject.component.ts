@@ -6,6 +6,8 @@ import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
 import { ISearchState } from '../ISearchState';
 import { ODataService } from '../OdataService'
+import { environment } from './../../environments/environment';
+
 const pageSize: number = 10;
 
 const sortParam: string = "sort";
@@ -99,7 +101,7 @@ export class SubjectComponent {
       }
 
       this.oDataService.getEntities<ISearchResult>(
-        'https://api.cultpodcasts.com/api/?',
+        new URL("/search", environment.api).toString(),
         {
           search: this.searchState.query,
           filter: this.searchState.filter,

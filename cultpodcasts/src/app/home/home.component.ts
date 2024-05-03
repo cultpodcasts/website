@@ -6,6 +6,8 @@ import { IHomepageItem } from '../IHomepageItem';
 import { KeyValue } from '@angular/common';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { environment } from './../../environments/environment';
+
 
 const pageSize: number = 10;
 const pageParam: string = "page";
@@ -81,7 +83,7 @@ export class HomeComponent {
         this.nextPage = 2;
       }
 
-      let homepage = this.http.get<IHomepage>("https://api.cultpodcasts.com/homepage")
+      let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
         .subscribe(data => {
           this.homepage = data;
           this.totalDuration = data.totalDuration.split(".")[0] + " days";

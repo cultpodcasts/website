@@ -69,25 +69,25 @@ export class AppComponent {
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
   }
 
-  onSwMessage(message: any) {
+  async onSwMessage(message: any) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      this.sendPodcast({ url: message.data.url, shareMode: ShareMode.Share });
+      await this.sendPodcast({ url: message.data.url, shareMode: ShareMode.Share });
     }
   }
 
-  sendPodcast(share: IShare) {
+  async sendPodcast(share: IShare) {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    dialogConfig.data = share;
-    this.dialog
-      .open(SendPodcastComponent, dialogConfig)
+    const dialog = this.dialog.open(SendPodcastComponent, dialogConfig);
+    dialog
       .afterClosed()
       .subscribe(result => {
         if (result && result.submitted) {
           let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
         }
       });
+    await dialog.componentInstance.submit(share);
   }
 
   search = (input: HTMLInputElement) => {
@@ -103,7 +103,7 @@ export class AppComponent {
     }
   };
 
-  openSubmitPodcast() {
+  async openSubmitPodcast() {
     const dialogConfig = new MatDialogConfig();
 
     dialogConfig.disableClose = true;
@@ -112,9 +112,9 @@ export class AppComponent {
     this.dialog
       .open(SubmitPodcastComponent, dialogConfig)
       .afterClosed()
-      .subscribe(result => {
+      .subscribe(async result => {
         if (result?.url) {
-          this.sendPodcast({ url: result.url, shareMode: ShareMode.Text });
+          await this.sendPodcast({ url: result.url, shareMode: ShareMode.Text });
         }
       });
   }
