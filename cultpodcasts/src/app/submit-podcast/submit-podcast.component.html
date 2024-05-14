@@ -1,16 +1,38 @@
 <h2 mat-dialog-title>Add Podcast</h2>
 
 <mat-dialog-content [formGroup]="form">
-  
+
     <mat-form-field>
-        <input matInput
-            placeholder="Podcast Url"
-            formControlName="url">
+        <input matInput placeholder="Podcast Url" formControlName="url">
     </mat-form-field>
- 
+
+    <mat-expansion-panel (opened)="advancedOpenState = true" (closed)="advancedOpenState = false">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                Advanced
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+        
+        <mat-form-field class="example-full-width" *ngIf="this.showAdvanced">
+            <mat-label>Number</mat-label>
+            <input type="text"
+                   placeholder="Pick one"
+                   aria-label="Number"
+                   matInput
+                   [formControl]="myControl"
+                   [matAutocomplete]="auto">
+            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+              <!-- @for (option of filteredOptions | async; track option) {
+                <mat-option [value]="option.id">{{option.name}}</mat-option>
+              } -->
+            </mat-autocomplete>
+          </mat-form-field>
+
+    </mat-expansion-panel>
+
 </mat-dialog-content>
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button class="mat-primary"(click)="save()">Save</button>
+    <button mat-raised-button class="mat-primary" (click)="save()">Save</button>
 </mat-dialog-actions>
