@@ -10,12 +10,16 @@ import { environment } from './../environments/environment';
   providedIn: 'root'
 })
 export class PodcastsService {
+  isAuthenticated: boolean = false;
 
-  constructor(private http: HttpClient,private auth:AuthService) { }
+  constructor(private http: HttpClient, private auth: AuthService) {
+    auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+  }
 
-  async getPodcasts():Promise<ISimplePodcastsResult> {
+  async getPodcasts(): Promise<ISimplePodcastsResult> {
     let headers: HttpHeaders = new HttpHeaders();
-    if (this.auth.isAuthenticated$) {
+    if (this.isAuthenticated) {
+      const podcastsEndpoint = new URL("/podcasts", environment.api);
       const accessTokenOptions: GetTokenSilentlyOptions = {
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
@@ -24,22 +28,22 @@ export class PodcastsService {
       };
       let token: string | undefined;
       try {
-        token = await firstValueFrom( this.auth.getAccessTokenSilently(accessTokenOptions));
+        token = await firstValueFrom(this.auth.getAccessTokenSilently(accessTokenOptions));
       } catch (e) {
         console.log(e);
       }
       if (token) {
         headers = headers.set("Authorization", "Bearer " + token);
       } else {
-        return {unauthorised: true, error: false, results: undefined};
+        return { unauthorised: true, error: false, results: undefined };
       }
       try {
-        const results:ISimplePodcast[]=await firstValueFrom(this.http.get<ISimplePodcast[]>(new URL("/podcasts", environment.api).toString(), { headers: headers }));
-        return {unauthorised: false, error: false, results: results};
+        const results: ISimplePodcast[] = await firstValueFrom(this.http.get<ISimplePodcast[]>(podcastsEndpoint.toString(), { headers: headers }));
+        return { unauthorised: false, error: false, results: results };
       } catch (error) {
-        return {unauthorised: false, error: true, results: undefined};
+        return { unauthorised: false, error: true, results: undefined };
       }
     }
-    return {unauthorised: true, error: false, results: undefined};
+    return { unauthorised: true, error: false, results: undefined };
   }
 }

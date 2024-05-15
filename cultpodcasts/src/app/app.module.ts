@@ -32,8 +32,7 @@ import { environment } from './../environments/environment';
 import { ContentComponent } from './content/content.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 @NgModule({
   declarations: [
@@ -72,10 +71,11 @@ import {MatAutocompleteModule} from '@angular/material/autocomplete';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatChipsModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatFormFieldModule
   ],
   providers: [
-    SiteService, 
+    SiteService,
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,

@@ -24,11 +24,13 @@ export class SendPodcastComponent {
   spotify: RegExp = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
+  isAuthenticated: boolean = false;
 
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
     private auth: AuthService) {
+    auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
   close() {
@@ -73,10 +75,10 @@ export class SendPodcastComponent {
         }
 
         if (url) {
-          const body = { url: url.toString() };
+          const body = { url: url.toString(), podcastId: data.podcastId };
 
           let headers: HttpHeaders = new HttpHeaders();
-          if (this.auth.isAuthenticated$) {
+          if (this.isAuthenticated) {
             const accessTokenOptions: GetTokenSilentlyOptions = {
               authorizationParams: {
                 audience: `https://api.cultpodcasts.com/`,
@@ -85,22 +87,23 @@ export class SendPodcastComponent {
             };
             let token: string | undefined;
             try {
-              token = await firstValueFrom( this.auth.getAccessTokenSilently(accessTokenOptions));
+              token = await firstValueFrom(this.auth.getAccessTokenSilently(accessTokenOptions));
             } catch (e) {
               console.log(e);
             }
             if (token) {
               headers = headers.set("Authorization", "Bearer " + token);
             }
-            try {
-              await firstValueFrom(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers }));
-              this.submitted = true;
-              this.close();
-            } catch (error) {
-              this.isSending = false;
-              this.submitError = true;
-            }
           }
+          try {
+            await firstValueFrom(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers }));
+            this.submitted = true;
+            this.close();
+          } catch (error) {
+            this.isSending = false;
+            this.submitError = true;
+          }
+
         }
       }
 

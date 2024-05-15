@@ -6,28 +6,22 @@
         <input matInput placeholder="Podcast Url" formControlName="url">
     </mat-form-field>
 
-    <mat-expansion-panel (opened)="advancedOpenState = true" (closed)="advancedOpenState = false">
+    <mat-expansion-panel *ngIf="showAdvanced" (opened)="advancedOpenState = true" (closed)="advancedOpenState = false">
         <mat-expansion-panel-header>
             <mat-panel-title>
                 Advanced
             </mat-panel-title>
         </mat-expansion-panel-header>
-        
-        <mat-form-field class="example-full-width" *ngIf="this.showAdvanced">
-            <mat-label>Number</mat-label>
-            <input type="text"
-                   placeholder="Pick one"
-                   aria-label="Number"
-                   matInput
-                   [formControl]="myControl"
-                   [matAutocomplete]="auto">
-            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-              <!-- @for (option of filteredOptions | async; track option) {
-                <mat-option [value]="option.id">{{option.name}}</mat-option>
-              } -->
-            </mat-autocomplete>
-          </mat-form-field>
 
+        <mat-form-field>
+            <mat-label>Podcast</mat-label>
+            <input type="text" matInput [matAutocomplete]="auto" formControlName="podcast">
+            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+                    {{option.name}}
+                </mat-option>
+            </mat-autocomplete>
+        </mat-form-field>
     </mat-expansion-panel>
 
 </mat-dialog-content>

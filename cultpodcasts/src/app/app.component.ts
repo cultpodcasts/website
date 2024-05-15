@@ -71,7 +71,7 @@ export class AppComponent {
 
   async onSwMessage(message: any) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      await this.sendPodcast({ url: message.data.url, shareMode: ShareMode.Share });
+      await this.sendPodcast({ url: message.data.url, podcastId: undefined, shareMode: ShareMode.Share });
     }
   }
 
@@ -114,7 +114,7 @@ export class AppComponent {
       .afterClosed()
       .subscribe(async result => {
         if (result?.url) {
-          await this.sendPodcast({ url: result.url, shareMode: ShareMode.Text });
+          await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, shareMode: ShareMode.Text });
         }
       });
   }

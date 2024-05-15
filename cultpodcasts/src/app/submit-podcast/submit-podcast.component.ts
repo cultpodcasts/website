@@ -6,22 +6,19 @@ import { PodcastsService } from '../podcasts.service';
 import { ISimplePodcast } from '../ISimplePodcast';
 import { Observable, map, startWith } from 'rxjs';
 
-
-
 @Component({
   selector: 'app-submit-podcast',
   templateUrl: './submit-podcast.component.html',
-  styleUrls: ['./submit-podcast.component.sass']  
+  styleUrls: ['./submit-podcast.component.sass']
 })
 export class SubmitPodcastComponent implements OnInit {
 
   form!: FormGroup;
   advancedOpenState: boolean = false;
-  myControl = new FormControl('');
-  filteredOptions!: Observable<ISimplePodcast[]>;
-  options: ISimplePodcast[] | undefined;
   showAdvanced: boolean = false;
-
+  podcast = new FormControl();
+  filteredOptions: Observable<ISimplePodcast[]> | undefined;
+  options: ISimplePodcast[] | undefined;
 
   constructor(
     private fb: FormBuilder,
@@ -35,35 +32,41 @@ export class SubmitPodcastComponent implements OnInit {
       url: [null, [
         Validators.required,
         UrlValidator.isValid()
-      ]]
+      ]],
+      podcast: [null, []]
     });
-    this.filteredOptions = this.myControl.valueChanges.pipe(
-      startWith(''),
-      map(value => this._filter(value || '')),
-    );
-    this.podcastService.getPodcasts().then(podcastsResult => {
-      if (podcastsResult.results) {
-        this.options = podcastsResult.results;
-      } else {
-        this.showAdvanced = false;
+    var podcastResponse = this.podcastService.getPodcasts().then(result => {
+      if (result.results) {
+        this.options = result.results;
+        this.filteredOptions = this.podcast.valueChanges
+          .pipe(
+            startWith(''),
+            map(value => typeof value === 'string' ? value : value.name),
+            map(name => name ? this._filter(name) : this.options!.slice())
+          );
+        this.showAdvanced = true;
       }
-    })
+    });
+  }
+
+  displayFn(podcast: ISimplePodcast): string {
+    return podcast && podcast.name ? podcast.name : '';
+  }
+
+  private _filter(name: string): ISimplePodcast[] {
+    const filterValue = name.toLowerCase();
+    return this.options!.filter(option => option.name.toLowerCase().indexOf(filterValue) >= 0);
   }
 
   save() {
     if (this.form.valid) {
-      this.dialogRef.close(this.form.value);
+      this.dialogRef.close(
+        this.form.value
+      );
     }
   }
 
   close() {
     this.dialogRef.close();
-  }
-
-
-  private _filter(value: string): ISimplePodcast[] {
-    const filterValue = value.toLowerCase();
-
-    return this.options!.filter(option => option.name.toLowerCase().includes(filterValue));
   }
 }
