@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { FormGroup, Validators, FormControl } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { UrlValidator } from '../url-validator';
 import { PodcastsService } from '../podcasts.service';
@@ -17,23 +17,24 @@ export class SubmitPodcastComponent implements OnInit {
   advancedOpenState: boolean = false;
   showAdvanced: boolean = false;
   podcast = new FormControl();
+  url = new FormControl()
   filteredOptions: Observable<ISimplePodcast[]> | undefined;
   options: ISimplePodcast[] | undefined;
 
   constructor(
-    private fb: FormBuilder,
     private dialogRef: MatDialogRef<SubmitPodcastComponent>,
     @Inject(MAT_DIALOG_DATA) data: any,
     private podcastService: PodcastsService) {
   }
 
   ngOnInit() {
-    this.form = this.fb.group({
-      url: [null, [
-        Validators.required,
-        UrlValidator.isValid()
-      ]],
-      podcast: [null, []]
+    this.url.addValidators([
+      Validators.required,
+      UrlValidator.isValid()
+    ]);
+    this.form = new FormGroup({
+      url: this.url,
+      podcast: this.podcast
     });
     var podcastResponse = this.podcastService.getPodcasts().then(result => {
       if (result.results) {
