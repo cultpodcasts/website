@@ -34,6 +34,7 @@ import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.componen
 import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DiscoveryComponent } from './discovery/discovery.component';
+import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 
 @NgModule({
   declarations: [
@@ -47,7 +48,8 @@ import { DiscoveryComponent } from './discovery/discovery.component';
     ContentComponent,
     PrivacyPolicyComponent,
     TermsAndConditionsComponent,
-    DiscoveryComponent
+    DiscoveryComponent,
+    UnauthorisedComponent
   ],
   imports: [
     BrowserModule,
