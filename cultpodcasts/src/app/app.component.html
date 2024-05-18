@@ -23,6 +23,10 @@
             </a>
           </mat-menu>
           <mat-menu #profile="matMenu">
+            <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+              <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
+              <span>Discovery</span>
+            </a>
             <a (click)="this.auth.logout()" mat-menu-item>
               <mat-icon>logout</mat-icon>
               <span>Logout</span>
@@ -37,6 +41,10 @@
         <a (click)="openSubmitPodcast()" mat-menu-item>
           <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
           <span>Add Podcast</span>
+        </a>
+        <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
+          <span>Discovery</span>
         </a>
         <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
           <mat-icon svgIcon="reddit"></mat-icon>

@@ -33,6 +33,7 @@ import { ContentComponent } from './content/content.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { DiscoveryComponent } from './discovery/discovery.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +46,8 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
     SendPodcastComponent,
     ContentComponent,
     PrivacyPolicyComponent,
-    TermsAndConditionsComponent
+    TermsAndConditionsComponent,
+    DiscoveryComponent
   ],
   imports: [
     BrowserModule,

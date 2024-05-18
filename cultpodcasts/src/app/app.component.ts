@@ -14,6 +14,7 @@ import { SearchBoxMode } from './SearchBoxMode';
 import { AuthService } from '@auth0/auth0-angular';
 import { FeatureSwtichService } from './FeatureSwitchService';
 import { FeatureSwitch } from './FeatureSwitch';
+import { IdToken } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ export class AppComponent {
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
   searchChip: string | null = null;
   searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
+  roles:string[]=[];
 
   public FeatureSwitch = FeatureSwitch;
 
@@ -51,6 +53,12 @@ export class AppComponent {
   }
 
   ngOnInit() {
+    this.auth.user$.subscribe(user=>{
+      if (user && user["https://api.cultpodcasts.com/roles"])
+        this.roles = user["https://api.cultpodcasts.com/roles"]
+      else
+        this.roles=[];
+    })
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value = siteData.query;
