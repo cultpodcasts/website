@@ -1,4 +1,5 @@
 <section id="results">
+
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
@@ -15,15 +16,20 @@
     </mat-card-header>
     <mat-card-content class="resultdescription">
       <p>{{result.episodeDescription}}</p>
+      <ng-container *ngIf="isYouTube(result.url)">
+        <img [src]="getYouTubeImageUrl(result.url!)">
+      </ng-container>
     </mat-card-content>
     <mat-card-actions>
-      <a *ngIf="isYouTube(result.url)" href="{{result.url}}" mat-icon-button>
-        <mat-icon svgIcon="youtube"></mat-icon>
-      </a>
-      <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta" >
-        <span *ngIf="result.youTubeViews">Views: {{result.youTubeViews}}</span>
-        <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
-      </div>
+      <ng-container *ngIf="isYouTube(result.url)">
+        <a href="{{result.url}}" mat-icon-button>
+          <mat-icon svgIcon="youtube"></mat-icon>
+        </a>
+        <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta">
+          <span *ngIf="result.youTubeViews">Views: {{result.youTubeViews}}</span>
+          <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
+        </div>
+      </ng-container>
       <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button>
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>

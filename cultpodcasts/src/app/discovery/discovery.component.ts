@@ -42,20 +42,34 @@ export class DiscoveryComponent {
 
   isYouTube(url: URL | undefined): boolean {
     if (!url) return false;
-    const has= url.host.includes("youtube");
+    const has = url.host.includes("youtube");
     return has;
   }
 
   isSpotify(url: URL | undefined): boolean {
     if (!url) return false;
-    const has= url.host.includes("spotify");
+    const has = url.host.includes("spotify");
     return has;
   }
 
   isApple(url: URL | undefined): boolean {
     if (!url) return false;
-    const has= url.host.includes("apple");
+    const has = url.host.includes("apple");
     return has;
   }
 
+  getYouTubeId(url: URL): string {
+    const videoId = new RegExp("v=([\-\\w]+)");
+    const shortId = new RegExp("shorts/([\-\\w]+)");
+    const _url = url.toString();
+    const videoMatch = _url.match(videoId);
+    if (videoMatch) return videoMatch[1];
+    const shortMatch = _url.match(shortId);
+    return shortMatch![1];
+  }
+
+  getYouTubeImageUrl(url: URL) {
+    const youTubeId = this.getYouTubeId(url)
+    return `https://i.ytimg.com/vi/${youTubeId}/maxresdefault.jpg`;
+  }
 }

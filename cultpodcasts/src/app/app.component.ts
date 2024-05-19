@@ -14,7 +14,7 @@ import { SearchBoxMode } from './SearchBoxMode';
 import { AuthService } from '@auth0/auth0-angular';
 import { FeatureSwtichService } from './FeatureSwitchService';
 import { FeatureSwitch } from './FeatureSwitch';
-import { IdToken } from '@auth0/auth0-angular';
+
 
 @Component({
   selector: 'app-root',
