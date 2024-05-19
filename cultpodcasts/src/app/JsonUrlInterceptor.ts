@@ -4,9 +4,9 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Injectable()
-export class JsonDateInterceptor implements HttpInterceptor {
+export class JsonUrlInterceptor implements HttpInterceptor {
 
-  private _isoDateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?Z$/;
+  private _urlFormat = /^https?\:\/\/.*$/;
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(map((val: HttpEvent<any>) => {
@@ -18,12 +18,19 @@ export class JsonDateInterceptor implements HttpInterceptor {
     }));
   }
 
-  isIsoDateString(value: any): boolean {
+  isUrl(value: any): boolean {
     if (value === null || value === undefined) {
       return false;
     }
     if (typeof value === 'string') {
-      return this._isoDateFormat.test(value);
+      if (this._urlFormat.test(value) && typeof(value)==="string") {
+        try {
+          new URL(value);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
     } return false;
   }
   
@@ -36,8 +43,8 @@ export class JsonDateInterceptor implements HttpInterceptor {
     }
     for (const key of Object.keys(body)) {
       const value = body[key];
-      if (this.isIsoDateString(value)) {
-        body[key] = new Date(value);
+      if (this.isUrl(value)) {
+        body[key] = new URL(value);
       } else if (typeof value === 'object') {
         this.convert(value);
       }

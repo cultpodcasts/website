@@ -39,4 +39,23 @@ export class DiscoveryComponent {
         })
     });
   }
+
+  isYouTube(url: URL | undefined): boolean {
+    if (!url) return false;
+    const has= url.host.includes("youtube");
+    return has;
+  }
+
+  isSpotify(url: URL | undefined): boolean {
+    if (!url) return false;
+    const has= url.host.includes("spotify");
+    return has;
+  }
+
+  isApple(url: URL | undefined): boolean {
+    if (!url) return false;
+    const has= url.host.includes("apple");
+    return has;
+  }
+
 }

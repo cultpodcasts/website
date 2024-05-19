@@ -3,7 +3,8 @@
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
   <section id="resultsheading">
-    <h2>Discovery results<ng-container *ngIf="this.minDate"> since {{minDate| date:'d MMM yyyy H:mm'}}</ng-container></h2>
+    <h2>Discovery results<ng-container *ngIf="this.minDate"> since {{minDate| date:'d MMM yyyy H:mm'}}</ng-container>
+    </h2>
   </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
@@ -16,6 +17,19 @@
       <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
+      <a *ngIf="isYouTube(result.url)" href="{{result.url}}" mat-icon-button>
+        <mat-icon svgIcon="youtube"></mat-icon>
+      </a>
+      <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta" >
+        <span *ngIf="result.youTubeViews">Views: {{result.youTubeViews}}</span>
+        <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
+      </div>
+      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button>
+        <mat-icon svgIcon="spotify"></mat-icon>
+      </a>
+      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button>
+        <mat-icon svgIcon="apple-podcasts"></mat-icon>
+      </a>
       <mat-card-footer class="subjects">
         <div *ngFor="let subject of result.subjects" class="subject">
           <a [routerLink]="['/subject', subject]">{{subject}}</a>

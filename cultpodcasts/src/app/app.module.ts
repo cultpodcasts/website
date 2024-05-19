@@ -36,6 +36,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { JsonDateInterceptor} from './JsonDateInterceptor'
+import { JsonUrlInterceptor } from './JsonUrlInterceptor';
 
 @NgModule({
   declarations: [
@@ -90,6 +91,9 @@ import { JsonDateInterceptor} from './JsonDateInterceptor'
     }),
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     }
   ],
   bootstrap: [AppComponent]
