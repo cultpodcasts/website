@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -35,6 +35,7 @@ import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-co
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
+import { JsonDateInterceptor} from './JsonDateInterceptor'
 
 @NgModule({
   declarations: [
@@ -86,7 +87,11 @@ import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
       authorizationParams: {
         redirect_uri: window.location.origin
       }
-    })],
+    }),
+    {
+      provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
