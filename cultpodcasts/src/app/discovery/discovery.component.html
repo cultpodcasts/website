@@ -1,4 +1,4 @@
-<section id="results">
+<section id="results" #resultsContainer>
 
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
@@ -7,7 +7,8 @@
     <h2>Discovery results<ng-container *ngIf="this.minDate"> since {{minDate| date:'d MMM yyyy H:mm'}}</ng-container>
     </h2>
   </section>
-  <mat-card *ngFor="let result of results" class="result" (click)="handleResult($event, result)">
+  <mat-card *ngFor="let result of results" class="result" (click)="handleResult($event, result)"
+    attr.data-url="{{result.url}}">
     <mat-card-header>
       <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
       <mat-card-subtitle>{{result.showName}}</mat-card-subtitle>
@@ -43,4 +44,8 @@
       </mat-card-footer>
     </mat-card-actions>
   </mat-card>
+
+  <div id="actions" *ngIf="results && results.length>0 && displaySave">
+    <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{this.saveDisabled}}">Save</button>
+  </div>
 </section>
