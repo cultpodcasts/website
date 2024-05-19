@@ -6,6 +6,9 @@ import { PodcastComponent } from './podcast/podcast.component';
 import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
 import { SubjectComponent } from './subject/subject.component';
 import { ContentComponent } from './content/content.component';
+import { DiscoveryComponent } from './discovery/discovery.component';
+import { hasRoleGuard } from './has-role.guard';
+import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 
 const siteTitle = "Cult Podcasts";
 
@@ -43,7 +46,7 @@ class ContentTitle implements Resolve<string> {
         title = "Privacy Policy";
         break;
       case "terms-and-conditions":
-        title= "Terms and Conditions";
+        title = "Terms and Conditions";
         break;
       default:
         break;
@@ -59,7 +62,9 @@ const routes: Routes = [
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
   { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
   { path: 'subject/:subjectName/:query', component: SubjectComponent, title: SubjectTitle },
-  { path: 'content/:path', component: ContentComponent, title: ContentTitle }
+  { path: 'content/:path', component: ContentComponent, title: ContentTitle },
+  { path: 'discovery', component: DiscoveryComponent, title: "Cult Podcasts", canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
+  { path: 'unauthorised', component: UnauthorisedComponent }
 ];
 
 @NgModule({

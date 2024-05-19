@@ -107,16 +107,16 @@ export class SendPodcastComponent {
         }
       }
 
-      if (!matchedUrl || !url) {
-        if (data.shareMode == ShareMode.Share) {
-          this.urlShareError = true;
-          this.shareUrl = data.url;
-        } else if (data.shareMode == ShareMode.Text) {
-          this.urlTextError = true;
-          this.shareUrl = data.url;
-        } else {
-          this.unknownError = true;
-        }
+    }
+    if (!matchedUrl || !url) {
+      if (data.shareMode == ShareMode.Share) {
+        this.urlShareError = true;
+        this.shareUrl = data.url;
+      } else if (data.shareMode == ShareMode.Text) {
+        this.urlTextError = true;
+        this.shareUrl = data.url;
+      } else {
+        this.unknownError = true;
       }
     }
   }
