@@ -7,7 +7,7 @@
     <h2>Discovery results<ng-container *ngIf="this.minDate"> since {{minDate| date:'d MMM yyyy H:mm'}}</ng-container>
     </h2>
   </section>
-  <mat-card *ngFor="let result of results" class="result">
+  <mat-card *ngFor="let result of results" class="result" (click)="handleResult($event, result)">
     <mat-card-header>
       <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
       <mat-card-subtitle>{{result.showName}}</mat-card-subtitle>
@@ -22,7 +22,7 @@
     </mat-card-content>
     <mat-card-actions>
       <ng-container *ngIf="isYouTube(result.url)">
-        <a href="{{result.url}}" mat-icon-button>
+        <a href="{{result.url}}" mat-icon-button target="_blank">
           <mat-icon svgIcon="youtube"></mat-icon>
         </a>
         <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta">
@@ -30,10 +30,10 @@
           <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
         </div>
       </ng-container>
-      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button>
+      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button target="_blank">
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button>
+      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button target="_blank">
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
       <mat-card-footer class="subjects">

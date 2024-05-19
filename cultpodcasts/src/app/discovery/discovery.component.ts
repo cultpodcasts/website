@@ -72,4 +72,27 @@ export class DiscoveryComponent {
     const youTubeId = this.getYouTubeId(url)
     return `https://i.ytimg.com/vi/${youTubeId}/maxresdefault.jpg`;
   }
+
+  handleResult($event: Event, result: IDiscoveryResult) {
+    const selectedClass: string = "selected";
+    let element: Element = $event.target as Element;
+    var isButton = false;
+    isButton = element.getAttribute("mat-icon-button") != null;
+    while (!isButton && element.nodeName.toLowerCase() != "mat-card") {
+      console.log(element.nodeName)
+      element = element.parentElement!;
+      isButton = isButton || element.getAttribute("mat-icon-button") != null;
+    }
+    if (!isButton) {
+      if (element.className.split(" ").includes(selectedClass)) {
+        element.className = element.className.split(" ").filter(x => x != selectedClass).join(" ");
+      } else {
+        element.className = element.className.split(" ").concat(selectedClass).join(" ");
+      }
+    }
+    if (isButton) {
+    }
+  }
+
+
 }
