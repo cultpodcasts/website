@@ -18,6 +18,7 @@ export class DiscoveryComponent {
   isLoading: boolean = true;
   minDate: Date | undefined;
   saveDisabled: boolean = true;
+  closeDisabled:boolean= false;
   displaySave: boolean= false;
   constructor(private auth: AuthService, private http: HttpClient) { }
 
@@ -95,10 +96,21 @@ export class DiscoveryComponent {
       } else {
         element.className = element.className.split(" ").concat(selectedClass).join(" ");
       }
-    }
-    this.saveDisabled = this.resultsContainer?.nativeElement.querySelector("mat-card.selected").length > 0;
+    } 
+    const itemsSelected= this.resultsContainer!.nativeElement.querySelectorAll("mat-card.selected").length;
+    this.closeDisabled= itemsSelected > 0;
+    this.saveDisabled = itemsSelected === 0;
   }
 
+  allowLink($event: Event) {
+    $event.stopPropagation();
+ }
+
+  close() {
+    if (this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected").length == 0 && confirm("Are you sure you want to close?")) {
+      this.save();
+    }
+  }
 
   save() {
     this.saveDisabled = true;
