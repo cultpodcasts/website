@@ -15,6 +15,6 @@ export interface IDiscoveryResult {
     subjects: string[];
     youTubeViews: number|undefined;
     youTubeChannelMembers: number|undefined;
-
+    imageUrl: URL|undefined;
 }
 
