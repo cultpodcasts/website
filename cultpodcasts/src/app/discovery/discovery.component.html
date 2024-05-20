@@ -12,18 +12,18 @@
     <mat-card-header>
       <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
       <mat-card-subtitle>{{result.showName}}</mat-card-subtitle>
-      <mat-card-subtitle>{{result.released | date:'d MMM yyyy'}}
+      <mat-card-subtitle>{{result.released | date:'d MMM yyyy H:mm'}}
         [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
-      <p>{{result.episodeDescription}}</p>
       <ng-container *ngIf="result.imageUrl">
         <img [src]="result.imageUrl">
       </ng-container>
+      <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
       <ng-container *ngIf="isYouTube(result.url)">
-        <a href="{{result.url}}" mat-icon-button target="_blank">
+        <a href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
           <mat-icon svgIcon="youtube"></mat-icon>
         </a>
         <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta">
@@ -31,10 +31,10 @@
           <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
         </div>
       </ng-container>
-      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button target="_blank">
+      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button target="_blank">
+      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
       <mat-card-footer class="subjects">
@@ -46,6 +46,7 @@
   </mat-card>
 
   <div id="actions" *ngIf="results && results.length>0 && displaySave">
+    <button mat-raised-button class="mat-primary" (click)="close()" disabled="{{this.closeDisabled}}">Close</button>
     <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{this.saveDisabled}}">Save</button>
   </div>
 </section>
