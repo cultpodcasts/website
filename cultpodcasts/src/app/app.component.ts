@@ -150,4 +150,20 @@ export class AppComponent {
       return null;
     }
   }
+
+  login() {
+    this.auth.loginWithRedirect().subscribe(()=>{
+      this.auth.user$.subscribe(user=> {
+        if (user) {
+          localStorage.setItem("hasLoggedIn", "true");
+        }
+      })
+    });
+  }
+
+  logout() {
+    this.auth.logout().subscribe(()=>{
+      localStorage.removeItem("hasLoggedIn");
+    });
+  }
 }

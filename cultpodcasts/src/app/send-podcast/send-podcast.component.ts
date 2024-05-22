@@ -78,8 +78,8 @@ export class SendPodcastComponent {
           const body = { url: url.toString(), podcastId: data.podcastId };
 
           let headers: HttpHeaders = new HttpHeaders();
-          alert(`Authenticated= ${this.isAuthenticated}`);
-          if (this.isAuthenticated) {
+
+          if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
             const accessTokenOptions: GetTokenSilentlyOptions = {
               authorizationParams: {
                 audience: `https://api.cultpodcasts.com/`,
