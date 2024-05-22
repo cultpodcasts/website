@@ -4,6 +4,9 @@ import { AuthService } from '@auth0/auth0-angular';
 import { firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-discovery',
@@ -18,9 +21,10 @@ export class DiscoveryComponent {
   isLoading: boolean = true;
   minDate: Date | undefined;
   saveDisabled: boolean = true;
-  closeDisabled:boolean= false;
-  displaySave: boolean= false;
-  constructor(private auth: AuthService, private http: HttpClient) { }
+  closeDisabled: boolean = false;
+  displaySave: boolean = false;
+
+  constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
   ngOnInit() {
     var token = firstValueFrom(this.auth.getAccessTokenSilently({
@@ -41,7 +45,7 @@ export class DiscoveryComponent {
           if (dates.length > 0)
             this.minDate = new Date(Math.min(...dates));
           this.isLoading = false;
-          this.displaySave= true;
+          this.displaySave = true;
         })
     });
   }
@@ -96,57 +100,48 @@ export class DiscoveryComponent {
       } else {
         element.className = element.className.split(" ").concat(selectedClass).join(" ");
       }
-    } 
-    const itemsSelected= this.resultsContainer!.nativeElement.querySelectorAll("mat-card.selected").length;
-    this.closeDisabled= itemsSelected > 0;
+    }
+    const itemsSelected = this.resultsContainer!.nativeElement.querySelectorAll("mat-card.selected").length;
+    this.closeDisabled = itemsSelected > 0;
     this.saveDisabled = itemsSelected === 0;
   }
 
   allowLink($event: Event) {
     $event.stopPropagation();
- }
+  }
 
-  close() {
+  async close() {
     if (this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected").length == 0 && confirm("Are you sure you want to close?")) {
-      this.save();
+      await this.save();
     }
   }
 
-  save() {
+  async save() {
     this.saveDisabled = true;
     const selected = this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected");
     const selectedArray = [...selected];
     const urls = selectedArray.map((x: any) => x.dataset.url);
-    var token = firstValueFrom(this.auth.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
-      }
-    }));
-    token.then(_token => {
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
-      const endpoint = new URL("/discovery-curation", environment.api).toString();
-      this.http.post(endpoint, {
-        ids: this.ids,
-        urls: urls
-      }, { headers: headers })
-        .subscribe(
-          resp => {
-            this.displaySave= false;
-            alert(JSON.stringify(resp));
-           }, 
-          err => {
-          this.saveError(err);
-        })
-    }).catch(r => {
-      this.saveError(r)
+
+    const dialogConfig = new MatDialogConfig();
+
+    dialogConfig.disableClose = true;
+    dialogConfig.autoFocus = true;
+
+    const dialog = this.dialog
+      .open(DiscoverySubmitComponent, dialogConfig);
+    dialog
+      .afterClosed()
+      .subscribe(async result => {
+        if (result && result.submitted) {
+          let snackBarRef = this.snackBar.open('Discovery Sent!', "Ok", { duration: 3000 });
+          this.displaySave = false;
+        } else {
+          this.saveDisabled = false;
+        }
+      });
+    await dialog.componentInstance.submit({
+      documentIds: this.ids!,
+      urls: urls
     });
   }
-
-  private saveError(r: any) {
-    this.saveDisabled = false;
-    alert(JSON.stringify(r));
-  }
-
 }

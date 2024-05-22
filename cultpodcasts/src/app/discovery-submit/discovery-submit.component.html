@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Sending Discovery</h2>
+
+<mat-dialog-content>
+
+    <mat-spinner style="margin:0 auto;" mode="indeterminate" *ngIf="isSending"></mat-spinner>
+    <div *ngIf="submitError">
+        <p>Error submitting discovery</p>
+    </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions *ngIf="submitError">
+    <button mat-raised-button (click)="close()">Close</button>
+</mat-dialog-actions>
