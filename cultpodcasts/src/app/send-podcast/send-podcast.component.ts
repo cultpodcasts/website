@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { IShare } from '../IShare';
@@ -25,6 +25,7 @@ export class SendPodcastComponent {
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   isAuthenticated: boolean = false;
+  submittedOrigin: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -34,7 +35,7 @@ export class SendPodcastComponent {
   }
 
   close() {
-    this.dialogRef.close({ submitted: this.submitted });
+    this.dialogRef.close({ submitted: this.submitted, submittedOrigin: this.submittedOrigin });
   }
 
   public async submit(data: IShare) {
@@ -78,7 +79,8 @@ export class SendPodcastComponent {
           const body = { url: url.toString(), podcastId: data.podcastId };
 
           let headers: HttpHeaders = new HttpHeaders();
-          if (this.isAuthenticated) {
+
+          if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
             const accessTokenOptions: GetTokenSilentlyOptions = {
               authorizationParams: {
                 audience: `https://api.cultpodcasts.com/`,
@@ -96,8 +98,16 @@ export class SendPodcastComponent {
             }
           }
           try {
-            await firstValueFrom(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers }));
-            this.submitted = true;
+            const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers, observe: 'response' }));
+            if (resp.status == 200) {
+              this.submitted = true;
+              if (resp.headers.get('X-Origin')) {
+                this.submittedOrigin = true;
+              }
+            } else {
+              this.submitError = true;
+              this.isSending = false;
+            }
             this.close();
           } catch (error) {
             this.isSending = false;
@@ -106,7 +116,6 @@ export class SendPodcastComponent {
 
         }
       }
-
     }
     if (!matchedUrl || !url) {
       if (data.shareMode == ShareMode.Share) {

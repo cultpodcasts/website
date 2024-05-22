@@ -17,7 +17,7 @@
               [matMenuTriggerFor]="loggedOutProfile">
           </ng-template>
           <mat-menu #loggedOutProfile="matMenu">
-            <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
+            <a (click)="login()" mat-menu-item>
               <mat-icon>login</mat-icon>
               <span>Login</span>
             </a>
@@ -27,7 +27,7 @@
               <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
               <span>Discovery</span>
             </a>
-            <a (click)="this.auth.logout()" mat-menu-item>
+            <a (click)="logout()" mat-menu-item>
               <mat-icon>logout</mat-icon>
               <span>Logout</span>
             </a>
@@ -56,13 +56,13 @@
         </a>
         <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
           <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedMenuItem">
-            <a (click)="this.auth.logout()" mat-menu-item>
+            <a (click)="logout()" mat-menu-item>
               <mat-icon>logout</mat-icon>
               <span>Logout</span>
             </a>
           </ng-container>
           <ng-template #unAuthenticatedMenuItem>
-            <a (click)="this.auth.loginWithRedirect()" mat-menu-item>
+            <a (click)="login()" mat-menu-item>
               <mat-icon>login</mat-icon>
               <span mat-mdc-menu-item-text>Login</span>
             </a>

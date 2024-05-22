@@ -27,7 +27,7 @@ export class AppComponent {
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
   searchChip: string | null = null;
   searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
-  roles:string[]=[];
+  roles: string[] = [];
 
   public FeatureSwitch = FeatureSwitch;
 
@@ -53,11 +53,14 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    this.auth.user$.subscribe(user=>{
-      if (user && user["https://api.cultpodcasts.com/roles"])
+    localStorage.removeItem("hasLoggedIn");
+    this.auth.user$.subscribe(user => {
+      if (user && user["https://api.cultpodcasts.com/roles"]) {
         this.roles = user["https://api.cultpodcasts.com/roles"]
+        localStorage.setItem("hasLoggedIn", "true");
+      }
       else
-        this.roles=[];
+        this.roles = [];
     })
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
@@ -92,7 +95,11 @@ export class AppComponent {
       .afterClosed()
       .subscribe(result => {
         if (result && result.submitted) {
-          let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
+          if (result.submittedOrigin) {
+            let snackBarRef = this.snackBar.open('Podcast Sent direct to database.', "Ok", { duration: 3000 });
+          } else {
+            let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
+          }
         }
       });
     await dialog.componentInstance.submit(share);
@@ -149,5 +156,13 @@ export class AppComponent {
     } else {
       return null;
     }
+  }
+
+  login() {
+    this.auth.loginWithRedirect();;
+  }
+
+  logout() {
+    this.auth.logout();
   }
 }
