@@ -38,6 +38,7 @@ import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { JsonDateInterceptor} from './JsonDateInterceptor'
 import { JsonUrlInterceptor } from './JsonUrlInterceptor';
 import { DiscoverySubmitComponent } from './discovery-submit/discovery-submit.component';
+import { ConfirmComponent } from './confirm/confirm.component';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { DiscoverySubmitComponent } from './discovery-submit/discovery-submit.co
     TermsAndConditionsComponent,
     DiscoveryComponent,
     UnauthorisedComponent,
-    DiscoverySubmitComponent
+    DiscoverySubmitComponent,
+    ConfirmComponent
   ],
   imports: [
     BrowserModule,

@@ -7,6 +7,7 @@ import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ConfirmComponent } from '../confirm/confirm.component';
 
 @Component({
   selector: 'app-discovery',
@@ -23,6 +24,7 @@ export class DiscoveryComponent {
   saveDisabled: boolean = true;
   closeDisabled: boolean = false;
   displaySave: boolean = false;
+  submitted: boolean = false;
 
   constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -85,6 +87,8 @@ export class DiscoveryComponent {
   }
 
   handleResult($event: Event, result: IDiscoveryResult) {
+    if (this.submitted)
+      return;
     const selectedClass: string = "selected";
     let element: Element = $event.target as Element;
     var isButton = false;
@@ -111,13 +115,21 @@ export class DiscoveryComponent {
   }
 
   async close() {
-    if (this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected").length == 0 && confirm("Are you sure you want to close?")) {
-      await this.save();
+    if (this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected").length == 0) {
+      let dialogRef = this.dialog.open(ConfirmComponent, {
+        data: { question: 'Are you sure you want to close without any episodes?', title: 'Confirm Close' },
+      });
+      dialogRef.afterClosed().subscribe(async result => {
+        if (result.result === true) {
+          await this.save();
+        }
+      });
     }
   }
 
   async save() {
     this.saveDisabled = true;
+    this.closeDisabled = true;
     const selected = this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected");
     const selectedArray = [...selected];
     const urls = selectedArray.map((x: any) => x.dataset.url);
@@ -135,8 +147,10 @@ export class DiscoveryComponent {
         if (result && result.submitted) {
           let snackBarRef = this.snackBar.open('Discovery Sent!', "Ok", { duration: 3000 });
           this.displaySave = false;
+          this.submitted = true;
         } else {
-          this.saveDisabled = false;
+          this.closeDisabled = selectedArray.length > 0;
+          this.saveDisabled = selectedArray.length === 0;
         }
       });
     await dialog.componentInstance.submit({

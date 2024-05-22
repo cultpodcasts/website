@@ -26,7 +26,6 @@ export class DiscoverySubmitComponent {
   }
 
   public async submit(data: IDiscoverySubmit) {
-
     var token = firstValueFrom(this.auth.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
