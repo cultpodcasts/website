@@ -25,7 +25,7 @@ export class SendPodcastComponent {
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   isAuthenticated: boolean = false;
-  submittedOrigin: boolean = false;
+  originResponse: any;
 
   constructor(
     private http: HttpClient,
@@ -35,7 +35,7 @@ export class SendPodcastComponent {
   }
 
   close() {
-    this.dialogRef.close({ submitted: this.submitted, submittedOrigin: this.submittedOrigin });
+    this.dialogRef.close({ submitted: this.submitted, originResponse: this.originResponse, });
   }
 
   public async submit(data: IShare) {
@@ -102,7 +102,7 @@ export class SendPodcastComponent {
             if (resp.status == 200) {
               this.submitted = true;
               if (resp.headers.get('X-Origin')) {
-                this.submittedOrigin = true;
+                this.originResponse = resp.body.success;
               }
             } else {
               this.submitError = true;
