@@ -95,8 +95,22 @@ export class AppComponent {
       .afterClosed()
       .subscribe(result => {
         if (result && result.submitted) {
-          if (result.submittedOrigin) {
-            let snackBarRef = this.snackBar.open('Podcast Sent direct to database.', "Ok", { duration: 3000 });
+          if (result.originResponse) {
+            let episode: string;
+            if (result.originResponse.episode === "Created") {
+              episode = "Episode created.";
+            } else if (result.originResponse.episode === "Enriched") {
+              episode = "Episode enriched.";
+            } else {
+              episode = "Podcast not found/removed.";
+            }
+            let podcast = "";
+            if (result.originResponse.podcast === "Created") {
+              podcast = "Podcast created.";
+            } else if (result.originResponse.podcast === "Enriched") {
+              podcast = "Podcast enriched.";
+            }
+            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, "Ok", { duration: 10000 });
           } else {
             let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }
