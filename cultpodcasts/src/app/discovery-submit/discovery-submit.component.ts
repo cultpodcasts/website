@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
@@ -14,9 +14,9 @@ import { environment } from 'src/environments/environment';
 })
 export class DiscoverySubmitComponent {
   isAuthenticated: boolean = false;
-  submitted: boolean = false;
   submitError: boolean = false;
   isSending: boolean = false;
+  ingestError: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -26,35 +26,36 @@ export class DiscoverySubmitComponent {
   }
 
   public async submit(data: IDiscoverySubmit) {
-    var token = firstValueFrom(this.auth.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
+    try {
+      var token = await firstValueFrom(this.auth.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      if (token === "") {
+        throw new Error("Unable to get access-token");
       }
-    }));
-    token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
+      headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending = true;
-      this.http.post(endpoint, {
-        ids: data.documentIds,
-        urls: data.urls
-      }, { headers: headers })
-        .subscribe(
-          resp => {
-            this.submitted = true;
-            this.isSending = false;
-            this.dialogRef.close({ submitted: true });
-          },
-          err => {
-            this.isSending = false;
-            this.submitError = true;
-          })
-    }).catch(r => {
+      var resp = await firstValueFrom<HttpResponse<any>>(this.http.post(endpoint, { ids: data.documentIds, urls: data.urls }, { headers: headers, observe: "response" }));
+      if (resp.status === 200) {
+        this.isSending = false;
+        if (resp.body.errorsOccurred) {
+          this.ingestError = true;
+        } else {
+          this.dialogRef.close({ submitted: true });
+        }
+      } else {
+        this.isSending = false;
+        this.submitError = true;
+      }
+    } catch (error) {
       this.isSending = false;
       this.submitError = true;
-    });
+    }
   }
 
   close() {

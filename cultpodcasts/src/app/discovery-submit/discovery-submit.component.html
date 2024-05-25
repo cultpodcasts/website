@@ -6,9 +6,12 @@
     <div *ngIf="submitError">
         <p>Error submitting discovery</p>
     </div>
+    <div *ngIf="ingestError">
+        <p>Error occurred submitting discovery-item</p>
+    </div>
 
 </mat-dialog-content>
 
-<mat-dialog-actions *ngIf="submitError">
+<mat-dialog-actions *ngIf="submitError || ingestError">
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>
