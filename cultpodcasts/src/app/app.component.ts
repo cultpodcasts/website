@@ -110,7 +110,6 @@ export class AppComponent {
             } else if (result.originResponse.podcast === "Enriched") {
               podcast = "Podcast enriched.";
             } else if (result.originResponse.podcast === "PodcastRemoved") {
-              episode = "";
               podcast = "Podcast Removed.";
             }
             let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, "Ok", { duration: 10000 });
