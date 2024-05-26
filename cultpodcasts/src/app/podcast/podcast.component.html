@@ -2,7 +2,7 @@
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
-  <section id="resultsheading">
+  <section id="resultsheading" *ngIf="!this.searchState.episodeUuid">
     <h2>{{podcastName}} has {{count}} episode<ng-container *ngIf="count>1 || count==0">s</ng-container><ng-container
         *ngIf="this.searchState.query && this.searchState.query!=''">
         matching "{{this.searchState.query}}"</ng-container> found by CultPodcasts.com</h2>
@@ -20,7 +20,8 @@
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      <button *ngIf="searchState.query" mat-menu-item id="rank" (click)="setSort(sortParamRank)" [ngClass]="searchState.sort==sortParamRank?'selected':''">
+      <button *ngIf="searchState.query" mat-menu-item id="rank" (click)="setSort(sortParamRank)"
+        [ngClass]="searchState.sort==sortParamRank?'selected':''">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>
@@ -63,8 +64,9 @@
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
 <section *ngIf="count === 0 && !isLoading">
-  <h2>There were no results for "{{podcastName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span></h2>
+  <h2>There were no results for "{{podcastName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span>
+  </h2>
   <div id="try-search">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>
-</section> 
+</section>

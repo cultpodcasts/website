@@ -26,6 +26,7 @@ const sortParamDateDesc: string = "date-desc";
 export class SubjectComponent {
   searchState: ISearchState = {
     query: "",
+    episodeUuid: "",
     page: 1,
     sort: sortParamDateDesc,
     filter: null
@@ -158,23 +159,23 @@ export class SubjectComponent {
     if (this.searchState.page != null && this.searchState.page > 1) {
       params["page"] = this.searchState.page;
     }
-    if (this.searchState.query){
+    if (this.searchState.query) {
       if (this.searchState.sort != sortParamRank) {
         params[sortParam] = this.searchState.sort;
-      }  
+      }
     } else {
       if (this.searchState.sort != sortParamDateDesc) {
         params[sortParam] = this.searchState.sort;
-      }  
+      }
     }
     this.router.navigate([url], { queryParams: params });
   }
 
   search() {
-    let url=`search/${this.subjectName}`;
+    let url = `search/${this.subjectName}`;
     if (this.searchState.query) {
-      url+= ` ${this.searchState.query}`;
+      url += ` ${this.searchState.query}`;
     }
     this.router.navigate([url]);
-  }    
+  }
 }

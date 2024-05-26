@@ -25,6 +25,7 @@ const sortParamDateDesc: string = "date-desc";
 export class PodcastComponent {
   searchState: ISearchState = {
     query: "",
+    episodeUuid: "",
     page: 1,
     sort: sortParamDateDesc,
     filter: null
@@ -40,8 +41,7 @@ export class PodcastComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) {
-  }
+  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) {}
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];
@@ -62,8 +62,24 @@ export class PodcastComponent {
       const { params, queryParams } = res;
 
       this.isLoading = true;
-      this.searchState.query = params["query"] ?? "";
+
+      let query = "";
+      let episodeUuid = "";
+      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const queryParam = params["query"];
+      if (queryParam) {
+        if (uuid.test(queryParam)) {
+          episodeUuid = queryParam;
+        } else {
+          query = queryParam;
+        }
+      }
+
+      this.searchState.query = query;
       this.siteService.setQuery(this.searchState.query);
+      this.searchState.episodeUuid = episodeUuid;
+      this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
+
       this.podcastName = params["podcastName"];
       this.siteService.setPodcast(this.podcastName);
       this.siteService.setSubject(null);
@@ -88,6 +104,9 @@ export class PodcastComponent {
       }
 
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
+      if (this.searchState.episodeUuid) {
+        this.searchState.filter+=` and (id eq '${this.searchState.episodeUuid}')`;
+      }
       this.siteService.setFilter(this.searchState.filter);
 
       let currentTime = Date.now();
@@ -156,23 +175,23 @@ export class PodcastComponent {
     if (this.searchState.page != null && this.searchState.page > 1) {
       params["page"] = this.searchState.page;
     }
-    if (this.searchState.query){
+    if (this.searchState.query) {
       if (this.searchState.sort != sortParamRank) {
         params[sortParam] = this.searchState.sort;
-      }  
+      }
     } else {
       if (this.searchState.sort != sortParamDateDesc) {
         params[sortParam] = this.searchState.sort;
-      }  
-     }
+      }
+    }
     this.router.navigate([url], { queryParams: params });
   }
 
   search() {
-    let url=`search/${this.podcastName}`;
+    let url = `search/${this.podcastName}`;
     if (this.searchState.query) {
-      url+= ` ${this.searchState.query}`;
+      url += ` ${this.searchState.query}`;
     }
     this.router.navigate([url]);
-  }    
+  }
 }

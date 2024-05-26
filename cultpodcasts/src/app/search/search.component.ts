@@ -27,6 +27,7 @@ const sortParamDateDesc: string = "date-desc";
 export class SearchComponent {
   searchState: ISearchState = {
     query: "",
+    episodeUuid: "",
     page: 1,
     sort: sortParamRank,
     filter: null
