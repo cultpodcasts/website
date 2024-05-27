@@ -163,9 +163,10 @@ export class AppComponent {
   }
 
   searchChipDisplay() {
+    const width = screen.availWidth > 500 ? 30 : screen.availWidth > 400 ? 15 : 10;
     if (this.searchChip) {
-      if (this.searchChip.length > 10) {
-        return this.searchChip.substring(0, 9) + "…";
+      if (this.searchChip.length > width) {
+        return this.searchChip.substring(0, width - 1) + "…";
       } else {
         return this.searchChip;
       }
