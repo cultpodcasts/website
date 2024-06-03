@@ -9,7 +9,7 @@
   </section>
   <h3 *ngIf="!isLoading && results?.length==0">There are no discovery results</h3>
   <mat-card *ngFor="let result of results" class="result" (click)="handleResult($event, result)"
-    attr.data-url="{{result.url}}">
+    attr.data-id="{{result.id}}">
     <mat-card-header>
       <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
       <mat-card-subtitle>{{result.showName}}</mat-card-subtitle>
@@ -23,8 +23,8 @@
       <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <ng-container *ngIf="isYouTube(result.url)">
-        <a href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+      <ng-container *ngIf="result.urls.youtube!=null">
+        <a href="{{result.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
           <mat-icon svgIcon="youtube"></mat-icon>
         </a>
         <div *ngIf="result.youTubeViews || result.youTubeChannelMembers" class="youtubemeta">
@@ -32,10 +32,12 @@
           <span *ngIf="result.youTubeChannelMembers">Members: {{result.youTubeChannelMembers}}</span>
         </div>
       </ng-container>
-      <a *ngIf="isSpotify(result.url)" href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+      <a *ngIf="result.urls.spotify!=null" href="{{result.urls.spotify}}" mat-icon-button target="_blank"
+        (click)="allowLink($event)">
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="isApple(result.url)" href="{{result.url}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+      <a *ngIf="result.urls.apple" href="{{result.urls.apple}}" mat-icon-button target="_blank"
+        (click)="allowLink($event)">
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
       <mat-card-footer class="subjects">

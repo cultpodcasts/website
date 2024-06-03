@@ -1,5 +1,4 @@
-
 export interface IDiscoverySubmit {
   documentIds: string[];
-  urls: URL[];
+  resultIds: string[];
 }

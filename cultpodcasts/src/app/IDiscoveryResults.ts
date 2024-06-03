@@ -4,17 +4,25 @@ export interface IDiscoveryResults {
     results: IDiscoveryResult[]
 }
 
-
 export interface IDiscoveryResult {
-    url: URL|undefined;
-    episodeName: string|undefined;
-    showName: string|undefined;
-    episodeDescription : string|undefined;
-    released : Date;
+    id: string;
+    urls: IDiscoveryResultUrls;
+    episodeName: string | undefined;
+    showName: string | undefined;
+    episodeDescription: string | undefined;
+    released: Date;
     duration: string;
     subjects: string[];
-    youTubeViews: number|undefined;
-    youTubeChannelMembers: number|undefined;
-    imageUrl: URL|undefined;
+    youTubeViews: number | undefined;
+    youTubeChannelMembers: number | undefined;
+    imageUrl: URL | undefined;
+    enrichedTimeFromApple: boolean;
+    enrichedUrlFromSpotify: boolean;
+}
+
+export interface IDiscoveryResultUrls {
+    spotify: URL | undefined;
+    youtube: URL | undefined;
+    apple: URL | undefined;
 }
 
