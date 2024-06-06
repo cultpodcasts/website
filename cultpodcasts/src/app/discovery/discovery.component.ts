@@ -1,13 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
-import { firstValueFrom, map } from 'rxjs';
+import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-discovery',
@@ -17,14 +18,16 @@ import { ConfirmComponent } from '../confirm/confirm.component';
 export class DiscoveryComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
-  results: IDiscoveryResult[] | undefined;
-  ids: string[] | undefined;
+  results: IDiscoveryResult[] = [];
+  documentIds: string[] = [];
+  selectedIds: string[] = [];
   isLoading: boolean = true;
   minDate: Date | undefined;
   saveDisabled: boolean = true;
   closeDisabled: boolean = false;
   displaySave: boolean = false;
   submitted: boolean = false;
+  submittedSubject: Subject<boolean> = new Subject<boolean>();
 
   constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -41,8 +44,8 @@ export class DiscoveryComponent {
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
         .subscribe(resp => {
-          this.results = resp.results;
-          this.ids = resp.ids;
+          this.results = resp.results.map(x => this.enrichFocused(x));
+          this.documentIds = resp.ids;
           const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
           if (dates.length > 0)
             this.minDate = new Date(Math.min(...dates));
@@ -50,34 +53,6 @@ export class DiscoveryComponent {
           this.displaySave = true;
         })
     });
-  }
-
-  handleResult($event: Event, result: IDiscoveryResult) {
-    if (this.submitted)
-      return;
-    const selectedClass: string = "selected";
-    let element: Element = $event.target as Element;
-    var isButton = false;
-    isButton = element.getAttribute("mat-icon-button") != null;
-    while (!isButton && element.nodeName.toLowerCase() != "mat-card") {
-      console.log(element.nodeName)
-      element = element.parentElement!;
-      isButton = isButton || element.getAttribute("mat-icon-button") != null;
-    }
-    if (!isButton) {
-      if (element.className.split(" ").includes(selectedClass)) {
-        element.className = element.className.split(" ").filter(x => x != selectedClass).join(" ");
-      } else {
-        element.className = element.className.split(" ").concat(selectedClass).join(" ");
-      }
-    }
-    const itemsSelected = this.resultsContainer!.nativeElement.querySelectorAll("mat-card.selected").length;
-    this.closeDisabled = itemsSelected > 0;
-    this.saveDisabled = itemsSelected === 0;
-  }
-
-  allowLink($event: Event) {
-    $event.stopPropagation();
   }
 
   async close() {
@@ -96,9 +71,8 @@ export class DiscoveryComponent {
   async save() {
     this.saveDisabled = true;
     this.closeDisabled = true;
-    const selected = this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected");
-    const selectedArray = [...selected];
-    const ids = selectedArray.map((x: any) => x.dataset.id);
+    this.submittedSubject.next(true);
+
 
     const dialogConfig = new MatDialogConfig();
 
@@ -114,14 +88,37 @@ export class DiscoveryComponent {
           let snackBarRef = this.snackBar.open('Discovery Sent!', "Ok", { duration: 3000 });
           this.displaySave = false;
           this.submitted = true;
+          this.submittedSubject.next(this.submitted);
         } else {
-          this.closeDisabled = selectedArray.length > 0;
-          this.saveDisabled = selectedArray.length === 0;
+          this.submitted = false;
+          this.submittedSubject.next(this.submitted);
+          this.closeDisabled = this.selectedIds.length > 0;
+          this.saveDisabled = this.selectedIds.length === 0;
         }
       });
     await dialog.componentInstance.submit({
-      documentIds: this.ids!,
-      resultIds: ids
+      documentIds: this.documentIds!,
+      resultIds: this.selectedIds
     });
   }
+
+  handleEvent($event: { id: string; selected: boolean; }) {
+    if ($event.selected) {
+      this.selectedIds.push($event.id);
+    } else {
+      this.selectedIds = this.selectedIds.filter(x => x !== $event.id);
+    }
+    this.closeDisabled = this.selectedIds.length > 0;
+    this.saveDisabled = this.selectedIds.length === 0;
+
+  }
+
+  private enrichFocused(result: IDiscoveryResult): IDiscoveryResult {
+    result.isFocused = result.matchingPodcastIds.length > 0 ||
+      result.subjects.length > 0 ||
+      (result.youTubeViews != undefined && result.youTubeViews > 100) ||
+      (result.youTubeChannelMembers != undefined && result.youTubeChannelMembers > 1000);
+    return result;
+  }
+
 }

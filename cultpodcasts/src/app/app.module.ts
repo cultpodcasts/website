@@ -39,6 +39,9 @@ import { JsonDateInterceptor} from './JsonDateInterceptor'
 import { JsonUrlInterceptor } from './JsonUrlInterceptor';
 import { DiscoverySubmitComponent } from './discovery-submit/discovery-submit.component';
 import { ConfirmComponent } from './confirm/confirm.component';
+import { DiscoveryItemComponent } from './discovery-item/discovery-item.component';
+import { DiscoveryItemFilter } from './discovery-item-filterr';
+import { MatDividerModule } from '@angular/material/divider';
 
 @NgModule({
   declarations: [
@@ -55,7 +58,9 @@ import { ConfirmComponent } from './confirm/confirm.component';
     DiscoveryComponent,
     UnauthorisedComponent,
     DiscoverySubmitComponent,
-    ConfirmComponent
+    ConfirmComponent,
+    DiscoveryItemComponent,
+    DiscoveryItemFilter
   ],
   imports: [
     BrowserModule,
@@ -82,7 +87,8 @@ import { ConfirmComponent } from './confirm/confirm.component';
     MatSnackBarModule,
     MatChipsModule,
     MatAutocompleteModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatDividerModule
   ],
   providers: [
     SiteService,
