@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
-import { firstValueFrom, map } from 'rxjs';
+import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
@@ -26,6 +26,7 @@ export class DiscoveryComponent {
   closeDisabled: boolean = false;
   displaySave: boolean = false;
   submitted: boolean = false;
+  submittedSubject: Subject<boolean> = new Subject<boolean>();
 
   constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -69,6 +70,8 @@ export class DiscoveryComponent {
   async save() {
     this.saveDisabled = true;
     this.closeDisabled = true;
+    this.submittedSubject.next(true);
+
 
     const dialogConfig = new MatDialogConfig();
 
@@ -84,7 +87,10 @@ export class DiscoveryComponent {
           let snackBarRef = this.snackBar.open('Discovery Sent!', "Ok", { duration: 3000 });
           this.displaySave = false;
           this.submitted = true;
+          this.submittedSubject.next(this.submitted);
         } else {
+          this.submitted= false;
+          this.submittedSubject.next(this.submitted);
           this.closeDisabled = this.selectedIds.length > 0;
           this.saveDisabled = this.selectedIds.length === 0;
         }
@@ -101,6 +107,9 @@ export class DiscoveryComponent {
     } else {
       this.selectedIds = this.selectedIds.filter(x => x !== $event.id);
     }
+    this.closeDisabled = this.selectedIds.length > 0;
+    this.saveDisabled = this.selectedIds.length === 0;
+
   }
 
   private enrichFocused(result: IDiscoveryResult): IDiscoveryResult {
