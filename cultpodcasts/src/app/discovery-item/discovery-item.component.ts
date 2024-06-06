@@ -11,20 +11,32 @@ import { Observable, Subscription } from 'rxjs';
 export class DiscoveryItemComponent {
   @Input() result!: IDiscoveryResult;
   @Output() changeState = new EventEmitter<{ id: string, selected: boolean }>();
-  @Input() events: Observable<boolean> | undefined;
+  @Input() selectedEvent: Observable<boolean> | undefined;
+  @Input() resultFilterEvent: Observable<string> | undefined;
 
   private eventsSubscription!: Subscription;
+  private resultsFilterSubscription!: Subscription;
 
+  selected: boolean = false;
   submitted: boolean = false;
+  resultsFilter: string = "";
 
   ngOnInit() {
-    if (this.events) {
-      this.eventsSubscription = this.events.subscribe((x) => this.submitted = x);
+    if (this.selectedEvent) {
+      this.eventsSubscription = this.selectedEvent.subscribe((x) => this.submitted = x);
+    }
+    if (this.resultFilterEvent) {
+      this.resultsFilterSubscription = this.resultFilterEvent.subscribe((x) => this.resultsFilter = x);
     }
   }
 
   ngOnDestroy() {
-    this.eventsSubscription.unsubscribe();
+    if (this.selectedEvent) {
+      this.eventsSubscription.unsubscribe();
+    }
+    if (this.resultFilterEvent) {
+      this.resultsFilterSubscription.unsubscribe();
+    }
   }
 
   handleResult($event: Event, result: IDiscoveryResult) {
@@ -47,6 +59,7 @@ export class DiscoveryItemComponent {
         element.className = element.className.split(" ").concat(selectedClass).join(" ");
       }
     }
+    this.selected = selected;
     this.changeState.emit({ id: this.result.id, selected: selected });
   }
 

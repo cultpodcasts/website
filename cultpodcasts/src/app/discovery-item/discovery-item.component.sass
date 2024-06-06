@@ -5,6 +5,14 @@ mat-card
     h3
         font-weight: bold
         margin-bottom: 2px
+    .multipleMatchingPodcasts
+        color: red
+        font-weight: bold
+    .matchedPodcast
+        font-weight: bold
+        color: var(--mdc-theme-secondary)
+    .matchedPodcast::after
+        content: ' (Matched Podcast)'
     mat-card-subtitle
         margin-top: 7px
         .duration
@@ -33,3 +41,6 @@ mat-card
             display: flex
 mat-card.selected
     background-color: var(--mdc-theme-secondary)
+    .matchedPodcast
+        color: var(--mdc-theme-text-primary-on-background)
+
