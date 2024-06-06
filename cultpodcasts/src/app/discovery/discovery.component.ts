@@ -8,6 +8,7 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-discovery',
@@ -17,7 +18,7 @@ import { ConfirmComponent } from '../confirm/confirm.component';
 export class DiscoveryComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
-  results: IDiscoveryResult[] | undefined;
+  results: IDiscoveryResult[] = [];
   documentIds: string[] = [];
   selectedIds: string[] = [];
   isLoading: boolean = true;
@@ -89,7 +90,7 @@ export class DiscoveryComponent {
           this.submitted = true;
           this.submittedSubject.next(this.submitted);
         } else {
-          this.submitted= false;
+          this.submitted = false;
           this.submittedSubject.next(this.submitted);
           this.closeDisabled = this.selectedIds.length > 0;
           this.saveDisabled = this.selectedIds.length === 0;
