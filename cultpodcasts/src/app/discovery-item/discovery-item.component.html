@@ -9,7 +9,7 @@
         <ng-container *ngIf="result.imageUrl">
             <img [src]="result.imageUrl">
         </ng-container>
-        <p>{{result.episodeDescription}}</p>
+        <p class="resultdescription">{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
         <ng-container *ngIf="result.urls.youtube!=null">
