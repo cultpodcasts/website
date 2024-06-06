@@ -18,7 +18,7 @@ export interface IDiscoveryResult {
     imageUrl: URL | undefined;
     enrichedTimeFromApple: boolean;
     enrichedUrlFromSpotify: boolean;
-    matchingPodcastIds: string[];
+    matchingPodcasts: string[];
     isFocused: boolean | undefined;
 }
 

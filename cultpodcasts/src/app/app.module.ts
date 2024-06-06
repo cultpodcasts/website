@@ -35,13 +35,16 @@ import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-co
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
-import { JsonDateInterceptor} from './JsonDateInterceptor'
+import { JsonDateInterceptor } from './JsonDateInterceptor'
 import { JsonUrlInterceptor } from './JsonUrlInterceptor';
 import { DiscoverySubmitComponent } from './discovery-submit/discovery-submit.component';
 import { ConfirmComponent } from './confirm/confirm.component';
 import { DiscoveryItemComponent } from './discovery-item/discovery-item.component';
 import { DiscoveryItemFilter } from './discovery-item-filterr';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { HideDirective } from './hide.directive';
 
 @NgModule({
   declarations: [
@@ -60,7 +63,8 @@ import { MatDividerModule } from '@angular/material/divider';
     DiscoverySubmitComponent,
     ConfirmComponent,
     DiscoveryItemComponent,
-    DiscoveryItemFilter
+    DiscoveryItemFilter,
+    HideDirective
   ],
   imports: [
     BrowserModule,
@@ -88,7 +92,9 @@ import { MatDividerModule } from '@angular/material/divider';
     MatChipsModule,
     MatAutocompleteModule,
     MatFormFieldModule,
-    MatDividerModule
+    MatDividerModule,
+    MatBadgeModule,
+    MatButtonToggleModule
   ],
   providers: [
     SiteService,

@@ -8,7 +8,7 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatButtonToggleChange } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-discovery',
@@ -28,6 +28,8 @@ export class DiscoveryComponent {
   displaySave: boolean = false;
   submitted: boolean = false;
   submittedSubject: Subject<boolean> = new Subject<boolean>();
+  resultsFilterSubject: Subject<string> = new Subject<string>();
+  resultsFilter: string = "all";
 
   constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -73,7 +75,6 @@ export class DiscoveryComponent {
     this.closeDisabled = true;
     this.submittedSubject.next(true);
 
-
     const dialogConfig = new MatDialogConfig();
 
     dialogConfig.disableClose = true;
@@ -110,15 +111,18 @@ export class DiscoveryComponent {
     }
     this.closeDisabled = this.selectedIds.length > 0;
     this.saveDisabled = this.selectedIds.length === 0;
-
   }
 
   private enrichFocused(result: IDiscoveryResult): IDiscoveryResult {
-    result.isFocused = result.matchingPodcastIds.length > 0 ||
+    result.isFocused = result.matchingPodcasts.length > 0 ||
       result.subjects.length > 0 ||
       (result.youTubeViews != undefined && result.youTubeViews > 100) ||
       (result.youTubeChannelMembers != undefined && result.youTubeChannelMembers > 1000);
     return result;
   }
 
+  resultsFilterChange($event: MatButtonToggleChange) {
+    this.resultsFilter = $event.value;
+    this.resultsFilterSubject.next(this.resultsFilter);
+  }
 }

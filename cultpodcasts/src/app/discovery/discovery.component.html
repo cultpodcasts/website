@@ -10,14 +10,24 @@
   <h3 *ngIf="!isLoading && results?.length==0">There are no discovery results</h3>
   <ng-container *ngIf="!isLoading">
     <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "
-      (changeState)="handleEvent($event)" [result]="result" [events]="submittedSubject.asObservable()"></discovery-item>
-      <mat-divider></mat-divider>
-      <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
-      (changeState)="handleEvent($event)" [result]="result" [events]="submittedSubject.asObservable()"></discovery-item>
+      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
+      [resultFilterEvent]="resultsFilterSubject.asObservable()"></discovery-item>
+    <mat-divider [appHide]="this.resultsFilter==='focused'"></mat-divider>
+    <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
+      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
+      [resultFilterEvent]="resultsFilterSubject.asObservable()"
+      [appHide]="this.resultsFilter==='focused'"></discovery-item>
   </ng-container>
 
   <div id="actions" *ngIf="results && results.length>0 && displaySave">
+
+    <mat-button-toggle-group [value]="resultsFilter" (change)="resultsFilterChange($event)">
+      <mat-button-toggle value="all">All</mat-button-toggle>
+      <mat-button-toggle value="focused">Focused</mat-button-toggle>
+      <mat-button-toggle value="selected">Selected</mat-button-toggle>
+    </mat-button-toggle-group>
     <button mat-raised-button class="mat-primary" (click)="close()" disabled="{{this.closeDisabled}}">Close</button>
-    <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{this.saveDisabled}}">Save</button>
+    <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{this.saveDisabled}}"
+      [matBadge]="this.selectedIds.length" [matBadgeHidden]="saveDisabled">Save</button>
   </div>
 </section>
