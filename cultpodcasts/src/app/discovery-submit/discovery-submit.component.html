@@ -3,15 +3,15 @@
 <mat-dialog-content>
 
     <mat-spinner style="margin:0 auto;" mode="indeterminate" *ngIf="isSending"></mat-spinner>
-    <div *ngIf="submitError">
+    <div *ngIf="this.submitState.endpointError">
         <p>Error submitting discovery</p>
     </div>
-    <div *ngIf="ingestError">
+    <div *ngIf="this.submitState.hasErrors">
         <p>Error occurred submitting discovery-item</p>
     </div>
 
 </mat-dialog-content>
 
-<mat-dialog-actions *ngIf="submitError || ingestError">
+<mat-dialog-actions *ngIf="this.submitState.endpointError || this.submitState.hasErrors">
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>

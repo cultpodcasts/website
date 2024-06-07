@@ -1,4 +1,6 @@
 #!/bin/bash
+node update-version.js
+cp src/environments/version.prod.ts src/environments/version.ts
 npx ng build --configuration $env
 echo build complete
 cp ./dist/cultpodcasts/ngsw-worker.js ./dist/cultpodcasts/ngsw-worker-dist.js

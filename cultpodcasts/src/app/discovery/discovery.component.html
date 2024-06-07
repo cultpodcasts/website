@@ -9,13 +9,21 @@
   </section>
   <h3 *ngIf="!isLoading && results?.length == 0">There are no discovery results</h3>
   <ng-container *ngIf="!isLoading">
-    <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "
-      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
-      [resultFilterEvent]="resultsFilterSubject.asObservable()"></discovery-item>
-    <mat-divider [appHide]="this.resultsFilter==='focused' && hasUnfocused"></mat-divider>
-    <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
-      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
+    <discovery-item 
+      *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "
+      (changeState)="handleEvent($event)" 
+      [result]="result" 
+      [selectedEvent]="submittedSubject.asObservable()"
       [resultFilterEvent]="resultsFilterSubject.asObservable()"
+      [erroredEvent]="erroredSubject.asObservable()"></discovery-item>
+    <mat-divider [appHide]="this.resultsFilter==='focused' || this.submitted || !hasUnfocused"></mat-divider>
+    <discovery-item 
+      *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
+      (changeState)="handleEvent($event)" 
+      [result]="result" 
+      [selectedEvent]="submittedSubject.asObservable()"
+      [resultFilterEvent]="resultsFilterSubject.asObservable()"
+      [erroredEvent]="erroredSubject.asObservable()"
       [appHide]="this.resultsFilter==='focused'"></discovery-item>
   </ng-container>
 
