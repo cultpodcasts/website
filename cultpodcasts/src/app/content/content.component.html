@@ -1,4 +1,4 @@
-<ng-container [ngSwitch]="content">
+<article [ngSwitch]="content" id="content">
     <ng-container *ngSwitchCase="'privacy-policy'">
         <privacy-policy/>
     </ng-container>
@@ -6,4 +6,4 @@
         <terms-and-conditions/>
     </ng-container>
     <h1 *ngSwitchDefault>Not Found!</h1>
-</ng-container>
+</article>

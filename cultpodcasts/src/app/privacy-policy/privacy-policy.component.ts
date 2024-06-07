@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { version, buildDate, commitHash } from "src/environments/version";
 
 @Component({
   selector: 'privacy-policy',
@@ -6,5 +7,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./privacy-policy.component.sass']
 })
 export class PrivacyPolicyComponent {
-
+  getVersion(): string {
+    return `Version ${version}, commit ${commitHash}, built at ${buildDate}`;
+  }
 }
