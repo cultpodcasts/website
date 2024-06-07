@@ -14,7 +14,9 @@
         <mat-card-subtitle>{{result.released | date:'d MMM yyyy H:mm'}}
             [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
-    <mat-card-content class="resultdescription">
+    <mat-card-content>
+        <p class="showDescription" *ngIf="result.showDescription && result.matchingPodcasts.length==0">
+            {{result.showDescription}}</p>
         <ng-container *ngIf="result.imageUrl">
             <img [src]="result.imageUrl">
         </ng-container>

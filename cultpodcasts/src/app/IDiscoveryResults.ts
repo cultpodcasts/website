@@ -10,6 +10,7 @@ export interface IDiscoveryResult {
     episodeName: string | undefined;
     showName: string | undefined;
     episodeDescription: string | undefined;
+    showDescription: string | undefined;
     released: Date;
     duration: string;
     subjects: string[];
