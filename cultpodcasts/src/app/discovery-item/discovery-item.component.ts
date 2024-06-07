@@ -13,13 +13,16 @@ export class DiscoveryItemComponent {
   @Output() changeState = new EventEmitter<{ id: string, selected: boolean }>();
   @Input() selectedEvent: Observable<boolean> | undefined;
   @Input() resultFilterEvent: Observable<string> | undefined;
+  @Input() erroredEvent: Observable<string[]> | undefined;
 
   private eventsSubscription!: Subscription;
   private resultsFilterSubscription!: Subscription;
+  private erroredSubscription!: Subscription;
 
   selected: boolean = false;
   submitted: boolean = false;
   resultsFilter: string = "";
+  errored: boolean = false;
 
   ngOnInit() {
     if (this.selectedEvent) {
@@ -27,6 +30,9 @@ export class DiscoveryItemComponent {
     }
     if (this.resultFilterEvent) {
       this.resultsFilterSubscription = this.resultFilterEvent.subscribe((x) => this.resultsFilter = x);
+    }
+    if (this.erroredEvent) {
+      this.erroredSubscription = this.erroredEvent.subscribe((x) => x.indexOf(this.result.id));
     }
   }
 
@@ -36,6 +42,9 @@ export class DiscoveryItemComponent {
     }
     if (this.resultFilterEvent) {
       this.resultsFilterSubscription.unsubscribe();
+    }
+    if (this.erroredEvent) {
+      this.erroredSubscription.unsubscribe();
     }
   }
 

@@ -1,26 +1,33 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
+import { AuthService } from '@auth0/auth0-angular';
 import { IDiscoverySubmit } from '../IDiscoverySubmit';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
-
+import { SubmitDiscoveryResponse } from '../ISubmitDiscoveryResponse';
+import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
 
 @Component({
   selector: 'app-discovery-submit',
   templateUrl: './discovery-submit.component.html',
   styleUrls: ['./discovery-submit.component.sass']
 })
+
 export class DiscoverySubmitComponent {
   isAuthenticated: boolean = false;
-  submitError: boolean = false;
   isSending: boolean = false;
-  ingestError: boolean = false;
+
+  submitState: ISubmitDiscoveryState = {
+    hasErrors: false,
+    erroredItems: [],
+    allErrored: false,
+    endpointError: false
+  }
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<DiscoverySubmitComponent>,
+    private dialogRef: MatDialogRef<DiscoverySubmitComponent, ISubmitDiscoveryState>,
     private auth: AuthService) {
     auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
@@ -40,28 +47,32 @@ export class DiscoverySubmitComponent {
       headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending = true;
-      var resp = await firstValueFrom<HttpResponse<any>>(this.http.post(endpoint, { ids: data.documentIds, resultIds: data.resultIds }, { headers: headers, observe: "response" }));
+      var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse>>(this.http.post<SubmitDiscoveryResponse>(endpoint, { ids: data.documentIds, resultIds: data.resultIds }, { headers: headers, observe: "response" }));
       if (resp.status === 200) {
         console.log(resp.body);
         this.isSending = false;
-        if (resp.body.errorsOccurred) {
-          this.ingestError = true;
+        if (resp.body?.errorsOccurred) {
+          this.submitState.hasErrors = true;
+          this.submitState.erroredItems = resp.body?.results.filter(x => x.message === "Error").map(x => x.discoveryItemId);
+
+          const containsAll = (arr1: string[], arr2: string[]) => arr2.every(arr2Item => arr1.includes(arr2Item))
+          const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
+
+          this.submitState.allErrored = sameMembers(this.submitState.erroredItems, data.resultIds);
         } else {
-          this.dialogRef.close({ submitted: true });
+          this.close();
         }
       } else {
         this.isSending = false;
-        this.submitError = true;
+        this.submitState.endpointError = true;
       }
     } catch (error) {
       this.isSending = false;
-      this.submitError = true;
+      this.submitState.endpointError = true;
     }
   }
 
   close() {
-    this.dialogRef.close({ submitted: false });
+    this.dialogRef.close(this.submitState);
   }
-
-
 }

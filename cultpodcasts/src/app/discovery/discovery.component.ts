@@ -9,6 +9,7 @@ import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.c
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import { MatButtonToggleChange } from '@angular/material/button-toggle';
+import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
 
 @Component({
   selector: 'app-discovery',
@@ -29,6 +30,7 @@ export class DiscoveryComponent {
   submitted: boolean = false;
   submittedSubject: Subject<boolean> = new Subject<boolean>();
   resultsFilterSubject: Subject<string> = new Subject<string>();
+  erroredSubject: Subject<string[]> = new Subject<string[]>();
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
 
@@ -83,12 +85,21 @@ export class DiscoveryComponent {
     dialogConfig.autoFocus = true;
 
     const dialog = this.dialog
-      .open(DiscoverySubmitComponent, dialogConfig);
+      .open<DiscoverySubmitComponent, any, ISubmitDiscoveryState>(DiscoverySubmitComponent, dialogConfig);
     dialog
       .afterClosed()
       .subscribe(async result => {
-        if (result && result.submitted) {
-          let snackBarRef = this.snackBar.open('Discovery Sent!', "Ok", { duration: 3000 });
+        if (result && !result.endpointError && !result.allErrored) {
+          let snackBarMessage = "Discovery Sent!"
+          let snackBarDuration = 3000;
+          if (result.hasErrors) {
+            snackBarMessage = "Discovery Sent! Errors Occured."
+            snackBarDuration = 10000;
+            this.resultsFilter = "errored";
+            this.erroredSubject.next(result.erroredItems);
+            this.resultsFilterSubject.next(this.resultsFilter);
+          }
+          let snackBarRef = this.snackBar.open(snackBarMessage, "Ok", { duration: snackBarDuration });
           this.displaySave = false;
           this.submitted = true;
           this.submittedSubject.next(this.submitted);
