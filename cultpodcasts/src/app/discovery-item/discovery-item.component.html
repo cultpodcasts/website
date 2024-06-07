@@ -1,6 +1,6 @@
 <mat-card 
     class="result" 
-    *ngClass="{'error': this.errored}"
+    [ngClass]="{'error': this.errored}"
     (click)="handleResult($event, result)" 
     attr.data-id="{{result.id}}"
     [appHide]="(resultsFilter==='selected' && !this.selected) || (resultsFilter=='errored' && !this.selected)">

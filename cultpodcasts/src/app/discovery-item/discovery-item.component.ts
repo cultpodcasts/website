@@ -32,7 +32,7 @@ export class DiscoveryItemComponent {
       this.resultsFilterSubscription = this.resultFilterEvent.subscribe((x) => this.resultsFilter = x);
     }
     if (this.erroredEvent) {
-      this.erroredSubscription = this.erroredEvent.subscribe((x) => x.indexOf(this.result.id));
+      this.erroredSubscription = this.erroredEvent.subscribe((x) => this.errored=x.indexOf(this.result.id)>=0);
     }
   }
 

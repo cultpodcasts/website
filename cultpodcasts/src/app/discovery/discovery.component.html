@@ -16,7 +16,7 @@
       [selectedEvent]="submittedSubject.asObservable()"
       [resultFilterEvent]="resultsFilterSubject.asObservable()"
       [erroredEvent]="erroredSubject.asObservable()"></discovery-item>
-    <mat-divider [appHide]="this.resultsFilter==='focused' || !hasUnfocused"></mat-divider>
+    <mat-divider [appHide]="this.resultsFilter==='focused' || this.submitted || !hasUnfocused"></mat-divider>
     <discovery-item 
       *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
       (changeState)="handleEvent($event)" 
