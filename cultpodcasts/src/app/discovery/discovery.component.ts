@@ -30,6 +30,7 @@ export class DiscoveryComponent {
   submittedSubject: Subject<boolean> = new Subject<boolean>();
   resultsFilterSubject: Subject<string> = new Subject<string>();
   resultsFilter: string = "all";
+  hasUnfocused: boolean = false;
 
   constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -47,6 +48,7 @@ export class DiscoveryComponent {
       this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
         .subscribe(resp => {
           this.results = resp.results.map(x => this.enrichFocused(x));
+          this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
           this.documentIds = resp.ids;
           const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
           if (dates.length > 0)
