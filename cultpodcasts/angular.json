@@ -62,10 +62,10 @@
               ],
               "outputHashing": "all",
               "fileReplacements": [
-                {
-                  "replace": "src/environments/version.ts",
-                  "with": "src/environments/version.prod.ts"
-                }
+                // {
+                //   "replace": "src/environments/version.ts",
+                //   "with": "src/environments/version.prod.ts"
+                // }
               ]
             },
             "staging": {
@@ -87,10 +87,10 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.staging.ts"
                 },
-                {
-                  "replace": "src/environments/version.ts",
-                  "with": "src/environments/version.prod.ts"
-                }
+                // {
+                //   "replace": "src/environments/version.ts",
+                //   "with": "src/environments/version.prod.ts"
+                // }
               ]
             },
             "development": {
