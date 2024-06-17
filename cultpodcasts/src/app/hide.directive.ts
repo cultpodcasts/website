@@ -1,6 +1,9 @@
 import { Directive, ElementRef, Input, Renderer2 } from '@angular/core';
 
-@Directive({ selector: '[appHide]' })
+@Directive({
+    selector: '[appHide]',
+    standalone: true
+})
 export class HideDirective {
     @Input() set appHide(shouldHide: boolean) {
         (shouldHide)

@@ -1,11 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
 import { ISearchState } from '../ISearchState';
 import { ODataService } from '../OdataService'
 import { environment } from './../../environments/environment';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { NgIf, NgClass, NgFor, DatePipe } from '@angular/common';
 
 const pageSize: number = 10;
 
@@ -19,9 +25,11 @@ const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
 
 @Component({
-  selector: 'app-search',
-  templateUrl: './search.component.html',
-  styleUrls: ['./search.component.sass']
+    selector: 'app-search',
+    templateUrl: './search.component.html',
+    styleUrls: ['./search.component.sass'],
+    standalone: true,
+    imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
 })
 
 export class SearchComponent {

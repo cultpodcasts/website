@@ -2,8 +2,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { IDiscoveryResult } from './IDiscoveryResults';
 
 @Pipe({
-  name: 'discoveryItemFilter',
-  pure: false
+    name: 'discoveryItemFilter',
+    pure: false,
+    standalone: true
 })
 
 export class DiscoveryItemFilter implements PipeTransform {

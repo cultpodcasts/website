@@ -8,13 +8,23 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
-import { MatButtonToggleChange } from '@angular/material/button-toggle';
+import { MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
+import { DiscoveryItemFilter } from '../discovery-item-filterr';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { HideDirective } from '../hide.directive';
+import { MatDividerModule } from '@angular/material/divider';
+import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
 
 @Component({
-  selector: 'app-discovery',
-  templateUrl: './discovery.component.html',
-  styleUrls: ['./discovery.component.sass']
+    selector: 'app-discovery',
+    templateUrl: './discovery.component.html',
+    styleUrls: ['./discovery.component.sass'],
+    standalone: true,
+    imports: [NgIf, MatProgressBarModule, NgFor, DiscoveryItemComponent, MatDividerModule, HideDirective, MatButtonToggleModule, MatButtonModule, MatBadgeModule, DatePipe, DiscoveryItemFilter]
 })
 export class DiscoveryComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;

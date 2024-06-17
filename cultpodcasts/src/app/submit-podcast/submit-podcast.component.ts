@@ -1,15 +1,24 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormGroup, Validators, FormControl } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
+import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { UrlValidator } from '../url-validator';
 import { PodcastsService } from '../podcasts.service';
 import { ISimplePodcast } from '../ISimplePodcast';
 import { Observable, map, startWith } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatOptionModule } from '@angular/material/core';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 @Component({
-  selector: 'app-submit-podcast',
-  templateUrl: './submit-podcast.component.html',
-  styleUrls: ['./submit-podcast.component.sass']
+    selector: 'app-submit-podcast',
+    templateUrl: './submit-podcast.component.html',
+    styleUrls: ['./submit-podcast.component.sass'],
+    standalone: true,
+    imports: [MatDialogModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, NgIf, MatExpansionModule, MatAutocompleteModule, NgFor, MatOptionModule, MatButtonModule, AsyncPipe]
 })
 export class SubmitPodcastComponent implements OnInit {
 

@@ -1,11 +1,19 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IDiscoveryResult } from '../IDiscoveryResults';
 import { Observable, Subscription } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { HideDirective } from '../hide.directive';
+import { NgClass, NgIf, NgFor, DatePipe } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
-  selector: 'discovery-item',
-  templateUrl: './discovery-item.component.html',
-  styleUrls: ['./discovery-item.component.sass']
+    selector: 'discovery-item',
+    templateUrl: './discovery-item.component.html',
+    styleUrls: ['./discovery-item.component.sass'],
+    standalone: true,
+    imports: [MatCardModule, NgClass, HideDirective, NgIf, MatButtonModule, MatIconModule, NgFor, RouterLink, DatePipe]
 })
 
 export class DiscoveryItemComponent {
