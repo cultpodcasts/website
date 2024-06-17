@@ -159,7 +159,7 @@ footer {
 
 @media (prefers-color-scheme: light) {
     body {
-        --mdc-elevated-card-container-color: white;
+        --mdc-elevated-card-container-color: white !important;
         --mat-card-subtitle-text-color: #757575;
         --mdc-filled-text-field-caret-color: #3f51b5;
         --mdc-filled-text-field-focus-active-indicator-color: #3f51b5;
@@ -216,6 +216,7 @@ body {
     --mat-card-subtitle-text-line-height: 22px;
     --mat-card-subtitle-text-size: 14px;
     --mat-card-subtitle-text-weight: 500;
+    --mdc-elevated-card-container-color: #424242;
     h2 {
         font-size: 20px !important;
         font-weight: 500 !important;
