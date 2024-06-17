@@ -3,19 +3,25 @@ import { HttpClient } from '@angular/common/http';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue } from '@angular/common';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe } from '@angular/common';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 
 const pageSize: number = 10;
 const pageParam: string = "page";
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.sass']
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    styleUrls: ['./home.component.sass'],
+    standalone: true,
+    imports: [NgIf, MatProgressBarModule, NgFor, MatCardModule, RouterLink, MatButtonModule, MatIconModule, DecimalPipe, KeyValuePipe]
 })
 export class HomeComponent {
   grouped: { [key: string]: IHomepageItem[]; };

@@ -1,16 +1,21 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
 import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'app-send-podcast',
-  templateUrl: './send-podcast.component.html',
-  styleUrls: ['./send-podcast.component.sass']
+    selector: 'app-send-podcast',
+    templateUrl: './send-podcast.component.html',
+    styleUrls: ['./send-podcast.component.sass'],
+    standalone: true,
+    imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class SendPodcastComponent {

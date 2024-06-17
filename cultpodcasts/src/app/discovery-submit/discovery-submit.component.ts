@@ -1,17 +1,22 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthService } from '@auth0/auth0-angular';
 import { IDiscoverySubmit } from '../IDiscoverySubmit';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { SubmitDiscoveryResponse } from '../ISubmitDiscoveryResponse';
 import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'app-discovery-submit',
-  templateUrl: './discovery-submit.component.html',
-  styleUrls: ['./discovery-submit.component.sass']
+    selector: 'app-discovery-submit',
+    templateUrl: './discovery-submit.component.html',
+    styleUrls: ['./discovery-submit.component.sass'],
+    standalone: true,
+    imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class DiscoverySubmitComponent {
