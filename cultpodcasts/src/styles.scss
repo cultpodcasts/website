@@ -5,8 +5,8 @@
 // Define a dark theme
 $dark-theme: mat.m2-define-dark-theme(
     (color: (
-        primary: mat.m2-define-palette(mat.$m2-pink-palette),
-        accent: mat.m2-define-palette(mat.$m2-blue-grey-palette),
+        primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+        accent: mat.m2-define-palette(mat.$m2-pink-palette),
     ),
         // Only include `typography` and `density` in the default dark theme.
         typography: mat.m2-define-typography-config(),
@@ -132,7 +132,7 @@ footer {
     height: 1.7em;
     padding-top: 5px;
     margin-bottom: 3px;
-    font-size: 1.3em;
+    font-size: 1.1em;
     z-index: 10;
 
     .mat-icon {
@@ -161,6 +161,10 @@ footer {
     body {
         --mdc-chip-selected-label-text-color: #335a59 !important;
         --mdc-chip-label-text-color: #335a59 !important;
+        .mat-mdc-chip-highlighted {
+            --mdc-chip-selected-label-text-color: #335a59 !important;
+            --mdc-chip-label-text-color: #335a59 !important;
+        }
         --mdc-elevated-card-container-color: white !important;
         --mat-card-subtitle-text-color: #757575;
         --mdc-filled-text-field-caret-color: #3f51b5;
