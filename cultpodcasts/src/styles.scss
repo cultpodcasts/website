@@ -1,0 +1,112 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+html, body { height: 100%; }
+body { margin: 0; padding:0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+mat-card-subtitle {
+    font-size: 1.4em !important;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    a {
+        color: var(--mdc-theme-text-secondary);
+        text-decoration: dashed underline 1px;
+        text-underline-offset: 5px;
+        line-height: 1.5em
+    }
+    a:hover {
+        text-decoration: none;
+    }
+    padding-bottom: 5px;
+}
+
+p {
+    font-size: 18px;
+    line-height: 1.3em;
+}
+
+#paging {
+    display: -webkit-flex;
+    display: flex;
+    list-style-type: none;
+    padding: 0;
+    justify-content: flex-end;
+    margin: 0 8px 25px 8px;
+    #previous {
+        margin-right: auto;
+    }
+}
+
+dark-mode-toggle {
+    display : none;
+}
+
+mat-card-footer.subjects {
+    text-align: right;
+    padding-right: 2px;
+    margin-left: auto;
+    .subject {
+        padding-left: 8px;
+        padding-bottom: 6px;
+        a {
+            color: var(--mdc-theme-text-secondary);
+            text-decoration: dashed underline 1px;
+            text-underline-offset: 5px;
+        }
+        a:hover {
+            text-decoration: none;
+        }
+    }
+}
+
+#try-search {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 599px) {
+    footer {
+        width: 100%;
+        max-width: 580px;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (min-width: 600px) {
+    footer {
+        width: 580px;
+        margin: 0 auto;
+    }
+}
+
+footer {
+    padding-left: 5px;
+    position: sticky;
+    bottom: 0;
+    background-color: var(--mat-toolbar-container-background-color);
+    height: 1.7em;
+    padding-top: 5px;
+    margin-bottom: 3px;
+    font-size: 1.3em;
+    z-index: 10;
+    .mat-icon {
+        vertical-align: bottom;
+        padding-left: 10px;
+        padding-right: 5px;
+    }
+    a {
+        height: 24px;
+        text-decoration: none;
+        color: var(--mat-toolbar-container-text-color);
+        display: inline-block;
+    }
+    #privacy {
+        margin-top: 3px;
+    }
+    #goTop {
+        float: right;
+    }
+}
+

@@ -40,7 +40,7 @@
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.sass"
+              "src/styles.scss"
             ],
             "scripts": [],
             "serviceWorker": true,
@@ -138,7 +138,7 @@
             ],
             "styles": [
               "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.sass"
+              "src/styles.scss"
             ],
             "scripts": []
           }
