@@ -108,10 +108,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "cultpodcasts:build:production"
+              "buildTarget": "cultpodcasts:build:production"
             },
             "development": {
-              "browserTarget": "cultpodcasts:build:development"
+              "buildTarget": "cultpodcasts:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -119,7 +119,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "cultpodcasts:build"
+            "buildTarget": "cultpodcasts:build"
           }
         },
         "test": {
