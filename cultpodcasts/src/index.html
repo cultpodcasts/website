@@ -29,8 +29,6 @@
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="">
 
-  <script type="module" src="dark-mode-toggle.mjs"></script>
-  <script defer src="/darkmode.js"></script>
   <script type="text/javascript">
     function goTop() {
       event.stopPropagation();
@@ -39,10 +37,10 @@
       element?.scrollIntoView();
     }
   </script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 
 <body class="mat-typography mat-app-background">
-  <dark-mode-toggle appearance="toggle"></dark-mode-toggle>
   <app-root></app-root>
   <footer>
     <a id="privacy" href="/content/privacy-policy">Privacy Policy</a>

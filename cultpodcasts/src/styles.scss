@@ -1,0 +1,239 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Define a dark theme
+$dark-theme: mat.m2-define-dark-theme((color: (primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+                accent: mat.m2-define-palette(mat.$m2-pink-palette),
+            ),
+            // Only include `typography` and `density` in the default dark theme.
+            typography: mat.m2-define-typography-config(),
+            density: 0,
+        ));
+
+// Define a light theme
+$light-theme: mat.m2-define-light-theme((color: (primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+                accent: mat.m2-define-palette(mat.$m2-pink-palette),
+            ),
+        ));
+
+// Apply the dark theme by default
+@include mat.core-theme($dark-theme);
+@include mat.button-theme($dark-theme);
+
+// Apply the light theme only when the user prefers light themes.
+@media (prefers-color-scheme: light) {
+    // Use the `-color` mixins to only apply color styles without reapplying the same
+    // typography and density styles.
+    @include mat.core-color($light-theme);
+    @include mat.button-color($light-theme);
+}
+
+
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+p {
+    font-size: 18px;
+    line-height: 1.3em;
+}
+
+#paging {
+    display: -webkit-flex;
+    display: flex;
+    list-style-type: none;
+    padding: 0;
+    justify-content: flex-end;
+    margin: 0 8px 25px 8px;
+
+    #previous {
+        margin-right: auto;
+    }
+}
+
+mat-card-footer.subjects {
+    text-align: right;
+    padding-right: 2px;
+    margin-left: auto;
+
+    .subject {
+        padding-left: 8px;
+        padding-bottom: 6px;
+
+        a {
+            color: var(--mdc-theme-text-secondary);
+            text-decoration: dashed underline 1px;
+            text-underline-offset: 5px;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+    }
+}
+
+#try-search {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 599px) {
+    footer {
+        width: 100%;
+        max-width: 580px;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (min-width: 600px) {
+    footer {
+        width: 580px;
+        margin: 0 auto;
+    }
+}
+
+footer {
+    padding-left: 5px;
+    position: sticky;
+    bottom: 0;
+    background-color: var(--mat-toolbar-container-background-color);
+    height: 1.7em;
+    padding-top: 5px;
+    margin-bottom: 3px;
+    font-size: 1.1em;
+    z-index: 10;
+
+    .mat-icon {
+        vertical-align: bottom;
+        padding-left: 10px;
+        padding-right: 5px;
+    }
+
+    a {
+        height: 24px;
+        text-decoration: none;
+        color: var(--mat-toolbar-container-text-color);
+        display: inline-block;
+    }
+
+    #privacy {
+        margin-top: 3px;
+    }
+
+    #goTop {
+        float: right;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    body {
+        --mdc-chip-selected-label-text-color: #335a59 !important;
+        --mdc-chip-label-text-color: #335a59 !important;
+
+        .mat-mdc-chip-highlighted {
+            --mdc-chip-selected-label-text-color: #335a59 !important;
+            --mdc-chip-label-text-color: #335a59 !important;
+        }
+
+        --mdc-elevated-card-container-color: white !important;
+        --mat-card-subtitle-text-color: #757575;
+        --mdc-filled-text-field-caret-color: #3f51b5;
+        --mdc-filled-text-field-focus-active-indicator-color: #3f51b5;
+        --mdc-filled-text-field-focus-label-text-color: rgba(63, 81, 181, .87);
+        --mdc-filled-text-field-container-color: whitesmoke;
+        --mdc-filled-text-field-disabled-container-color: #fafafa;
+        --mdc-filled-text-field-label-text-color: rgba(0, 0, 0, .6);
+        --mdc-filled-text-field-disabled-label-text-color: rgba(0, 0, 0, .38);
+        --mdc-filled-text-field-input-text-color: rgba(0, 0, 0, .87);
+        --mdc-filled-text-field-disabled-input-text-color: rgba(0, 0, 0, .38);
+        --mdc-filled-text-field-input-text-placeholder-color: rgba(0, 0, 0, .6);
+        --mdc-filled-text-field-error-focus-label-text-color: #f44336;
+        --mdc-filled-text-field-error-label-text-color: #f44336;
+        --mdc-filled-text-field-error-caret-color: #f44336;
+        --mdc-filled-text-field-active-indicator-color: rgba(0, 0, 0, .42);
+        --mdc-filled-text-field-disabled-active-indicator-color: rgba(0, 0, 0, .06);
+        --mdc-filled-text-field-hover-active-indicator-color: rgba(0, 0, 0, .87);
+        --mdc-filled-text-field-error-active-indicator-color: #f44336;
+        --mdc-filled-text-field-error-focus-active-indicator-color: #f44336;
+        --mdc-filled-text-field-error-hover-active-indicator-color: #f44336;
+        --mdc-outlined-text-field-caret-color: #3f51b5;
+        --mdc-outlined-text-field-focus-outline-color: #3f51b5;
+        --mdc-outlined-text-field-focus-label-text-color: rgba(63, 81, 181, .87);
+        --mdc-outlined-text-field-label-text-color: rgba(0, 0, 0, .6);
+        --mdc-outlined-text-field-disabled-label-text-color: rgba(0, 0, 0, .38);
+        --mdc-outlined-text-field-input-text-color: rgba(0, 0, 0, .87);
+        --mdc-outlined-text-field-disabled-input-text-color: rgba(0, 0, 0, .38);
+        --mdc-outlined-text-field-input-text-placeholder-color: rgba(0, 0, 0, .6);
+        --mdc-outlined-text-field-error-caret-color: #f44336;
+        --mdc-outlined-text-field-error-focus-label-text-color: #f44336;
+        --mdc-outlined-text-field-error-label-text-color: #f44336;
+        --mdc-outlined-text-field-outline-color: rgba(0, 0, 0, .38);
+        --mdc-outlined-text-field-disabled-outline-color: rgba(0, 0, 0, .06);
+        --mdc-outlined-text-field-hover-outline-color: rgba(0, 0, 0, .87);
+        --mdc-outlined-text-field-error-focus-outline-color: #f44336;
+        --mdc-outlined-text-field-error-hover-outline-color: #f44336;
+        --mdc-outlined-text-field-error-outline-color: #f44336;
+        --mat-form-field-disabled-input-text-placeholder-color: rgba(0, 0, 0, .38);
+        --mat-toolbar-container-background-color: whitesmoke;
+        --mat-toolbar-container-text-color: rgba(0, 0, 0, .87) --mdc-linear-progress-active-indicator-color: #3f51b5;
+
+        --mdc-linear-progress-track-color: rgba(63, 81, 181, .25) .mat-mdc-progress-bar .mdc-linear-progress__buffer-dots {
+            background-color: #3f51b540;
+            background-color: var(--mdc-linear-progress-track-color, rgba(63, 81, 181, .25))
+        }
+    }
+}
+
+body {
+    --mat-card-title-text-line-height: 32px !important;
+    --mat-card-title-text-size: 20px !important;
+    --mat-card-title-text-weight: 500 !important;
+    --mat-card-subtitle-text-line-height: 22px !important;
+    --mat-card-subtitle-text-size: 14px !important;
+    --mat-card-subtitle-text-weight: 500 !important;
+    --mdc-elevated-card-container-color: #424242;
+
+    h2 {
+        font-size: 20px !important;
+        font-weight: 500 !important;
+        line-height: 32px !important;
+        font-family: Roboto, sans-serif !important;
+        letter-spacing: .0125em !important;
+    }
+}
+
+mat-card {
+    mat-card-subtitle {
+
+
+        font-size: 1.3em !important;
+        margin-top: 10px;
+        padding-bottom: 10px;
+
+        a {
+            color: var(--mdc-theme-text-secondary);
+            text-decoration: dashed underline 1px;
+            text-underline-offset: 5px;
+            line-height: 1.5em
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+
+    }
+
+    mat-card-content {
+        font-size: 18px;
+        line-height: 1.3em;
+    }
+}

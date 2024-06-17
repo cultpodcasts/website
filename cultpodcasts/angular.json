@@ -15,11 +15,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/cultpodcasts",
+            "outputPath": {
+              "base": "dist/cultpodcasts"
+            },
             "index": "src/index.html",
-            "main": "src/main.ts",
             "polyfills": [
               "zone.js"
             ],
@@ -30,8 +31,6 @@
               "src/assets",
               "src/manifest.webmanifest",
               "src/manifest-dark.webmanifest",
-              "src/dark-mode-toggle.mjs",
-              "src/darkmode.js",
               "src/robots.txt",
               "src/sitemap.xml",
               "src/_headers",
@@ -39,12 +38,12 @@
               "src/remove-ngsw-worker.js"
             ],
             "styles": [
-              "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.sass"
+              "@angular/material/prebuilt-themes/cyan-orange.css",
+              "src/styles.scss"
             ],
             "scripts": [],
-            "serviceWorker": true,
-            "ngswConfigPath": "ngsw-config.json"
+            "serviceWorker": "ngsw-config.json",
+            "browser": "src/main.ts"
           },
           "configurations": {
             "production": {
@@ -84,9 +83,7 @@
               ]
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true,
@@ -108,10 +105,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "cultpodcasts:build:production"
+              "buildTarget": "cultpodcasts:build:production"
             },
             "development": {
-              "browserTarget": "cultpodcasts:build:development"
+              "buildTarget": "cultpodcasts:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -119,7 +116,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "cultpodcasts:build"
+            "buildTarget": "cultpodcasts:build"
           }
         },
         "test": {
@@ -137,8 +134,8 @@
               "src/manifest.webmanifest"
             ],
             "styles": [
-              "@angular/material/prebuilt-themes/deeppurple-amber.css",
-              "src/styles.sass"
+              "@angular/material/prebuilt-themes/cyan-orange.css",
+              "src/styles.scss"
             ],
             "scripts": []
           }
