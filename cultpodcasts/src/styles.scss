@@ -3,22 +3,22 @@
 @include mat.core();
 
 // Define a dark theme
-$dark-theme: mat.m2-define-dark-theme((
- color: (
-   primary: mat.m2-define-palette(mat.$m2-pink-palette),
-   accent: mat.m2-define-palette(mat.$m2-blue-grey-palette),
- ),
-  // Only include `typography` and `density` in the default dark theme.
-  typography: mat.m2-define-typography-config(),
-  density: 0,
+$dark-theme: mat.m2-define-dark-theme(
+    (color: (
+        primary: mat.m2-define-palette(mat.$m2-pink-palette),
+        accent: mat.m2-define-palette(mat.$m2-blue-grey-palette),
+    ),
+        // Only include `typography` and `density` in the default dark theme.
+        typography: mat.m2-define-typography-config(),
+        density: 0,
 ));
 
 // Define a light theme
-$light-theme: mat.m2-define-light-theme((
- color: (
-   primary: mat.m2-define-palette(mat.$m2-indigo-palette),
-   accent: mat.m2-define-palette(mat.$m2-pink-palette),
- ),
+$light-theme: mat.m2-define-light-theme(
+    (color: (
+        primary: mat.m2-define-palette(mat.$m2-indigo-palette),
+        accent: mat.m2-define-palette(mat.$m2-pink-palette),
+    ),
 ));
 
 // Apply the dark theme by default
@@ -27,31 +27,41 @@ $light-theme: mat.m2-define-light-theme((
 
 // Apply the light theme only when the user prefers light themes.
 @media (prefers-color-scheme: light) {
- // Use the `-color` mixins to only apply color styles without reapplying the same
- // typography and density styles.
- @include mat.core-color($light-theme);
- @include mat.button-color($light-theme);
+    // Use the `-color` mixins to only apply color styles without reapplying the same
+    // typography and density styles.
+    @include mat.core-color($light-theme);
+    @include mat.button-color($light-theme);
 }
 
 
-html, body { height: 100%; }
-body { margin: 0; padding:0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
+html,
+body {
+    height: 100%;
+}
 
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
 mat-card-subtitle {
     font-size: 1.4em !important;
     margin-top: 10px;
     margin-bottom: 10px;
+
     a {
         color: var(--mdc-theme-text-secondary);
         text-decoration: dashed underline 1px;
         text-underline-offset: 5px;
         line-height: 1.5em
     }
+
     a:hover {
         text-decoration: none;
     }
+
     padding-bottom: 5px;
 }
 
@@ -67,6 +77,7 @@ p {
     padding: 0;
     justify-content: flex-end;
     margin: 0 8px 25px 8px;
+
     #previous {
         margin-right: auto;
     }
@@ -76,14 +87,17 @@ mat-card-footer.subjects {
     text-align: right;
     padding-right: 2px;
     margin-left: auto;
+
     .subject {
         padding-left: 8px;
         padding-bottom: 6px;
+
         a {
             color: var(--mdc-theme-text-secondary);
             text-decoration: dashed underline 1px;
             text-underline-offset: 5px;
         }
+
         a:hover {
             text-decoration: none;
         }
@@ -120,22 +134,54 @@ footer {
     margin-bottom: 3px;
     font-size: 1.3em;
     z-index: 10;
+
     .mat-icon {
         vertical-align: bottom;
         padding-left: 10px;
         padding-right: 5px;
     }
+
     a {
         height: 24px;
         text-decoration: none;
         color: var(--mat-toolbar-container-text-color);
         display: inline-block;
     }
+
     #privacy {
         margin-top: 3px;
     }
+
     #goTop {
         float: right;
     }
 }
 
+@media (prefers-color-scheme: light) {
+    body {
+        --mdc-elevated-card-container-color: white;
+        --mat-card-subtitle-text-color: #757575;
+    }
+}
+
+body {
+    --mat-card-title-text-line-height: 32px;
+    --mat-card-title-text-size: 20px;
+    --mat-card-title-text-weight: 500;
+    --mat-card-subtitle-text-line-height: 22px;
+    --mat-card-subtitle-text-size: 14px;
+    --mat-card-subtitle-text-weight: 500;
+}
+
+mat-card {
+    mat-card-subtitle {
+        a {
+            text-decoration: dashed underline 1px;
+        }
+    }
+
+    mat-card-content {
+        font-size: 18px;
+        line-height: 1.3em;
+    }
+}

@@ -32,6 +32,7 @@ import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient } from '@a
 import { environment } from './environments/environment';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './app/SiteService';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 
 bootstrapApplication(AppComponent, {
@@ -55,7 +56,7 @@ bootstrapApplication(AppComponent, {
             provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
         },
         provideAnimations(),
-        provideHttpClient(withInterceptorsFromDi())
+        provideHttpClient(withInterceptorsFromDi()), provideAnimationsAsync()
     ]
 })
   .catch(err => console.error(err));
