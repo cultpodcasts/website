@@ -1,9 +1,7 @@
 import { Injectable } from "@angular/core";
 import { FeatureSwitch } from "./FeatureSwitch";
 
-@Injectable({
-    providedIn: `root`
-})
+@Injectable({ providedIn: `root` })
 export class FeatureSwtichService {
     public IsEnabled(featureSwitch: FeatureSwitch): boolean {
         switch (featureSwitch) {

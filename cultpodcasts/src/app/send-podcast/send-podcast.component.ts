@@ -1,21 +1,22 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
-import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
+import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
+import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { NgIf } from '@angular/common';
+import { NgIf, isPlatformBrowser } from '@angular/common';
 
 @Component({
-    selector: 'app-send-podcast',
-    templateUrl: './send-podcast.component.html',
-    styleUrls: ['./send-podcast.component.sass'],
-    standalone: true,
-    imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
+  selector: 'app-send-podcast',
+  templateUrl: './send-podcast.component.html',
+  styleUrls: ['./send-podcast.component.sass'],
+  standalone: true,
+  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class SendPodcastComponent {
@@ -31,12 +32,15 @@ export class SendPodcastComponent {
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   isAuthenticated: boolean = false;
   originResponse: any;
+  isBrowser: any;
 
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
-    private auth: AuthService) {
-    auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+    private auth: FakeAuthServiceWrapper,
+    @Inject(PLATFORM_ID) private platformId: any) {
+    this.isBrowser = isPlatformBrowser(platformId);
+    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
   close() {
@@ -85,21 +89,23 @@ export class SendPodcastComponent {
 
           let headers: HttpHeaders = new HttpHeaders();
 
-          if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
-            const accessTokenOptions: GetTokenSilentlyOptions = {
-              authorizationParams: {
-                audience: `https://api.cultpodcasts.com/`,
-                scope: 'submit'
+          if (this.isBrowser) {
+            if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
+              const accessTokenOptions: GetTokenSilentlyOptions = {
+                authorizationParams: {
+                  audience: `https://api.cultpodcasts.com/`,
+                  scope: 'submit'
+                }
+              };
+              let token: string | undefined;
+              try {
+                token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
+              } catch (e) {
+                console.log(e);
               }
-            };
-            let token: string | undefined;
-            try {
-              token = await firstValueFrom(this.auth.getAccessTokenSilently(accessTokenOptions));
-            } catch (e) {
-              console.log(e);
-            }
-            if (token) {
-              headers = headers.set("Authorization", "Bearer " + token);
+              if (token) {
+                headers = headers.set("Authorization", "Bearer " + token);
+              }
             }
           }
           try {

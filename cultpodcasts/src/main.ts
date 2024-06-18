@@ -25,7 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app/app-routing.module';
-import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { BrowserModule, bootstrapApplication, provideClientHydration } from '@angular/platform-browser';
 import { JsonUrlInterceptor } from './app/JsonUrlInterceptor';
 import { JsonDateInterceptor } from './app/JsonDateInterceptor';
 import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
@@ -56,7 +56,7 @@ bootstrapApplication(AppComponent, {
             provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
         },
         provideAnimations(),
-        provideHttpClient(withInterceptorsFromDi()), provideAnimationsAsync()
+        provideHttpClient(withInterceptorsFromDi()), provideAnimationsAsync(), provideClientHydration()
     ]
 })
-  .catch(err => console.error(err));
+    .catch(err => console.error(err));

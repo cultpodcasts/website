@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { AuthService } from '@auth0/auth0-angular';
+import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
 import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
@@ -20,11 +20,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgFor, DatePipe } from '@angular/common';
 
 @Component({
-    selector: 'app-discovery',
-    templateUrl: './discovery.component.html',
-    styleUrls: ['./discovery.component.sass'],
-    standalone: true,
-    imports: [NgIf, MatProgressBarModule, NgFor, DiscoveryItemComponent, MatDividerModule, HideDirective, MatButtonToggleModule, MatButtonModule, MatBadgeModule, DatePipe, DiscoveryItemFilter]
+  selector: 'app-discovery',
+  templateUrl: './discovery.component.html',
+  styleUrls: ['./discovery.component.sass'],
+  standalone: true,
+  imports: [NgIf, MatProgressBarModule, NgFor, DiscoveryItemComponent, MatDividerModule, HideDirective, MatButtonToggleModule, MatButtonModule, MatBadgeModule, DatePipe, DiscoveryItemFilter],
+  host: { ngSkipHydration: 'true' }
 })
 export class DiscoveryComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
@@ -44,10 +45,10 @@ export class DiscoveryComponent {
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
 
-  constructor(private auth: AuthService, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
+  constructor(private auth: FakeAuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
   ngOnInit() {
-    var token = firstValueFrom(this.auth.getAccessTokenSilently({
+    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
         scope: 'curate'
