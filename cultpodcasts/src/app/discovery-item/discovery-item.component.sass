@@ -44,10 +44,14 @@ mat-card
             margin-left: 10px
             display: flex
 mat-card.selected
-    background-color: var(--mdc-theme-secondary)
+    background-color: #394141
     .matchedPodcast
         color: var(--mdc-theme-text-primary-on-background)
 mat-card.error
         border-color: red
         border-width: 3px
+
+@media (prefers-color-scheme: light)
+    mat-card.selected
+        background-color: #cecaca
 

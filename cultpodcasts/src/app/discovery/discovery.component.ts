@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
@@ -45,7 +45,7 @@ export class DiscoveryComponent {
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
 
-  constructor(private auth: FakeAuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
+  constructor(private auth: AuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
   ngOnInit() {
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
