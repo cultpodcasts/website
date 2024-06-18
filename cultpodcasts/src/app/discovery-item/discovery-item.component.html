@@ -15,8 +15,9 @@
                 {{result.matchingPodcasts.join(",")}}
             </ng-container>
         </mat-card-subtitle>
-        <mat-card-subtitle>{{result.released | date:'d MMM yyyy H:mm'}}
-            [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
+        <mat-card-subtitle>
+            {{result.released | date:'d MMM yyyy H:mm'}}
+            {{duration()}}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
         <p class="showDescription" *ngIf="result.showDescription && result.matchingPodcasts.length==0">

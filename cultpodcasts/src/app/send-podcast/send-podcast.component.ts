@@ -3,7 +3,7 @@ import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
-import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
@@ -37,7 +37,7 @@ export class SendPodcastComponent {
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<SendPodcastComponent>,
-    private auth: FakeAuthServiceWrapper,
+    private auth: AuthServiceWrapper,
     @Inject(PLATFORM_ID) private platformId: any) {
     this.isBrowser = isPlatformBrowser(platformId);
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);

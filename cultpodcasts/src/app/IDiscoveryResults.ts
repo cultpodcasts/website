@@ -12,7 +12,7 @@ export interface IDiscoveryResult {
     episodeDescription: string | undefined;
     showDescription: string | undefined;
     released: Date;
-    duration: string;
+    duration: string | undefined;
     subjects: string[];
     youTubeViews: number | undefined;
     youTubeChannelMembers: number | undefined;

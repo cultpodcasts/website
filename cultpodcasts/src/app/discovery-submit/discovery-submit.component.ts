@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { IDiscoverySubmit } from '../IDiscoverySubmit';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -33,7 +33,7 @@ export class DiscoverySubmitComponent {
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, ISubmitDiscoveryState>,
-    private auth: FakeAuthServiceWrapper) {
+    private auth: AuthServiceWrapper) {
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 

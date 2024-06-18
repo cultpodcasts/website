@@ -9,11 +9,11 @@ import { NgClass, NgIf, NgFor, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
-    selector: 'discovery-item',
-    templateUrl: './discovery-item.component.html',
-    styleUrls: ['./discovery-item.component.sass'],
-    standalone: true,
-    imports: [MatCardModule, NgClass, HideDirective, NgIf, MatButtonModule, MatIconModule, NgFor, RouterLink, DatePipe]
+  selector: 'discovery-item',
+  templateUrl: './discovery-item.component.html',
+  styleUrls: ['./discovery-item.component.sass'],
+  standalone: true,
+  imports: [MatCardModule, NgClass, HideDirective, NgIf, MatButtonModule, MatIconModule, NgFor, RouterLink, DatePipe]
 })
 
 export class DiscoveryItemComponent {
@@ -32,6 +32,13 @@ export class DiscoveryItemComponent {
   resultsFilter: string = "";
   errored: boolean = false;
 
+  duration(): string {
+    if (this.result.duration) {
+      return "["+this.result.duration.split(".")[0].substring(1)+"]";
+    }
+    return "Unknown";
+  }
+
   ngOnInit() {
     if (this.selectedEvent) {
       this.eventsSubscription = this.selectedEvent.subscribe((x) => this.submitted = x);
@@ -40,7 +47,7 @@ export class DiscoveryItemComponent {
       this.resultsFilterSubscription = this.resultFilterEvent.subscribe((x) => this.resultsFilter = x);
     }
     if (this.erroredEvent) {
-      this.erroredSubscription = this.erroredEvent.subscribe((x) => this.errored=x.indexOf(this.result.id)>=0);
+      this.erroredSubscription = this.erroredEvent.subscribe((x) => this.errored = x.indexOf(this.result.id) >= 0);
     }
   }
 

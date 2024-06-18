@@ -1,0 +1,71 @@
+<mat-toolbar color="secondary">
+    <a routerLink="/" id="site" (click)="siteService.setQuery('')"><img src="/assets/cultpodcasts.svg"
+        alt="image"><span>Cult Podcasts</span></a>
+    <div id="socialbuttons">
+      <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
+      <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
+      <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
+          class="socialbutton"></a>
+      <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
+        <div *ngIf="this.auth.authService.user$ | async as user; else unAuthenticatedButton"
+          class="socialbutton button">
+          <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
+        </div>
+        <ng-template #unAuthenticatedButton>
+          <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"
+            [matMenuTriggerFor]="loggedOutProfile">
+        </ng-template>
+        <mat-menu #loggedOutProfile="matMenu">
+          <a (click)="login()" mat-menu-item>
+            <mat-icon>login</mat-icon>
+            <span>Login</span>
+          </a>
+        </mat-menu>
+        <mat-menu #profile="matMenu">
+          <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+            <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
+            <span>Discovery</span>
+          </a>
+          <a (click)="logout()" mat-menu-item>
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </a>
+        </mat-menu>
+      </ng-container>
+    </div>
+    <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <a (click)="openSubmitPodcast()" mat-menu-item>
+        <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
+        <span>Add Podcast</span>
+      </a>
+      <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+        <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
+        <span>Discovery</span>
+      </a>
+      <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
+        <mat-icon svgIcon="reddit"></mat-icon>
+        <span>Reddit</span>
+      </a>
+      <a href="https://twitter.com/cultpodcasts" mat-menu-item>
+        <mat-icon svgIcon="twitter"></mat-icon>
+        <span>Twitter</span>
+      </a>
+      <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
+        <ng-container *ngIf="this.auth.authService.user$ | async as user; else unAuthenticatedMenuItem">
+          <a (click)="logout()" mat-menu-item>
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </a>
+        </ng-container>
+        <ng-template #unAuthenticatedMenuItem>
+          <a (click)="login()" mat-menu-item>
+            <mat-icon>login</mat-icon>
+            <span mat-mdc-menu-item-text>Login</span>
+          </a>
+        </ng-template>
+      </ng-container>
+    </mat-menu>
+  </mat-toolbar>

@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { FakeAuthServiceWrapper } from './FakeAuthServiceWrapper';
 import { catchError, map, of } from 'rxjs';
+import { AuthServiceWrapper } from './AuthServiceWrapper';
 
 export const hasRoleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
-  return inject(FakeAuthServiceWrapper).authService.user$.pipe(
+  return inject(AuthServiceWrapper).authService.user$.pipe(
     map(e => {
       if (e && e["https://api.cultpodcasts.com/roles"]) {
         const roles: string[] = e["https://api.cultpodcasts.com/roles"];
