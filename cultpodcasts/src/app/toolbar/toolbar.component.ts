@@ -3,8 +3,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { FeatureSwtichService } from '../FeatureSwitchService';
 import { isPlatformBrowser, NgIf, AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../FeatureSwitch';
-import { MatIconRegistry, MatIconModule } from "@angular/material/icon";
-import { DomSanitizer } from "@angular/platform-browser";
+import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { SiteService } from '../SiteService';
@@ -32,22 +31,11 @@ export class ToolbarComponent {
   constructor(
     protected siteService: SiteService,
     protected auth: AuthServiceWrapper,
-    private iconRegistry: MatIconRegistry,
     protected featureSwtichService: FeatureSwtichService,
-    private domSanitizer: DomSanitizer,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     @Inject(PLATFORM_ID) private platformId: any) {
     this.isBrowser = isPlatformBrowser(platformId);
-    this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
-    this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
-    this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
-    this.iconRegistry.addSvgIcon(`twitter`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/twitter.svg"));
-    this.iconRegistry.addSvgIcon(`github`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/github.svg"));
-    this.iconRegistry.addSvgIcon(`spotify`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/spotify.svg"));
-    this.iconRegistry.addSvgIcon(`youtube`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/youtube.svg"));
-    this.iconRegistry.addSvgIcon(`apple-podcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/apple-podcasts.svg"));
-    this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/profile.svg"));
   }
 
   ngOnInit() {
