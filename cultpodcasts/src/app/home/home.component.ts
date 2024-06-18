@@ -17,11 +17,12 @@ const pageSize: number = 10;
 const pageParam: string = "page";
 
 @Component({
-    selector: 'app-home',
-    templateUrl: './home.component.html',
-    styleUrls: ['./home.component.sass'],
-    standalone: true,
-    imports: [NgIf, MatProgressBarModule, NgFor, MatCardModule, RouterLink, MatButtonModule, MatIconModule, DecimalPipe, KeyValuePipe]
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.sass'],
+  standalone: true,
+  imports: [NgIf, MatProgressBarModule, NgFor, MatCardModule, RouterLink, MatButtonModule, MatIconModule, DecimalPipe, KeyValuePipe],
+  host: { ngSkipHydration: 'true' }
 })
 export class HomeComponent {
   grouped: { [key: string]: IHomepageItem[]; };

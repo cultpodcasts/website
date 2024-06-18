@@ -1,19 +1,18 @@
 import { Injectable } from '@angular/core';
 import { ISimplePodcast } from './ISimplePodcast';
 import { ISimplePodcastsResult } from "./ISimplePodcastsResult";
-import { AuthService, GetTokenSilentlyOptions } from '@auth0/auth0-angular';
+import { FakeAuthServiceWrapper } from './FakeAuthServiceWrapper';
+import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../environments/environment';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class PodcastsService {
   isAuthenticated: boolean = false;
 
-  constructor(private http: HttpClient, private auth: AuthService) {
-    auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+  constructor(private http: HttpClient, private auth: FakeAuthServiceWrapper) {
+    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
   async getPodcasts(): Promise<ISimplePodcastsResult> {
@@ -28,7 +27,7 @@ export class PodcastsService {
       };
       let token: string | undefined;
       try {
-        token = await firstValueFrom(this.auth.getAccessTokenSilently(accessTokenOptions));
+        token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
       } catch (e) {
         console.log(e);
       }

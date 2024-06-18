@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { MatIconRegistry, MatIconModule } from "@angular/material/icon";
@@ -11,7 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { IShare } from './IShare';
 import { ShareMode } from "./ShareMode";
 import { SearchBoxMode } from './SearchBoxMode';
-import { AuthService } from '@auth0/auth0-angular';
+import { AuthServiceWrapper } from './AuthServiceWrapper';
 import { FeatureSwtichService } from './FeatureSwitchService';
 import { FeatureSwitch } from './FeatureSwitch';
 import { MatInputModule } from '@angular/material/input';
@@ -20,26 +20,26 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { NgIf, AsyncPipe, isPlatformBrowser } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.sass'],
-    standalone: true,
-    imports: [MatToolbarModule, RouterLink, NgIf, MatMenuModule, MatIconModule, MatButtonModule, FormsModule, MatFormFieldModule, MatChipsModule, MatInputModule, RouterOutlet, AsyncPipe]
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.sass'],
+  standalone: true,
+  imports: [MatToolbarModule, RouterLink, NgIf, MatMenuModule, MatIconModule, MatButtonModule, FormsModule, MatFormFieldModule, MatChipsModule, MatInputModule, RouterOutlet, AsyncPipe]
 })
 
 export class AppComponent {
-
   @ViewChild('searchBox', { static: true }) searchBox: ElementRef | undefined;
   searchChip: string | null = null;
   searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
   roles: string[] = [];
 
   public FeatureSwitch = FeatureSwitch;
+  isBrowser: boolean;
 
   constructor(
     private http: HttpClient,
@@ -49,8 +49,10 @@ export class AppComponent {
     private siteService: SiteService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    protected auth: AuthService,
-    protected featureSwtichService: FeatureSwtichService) {
+    protected auth: AuthServiceWrapper,
+    protected featureSwtichService: FeatureSwtichService,
+    @Inject(PLATFORM_ID) private platformId: any) {
+    this.isBrowser = isPlatformBrowser(platformId);
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/cultpodcasts.svg"));
     this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/add-podcast.svg"));
     this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl("../assets/reddit.svg"));
@@ -63,15 +65,17 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    localStorage.removeItem("hasLoggedIn");
-    this.auth.user$.subscribe(user => {
-      if (user && user["https://api.cultpodcasts.com/roles"]) {
-        this.roles = user["https://api.cultpodcasts.com/roles"]
-        localStorage.setItem("hasLoggedIn", "true");
-      }
-      else
-        this.roles = [];
-    })
+    if (this.isBrowser) {
+      localStorage.removeItem("hasLoggedIn");
+      this.auth.authService.user$.subscribe(user => {
+        if (user && user["https://api.cultpodcasts.com/roles"]) {
+          this.roles = user["https://api.cultpodcasts.com/roles"]
+          localStorage.setItem("hasLoggedIn", "true");
+        }
+        else
+          this.roles = [];
+      })
+    }
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
         this.searchBox.nativeElement.value = siteData.query;
@@ -87,7 +91,9 @@ export class AppComponent {
         }
       };
     });
-    navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
+    if (this.isBrowser) {
+      navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
+    }
   }
 
   async onSwMessage(message: any) {
@@ -186,10 +192,10 @@ export class AppComponent {
   }
 
   login() {
-    this.auth.loginWithRedirect();;
+    this.auth.authService.loginWithRedirect();;
   }
 
   logout() {
-    this.auth.logout();
+    this.auth.authService.logout();
   }
 }

@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { AuthService } from '@auth0/auth0-angular';
+import { FakeAuthServiceWrapper } from '../FakeAuthServiceWrapper';
 import { IDiscoverySubmit } from '../IDiscoverySubmit';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -12,11 +12,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NgIf } from '@angular/common';
 
 @Component({
-    selector: 'app-discovery-submit',
-    templateUrl: './discovery-submit.component.html',
-    styleUrls: ['./discovery-submit.component.sass'],
-    standalone: true,
-    imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
+  selector: 'app-discovery-submit',
+  templateUrl: './discovery-submit.component.html',
+  styleUrls: ['./discovery-submit.component.sass'],
+  standalone: true,
+  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class DiscoverySubmitComponent {
@@ -33,13 +33,13 @@ export class DiscoverySubmitComponent {
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, ISubmitDiscoveryState>,
-    private auth: AuthService) {
-    auth.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+    private auth: FakeAuthServiceWrapper) {
+    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
   public async submit(data: IDiscoverySubmit) {
     try {
-      var token = await firstValueFrom(this.auth.getAccessTokenSilently({
+      var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
           scope: 'curate'

@@ -9,7 +9,8 @@
         <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
             class="socialbutton"></a>
         <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
-          <div *ngIf="this.auth.user$ | async as user; else unAuthenticatedButton" class="socialbutton button">
+          <div *ngIf="this.auth.authService.user$ | async as user; else unAuthenticatedButton"
+            class="socialbutton button">
             <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
           </div>
           <ng-template #unAuthenticatedButton>
@@ -55,7 +56,7 @@
           <span>Twitter</span>
         </a>
         <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
-          <ng-container *ngIf="this.auth.user$ | async as user; else unAuthenticatedMenuItem">
+          <ng-container *ngIf="this.auth.authService.user$ | async as user; else unAuthenticatedMenuItem">
             <a (click)="logout()" mat-menu-item>
               <mat-icon>logout</mat-icon>
               <span>Logout</span>

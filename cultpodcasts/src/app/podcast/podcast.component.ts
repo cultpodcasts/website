@@ -23,11 +23,12 @@ const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
 
 @Component({
-    selector: 'app-podcast',
-    templateUrl: './podcast.component.html',
-    styleUrls: ['./podcast.component.sass'],
-    standalone: true,
-    imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
+  selector: 'app-podcast',
+  templateUrl: './podcast.component.html',
+  styleUrls: ['./podcast.component.sass'],
+  standalone: true,
+  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
+  host: { ngSkipHydration: 'true' }
 })
 
 export class PodcastComponent {
@@ -49,7 +50,7 @@ export class PodcastComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) {}
+  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) { }
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];
@@ -113,7 +114,7 @@ export class PodcastComponent {
 
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       if (this.searchState.episodeUuid) {
-        this.searchState.filter+=` and (id eq '${this.searchState.episodeUuid}')`;
+        this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
       }
       this.siteService.setFilter(this.searchState.filter);
 

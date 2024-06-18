@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ISiteData } from './ISiteData';
 import { BehaviorSubject } from 'rxjs';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class SiteService {
     private _siteData: ISiteData = {
         query: "",

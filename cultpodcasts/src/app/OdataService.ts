@@ -11,9 +11,7 @@ import { ISearchRequest } from "./ISearchRequest";
  * endpoint and parse the HTTP response to a type-safe entity and its 
  * metadata.
  */
-@Injectable({
-    providedIn: `root`
-})
+@Injectable({ providedIn: `root` })
 export class ODataService {
 
     /**
@@ -32,9 +30,9 @@ export class ODataService {
      * @param url - URL for an OData-enabled enpoint
      * @returns Response containing metadata and entities
      */
-     getEntities<T>(url: string, searchRequest: ISearchRequest): Observable<ODataEntitiesResponse<T>> {
+    getEntities<T>(url: string, searchRequest: ISearchRequest): Observable<ODataEntitiesResponse<T>> {
         return this.httpClient
-            .post<any>(url, searchRequest, {observe: 'response' } )
+            .post<any>(url, searchRequest, { observe: 'response' })
             .pipe(map(response => new ODataEntitiesResponse<T>(response)));
     }
 }

@@ -55,7 +55,7 @@ class ContentTitle implements Resolve<string> {
   }
 }
 
-const routes: Routes = [
+export const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent, title: QueryTitle },
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
