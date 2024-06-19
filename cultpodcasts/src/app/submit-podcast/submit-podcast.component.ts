@@ -12,13 +12,15 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { FeatureSwtichService } from '../FeatureSwitchService';
+import { FeatureSwitch } from '../FeatureSwitch';
 
 @Component({
-    selector: 'app-submit-podcast',
-    templateUrl: './submit-podcast.component.html',
-    styleUrls: ['./submit-podcast.component.sass'],
-    standalone: true,
-    imports: [MatDialogModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, NgIf, MatExpansionModule, MatAutocompleteModule, NgFor, MatOptionModule, MatButtonModule, AsyncPipe]
+  selector: 'app-submit-podcast',
+  templateUrl: './submit-podcast.component.html',
+  styleUrls: ['./submit-podcast.component.sass'],
+  standalone: true,
+  imports: [MatDialogModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, NgIf, MatExpansionModule, MatAutocompleteModule, NgFor, MatOptionModule, MatButtonModule, AsyncPipe]
 })
 export class SubmitPodcastComponent implements OnInit {
 
@@ -32,6 +34,7 @@ export class SubmitPodcastComponent implements OnInit {
 
   constructor(
     private dialogRef: MatDialogRef<SubmitPodcastComponent>,
+    private featureSwitchService: FeatureSwtichService,
     @Inject(MAT_DIALOG_DATA) data: any,
     private podcastService: PodcastsService) {
   }
@@ -45,18 +48,20 @@ export class SubmitPodcastComponent implements OnInit {
       url: this.url,
       podcast: this.podcast
     });
-    var podcastResponse = this.podcastService.getPodcasts().then(result => {
-      if (result.results) {
-        this.options = result.results;
-        this.filteredOptions = this.podcast.valueChanges
-          .pipe(
-            startWith(''),
-            map(value => typeof value === 'string' ? value : value.name),
-            map(name => name ? this._filter(name) : this.options!.slice())
-          );
-        this.showAdvanced = true;
-      }
-    });
+    if (this.featureSwitchService.IsEnabled(FeatureSwitch.submitPodcastSelector)) {
+      var podcastResponse = this.podcastService.getPodcasts().then(result => {
+        if (result.results) {
+          this.options = result.results;
+          this.filteredOptions = this.podcast.valueChanges
+            .pipe(
+              startWith(''),
+              map(value => typeof value === 'string' ? value : value.name),
+              map(name => name ? this._filter(name) : this.options!.slice())
+            );
+          this.showAdvanced = true;
+        }
+      });
+    }
   }
 
   displayFn(podcast: ISimplePodcast): string {
