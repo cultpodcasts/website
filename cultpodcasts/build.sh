@@ -16,8 +16,8 @@ cp src/environments/version.prod.ts src/environments/version.ts
 
 if [ "$env" == "staging" ]
 then
-    cp environments/environment.staging.ts environments/environment.ts 
-    echo environments/environment.staging.ts -> environments/environment.ts 
+    cp src/environments/environment.staging.ts src/environments/environment.ts 
+    echo src/environments/environment.staging.ts -> src/environments/environment.ts 
 fi
 
 echo "${env}"
