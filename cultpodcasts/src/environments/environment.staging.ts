@@ -5,5 +5,6 @@ export const environment:IEnvironment = {
     clientId: "o1YtyIzzhBEQ7c7IEZzovb1TGov1AGSs",
     domain: "cultpodcasts-staging.uk.auth0.com"
    },
-   api: 'https://api.cultpodcasts.com'
+   api: 'https://api.cultpodcasts.com',
+   assetHost: 'https://cultpodcasts.com'
 };

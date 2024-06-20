@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --experimental-local",
+    "build": "ng build && npm run process",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:cultpodcasts": "node dist/cultpodcasts/server/server.mjs"
+    "serve:ssr:cultpodcasts": "node dist/cultpodcasts/server/server.mjs",
+    "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
+    "deploy": "npm run build && wrangler pages deploy dist/cloudflare"
   },
   "private": true,
   "dependencies": {
@@ -34,6 +36,8 @@
     "@angular-devkit/build-angular": "^18.0.4",
     "@angular/cli": "~18.0.4",
     "@angular/compiler-cli": "^18.0.3",
+    "@cloudflare/workers-types": "^4.20240614.0",
+    "@miniflare/tre": "^3.0.0-next.13",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~4.3.0",
     "@types/node": "^18.18.0",
@@ -43,6 +47,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "5.4"
+    "typescript": "5.4",
+    "wrangler": "^3.61.0"
   }
 }

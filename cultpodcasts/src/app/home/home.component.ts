@@ -72,7 +72,7 @@ export class HomeComponent {
   totalDuration: string = "";
 
   ngOnInit() {
-    if (this.isBrowser) {
+    // if (this.isBrowser) {
       combineLatest(
         this.route.params,
         this.route.queryParams,
@@ -117,7 +117,7 @@ export class HomeComponent {
             this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
           });
       });
-    }
+    // }
   }
 
   setPage(page: number) {
