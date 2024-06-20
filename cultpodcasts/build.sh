@@ -6,6 +6,10 @@ cat <<< "$env" > "./.env"
 
 echo LS:
 echo $(ls)
+echo LS .env:
+echo $(ls .env)
+echo CAT .env:
+echo $(cat .env)
 
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
