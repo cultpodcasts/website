@@ -2,6 +2,8 @@
 echo ENV:
 echo "$(env)"
 
+echo "$(env)" > .env
+
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 
