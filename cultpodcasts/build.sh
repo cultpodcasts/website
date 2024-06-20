@@ -3,6 +3,10 @@ node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 npx ng build --configuration $env
 echo build complete
+echo PWD:
+echo "$(pwd)"
+echo LS:
+echo $(ls)
 cp ./dist/cloudflare/ngsw-worker.js ./dist/cloudflare/ngsw-worker-dist.js
 echo switched ngsw-worker.js -> ngsw-worker-dist.js
 cp ./src/remove-ngsw-worker.js ./dist/cloudflare/ngsw-worker.js
