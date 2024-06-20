@@ -7,6 +7,10 @@ echo PWD:
 echo "$(pwd)"
 echo LS:
 echo $(ls)
+echo LS dist:
+echo $(ls dist)
+echo LS dist/cloudflare:
+echo $(ls dist/cloudflare)
 cp ./dist/cloudflare/ngsw-worker.js ./dist/cloudflare/ngsw-worker-dist.js
 echo switched ngsw-worker.js -> ngsw-worker-dist.js
 cp ./src/remove-ngsw-worker.js ./dist/cloudflare/ngsw-worker.js
