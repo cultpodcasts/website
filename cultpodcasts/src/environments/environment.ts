@@ -6,5 +6,6 @@ export const environment:IEnvironment = {
     domain: "cultpodcasts.uk.auth0.com"
    },
    api: 'https://api.cultpodcasts.com',
-   assetHost: 'https://cultpodcasts.com'
+   assetHost: 'https://cultpodcasts.com',
+   name: "prod"
 };

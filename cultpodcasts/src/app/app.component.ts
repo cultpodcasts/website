@@ -39,6 +39,7 @@ export class AppComponent {
     private iconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: any) {
+      console.log("Environment: "+environment.name);
     this.isBrowser = isPlatformBrowser(platformId);
     this.registerSvg();
   }
@@ -109,7 +110,6 @@ export class AppComponent {
   }
 
   private registerSvg() {
-    // if (this.isBrowser) {
       this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/cultpodcasts.svg"));
       this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/add-podcast.svg"));
       this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/reddit.svg"));
@@ -119,7 +119,5 @@ export class AppComponent {
       this.iconRegistry.addSvgIcon(`youtube`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/youtube.svg"));
       this.iconRegistry.addSvgIcon(`apple-podcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/apple-podcasts.svg"));
       this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.assetHost + "/assets/profile.svg"));
-//    }
-
   }
 }
