@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"include": ["/", "/content/*"],
+	"include": ["/", "/content/*", "/podcasts/*", "/subject/*", "/search/*"],
 	"exclude": []
  }
  
