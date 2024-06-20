@@ -1,9 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -27,8 +27,14 @@ export class HomeComponent {
   grouped: { [key: string]: IHomepageItem[]; };
   currentPage: number = 1;
   podcastCount: number | undefined;
-  constructor(private router: Router, private http: HttpClient, private siteService: SiteService) {
+  isBrowser: any;
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private siteService: SiteService,
+    @Inject(PLATFORM_ID) private platformId: any) {
     this.grouped = {};
+    this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
 
@@ -66,54 +72,52 @@ export class HomeComponent {
   totalDuration: string = "";
 
   ngOnInit() {
-    combineLatest(
-      this.route.params,
-      this.route.queryParams,
-      (params: Params, queryParams: Params) => ({
-        params,
-        queryParams,
-      })
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
+    if (this.isBrowser) {
+      combineLatest(
+        this.route.params,
+        this.route.queryParams,
+        (params: Params, queryParams: Params) => ({
+          params,
+          queryParams,
+        })
+      ).subscribe((res: { params: Params; queryParams: Params }) => {
+        const { params, queryParams } = res;
 
-      this.siteService.setQuery(null);
-      this.siteService.setPodcast(null);
-      this.siteService.setSubject(null);
+        this.siteService.setQuery(null);
+        this.siteService.setPodcast(null);
+        this.siteService.setSubject(null);
 
-      this.currentPage = 1;
-      if (queryParams[pageParam]) {
-        this.currentPage = parseInt(queryParams[pageParam]);
-        this.prevPage = this.currentPage - 1;
-        this.nextPage = this.currentPage + 1;
-      } else {
-        this.nextPage = 2;
-      }
+        this.currentPage = 1;
+        if (queryParams[pageParam]) {
+          this.currentPage = parseInt(queryParams[pageParam]);
+          this.prevPage = this.currentPage - 1;
+          this.nextPage = this.currentPage + 1;
+        } else {
+          this.nextPage = 2;
+        }
 
-      let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
-        .subscribe(data => {
-          this.homepage = data;
-          this.totalDuration = data.totalDuration.split(".")[0] + " days";
-          let start = (this.currentPage - 1) * pageSize;
-          this.podcastCount = data.recentEpisodes.length;
-          var pageEpisodes = data.recentEpisodes.slice(start, start + pageSize);
-          this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-            item.release = new Date(item.release);
-            if (!group[item.release.toLocaleDateString()]) {
-              group[item.release.toLocaleDateString()] = [];
-            }
-            group[item.release.toLocaleDateString()].push(item);
-            return group;
-          }, {});
-          this.isLoading = false;
-
-
-          this.showPagingPrevious = this.currentPage > 2;
-          this.showPagingPreviousInit = this.currentPage == 2;
-          this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-
-
-        });
-    });
+        let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
+          .subscribe(data => {
+            this.homepage = data;
+            this.totalDuration = data.totalDuration.split(".")[0] + " days";
+            let start = (this.currentPage - 1) * pageSize;
+            this.podcastCount = data.recentEpisodes.length;
+            var pageEpisodes = data.recentEpisodes.slice(start, start + pageSize);
+            this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+              item.release = new Date(item.release);
+              if (!group[item.release.toLocaleDateString()]) {
+                group[item.release.toLocaleDateString()] = [];
+              }
+              group[item.release.toLocaleDateString()].push(item);
+              return group;
+            }, {});
+            this.isLoading = false;
+            this.showPagingPrevious = this.currentPage > 2;
+            this.showPagingPreviousInit = this.currentPage == 2;
+            this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+          });
+      });
+    }
   }
 
   setPage(page: number) {
