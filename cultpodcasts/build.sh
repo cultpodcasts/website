@@ -2,27 +2,18 @@
 echo ENV:
 echo "$(env)"
 
-cat <<< "$env" > "./.env"
-
-echo LS:
-echo $(ls)
-echo LS .env:
-echo $(ls .env)
-echo CAT .env:
-echo $(cat .env)
-
-node update-version.js
-cp src/environments/version.prod.ts src/environments/version.ts
-
 if [ "$env" == "staging" ]
 then
+    echo "is staging"
     cp src/environments/environment.staging.ts src/environments/environment.ts 
-    echo Copied src/environments/environment.staging.ts -> src/environments/environment.ts 
+    echo "Copied src/environments/environment.staging.ts -> src/environments/environment.ts"
 else
    echo "Leaving environment config"
 fi
 
-echo "${env}"
+node update-version.js
+cp src/environments/version.prod.ts src/environments/version.ts
+
 npx npm run build --configuration "${env}"
 echo build complete
 
