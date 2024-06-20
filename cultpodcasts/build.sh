@@ -5,8 +5,8 @@ echo "$(env)"
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 
-echo "npm run build --configuration $($env)"
-npx npm run build --configuration $env
+echo "${env}"
+npx npm run build --configuration "${env}"
 echo build complete
 
 cp ./dist/cloudflare/ngsw-worker.js ./dist/cloudflare/ngsw-worker-dist.js
