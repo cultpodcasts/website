@@ -14,6 +14,12 @@ echo $(cat .env)
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 
+if [ "$env" == "staging" ]
+then
+    cp environments/environment.staging.ts environments/environment.ts 
+    echo environments/environment.staging.ts -> environments/environment.ts 
+fi
+
 echo "${env}"
 npx npm run build --configuration "${env}"
 echo build complete
