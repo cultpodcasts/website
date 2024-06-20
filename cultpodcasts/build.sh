@@ -2,7 +2,10 @@
 echo ENV:
 echo "$(env)"
 
-echo "$(env)" > .env
+cat <<< "$env" > "."
+
+echo LS:
+echo $(ls)
 
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
