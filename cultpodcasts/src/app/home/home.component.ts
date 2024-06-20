@@ -12,7 +12,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
-
 const pageSize: number = 10;
 const pageParam: string = "page";
 
