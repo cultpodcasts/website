@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe } from '@angular/common';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 
 const pageSize: number = 10;
 
@@ -49,8 +49,15 @@ export class PodcastComponent {
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
+  isBrowser: any;
 
-  constructor(private router: Router, private siteService: SiteService, private oDataService: ODataService) { }
+  constructor(
+    private router: Router,
+    private siteService: SiteService,
+    private oDataService: ODataService,
+    @Inject(PLATFORM_ID) platformId: any) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];
@@ -60,99 +67,101 @@ export class PodcastComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
-    combineLatest(
-      this.route.params,
-      this.route.queryParams,
-      (params: Params, queryParams: Params) => ({
-        params,
-        queryParams,
-      })
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
+    if (this.isBrowser) {
+      combineLatest(
+        this.route.params,
+        this.route.queryParams,
+        (params: Params, queryParams: Params) => ({
+          params,
+          queryParams,
+        })
+      ).subscribe((res: { params: Params; queryParams: Params }) => {
+        const { params, queryParams } = res;
 
-      this.isLoading = true;
+        this.isLoading = true;
 
-      let query = "";
-      let episodeUuid = "";
-      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const queryParam = params["query"];
-      if (queryParam) {
-        if (uuid.test(queryParam)) {
-          episodeUuid = queryParam;
-        } else {
-          query = queryParam;
+        let query = "";
+        let episodeUuid = "";
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const queryParam = params["query"];
+        if (queryParam) {
+          if (uuid.test(queryParam)) {
+            episodeUuid = queryParam;
+          } else {
+            query = queryParam;
+          }
         }
-      }
 
-      this.searchState.query = query;
-      this.siteService.setQuery(this.searchState.query);
-      this.searchState.episodeUuid = episodeUuid;
-      this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
+        this.searchState.query = query;
+        this.siteService.setQuery(this.searchState.query);
+        this.searchState.episodeUuid = episodeUuid;
+        this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
 
-      this.podcastName = params["podcastName"];
-      this.siteService.setPodcast(this.podcastName);
-      this.siteService.setSubject(null);
+        this.podcastName = params["podcastName"];
+        this.siteService.setPodcast(this.podcastName);
+        this.siteService.setSubject(null);
 
-      if (queryParams[pageParam]) {
-        this.searchState.page = parseInt(queryParams[pageParam]);
-        this.prevPage = this.searchState.page - 1;
-        this.nextPage = this.searchState.page + 1;
-      } else {
-        this.nextPage = 2;
-        this.searchState.page = 1;
-      }
-
-      if (queryParams[sortParam]) {
-        this.searchState.sort = queryParams[sortParam];
-      } else {
-        if (this.searchState.query) {
-          this.searchState.sort = sortParamRank;
+        if (queryParams[pageParam]) {
+          this.searchState.page = parseInt(queryParams[pageParam]);
+          this.prevPage = this.searchState.page - 1;
+          this.nextPage = this.searchState.page + 1;
         } else {
-          this.searchState.sort = sortParamDateDesc;
+          this.nextPage = 2;
+          this.searchState.page = 1;
         }
-      }
 
-      this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
-      if (this.searchState.episodeUuid) {
-        this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
-      }
-      this.siteService.setFilter(this.searchState.filter);
+        if (queryParams[sortParam]) {
+          this.searchState.sort = queryParams[sortParam];
+        } else {
+          if (this.searchState.query) {
+            this.searchState.sort = sortParamRank;
+          } else {
+            this.searchState.sort = sortParamDateDesc;
+          }
+        }
 
-      let currentTime = Date.now();
-      var sort: string = "";
-      if (this.searchState.sort == "date-asc") {
-        sort = "release asc";
-      } else if (this.searchState.sort == "date-desc") {
-        sort = "release desc";
-      }
+        this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
+        if (this.searchState.episodeUuid) {
+          this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
+        }
+        this.siteService.setFilter(this.searchState.filter);
 
-      this.oDataService.getEntities<ISearchResult>(
-        new URL("/search", environment.api).toString(),
-        {
-          search: this.searchState.query,
-          filter: this.searchState.filter,
-          searchMode: 'any',
-          queryType: 'simple',
-          count: true,
-          skip: (this.searchState.page - 1) * pageSize,
-          top: pageSize,
-          facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
-          orderby: sort
-        }).subscribe(data => {
-          this.results = data.entities;
-          var requestTime = (Date.now() - currentTime) / 1000;
-          const count = data.metadata.get("count");
+        let currentTime = Date.now();
+        var sort: string = "";
+        if (this.searchState.sort == "date-asc") {
+          sort = "release asc";
+        } else if (this.searchState.sort == "date-desc") {
+          sort = "release desc";
+        }
 
-          this.count = count;
+        this.oDataService.getEntities<ISearchResult>(
+          new URL("/search", environment.api).toString(),
+          {
+            search: this.searchState.query,
+            filter: this.searchState.filter,
+            searchMode: 'any',
+            queryType: 'simple',
+            count: true,
+            skip: (this.searchState.page - 1) * pageSize,
+            top: pageSize,
+            facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
+            orderby: sort
+          }).subscribe(data => {
+            this.results = data.entities;
+            var requestTime = (Date.now() - currentTime) / 1000;
+            const count = data.metadata.get("count");
 
-          this.isLoading = false;
-          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-          this.showPagingNext = (this.searchState.page * pageSize) < count;
-        }, error => {
-          this.resultsHeading = "Something went wrong. Please try again.";
-          this.isLoading = false;
-        });
-    });
+            this.count = count;
+
+            this.isLoading = false;
+            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+            this.showPagingNext = (this.searchState.page * pageSize) < count;
+          }, error => {
+            this.resultsHeading = "Something went wrong. Please try again.";
+            this.isLoading = false;
+          });
+      });
+    }
   }
 
   setSort(sort: string) {

@@ -2,7 +2,6 @@ import { Component, ElementRef, Inject, PLATFORM_ID, ViewChild } from '@angular/
 import { SearchBoxMode } from '../SearchBoxMode';
 import { Router } from '@angular/router';
 import { SiteService } from '../SiteService';
-import { environment } from 'src/environments/environment';
 import { NgIf, isPlatformBrowser } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +31,6 @@ export class SearchBarComponent {
     private router: Router,
     private siteService: SiteService,
     @Inject(PLATFORM_ID) private platformId: any) {
-    console.log("Environment: " + environment.name);
     this.isBrowser = isPlatformBrowser(platformId);
   }
 

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe } from '@angular/common';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 
 const pageSize: number = 10;
 
@@ -24,11 +24,11 @@ const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
 
 @Component({
-    selector: 'app-subject',
-    templateUrl: './subject.component.html',
-    styleUrls: ['./subject.component.sass'],
-    standalone: true,
-    imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
+  selector: 'app-subject',
+  templateUrl: './subject.component.html',
+  styleUrls: ['./subject.component.sass'],
+  standalone: true,
+  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
 })
 
 export class SubjectComponent {
@@ -49,8 +49,16 @@ export class SubjectComponent {
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
+  isBrowser: boolean;
 
-  constructor(private http: HttpClient, private router: Router, private siteService: SiteService, private oDataService: ODataService) { }
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private siteService: SiteService,
+    private oDataService: ODataService,
+    @Inject(PLATFORM_ID) platformId: any) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];
@@ -60,82 +68,84 @@ export class SubjectComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
-    combineLatest(
-      this.route.params,
-      this.route.queryParams,
-      (params: Params, queryParams: Params) => ({
-        params,
-        queryParams,
-      })
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
+    if (this.isBrowser) {
+      combineLatest(
+        this.route.params,
+        this.route.queryParams,
+        (params: Params, queryParams: Params) => ({
+          params,
+          queryParams,
+        })
+      ).subscribe((res: { params: Params; queryParams: Params }) => {
+        const { params, queryParams } = res;
 
-      this.isLoading = true;
-      this.searchState.query = this.searchState.query = params["query"] ?? "";
-      this.siteService.setQuery(this.searchState.query);
-      this.siteService.setPodcast(null);
-      this.subjectName = params["subjectName"];
-      this.siteService.setSubject(this.subjectName);
+        this.isLoading = true;
+        this.searchState.query = this.searchState.query = params["query"] ?? "";
+        this.siteService.setQuery(this.searchState.query);
+        this.siteService.setPodcast(null);
+        this.subjectName = params["subjectName"];
+        this.siteService.setSubject(this.subjectName);
 
 
-      if (queryParams[pageParam]) {
-        this.searchState.page = parseInt(queryParams[pageParam]);
-        this.prevPage = this.searchState.page - 1;
-        this.nextPage = this.searchState.page + 1;
-      } else {
-        this.nextPage = 2;
-        this.searchState.page = 1;
-      }
-
-      if (queryParams[sortParam]) {
-        this.searchState.sort = queryParams[sortParam];
-      } else {
-        if (this.searchState.query) {
-          this.searchState.sort = sortParamRank;
+        if (queryParams[pageParam]) {
+          this.searchState.page = parseInt(queryParams[pageParam]);
+          this.prevPage = this.searchState.page - 1;
+          this.nextPage = this.searchState.page + 1;
         } else {
-          this.searchState.sort = sortParamDateDesc;
+          this.nextPage = 2;
+          this.searchState.page = 1;
         }
-      }
 
-      this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
-      this.siteService.setFilter(this.searchState.filter);
+        if (queryParams[sortParam]) {
+          this.searchState.sort = queryParams[sortParam];
+        } else {
+          if (this.searchState.query) {
+            this.searchState.sort = sortParamRank;
+          } else {
+            this.searchState.sort = sortParamDateDesc;
+          }
+        }
 
-      let currentTime = Date.now();
+        this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
+        this.siteService.setFilter(this.searchState.filter);
 
-      var sort: string = "";
-      if (this.searchState.sort == "date-asc") {
-        sort = "release asc";
-      } else if (this.searchState.sort == "date-desc") {
-        sort = "release desc";
-      }
+        let currentTime = Date.now();
 
-      this.oDataService.getEntities<ISearchResult>(
-        new URL("/search", environment.api).toString(),
-        {
-          search: this.searchState.query,
-          filter: this.searchState.filter,
-          searchMode: 'any',
-          queryType: 'simple',
-          count: true,
-          skip: (this.searchState.page - 1) * pageSize,
-          top: pageSize,
-          facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
-          orderby: sort
-        }).subscribe(data => {
-          this.results = data.entities;
-          var requestTime = (Date.now() - currentTime) / 1000;
-          const count = data.metadata.get("count");
+        var sort: string = "";
+        if (this.searchState.sort == "date-asc") {
+          sort = "release asc";
+        } else if (this.searchState.sort == "date-desc") {
+          sort = "release desc";
+        }
 
-          this.count = count;
+        this.oDataService.getEntities<ISearchResult>(
+          new URL("/search", environment.api).toString(),
+          {
+            search: this.searchState.query,
+            filter: this.searchState.filter,
+            searchMode: 'any',
+            queryType: 'simple',
+            count: true,
+            skip: (this.searchState.page - 1) * pageSize,
+            top: pageSize,
+            facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
+            orderby: sort
+          }).subscribe(data => {
+            this.results = data.entities;
+            var requestTime = (Date.now() - currentTime) / 1000;
+            const count = data.metadata.get("count");
 
-          this.isLoading = false;
-          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-          this.showPagingNext = (this.searchState.page * pageSize) < count;
-        }, error => {
-          this.resultsHeading = "Something went wrong. Please try again.";
-          this.isLoading = false;
-        });
-    });
+            this.count = count;
+
+            this.isLoading = false;
+            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+            this.showPagingNext = (this.searchState.page * pageSize) < count;
+          }, error => {
+            this.resultsHeading = "Something went wrong. Please try again.";
+            this.isLoading = false;
+          });
+      });
+    }
   }
 
   setSort(sort: string) {
