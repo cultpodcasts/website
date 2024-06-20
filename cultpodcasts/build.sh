@@ -1,4 +1,6 @@
 #!/bin/bash
+echo ENV:
+echo "$(env)"
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 npx npm run build --configuration $env
