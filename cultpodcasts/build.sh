@@ -2,7 +2,7 @@
 echo ENV:
 echo "$(env)"
 
-cat <<< "$env" > "."
+cat <<< "$env" > "./.env"
 
 echo LS:
 echo $(ls)
