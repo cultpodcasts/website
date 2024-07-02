@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { version, buildDate, commitHash } from "src/environments/version";
 import { SeoService } from '../seo.service';
+import { Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'privacy-policy',
@@ -9,7 +10,10 @@ import { SeoService } from '../seo.service';
   standalone: true
 })
 export class PrivacyPolicyComponent {
-  constructor(private seoService: SeoService) {
+  constructor(
+    private title: Title,
+    private seoService: SeoService) {
+    title.setTitle("Privacy Policy");
     seoService.AddMetaTags({ title: "Privacy Policy" });
   }
 
