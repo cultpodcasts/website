@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { SeoService } from '../seo.service';
 
 @Component({
     selector: 'terms-and-conditions',
@@ -7,5 +8,7 @@ import { Component } from '@angular/core';
     standalone: true
 })
 export class TermsAndConditionsComponent {
-
+    constructor(private seoService: SeoService) {
+        seoService.AddMetaTags({ title: "Terms &amp; Conditions" });
+    }
 }

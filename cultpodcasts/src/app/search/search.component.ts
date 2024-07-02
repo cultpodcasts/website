@@ -12,6 +12,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
+import { SeoService } from '../seo.service';
 
 const pageSize: number = 10;
 
@@ -53,7 +54,8 @@ export class SearchComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    @Inject(PLATFORM_ID) platformId: any) {
+    @Inject(PLATFORM_ID) platformId: any,
+    private seoService: SeoService) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
@@ -65,19 +67,27 @@ export class SearchComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
-    if (this.isBrowser) {
-      combineLatest(
-        this.route.params,
-        this.route.queryParams,
-        (params: Params, queryParams: Params) => ({
-          params,
-          queryParams,
-        })
-      ).subscribe((res: { params: Params; queryParams: Params }) => {
-        const { params, queryParams } = res;
+    combineLatest(
+      this.route.params,
+      this.route.queryParams,
+      (params: Params, queryParams: Params) => ({
+        params,
+        queryParams,
+      })
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
 
+      const { params, queryParams } = res;
+      this.searchState.query = params[queryParam];
+      let presentableQuery: string = this.searchState.query;
+      if ((presentableQuery.startsWith("'") && presentableQuery.endsWith("'")) ||
+        (presentableQuery.startsWith("\"") && presentableQuery.endsWith("\""))) {
+        presentableQuery = presentableQuery.substring(1, presentableQuery.length - 1);
+      }
+
+      this.seoService.AddMetaTags({title: `Search '${presentableQuery}'`});
+
+      if (this.isBrowser) {
         this.isLoading = true;
-        this.searchState.query = params[queryParam];
         this.siteService.setQuery(params[queryParam]);
         this.siteService.setPodcast(null);
         this.siteService.setSubject(null);
@@ -128,11 +138,6 @@ export class SearchComponent {
             this.results = data.entities;
             var requestTime = (Date.now() - currentTime) / 1000;
             const count = data.metadata.get("count");
-            let presentableQuery: string = this.searchState.query;
-            if ((presentableQuery.startsWith("'") && presentableQuery.endsWith("'")) ||
-              (presentableQuery.startsWith("\"") && presentableQuery.endsWith("\""))) {
-              presentableQuery = presentableQuery.substring(1, presentableQuery.length - 1);
-            }
             let resultsSummary: String = `${count} results`;
             if (count === 0) {
               resultsSummary = `0 results`;
@@ -148,8 +153,8 @@ export class SearchComponent {
             this.resultsHeading = "Something went wrong. Please try again.";
             this.isLoading = false;
           });
-      });
-    }
+      }
+    });
   }
 
   setSort(sort: string) {

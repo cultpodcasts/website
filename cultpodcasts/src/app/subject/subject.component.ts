@@ -13,6 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
+import { SeoService } from '../seo.service';
 
 const pageSize: number = 10;
 
@@ -56,7 +57,8 @@ export class SubjectComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    @Inject(PLATFORM_ID) platformId: any) {
+    @Inject(PLATFORM_ID) platformId: any,
+    private seoService: SeoService) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
@@ -68,25 +70,25 @@ export class SubjectComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
-    if (this.isBrowser) {
-      combineLatest(
-        this.route.params,
-        this.route.queryParams,
-        (params: Params, queryParams: Params) => ({
-          params,
-          queryParams,
-        })
-      ).subscribe((res: { params: Params; queryParams: Params }) => {
-        const { params, queryParams } = res;
+    combineLatest(
+      this.route.params,
+      this.route.queryParams,
+      (params: Params, queryParams: Params) => ({
+        params,
+        queryParams,
+      })
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const { params, queryParams } = res;
+      this.subjectName = params["subjectName"];
+      this.seoService.AddMetaTags({ title: `'${this.subjectName}'` });
+
+      if (this.isBrowser) {
 
         this.isLoading = true;
         this.searchState.query = this.searchState.query = params["query"] ?? "";
         this.siteService.setQuery(this.searchState.query);
         this.siteService.setPodcast(null);
-        this.subjectName = params["subjectName"];
         this.siteService.setSubject(this.subjectName);
-
-
         if (queryParams[pageParam]) {
           this.searchState.page = parseInt(queryParams[pageParam]);
           this.prevPage = this.searchState.page - 1;
@@ -144,8 +146,8 @@ export class SubjectComponent {
             this.resultsHeading = "Something went wrong. Please try again.";
             this.isLoading = false;
           });
-      });
-    }
+      }
+    });
   }
 
   setSort(sort: string) {

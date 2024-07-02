@@ -22,31 +22,29 @@ export class SeoService {
     if (pageDetails.description) {
       this.meta.updateTag({ name: "description", content: pageDetails.description });
     }
-    if (this.isServer) {
-      console.log("url: " + this.url);
-      this.meta.updateTag({ name: "og:url", content: this.url.toString() });
-    }
-    this.meta.updateTag({ name: "og:title", content: pageDetails.title });
+    this.meta.updateTag({ name: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
     console.log("Added Metatags");
   }
 
   AddRequiredMetaTags() {
     const twitterHandle: string = "@cultpodcasts";
     const twitterCardType: string = "summary";
-    const domain: string = "cultpodcasts.com";
     const twitterType: string = "website";
     const description: string = "Find your Cult Podcasts!";
     const title: string = "Cult Podcasts";
-    const url: string = "https://cultpodcasts.com";
 
     this.meta.addTag({ property: "twitter:site", content: twitterHandle });
     this.meta.addTag({ property: "twitter:creator", content: twitterHandle });
     this.meta.addTag({ name: "twitter:card", content: twitterCardType });
-    this.meta.addTag({ property: "twitter:domain", content: domain });
     this.meta.addTag({ name: "twitter:type", content: twitterType });
     this.meta.addTag({ name: "description", content: description });
-    this.meta.addTag({ property: "og:url", content: url });
     this.meta.addTag({ property: "og:title", content: title });
     this.meta.addTag({ property: "og:description", content: description });
+    if (this.isServer && this.url) {
+      const domain: string = this.url.hostname;
+      const url: string = this.url.toString();
+      this.meta.addTag({ property: "twitter:domain", content: domain });
+      this.meta.addTag({ property: "og:url", content: url });
+    };
   }
 }
