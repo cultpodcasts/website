@@ -1,0 +1,39 @@
+#searchcontainer
+    margin-left: 8px
+    margin-right: 8px
+    #searchbar
+        align-items: baseline
+        margin-top: 10px
+        display: -webkit-flex
+        display: flex
+        list-style-type: none
+        padding: 0
+        justify-content: flex-end
+        #searchbox
+            flex-grow: 1
+            mat-chip
+                margin-top: 0
+                margin-bottom: 0
+                margin-left: 0
+                .chiptext
+                    display: block
+                    overflow: hidden
+                    text-overflow: ellipsis
+            input.mat-mdc-chip-input
+                flex: 1 0 10px
+        #searchcta
+            margin-right: auto
+            margin-left: 8px
+
+@media screen and (min-width: 400px)
+    .chiptext
+        max-width: 150px
+@media screen and (max-width: 400px)
+    .chiptext
+        max-width: 75px
+@media screen and (max-width: 300px)
+    .chiptext
+        max-width: 40px
+
+
+

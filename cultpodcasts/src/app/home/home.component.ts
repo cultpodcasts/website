@@ -1,9 +1,9 @@
-import { Component, Inject, PLATFORM_ID, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, isPlatformBrowser } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -12,7 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
-const pageSize: number = 10;
+const pageSize: number = 20;
 const pageParam: string = "page";
 
 @Component({
@@ -27,14 +27,11 @@ export class HomeComponent {
   grouped: { [key: string]: IHomepageItem[]; };
   currentPage: number = 1;
   podcastCount: number | undefined;
-  isBrowser: any;
   constructor(
     private router: Router,
     private http: HttpClient,
-    private siteService: SiteService,
-    @Inject(PLATFORM_ID) private platformId: any) {
+    private siteService: SiteService) {
     this.grouped = {};
-    this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
 
@@ -72,7 +69,6 @@ export class HomeComponent {
   totalDuration: string = "";
 
   ngOnInit() {
-    if (this.isBrowser) {
       combineLatest(
         this.route.params,
         this.route.queryParams,
@@ -117,7 +113,6 @@ export class HomeComponent {
             this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
           });
       });
-    }
   }
 
   setPage(page: number) {
