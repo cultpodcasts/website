@@ -1,21 +1,5 @@
 <section id="body">
-  <section id="header">
-    <app-toolbar></app-toolbar>
-  </section>
-  <section id="searchcontainer">
-    <form (onsubmit)="search(searchBox)" id="searchbar">
-      <mat-form-field id="searchbox">
-        <mat-chip-grid #chips>
-          <mat-chip *ngIf="searchChip" (removed)="removeSearchChip()">
-            {{searchChipDisplay()}}
-            <mat-icon matChipRemove>cancel</mat-icon>
-          </mat-chip>
-          <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext" #searchBox
-            (keydown.enter)="search(searchBox)">
-        </mat-chip-grid>
-      </mat-form-field>
-      <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
-    </form>
-  </section>
+  <app-toolbar></app-toolbar>
+  <app-search-bar></app-search-bar>
   <router-outlet></router-outlet>
 </section>

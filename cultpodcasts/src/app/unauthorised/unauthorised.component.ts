@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { SeoService } from '../seo.service';
 
 @Component({
     selector: 'app-unauthorised',
@@ -7,5 +8,7 @@ import { Component } from '@angular/core';
     standalone: true
 })
 export class UnauthorisedComponent {
-
+    constructor(private seoService: SeoService) {
+        seoService.AddMetaTags({ title: "Unauthorised" });
+    }
 }

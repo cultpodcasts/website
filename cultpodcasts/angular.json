@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
+  "cli": {
+    "packageManager": "npm"
+  },
   "newProjectRoot": "projects",
   "projects": {
     "cultpodcasts": {
@@ -17,10 +20,9 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": {
-              "base": "dist/cultpodcasts"
-            },
+            "outputPath": "dist",
             "index": "src/index.html",
+            "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
             ],
@@ -35,7 +37,9 @@
               "src/sitemap.xml",
               "src/_headers",
               "src/service-worker.js",
-              "src/remove-ngsw-worker.js"
+              "src/remove-ngsw-worker.js",
+              "src/_routes.json"
+
             ],
             "styles": [
               "@angular/material/prebuilt-themes/cyan-orange.css",
@@ -43,7 +47,6 @@
             ],
             "scripts": [],
             "serviceWorker": "ngsw-config.json",
-            "browser": "src/main.ts",
             "server": "src/main.server.ts",
             "prerender": true,
             "ssr": {
