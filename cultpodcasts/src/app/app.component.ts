@@ -7,13 +7,14 @@ import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
+import { SeoService } from './seo.service';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.sass'],
-    standalone: true,
-    imports: [RouterOutlet, MatIconModule, ToolbarComponent, SearchBarComponent]
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.sass'],
+  standalone: true,
+  imports: [RouterOutlet, MatIconModule, ToolbarComponent, SearchBarComponent]
 })
 
 export class AppComponent {
@@ -25,9 +26,11 @@ export class AppComponent {
   constructor(
     private iconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
-    @Inject(PLATFORM_ID) private platformId: any) {
-      this.isBrowser = isPlatformBrowser(platformId);
-      this.registerSvg();
+    @Inject(PLATFORM_ID) private platformId: any,
+    private seoService: SeoService) {
+    seoService.AddRequiredMetaTags();
+    this.isBrowser = isPlatformBrowser(platformId);
+    this.registerSvg();
   }
 
   ngOnInit() {

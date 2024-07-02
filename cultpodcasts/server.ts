@@ -20,6 +20,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,
+		platformProviders: [{ provide: 'url', useValue: url }]
 	});
 
 	// console.log("rendered SSR", content);

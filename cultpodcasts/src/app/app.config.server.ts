@@ -16,7 +16,7 @@ const serverConfig: ApplicationConfig = {
       useClass: FakeAuthServiceWrapper,
     },
     FakeAuthServiceWrapper,
-    importProvidersFrom(FakeAuthServiceWrapper),
+    importProvidersFrom(FakeAuthServiceWrapper)
   ],
 };
 

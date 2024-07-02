@@ -34,7 +34,6 @@ import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './app/SiteService';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
-
 bootstrapApplication(AppComponent, {
     providers: [
         importProvidersFrom(BrowserModule, AppRoutingModule, MatInputModule, MatIconModule, MatButtonModule, FormsModule, ReactiveFormsModule, NgIf, MatCardModule, MatExpansionModule, MatToolbarModule, MatProgressBarModule, MatMenuModule, MatDialogModule, ServiceWorkerModule.register('service-worker.js', {
