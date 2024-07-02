@@ -7,6 +7,15 @@ then
     echo "is staging"
     cp src/environments/environment.staging.ts src/environments/environment.ts 
     echo "Copied src/environments/environment.staging.ts -> src/environments/environment.ts"
+elif [ "$env" == "production" ]
+    echo "is production"
+    cp src/environments/environment.production.ts src/environments/environment.ts 
+    echo "Copied src/environments/environment.production.ts -> src/environments/environment.ts"
+then
+    echo "is staging"
+    cp src/environments/environment.staging.ts src/environments/environment.ts 
+    echo "Copied src/environments/environment.staging.ts -> src/environments/environment.ts"
+
 else
    echo "Leaving environment config"
 fi
