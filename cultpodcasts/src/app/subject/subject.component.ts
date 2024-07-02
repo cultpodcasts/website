@@ -58,9 +58,11 @@ export class SubjectComponent {
     private siteService: SiteService,
     private oDataService: ODataService,
     @Inject(PLATFORM_ID) platformId: any,
-    private seoService: SeoService) {
+    private seoService: SeoService
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
+  
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];

@@ -2,12 +2,12 @@ import { Injectable, NgModule } from '@angular/core';
 import { SearchComponent } from './search/search.component';
 import { PodcastComponent } from './podcast/podcast.component';
 import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
-import { SubjectComponent } from './subject/subject.component';
 import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
+import { SubjectWrapperComponent } from './subject-wrapper/subject-wrapper.component';
 
 const siteTitle = "Cult Podcasts";
 
@@ -59,8 +59,8 @@ export const routes: Routes = [
   { path: 'search/:query', component: SearchComponent, title: QueryTitle },
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
-  { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
-  { path: 'subject/:subjectName/:query', component: SubjectComponent, title: SubjectTitle },
+  { path: 'subject/:subjectName', component: SubjectWrapperComponent, title: SubjectTitle },
+  { path: 'subject/:subjectName/:query', component: SubjectWrapperComponent, title: SubjectTitle },
   { path: 'content/:path', component: ContentComponent, title: ContentTitle },
   { path: 'discovery', component: DiscoveryComponent, title: "Cult Podcasts", canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
