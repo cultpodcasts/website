@@ -29,7 +29,7 @@ const sortParamDateDesc: string = "date-desc";
   styleUrls: ['./podcast.component.sass'],
   standalone: true,
   imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
-  host: { ngSkipHydration: 'true' }
+//  host: { ngSkipHydration: 'true' }
 })
 
 export class PodcastComponent {
