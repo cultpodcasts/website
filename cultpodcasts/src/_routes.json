@@ -4,7 +4,8 @@
 		"/",
 		"/content/*",
 		"/podcast/*",
-		"/subject/*"
+		"/subject/*",
+		"/search/*"
 	],
 	"exclude": []
 }

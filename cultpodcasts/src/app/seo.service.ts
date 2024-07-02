@@ -45,7 +45,7 @@ export class SeoService {
       const url: string = this.url.toString();
       this.meta.addTag({ property: "twitter:domain", content: domain });
       this.meta.addTag({ property: "og:url", content: url });
-      this.meta.addTag({ name: "twitter:image", content: new URL("/sq-image.png", this.url).toString() })
+      this.meta.addTag({ name: "twitter:image", content: new URL("/assets/sq-image.png", this.url).toString() })
     };
   }
 }
