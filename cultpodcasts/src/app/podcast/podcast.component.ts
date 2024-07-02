@@ -98,6 +98,7 @@ export class PodcastComponent {
         this.searchState.episodeUuid = episodeUuid;
         this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
 
+        this.podcastName = params["podcastName"];
         this.siteService.setPodcast(this.podcastName);
         this.siteService.setSubject(null);
 
