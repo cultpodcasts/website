@@ -15,7 +15,7 @@ const siteTitle = "Cult Podcasts";
 class QueryTitle implements Resolve<string> {
   constructor() { }
   resolve(route: ActivatedRouteSnapshot) {
-    return `${route.params['query']} Search Results - ${siteTitle}`;
+    return `"${route.params['query']}" Search Results - ${siteTitle}`;
   }
 }
 
