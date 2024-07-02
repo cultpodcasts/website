@@ -30,7 +30,8 @@ const sortParamDateDesc: string = "date-desc";
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.sass'],
   standalone: true,
-  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
+  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
+  host: { ngSkipHydration: 'true' }
 })
 
 export class SearchComponent {

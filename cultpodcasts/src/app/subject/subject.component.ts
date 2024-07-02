@@ -29,7 +29,8 @@ const sortParamDateDesc: string = "date-desc";
   templateUrl: './subject.component.html',
   styleUrls: ['./subject.component.sass'],
   standalone: true,
-  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe]
+  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
+  host: { ngSkipHydration: 'true' }
 })
 
 export class SubjectComponent {

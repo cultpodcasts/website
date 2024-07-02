@@ -6,8 +6,8 @@ import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
-import { SubjectWrapperComponent } from './subject-wrapper/subject-wrapper.component';
-import { SearchWrapperComponent } from './search-wrapper/search-wrapper.component';
+import { SearchComponent } from './search/search.component';
+import { SubjectComponent } from './subject/subject.component';
 
 const siteTitle = "Cult Podcasts";
 
@@ -56,11 +56,11 @@ class ContentTitle implements Resolve<string> {
 
 export const routes: Routes = [
   { path: '', component: HomeWrapperComponent, title: "Cult Podcasts" },
-  { path: 'search/:query', component: SearchWrapperComponent, title: QueryTitle },
+  { path: 'search/:query', component: SearchComponent, title: QueryTitle },
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
-  { path: 'subject/:subjectName', component: SubjectWrapperComponent, title: SubjectTitle },
-  { path: 'subject/:subjectName/:query', component: SubjectWrapperComponent, title: SubjectTitle },
+  { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
+  { path: 'subject/:subjectName/:query', component: SubjectComponent, title: SubjectTitle },
   { path: 'content/:path', component: ContentComponent, title: ContentTitle },
   { path: 'discovery', component: DiscoveryComponent, title: "Cult Podcasts", canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
