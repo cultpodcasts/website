@@ -1,5 +1,4 @@
 import { Injectable, NgModule } from '@angular/core';
-import { SearchComponent } from './search/search.component';
 import { PodcastComponent } from './podcast/podcast.component';
 import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
 import { ContentComponent } from './content/content.component';
@@ -8,6 +7,7 @@ import { hasRoleGuard } from './has-role.guard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
 import { SubjectWrapperComponent } from './subject-wrapper/subject-wrapper.component';
+import { SearchWrapperComponent } from './search-wrapper/search-wrapper.component';
 
 const siteTitle = "Cult Podcasts";
 
@@ -56,7 +56,7 @@ class ContentTitle implements Resolve<string> {
 
 export const routes: Routes = [
   { path: '', component: HomeWrapperComponent, title: "Cult Podcasts" },
-  { path: 'search/:query', component: SearchComponent, title: QueryTitle },
+  { path: 'search/:query', component: SearchWrapperComponent, title: QueryTitle },
   { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
   { path: 'subject/:subjectName', component: SubjectWrapperComponent, title: SubjectTitle },
