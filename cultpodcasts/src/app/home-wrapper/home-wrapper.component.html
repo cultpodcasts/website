@@ -1,1 +1,3 @@
-<app-home *ngIf="this.isBrowser"></app-home>
+@if (this.isBrowser) {
+<app-home></app-home>
+}
