@@ -12,7 +12,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
-import { Meta, Title } from '@angular/platform-browser';
+//import { Meta } from '@angular/platform-browser';
 
 const pageSize: number = 10;
 
@@ -29,7 +29,7 @@ const sortParamDateDesc: string = "date-desc";
   styleUrls: ['./podcast.component.sass'],
   standalone: true,
   imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
-//  host: { ngSkipHydration: 'true' }
+  host: { ngSkipHydration: 'true' }
 })
 
 export class PodcastComponent {
@@ -56,9 +56,7 @@ export class PodcastComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    @Inject(PLATFORM_ID) platformId: any,
-    private meta: Meta, private titleService: Title
-  ) {
+    @Inject(PLATFORM_ID) platformId: any) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
@@ -80,9 +78,6 @@ export class PodcastComponent {
       })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
-
-      this.podcastName = params["podcastName"];
-      this.titleService.setTitle(`${this.podcastName} - Cult Podcasts`);
 
       if (this.isBrowser) {
         this.isLoading = true;

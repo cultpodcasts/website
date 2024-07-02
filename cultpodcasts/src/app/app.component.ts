@@ -26,7 +26,6 @@ export class AppComponent {
     private iconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: any) {
-      console.log("Environment: " + environment.name);
       this.isBrowser = isPlatformBrowser(platformId);
       this.registerSvg();
   }

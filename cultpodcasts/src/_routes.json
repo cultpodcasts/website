@@ -3,7 +3,7 @@
 	"include": [
 		"/",
 		"/content/*",
-		"/podcasts/*",
+		"/podcast/*",
 		"/subject/*"
 	],
 	"exclude": []
