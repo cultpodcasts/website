@@ -19,33 +19,37 @@ export class SeoService {
   }
 
   AddMetaTags(pageDetails: IPageDetails) {
-    if (pageDetails.description) {
-      this.meta.updateTag({ name: "description", content: pageDetails.description });
+    if (this.isServer) {
+      if (pageDetails.description) {
+        this.meta.updateTag({ name: "description", content: pageDetails.description });
+      }
+      this.meta.updateTag({ name: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
+      console.log("Added Metatags");
     }
-    this.meta.updateTag({ name: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
-    console.log("Added Metatags");
   }
 
   AddRequiredMetaTags() {
-    const twitterHandle: string = "@cultpodcasts";
-    const twitterCardType: string = "summary";
-    const twitterType: string = "website";
-    const description: string = "Find your Cult Podcasts!";
-    const title: string = "Cult Podcasts";
+    if (this.isServer) {
+      const twitterHandle: string = "@cultpodcasts";
+      const twitterCardType: string = "summary";
+      const twitterType: string = "website";
+      const description: string = "Find your Cult Podcasts!";
+      const title: string = "Cult Podcasts";
 
-    this.meta.addTag({ property: "twitter:site", content: twitterHandle });
-    this.meta.addTag({ property: "twitter:creator", content: twitterHandle });
-    this.meta.addTag({ name: "twitter:card", content: twitterCardType });
-    this.meta.addTag({ name: "twitter:type", content: twitterType });
-    this.meta.addTag({ name: "description", content: description });
-    this.meta.addTag({ property: "og:title", content: title });
-    this.meta.addTag({ property: "og:description", content: description });
-    if (this.isServer && this.url) {
-      const domain: string = this.url.hostname;
-      const url: string = this.url.toString();
-      this.meta.addTag({ property: "twitter:domain", content: domain });
-      this.meta.addTag({ property: "og:url", content: url });
-      this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
-    };
+      this.meta.addTag({ property: "twitter:site", content: twitterHandle });
+      this.meta.addTag({ property: "twitter:creator", content: twitterHandle });
+      this.meta.addTag({ name: "twitter:card", content: twitterCardType });
+      this.meta.addTag({ name: "twitter:type", content: twitterType });
+      this.meta.addTag({ name: "description", content: description });
+      this.meta.addTag({ property: "og:title", content: title });
+      this.meta.addTag({ property: "og:description", content: description });
+      if (this.url) {
+        const domain: string = this.url.hostname;
+        const url: string = this.url.toString();
+        this.meta.addTag({ property: "twitter:domain", content: domain });
+        this.meta.addTag({ property: "og:url", content: url });
+        this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
+      };
+    }
   }
 }
