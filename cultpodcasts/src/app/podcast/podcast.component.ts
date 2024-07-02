@@ -11,8 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
-//import { Meta } from '@angular/platform-browser';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation } from '@angular/common';
+import { Meta } from '@angular/platform-browser';
 
 const pageSize: number = 10;
 
@@ -56,7 +56,10 @@ export class PodcastComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    @Inject(PLATFORM_ID) platformId: any) {
+    @Inject(PLATFORM_ID) platformId: any,
+    private meta: Meta,
+private location: PlatformLocation
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
@@ -79,6 +82,11 @@ export class PodcastComponent {
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
+      this.podcastName = params["podcastName"];
+      this.meta.addTag({ name: "description", content: this.podcastName });
+      this.meta.addTag({ name: "og:url", content: this.location.href });
+      this.meta.addTag({ name: "og:title", content: this.podcastName });
+
       if (this.isBrowser) {
         this.isLoading = true;
         let query = "";
@@ -98,7 +106,6 @@ export class PodcastComponent {
         this.searchState.episodeUuid = episodeUuid;
         this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
 
-        this.podcastName = params["podcastName"];
         this.siteService.setPodcast(this.podcastName);
         this.siteService.setSubject(null);
 
