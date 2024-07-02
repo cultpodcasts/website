@@ -12,6 +12,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
 
 const pageSize: number = 10;
 
@@ -55,7 +56,9 @@ export class PodcastComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    @Inject(PLATFORM_ID) platformId: any) {
+    @Inject(PLATFORM_ID) platformId: any,
+    private meta: Meta, private titleService: Title
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
   private route = inject(ActivatedRoute);
@@ -67,19 +70,22 @@ export class PodcastComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
-    if (this.isBrowser) {
-      combineLatest(
-        this.route.params,
-        this.route.queryParams,
-        (params: Params, queryParams: Params) => ({
-          params,
-          queryParams,
-        })
-      ).subscribe((res: { params: Params; queryParams: Params }) => {
-        const { params, queryParams } = res;
 
+    combineLatest(
+      this.route.params,
+      this.route.queryParams,
+      (params: Params, queryParams: Params) => ({
+        params,
+        queryParams,
+      })
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const { params, queryParams } = res;
+
+      this.podcastName = params["podcastName"];
+      this.titleService.setTitle(`${this.podcastName} - Cult Podcasts`);
+
+      if (this.isBrowser) {
         this.isLoading = true;
-
         let query = "";
         let episodeUuid = "";
         const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -97,7 +103,6 @@ export class PodcastComponent {
         this.searchState.episodeUuid = episodeUuid;
         this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
 
-        this.podcastName = params["podcastName"];
         this.siteService.setPodcast(this.podcastName);
         this.siteService.setSubject(null);
 
@@ -160,8 +165,8 @@ export class PodcastComponent {
             this.resultsHeading = "Something went wrong. Please try again.";
             this.isLoading = false;
           });
-      });
-    }
+      }
+    });
   }
 
   setSort(sort: string) {

@@ -20,14 +20,6 @@ class QueryTitle implements Resolve<string> {
 }
 
 @Injectable({ providedIn: 'root' })
-class PodcastTitle implements Resolve<string> {
-  constructor() { }
-  resolve(route: ActivatedRouteSnapshot) {
-    return `${route.params['podcastName']} - ${siteTitle}`;
-  }
-}
-
-@Injectable({ providedIn: 'root' })
 class SubjectTitle implements Resolve<string> {
   constructor() { }
   resolve(route: ActivatedRouteSnapshot) {
@@ -57,8 +49,8 @@ class ContentTitle implements Resolve<string> {
 export const routes: Routes = [
   { path: '', component: HomeWrapperComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent, title: QueryTitle },
-  { path: 'podcast/:podcastName', component: PodcastComponent, title: PodcastTitle },
-  { path: 'podcast/:podcastName/:query', component: PodcastComponent, title: PodcastTitle },
+  { path: 'podcast/:podcastName', component: PodcastComponent },
+  { path: 'podcast/:podcastName/:query', component: PodcastComponent },
   { path: 'subject/:subjectName', component: SubjectComponent, title: SubjectTitle },
   { path: 'subject/:subjectName/:query', component: SubjectComponent, title: SubjectTitle },
   { path: 'content/:path', component: ContentComponent, title: ContentTitle },
