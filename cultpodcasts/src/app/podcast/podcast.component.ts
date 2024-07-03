@@ -114,7 +114,7 @@ export class PodcastComponent {
 
   populateTags(params: Params) {
     const episodeUuid = this.getEpisodeUuid(params["query"]);
-    let episodeTitle = "";
+    let episodeTitle: string | undefined = undefined;
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
@@ -123,7 +123,7 @@ export class PodcastComponent {
             if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
               episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
               console.log("episodeTitle: " + episodeTitle);
-              if (episodeTitle != "") {
+              if (episodeTitle) {
                 this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
               } else {
                 this.seoService.AddMetaTags({ title: this.podcastName });
