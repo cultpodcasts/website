@@ -29,7 +29,11 @@ export class SeoService {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
-      this.titie.setTitle(_title);
+      if (pageDetails.pageTitle) {
+        this.titie.setTitle(pageDetails.pageTitle);
+      } else {
+        this.titie.setTitle(_title);
+      }
       this.meta.updateTag({ property: "og:title", content: _title });
       console.log(`Added Metatags title: '${_title}', description: '${pageDetails.description}'.`);
     }

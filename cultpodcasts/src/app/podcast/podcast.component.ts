@@ -124,7 +124,7 @@ export class PodcastComponent {
               episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
               console.log("episodeTitle: " + episodeTitle);
               if (episodeTitle) {
-                this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+                this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
               } else {
                 this.seoService.AddMetaTags({ title: this.podcastName });
               }
