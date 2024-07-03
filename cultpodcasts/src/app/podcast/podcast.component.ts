@@ -117,6 +117,7 @@ export class PodcastComponent {
       console.log("kv: " + this.kv);
       try {
         this.kv.getWithMetadata<ShortnerRecord>(key).then(episodeKvWithMetaData => {
+          console.log("-8-");
           console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
           if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
             episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
