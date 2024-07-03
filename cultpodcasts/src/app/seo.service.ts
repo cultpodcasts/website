@@ -1,6 +1,6 @@
 import { PlatformLocation, isPlatformServer } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
 
 @Injectable({
@@ -9,7 +9,9 @@ import { IPageDetails } from './page-details';
 export class SeoService {
   isServer: boolean;
 
-  constructor(private meta: Meta,
+  constructor(
+    private meta: Meta,
+    private titie : Title,
     @Inject(PLATFORM_ID) platformId: any,
     @Optional() @Inject('url') private url: URL,
     private location: PlatformLocation
@@ -24,6 +26,7 @@ export class SeoService {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
+      this.titie.setTitle(pageDetails.title);
       this.meta.updateTag({ property: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
       console.log(`Added Metatags title: '${pageDetails.title}', description: '${pageDetails.description}'.`);
     }
