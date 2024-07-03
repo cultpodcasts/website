@@ -67,6 +67,12 @@ export class PodcastComponent {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
+    if (this.isServer) {
+      this.initialiseServer();
+    } else {
+      this.initialiseBrowser();
+    }
+
   }
   private route = inject(ActivatedRoute);
 
@@ -85,71 +91,57 @@ export class PodcastComponent {
     }
   }
 
-  ngOnInit() {
 
+  initialiseBrowser() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
-
       this.podcastName = params["podcastName"];
+      this.populatePage(params, queryParams)
+      console.log("Finished browser pre-processing");
+    });
+  }
 
-      if (this.isServer) {
-        this.populateTags(params)
-      } else {
-        this.populatePage(params, queryParams)
-      }
-      console.log("Finished pre-processing");
-
+  initialiseServer() {
+    this.route.params.subscribe(params => {
+      this.podcastName = params["podcastName"];
+      this.populateTags(params)
+      console.log("Finished server pre-processing");
     });
   }
 
   populateTags(params: Params) {
-    console.log("populate-tags")
     const episodeUuid = this.getEpisodeUuid(params["query"]);
-
     let episodeTitle = "";
     if (episodeUuid != "") {
-      console.log("episode-uuid: " + episodeUuid);
       const key = this.guidService.toBase64(episodeUuid);
-      console.log("key: " + key);
-      console.log("kv: " + this.kv);
       try {
         this.kv.getWithMetadata<ShortnerRecord>(key)
-        .then(episodeKvWithMetaData => {
-          console.log("-8-");
-          console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
-          if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-            episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-            console.log("episodeTitle: " + episodeTitle);
-            if (episodeTitle != "") {
-              console.log("-1-");
-              this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+          .then(episodeKvWithMetaData => {
+            if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+              episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+              console.log("episodeTitle: " + episodeTitle);
+              if (episodeTitle != "") {
+                this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+              } else {
+                this.seoService.AddMetaTags({ title: this.podcastName });
+              }
             } else {
-              console.log("-2-");
               this.seoService.AddMetaTags({ title: this.podcastName });
             }
-          } else {
-            console.log("-3-");
-            this.seoService.AddMetaTags({ title: this.podcastName });
-          }
-        })
-        .catch(error=>{
-          console.log(error);
-        });
-        console.log("-6-");
+          })
+          .catch(error => {
+            console.log(error);
+          });
       } catch (error) {
         console.log(error);
-        console.error(error);
-        console.log("-4-");
         this.seoService.AddMetaTags({ title: this.podcastName });
       }
     } else {
-      console.log("-5-");
       this.seoService.AddMetaTags({ title: this.podcastName });
     }
-    console.log("-7-");
   }
 
   populatePage(params: Params, queryParams: Params) {
