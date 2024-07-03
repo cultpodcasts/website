@@ -76,7 +76,7 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
-  ngOnInit() {
+  async ngOnInit() {
 
     combineLatest(
       this.route.params,
