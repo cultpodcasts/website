@@ -106,6 +106,7 @@ export class PodcastComponent {
   }
 
   populateTags(params: Params) {
+    console.log("populate-tags")
     const episodeUuid = this.getEpisodeUuid(params["query"]);
 
     let episodeTitle = "";
@@ -132,6 +133,7 @@ export class PodcastComponent {
             this.seoService.AddMetaTags({ title: this.podcastName });
           }
         });
+        console.log("-6-");
       } catch (error) {
         console.log(error);
         console.error(error);
@@ -142,9 +144,11 @@ export class PodcastComponent {
       console.log("-5-");
       this.seoService.AddMetaTags({ title: this.podcastName });
     }
+    console.log("-7-");
   }
 
   populatePage(params: Params, queryParams: Params) {
+    console.log("populate-page")
     const episodeUuid = this.getEpisodeUuid(params["query"])
     let query = "";
     if (episodeUuid == "") {
