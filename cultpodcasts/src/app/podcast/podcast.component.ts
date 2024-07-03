@@ -119,6 +119,7 @@ export class PodcastComponent {
               console.log("episodeTitle: " + episodeTitle);
             }
           } catch (error) {
+            console.log(error);
             console.error(error);
           }
         }
