@@ -15,6 +15,7 @@ import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation } f
 import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
+import { KVNamespace } from '@cloudflare/workers-types';
 
 const pageSize: number = 10;
 

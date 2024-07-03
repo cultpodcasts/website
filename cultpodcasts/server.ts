@@ -1,4 +1,5 @@
 import { renderApplication } from "@angular/platform-server";
+import { KVNamespace } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 
 interface Env {
