@@ -17,7 +17,7 @@ import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
 
-const pageSize: number = 10;
+const pageSize: number = 20;
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -91,7 +91,6 @@ export class PodcastComponent {
     }
   }
 
-
   initialiseBrowser() {
     combineLatest(
       [this.route.params, this.route.queryParams],
@@ -122,7 +121,6 @@ export class PodcastComponent {
           .then(episodeKvWithMetaData => {
             if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
               episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-              console.log("episodeTitle: " + episodeTitle);
               if (episodeTitle) {
                 this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
               } else {

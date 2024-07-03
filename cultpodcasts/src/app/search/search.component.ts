@@ -14,7 +14,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 import { SeoService } from '../seo.service';
 
-const pageSize: number = 10;
+const pageSize: number = 20;
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
