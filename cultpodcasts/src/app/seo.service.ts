@@ -23,16 +23,16 @@ export class SeoService {
   }
 
   AddMetaTags(pageDetails: IPageDetails) {
+    const _title = `${pageDetails.title} | ${title}`;
+    if (pageDetails.pageTitle) {
+      this.titie.setTitle(`${pageDetails.pageTitle} | ${title}`);
+    } else {
+      this.titie.setTitle(_title);
+    }
     if (this.isServer) {
-      const _title = `${pageDetails.title} | ${title}`;
       if (pageDetails.description) {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
-      }
-      if (pageDetails.pageTitle) {
-        this.titie.setTitle(`${pageDetails.pageTitle} | ${title}`);
-      } else {
-        this.titie.setTitle(_title);
       }
       this.meta.updateTag({ property: "og:title", content: _title });
       console.log(`Added Metatags title: '${_title}', description: '${pageDetails.description}'.`);

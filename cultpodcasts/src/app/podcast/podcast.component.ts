@@ -149,6 +149,7 @@ export class PodcastComponent {
     const episodeUuid = this.getEpisodeUuid(params["query"])
     let query = "";
     if (episodeUuid == "") {
+      this.seoService.AddMetaTags({ title: this.podcastName });
       query = params["query"] ?? "";
     }
     this.isLoading = true;
