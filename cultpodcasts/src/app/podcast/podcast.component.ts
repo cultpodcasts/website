@@ -16,6 +16,7 @@ import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
+import { CoreModule } from '../core/core.module';
 
 const pageSize: number = 10;
 
@@ -63,10 +64,13 @@ export class PodcastComponent {
     private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
+    private cm: CoreModule,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
+    const p = this.init();
+    this.cm.waitFor(p);
   }
   private route = inject(ActivatedRoute);
 
@@ -76,8 +80,7 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
-  async ngOnInit(): Promise<any> {
-
+  async init(): Promise<any> {
     combineLatest(
       this.route.params,
       this.route.queryParams,
