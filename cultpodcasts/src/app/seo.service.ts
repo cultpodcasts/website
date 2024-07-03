@@ -1,7 +1,9 @@
 import { PlatformLocation, isPlatformServer } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
+
+const title: string = "Cult Podcasts";
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +11,9 @@ import { IPageDetails } from './page-details';
 export class SeoService {
   isServer: boolean;
 
-  constructor(private meta: Meta,
+  constructor(
+    private meta: Meta,
+    private titie: Title,
     @Inject(PLATFORM_ID) platformId: any,
     @Optional() @Inject('url') private url: URL,
     private location: PlatformLocation
@@ -19,12 +23,19 @@ export class SeoService {
   }
 
   AddMetaTags(pageDetails: IPageDetails) {
+    const _title = `${pageDetails.title} | ${title}`;
+    if (pageDetails.pageTitle) {
+      this.titie.setTitle(`${pageDetails.pageTitle} | ${title}`);
+    } else {
+      this.titie.setTitle(_title);
+    }
     if (this.isServer) {
       if (pageDetails.description) {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
+        this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
-      this.meta.updateTag({ name: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
-      console.log("Added Metatags");
+      this.meta.updateTag({ property: "og:title", content: _title });
+      console.log(`Added Metatags title: '${_title}', description: '${pageDetails.description}'.`);
     }
   }
 
@@ -34,7 +45,6 @@ export class SeoService {
       const twitterCardType: string = "summary";
       const twitterType: string = "website";
       const description: string = "Find your Cult Podcasts!";
-      const title: string = "Cult Podcasts";
 
       this.meta.addTag({ property: "twitter:site", content: twitterHandle });
       this.meta.addTag({ property: "twitter:creator", content: twitterHandle });
@@ -51,5 +61,6 @@ export class SeoService {
         this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
       };
     }
+    console.log(`Added Required Metatags.`);
   }
 }

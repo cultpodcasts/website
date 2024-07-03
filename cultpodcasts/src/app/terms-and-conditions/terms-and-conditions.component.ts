@@ -11,7 +11,6 @@ import { Title } from '@angular/platform-browser';
 export class TermsAndConditionsComponent {
     constructor(private title: Title,
         private seoService: SeoService) {
-        title.setTitle("Terms & Conditions");
         seoService.AddMetaTags({ title: "Terms &amp; Conditions" });
     }
 }

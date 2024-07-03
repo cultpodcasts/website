@@ -1,4 +1,5 @@
 export interface IPageDetails {
-    title:string,
-    description?:string
+    title: string,
+    pageTitle?: string,
+    description?: string
 }
