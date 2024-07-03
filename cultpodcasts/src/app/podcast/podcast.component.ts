@@ -122,6 +122,7 @@ export class PodcastComponent {
           this.seoService.AddMetaTags({ title: this.podcastName });
         }
       }
+      console.log("Finished pre-processing");
 
       if (this.isBrowser) {
         this.isLoading = true;
