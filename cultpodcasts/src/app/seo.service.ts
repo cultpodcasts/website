@@ -52,5 +52,6 @@ export class SeoService {
         this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
       };
     }
+    console.log(`Added Required Metatags.`);
   }
 }
