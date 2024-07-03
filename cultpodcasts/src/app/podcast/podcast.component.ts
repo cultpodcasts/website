@@ -76,7 +76,7 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
-  async ngOnInit() {
+  async ngOnInit(): Promise<any> {
 
     combineLatest(
       this.route.params,
@@ -110,7 +110,7 @@ export class PodcastComponent {
           console.log("kv: " + this.kv);
           try {
             console.log("kv-get: " + this.kv.get);
-            var episodeKv = await this.kv.get(key);
+            var episodeKv = this.kv.get(key);
             console.log("episodeKv: " + episodeKv);
             var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
             console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
