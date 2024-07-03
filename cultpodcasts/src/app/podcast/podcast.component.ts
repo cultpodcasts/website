@@ -107,14 +107,18 @@ export class PodcastComponent {
           console.log("episode-uuid: " + episodeUuid);
           const key = this.guidService.toBase64(episodeUuid);
           console.log("key: " + key);
-          console.log("kv: "+this.kv);
-          var episodeKv = await this.kv.get(key);
-          console.log("episodeKv: " + episodeKv);
-          var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-          console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
-          if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-            episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-            console.log("episodeTitle: " + episodeTitle);
+          console.log("kv: " + this.kv);
+          try {
+            var episodeKv = await this.kv.get(key);
+            console.log("episodeKv: " + episodeKv);
+            var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+            console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
+            if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+              episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+              console.log("episodeTitle: " + episodeTitle);
+            }
+          } catch (error) {
+            console.error(error);
           }
         }
         if (episodeTitle != "") {
