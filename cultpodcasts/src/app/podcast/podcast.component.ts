@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID, inject } from '@angular/core';
+import { Component, Inject, Optional, PLATFORM_ID, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -13,6 +13,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation } from '@angular/common';
 import { SeoService } from '../seo.service';
+import { GuidService } from '../guid.service';
+import { ShortnerRecord } from '../shortner-record';
 
 const pageSize: number = 10;
 
@@ -56,8 +58,10 @@ export class PodcastComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
+    private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
-    private seoService: SeoService
+    private seoService: SeoService,
+    @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -78,24 +82,38 @@ export class PodcastComponent {
         params,
         queryParams,
       })
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
+    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
       this.podcastName = params["podcastName"];
-      this.seoService.AddMetaTags({ title: this.podcastName });
+      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const queryParam = params["query"];
+      let query = "";
+      let episodeUuid = "";
+      let episodeTitle = "";
+      if (queryParam) {
+        if (uuid.test(queryParam)) {
+          episodeUuid = queryParam;
+console.log("episode-uuid: "+episodeUuid);
+          const key = this.guidService.toBase64(episodeUuid);
+console.log("key: "+key);
+          var episodeKv = await this.kv.getWithMetadata<ShortnerRecord>(key);
+console.log("episodeKv: "+episodeKv);
+          if (episodeKv != null && episodeKv.metadata != null) {
+            episodeTitle = episodeKv.metadata.episodeTitle;
+          }
+        } else {
+          query = queryParam;
+        }
+      }
+      if (episodeTitle != "") {
+        this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+      } else {
+        this.seoService.AddMetaTags({ title: this.podcastName });
+      }
+
       if (this.isBrowser) {
         this.isLoading = true;
-        let query = "";
-        let episodeUuid = "";
-        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        const queryParam = params["query"];
-        if (queryParam) {
-          if (uuid.test(queryParam)) {
-            episodeUuid = queryParam;
-          } else {
-            query = queryParam;
-          }
-        }
 
         this.searchState.query = query;
         this.siteService.setQuery(this.searchState.query);
@@ -154,9 +172,7 @@ export class PodcastComponent {
             this.results = data.entities;
             var requestTime = (Date.now() - currentTime) / 1000;
             const count = data.metadata.get("count");
-
             this.count = count;
-
             this.isLoading = false;
             this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
             this.showPagingNext = (this.searchState.page * pageSize) < count;

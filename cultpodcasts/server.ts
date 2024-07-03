@@ -3,6 +3,7 @@ import bootstrap from "./src/main.server";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
+	kv: KVNamespace;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -20,7 +21,10 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,
-		platformProviders: [{ provide: 'url', useValue: url }]
+		platformProviders: [
+			{ provide: 'url', useValue: url },
+			{ provide: 'kv', useValue: env.kv }
+		]
 	});
 
 	// console.log("rendered SSR", content);

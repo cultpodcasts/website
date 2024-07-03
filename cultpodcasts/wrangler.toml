@@ -1,0 +1,9 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "website"
+compatibility_date = "2024-05-24"
+compatibility_flags = ["nodejs_compat"]
+
+kv_namespaces = [
+    { binding = "kv", id = "663cd5c74988404dafbf67e1e06b21e8" }
+]
+
