@@ -76,42 +76,39 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
+  getEpisodeUuid(queryParam:string):string {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuid.test(queryParam)) {
+      return queryParam;
+    } else {
+      return "";
+    }
+
+  }
+
   ngOnInit() {
 
     combineLatest(
-      this.route.params,
-      this.route.queryParams,
-      (params: Params, queryParams: Params) => ({
-        params,
-        queryParams,
-      })
+      [this.route.params,this.route.queryParams],
+      (params: Params, queryParams: Params) => ({params, queryParams})
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
       this.podcastName = params["podcastName"];
-      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const queryParam = params["query"];
-      let query = "";
-      let episodeUuid = "";
-      if (queryParam) {
-        if (uuid.test(queryParam)) {
-          episodeUuid = queryParam;
-        } else {
-          query = queryParam;
-        }
-      }
 
       if (this.isServer) {
-        this.populateTags(episodeUuid)
+        this.populateTags(params)
       } else {
-        this.populatePage(query, episodeUuid, queryParams)
+        this.populatePage(params, queryParams)
       }
       console.log("Finished pre-processing");
 
     });
   }
 
-  populateTags(episodeUuid: string) {
+  populateTags(params: Params) {
+    const episodeUuid= this.getEpisodeUuid(params["query"]);
+
     let episodeTitle = "";
     if (episodeUuid != "") {
       console.log("episode-uuid: " + episodeUuid);
@@ -148,7 +145,12 @@ export class PodcastComponent {
     }
   }
 
-  populatePage(query: string, episodeUuid: string, queryParams: Params) {
+  populatePage(params:Params, queryParams: Params) {
+    const episodeUuid= this.getEpisodeUuid(params["query"])
+    let query = "";
+    if (episodeUuid=="") {
+      query= params["query"]
+    }
     this.isLoading = true;
 
     this.searchState.query = query;
