@@ -109,6 +109,7 @@ export class PodcastComponent {
           console.log("key: " + key);
           console.log("kv: " + this.kv);
           try {
+            console.log("kv-get: " + this.kv.get);
             var episodeKv = await this.kv.get(key);
             console.log("episodeKv: " + episodeKv);
             var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
