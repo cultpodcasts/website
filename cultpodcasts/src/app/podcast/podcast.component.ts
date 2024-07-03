@@ -119,21 +119,18 @@ export class PodcastComponent {
                 } else {
                   this.seoService.AddMetaTags({ title: this.podcastName });
                 }
-                this.populatePage(query, episodeUuid, queryParams)
               } else {
                 this.seoService.AddMetaTags({ title: this.podcastName });
-                this.populatePage(query, episodeUuid, queryParams)
               }
-            },
-              failure => {
-                this.populatePage(query, episodeUuid, queryParams)
-              });
+            });
           } catch (error) {
             console.log(error);
             console.error(error);
             this.seoService.AddMetaTags({ title: this.podcastName });
           }
         }
+      } else {
+        this.populatePage(query, episodeUuid, queryParams)
       }
       console.log("Finished pre-processing");
 
