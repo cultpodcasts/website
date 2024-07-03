@@ -109,96 +109,105 @@ export class PodcastComponent {
           console.log("key: " + key);
           console.log("kv: " + this.kv);
           try {
-            this.kv.getWithMetadata<ShortnerRecord>(key).then(episodeKvWithMetaData=>{
+            this.kv.getWithMetadata<ShortnerRecord>(key).then(episodeKvWithMetaData => {
               console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
               if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
                 episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
                 console.log("episodeTitle: " + episodeTitle);
-              }  
-            });
+                if (episodeTitle != "") {
+                  this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+                } else {
+                  this.seoService.AddMetaTags({ title: this.podcastName });
+                }
+                this.populatePage(query, episodeUuid, queryParams)
+              } else {
+                this.seoService.AddMetaTags({ title: this.podcastName });
+                this.populatePage(query, episodeUuid, queryParams)
+              }
+            },
+              failure => {
+                this.populatePage(query, episodeUuid, queryParams)
+              });
           } catch (error) {
             console.log(error);
             console.error(error);
+            this.seoService.AddMetaTags({ title: this.podcastName });
           }
-        }
-        if (episodeTitle != "") {
-          this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
-        } else {
-          this.seoService.AddMetaTags({ title: this.podcastName });
         }
       }
       console.log("Finished pre-processing");
 
-      if (this.isBrowser) {
-        this.isLoading = true;
-
-        this.searchState.query = query;
-        this.siteService.setQuery(this.searchState.query);
-        this.searchState.episodeUuid = episodeUuid;
-        this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
-
-        this.siteService.setPodcast(this.podcastName);
-        this.siteService.setSubject(null);
-
-        if (queryParams[pageParam]) {
-          this.searchState.page = parseInt(queryParams[pageParam]);
-          this.prevPage = this.searchState.page - 1;
-          this.nextPage = this.searchState.page + 1;
-        } else {
-          this.nextPage = 2;
-          this.searchState.page = 1;
-        }
-
-        if (queryParams[sortParam]) {
-          this.searchState.sort = queryParams[sortParam];
-        } else {
-          if (this.searchState.query) {
-            this.searchState.sort = sortParamRank;
-          } else {
-            this.searchState.sort = sortParamDateDesc;
-          }
-        }
-
-        this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
-        if (this.searchState.episodeUuid) {
-          this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
-        }
-        this.siteService.setFilter(this.searchState.filter);
-
-        let currentTime = Date.now();
-        var sort: string = "";
-        if (this.searchState.sort == "date-asc") {
-          sort = "release asc";
-        } else if (this.searchState.sort == "date-desc") {
-          sort = "release desc";
-        }
-
-        this.oDataService.getEntities<ISearchResult>(
-          new URL("/search", environment.api).toString(),
-          {
-            search: this.searchState.query,
-            filter: this.searchState.filter,
-            searchMode: 'any',
-            queryType: 'simple',
-            count: true,
-            skip: (this.searchState.page - 1) * pageSize,
-            top: pageSize,
-            facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
-            orderby: sort
-          }).subscribe(data => {
-            this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
-            this.count = count;
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          }, error => {
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
-          });
-      }
     });
+  }
+
+  populatePage(query: string, episodeUuid: string, queryParams: Params) {
+    this.isLoading = true;
+
+    this.searchState.query = query;
+    this.siteService.setQuery(this.searchState.query);
+    this.searchState.episodeUuid = episodeUuid;
+    this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
+
+    this.siteService.setPodcast(this.podcastName);
+    this.siteService.setSubject(null);
+
+    if (queryParams[pageParam]) {
+      this.searchState.page = parseInt(queryParams[pageParam]);
+      this.prevPage = this.searchState.page - 1;
+      this.nextPage = this.searchState.page + 1;
+    } else {
+      this.nextPage = 2;
+      this.searchState.page = 1;
+    }
+
+    if (queryParams[sortParam]) {
+      this.searchState.sort = queryParams[sortParam];
+    } else {
+      if (this.searchState.query) {
+        this.searchState.sort = sortParamRank;
+      } else {
+        this.searchState.sort = sortParamDateDesc;
+      }
+    }
+
+    this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
+    if (this.searchState.episodeUuid) {
+      this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
+    }
+    this.siteService.setFilter(this.searchState.filter);
+
+    let currentTime = Date.now();
+    var sort: string = "";
+    if (this.searchState.sort == "date-asc") {
+      sort = "release asc";
+    } else if (this.searchState.sort == "date-desc") {
+      sort = "release desc";
+    }
+
+    this.oDataService.getEntities<ISearchResult>(
+      new URL("/search", environment.api).toString(),
+      {
+        search: this.searchState.query,
+        filter: this.searchState.filter,
+        searchMode: 'any',
+        queryType: 'simple',
+        count: true,
+        skip: (this.searchState.page - 1) * pageSize,
+        top: pageSize,
+        facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
+        orderby: sort
+      }).subscribe(data => {
+        this.results = data.entities;
+        var requestTime = (Date.now() - currentTime) / 1000;
+        const count = data.metadata.get("count");
+        this.count = count;
+        this.isLoading = false;
+        this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+        this.showPagingNext = (this.searchState.page * pageSize) < count;
+      }, error => {
+        this.resultsHeading = "Something went wrong. Please try again.";
+        this.isLoading = false;
+      });
   }
 
   setSort(sort: string) {
