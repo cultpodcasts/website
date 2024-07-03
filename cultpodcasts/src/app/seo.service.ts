@@ -3,11 +3,15 @@ import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
 
+const title: string = "Cult Podcasts";
+
 @Injectable({
   providedIn: 'root'
 })
 export class SeoService {
   isServer: boolean;
+
+
 
   constructor(
     private meta: Meta,
@@ -22,13 +26,14 @@ export class SeoService {
 
   AddMetaTags(pageDetails: IPageDetails) {
     if (this.isServer) {
+      const _title= `${pageDetails.title} | ${title}`;
       if (pageDetails.description) {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
-      this.titie.setTitle(pageDetails.title);
-      this.meta.updateTag({ property: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
-      console.log(`Added Metatags title: '${pageDetails.title}', description: '${pageDetails.description}'.`);
+      this.titie.setTitle(_title);
+      this.meta.updateTag({ property: "og:title", content: _title });
+      console.log(`Added Metatags title: '${_title}', description: '${pageDetails.description}'.`);
     }
   }
 
@@ -38,7 +43,6 @@ export class SeoService {
       const twitterCardType: string = "summary";
       const twitterType: string = "website";
       const description: string = "Find your Cult Podcasts!";
-      const title: string = "Cult Podcasts";
 
       this.meta.addTag({ property: "twitter:site", content: twitterHandle });
       this.meta.addTag({ property: "twitter:creator", content: twitterHandle });
