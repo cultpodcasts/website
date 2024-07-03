@@ -16,7 +16,6 @@ import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
-import { CoreModule } from '../core/core.module';
 
 const pageSize: number = 10;
 
@@ -64,13 +63,10 @@ export class PodcastComponent {
     private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
-    private cm: CoreModule,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
-    const p = this.init();
-    this.cm.waitFor(p);
   }
   private route = inject(ActivatedRoute);
 
@@ -80,7 +76,8 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
-  async init(): Promise<any> {
+  ngOnInit() {
+
     combineLatest(
       this.route.params,
       this.route.queryParams,
@@ -88,7 +85,7 @@ export class PodcastComponent {
         params,
         queryParams,
       })
-    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
       this.podcastName = params["podcastName"];
@@ -112,15 +109,13 @@ export class PodcastComponent {
           console.log("key: " + key);
           console.log("kv: " + this.kv);
           try {
-            console.log("kv-get: " + this.kv.get);
-            var episodeKv = this.kv.get(key);
-            console.log("episodeKv: " + episodeKv);
-            var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-            console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
-            if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-              episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-              console.log("episodeTitle: " + episodeTitle);
-            }
+            this.kv.getWithMetadata<ShortnerRecord>(key).then(episodeKvWithMetaData=>{
+              console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
+              if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+                episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+                console.log("episodeTitle: " + episodeTitle);
+              }  
+            });
           } catch (error) {
             console.log(error);
             console.error(error);
