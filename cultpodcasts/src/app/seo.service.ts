@@ -22,8 +22,9 @@ export class SeoService {
     if (this.isServer) {
       if (pageDetails.description) {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
+        this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
-      this.meta.updateTag({ name: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
+      this.meta.updateTag({ property: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
       console.log("Added Metatags");
     }
   }
