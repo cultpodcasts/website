@@ -25,7 +25,7 @@ export class SeoService {
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
       this.meta.updateTag({ property: "og:title", content: `${pageDetails.title} | Cult Podcasts` });
-      console.log("Added Metatags");
+      console.log(`Added Metatags title: '${pageDetails.title}', description: '${pageDetails.description}'.`);
     }
   }
 
