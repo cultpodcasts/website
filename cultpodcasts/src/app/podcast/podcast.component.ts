@@ -108,8 +108,8 @@ export class PodcastComponent {
           const key = this.guidService.toBase64(episodeUuid);
           console.log("key: " + key);
           var episodeKv = await this.kv.get(key);
-          var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
           console.log("episodeKv: " + episodeKv);
+          var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
           console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
           if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
             episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
