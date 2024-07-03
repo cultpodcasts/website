@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation } from '@angular/common';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation, isPlatformServer } from '@angular/common';
 import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
@@ -54,6 +54,7 @@ export class PodcastComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   isBrowser: any;
+  isServer: boolean;
 
   constructor(
     private router: Router,
@@ -65,6 +66,7 @@ export class PodcastComponent {
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    this.isServer = isPlatformServer(platformId);
   }
   private route = inject(ActivatedRoute);
 
@@ -95,22 +97,28 @@ export class PodcastComponent {
       if (queryParam) {
         if (uuid.test(queryParam)) {
           episodeUuid = queryParam;
-console.log("episode-uuid: "+episodeUuid);
-          const key = this.guidService.toBase64(episodeUuid);
-console.log("key: "+key);
-          var episodeKv = await this.kv.getWithMetadata<ShortnerRecord>(key);
-console.log("episodeKv: "+episodeKv);
-          if (episodeKv != null && episodeKv.metadata != null) {
-            episodeTitle = episodeKv.metadata.episodeTitle;
-          }
         } else {
           query = queryParam;
         }
       }
-      if (episodeTitle != "") {
-        this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
-      } else {
-        this.seoService.AddMetaTags({ title: this.podcastName });
+
+      if (this.isServer) {
+        if (episodeUuid!="") {
+console.log("episode-uuid: " + episodeUuid);
+          const key = this.guidService.toBase64(episodeUuid);
+console.log("key: " + key);
+          var episodeKv = await this.kv.getWithMetadata<ShortnerRecord>(key);
+console.log("episodeKv: " + episodeKv);
+          if (episodeKv != null && episodeKv.metadata != null) {
+            episodeTitle = episodeKv.metadata.episodeTitle;
+console.log("episodeTitle: " + episodeTitle);
+          }
+        }
+        if (episodeTitle != "") {
+          this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName });
+        } else {
+          this.seoService.AddMetaTags({ title: this.podcastName });
+        }
       }
 
       if (this.isBrowser) {
