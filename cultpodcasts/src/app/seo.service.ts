@@ -11,11 +11,9 @@ const title: string = "Cult Podcasts";
 export class SeoService {
   isServer: boolean;
 
-
-
   constructor(
     private meta: Meta,
-    private titie : Title,
+    private titie: Title,
     @Inject(PLATFORM_ID) platformId: any,
     @Optional() @Inject('url') private url: URL,
     private location: PlatformLocation
@@ -26,7 +24,7 @@ export class SeoService {
 
   AddMetaTags(pageDetails: IPageDetails) {
     if (this.isServer) {
-      const _title= `${pageDetails.title} | ${title}`;
+      const _title = `${pageDetails.title} | ${title}`;
       if (pageDetails.description) {
         this.meta.updateTag({ name: "description", content: pageDetails.description });
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
