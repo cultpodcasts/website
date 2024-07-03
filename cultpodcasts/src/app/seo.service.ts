@@ -30,7 +30,7 @@ export class SeoService {
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
       if (pageDetails.pageTitle) {
-        this.titie.setTitle(pageDetails.pageTitle);
+        this.titie.setTitle(`${pageDetails.pageTitle} | ${title}`);
       } else {
         this.titie.setTitle(_title);
       }
