@@ -76,21 +76,20 @@ export class PodcastComponent {
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
 
-  getEpisodeUuid(queryParam:string):string {
+  getEpisodeUuid(queryParam: string): string {
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuid.test(queryParam)) {
       return queryParam;
     } else {
       return "";
     }
-
   }
 
   ngOnInit() {
 
     combineLatest(
-      [this.route.params,this.route.queryParams],
-      (params: Params, queryParams: Params) => ({params, queryParams})
+      [this.route.params, this.route.queryParams],
+      (params: Params, queryParams: Params) => ({ params, queryParams })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
@@ -107,7 +106,7 @@ export class PodcastComponent {
   }
 
   populateTags(params: Params) {
-    const episodeUuid= this.getEpisodeUuid(params["query"]);
+    const episodeUuid = this.getEpisodeUuid(params["query"]);
 
     let episodeTitle = "";
     if (episodeUuid != "") {
@@ -145,11 +144,11 @@ export class PodcastComponent {
     }
   }
 
-  populatePage(params:Params, queryParams: Params) {
-    const episodeUuid= this.getEpisodeUuid(params["query"])
+  populatePage(params: Params, queryParams: Params) {
+    const episodeUuid = this.getEpisodeUuid(params["query"])
     let query = "";
-    if (episodeUuid=="") {
-      query= params["query"]
+    if (episodeUuid == "") {
+      query = params["query"] ?? "";
     }
     this.isLoading = true;
 
