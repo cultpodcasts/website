@@ -116,7 +116,8 @@ export class PodcastComponent {
       console.log("key: " + key);
       console.log("kv: " + this.kv);
       try {
-        this.kv.getWithMetadata<ShortnerRecord>(key).then(episodeKvWithMetaData => {
+        this.kv.getWithMetadata<ShortnerRecord>(key)
+        .then(episodeKvWithMetaData => {
           console.log("-8-");
           console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
           if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
@@ -133,6 +134,9 @@ export class PodcastComponent {
             console.log("-3-");
             this.seoService.AddMetaTags({ title: this.podcastName });
           }
+        })
+        .catch(error=>{
+          console.log(error);
         });
         console.log("-6-");
       } catch (error) {
