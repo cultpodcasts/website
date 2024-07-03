@@ -103,15 +103,17 @@ export class PodcastComponent {
       }
 
       if (this.isServer) {
-        if (episodeUuid!="") {
-console.log("episode-uuid: " + episodeUuid);
+        if (episodeUuid != "") {
+          console.log("episode-uuid: " + episodeUuid);
           const key = this.guidService.toBase64(episodeUuid);
-console.log("key: " + key);
-          var episodeKv = await this.kv.getWithMetadata<ShortnerRecord>(key);
-console.log("episodeKv: " + episodeKv);
-          if (episodeKv != null && episodeKv.metadata != null) {
-            episodeTitle = episodeKv.metadata.episodeTitle;
-console.log("episodeTitle: " + episodeTitle);
+          console.log("key: " + key);
+          var episodeKv = await this.kv.get(key);
+          var episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+          console.log("episodeKv: " + episodeKv);
+          console.log("episodeKvWithMetaData: " + episodeKvWithMetaData);
+          if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+            episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+            console.log("episodeTitle: " + episodeTitle);
           }
         }
         if (episodeTitle != "") {
