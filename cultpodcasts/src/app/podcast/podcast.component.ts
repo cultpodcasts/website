@@ -16,8 +16,8 @@ import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
+import { firstValueFrom } from 'rxjs';
 import { CoreModule } from '../core/core.module';
-import { firstValueFrom, of } from 'rxjs';
 
 const pageSize: number = 20;
 
@@ -75,6 +75,7 @@ export class PodcastComponent {
     } else {
       this.initialiseBrowser();
     }
+
   }
   private route = inject(ActivatedRoute);
 
@@ -105,42 +106,36 @@ export class PodcastComponent {
     });
   }
 
-  initialiseServer(): Promise<any> {
-    return firstValueFrom(this.route.params).then(params => {
-      this.podcastName = params["podcastName"];
-      this.cm.waitFor(this.populateTags(params));
-      console.log("Finished server pre-processing");
-    });
+  async initialiseServer() {
+    const params = await firstValueFrom(this.route.params)
+    this.podcastName = params["podcastName"];
+    await this.populateTags(params)
+    console.log("Finished server pre-processing");
   }
 
-  populateTags(params: Params): Promise<any> {
+  async populateTags(params: Params) {
     const episodeUuid = this.getEpisodeUuid(params["query"]);
     let episodeTitle: string | undefined = undefined;
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
-        return this.cm.waitFor(this.kv.getWithMetadata<ShortnerRecord>(key))
-          .then(episodeKvWithMetaData => {
-            if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-              episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-              if (episodeTitle) {
-                this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
-              } else {
-                this.seoService.AddMetaTags({ title: this.podcastName });
-              }
-            } else {
-              this.seoService.AddMetaTags({ title: this.podcastName });
-            }
-          })
-          .catch(error => console.log(error))
+        const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key)
+        if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+          episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+          if (episodeTitle) {
+            this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
+          } else {
+            this.seoService.AddMetaTags({ title: this.podcastName });
+          }
+        } else {
+          this.seoService.AddMetaTags({ title: this.podcastName });
+        }
       } catch (error) {
         console.log(error);
         this.seoService.AddMetaTags({ title: this.podcastName });
-        return this.cm.waitFor(of());
       }
     } else {
       this.seoService.AddMetaTags({ title: this.podcastName });
-      return this.cm.waitFor(of());
     }
   }
 
