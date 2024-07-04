@@ -16,6 +16,8 @@ import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
+import { CoreModule } from '../core/core.module';
+import { firstValueFrom, of } from 'rxjs';
 
 const pageSize: number = 20;
 
@@ -63,16 +65,16 @@ export class PodcastComponent {
     private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
+    private cm: CoreModule,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
     if (this.isServer) {
-      this.initialiseServer();
+      this.cm.waitFor(this.initialiseServer());
     } else {
       this.initialiseBrowser();
     }
-
   }
   private route = inject(ActivatedRoute);
 
@@ -103,21 +105,21 @@ export class PodcastComponent {
     });
   }
 
-  initialiseServer() {
-    this.route.params.subscribe(params => {
+  initialiseServer(): Promise<any> {
+    return firstValueFrom(this.route.params).then(params => {
       this.podcastName = params["podcastName"];
-      this.populateTags(params)
+      this.cm.waitFor(this.populateTags(params));
       console.log("Finished server pre-processing");
     });
   }
 
-  populateTags(params: Params) {
+  populateTags(params: Params): Promise<any> {
     const episodeUuid = this.getEpisodeUuid(params["query"]);
     let episodeTitle: string | undefined = undefined;
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
-        this.kv.getWithMetadata<ShortnerRecord>(key)
+        return this.cm.waitFor(this.kv.getWithMetadata<ShortnerRecord>(key))
           .then(episodeKvWithMetaData => {
             if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
               episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
@@ -130,15 +132,15 @@ export class PodcastComponent {
               this.seoService.AddMetaTags({ title: this.podcastName });
             }
           })
-          .catch(error => {
-            console.log(error);
-          });
+          .catch(error => console.log(error))
       } catch (error) {
         console.log(error);
         this.seoService.AddMetaTags({ title: this.podcastName });
+        return this.cm.waitFor(of());
       }
     } else {
       this.seoService.AddMetaTags({ title: this.podcastName });
+      return this.cm.waitFor(of());
     }
   }
 
