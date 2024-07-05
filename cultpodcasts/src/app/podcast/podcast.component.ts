@@ -118,7 +118,9 @@ export class PodcastComponent {
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
+        console.log("exec getWithMetadata")
         const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+        console.log("execed getWithMetadata")
         if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
           episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
           if (episodeTitle) {
