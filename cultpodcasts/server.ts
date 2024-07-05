@@ -19,7 +19,6 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
 	const document = await indexResponse.text();
 
-	console.log("kv: "+env.kv);
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,

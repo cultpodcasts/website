@@ -103,15 +103,13 @@ export class PodcastComponent {
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
       this.populatePage(params, queryParams)
-      console.log("Finished browser pre-processing");
     });
   }
 
   async initialiseServer(): Promise<any> {
     const params = await firstValueFrom(this.route.params);
     this.podcastName = params["podcastName"];
-    await this.populateTags(params)
-    console.log("Finished server pre-processing");
+    await this.populateTags(params);
   }
 
   async populateTags(params: Params): Promise<any> {
@@ -121,17 +119,18 @@ export class PodcastComponent {
       const key = this.guidService.toBase64(episodeUuid);
       try {
         const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-        console.log("retieved kv")
         if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
           episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-          console.log("episodeTitle: "+episodeTitle );
           if (episodeTitle) {
             this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
+            console.log("Added meta-tags from kv");
           } else {
             this.seoService.AddMetaTags({ title: this.podcastName });
+            console.log("No episode name in kv");
           }
         } else {
           this.seoService.AddMetaTags({ title: this.podcastName });
+          console.log("No entry in kv");
         }
       } catch (error) {
         console.log(error);
@@ -143,7 +142,6 @@ export class PodcastComponent {
   }
 
   populatePage(params: Params, queryParams: Params) {
-    console.log("populate-page")
     const episodeUuid = this.getEpisodeUuid(params["query"])
     let query = "";
     if (episodeUuid == "") {
