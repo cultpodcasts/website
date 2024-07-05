@@ -16,12 +16,12 @@ import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
+import { firstValueFrom } from 'rxjs';
+import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
-
 const sortParam: string = "sort";
 const pageParam: string = "page";
-
 const sortParamRank: string = "rank";
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -46,10 +46,8 @@ export class PodcastComponent {
 
   podcastName: string = "";
   count: number = 0;
-
   prevPage: number = 0;
   nextPage: number = 0;
-
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -67,12 +65,6 @@ export class PodcastComponent {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
-    if (this.isServer) {
-      this.initialiseServer();
-    } else {
-      this.initialiseBrowser();
-    }
-
   }
   private route = inject(ActivatedRoute);
 
@@ -81,6 +73,14 @@ export class PodcastComponent {
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
+
+  async ngOnInit(): Promise<any> {
+    if (this.isServer) {
+      waitFor(this.initialiseServer());
+    } else {
+      this.initialiseBrowser();
+    }
+  }
 
   getEpisodeUuid(queryParam: string): string {
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -99,40 +99,37 @@ export class PodcastComponent {
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
       this.populatePage(params, queryParams)
-      console.log("Finished browser pre-processing");
     });
   }
 
-  initialiseServer() {
-    this.route.params.subscribe(params => {
-      this.podcastName = params["podcastName"];
-      this.populateTags(params)
-      console.log("Finished server pre-processing");
-    });
+  async initialiseServer(): Promise<any> {
+    const params = await firstValueFrom(this.route.params);
+    this.podcastName = params["podcastName"];
+    await this.populateTags(params);
   }
 
-  populateTags(params: Params) {
+  async populateTags(params: Params): Promise<any> {
     const episodeUuid = this.getEpisodeUuid(params["query"]);
     let episodeTitle: string | undefined = undefined;
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
-        this.kv.getWithMetadata<ShortnerRecord>(key)
-          .then(episodeKvWithMetaData => {
-            if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-              episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-              if (episodeTitle) {
-                this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
-              } else {
-                this.seoService.AddMetaTags({ title: this.podcastName });
-              }
-            } else {
-              this.seoService.AddMetaTags({ title: this.podcastName });
-            }
-          })
-          .catch(error => {
-            console.log(error);
-          });
+        console.log("exec getWithMetadata")
+        const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+        console.log("execed getWithMetadata")
+        if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+          episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+          if (episodeTitle) {
+            this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
+            console.log("Added meta-tags from kv");
+          } else {
+            this.seoService.AddMetaTags({ title: this.podcastName });
+            console.log("No episode name in kv");
+          }
+        } else {
+          this.seoService.AddMetaTags({ title: this.podcastName });
+          console.log("No entry in kv");
+        }
       } catch (error) {
         console.log(error);
         this.seoService.AddMetaTags({ title: this.podcastName });
@@ -143,7 +140,6 @@ export class PodcastComponent {
   }
 
   populatePage(params: Params, queryParams: Params) {
-    console.log("populate-page")
     const episodeUuid = this.getEpisodeUuid(params["query"])
     let query = "";
     if (episodeUuid == "") {

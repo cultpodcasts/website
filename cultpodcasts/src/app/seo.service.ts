@@ -35,7 +35,6 @@ export class SeoService {
         this.meta.updateTag({ property: "og:description", content: pageDetails.description });
       }
       this.meta.updateTag({ property: "og:title", content: _title });
-      console.log(`Added Metatags title: '${_title}', description: '${pageDetails.description}'.`);
     }
   }
 
@@ -61,6 +60,5 @@ export class SeoService {
         this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
       };
     }
-    console.log(`Added Required Metatags.`);
   }
 }
