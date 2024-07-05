@@ -17,7 +17,6 @@ import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
 import { firstValueFrom } from 'rxjs';
-import { CoreModule } from '../core/core.module';
 
 const pageSize: number = 20;
 
@@ -65,17 +64,10 @@ export class PodcastComponent {
     private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
-    private cm: CoreModule,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
-    if (this.isServer) {
-      this.cm.waitFor(this.initialiseServer());
-    } else {
-      this.initialiseBrowser();
-    }
-
   }
   private route = inject(ActivatedRoute);
 
@@ -84,6 +76,15 @@ export class PodcastComponent {
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
+
+  async ngOnInit(): Promise<any> {
+    if (this.isServer) {
+      this.initialiseServer();
+    } else {
+      this.initialiseBrowser();
+    }
+
+  }
 
   getEpisodeUuid(queryParam: string): string {
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -106,22 +107,24 @@ export class PodcastComponent {
     });
   }
 
-  async initialiseServer() {
-    const params = await firstValueFrom(this.route.params)
+  async initialiseServer(): Promise<any> {
+    const params = await firstValueFrom(this.route.params);
     this.podcastName = params["podcastName"];
     await this.populateTags(params)
     console.log("Finished server pre-processing");
   }
 
-  async populateTags(params: Params) {
+  async populateTags(params: Params): Promise<any> {
     const episodeUuid = this.getEpisodeUuid(params["query"]);
     let episodeTitle: string | undefined = undefined;
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
-        const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key)
+        const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+        console.log("retieved kv")
         if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
           episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+          console.log("episodeTitle: "+episodeTitle );
           if (episodeTitle) {
             this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
           } else {
