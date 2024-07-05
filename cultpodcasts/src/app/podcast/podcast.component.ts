@@ -20,10 +20,8 @@ import { firstValueFrom } from 'rxjs';
 import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
-
 const sortParam: string = "sort";
 const pageParam: string = "page";
-
 const sortParamRank: string = "rank";
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -48,10 +46,8 @@ export class PodcastComponent {
 
   podcastName: string = "";
   count: number = 0;
-
   prevPage: number = 0;
   nextPage: number = 0;
-
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -267,6 +263,4 @@ export class PodcastComponent {
     }
     this.router.navigate([url]);
   }
-
-  
 }
