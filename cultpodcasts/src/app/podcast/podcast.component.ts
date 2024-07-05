@@ -17,6 +17,7 @@ import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
 import { firstValueFrom } from 'rxjs';
+import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
 
@@ -79,11 +80,10 @@ export class PodcastComponent {
 
   async ngOnInit(): Promise<any> {
     if (this.isServer) {
-      this.initialiseServer();
+      waitFor(this.initialiseServer());
     } else {
       this.initialiseBrowser();
     }
-
   }
 
   getEpisodeUuid(queryParam: string): string {
@@ -267,4 +267,6 @@ export class PodcastComponent {
     }
     this.router.navigate([url]);
   }
+
+  
 }
