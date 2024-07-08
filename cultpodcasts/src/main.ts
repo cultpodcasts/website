@@ -10,8 +10,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { isDevMode, importProvidersFrom } from '@angular/core';
-import { ServiceWorkerModule } from '@angular/service-worker';
+import { importProvidersFrom } from '@angular/core';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -51,10 +50,6 @@ bootstrapApplication(AppComponent, {
             MatProgressBarModule,
             MatMenuModule,
             MatDialogModule,
-            ServiceWorkerModule.register('service-worker.js', {
-                enabled: !isDevMode(),
-                registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
-            }),
             MatProgressSpinnerModule,
             MatSnackBarModule,
             MatChipsModule,
