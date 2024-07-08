@@ -9,7 +9,8 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(withFetch()),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes), provideClientHydration(),
+    provideRouter(routes),
+    provideClientHydration(),
     provideServiceWorker('service-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'

@@ -57,7 +57,8 @@ bootstrapApplication(AppComponent, {
             MatFormFieldModule,
             MatDividerModule,
             MatBadgeModule,
-            MatButtonToggleModule),
+            MatButtonToggleModule
+        ),
         SiteService,
         provideAuth0({
             domain: environment.auth0.domain,
@@ -73,8 +74,8 @@ bootstrapApplication(AppComponent, {
             provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
         },
         provideAnimations(),
-        provideHttpClient(withInterceptorsFromDi()), 
-        provideAnimationsAsync(), 
+        provideHttpClient(withInterceptorsFromDi()),
+        provideAnimationsAsync(),
         provideClientHydration()
     ]
 })
