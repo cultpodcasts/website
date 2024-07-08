@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes), provideClientHydration(),
     provideServiceWorker('service-worker.js', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
+      registrationStrategy: 'registerWhenStable:30000'
     }
     )]
 };
