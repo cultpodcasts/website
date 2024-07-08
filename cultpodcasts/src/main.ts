@@ -36,10 +36,33 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 bootstrapApplication(AppComponent, {
     providers: [
-        importProvidersFrom(BrowserModule, AppRoutingModule, MatInputModule, MatIconModule, MatButtonModule, FormsModule, ReactiveFormsModule, NgIf, MatCardModule, MatExpansionModule, MatToolbarModule, MatProgressBarModule, MatMenuModule, MatDialogModule, ServiceWorkerModule.register('service-worker.js', {
-            enabled: !isDevMode(),
-            registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
-        }), MatProgressSpinnerModule, MatSnackBarModule, MatChipsModule, MatAutocompleteModule, MatFormFieldModule, MatDividerModule, MatBadgeModule, MatButtonToggleModule),
+        importProvidersFrom(
+            BrowserModule,
+            AppRoutingModule,
+            MatInputModule,
+            MatIconModule,
+            MatButtonModule,
+            FormsModule,
+            ReactiveFormsModule,
+            NgIf,
+            MatCardModule,
+            MatExpansionModule,
+            MatToolbarModule,
+            MatProgressBarModule,
+            MatMenuModule,
+            MatDialogModule,
+            ServiceWorkerModule.register('service-worker.js', {
+                enabled: !isDevMode(),
+                registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
+            }),
+            MatProgressSpinnerModule,
+            MatSnackBarModule,
+            MatChipsModule,
+            MatAutocompleteModule,
+            MatFormFieldModule,
+            MatDividerModule,
+            MatBadgeModule,
+            MatButtonToggleModule),
         SiteService,
         provideAuth0({
             domain: environment.auth0.domain,
