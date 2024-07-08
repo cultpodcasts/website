@@ -73,7 +73,9 @@ bootstrapApplication(AppComponent, {
             provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
         },
         provideAnimations(),
-        provideHttpClient(withInterceptorsFromDi()), provideAnimationsAsync(), provideClientHydration()
+        provideHttpClient(withInterceptorsFromDi()), 
+        provideAnimationsAsync(), 
+        provideClientHydration()
     ]
 })
     .catch(err => console.error(err));
