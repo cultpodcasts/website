@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
-import { BrowserModule, bootstrapApplication, provideClientHydration } from '@angular/platform-browser';
+import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
 import { JsonUrlInterceptor } from './JsonUrlInterceptor';
 import { JsonDateInterceptor } from './JsonDateInterceptor';
 import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/common/http';

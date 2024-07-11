@@ -14,7 +14,7 @@
     rel="stylesheet">
 
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
+  <meta name="theme-color" content="#fafafa" data-dark="#303030">
   <meta name="supported-color-schemes" content="dark light">
   <meta name="color-scheme" content="dark light">
 
@@ -24,6 +24,12 @@
       event.preventDefault()
       const element = document.querySelector('body');
       element?.scrollIntoView();
+    }
+
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      const themeColor= document.querySelector("meta[name=theme-color]");
+      const darkThemeColor= themeColor.attributes["data-dark"];
+      themeColor.attributes["content"]= darkThemeColor;
     }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
