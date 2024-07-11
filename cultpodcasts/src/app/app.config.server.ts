@@ -9,7 +9,7 @@ const serverConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(
       withFetch()
-     ),
+    ),
     provideServerRendering(),
     {
       provide: AuthService,
