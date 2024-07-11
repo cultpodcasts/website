@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, Inject, isDevMode, PLATFORM_ID, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ShareMode } from "./ShareMode";
 import { isPlatformBrowser } from '@angular/common';
@@ -34,6 +34,7 @@ export class AppComponent {
   }
 
   ngOnInit() {
+    console.log(`isDevMode=${isDevMode()}`);
     if (this.isBrowser) {
       navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     }
