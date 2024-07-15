@@ -1,4 +1,4 @@
-import { PlatformLocation, isPlatformServer } from '@angular/common';
+import { PlatformLocation, isPlatformServer, formatDate } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
@@ -31,8 +31,15 @@ export class SeoService {
     }
     if (this.isServer) {
       if (pageDetails.description) {
-        this.meta.updateTag({ name: "description", content: pageDetails.description });
-        this.meta.updateTag({ property: "og:description", content: pageDetails.description });
+        let description = pageDetails.description;
+        if (pageDetails.releaseDate) {
+          description = description + ", " + formatDate(pageDetails.releaseDate, 'mediumDate', 'en-US');
+        }
+        if (pageDetails.duration) {
+          description = description + " [" + pageDetails.duration.split(".")[0].substring(1) + "]";
+        }
+        this.meta.updateTag({ name: "description", content: description });
+        this.meta.updateTag({ property: "og:description", content: description });
       }
       this.meta.updateTag({ property: "og:title", content: _title });
     }

@@ -114,13 +114,17 @@ export class PodcastComponent {
     if (episodeUuid != "") {
       const key = this.guidService.toBase64(episodeUuid);
       try {
-        console.log("exec getWithMetadata")
         const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-        console.log("execed getWithMetadata")
         if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
           episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
           if (episodeTitle) {
-            this.seoService.AddMetaTags({ title: episodeTitle, description: this.podcastName, pageTitle: `${episodeTitle} | ${this.podcastName}` });
+            this.seoService.AddMetaTags({
+              title: episodeTitle,
+              description: this.podcastName,
+              pageTitle: `${episodeTitle} | ${this.podcastName}`,
+              releaseDate: episodeKvWithMetaData.metadata.releaseDate,
+              duration: episodeKvWithMetaData.metadata.duration
+            });
             console.log("Added meta-tags from kv");
           } else {
             this.seoService.AddMetaTags({ title: this.podcastName });
