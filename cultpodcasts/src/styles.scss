@@ -250,4 +250,8 @@ mat-card {
         font-size: 18px;
         line-height: 1.3em;
     }
+
+    .mdc-card__actions {
+        align-items: end;
+    }
 }
