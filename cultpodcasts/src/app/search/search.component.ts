@@ -187,7 +187,7 @@ export class SearchComponent {
     const share = {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.assetHost}/podcast/${item.podcastName}/${item.id}`
+      url: `${environment.assetHost}/podcast/${encodeURIComponent(item.podcastName)}/${item.id}`
     };
     window.navigator.share(share);
   }
