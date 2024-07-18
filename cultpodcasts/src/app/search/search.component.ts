@@ -192,5 +192,3 @@ export class SearchComponent {
     window.navigator.share(share);
   }
 }
-    
-}
