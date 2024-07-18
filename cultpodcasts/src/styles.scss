@@ -227,8 +227,6 @@ body {
 
 mat-card {
     mat-card-subtitle {
-
-
         font-size: 1.3em !important;
         margin-top: 10px;
         padding-bottom: 10px;
@@ -250,4 +248,14 @@ mat-card {
         font-size: 18px;
         line-height: 1.3em;
     }
+
+    .mdc-card__actions {
+        align-items: end;
+        padding-left: 20px;
+    }
+}
+
+a[mat-icon-button], button[mat-icon-button] {
+    margin-right: 25px;
+    transform: scale(1.2);
 }
