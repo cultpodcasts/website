@@ -131,7 +131,7 @@ export class HomeComponent {
     const share= {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.assetHost}/podcast/${item.podcastName}/${item.episodeId}`
+      url: `${environment.assetHost}/podcast/${encodeURIComponent(item.podcastName)}/${item.episodeId}`
     };
     window.navigator.share(share);
   }
