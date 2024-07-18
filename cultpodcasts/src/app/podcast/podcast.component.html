@@ -1,4 +1,4 @@
-<section id="results" *ngIf="count > 0">
+<section id="results" *ngIf="count > 0" [class.episodePage] = "this.searchState.episodeUuid!=''">
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
