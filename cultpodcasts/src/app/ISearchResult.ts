@@ -1,5 +1,6 @@
 export interface ISearchResult {
   podcastName: string;
+  id: string;
   episodeTitle: string;
   episodeDescription: string;
   duration: string;
