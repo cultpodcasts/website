@@ -253,5 +253,11 @@ mat-card {
 
     .mdc-card__actions {
         align-items: end;
+        padding-left: 20px;
     }
+}
+
+a[mat-icon-button] {
+    margin-right: 25px;
+    transform: scale(1.2);
 }
