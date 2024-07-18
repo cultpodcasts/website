@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -42,7 +42,6 @@ export class HomeComponent {
   showPagingPrevious: boolean = false;
   showPagingPreviousInit: boolean = false;
   showPagingNext: boolean = false;
-
 
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -123,5 +122,17 @@ export class HomeComponent {
       params["page"] = this.currentPage;
     }
     this.router.navigate([url], { queryParams: params });
+  }
+
+  share(item: IHomepageItem) { 
+    let description= item.podcastName;
+    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
+    description = description + " [" + item.length.split(".")[0].substring(1) + "]";
+    const share= {
+      title: item.episodeTitle,
+      text: description,
+      url: `${environment.assetHost}/podcast/${item.podcastName}/${item.episodeId}`
+    };
+    window.navigator.share(share);
   }
 }

@@ -1,11 +1,10 @@
 export interface IHomepageItem {
   podcastName: string;
-
+  episodeId: string;
   episodeTitle: string;
   episodeDescription: string;
   length: string;
-  release: Date;
-  
+  release: Date;  
   spotify: URL | undefined;
   apple: URL | undefined;
   youtube: URL | undefined;

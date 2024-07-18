@@ -33,6 +33,9 @@
         <a *ngIf="item.apple" href="{{item.apple}}" mat-icon-button>
           <mat-icon svgIcon="apple-podcasts"></mat-icon>
         </a>
+        <button mat-icon-button (click)="share(item)">
+          <mat-icon>share</mat-icon>
+        </button>
         <mat-card-footer class="subjects">
           <div *ngFor="let subject of item.subjects" class="subject">
             <a [routerLink]="['/subject', subject]">{{subject}}</a>
