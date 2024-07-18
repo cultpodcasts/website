@@ -269,7 +269,7 @@ export class PodcastComponent {
   }
 
   share(item: ISearchResult) {
-    let description = item.podcastName;
+    let description= `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
     const share = {

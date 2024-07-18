@@ -125,7 +125,7 @@ export class HomeComponent {
   }
 
   share(item: IHomepageItem) { 
-    let description= item.podcastName;
+    let description= `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.length.split(".")[0].substring(1) + "]";
     const share= {
@@ -133,6 +133,7 @@ export class HomeComponent {
       text: description,
       url: `${environment.assetHost}/podcast/${item.podcastName}/${item.episodeId}`
     };
+    console.log(share)
     window.navigator.share(share);
   }
 }
