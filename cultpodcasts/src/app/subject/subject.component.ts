@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, formatDate } from '@angular/common';
 import { SeoService } from '../seo.service';
 
 const pageSize: number = 20;
@@ -63,7 +63,7 @@ export class SubjectComponent {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
-  
+
   private route = inject(ActivatedRoute);
 
   results: ISearchResult[] = [];
@@ -201,4 +201,17 @@ export class SubjectComponent {
     }
     this.router.navigate([url]);
   }
+
+  share(item: ISearchResult) {
+    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
+    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
+    description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
+    const share = {
+      title: item.episodeTitle,
+      text: description,
+      url: `${environment.assetHost}/podcast/${item.podcastName}/${item.id}`
+    };
+    window.navigator.share(share);
+  }
+
 }

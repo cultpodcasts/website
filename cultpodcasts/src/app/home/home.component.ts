@@ -133,7 +133,6 @@ export class HomeComponent {
       text: description,
       url: `${environment.assetHost}/podcast/${item.podcastName}/${item.episodeId}`
     };
-    console.log(share)
     window.navigator.share(share);
   }
 }
