@@ -69,7 +69,7 @@
 <section *ngIf="count === 0 && !isLoading">
   <h2>There were no results for "{{podcastName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span>
   </h2>
-  <div id="try-search">
+  <div id="cta-button">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>
 </section>
