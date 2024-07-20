@@ -151,7 +151,7 @@ export class PodcastComponent {
           if (result.status == 200) {
             const body: any = await result.json();
             if (body.value && body.value.length == 1) {
-              const episode: ISearchResult = body.value[0];
+              const episode = body.value[0];
               this.seoService.AddMetaTags({
                 title: episode.episodeTitle,
                 description: this.podcastName,
@@ -161,7 +161,7 @@ export class PodcastComponent {
               });
               const shortnerRecord: ShortnerRecord = {
                 episodeTitle: episode.episodeTitle,
-                releaseDate: episode.release.toISOString().split('T')[0],
+                releaseDate: episode.release.split('T')[0],
                 duration: episode.duration
               };
               this.kv.put(key, encodeURIComponent(episode.podcastName) + "/" + episode.id, { metadata: shortnerRecord });
