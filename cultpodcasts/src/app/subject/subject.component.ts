@@ -135,20 +135,24 @@ export class SubjectComponent {
             top: pageSize,
             facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
             orderby: sort
-          }).subscribe(data => {
-            this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
+          }).subscribe(
+            {
+              next: data => {
+                this.results = data.entities;
+                var requestTime = (Date.now() - currentTime) / 1000;
+                const count = data.metadata.get("count");
 
-            this.count = count;
+                this.count = count;
 
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          }, error => {
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
-          });
+                this.isLoading = false;
+                this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+                this.showPagingNext = (this.searchState.page * pageSize) < count;
+              },
+              error: (e) => {
+                this.resultsHeading = "Something went wrong. Please try again.";
+                this.isLoading = false;
+              }
+            });
       }
     });
   }

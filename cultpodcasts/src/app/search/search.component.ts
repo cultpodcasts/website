@@ -135,24 +135,26 @@ export class SearchComponent {
             top: pageSize,
             facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
             orderby: sort
-          }).subscribe(data => {
-            this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
-            let resultsSummary: String = `${count} results`;
-            if (count === 0) {
-              resultsSummary = `0 results`;
-            } else if (count === 1) {
-              resultsSummary = `1 result`;
+          }).subscribe({
+            next: data => {
+              this.results = data.entities;
+              var requestTime = (Date.now() - currentTime) / 1000;
+              const count = data.metadata.get("count");
+              let resultsSummary: String = `${count} results`;
+              if (count === 0) {
+                resultsSummary = `0 results`;
+              } else if (count === 1) {
+                resultsSummary = `1 result`;
+              }
+              this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
+              this.isLoading = false;
+              this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+              this.showPagingNext = (this.searchState.page * pageSize) < count;
+            },
+            error: (e) => {
+              this.resultsHeading = "Something went wrong. Please try again.";
+              this.isLoading = false;
             }
-            this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
-
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          }, error => {
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
           });
       }
     });

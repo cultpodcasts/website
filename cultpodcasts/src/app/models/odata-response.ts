@@ -76,7 +76,7 @@ export class ODataEntityResponse<T> extends ODataResponse {
      * @param data - The untyped response body
      * @returns Entity of type ``T``
      */
-    private getEntity(data: any): T{
+    private getEntity(data: any): T {
 
         let entity = {} as T;
 
@@ -100,9 +100,8 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
      * 
      * @param response - The HTTP Response.
      */
-     constructor(response: HttpResponse<any>) {
+    constructor(response: HttpResponse<any>) {
         super(response);
-
         this.entities = this.getEntities(response.body);
     }
 
@@ -112,7 +111,7 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
      * @param data - The untyped response body
      * @returns Array of type ``T`` elements
      */
-    private  getEntities(data: any): T[] {
+    private getEntities(data: any): T[] {
         const keys = Object.keys(data).filter((key) => !key.startsWith("@odata"));
         if (keys.length === 2 && keys[1] === "value") {
             return (data.value as T[]);

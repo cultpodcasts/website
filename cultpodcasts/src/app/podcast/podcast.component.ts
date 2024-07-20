@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, PlatformLocation, isPlatformServer, formatDate } from '@angular/common';
+import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, isPlatformServer, formatDate } from '@angular/common';
 import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { ShortnerRecord } from '../shortner-record';
@@ -131,8 +131,39 @@ export class PodcastComponent {
             console.log("No episode name in kv");
           }
         } else {
-          this.seoService.AddMetaTags({ title: this.podcastName });
           console.log("No entry in kv");
+          var episodeQuery = {
+            "search": "",
+            "filter": `(id eq '${episodeUuid}')`,
+            "searchMode": "any",
+            "queryType": "simple",
+            "count": false,
+            "skip": 0,
+            "top": 20,
+            "facets": [],
+            "orderby": "release desc"
+          };
+          const url = new URL("/search", environment.api).toString();
+          console.log("call " + url)
+          let result = await fetch(url, {
+            method: "POST",
+            body: JSON.stringify(episodeQuery)
+          });
+          console.log("called");
+          if (result.status == 200) {
+            const body: any = await result.json();
+            if (body.value && body.value.length == 1) {
+              const episode: ISearchResult = body.value[0];
+              console.log(episode);
+              this.seoService.AddMetaTags({
+                title: episode.episodeTitle,
+                description: this.podcastName,
+                pageTitle: `${episode.episodeTitle} | ${this.podcastName}`,
+                releaseDate: episode.release.toString(),
+                duration: episode.duration
+              });
+            }
+          }
         }
       } catch (error) {
         console.log(error);
@@ -205,18 +236,22 @@ export class PodcastComponent {
         top: pageSize,
         facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
         orderby: sort
-      }).subscribe(data => {
-        this.results = data.entities;
-        var requestTime = (Date.now() - currentTime) / 1000;
-        const count = data.metadata.get("count");
-        this.count = count;
-        this.isLoading = false;
-        this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-        this.showPagingNext = (this.searchState.page * pageSize) < count;
-      }, error => {
-        this.resultsHeading = "Something went wrong. Please try again.";
-        this.isLoading = false;
-      });
+      }).subscribe(
+        {
+          next: data => {
+            this.results = data.entities;
+            var requestTime = (Date.now() - currentTime) / 1000;
+            const count = data.metadata.get("count");
+            this.count = count;
+            this.isLoading = false;
+            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+            this.showPagingNext = (this.searchState.page * pageSize) < count;
+          },
+          error: (e) => {
+            this.resultsHeading = "Something went wrong. Please try again.";
+            this.isLoading = false;
+          }
+        });
   }
 
   setSort(sort: string) {
