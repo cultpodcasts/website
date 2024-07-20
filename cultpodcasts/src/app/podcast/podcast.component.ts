@@ -144,17 +144,14 @@ export class PodcastComponent {
             "orderby": "release desc"
           };
           const url = new URL("/search", environment.api).toString();
-          console.log("call " + url)
           let result = await fetch(url, {
             method: "POST",
             body: JSON.stringify(episodeQuery)
           });
-          console.log("called");
           if (result.status == 200) {
             const body: any = await result.json();
             if (body.value && body.value.length == 1) {
               const episode: ISearchResult = body.value[0];
-              console.log(episode);
               this.seoService.AddMetaTags({
                 title: episode.episodeTitle,
                 description: this.podcastName,
@@ -162,11 +159,17 @@ export class PodcastComponent {
                 releaseDate: episode.release.toString(),
                 duration: episode.duration
               });
+              const shortnerRecord: ShortnerRecord = {
+                episodeTitle: episode.episodeTitle,
+                releaseDate: episode.release.toISOString().split('T')[0],
+                duration: episode.duration
+              };
+              this.kv.put(key, encodeURIComponent(episode.podcastName) + "/" + episode.id, { metadata: shortnerRecord });
             }
           }
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
         this.seoService.AddMetaTags({ title: this.podcastName });
       }
     } else {
