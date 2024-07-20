@@ -74,6 +74,7 @@ export class DiscoveryComponent {
               this.displaySave = true;
             },
             error: e => {
+              this.isLoading = false;
               this.isInError = true;
             }
           }
