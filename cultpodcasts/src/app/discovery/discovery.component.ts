@@ -49,6 +49,8 @@ export class DiscoveryComponent {
   constructor(private auth: AuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
   ngOnInit() {
+    this.isLoading= true;
+    this.isInError= false;
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
