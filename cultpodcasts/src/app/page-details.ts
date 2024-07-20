@@ -1,6 +1,5 @@
 export interface IPageDetails {
-    title: string,
-    pageTitle?: string,
+    title?: string,
     description?: string,
     releaseDate?: string,
     duration?: string

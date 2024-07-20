@@ -119,9 +119,8 @@ export class PodcastComponent {
           episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
           if (episodeTitle) {
             this.seoService.AddMetaTags({
-              title: episodeTitle,
               description: this.podcastName,
-              pageTitle: `${episodeTitle} | ${this.podcastName}`,
+              title: `${episodeTitle} | ${this.podcastName}`,
               releaseDate: episodeKvWithMetaData.metadata.releaseDate,
               duration: episodeKvWithMetaData.metadata.duration
             });
@@ -153,9 +152,8 @@ export class PodcastComponent {
             if (body.value && body.value.length == 1) {
               const episode = body.value[0];
               this.seoService.AddMetaTags({
-                title: episode.episodeTitle,
                 description: this.podcastName,
-                pageTitle: `${episode.episodeTitle} | ${this.podcastName}`,
+                title: `${episode.episodeTitle} | ${this.podcastName}`,
                 releaseDate: episode.release.toString(),
                 duration: episode.duration
               });

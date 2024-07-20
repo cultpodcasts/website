@@ -44,6 +44,7 @@ export class DiscoveryComponent {
   erroredSubject: Subject<string[]> = new Subject<string[]>();
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
+  isInError: boolean= false;
 
   constructor(private auth: AuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -60,6 +61,7 @@ export class DiscoveryComponent {
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
         .subscribe(resp => {
+          this.isInError= false;
           this.results = resp.results.map(x => this.enrichFocused(x));
           this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
           this.documentIds = resp.ids;
@@ -69,6 +71,9 @@ export class DiscoveryComponent {
           this.isLoading = false;
           this.displaySave = true;
         })
+    }).catch(x=>{
+      this.isLoading= false;
+      this.isInError= true;
     });
   }
 

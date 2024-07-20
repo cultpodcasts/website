@@ -24,8 +24,8 @@ export class SeoService {
 
   AddMetaTags(pageDetails: IPageDetails) {
     let title: string = siteName;
-    if (pageDetails.pageTitle) {
-      title = `${pageDetails.pageTitle} | ${siteName}`;
+    if (pageDetails.title) {
+      title = `${pageDetails.title} | ${siteName}`;
     }
     this.titie.setTitle(title);
 
