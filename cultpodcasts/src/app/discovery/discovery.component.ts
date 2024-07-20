@@ -44,7 +44,7 @@ export class DiscoveryComponent {
   erroredSubject: Subject<string[]> = new Subject<string[]>();
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
-  isInError: boolean= false;
+  isInError: boolean = false;
 
   constructor(private auth: AuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
 
@@ -60,20 +60,27 @@ export class DiscoveryComponent {
       headers = headers.set("Authorization", "Bearer " + _token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
-        .subscribe(resp => {
-          this.isInError= false;
-          this.results = resp.results.map(x => this.enrichFocused(x));
-          this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
-          this.documentIds = resp.ids;
-          const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
-          if (dates.length > 0)
-            this.minDate = new Date(Math.min(...dates));
-          this.isLoading = false;
-          this.displaySave = true;
-        })
-    }).catch(x=>{
-      this.isLoading= false;
-      this.isInError= true;
+        .subscribe(
+          {
+            next: resp => {
+              this.isInError = false;
+              this.results = resp.results.map(x => this.enrichFocused(x));
+              this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
+              this.documentIds = resp.ids;
+              const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
+              if (dates.length > 0)
+                this.minDate = new Date(Math.min(...dates));
+              this.isLoading = false;
+              this.displaySave = true;
+            },
+            error: e => {
+              this.isInError = true;
+            }
+          }
+        )
+    }).catch(x => {
+      this.isLoading = false;
+      this.isInError = true;
     });
   }
 
