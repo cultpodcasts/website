@@ -8,7 +8,12 @@
     </h2>
   </section>
   <h3 *ngIf="!isLoading && results?.length == 0">There are no discovery results</h3>
-  <h3 *ngIf="isInError">Error requesting discovery</h3>
+  <ng-container *ngIf="isInError">
+    <h3>Error requesting discovery</h3>
+    <div id="try-again">
+      <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
+    </div>
+  </ng-container>
   <ng-container *ngIf="!isLoading">
     <discovery-item 
       *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "

@@ -27,9 +27,9 @@
     }
 
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      const themeColor= document.querySelector("meta[name=theme-color]");
-      const darkThemeColor= themeColor.attributes["data-dark"].value;
-      themeColor.attributes["content"].value= darkThemeColor;
+      const themeColor = document.querySelector("meta[name=theme-color]");
+      const darkThemeColor = themeColor.attributes["data-dark"].value;
+      themeColor.attributes["content"].value = darkThemeColor;
     }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
