@@ -14,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, formatDate } from '@angular/common';
 import { SeoService } from '../seo.service';
+import { GuidService } from '../guid.service';
 
 const pageSize: number = 20;
 
@@ -59,7 +60,8 @@ export class SubjectComponent {
     private siteService: SiteService,
     private oDataService: ODataService,
     @Inject(PLATFORM_ID) platformId: any,
-    private seoService: SeoService
+    private seoService: SeoService,
+    private guidService: GuidService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -135,20 +137,24 @@ export class SubjectComponent {
             top: pageSize,
             facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
             orderby: sort
-          }).subscribe(data => {
-            this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
+          }).subscribe(
+            {
+              next: data => {
+                this.results = data.entities;
+                var requestTime = (Date.now() - currentTime) / 1000;
+                const count = data.metadata.get("count");
 
-            this.count = count;
+                this.count = count;
 
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          }, error => {
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
-          });
+                this.isLoading = false;
+                this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+                this.showPagingNext = (this.searchState.page * pageSize) < count;
+              },
+              error: (e) => {
+                this.resultsHeading = "Something went wrong. Please try again.";
+                this.isLoading = false;
+              }
+            });
       }
     });
   }
@@ -206,10 +212,11 @@ export class SubjectComponent {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
+    const shortGuid = this.guidService.toBase64(item.id);
     const share = {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.assetHost}/podcast/${encodeURIComponent(item.podcastName)}/${item.id}`
+      url: `${environment.shortner}/${shortGuid}`
     };
     window.navigator.share(share);
   }
