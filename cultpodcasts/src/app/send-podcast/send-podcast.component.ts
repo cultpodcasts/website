@@ -101,7 +101,7 @@ export class SendPodcastComponent {
               try {
                 token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
               } catch (e) {
-                console.log(e);
+                console.error(e);
               }
               if (token) {
                 headers = headers.set("Authorization", "Bearer " + token);

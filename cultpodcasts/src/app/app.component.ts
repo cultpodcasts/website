@@ -34,7 +34,6 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    console.log(`isDevMode=${isDevMode()}`);
     if (this.isBrowser) {
       navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     }
