@@ -3,7 +3,7 @@ import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
 
-const title: string = "Cult Podcasts";
+const siteName: string = "Cult Podcasts";
 
 @Injectable({
   providedIn: 'root'
@@ -23,12 +23,12 @@ export class SeoService {
   }
 
   AddMetaTags(pageDetails: IPageDetails) {
-    const _title = `${pageDetails.title} | ${title}`;
+    let title: string = siteName;
     if (pageDetails.pageTitle) {
-      this.titie.setTitle(`${pageDetails.pageTitle} | ${title}`);
-    } else {
-      this.titie.setTitle(_title);
+      title = `${pageDetails.pageTitle} | ${siteName}`;
     }
+    this.titie.setTitle(title);
+
     if (this.isServer) {
       if (pageDetails.description) {
         let description = pageDetails.description;
@@ -41,7 +41,7 @@ export class SeoService {
         this.meta.updateTag({ name: "description", content: description });
         this.meta.updateTag({ property: "og:description", content: description });
       }
-      this.meta.updateTag({ property: "og:title", content: _title });
+      this.meta.updateTag({ property: "og:title", content: title });
     }
   }
 
@@ -57,7 +57,7 @@ export class SeoService {
       this.meta.addTag({ name: "twitter:card", content: twitterCardType });
       this.meta.addTag({ name: "twitter:type", content: twitterType });
       this.meta.addTag({ name: "description", content: description });
-      this.meta.addTag({ property: "og:title", content: title });
+      this.meta.addTag({ property: "og:title", content: siteName });
       this.meta.addTag({ property: "og:description", content: description });
       if (this.url) {
         const domain: string = this.url.hostname;

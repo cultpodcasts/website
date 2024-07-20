@@ -13,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, formatDate } from '@angular/common';
 import { SeoService } from '../seo.service';
+import { GuidService } from '../guid.service';
 
 const pageSize: number = 20;
 
@@ -55,6 +56,7 @@ export class SearchComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
+    private guidService: GuidService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -186,10 +188,11 @@ export class SearchComponent {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
+    const shortGuid= this.guidService.toBase64(item.id);
     const share = {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.assetHost}/podcast/${encodeURIComponent(item.podcastName)}/${item.id}`
+      url: `${environment.shortner}/${shortGuid}`
     };
     window.navigator.share(share);
   }

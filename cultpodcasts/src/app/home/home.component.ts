@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { GuidService } from '../guid.service';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -30,7 +31,8 @@ export class HomeComponent {
   constructor(
     private router: Router,
     private http: HttpClient,
-    private siteService: SiteService) {
+    private siteService: SiteService,
+    private guidService: GuidService) {
     this.grouped = {};
   }
   private route = inject(ActivatedRoute);
@@ -68,50 +70,50 @@ export class HomeComponent {
   totalDuration: string = "";
 
   ngOnInit() {
-      combineLatest(
-        this.route.params,
-        this.route.queryParams,
-        (params: Params, queryParams: Params) => ({
-          params,
-          queryParams,
-        })
-      ).subscribe((res: { params: Params; queryParams: Params }) => {
-        const { params, queryParams } = res;
+    combineLatest(
+      this.route.params,
+      this.route.queryParams,
+      (params: Params, queryParams: Params) => ({
+        params,
+        queryParams,
+      })
+    ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const { params, queryParams } = res;
 
-        this.siteService.setQuery(null);
-        this.siteService.setPodcast(null);
-        this.siteService.setSubject(null);
+      this.siteService.setQuery(null);
+      this.siteService.setPodcast(null);
+      this.siteService.setSubject(null);
 
-        this.currentPage = 1;
-        if (queryParams[pageParam]) {
-          this.currentPage = parseInt(queryParams[pageParam]);
-          this.prevPage = this.currentPage - 1;
-          this.nextPage = this.currentPage + 1;
-        } else {
-          this.nextPage = 2;
-        }
+      this.currentPage = 1;
+      if (queryParams[pageParam]) {
+        this.currentPage = parseInt(queryParams[pageParam]);
+        this.prevPage = this.currentPage - 1;
+        this.nextPage = this.currentPage + 1;
+      } else {
+        this.nextPage = 2;
+      }
 
-        let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
-          .subscribe(data => {
-            this.homepage = data;
-            this.totalDuration = data.totalDuration.split(".")[0] + " days";
-            let start = (this.currentPage - 1) * pageSize;
-            this.podcastCount = data.recentEpisodes.length;
-            var pageEpisodes = data.recentEpisodes.slice(start, start + pageSize);
-            this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-              item.release = new Date(item.release);
-              if (!group[item.release.toLocaleDateString()]) {
-                group[item.release.toLocaleDateString()] = [];
-              }
-              group[item.release.toLocaleDateString()].push(item);
-              return group;
-            }, {});
-            this.isLoading = false;
-            this.showPagingPrevious = this.currentPage > 2;
-            this.showPagingPreviousInit = this.currentPage == 2;
-            this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-          });
-      });
+      let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
+        .subscribe(data => {
+          this.homepage = data;
+          this.totalDuration = data.totalDuration.split(".")[0] + " days";
+          let start = (this.currentPage - 1) * pageSize;
+          this.podcastCount = data.recentEpisodes.length;
+          var pageEpisodes = data.recentEpisodes.slice(start, start + pageSize);
+          this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+            item.release = new Date(item.release);
+            if (!group[item.release.toLocaleDateString()]) {
+              group[item.release.toLocaleDateString()] = [];
+            }
+            group[item.release.toLocaleDateString()].push(item);
+            return group;
+          }, {});
+          this.isLoading = false;
+          this.showPagingPrevious = this.currentPage > 2;
+          this.showPagingPreviousInit = this.currentPage == 2;
+          this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+        });
+    });
   }
 
   setPage(page: number) {
@@ -124,14 +126,15 @@ export class HomeComponent {
     this.router.navigate([url], { queryParams: params });
   }
 
-  share(item: IHomepageItem) { 
-    let description= `"${item.episodeTitle}" - ${item.podcastName}`;
+  share(item: IHomepageItem) {
+    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.length.split(".")[0].substring(1) + "]";
-    const share= {
+    const shortGuid= this.guidService.toBase64(item.episodeId);
+    const share = {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.assetHost}/podcast/${encodeURIComponent(item.podcastName)}/${item.episodeId}`
+      url: `${environment.shortner}/${shortGuid}`
     };
     window.navigator.share(share);
   }
