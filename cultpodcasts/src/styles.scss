@@ -256,7 +256,36 @@ mat-card {
     }
 }
 
-a[mat-icon-button], button[mat-icon-button] {
+a[mat-icon-button],
+button[mat-icon-button] {
     margin-right: 25px;
     transform: scale(1.2);
+}
+
+@media screen and (max-width: 600px) {
+
+    a[mat-icon-button],
+    button[mat-icon-button] {
+        margin-right: 18px;
+    }
+
+    mat-card {
+        .mdc-card__actions {
+            padding-left: 10px;
+        }
+    }
+}
+
+@media screen and (max-width: 400px) {
+
+    a[mat-icon-button],
+    button[mat-icon-button] {
+        margin-right: 12px;
+    }
+
+    mat-card {
+        .mdc-card__actions {
+            padding-left: 0px;
+        }
+    }
 }
