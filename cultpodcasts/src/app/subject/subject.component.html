@@ -30,7 +30,7 @@
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
       <mat-card-title>
-        <a [routerLink]="['/podcast', result.podcastName, result.id]">{{result.episodeTitle}}</a>
+        <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
       <mat-card-subtitle>
         <a [routerLink]="['/podcast', result.podcastName]">
