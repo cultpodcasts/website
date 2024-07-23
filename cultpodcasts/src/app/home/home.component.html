@@ -13,7 +13,8 @@
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
     <mat-card *ngFor="let item of dateItems.value" class="result">
       <mat-card-header>
-        <mat-card-title [innerHTML]="item.episodeTitle"></mat-card-title>
+        <mat-card-title><a
+            [routerLink]="['/podcast', item.podcastName, item.episodeId]">{{item.episodeTitle}}</a></mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
             {{item.podcastName}}</a>

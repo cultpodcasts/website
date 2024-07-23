@@ -227,6 +227,12 @@ body {
 }
 
 mat-card {
+    mat-card-title {
+        a {
+            color: var(--mat-app-text-color);
+            text-decoration: none;
+        }
+    }
     mat-card-subtitle {
         font-size: 1.3em !important;
         margin-top: 10px;
