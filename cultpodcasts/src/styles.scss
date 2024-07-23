@@ -284,8 +284,15 @@ button[mat-icon-button] {
     }
 
     mat-card {
-        .mdc-card__actions {
-            padding-left: 0px;
+
+        margin-left: 3px;
+        margin-right: 3px;
+
+        .mat-mdc-card-header,
+        .mdc-card__actions,
+        .mat-mdc-card-content {
+            padding-left: 2px;
+            padding-right: 2px;
         }
     }
 }
