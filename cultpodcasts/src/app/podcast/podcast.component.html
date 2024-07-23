@@ -1,4 +1,4 @@
-<section id="results" *ngIf="count > 0" [class.episodePage] = "this.searchState.episodeUuid!=''">
+<section id="results" *ngIf="count > 0" [class.episodePage]="this.searchState.episodeUuid!=''">
   <div id="progresswrapper">
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
   </div>
@@ -29,7 +29,9 @@
   </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
-      <mat-card-title [innerHTML]="result.episodeTitle"></mat-card-title>
+      <mat-card-title>
+        <a [routerLink]="['/podcast', result.podcastName, result.id]">{{result.episodeTitle}}</a>
+      </mat-card-title>
       <mat-card-subtitle>
         <a [routerLink]="['/podcast', podcastName]">
           {{result.podcastName}}
@@ -54,7 +56,7 @@
       <button mat-icon-button (click)="share(result)">
         <mat-icon>share</mat-icon>
       </button>
-    <mat-card-footer class="subjects">
+      <mat-card-footer class="subjects">
         <div *ngFor="let subject of result.subjects" class="subject">
           <a [routerLink]="['/subject', subject]">{{subject}}</a>
         </div>
