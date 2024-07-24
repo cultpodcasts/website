@@ -53,6 +53,11 @@ export class PodcastComponent {
   sortParamDateDesc: string = sortParamDateDesc;
   isBrowser: any;
   isServer: boolean;
+  results: ISearchResult[] = [];
+  resultsHeading: string = "";
+  isLoading: boolean = true;
+  showPagingPrevious: boolean = false;
+  showPagingNext: boolean = false;
 
   constructor(
     private router: Router,
@@ -67,12 +72,6 @@ export class PodcastComponent {
     this.isServer = isPlatformServer(platformId);
   }
   private route = inject(ActivatedRoute);
-
-  results: ISearchResult[] = [];
-  resultsHeading: string = "";
-  isLoading: boolean = true;
-  showPagingPrevious: boolean = false;
-  showPagingNext: boolean = false;
 
   async ngOnInit(): Promise<any> {
     if (this.isServer) {
