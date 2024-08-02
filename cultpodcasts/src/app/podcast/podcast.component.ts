@@ -19,6 +19,8 @@ import { KVNamespace } from '@cloudflare/workers-types';
 import { firstValueFrom } from 'rxjs';
 import { waitFor } from '../core.module';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -68,6 +70,7 @@ export class PodcastComponent {
     protected auth: AuthServiceWrapper,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
+    private dialog: MatDialog,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -90,6 +93,10 @@ export class PodcastComponent {
     } else {
       return "";
     }
+  }
+
+  edit(id:string) {
+    this.dialog.open(EditEpisodeDialogComponent, {data: {episodeId: id}});
   }
 
   initialiseBrowser() {
