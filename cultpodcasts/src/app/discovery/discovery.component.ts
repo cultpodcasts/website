@@ -46,11 +46,16 @@ export class DiscoveryComponent {
   hasUnfocused: boolean = false;
   isInError: boolean = false;
 
-  constructor(private auth: AuthServiceWrapper, private http: HttpClient, private dialog: MatDialog, private snackBar: MatSnackBar,) { }
+  constructor(
+    private auth: AuthServiceWrapper,
+    private http: HttpClient,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) { }
 
   ngOnInit() {
-    this.isLoading= true;
-    this.isInError= false;
+    this.isLoading = true;
+    this.isInError = false;
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
