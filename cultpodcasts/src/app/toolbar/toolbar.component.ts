@@ -24,7 +24,7 @@ import { ShareMode } from "../ShareMode";
   host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
-  roles: string[] = [];
+  
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
 
@@ -36,20 +36,6 @@ export class ToolbarComponent {
     private snackBar: MatSnackBar,
     @Inject(PLATFORM_ID) private platformId: any) {
     this.isBrowser = isPlatformBrowser(platformId);
-  }
-
-  ngOnInit() {
-    if (this.isBrowser) {
-      localStorage.removeItem("hasLoggedIn");
-      this.auth.authService.user$.subscribe(user => {
-        if (user && user["https://api.cultpodcasts.com/roles"]) {
-          this.roles = user["https://api.cultpodcasts.com/roles"]
-          localStorage.setItem("hasLoggedIn", "true");
-        }
-        else
-          this.roles = [];
-      })
-    }
   }
 
   login() {

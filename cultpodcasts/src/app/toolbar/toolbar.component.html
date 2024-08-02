@@ -23,7 +23,7 @@
           </a>
         </mat-menu>
         <mat-menu #profile="matMenu">
-          <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+          <a *ngIf="this.auth.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
             <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
             <span>Discovery</span>
           </a>
@@ -42,7 +42,7 @@
         <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
         <span>Add Podcast</span>
       </a>
-      <a *ngIf="this.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+      <a *ngIf="this.auth.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
         <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
         <span>Discovery</span>
       </a>

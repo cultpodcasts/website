@@ -18,6 +18,7 @@ import { ShortnerRecord } from '../shortner-record';
 import { KVNamespace } from '@cloudflare/workers-types';
 import { firstValueFrom } from 'rxjs';
 import { waitFor } from '../core.module';
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -64,6 +65,7 @@ export class PodcastComponent {
     private siteService: SiteService,
     private oDataService: ODataService,
     private guidService: GuidService,
+    protected auth: AuthServiceWrapper,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
     @Optional() @Inject('kv') private kv: KVNamespace
