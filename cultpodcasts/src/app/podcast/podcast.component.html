@@ -29,6 +29,17 @@
   </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
+      @if (this.searchState.episodeUuid!='' && this.auth.roles.includes('Curator')) {
+      <button mat-icon-button [matMenuTriggerFor]="menu">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="edit(result.id)">
+          <mat-icon>edit</mat-icon>
+          <span>Edit</span>
+        </button>
+      </mat-menu>
+      }
       <mat-card-title>
         @if (this.searchState.episodeUuid=='') {
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>

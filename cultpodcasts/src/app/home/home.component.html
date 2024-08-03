@@ -8,6 +8,9 @@
 </div>
 <section id="thisweek">
   <h2>This weeks new releases. <span *ngIf="podcastCount">{{podcastCount}} Podcasts.</span></h2>
+  @if (this.isInError) {
+    <p>An error occurred.</p>
+  }
   <div *ngFor="let dateItems of grouped | keyvalue: descDate">
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
