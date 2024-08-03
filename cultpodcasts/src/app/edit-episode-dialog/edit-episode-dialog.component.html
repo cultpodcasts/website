@@ -8,7 +8,7 @@
     } @else {
     <form id="edit" [formGroup]="form">
         <mat-tab-group>
-            <mat-tab label="details">
+            <mat-tab label="Details">
                 <label>
                     <span>Title:</span>
                     <input type="text" [formControl]="form.controls.title">
@@ -18,7 +18,7 @@
                     <textarea [formControl]="form.controls.description"></textarea>
                 </label>
             </mat-tab>
-            <mat-tab label="flags">
+            <mat-tab label="Flags">
                 <div class="flags">
                     <label>
                         <span>Posted:</span>
@@ -42,7 +42,7 @@
                     </label>
                 </div>
             </mat-tab>
-            <mat-tab label="urls">
+            <mat-tab label="Urls">
                 <label>
                     <span>Spotify:</span>
                     <input type="text" [formControl]="form.controls.spotify">
@@ -67,7 +67,11 @@
                 </label>
                 <label>
                     <span>Subjects:</span>
-                    <input type="text" [formControl]="form.controls.subjects">
+                    <mat-select [formControl]="form.controls.subjects" multiple>
+                        @for (subject of subjects; track subject) {
+                          <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                      </mat-select>
                 </label>
                 <label>
                     <span>Search Terms:</span>

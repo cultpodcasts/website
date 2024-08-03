@@ -5,11 +5,14 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
+import { Subject } from '../subject';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form';
 import {MatTabsModule} from '@angular/material/tabs'; 
+import {MatSelectModule} from '@angular/material/select';
+import {MatFormFieldModule} from '@angular/material/form-field';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -19,7 +22,10 @@ import {MatTabsModule} from '@angular/material/tabs';
     MatProgressSpinnerModule, 
     MatButtonModule, 
     ReactiveFormsModule, 
-    MatTabsModule],
+    MatTabsModule,
+    MatFormFieldModule,
+    MatSelectModule
+  ],
   templateUrl: './edit-episode-dialog.component.html',
   styleUrl: './edit-episode-dialog.component.sass'
 })
@@ -27,6 +33,7 @@ export class EditEpisodeDialogComponent {
   episodeId: string;
   isLoading: boolean = true;
   isInError: boolean = false;
+  subjects: string[] = [];
 
   form = new FormGroup<EpisodeForm>({
     title: new FormControl('', { nonNullable: true }),
@@ -65,13 +72,11 @@ export class EditEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const endpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
-      this.http.get<Episode>(endpoint, { headers: headers })
+      const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
+      this.http.get<Episode>(episodeEndpoint, { headers: headers })
         .subscribe(
           {
             next: resp => {
-              this.isLoading = false;
-              console.log(resp)
               this.form.controls.title.setValue(resp.title);
               this.form.controls.description.setValue(resp.description);
               this.form.controls.posted.setValue(resp.posted);
@@ -86,6 +91,19 @@ export class EditEpisodeDialogComponent {
               this.form.controls.youtube.setValue(resp.urls.youtube||null);
               this.form.controls.subjects.setValue(resp.subjects);
               this.form.controls.searchTerms.setValue(resp.searchTerms||null);
+
+              const subjectsEndpoint= new URL("/subjects", environment.api).toString();
+              this.http.get<Subject[]>(subjectsEndpoint, {headers:headers}).subscribe({
+                next: d=> {
+                  this.subjects= d.map(x=>x.name);
+                  this.isLoading = false;
+                  console.log(this.subjects);
+                },
+                error: e => {
+                  this.isLoading = false;
+                  this.isInError = true;
+                }
+              })
             },
             error: e => {
               this.isLoading = false;
