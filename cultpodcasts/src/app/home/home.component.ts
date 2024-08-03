@@ -41,6 +41,7 @@ export class HomeComponent {
   nextPage: number = 0;
 
   isLoading: boolean = true;
+  isInError: boolean = false;
   showPagingPrevious: boolean = false;
   showPagingPreviousInit: boolean = false;
   showPagingNext: boolean = false;
@@ -54,7 +55,6 @@ export class HomeComponent {
   }
 
   descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
-
     var aD = this.ToDate(a.key);
     var bD = this.ToDate(b.key);
     if (aD > bD) {
@@ -94,7 +94,8 @@ export class HomeComponent {
       }
 
       let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
-        .subscribe(data => {
+        .subscribe({
+          next: data => {
           this.homepage = data;
           this.totalDuration = data.totalDuration.split(".")[0] + " days";
           let start = (this.currentPage - 1) * pageSize;
@@ -112,7 +113,11 @@ export class HomeComponent {
           this.showPagingPrevious = this.currentPage > 2;
           this.showPagingPreviousInit = this.currentPage == 2;
           this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-        });
+        },
+      error:e=>{
+        this.isLoading= false;
+        this.isInError= true;
+      }});
     });
   }
 
