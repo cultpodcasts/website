@@ -21,6 +21,7 @@ import { waitFor } from '../core.module';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -34,7 +35,18 @@ const sortParamDateDesc: string = "date-desc";
   templateUrl: './podcast.component.html',
   styleUrls: ['./podcast.component.sass'],
   standalone: true,
-  imports: [NgIf, MatProgressBarModule, MatButtonModule, MatMenuModule, MatIconModule, NgClass, NgFor, MatCardModule, RouterLink, DatePipe],
+  imports: [
+    NgIf, 
+    MatProgressBarModule, 
+    MatButtonModule, 
+    MatMenuModule, 
+    MatIconModule, 
+    NgClass, 
+    NgFor, 
+    MatCardModule, 
+    RouterLink, 
+    DatePipe
+  ],
   host: { ngSkipHydration: 'true' }
 })
 
@@ -68,6 +80,7 @@ export class PodcastComponent {
     private oDataService: ODataService,
     private guidService: GuidService,
     protected auth: AuthServiceWrapper,
+    private snackBar: MatSnackBar,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
     private dialog: MatDialog,
@@ -96,7 +109,14 @@ export class PodcastComponent {
   }
 
   edit(id:string) {
-    this.dialog.open(EditEpisodeDialogComponent, {data: {episodeId: id}});
+    const dialogRef= this.dialog.open(EditEpisodeDialogComponent, {data: {episodeId: id}});
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
   }
 
   initialiseBrowser() {

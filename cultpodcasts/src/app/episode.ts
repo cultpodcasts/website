@@ -8,13 +8,10 @@ export interface Episode {
     tweeted: boolean,
     ignored: boolean,
     removed: boolean,
+    explicit: boolean,
     release: Date,
     duration: string,
-    explicit: boolean,
-    spotifyId: string,
-    appleId?: number,
-    youTubeId: string,
     urls: EpisodeUrls,
     subjects: string[],
-    searchTerms?: string
+    searchTerms?: string | null
 }

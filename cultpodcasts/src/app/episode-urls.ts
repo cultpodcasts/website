@@ -1,5 +1,5 @@
 export interface EpisodeUrls {
-    spotify?: URL,
-    apple?: URL,
-    youtube?: URL
+    spotify?: URL | null,
+    apple?: URL | null,
+    youtube?: URL | null
 }
