@@ -24,7 +24,8 @@ export class JsonDateInterceptor implements HttpInterceptor {
     }
     if (typeof value === 'string') {
       return this._isoDateFormat.test(value);
-    } return false;
+    }
+    return false;
   }
   
   convert(body: any) {

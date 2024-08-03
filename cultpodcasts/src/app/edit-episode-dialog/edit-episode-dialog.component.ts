@@ -114,12 +114,12 @@ export class EditEpisodeDialogComponent {
       id: this.episodeId,
       title: this.form!.controls.title.value,
       description: this.form!.controls.description.value,
-      posted: this.form!.controls.posted.valid,
+      posted: this.form!.controls.posted.value,
       tweeted: this.form!.controls.tweeted.value,
       ignored: this.form!.controls.ignored.value,
       removed: this.form!.controls.removed.value,
       explicit: this.form!.controls.explicit.value,
-      release: this.form!.controls.release.value,
+      release: new Date(this.form!.controls.release.value),
       duration: this.form!.controls.duration.value,
       urls: {
         spotify: this.form!.controls.spotify.value,
@@ -172,7 +172,7 @@ export class EditEpisodeDialogComponent {
     if (prev.explicit != now.explicit) changes.explicit = now.explicit;
     if (prev.ignored != now.ignored) changes.ignored = now.ignored;
     if (prev.posted != now.posted) changes.posted = now.posted;
-    if (prev.release != now.release) changes.release = new Date(now.release).toISOString();
+    if (prev.release.toISOString() != now.release.toISOString()) changes.release = new Date(now.release).toISOString();
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
     if (prev.subjects != now.subjects) changes.subjects = now.subjects;
