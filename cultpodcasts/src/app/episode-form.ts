@@ -8,7 +8,7 @@ export interface EpisodeForm {
     ignored: FormControl<boolean>,
     removed: FormControl<boolean>,
     explicit: FormControl<boolean>,
-    release: FormControl<Date>,
+    release: FormControl<string>,
     duration: FormControl<string>,
     spotify: FormControl<URL|null>,
     apple: FormControl<URL|null>,

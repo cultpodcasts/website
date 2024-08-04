@@ -73,7 +73,7 @@ export class EditEpisodeDialogComponent {
                 ignored: new FormControl(resp.ignored, { nonNullable: true }),
                 explicit: new FormControl(resp.explicit, { nonNullable: true }),
                 removed: new FormControl(resp.removed, { nonNullable: true }),
-                release: new FormControl(resp.release, { nonNullable: true }),
+                release: new FormControl(this.dateToLocalISO(resp.release), { nonNullable: true }),
                 duration: new FormControl(resp.duration, { nonNullable: true }),
                 spotify: new FormControl(resp.urls.spotify || null),
                 apple: new FormControl(resp.urls.apple || null),
@@ -166,13 +166,14 @@ export class EditEpisodeDialogComponent {
   }
 
   getChanges(prev: Episode, now: Episode): EpisodePost {
+    const nowReleaseDate = new Date(now.release).toISOString();
     var changes: EpisodePost = { urls: {} };
     if (prev.description != now.description) changes.description = now.description;
     if (prev.duration != now.duration) changes.duration = now.duration;
     if (prev.explicit != now.explicit) changes.explicit = now.explicit;
     if (prev.ignored != now.ignored) changes.ignored = now.ignored;
     if (prev.posted != now.posted) changes.posted = now.posted;
-    if (prev.release.toISOString() != now.release.toISOString()) changes.release = new Date(now.release).toISOString();
+    if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
     if (prev.subjects != now.subjects) changes.subjects = now.subjects;
@@ -182,5 +183,11 @@ export class EditEpisodeDialogComponent {
     if (prev.urls.spotify?.toString() != now.urls.spotify?.toString()) changes.urls.spotify = now.urls.spotify;
     if (prev.urls.youtube?.toString() != now.urls.youtube?.toString()) changes.urls.youtube = now.urls.youtube;
     return changes;
+  }
+
+  dateToLocalISO(date: Date) {
+    const off = date.getTimezoneOffset()
+    const absoff = Math.abs(off)
+    return (new Date(date.getTime() - off * 60 * 1000).toISOString().substring(0, 23))
   }
 }

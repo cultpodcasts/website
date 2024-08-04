@@ -185,7 +185,16 @@ footer {
         --mat-form-field-disabled-input-text-placeholder-color: rgba(0, 0, 0, .38);
         --mat-toolbar-container-background-color: whitesmoke;
         --mat-toolbar-container-text-color: rgba(0, 0, 0, .87) --mdc-linear-progress-active-indicator-color: #3f51b5;
-
+        --mat-tab-header-active-hover-label-text-color: black;
+        --mat-tab-header-active-label-text-color: black;
+        --mat-tab-header-inactive-label-text-color: black;
+        --mat-tab-header-active-focus-label-text-color: black;
+        --mat-tab-header-inactive-hover-label-text-color: black;
+        --mat-tab-header-inactive-focus-label-text-color: black;
+        --mat-select-enabled-trigger-text-color: black;
+        --mat-select-enabled-arrow-color: black;
+        --mat-select-panel-background-color: whitesmoke;
+        
         --mdc-linear-progress-track-color: rgba(63, 81, 181, .25);
 
         .mat-mdc-progress-bar .mdc-linear-progress__buffer-dots {
