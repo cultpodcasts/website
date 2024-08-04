@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class JsonDateInterceptor implements HttpInterceptor {
 
-  private _isoDateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?Z$/;
+  private _isoDateFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?Z?$/;
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(map((val: HttpEvent<any>) => {
@@ -27,7 +27,7 @@ export class JsonDateInterceptor implements HttpInterceptor {
     }
     return false;
   }
-  
+
   convert(body: any) {
     if (body === null || body === undefined) {
       return body;

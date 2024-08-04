@@ -14,6 +14,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
+import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
+import { SubmitDialogResponse } from '../submit-url-origin-response';
+
 
 @Component({
   selector: 'app-toolbar',
@@ -24,7 +27,7 @@ import { ShareMode } from "../ShareMode";
   host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
-  
+
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
 
@@ -66,34 +69,58 @@ export class ToolbarComponent {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.disableClose = true;
     dialogConfig.autoFocus = true;
-    const dialog = this.dialog.open(SendPodcastComponent, dialogConfig);
+    const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, dialogConfig);
     dialog
       .afterClosed()
       .subscribe(result => {
         if (result && result.submitted) {
-          if (result.originResponse) {
+          if (result.originResponse?.success != null) {
             let episode: string;
-            if (result.originResponse.episode === "Created") {
+            let edit: boolean = false;
+            if (result.originResponse.success.episode === "Created") {
               episode = "Episode created.";
-            } else if (result.originResponse.episode === "Enriched") {
+              edit = true;
+            } else if (result.originResponse.success.episode === "Enriched") {
               episode = "Episode enriched.";
+              edit = true;
+            } else if (result.originResponse.success.episode === "Ignored") {
+              episode = "Episode ignored.";
             } else {
               episode = "Episode not created.";
             }
             let podcast = "";
-            if (result.originResponse.podcast === "Created") {
+            if (result.originResponse.success.podcast === "Created") {
               podcast = "Podcast created.";
-            } else if (result.originResponse.podcast === "Enriched") {
+            } else if (result.originResponse.success.podcast === "Enriched") {
               podcast = "Podcast enriched.";
-            } else if (result.originResponse.podcast === "PodcastRemoved") {
+            } else if (result.originResponse.success.podcast === "Ignored") {
+              podcast = "Podcast ignored.";
+            } else if (result.originResponse.success.podcast === "PodcastRemoved") {
               podcast = "Podcast Removed.";
             }
-            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, "Ok", { duration: 10000 });
+            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, edit ? "Edit" : "Ok", { duration: 10000 });
+
+            if (edit) {
+              snackBarRef.onAction().subscribe(() => {
+                this.edit(result.originResponse!.success!.episodeId!)
+              });
+            }
           } else {
             let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }
         }
       });
     await dialog.componentInstance.submit(share);
+  }
+
+  edit(id: string) {
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, { data: { episodeId: id } });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
   }
 }

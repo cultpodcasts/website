@@ -10,6 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NgIf, isPlatformBrowser } from '@angular/common';
+import { SubmitDialogResponse, SubmitUrlOriginResponse } from '../submit-url-origin-response';
 
 @Component({
   selector: 'app-send-podcast',
@@ -31,12 +32,12 @@ export class SendPodcastComponent {
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   isAuthenticated: boolean = false;
-  originResponse: any;
+  originResponse: SubmitUrlOriginResponse|undefined;
   isBrowser: any;
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<SendPodcastComponent>,
+    private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>,
     private auth: AuthServiceWrapper,
     @Inject(PLATFORM_ID) private platformId: any) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -113,7 +114,7 @@ export class SendPodcastComponent {
             if (resp.status == 200) {
               this.submitted = true;
               if (resp.headers.get('X-Origin')) {
-                this.originResponse = resp.body.success;
+                this.originResponse = resp.body;
               }
             } else {
               this.submitError = true;
