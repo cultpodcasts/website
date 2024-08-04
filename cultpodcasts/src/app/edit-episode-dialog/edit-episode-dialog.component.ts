@@ -86,7 +86,7 @@ export class EditEpisodeDialogComponent {
               const subjectsEndpoint = new URL("/subjects", environment.api).toString();
               this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
                 next: d => {
-                  this.subjects = d.map(x => x.name);
+                  this.subjects = resp.subjects.concat(d.filter(x => !resp.subjects.includes(x.name)).map(x => x.name));
                   this.isLoading = false;
                 },
                 error: e => {
@@ -150,7 +150,6 @@ export class EditEpisodeDialogComponent {
     });
   }
 
-
   getChanges(prev: Episode, now: Episode): EpisodePost {
     const nowReleaseDate = new Date(now.release).toISOString();
     var changes: EpisodePost = { urls: {} };
@@ -175,5 +174,9 @@ export class EditEpisodeDialogComponent {
     const off = date.getTimezoneOffset()
     const absoff = Math.abs(off)
     return (new Date(date.getTime() - off * 60 * 1000).toISOString().substring(0, 23))
+  }
+
+  noCompareFunction() {
+    return 0;
   }
 }

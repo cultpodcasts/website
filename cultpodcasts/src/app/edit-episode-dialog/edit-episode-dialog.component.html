@@ -67,7 +67,7 @@
                 </label>
                 <label>
                     <span>Subjects:</span>
-                    <mat-select [formControl]="form!.controls.subjects" multiple>
+                    <mat-select [formControl]="form!.controls.subjects" multiple [sortComparator]="noCompareFunction">
                         @for (subject of subjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
