@@ -52,7 +52,12 @@ export class DiscoverySubmitComponent {
       headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending = true;
-      var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse>>(this.http.post<SubmitDiscoveryResponse>(endpoint, { ids: data.documentIds, resultIds: data.resultIds }, { headers: headers, observe: "response" }));
+      var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse>>(
+        this.http.post<SubmitDiscoveryResponse>(
+          endpoint,
+          { ids: data.documentIds, resultIds: data.resultIds },
+          { headers: headers, observe: "response" }
+        ));
       if (resp.status === 200) {
         console.log(resp.body);
         this.isSending = false;

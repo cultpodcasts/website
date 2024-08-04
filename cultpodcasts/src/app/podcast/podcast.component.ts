@@ -22,6 +22,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -36,15 +37,15 @@ const sortParamDateDesc: string = "date-desc";
   styleUrls: ['./podcast.component.sass'],
   standalone: true,
   imports: [
-    NgIf, 
-    MatProgressBarModule, 
-    MatButtonModule, 
-    MatMenuModule, 
-    MatIconModule, 
-    NgClass, 
-    NgFor, 
-    MatCardModule, 
-    RouterLink, 
+    NgIf,
+    MatProgressBarModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatIconModule,
+    NgClass,
+    NgFor,
+    MatCardModule,
+    RouterLink,
     DatePipe
   ],
   host: { ngSkipHydration: 'true' }
@@ -108,8 +109,8 @@ export class PodcastComponent {
     }
   }
 
-  edit(id:string) {
-    const dialogRef= this.dialog.open(EditEpisodeDialogComponent, {data: {episodeId: id}});
+  edit(id: string) {
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, { data: { episodeId: id } });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
@@ -344,4 +345,15 @@ export class PodcastComponent {
     };
     window.navigator.share(share);
   }
+
+  index() {
+    const dialogRef = this.dialog.open(PodcastIndexComponent);
+    dialogRef.componentInstance.index(this.results[0].podcastName);
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Podcast Indexed", "Ok", { duration: 10000 });
+      }
+    });
+  }
+
 }
