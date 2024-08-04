@@ -270,18 +270,19 @@ mat-card {
         padding-left: 20px;
     }
 }
-
-a[mat-icon-button],
-button[mat-icon-button] {
-    margin-right: 25px;
-    transform: scale(1.2);
+mat-card-actions {
+    a[mat-icon-button], button[mat-icon-button] {
+        margin-right: 25px;
+        transform: scale(1.2);
+    }
 }
 
 @media screen and (max-width: 600px) {
-
-    a[mat-icon-button],
-    button[mat-icon-button] {
-        margin-right: 18px;
+    mat-card-actions {
+        a[mat-icon-button],
+        button[mat-icon-button] {
+            margin-right: 18px;
+        }
     }
 
     mat-card {
@@ -292,10 +293,11 @@ button[mat-icon-button] {
 }
 
 @media screen and (max-width: 400px) {
-
-    a[mat-icon-button],
-    button[mat-icon-button] {
-        margin-right: 12px;
+    mat-card-actions {
+        a[mat-icon-button],
+        button[mat-icon-button] {
+            margin-right: 12px;
+        }
     }
 
     mat-card {
