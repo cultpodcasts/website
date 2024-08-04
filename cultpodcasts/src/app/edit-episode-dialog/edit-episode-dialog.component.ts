@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +14,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../EpisodePost';
+import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -44,7 +45,8 @@ export class EditEpisodeDialogComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { episodeId: string },
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dialog: MatDialog,
   ) {
     this.episodeId = data.episodeId;
   }
@@ -134,36 +136,20 @@ export class EditEpisodeDialogComponent {
     if (Object.keys(changes).length == 1) {
       this.dialogRef.close({ noChange: true });
     } else {
-      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-        authorizationParams: {
-          audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
-        }
-      }));
-      token.then(_token => {
-        let headers: HttpHeaders = new HttpHeaders();
-        headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
-        this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
-          .subscribe(
-            {
-              next: resp => {
-                this.dialogRef.close({ updated: true });
-              },
-              error: e => {
-                this.isLoading = false;
-                this.isInError = true;
-                console.log(e);
-              }
-            }
-          )
-      }).catch(x => {
-        this.isLoading = false;
-        this.isInError = true;
-        console.log(x);
-      });
+      this.send(this.episodeId, changes);
     }
   }
+
+  send(id: string, changes: EpisodePost) {
+    const dialogRef = this.dialog.open(EditEpisodeSendComponent);
+    dialogRef.componentInstance.submit(id, changes);
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        this.dialogRef.close({ updated: true });
+      }
+    });
+  }
+
 
   getChanges(prev: Episode, now: Episode): EpisodePost {
     const nowReleaseDate = new Date(now.release).toISOString();
