@@ -24,7 +24,7 @@ import { ShareMode } from "../ShareMode";
   host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
-  
+
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
 
@@ -77,6 +77,8 @@ export class ToolbarComponent {
               episode = "Episode created.";
             } else if (result.originResponse.episode === "Enriched") {
               episode = "Episode enriched.";
+            } else if (result.originResponse.episode === "Ignored") {
+              episode = "Episode ignored.";
             } else {
               episode = "Episode not created.";
             }
@@ -85,6 +87,8 @@ export class ToolbarComponent {
               podcast = "Podcast created.";
             } else if (result.originResponse.podcast === "Enriched") {
               podcast = "Podcast enriched.";
+            } else if (result.originResponse.podcast === "Ignored") {
+              podcast = "Podcast ignored.";
             } else if (result.originResponse.podcast === "PodcastRemoved") {
               podcast = "Podcast Removed.";
             }
