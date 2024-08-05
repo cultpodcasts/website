@@ -112,31 +112,34 @@ export class EditEpisodeDialogComponent {
   }
 
   onSubmit() {
-    const update: Episode = {
-      id: this.episodeId,
-      title: this.form!.controls.title.value,
-      description: this.form!.controls.description.value,
-      posted: this.form!.controls.posted.value,
-      tweeted: this.form!.controls.tweeted.value,
-      ignored: this.form!.controls.ignored.value,
-      removed: this.form!.controls.removed.value,
-      explicit: this.form!.controls.explicit.value,
-      release: new Date(this.form!.controls.release.value),
-      duration: this.form!.controls.duration.value,
-      urls: {
-        spotify: this.form!.controls.spotify.value,
-        apple: this.form!.controls.apple.value,
-        youtube: this.form!.controls.youtube.value
-      },
-      subjects: this.form!.controls.subjects.value,
-      searchTerms: this.form!.controls.searchTerms.value
-    };
+    if (this.form?.valid) {
 
-    var changes = this.getChanges(this.originalEpisode!, update);
-    if (Object.keys(changes).length == 1) {
-      this.dialogRef.close({ noChange: true });
-    } else {
-      this.send(this.episodeId, changes);
+      const update: Episode = {
+        id: this.episodeId,
+        title: this.form!.controls.title.value,
+        description: this.form!.controls.description.value,
+        posted: this.form!.controls.posted.value,
+        tweeted: this.form!.controls.tweeted.value,
+        ignored: this.form!.controls.ignored.value,
+        removed: this.form!.controls.removed.value,
+        explicit: this.form!.controls.explicit.value,
+        release: new Date(this.form!.controls.release.value),
+        duration: this.form!.controls.duration.value,
+        urls: {
+          spotify: this.form!.controls.spotify.value,
+          apple: this.form!.controls.apple.value,
+          youtube: this.form!.controls.youtube.value
+        },
+        subjects: this.form!.controls.subjects.value,
+        searchTerms: this.form!.controls.searchTerms.value
+      };
+
+      var changes = this.getChanges(this.originalEpisode!, update);
+      if (Object.keys(changes).length == 1 && Object.keys(changes.urls).length == 0) {
+        this.dialogRef.close({ noChange: true });
+      } else {
+        this.send(this.episodeId, changes);
+      }
     }
   }
 

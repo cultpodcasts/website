@@ -1,0 +1,94 @@
+<h2 mat-dialog-title>Edit Podcast</h2>
+
+<mat-dialog-content>
+    @if (this.isLoading) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (this.isInError) {
+    <p id="error">An error occurred</p>
+    } @else {
+    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+        <mat-tab-group>
+            <mat-tab label="Details">
+                <label>
+                    <span>Spotify Id:</span>
+                    <input type="text" [formControl]="form!.controls.spotifyId">
+                </label>
+                <label>
+                    <span>Apple Id:</span>
+                    <input type="number" [formControl]="form!.controls.appleId">
+                </label>
+                <label>
+                    <span>Default Subject:</span>
+                    <mat-select [formControl]="form!.controls.defaultSubject">
+                        <mat-option [value]="">No Subject</mat-option>
+                        @for (subject of subjects; track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
+                </label>
+                <label>
+                    <span>YouTube Publication Delay:</span>
+                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay">
+                </label>
+                <label>
+                    <span>Twitter Handle:</span>
+                    <input type="text" [formControl]="form!.controls.twitterHandle">
+                </label>
+            </mat-tab>
+            <mat-tab label="Services">
+                <label>
+                    <span>Release Authority:</span>
+                    <input type="text" [formControl]="form!.controls.releaseAuthority">
+                </label>
+                <label>
+                    <span>Primary Post Service:</span>
+                    <input type="text" [formControl]="form!.controls.primaryPostService">
+                </label>
+            </mat-tab>
+            <mat-tab label="Flags">
+                <div class="flags">
+                    <label>
+                        <span>Removed:</span>
+                        <input type="checkbox" [formControl]="form!.controls.removed">
+                    </label>
+                    <label>
+                        <span>Index All Episodes:</span>
+                        <input type="checkbox" [formControl]="form!.controls.indexAllEpisodes">
+                    </label>
+                    <label>
+                        <span>Bypass Short Episode Checking:</span>
+                        <input type="checkbox" [formControl]="form!.controls.bypassShortEpisodeChecking">
+                    </label>
+                    <label>
+                        <span>Skip Enriching From YouTube:</span>
+                        <input type="checkbox" [formControl]="form!.controls.skipEnrichingFromYouTube">
+                    </label>
+                </div>
+            </mat-tab>
+            <mat-tab label="Regexs">
+                <label>
+                    <span>Title Regex:</span>
+                    <input type="text" [formControl]="form!.controls.titleRegex">
+                </label>
+                <label>
+                    <span>Description Regex:</span>
+                    <input type="text" [formControl]="form!.controls.descriptionRegex">
+                </label>
+                <label>
+                    <span>Episode Match Regex:</span>
+                    <input type="text" [formControl]="form!.controls.episodeMatchRegex">
+                </label>
+                <label>
+                    <span>Episode Include Title Regex:</span>
+                    <input type="text" [formControl]="form!.controls.episodeIncludeTitleRegex">
+                </label>
+            </mat-tab>
+        </mat-tab-group>
+    </form>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Close</button>
+    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+</mat-dialog-actions>
