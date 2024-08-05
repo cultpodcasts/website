@@ -18,13 +18,25 @@ import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-discovery',
   templateUrl: './discovery.component.html',
   styleUrls: ['./discovery.component.sass'],
   standalone: true,
-  imports: [NgIf, MatProgressBarModule, NgFor, DiscoveryItemComponent, MatDividerModule, HideDirective, MatButtonToggleModule, MatButtonModule, MatBadgeModule, DatePipe, DiscoveryItemFilter],
+  imports: [
+    NgIf,
+    MatProgressBarModule,
+    NgFor,
+    DiscoveryItemComponent,
+    MatDividerModule,
+    HideDirective,
+    MatButtonToggleModule,
+    MatButtonModule,
+    MatBadgeModule,
+    DatePipe,
+    DiscoveryItemFilter],
   host: { ngSkipHydration: 'true' }
 })
 export class DiscoveryComponent {
@@ -50,7 +62,8 @@ export class DiscoveryComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) { }
 
   ngOnInit() {
@@ -122,7 +135,7 @@ export class DiscoveryComponent {
       .subscribe(async result => {
         if (result && !result.endpointError && !result.allErrored) {
           let snackBarMessage = "Discovery Sent!"
-          let snackBarDuration = 3000;
+          let snackBarDuration = 10000;
           if (result.hasErrors) {
             snackBarMessage = "Discovery Sent! Errors Occured."
             snackBarDuration = 10000;
@@ -130,7 +143,13 @@ export class DiscoveryComponent {
             this.erroredSubject.next(result.erroredItems);
             this.resultsFilterSubject.next(this.resultsFilter);
           }
-          let snackBarRef = this.snackBar.open(snackBarMessage, "Ok", { duration: snackBarDuration });
+          let snackBarRef = this.snackBar.open(snackBarMessage, !result.hasErrors ? "Review" : "Ok", { duration: snackBarDuration });
+          if (!result.hasErrors) {
+            snackBarRef.onAction().subscribe(() => {
+              const episodeIds = JSON.stringify(result.episodeIds);
+              this.router.navigate(["/episodes", episodeIds])
+            });
+          }
           this.displaySave = false;
           this.submitted = true;
           this.submittedSubject.next(this.submitted);

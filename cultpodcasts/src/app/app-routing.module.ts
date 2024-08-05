@@ -8,6 +8,7 @@ import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
 import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';
+import { EpisodesComponent } from './episodes/episodes.component';
 
 
 export const routes: Routes = [
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'subject/:subjectName/:query', component: SubjectComponent },
   { path: 'content/:path', component: ContentComponent },
   { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
+  { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
 ];
 

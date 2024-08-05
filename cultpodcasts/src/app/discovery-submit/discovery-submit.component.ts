@@ -61,13 +61,13 @@ export class DiscoverySubmitComponent {
       if (resp.status === 200) {
         console.log(resp.body);
         this.isSending = false;
+        const episodeIds = resp.body?.results.filter(x => x.episodeId != null).map(x => x.episodeId!);
+        this.submitState.episodeIds = episodeIds;
         if (resp.body?.errorsOccurred) {
           this.submitState.hasErrors = true;
           this.submitState.erroredItems = resp.body?.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
-
           const containsAll = (arr1: string[], arr2: string[]) => arr2.every(arr2Item => arr1.includes(arr2Item))
           const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
-
           this.submitState.allErrored = sameMembers(this.submitState.erroredItems, data.resultIds);
         } else {
           this.close();
