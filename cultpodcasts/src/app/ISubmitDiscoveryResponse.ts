@@ -7,4 +7,5 @@ export interface SubmitDiscoveryResponse {
 export interface SubmitDiscoveryItemResult {
     discoveryItemId: string;
     message: string;
+    episodeId: string | undefined
 }

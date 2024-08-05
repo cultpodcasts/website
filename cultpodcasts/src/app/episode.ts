@@ -3,6 +3,7 @@ import { EpisodeUrls } from "./episode-urls";
 export interface Episode {
     id: string,
     title: string,
+    podcastName?: string,
     description: string,
     posted: boolean,
     tweeted: boolean,

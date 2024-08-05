@@ -69,6 +69,7 @@ export class DiscoverySubmitComponent {
           const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
 
           this.submitState.allErrored = sameMembers(this.submitState.erroredItems, data.resultIds);
+          this.submitState.episodeIds= resp.body.results.filter(x=>x.episodeId && x.episodeId!=null).map(x=>x.episodeId!)
         } else {
           this.close();
         }
