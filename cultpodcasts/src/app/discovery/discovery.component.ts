@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
@@ -17,7 +17,7 @@ import { HideDirective } from '../hide.directive';
 import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { NgIf, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
@@ -57,52 +57,58 @@ export class DiscoveryComponent {
   resultsFilter: string = "all";
   hasUnfocused: boolean = false;
   isInError: boolean = false;
+  isBrowser: boolean;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private router: Router
-  ) { }
+    private router: Router,
+    @Inject(PLATFORM_ID) platformId: any,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit() {
-    this.isLoading = true;
-    this.isInError = false;
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
-      }
-    }));
-    token.then(_token => {
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
-      const endpoint = new URL("/discovery-curation", environment.api).toString();
-      this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.isInError = false;
-              this.results = resp.results.map(x => this.enrichFocused(x));
-              this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
-              this.documentIds = resp.ids;
-              const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
-              if (dates.length > 0)
-                this.minDate = new Date(Math.min(...dates));
-              this.isLoading = false;
-              this.displaySave = true;
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
+    if (this.isBrowser) {
+      this.isLoading = true;
+      this.isInError = false;
+      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      token.then(_token => {
+        let headers: HttpHeaders = new HttpHeaders();
+        headers = headers.set("Authorization", "Bearer " + _token);
+        const endpoint = new URL("/discovery-curation", environment.api).toString();
+        this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
+          .subscribe(
+            {
+              next: resp => {
+                this.isInError = false;
+                this.results = resp.results.map(x => this.enrichFocused(x));
+                this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
+                this.documentIds = resp.ids;
+                const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
+                if (dates.length > 0)
+                  this.minDate = new Date(Math.min(...dates));
+                this.isLoading = false;
+                this.displaySave = true;
+              },
+              error: e => {
+                this.isLoading = false;
+                this.isInError = true;
+              }
             }
-          }
-        )
-    }).catch(x => {
-      this.isLoading = false;
-      this.isInError = true;
-    });
+          )
+      }).catch(x => {
+        this.isLoading = false;
+        this.isInError = true;
+      });
+    }
   }
 
   async close() {

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -8,7 +8,7 @@ import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DatePipe, isPlatformBrowser, NgClass, NgFor, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -45,7 +45,7 @@ export class EpisodesComponent {
   error: boolean = false;
   isLoading: boolean = true;
   sortDirection: string = sortParamDateDesc;
-
+  isBrowser: boolean;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -53,47 +53,54 @@ export class EpisodesComponent {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-  ) { }
-  ngOnInit() {
-    this.isLoading = true;
-    this.error = false;
-    this.episodes = [];
-    this.route.params.subscribe(params => {
-      var serialisedEpisodeId = params['episodeIds'];
-      let episodeIds: string[] = [];
-      if (serialisedEpisodeId) {
-        episodeIds = JSON.parse(serialisedEpisodeId);
-      }
-      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-        authorizationParams: {
-          audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
-        }
-      }));
-      token.then(_token => {
-        let headers: HttpHeaders = new HttpHeaders();
-        headers = headers.set("Authorization", "Bearer " + _token);
-
-        const episodeResponses: Observable<Episode>[] = [];
-        episodeIds.forEach(episodeId => {
-          const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers })
-          episodeResponses.push(get);
-        })
-        forkJoin(episodeResponses).subscribe({
-          next: episodes => {
-            this.episodes = episodes;
-            this.isLoading = false;
-          },
-          error: e => {
-            this.error = true;
-            this.isLoading = false;
-            console.error(e);
-          }
-        })
-      });
-    })
+    @Inject(PLATFORM_ID) platformId: any
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
   }
+
+  ngOnInit() {
+    if (this.isBrowser) {
+      this.isLoading = true;
+      this.error = false;
+      this.episodes = [];
+      this.route.params.subscribe(params => {
+        var serialisedEpisodeId = params['episodeIds'];
+        let episodeIds: string[] = [];
+        if (serialisedEpisodeId) {
+          episodeIds = JSON.parse(serialisedEpisodeId);
+        }
+        var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+          authorizationParams: {
+            audience: `https://api.cultpodcasts.com/`,
+            scope: 'curate'
+          }
+        }));
+        token.then(_token => {
+          let headers: HttpHeaders = new HttpHeaders();
+          headers = headers.set("Authorization", "Bearer " + _token);
+
+          const episodeResponses: Observable<Episode>[] = [];
+          episodeIds.forEach(episodeId => {
+            const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
+            const get = this.http.get<Episode>(episodeEndpoint, { headers: headers })
+            episodeResponses.push(get);
+          })
+          forkJoin(episodeResponses).subscribe({
+            next: episodes => {
+              this.episodes = episodes;
+              this.isLoading = false;
+            },
+            error: e => {
+              this.error = true;
+              this.isLoading = false;
+              console.error(e);
+            }
+          })
+        });
+      })
+    }
+  }
+
   setSort(sort: string) {
     if (sort != sortParamDateDesc) {
       this.episodes = this.episodes?.sort((a: Episode, b: Episode) => {

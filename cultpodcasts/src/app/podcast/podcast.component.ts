@@ -23,6 +23,7 @@ import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
+import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -114,6 +115,17 @@ export class PodcastComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
+  }
+
+  editPodcast() {
+    const dialogRef = this.dialog.open(EditPodcastDialogComponent, { data: { podcastName: this.podcastName } });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
