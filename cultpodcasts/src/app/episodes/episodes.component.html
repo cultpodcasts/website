@@ -2,14 +2,6 @@
     <div id="progresswrapper">
         <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
     </div>
-    <ng-container *ngIf="!isLoading && error">
-        <p>
-            An error occurred.
-        </p>
-        <div id="cta-button">
-            <button mat-flat-button color="primary" (click)="ngOnInit()">Try again</button>
-        </div>
-    </ng-container>
     <section id="resultsheading">
         <h2>Review</h2>
         <button id="sort" mat-icon-button [matMenuTriggerFor]="sort" *ngIf="!isLoading && !error">
@@ -72,6 +64,14 @@
         </mat-card-actions>
     </mat-card>
 </section>
+<ng-container *ngIf="!isLoading && error">
+    <p id="error">
+        An error occurred.
+    </p>
+    <div id="cta-button">
+        <button mat-flat-button color="primary" (click)="ngOnInit()">Try again</button>
+    </div>
+</ng-container>
 <div id="cta-button" *ngIf="!isLoading && !error">
     <button mat-flat-button color="primary" (click)="ngOnInit()">Refresh</button>
 </div>

@@ -146,7 +146,8 @@ export class DiscoveryComponent {
           let snackBarRef = this.snackBar.open(snackBarMessage, !result.hasErrors ? "Review" : "Ok", { duration: snackBarDuration });
           if (!result.hasErrors) {
             snackBarRef.onAction().subscribe(() => {
-              this.router.navigate(["/episodes", JSON.stringify(result.episodeIds)])
+              const episodeIds = JSON.stringify(result.episodeIds);
+              this.router.navigate(["/episodes", episodeIds])
             });
           }
           this.displaySave = false;
