@@ -72,7 +72,7 @@ export class EditSubjectDialogComponent {
                 enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
                 hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
                 redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
-                redditFlairText: new FormControl(resp.redditFlairText, { nonNullable: false }),
+                redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
               });
               this.isLoading = false;
             },
@@ -94,7 +94,17 @@ export class EditSubjectDialogComponent {
 
   translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
     if (x.value) return x.value;
-    return undefined;
+    return "";
+  }
+
+  translateForEntityG(x: FormControl<string | undefined | null>): string | undefined {
+    if (x.value) return x.value;
+    return "00000000-0000-0000-0000-000000000000";
+  }
+
+  translateForEntityE(x: FormControl<string | undefined | null>): string | undefined {
+    if (x.value) return x.value;
+    return "Unset";
   }
 
   translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
@@ -107,7 +117,7 @@ export class EditSubjectDialogComponent {
         return valueSt.split(",");
       }
     };
-    return undefined;
+    return [];
   }
 
   onSubmit() {
@@ -117,9 +127,9 @@ export class EditSubjectDialogComponent {
         associatedSubjects: this.translateForEntityA(this.form!.controls.associatedSubjects),
         enrichmentHashTags: this.translateForEntityA(this.form!.controls.enrichmentHashTags),
         hashTag: this.translateForEntity(this.form!.controls.hashTag),
-        redditFlairTemplateId: this.translateForEntity(this.form!.controls.redditFlairTemplateId),
-        redditFlairText: this.translateForEntity(this.form!.controls.redditFlairText),
-        subjectType: this.translateForEntity(this.form!.controls.subjectType)
+        redditFlairTemplateId: this.translateForEntityG(this.form!.controls.redditFlairTemplateId),
+        redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
+        subjectType: this.translateForEntityE(this.form!.controls.subjectType)
       };
 
       var changes = this.getChanges(this.originalSubject!, update);
@@ -131,7 +141,19 @@ export class EditSubjectDialogComponent {
     }
   }
 
-  isSame(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    if (!a && b?.length == 0) {
+      return true;
+    }
+    if (a?.length == 0 && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
+  }
+  isSame(a: string | null | undefined, b: string | null | undefined): boolean {
     if (!a && !b) {
       return true;
     }
@@ -140,18 +162,17 @@ export class EditSubjectDialogComponent {
 
   getChanges(prev: SubjectEntity, now: SubjectEntity): SubjectEntity {
     var changes: SubjectEntity = {};
-    if (!this.isSame(prev.aliases, now.aliases)) changes.aliases = now.aliases;
-    if (!this.isSame(prev.associatedSubjects, now.associatedSubjects)) changes.associatedSubjects = now.associatedSubjects;
-    if (!this.isSame(prev.enrichmentHashTags, now.enrichmentHashTags)) changes.enrichmentHashTags = now.enrichmentHashTags;
-    if (prev.hashTag != now.hashTag) changes.hashTag = now.hashTag;
-    if (prev.redditFlairTemplateId != now.redditFlairTemplateId) changes.redditFlairTemplateId = now.redditFlairTemplateId;
-    if (prev.redditFlairText != now.redditFlairText) changes.redditFlairText = now.redditFlairText;
-    if (prev.subjectType != now.subjectType) changes.subjectType = now.subjectType;
+    if (!this.isSameA(prev.aliases, now.aliases)) changes.aliases = now.aliases;
+    if (!this.isSameA(prev.associatedSubjects, now.associatedSubjects)) changes.associatedSubjects = now.associatedSubjects;
+    if (!this.isSameA(prev.enrichmentHashTags, now.enrichmentHashTags)) changes.enrichmentHashTags = now.enrichmentHashTags;
+    if (!this.isSame(prev.hashTag, now.hashTag)) changes.hashTag = now.hashTag;
+    if (!this.isSame(prev.redditFlairTemplateId, now.redditFlairTemplateId)) changes.redditFlairTemplateId = now.redditFlairTemplateId;
+    if (!this.isSame(prev.redditFlareText, now.redditFlareText)) changes.redditFlareText = now.redditFlareText;
+    if (!this.isSame(prev.subjectType, now.subjectType)) changes.subjectType = now.subjectType;
     return changes;
   }
 
   send(id: string, changes: SubjectEntity) {
-    return;
     const dialogRef = this.dialog.open(EditSubjectSendComponent);
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {

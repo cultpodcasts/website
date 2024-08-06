@@ -9,5 +9,5 @@ export interface SubjectEntity {
     hashTag?: string | null;
 
     redditFlairTemplateId?: string | null;
-    redditFlairText?: string | null;
+    redditFlareText?: string | null;
 }
