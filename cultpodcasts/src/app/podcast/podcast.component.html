@@ -13,11 +13,11 @@
       @if (this.auth.roles.includes('Curator')) {
       <button mat-menu-item id="index" (click)="index()">
         <mat-icon>refresh</mat-icon>
-        <span>Index</span>
+        <span>Index Podcast</span>
       </button>
       <button mat-menu-item id="edit" (click)="editPodcast()">
         <mat-icon>edit</mat-icon>
-        <span>Edit</span>
+        <span>Edit Podcast</span>
       </button>
       }
       <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
@@ -46,7 +46,7 @@
       <mat-menu #menu="matMenu">
         <button mat-menu-item (click)="edit(result.id)">
           <mat-icon>edit</mat-icon>
-          <span>Edit</span>
+          <span>Edit Episode</span>
         </button>
       </mat-menu>
       }
