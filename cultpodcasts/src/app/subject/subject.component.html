@@ -10,7 +10,13 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
+      @if (this.auth.roles.includes('Curator')) {
+        <button mat-menu-item id="edit" (click)="editSubject()">
+          <mat-icon>edit</mat-icon>
+          <span>Edit</span>
+        </button>
+        }
+        <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
         [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>

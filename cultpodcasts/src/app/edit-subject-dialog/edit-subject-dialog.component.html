@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Edit Podcast</h2>
+
+<mat-dialog-content>
+    @if (this.isLoading) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (this.isInError) {
+    <p id="error">An error occurred</p>
+    } @else {
+    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+        <mat-tab-group>
+            <mat-tab label="Details">
+                <label>
+                    <span>Name:</span>
+                    <input type="text" [formControl]="form!.controls.name" readonly>
+                </label>
+                <label>
+                    <span>Aliases:</span>
+                    <textarea [formControl]="form!.controls.aliases"></textarea>
+                </label>
+                <label>
+                    <span>Associated Subjects:</span>
+                    <input type="text" [formControl]="form!.controls.associatedSubjects">
+                </label>
+                <label>
+                    <span>Subject Type:</span>
+                    <input type="text" [formControl]="form!.controls.subjectType">
+                </label>
+            </mat-tab>
+            <mat-tab label="Hash Tags">
+                <label>
+                    <span>Hash Tags:</span>
+                    <input type="text" [formControl]="form!.controls.hashTag">
+                </label>
+                <label>
+                    <span>Enrichment Hash Tags:</span>
+                    <textarea [formControl]="form!.controls.enrichmentHashTags"></textarea>
+                </label>
+            </mat-tab>
+            <mat-tab label="Reddit">
+                <label>
+                    <span>Reddit Flair Template Id:</span>
+                    <input type="text" [formControl]="form!.controls.redditFlairTemplateId">
+                </label>
+                <label>
+                    <span>Reddit Flair Text:</span>
+                    <input type="text" [formControl]="form!.controls.redditFlareText">
+                </label>
+            </mat-tab>
+        </mat-tab-group>
+    </form>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Close</button>
+    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+</mat-dialog-actions>
