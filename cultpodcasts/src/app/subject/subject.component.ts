@@ -15,6 +15,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, isPlatformBrowser, formatDate } from '@angular/common';
 import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 
 const pageSize: number = 20;
 
@@ -61,7 +65,10 @@ export class SubjectComponent {
     private oDataService: ODataService,
     @Inject(PLATFORM_ID) platformId: any,
     private seoService: SeoService,
-    private guidService: GuidService
+    private guidService: GuidService,
+    protected auth: AuthServiceWrapper,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
@@ -221,4 +228,14 @@ export class SubjectComponent {
     window.navigator.share(share);
   }
 
+  editSubject() {
+    const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: this.subjectName } });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Subject updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
+  }
 }
