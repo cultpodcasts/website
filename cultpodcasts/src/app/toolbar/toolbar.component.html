@@ -31,6 +31,10 @@
             <mat-icon class="material-symbols-outlined">add</mat-icon>
             <span>Create Subject</span>
           </a>
+          <a mat-menu-item (click)="openReviewOutgoing()">
+            <mat-icon class="material-symbols-outlined">search_check</mat-icon>
+            <span>Review Outgoing</span>
+          </a>
           }
           <a (click)="logout()" mat-menu-item>
             <mat-icon>logout</mat-icon>
@@ -55,6 +59,10 @@
       <a mat-menu-item (click)="openSubmitSubject()">
         <mat-icon class="material-symbols-outlined">add</mat-icon>
         <span>Create Subject</span>
+      </a>
+      <a mat-menu-item (click)="openReviewOutgoing()">
+        <mat-icon class="material-symbols-outlined">search_check</mat-icon>
+        <span>Review Outgoing</span>
       </a>
       }
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
