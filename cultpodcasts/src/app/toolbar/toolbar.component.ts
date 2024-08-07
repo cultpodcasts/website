@@ -7,7 +7,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { SiteService } from '../SiteService';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -17,6 +17,7 @@ import { ShareMode } from "../ShareMode";
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
+import { OutgoingEpisodesSendComponent } from '../outgoing-episodes-send/outgoing-episodes-send.component';
 
 
 @Component({
@@ -38,7 +39,9 @@ export class ToolbarComponent {
     protected featureSwtichService: FeatureSwtichService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) private platformId: any) {
+    @Inject(PLATFORM_ID) private platformId: any,
+    private router: Router
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
@@ -141,6 +144,21 @@ export class ToolbarComponent {
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
+    });
+  }
+  openReviewOutgoing() {
+    console.log("review outgoing")
+    const dialogRef = this.dialog.open(OutgoingEpisodesSendComponent);
+    dialogRef.componentInstance.getOutgoingEpisodes();
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.error) {
+        let snackBarRef = this.snackBar.open("Error occurred getting episodes", "Ok", { duration: 10000 });
+      } else {
+        const episodeIds = JSON.stringify(result.episodeIds);
+        this.router.navigate(["/episodes", episodeIds])
+      }
+      console.log("Result of episodes get:")
+      console.log(result);
     });
   }
 }
