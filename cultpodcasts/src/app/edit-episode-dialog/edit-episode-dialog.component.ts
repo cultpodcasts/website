@@ -39,6 +39,7 @@ export class EditEpisodeDialogComponent {
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: Episode | undefined;
+  podcastName: string | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -67,6 +68,7 @@ export class EditEpisodeDialogComponent {
           {
             next: resp => {
               this.originalEpisode = resp;
+              this.podcastName= resp.podcastName;
               this.form = new FormGroup<EpisodeForm>({
                 title: new FormControl(resp.title, { nonNullable: true }),
                 description: new FormControl(resp.description, { nonNullable: true }),

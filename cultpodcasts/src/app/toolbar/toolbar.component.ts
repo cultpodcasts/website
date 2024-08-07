@@ -16,6 +16,7 @@ import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
+import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 
 
 @Component({
@@ -63,6 +64,25 @@ export class ToolbarComponent {
           await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, shareMode: ShareMode.Text });
         }
       });
+  }
+
+  openSubmitSubject() {
+    const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { create: true } });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Subject created", "Edit", { duration: 10000 });
+        snackBarRef.onAction().subscribe(() => {
+          const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: result.subjectName } });
+        });
+      } else if (result.conflict) {
+        let snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
+        snackBarRef.onAction().subscribe(() => {
+          const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: result.conflict } });
+        });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
   }
 
   async sendPodcast(share: IShare) {

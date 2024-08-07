@@ -233,6 +233,11 @@ export class SubjectComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Subject updated", "Ok", { duration: 10000 });
+      } else if (result.conflict) {
+        let snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
+        snackBarRef.onAction().subscribe(() => {
+          const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: result.conflict } });
+        });
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }

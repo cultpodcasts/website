@@ -10,6 +10,10 @@
         <mat-tab-group>
             <mat-tab label="Details">
                 <label>
+                    <span>Podcast:</span>
+                    <p>{{this.podcastName}}</p>
+                </label>
+                <label>
                     <span>Title:</span>
                     <input type="text" [formControl]="form!.controls.title">
                 </label>

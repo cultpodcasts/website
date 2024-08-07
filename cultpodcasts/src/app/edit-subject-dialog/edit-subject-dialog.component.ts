@@ -28,68 +28,91 @@ import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send
   styleUrl: './edit-subject-dialog.component.sass'
 })
 export class EditSubjectDialogComponent {
-  subjectName: string;
+  subjectName: string | undefined;
   isLoading: boolean = true;
   isInError: boolean = false;
 
   form: FormGroup<SubjectForm> | undefined;
   originalSubject: SubjectEntity | undefined;
   subjectId: string | undefined;
+  create: boolean;
+  conflict: string | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string },
+    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined },
     private fb: FormBuilder,
     private dialog: MatDialog,
   ) {
     this.subjectName = data.subjectName;
+    this.create = data.create || false;
   }
 
   ngOnInit() {
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
-      }
-    }));
-    token.then(_token => {
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName)}`, environment.api).toString();
-      this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.subjectId = resp.id;
-              this.originalSubject = resp;
-              this.form = new FormGroup<SubjectForm>({
-                name: new FormControl(resp.name!, { nonNullable: true }),
-                aliases: new FormControl(resp.aliases, { nonNullable: false }),
-                associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
-                subjectType: new FormControl(resp.subjectType, { nonNullable: false }),
-                enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
-                hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
-                redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
-                redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
-              });
-              this.isLoading = false;
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
+    if (!this.create) {
+      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      token.then(_token => {
+        let headers: HttpHeaders = new HttpHeaders();
+        headers = headers.set("Authorization", "Bearer " + _token);
+        const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
+        this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
+          .subscribe(
+            {
+              next: resp => {
+                this.subjectId = resp.id;
+                this.originalSubject = resp;
+                this.form = new FormGroup<SubjectForm>({
+                  name: new FormControl(resp.name!, { nonNullable: true }),
+                  aliases: new FormControl(resp.aliases, { nonNullable: false }),
+                  associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
+                  subjectType: new FormControl(resp.subjectType, { nonNullable: false }),
+                  enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
+                  hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
+                  redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
+                  redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
+                });
+                this.isLoading = false;
+              },
+              error: e => {
+                this.isLoading = false;
+                this.isInError = true;
+              }
             }
-          }
-        )
-    }).catch(x => {
+          )
+      }).catch(x => {
+        this.isLoading = false;
+        this.isInError = true;
+      });
+    } else {
+      this.originalSubject = {};
+      this.form = new FormGroup<SubjectForm>({
+        name: new FormControl(""!, { nonNullable: true }),
+        aliases: new FormControl([], { nonNullable: false }),
+        associatedSubjects: new FormControl([], { nonNullable: false }),
+        subjectType: new FormControl("", { nonNullable: false }),
+        enrichmentHashTags: new FormControl([], { nonNullable: false }),
+        hashTag: new FormControl("", { nonNullable: false }),
+        redditFlairTemplateId: new FormControl("", { nonNullable: false }),
+        redditFlareText: new FormControl("", { nonNullable: false }),
+      });
       this.isLoading = false;
-      this.isInError = true;
-    });
+    }
   }
 
   close() {
-    this.dialogRef.close({ closed: true });
+    if (this.conflict) {
+      this.dialogRef.close({ conflict: this.conflict });
+
+    } else {
+      this.dialogRef.close({ closed: true });
+    }
   }
 
   translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
@@ -131,6 +154,9 @@ export class EditSubjectDialogComponent {
         redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
         subjectType: this.translateForEntityE(this.form!.controls.subjectType)
       };
+      if (this.create) {
+        update.name = this.translateForEntity(this.form!.controls.name);
+      }
 
       var changes = this.getChanges(this.originalSubject!, update);
       if (Object.keys(changes).length == 0) {
@@ -162,6 +188,7 @@ export class EditSubjectDialogComponent {
 
   getChanges(prev: SubjectEntity, now: SubjectEntity): SubjectEntity {
     var changes: SubjectEntity = {};
+    if (this.create) changes.name = now.name;
     if (!this.isSameA(prev.aliases, now.aliases)) changes.aliases = now.aliases;
     if (!this.isSameA(prev.associatedSubjects, now.associatedSubjects)) changes.associatedSubjects = now.associatedSubjects;
     if (!this.isSameA(prev.enrichmentHashTags, now.enrichmentHashTags)) changes.enrichmentHashTags = now.enrichmentHashTags;
@@ -174,10 +201,13 @@ export class EditSubjectDialogComponent {
 
   send(id: string, changes: SubjectEntity) {
     const dialogRef = this.dialog.open(EditSubjectSendComponent);
-    dialogRef.componentInstance.submit(id, changes);
+    dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
+      console.log(result)
       if (result.updated) {
-        this.dialogRef.close({ updated: true });
+        this.dialogRef.close({ updated: true, subjectName: changes.name });
+      } else if (result.conflict) {
+        this.conflict = result.conflict;
       }
     });
   }
