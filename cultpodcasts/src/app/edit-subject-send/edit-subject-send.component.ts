@@ -9,7 +9,6 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
-
 @Component({
   selector: 'app-edit-subject-send',
   standalone: true,
@@ -20,6 +19,7 @@ import { firstValueFrom } from 'rxjs';
 export class EditSubjectSendComponent {
   isSending: boolean = true;
   sendError: boolean = false;
+  conflict: string | undefined;
 
   constructor(
     private http: HttpClient,
@@ -27,7 +27,7 @@ export class EditSubjectSendComponent {
     private auth: AuthServiceWrapper) {
   }
 
-  public submit(subjectId: string, changes: SubjectEntity) {
+  public submit(subjectId: string, changes: SubjectEntity, create: boolean) {
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -37,20 +37,46 @@ export class EditSubjectSendComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/subject/${subjectId}`, environment.api).toString();
-      this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
-        .subscribe(
-          {
-            next: resp => {
-              this.dialogRef.close({ updated: true });
-            },
-            error: e => {
-              this.isSending = false;
-              this.sendError = true;
-              console.log(e);
+
+      if (create) {
+        const episodeEndpoint = new URL(`/subject`, environment.api).toString();
+        this.http.put<any>(episodeEndpoint, changes, { headers: headers, observe: "response" })
+          .subscribe(
+            {
+              next: resp => {
+                if (resp.status == 202) {
+                  this.dialogRef.close({ updated: true });
+                }
+              },
+              error: e => {
+                if (e.status == 409) {
+                  this.isSending = false;
+                  this.sendError = true;
+                  this.conflict = e.error.conflict;
+                } else {
+                  this.isSending = false;
+                  this.sendError = true;
+                  console.log(e);
+                }
+              }
             }
-          }
-        )
+          );
+      } else {
+        const episodeEndpoint = new URL(`/subject/${subjectId}`, environment.api).toString();
+        this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
+          .subscribe(
+            {
+              next: resp => {
+                this.dialogRef.close({ updated: true });
+              },
+              error: e => {
+                this.isSending = false;
+                this.sendError = true;
+                console.log(e);
+              }
+            }
+          );
+      }
     }).catch(x => {
       this.isSending = false;
       this.sendError = true;
@@ -59,6 +85,10 @@ export class EditSubjectSendComponent {
   }
 
   close() {
-    this.dialogRef.close({ updated: false });
+    if (this.conflict) {
+      this.dialogRef.close({ conflict: this.conflict });
+    } else {
+      this.dialogRef.close({ updated: false });
+    }
   }
 }

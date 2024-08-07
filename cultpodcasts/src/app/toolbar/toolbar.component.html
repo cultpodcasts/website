@@ -5,8 +5,7 @@
     <div id="socialbuttons">
       <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
       <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
-      <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter"
-          class="socialbutton"></a>
+      <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter" class="socialbutton"></a>
       <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
         <div *ngIf="this.auth.authService.user$ | async as user; else unAuthenticatedButton"
           class="socialbutton button">
@@ -23,10 +22,16 @@
           </a>
         </mat-menu>
         <mat-menu #profile="matMenu">
-          <a *ngIf="this.auth.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+          @if (this.auth.roles.includes("Curator")) {
+          <a [routerLink]="['/discovery']" mat-menu-item>
             <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
             <span>Discovery</span>
           </a>
+          <a mat-menu-item (click)="openSubmitSubject()">
+            <mat-icon class="material-symbols-outlined">add</mat-icon>
+            <span>Create Subject</span>
+          </a>
+          }
           <a (click)="logout()" mat-menu-item>
             <mat-icon>logout</mat-icon>
             <span>Logout</span>
@@ -42,10 +47,16 @@
         <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
         <span>Add Podcast</span>
       </a>
-      <a *ngIf="this.auth.roles.includes('Curator')" [routerLink]="['/discovery']" mat-menu-item>
+      @if (this.auth.roles.includes("Curator")) {
+      <a [routerLink]="['/discovery']" mat-menu-item>
         <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
         <span>Discovery</span>
       </a>
+      <a mat-menu-item (click)="openSubmitSubject()">
+        <mat-icon class="material-symbols-outlined">add</mat-icon>
+        <span>Create Subject</span>
+      </a>
+      }
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
         <mat-icon svgIcon="reddit"></mat-icon>
         <span>Reddit</span>

@@ -5,6 +5,9 @@
     <mat-spinner style="margin:0 auto;" mode="indeterminate" *ngIf="isSending"></mat-spinner>
     <div *ngIf="sendError">
         <p>An error occured updating subject</p>
+        @if (this.conflict) {
+        <p id="error">A conflict occured with '{{this.conflict}}'.</p>
+        }
     </div>
 
 </mat-dialog-content>

@@ -11,7 +11,7 @@
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
-                    <input type="text" [formControl]="form!.controls.name" readonly>
+                    <input type="text" [formControl]="form!.controls.name" [readonly]="!this.create">
                 </label>
                 <label>
                     <span>Aliases:</span>
@@ -19,7 +19,7 @@
                 </label>
                 <label>
                     <span>Associated Subjects:</span>
-                    <input type="text" [formControl]="form!.controls.associatedSubjects">
+                    <textarea type="text" [formControl]="form!.controls.associatedSubjects"></textarea>
                 </label>
                 <label>
                     <span>Subject Type:</span>
