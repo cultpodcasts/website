@@ -146,8 +146,10 @@ export class DiscoveryComponent {
             this.erroredSubject.next(result.erroredItems);
             this.resultsFilterSubject.next(this.resultsFilter);
           }
-          let snackBarRef = this.snackBar.open(snackBarMessage, result.hasErrors || (result.episodeIds?.length ?? 0 == 0) ? "Ok" : "Review", { duration: snackBarDuration });
-          if (!(result.hasErrors || (result.episodeIds?.length ?? 0 == 0))) {
+          const results = result.episodeIds?.length ?? 0;
+          const review: boolean = !result.hasErrors && results > 0;
+          let snackBarRef = this.snackBar.open(snackBarMessage, review ? "Review" : "Ok", { duration: snackBarDuration });
+          if (review) {
             snackBarRef.onAction().subscribe(() => {
               const episodeIds = JSON.stringify(result.episodeIds);
               this.router.navigate(["/episodes", episodeIds])

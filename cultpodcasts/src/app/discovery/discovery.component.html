@@ -15,33 +15,29 @@
     </div>
   </ng-container>
   <ng-container *ngIf="!isLoading">
-    <discovery-item 
-      *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "
-      (changeState)="handleEvent($event)" 
-      [result]="result" 
-      [selectedEvent]="submittedSubject.asObservable()"
+    <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: true} "
+      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
       [resultFilterEvent]="resultsFilterSubject.asObservable()"
       [erroredEvent]="erroredSubject.asObservable()"></discovery-item>
     <mat-divider [appHide]="this.resultsFilter==='focused' || this.submitted || !hasUnfocused"></mat-divider>
-    <discovery-item 
-      *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
-      (changeState)="handleEvent($event)" 
-      [result]="result" 
-      [selectedEvent]="submittedSubject.asObservable()"
-      [resultFilterEvent]="resultsFilterSubject.asObservable()"
-      [erroredEvent]="erroredSubject.asObservable()"
+    <discovery-item *ngFor="let result of results | discoveryItemFilter: {isFocused: false} "
+      (changeState)="handleEvent($event)" [result]="result" [selectedEvent]="submittedSubject.asObservable()"
+      [resultFilterEvent]="resultsFilterSubject.asObservable()" [erroredEvent]="erroredSubject.asObservable()"
       [appHide]="this.resultsFilter==='focused'"></discovery-item>
   </ng-container>
 
-  <div id="actions" *ngIf="results && results.length>0 && displaySave">
-
+  @if (results && results.length>0) {
+  <div id="actions">
     <mat-button-toggle-group [value]="resultsFilter" (change)="resultsFilterChange($event)">
       <mat-button-toggle value="all">All</mat-button-toggle>
       <mat-button-toggle value="focused">Focused</mat-button-toggle>
       <mat-button-toggle value="selected">Selected</mat-button-toggle>
     </mat-button-toggle-group>
+    @if (displaySave) {
     <button mat-raised-button class="mat-primary" (click)="close()" disabled="{{this.closeDisabled}}">Close</button>
     <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{this.saveDisabled}}"
       [matBadge]="this.selectedIds.length" [matBadgeHidden]="saveDisabled">Save</button>
+    }
   </div>
+  }
 </section>
