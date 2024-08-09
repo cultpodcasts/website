@@ -24,6 +24,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
+import { ShareMode } from '../ShareMode';
+import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
+import { SubmitDialogResponse } from '../submit-url-origin-response';
+import { IShare } from '../IShare';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -111,7 +116,11 @@ export class PodcastComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, { data: { episodeId: id } });
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
@@ -122,7 +131,11 @@ export class PodcastComponent {
   }
 
   editPodcast() {
-    const dialogRef = this.dialog.open(EditPodcastDialogComponent, { data: { podcastName: this.podcastName } });
+    const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
+      data: { podcastName: this.podcastName },
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
@@ -359,13 +372,69 @@ export class PodcastComponent {
   }
 
   index() {
-    const dialogRef = this.dialog.open(PodcastIndexComponent);
+    const dialogRef = this.dialog.open(PodcastIndexComponent,  { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.index(this.results[0].podcastName);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Podcast Indexed", "Ok", { duration: 10000 });
       }
     });
+  }
+
+  submitUrlForPodcast() {
+    this.dialog
+      .open(SubmitPodcastComponent, { disableClose: true, autoFocus: true })
+      .afterClosed()
+      .subscribe(async result => {
+        if (result?.url) {
+          await this.sendPodcast({ url: result.url, podcastName: this.podcastName, podcastId: undefined, shareMode: ShareMode.Text });
+        }
+      });
+  }
+
+  async sendPodcast(share: IShare) {
+    const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
+    dialog
+      .afterClosed()
+      .subscribe(result => {
+        if (result && result.submitted) {
+          if (result.originResponse?.success != null) {
+            let episode: string;
+            let edit: boolean = false;
+            if (result.originResponse.success.episode === "Created") {
+              episode = "Episode created.";
+              edit = true;
+            } else if (result.originResponse.success.episode === "Enriched") {
+              episode = "Episode enriched.";
+              edit = true;
+            } else if (result.originResponse.success.episode === "Ignored") {
+              episode = "Episode ignored.";
+            } else {
+              episode = "Episode not created.";
+            }
+            let podcast = "";
+            if (result.originResponse.success.podcast === "Created") {
+              podcast = "Podcast created.";
+            } else if (result.originResponse.success.podcast === "Enriched") {
+              podcast = "Podcast enriched.";
+            } else if (result.originResponse.success.podcast === "Ignored") {
+              podcast = "Podcast ignored.";
+            } else if (result.originResponse.success.podcast === "PodcastRemoved") {
+              podcast = "Podcast Removed.";
+            }
+            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, edit ? "Edit" : "Ok", { duration: 10000 });
+
+            if (edit) {
+              snackBarRef.onAction().subscribe(() => {
+                this.edit(result.originResponse!.success!.episodeId!)
+              });
+            }
+          } else {
+            let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
+          }
+        }
+      });
+    await dialog.componentInstance.submit(share);
   }
 
 }

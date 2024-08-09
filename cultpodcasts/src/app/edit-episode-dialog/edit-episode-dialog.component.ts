@@ -146,7 +146,7 @@ export class EditEpisodeDialogComponent {
   }
 
   send(id: string, changes: EpisodePost) {
-    const dialogRef = this.dialog.open(EditEpisodeSendComponent);
+    const dialogRef = this.dialog.open(EditEpisodeSendComponent,  { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

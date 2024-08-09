@@ -41,7 +41,7 @@ export class AppComponent {
 
   async onSwMessage(message: any) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, shareMode: ShareMode.Share });
+      await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share });
     }
   }
 
