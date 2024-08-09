@@ -32,7 +32,7 @@ export class SendPodcastComponent {
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   isAuthenticated: boolean = false;
-  originResponse: SubmitUrlOriginResponse|undefined;
+  originResponse: SubmitUrlOriginResponse | undefined;
   isBrowser: any;
 
   constructor(
@@ -86,7 +86,7 @@ export class SendPodcastComponent {
         }
 
         if (url) {
-          const body = { url: url.toString(), podcastId: data.podcastId };
+          const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
 
           let headers: HttpHeaders = new HttpHeaders();
 

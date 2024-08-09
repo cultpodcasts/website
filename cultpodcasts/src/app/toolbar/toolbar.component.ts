@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { SiteService } from '../SiteService';
 import { Router, RouterLink } from '@angular/router';
-import { MatDialog, MatDialogConfig } from "@angular/material/dialog";
+import { MatDialog } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
@@ -54,33 +54,40 @@ export class ToolbarComponent {
   }
 
   async openSubmitPodcast() {
-    const dialogConfig = new MatDialogConfig();
-
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-
     this.dialog
-      .open(SubmitPodcastComponent, dialogConfig)
+      .open(SubmitPodcastComponent, { disableClose: true, autoFocus: true })
       .afterClosed()
       .subscribe(async result => {
         if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, shareMode: ShareMode.Text });
+          await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, podcastName: undefined, shareMode: ShareMode.Text });
         }
       });
   }
 
   openSubmitSubject() {
-    const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { create: true } });
+    const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+      data: { create: true },
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Subject created", "Edit", { duration: 10000 });
         snackBarRef.onAction().subscribe(() => {
-          const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: result.subjectName } });
+          const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+            data: { subjectName: result.subjectName },
+            disableClose: true,
+            autoFocus: true
+          });
         });
       } else if (result.conflict) {
         let snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
         snackBarRef.onAction().subscribe(() => {
-          const dialogRef = this.dialog.open(EditSubjectDialogComponent, { data: { subjectName: result.conflict } });
+          const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+            data: { subjectName: result.conflict },
+            disableClose: true,
+            autoFocus: true
+          });
         });
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
@@ -89,10 +96,7 @@ export class ToolbarComponent {
   }
 
   async sendPodcast(share: IShare) {
-    const dialogConfig = new MatDialogConfig();
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-    const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, dialogConfig);
+    const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
       .subscribe(result => {
@@ -137,7 +141,11 @@ export class ToolbarComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, { data: { episodeId: id } });
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
@@ -146,9 +154,10 @@ export class ToolbarComponent {
       }
     });
   }
+
   openReviewOutgoing() {
     console.log("review outgoing")
-    const dialogRef = this.dialog.open(OutgoingEpisodesSendComponent);
+    const dialogRef = this.dialog.open(OutgoingEpisodesSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.getOutgoingEpisodes();
     dialogRef.afterClosed().subscribe(async result => {
       if (result.error) {

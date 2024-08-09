@@ -4,7 +4,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { Subject, firstValueFrom, map } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
-import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
@@ -115,6 +115,8 @@ export class DiscoveryComponent {
     if (this.resultsContainer?.nativeElement.querySelectorAll("mat-card.selected").length == 0) {
       let dialogRef = this.dialog.open(ConfirmComponent, {
         data: { question: 'Are you sure you want to close without any episodes?', title: 'Confirm Close' },
+        disableClose: true,
+        autoFocus: true
       });
       dialogRef.afterClosed().subscribe(async result => {
         if (result.result === true) {
@@ -129,13 +131,8 @@ export class DiscoveryComponent {
     this.closeDisabled = true;
     this.submittedSubject.next(true);
 
-    const dialogConfig = new MatDialogConfig();
-
-    dialogConfig.disableClose = true;
-    dialogConfig.autoFocus = true;
-
     const dialog = this.dialog
-      .open<DiscoverySubmitComponent, any, ISubmitDiscoveryState>(DiscoverySubmitComponent, dialogConfig);
+      .open<DiscoverySubmitComponent, any, ISubmitDiscoveryState>(DiscoverySubmitComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
       .subscribe(async result => {
@@ -149,8 +146,8 @@ export class DiscoveryComponent {
             this.erroredSubject.next(result.erroredItems);
             this.resultsFilterSubject.next(this.resultsFilter);
           }
-          let snackBarRef = this.snackBar.open(snackBarMessage, !result.hasErrors ? "Review" : "Ok", { duration: snackBarDuration });
-          if (!result.hasErrors) {
+          let snackBarRef = this.snackBar.open(snackBarMessage, result.hasErrors || (result.episodeIds?.length ?? 0 == 0) ? "Ok" : "Review", { duration: snackBarDuration });
+          if (!(result.hasErrors || (result.episodeIds?.length ?? 0 == 0))) {
             snackBarRef.onAction().subscribe(() => {
               const episodeIds = JSON.stringify(result.episodeIds);
               this.router.navigate(["/episodes", episodeIds])

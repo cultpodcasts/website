@@ -169,7 +169,7 @@ export class EditPodcastDialogComponent {
   }
 
   send(id: string, changes: PodcastPost) {
-    const dialogRef = this.dialog.open(EditPodcastSendComponent);
+    const dialogRef = this.dialog.open(EditPodcastSendComponent,  { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

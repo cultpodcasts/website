@@ -4,4 +4,5 @@ export interface IShare {
   url: URL;
   podcastId: string | undefined;
   shareMode: ShareMode;
+  podcastName: string | undefined;
 }

@@ -114,7 +114,11 @@ export class EpisodesComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, { data: { episodeId: id } });
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });

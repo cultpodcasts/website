@@ -200,7 +200,7 @@ export class EditSubjectDialogComponent {
   }
 
   send(id: string, changes: SubjectEntity) {
-    const dialogRef = this.dialog.open(EditSubjectSendComponent);
+    const dialogRef = this.dialog.open(EditSubjectSendComponent,  { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
       console.log(result)
