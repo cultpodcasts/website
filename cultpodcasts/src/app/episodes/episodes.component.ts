@@ -14,6 +14,7 @@ import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
+import { Title } from '@angular/platform-browser';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -53,9 +54,11 @@ export class EpisodesComponent {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) platformId: any
+    @Inject(PLATFORM_ID) platformId: any,
+    private title:Title
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    title.setTitle("Review");
   }
 
   ngOnInit() {
