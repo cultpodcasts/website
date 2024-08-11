@@ -14,6 +14,8 @@ import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
+import { Title } from '@angular/platform-browser';
+import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -53,9 +55,11 @@ export class EpisodesComponent {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) platformId: any
+    @Inject(PLATFORM_ID) platformId: any,
+    private title: Title
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    title.setTitle("Review");
   }
 
   ngOnInit() {
@@ -124,6 +128,27 @@ export class EpisodesComponent {
         let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
+  }
+
+  post(id: string) {
+    const dialogRef = this.dialog.open(PostEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
+      } else if (result.response) {
+        let message: string = "Episode tweeted and posted";
+        if (!result.response.tweet) {
+          message = "Episode posted";
+        } else {
+          message = "Episode tweeted";
+        }
+        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       }
     });
   }

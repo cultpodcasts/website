@@ -19,6 +19,8 @@ import { DiscoveryItemComponent } from '../discovery-item/discovery-item.compone
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+
 
 @Component({
   selector: 'app-discovery',
@@ -66,8 +68,10 @@ export class DiscoveryComponent {
     private snackBar: MatSnackBar,
     private router: Router,
     @Inject(PLATFORM_ID) platformId: any,
+    private title: Title
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    title.setTitle("Privacy Policy");
   }
 
   ngOnInit() {
