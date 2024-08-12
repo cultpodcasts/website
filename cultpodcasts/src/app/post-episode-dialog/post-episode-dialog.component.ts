@@ -113,12 +113,12 @@ export class PostEpisodeDialogComponent {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
         const episodeEndpoint = new URL(`/episode/publish/${this.episodeId}`, environment.api).toString();
-        this.http.post(episodeEndpoint, model, { headers: headers })
+        this.http.post<any>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {
               next: resp => {
                 this.isSending = false;
-                this.dialogRef.close({ response: model })
+                this.dialogRef.close({ response: resp })
               },
               error: e => {
                 this.isSending = false;

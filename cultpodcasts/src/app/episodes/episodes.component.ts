@@ -143,9 +143,9 @@ export class EpisodesComponent {
         let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
       } else if (result.response) {
         let message: string = "Episode tweeted and posted";
-        if (!result.response.tweet && result.response.posted) {
+        if (!result.response.tweeted && result.response.posted) {
           message = "Episode posted";
-        } else if (result.response.tweet && !result.response.posted) {
+        } else if (result.response.tweeted && !result.response.posted) {
           message = "Episode tweeted";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
