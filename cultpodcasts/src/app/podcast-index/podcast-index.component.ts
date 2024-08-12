@@ -44,9 +44,15 @@ export class PodcastIndexComponent {
               this.dialogRef.close({ updated: true });
             },
             error: e => {
-              this.isSending = false;
-              this.sendError = true;
-              console.log(e);
+              if (e.status == 400) {
+                this.dialogRef.close({ podcastNotAutoIndex: true });
+              } else if (e.status == 404) {
+                this.dialogRef.close({ podcastNotFound: true });
+              } else {
+                this.isSending = false;
+                this.sendError = true;
+                console.log(e);
+              }
             }
           }
         )
