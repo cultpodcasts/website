@@ -71,7 +71,7 @@ export class DiscoveryComponent {
     private title: Title
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
-    title.setTitle("Privacy Policy");
+    title.setTitle("Discovery");
   }
 
   ngOnInit() {
