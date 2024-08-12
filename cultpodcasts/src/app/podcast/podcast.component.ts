@@ -377,6 +377,10 @@ export class PodcastComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Podcast Indexed", "Ok", { duration: 10000 });
+      } else if (result.podcastNotAutoIndex) {
+        let snackBarRef = this.snackBar.open("Podcast not indexable", "Ok", { duration: 10000 });
+      } else if (result.podcastNotFound) {
+        let snackBarRef = this.snackBar.open("Podcast not found", "Ok", { duration: 10000 });
       }
     });
   }
