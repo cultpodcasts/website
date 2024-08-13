@@ -62,7 +62,8 @@ export class DiscoverySubmitComponent {
         console.log(resp.body);
         this.isSending = false;
         const episodeIds = resp.body?.results.filter(x => x.episodeId != null).map(x => x.episodeId!);
-        this.submitState.episodeIds = episodeIds;
+        let uniqueEpisodeIds = [...new Set(episodeIds)];
+        this.submitState.episodeIds = uniqueEpisodeIds;
         if (resp.body?.errorsOccurred) {
           this.submitState.hasErrors = true;
           this.submitState.erroredItems = resp.body?.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
