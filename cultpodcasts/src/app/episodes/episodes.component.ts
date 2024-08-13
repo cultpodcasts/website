@@ -145,8 +145,14 @@ export class EpisodesComponent {
         let message: string = "Episode tweeted and posted";
         if (!result.response.tweeted && result.response.posted) {
           message = "Episode posted";
+          if (result.expectation.tweet) {
+            message += ". Failed to tweet";
+          }
         } else if (result.response.tweeted && !result.response.posted) {
           message = "Episode tweeted";
+          if (result.expectation.post) {
+            message += ". Failed to post";
+          }
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       }

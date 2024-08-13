@@ -118,7 +118,7 @@ export class PostEpisodeDialogComponent {
             {
               next: resp => {
                 this.isSending = false;
-                this.dialogRef.close({ response: resp })
+                this.dialogRef.close({ response: resp, expectation: model })
               },
               error: e => {
                 this.isSending = false;
