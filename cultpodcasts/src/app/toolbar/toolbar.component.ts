@@ -156,7 +156,6 @@ export class ToolbarComponent {
   }
 
   openReviewOutgoing() {
-    console.log("review outgoing")
     const dialogRef = this.dialog.open(OutgoingEpisodesSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.getOutgoingEpisodes();
     dialogRef.afterClosed().subscribe(async result => {
@@ -164,10 +163,8 @@ export class ToolbarComponent {
         let snackBarRef = this.snackBar.open("Error occurred getting episodes", "Ok", { duration: 10000 });
       } else {
         const episodeIds = JSON.stringify(result.episodeIds);
-        this.router.navigate(["/episodes", episodeIds])
+        this.router.navigate(["/episodes", episodeIds], { onSameUrlNavigation: 'reload' })
       }
-      console.log("Result of episodes get:")
-      console.log(result);
     });
   }
 }
