@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "scripts": {
     "ng": "ng",
-    "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --experimental-local --local-protocol https --kv kv",
+    "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --local-protocol https --kv kv",
     "build": "ng build && npm run process",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -48,6 +48,6 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "5.4",
-    "wrangler": "^3.61.0"
+    "wrangler": "^3.71.0"
   }
 }

@@ -7,6 +7,7 @@ export const environment: IEnvironment = {
    },
    api: 'https://api.cultpodcasts.com',
    assetHost: 'https://cultpodcasts.com',
+   bundleAssetHost: 'https://cultpodcasts.com',
    shortner: 'https://s.cultpodcasts.com',
    name: "prod"
 };

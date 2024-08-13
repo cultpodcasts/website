@@ -4,11 +4,14 @@ pages_build_output_dir = "dist/cloudflare"
 compatibility_date = "2023-08-21"
 
 [vars]
-env = "staging"
+env = "development"
 
 [[kv_namespaces]]
 id = "663cd5c74988404dafbf67e1e06b21e8"
 binding = "kv"
+
+[env.preview.vars]
+env = "staging"
 
 [env.production.vars]
 env = "production"
