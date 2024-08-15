@@ -12,6 +12,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
+import { Flair } from '../flair';
+import { MatSelectModule } from '@angular/material/select';
+import { KeyValue, KeyValuePipe, NgFor } from '@angular/common';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -22,7 +25,10 @@ import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send
     MatButtonModule,
     ReactiveFormsModule,
     MatTabsModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatSelectModule,
+    NgFor,
+    KeyValuePipe
   ],
   templateUrl: './edit-subject-dialog.component.html',
   styleUrl: './edit-subject-dialog.component.sass'
@@ -37,6 +43,7 @@ export class EditSubjectDialogComponent {
   subjectId: string | undefined;
   create: boolean;
   conflict: string | undefined;
+  flairs: Map<string, Flair> = new Map<string, Flair>();
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -51,59 +58,71 @@ export class EditSubjectDialogComponent {
   }
 
   ngOnInit() {
-    if (!this.create) {
-      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-        authorizationParams: {
-          audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
-        }
-      }));
-      token.then(_token => {
-        let headers: HttpHeaders = new HttpHeaders();
-        headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
-        this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
-          .subscribe(
-            {
-              next: resp => {
-                this.subjectId = resp.id;
-                this.originalSubject = resp;
-                this.form = new FormGroup<SubjectForm>({
-                  name: new FormControl(resp.name!, { nonNullable: true }),
-                  aliases: new FormControl(resp.aliases, { nonNullable: false }),
-                  associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
-                  subjectType: new FormControl(resp.subjectType, { nonNullable: false }),
-                  enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
-                  hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
-                  redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
-                  redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
-                });
-                this.isLoading = false;
-              },
-              error: e => {
-                this.isLoading = false;
-                this.isInError = true;
-              }
+    this.isLoading = true;
+    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+      authorizationParams: {
+        audience: `https://api.cultpodcasts.com/`,
+        scope: 'curate'
+      }
+    }));
+    token.then(_token => {
+      let headers: HttpHeaders = new HttpHeaders();
+      headers = headers.set("Authorization", "Bearer " + _token);
+      const flairsEndpoint = new URL("/flairs", environment.api).toString();
+      this.http.get<Map<string, Flair>>(flairsEndpoint, { headers: headers })
+        .subscribe({
+          next: flairs => {
+            this.flairs = flairs;
+            if (!this.create) {
+              const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
+              this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
+                .subscribe(
+                  {
+                    next: resp => {
+                      this.subjectId = resp.id;
+                      this.originalSubject = resp;
+                      this.form = new FormGroup<SubjectForm>({
+                        name: new FormControl(resp.name!, { nonNullable: true }),
+                        aliases: new FormControl(resp.aliases, { nonNullable: false }),
+                        associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
+                        subjectType: new FormControl(resp.subjectType, { nonNullable: false }),
+                        enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
+                        hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
+                        redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
+                        redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
+                      });
+                      this.isLoading = false;
+                    },
+                    error: e => {
+                      this.isLoading = false;
+                      this.isInError = true;
+                    }
+                  }
+                )
+            } else {
+              this.originalSubject = {};
+              this.form = new FormGroup<SubjectForm>({
+                name: new FormControl(""!, { nonNullable: true }),
+                aliases: new FormControl([], { nonNullable: false }),
+                associatedSubjects: new FormControl([], { nonNullable: false }),
+                subjectType: new FormControl("", { nonNullable: false }),
+                enrichmentHashTags: new FormControl([], { nonNullable: false }),
+                hashTag: new FormControl("", { nonNullable: false }),
+                redditFlairTemplateId: new FormControl("", { nonNullable: false }),
+                redditFlareText: new FormControl("", { nonNullable: false }),
+              });
+              this.isLoading = false;
             }
-          )
-      }).catch(x => {
-        this.isLoading = false;
-        this.isInError = true;
-      });
-    } else {
-      this.originalSubject = {};
-      this.form = new FormGroup<SubjectForm>({
-        name: new FormControl(""!, { nonNullable: true }),
-        aliases: new FormControl([], { nonNullable: false }),
-        associatedSubjects: new FormControl([], { nonNullable: false }),
-        subjectType: new FormControl("", { nonNullable: false }),
-        enrichmentHashTags: new FormControl([], { nonNullable: false }),
-        hashTag: new FormControl("", { nonNullable: false }),
-        redditFlairTemplateId: new FormControl("", { nonNullable: false }),
-        redditFlareText: new FormControl("", { nonNullable: false }),
-      });
+          },
+          error: error => {
+            this.isLoading = false;
+            this.isInError = true;
+          }
+        })
+    }).catch(x => {
       this.isLoading = false;
-    }
+      this.isInError = true;
+    });
   }
 
   close() {
@@ -200,7 +219,7 @@ export class EditSubjectDialogComponent {
   }
 
   send(id: string, changes: SubjectEntity) {
-    const dialogRef = this.dialog.open(EditSubjectSendComponent,  { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
       console.log(result)
@@ -211,4 +230,21 @@ export class EditSubjectDialogComponent {
       }
     });
   }
+
+  styleOption(flair: Flair): string {
+    return `background-color: ${flair.backgroundColour}; color:${flair.textColour == 'dark' ? 'black' : 'white'}`;
+  }
+
+  styleSelect(): string {
+    const currentFlairId = this.form!.controls.redditFlairTemplateId.value;
+    if (currentFlairId) {
+      const anyFlair: any = this.flairs;
+      const flair = anyFlair[currentFlairId];
+      if (flair) {
+        return `background-color: ${flair.backgroundColour}; color:${flair.textColour == 'dark' ? 'black' : 'white'}`;
+      }
+    }
+    return "";
+  }
+
 }

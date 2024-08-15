@@ -6,6 +6,7 @@
     } @else if (this.isInError) {
     <p id="error">An error occurred</p>
     } @else {
+
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
@@ -38,11 +39,18 @@
             </mat-tab>
             <mat-tab label="Reddit">
                 <label>
-                    <span>Reddit Flair Template Id:</span>
-                    <input type="text" [formControl]="form!.controls.redditFlairTemplateId">
+                    <span>Flair Id:</span>
+                    <mat-select [formControl]="form!.controls.redditFlairTemplateId" id="flair" [style]="styleSelect()"
+                        panelClass="flairs">
+                        <mat-option [value]="">No Subject</mat-option>
+                        @for (flair of this.flairs | keyvalue; track flair.key) {
+                        <mat-option [value]="flair.key"
+                            [style]="styleOption(flair.value)">{{flair.key.substring(0,8)}}</mat-option>
+                        }
+                    </mat-select>
                 </label>
                 <label>
-                    <span>Reddit Flair Text:</span>
+                    <span>Flair Text:</span>
                     <input type="text" [formControl]="form!.controls.redditFlareText">
                 </label>
             </mat-tab>
