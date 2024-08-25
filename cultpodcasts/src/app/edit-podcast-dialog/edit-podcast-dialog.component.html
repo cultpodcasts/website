@@ -4,7 +4,11 @@
     @if (this.isLoading) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     } @else if (this.isInError) {
+    @if (this.notFound) {
+    <p id="error">Podcast not found.</p>
+    } @else {
     <p id="error">An error occurred</p>
+    }
     } @else {
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <mat-tab-group>

@@ -35,6 +35,7 @@ export class EditPodcastDialogComponent {
   podcastName: string;
   isLoading: boolean = true;
   isInError: boolean = false;
+  notFound: boolean= false;
 
   form: FormGroup<PodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
@@ -105,7 +106,10 @@ export class EditPodcastDialogComponent {
             error: e => {
               this.isLoading = false;
               this.isInError = true;
-            }
+              if (e.status== 404) {
+                this.notFound= true;
+              }
+        }
           }
         )
     }).catch(x => {
