@@ -216,7 +216,11 @@ export class PodcastComponent {
                 releaseDate: episode.release.split('T')[0],
                 duration: episode.duration
               };
-              this.kv.put(key, encodeURIComponent(episode.podcastName) + "/" + episode.id, { metadata: shortnerRecord });
+              const encodedPodcastName =
+                encodeURIComponent(episode.podcastName)
+                  .replaceAll("(", "%28")
+                  .replaceAll(")", "%29");
+              this.kv.put(key, encodedPodcastName + "/" + episode.id, { metadata: shortnerRecord });
             }
           }
         }
@@ -372,7 +376,7 @@ export class PodcastComponent {
   }
 
   index() {
-    const dialogRef = this.dialog.open(PodcastIndexComponent,  { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.index(this.results[0].podcastName);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
