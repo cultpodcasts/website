@@ -1,6 +1,6 @@
 <section id="notices">
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span
-      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 21000 | number}}</span> podcasts on the subject of Cults.
+      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 30000 | number}}</span> podcasts on the subject of Cults.
   </p>
 </section>
 <div id="progresswrapper">
@@ -9,7 +9,7 @@
 <section id="thisweek">
   <h2>This weeks new releases. <span *ngIf="podcastCount">{{podcastCount}} Podcasts.</span></h2>
   @if (this.isInError) {
-    <p>An error occurred.</p>
+  <p>An error occurred.</p>
   }
   <div *ngFor="let dateItems of grouped | keyvalue: descDate">
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
