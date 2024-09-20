@@ -27,7 +27,7 @@ import { Episode } from '../episode';
 })
 export class PostEpisodeDialogComponent {
   isInError: boolean = false;
-  isSending: boolean = false;
+  isSending: boolean = true;
   form: FormGroup<PostForm> | undefined;
   episodeId: string | undefined;
   hasPosted: boolean = false;
