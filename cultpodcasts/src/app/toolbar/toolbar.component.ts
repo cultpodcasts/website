@@ -17,7 +17,6 @@ import { ShareMode } from "../ShareMode";
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
-import { OutgoingEpisodesSendComponent } from '../outgoing-episodes-send/outgoing-episodes-send.component';
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
 
 @Component({
