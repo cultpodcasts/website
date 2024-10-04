@@ -1,0 +1,10 @@
+<h2 mat-dialog-title>Set Number Of Days</h2>
+
+<mat-dialog-content>
+    <input mat-input [(ngModel)]="days" type="number">
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close(false)">Close</button>
+    <button mat-raised-button (click)="close(true)">Ok</button>
+</mat-dialog-actions>

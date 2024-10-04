@@ -6,7 +6,7 @@ import { firstValueFrom, forkJoin, Observable } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { DatePipe, isPlatformBrowser, NgClass, NgFor, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -17,6 +17,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { Title } from '@angular/platform-browser';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { SiteService } from '../SiteService';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { FormsModule } from '@angular/forms';
+import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -34,8 +37,10 @@ const sortParamDateDesc: string = "date-desc";
     NgFor,
     MatCardModule,
     RouterLink,
-    DatePipe
-
+    DatePipe,
+    MatCheckboxModule,
+    MatMenuItem,
+    FormsModule
   ],
   templateUrl: './outgoing-episodes.component.html',
   styleUrl: './outgoing-episodes.component.sass'
@@ -49,6 +54,11 @@ export class OutgoingEpisodesComponent {
   isLoading: boolean = true;
   sortDirection: string = sortParamDateDesc;
   isBrowser: boolean;
+
+  days: number | undefined;
+  posted: boolean | undefined;
+  tweeted: boolean | undefined;
+  token: string = "";
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -73,10 +83,8 @@ export class OutgoingEpisodesComponent {
       this.isLoading = true;
       this.error = false;
       this.episodes = [];
+
       this.route.params.subscribe(params => {
-
-
-
         var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
           authorizationParams: {
             audience: `https://api.cultpodcasts.com/`,
@@ -84,44 +92,22 @@ export class OutgoingEpisodesComponent {
           }
         }));
         token.then(_token => {
-          let headers: HttpHeaders = new HttpHeaders();
-          headers = headers.set("Authorization", "Bearer " + _token);
-
-
-          const episodeEndpoint = new URL(`/episodes/outgoing`, environment.api).toString();
-          this.http.get<Episode[]>(episodeEndpoint, { headers: headers, observe: "response" })
-            .subscribe(
-              {
-                next: resp => {
-                  this.isLoading = false;
-                  this.error = false;
-                  this.episodes = resp.body!;
-                },
-                error: e => {
-                  this.isLoading = false;
-                  this.error = true;
-                  console.log(e);
-                }
-              }
-            );
-
+          this.token = _token;
+          this.getEpisodes();
         }).catch(x => {
           this.isLoading = false;
           this.error = true;
           console.log(x);
         });
-      }
-
-
-
-
-
-
-
-
-
-      )
+      })
     }
+  }
+
+  reset() {
+    this.posted = false;
+    this.tweeted = false;
+    this.days = 7;
+    this.ngOnInit()
   }
 
   setSort(sort: string) {
@@ -176,5 +162,51 @@ export class OutgoingEpisodesComponent {
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       }
     });
+  }
+
+  getEpisodes() {
+    this.isLoading = true;
+    let headers: HttpHeaders = new HttpHeaders();
+    headers = headers.set("Authorization", "Bearer " + this.token);
+
+    const url = new URL(`/episodes/outgoing`, environment.api);
+    if (this.days)
+      url.searchParams.append("days", this.days.toString());
+    if (this.tweeted)
+      url.searchParams.append("tweeted", this.tweeted.toString());
+    if (this.posted)
+      url.searchParams.append("posted", this.posted.toString());
+    const episodeEndpoint = url.toString();
+    this.http.get<Episode[]>(episodeEndpoint, { headers: headers, observe: "response" })
+      .subscribe(
+        {
+          next: resp => {
+            this.isLoading = false;
+            this.error = false;
+            this.episodes = resp.body!;
+          },
+          error: e => {
+            this.isLoading = false;
+            this.error = true;
+            console.log(e);
+          }
+        }
+      );
+  }
+
+  openSetDays() {
+    var _days = this.days || 7;
+    this.dialog
+      .open(SetNumberOfDaysComponent, { disableClose: true, autoFocus: true, data: { days: _days } })
+      .afterClosed()
+      .subscribe(async result => {
+        if (result?.days && parseInt(result.days)) {
+          var days = parseInt(result.days);
+          if (days != _days) {
+            this.days = days;
+            this.getEpisodes();
+          }
+        }
+      });
   }
 }
