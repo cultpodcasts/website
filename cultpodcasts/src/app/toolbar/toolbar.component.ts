@@ -17,8 +17,8 @@ import { ShareMode } from "../ShareMode";
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
-import { OutgoingEpisodesSendComponent } from '../outgoing-episodes-send/outgoing-episodes-send.component';
-
+import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
+import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -29,7 +29,6 @@ import { OutgoingEpisodesSendComponent } from '../outgoing-episodes-send/outgoin
   host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
-
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
 
@@ -46,7 +45,18 @@ export class ToolbarComponent {
   }
 
   login() {
-    this.auth.authService.loginWithRedirect();;
+    if (localStorage.getItem("hasLoggedIn")) {
+      this.auth.authService.loginWithRedirect();
+    } else {
+      this.dialog
+        .open(FirstLoginNoticeComponent, { disableClose: true, autoFocus: true })
+        .afterClosed()
+        .subscribe(async result => {
+          if (result?.continue) {
+            this.auth.authService.loginWithRedirect();;
+          }
+        });
+    }
   }
 
   logout() {
@@ -156,15 +166,16 @@ export class ToolbarComponent {
   }
 
   openReviewOutgoing() {
-    const dialogRef = this.dialog.open(OutgoingEpisodesSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.getOutgoingEpisodes();
+    this.router.navigate(["/outgoingEpisodes"], { onSameUrlNavigation: 'reload' })
+  }
+
+  runSearchIndexer() {
+    const dialogRef = this.dialog.open(RunSearchIndexerComponent, {
+      disableClose: true,
+      autoFocus: true
+    });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.error) {
-        let snackBarRef = this.snackBar.open("Error occurred getting episodes", "Ok", { duration: 10000 });
-      } else {
-        const episodeIds = JSON.stringify(result.episodeIds);
-        this.router.navigate(["/episodes", episodeIds], { onSameUrlNavigation: 'reload' })
-      }
+      let snackBarRef = this.snackBar.open(result, "Ok", { duration: 10000 });
     });
   }
 }

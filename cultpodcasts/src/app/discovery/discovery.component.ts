@@ -20,7 +20,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-
+import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-discovery',
@@ -67,6 +67,7 @@ export class DiscoveryComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
+    private siteService: SiteService,
     @Inject(PLATFORM_ID) platformId: any,
     private title: Title
   ) {
@@ -76,6 +77,10 @@ export class DiscoveryComponent {
 
   ngOnInit() {
     if (this.isBrowser) {
+      this.siteService.setQuery(null);
+      this.siteService.setPodcast(null);
+      this.siteService.setSubject(null);
+
       this.isLoading = true;
       this.isInError = false;
       var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({

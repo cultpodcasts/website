@@ -1,0 +1,109 @@
+<section id="results">
+    <div id="progresswrapper">
+        <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+    </div>
+    <ng-container *ngIf="!isLoading && error">
+        <p id="error">
+            An error occurred.
+        </p>
+        <div id="cta-button">
+            <button mat-flat-button color="primary" (click)="reset()">Reset</button>
+        </div>
+    </ng-container>
+    <section id="resultsheading">
+        <h2>Outgoing Episodes</h2>
+        <button id="sort" mat-icon-button [matMenuTriggerFor]="options" *ngIf="!isLoading && !error">
+            <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #options="matMenu">
+            <div mat-menu-item>
+                <mat-checkbox [disabled]="tweeted||false" [(ngModel)]="posted"
+                    (change)="getEpisodes()">Posted</mat-checkbox>
+            </div>
+            <div mat-menu-item>
+                <mat-checkbox [disabled]="posted||false" [(ngModel)]="tweeted"
+                    (change)="getEpisodes()">Tweeted</mat-checkbox>
+            </div>
+            <button mat-menu-item (click)="openSetDays()">
+                <span>Set duration</span>
+            </button>
+            <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
+                [ngClass]="this.sortDirection==sortParamDateAsc?'selected':''">
+                <mat-icon>arrow_upward</mat-icon>
+                <span>Date ascending</span>
+            </button>
+            <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
+                [ngClass]="this.sortDirection==sortParamDateDesc?'selected':''">
+                <mat-icon>arrow_downward</mat-icon>
+                <span>Date descending</span>
+            </button>
+        </mat-menu>
+    </section>
+    <mat-card *ngFor="let result of episodes" class="result">
+        <mat-card-header>
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="edit(result.id)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit Episode</span>
+                </button>
+                <button mat-menu-item (click)="post(result.id)">
+                    <mat-icon>send</mat-icon>
+                    <span>Post Episode</span>
+                </button>
+            </mat-menu>
+            <mat-card-title>
+                <span [outerHTML]="result.title"></span>
+            </mat-card-title>
+            <mat-card-subtitle>
+                <a [routerLink]="['/podcast', result.podcastName]">
+                    {{result.podcastName}}
+                </a>
+            </mat-card-subtitle>
+            <mat-card-subtitle>{{result.release | date:'d MMM yyyy H:mm'}}
+                [{{result.duration.split(".")[0].substring(1)}}]
+            </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="resultdescription">
+            <p>{{result.description}}</p>
+            @if (!result.posted || !result.tweeted || result.ignored || result.removed) {
+            <p>
+                @if (!result.posted) {
+                Unposted
+                }
+                @if (!result.tweeted) {
+                Untweeted
+                }
+                @if (result.ignored) {
+                <strong>Ignored</strong>
+                }
+                @if (result.removed) {
+                <strong>Removed</strong>
+                }
+
+            </p>
+            }
+        </mat-card-content>
+        <mat-card-actions>
+            <a *ngIf="result.urls.youtube" href="{{result.urls.youtube}}" mat-icon-button>
+                <mat-icon svgIcon="youtube"></mat-icon>
+            </a>
+            <a *ngIf="result.urls.spotify" href="{{result.urls.spotify}}" mat-icon-button>
+                <mat-icon svgIcon="spotify"></mat-icon>
+            </a>
+            <a *ngIf="result.urls.apple" href="{{result.urls.apple}}" mat-icon-button>
+                <mat-icon svgIcon="apple-podcasts"></mat-icon>
+            </a>
+            <mat-card-footer class="subjects">
+                <div *ngFor="let subject of result.subjects" class="subject">
+                    <a [routerLink]="['/subject', subject]">{{subject}}</a>
+                </div>
+            </mat-card-footer>
+        </mat-card-actions>
+    </mat-card>
+</section>
+<div id="cta-button" *ngIf="!isLoading && !error">
+    <button mat-flat-button color="primary" (click)="ngOnInit()">Refresh</button>
+</div>
