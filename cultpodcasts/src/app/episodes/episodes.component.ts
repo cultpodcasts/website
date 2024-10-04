@@ -16,6 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { Title } from '@angular/platform-browser';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { SiteService } from '../SiteService';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -55,6 +56,7 @@ export class EpisodesComponent {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
+    private siteService: SiteService,
     @Inject(PLATFORM_ID) platformId: any,
     private title: Title
   ) {
@@ -64,6 +66,10 @@ export class EpisodesComponent {
 
   ngOnInit() {
     if (this.isBrowser) {
+      this.siteService.setQuery(null);
+      this.siteService.setPodcast(null);
+      this.siteService.setSubject(null);
+
       this.isLoading = true;
       this.error = false;
       this.episodes = [];
