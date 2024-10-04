@@ -1,6 +1,6 @@
-import { Injectable, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { PodcastComponent } from './podcast/podcast.component';
-import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
@@ -9,7 +9,7 @@ import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
 import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';
 import { EpisodesComponent } from './episodes/episodes.component';
-
+import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
 
 export const routes: Routes = [
   { path: '', component: HomeWrapperComponent, title: "Cult Podcasts" },
@@ -21,6 +21,7 @@ export const routes: Routes = [
   { path: 'content/:path', component: ContentComponent },
   { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
+  { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
 ];
 
