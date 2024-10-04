@@ -18,6 +18,7 @@ import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
+import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -28,7 +29,6 @@ import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-not
   host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
-
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
 
@@ -167,5 +167,15 @@ export class ToolbarComponent {
 
   openReviewOutgoing() {
     this.router.navigate(["/outgoingEpisodes"], { onSameUrlNavigation: 'reload' })
+  }
+
+  runSearchIndexer() {
+    const dialogRef = this.dialog.open(RunSearchIndexerComponent, {
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      let snackBarRef = this.snackBar.open(result, "Ok", { duration: 10000 });
+    });
   }
 }
