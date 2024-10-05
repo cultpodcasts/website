@@ -29,8 +29,6 @@ $light-theme: mat.m2-define-light-theme((color: (primary: mat.m2-define-palette(
     @include mat.button-color($light-theme);
 }
 
-
-
 html,
 body {
     height: 100%;
@@ -194,7 +192,7 @@ footer {
         --mat-select-enabled-trigger-text-color: black;
         --mat-select-enabled-arrow-color: black;
         --mat-select-panel-background-color: whitesmoke;
-        
+
         --mdc-linear-progress-track-color: rgba(63, 81, 181, .25);
 
         .mat-mdc-progress-bar .mdc-linear-progress__buffer-dots {
@@ -214,6 +212,33 @@ footer {
         --mat-autocomplete-background-color: #c9bbbb;
         --mat-icon-color: black;
         --mdc-dialog-supporting-text-color: black;
+        --mat-checkbox-label-text-color: black;
+
+        .mat-accent.mat-mdc-checkbox {
+            --mat-checkbox-label-text-color: black;
+        }
+
+        .mat-mdc-checkbox .mat-internal-form-field {
+            --mat-checkbox-label-text-weight: 500;
+        }
+
+        .mdc-checkbox__background {
+            --mdc-checkbox-unselected-icon-color: black;
+        }
+
+        .mat-mdc-checkbox.mat-mdc-checkbox-disabled label {
+            --mat-checkbox-disabled-label-color: #666;
+        }
+
+
+        .mdc-checkbox:hover .mdc-checkbox__native-control:not(:checked)~.mdc-checkbox__background,
+        .mdc-checkbox:hover .mdc-checkbox__native-control:not(:indeterminate)~.mdc-checkbox__background {
+            --mdc-checkbox-unselected-hover-icon-color: #666;
+        }
+        .mdc-checkbox--disabled .mdc-checkbox__background {
+            --mdc-checkbox-disabled-unselected-icon-color: #666;
+        }
+
     }
 }
 
@@ -242,6 +267,7 @@ mat-card {
             text-decoration: none;
         }
     }
+
     mat-card-subtitle {
         font-size: 1.3em !important;
         margin-top: 10px;
@@ -270,8 +296,11 @@ mat-card {
         padding-left: 20px;
     }
 }
+
 mat-card-actions {
-    a[mat-icon-button], button[mat-icon-button] {
+
+    a[mat-icon-button],
+    button[mat-icon-button] {
         margin-right: 25px;
         transform: scale(1.2);
     }
@@ -279,6 +308,7 @@ mat-card-actions {
 
 @media screen and (max-width: 600px) {
     mat-card-actions {
+
         a[mat-icon-button],
         button[mat-icon-button] {
             margin-right: 18px;
@@ -294,6 +324,7 @@ mat-card-actions {
 
 @media screen and (max-width: 400px) {
     mat-card-actions {
+
         a[mat-icon-button],
         button[mat-icon-button] {
             margin-right: 12px;
