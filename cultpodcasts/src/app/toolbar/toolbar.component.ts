@@ -20,6 +20,7 @@ import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
 import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
+import { AddTermComponent } from '../add-term/add-term.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -188,6 +189,19 @@ export class ToolbarComponent {
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef = this.snackBar.open(result.replace(/([A-Z])/g, ' $1').trim(), "Ok", { duration: 10000 });
     });
+  }
+
+  addTerm() {
+    const dialogRef = this.dialog.open(AddTermComponent, {
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open(`Term '${result.term}' added`, "Ok", { duration: 10000 });
+      }
+    });
+
   }
 
 }
