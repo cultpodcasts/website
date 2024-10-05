@@ -4,7 +4,9 @@ export interface PodcastPost {
     indexAllEpisodes?: boolean;
     bypassShortEpisodeChecking?: boolean;
     releaseAuthority?: string;
+    unsetReleaseAuthority?: boolean;
     primaryPostService?: string;
+    unsetPrimaryPostService?: boolean;
     spotifyId?: string;
     appleId?: number | null;
     youTubePublicationDelay?: string;
