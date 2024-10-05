@@ -175,7 +175,7 @@ export class ToolbarComponent {
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef = this.snackBar.open(result, "Ok", { duration: 10000 });
+      let snackBarRef = this.snackBar.open(result.replace(/([A-Z])/g, ' $1').trim(), "Ok", { duration: 10000 });
     });
   }
 }
