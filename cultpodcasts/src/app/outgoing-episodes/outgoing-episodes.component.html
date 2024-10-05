@@ -25,7 +25,12 @@
                     (change)="getEpisodes()">Tweeted</mat-checkbox>
             </div>
             <button mat-menu-item (click)="openSetDays()">
-                <span>Set duration</span>
+                <mat-icon>calendar_month</mat-icon>
+                <span>Set duration
+                    @if (this.days) {
+                    ({{this.days}})
+                    }
+                </span>
             </button>
             <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
                 [ngClass]="this.sortDirection==sortParamDateAsc?'selected':''">
