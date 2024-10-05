@@ -2,7 +2,7 @@ import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { firstValueFrom, forkJoin, Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -23,6 +23,7 @@ import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-da
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
+const daysKey: string = "pref.outgoing-episodes.days";
 
 @Component({
   selector: 'app-episodes',
@@ -80,12 +81,17 @@ export class OutgoingEpisodesComponent {
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
+      const daysValue: string | null = localStorage.getItem(daysKey);
+      if (daysValue && parseInt(daysValue)) {
+        this.days = parseInt(daysValue);
+      }
+
       this.isLoading = true;
       this.error = false;
       this.episodes = [];
 
       this.route.params.subscribe(params => {
-        var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
           authorizationParams: {
             audience: `https://api.cultpodcasts.com/`,
             scope: 'curate'
@@ -104,9 +110,9 @@ export class OutgoingEpisodesComponent {
   }
 
   reset() {
-    this.posted = false;
-    this.tweeted = false;
-    this.days = 7;
+    this.posted = undefined;
+    this.tweeted = undefined;
+    this.days = undefined;
     this.ngOnInit()
   }
 
@@ -203,6 +209,7 @@ export class OutgoingEpisodesComponent {
         if (result?.days && parseInt(result.days)) {
           var days = parseInt(result.days);
           if (days != _days) {
+            localStorage.setItem(daysKey, days.toString());
             this.days = days;
             this.getEpisodes();
           }

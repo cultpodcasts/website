@@ -71,6 +71,12 @@
         <span>Review Outgoing</span>
       </a>
       }
+      @if (this.auth.roles.includes("Admin")) {
+      <a (click)="runSearchIndexer()" mat-menu-item>
+        <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
+        <span>Run Search Indexer</span>
+      </a>
+      }
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
         <mat-icon svgIcon="reddit"></mat-icon>
         <span>Reddit</span>
