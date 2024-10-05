@@ -35,7 +35,7 @@ export class EditPodcastDialogComponent {
   podcastName: string;
   isLoading: boolean = true;
   isInError: boolean = false;
-  notFound: boolean= false;
+  notFound: boolean = false;
 
   form: FormGroup<PodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
@@ -106,10 +106,10 @@ export class EditPodcastDialogComponent {
             error: e => {
               this.isLoading = false;
               this.isInError = true;
-              if (e.status== 404) {
-                this.notFound= true;
+              if (e.status == 404) {
+                this.notFound = true;
               }
-        }
+            }
           }
         )
     }).catch(x => {
@@ -156,8 +156,10 @@ export class EditPodcastDialogComponent {
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.indexAllEpisodes != now.indexAllEpisodes) changes.indexAllEpisodes = now.indexAllEpisodes;
     if (prev.bypassShortEpisodeChecking != now.bypassShortEpisodeChecking) changes.bypassShortEpisodeChecking = now.bypassShortEpisodeChecking;
-    if (prev.releaseAuthority != now.releaseAuthority) changes.releaseAuthority = now.releaseAuthority;
-    if (prev.primaryPostService != now.primaryPostService) changes.primaryPostService = now.primaryPostService;
+    if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority) changes.releaseAuthority = now.releaseAuthority;
+    if (prev.releaseAuthority != now.releaseAuthority && !now.releaseAuthority) changes.unsetReleaseAuthority = true;
+    if (prev.primaryPostService != now.primaryPostService && now.primaryPostService) changes.primaryPostService = now.primaryPostService;
+    if (prev.primaryPostService != now.primaryPostService && !now.primaryPostService) changes.unsetPrimaryPostService = true;
     if (prev.spotifyId != now.spotifyId) changes.spotifyId = now.spotifyId;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.appleId != now.appleId) changes.appleId = now.appleId;
@@ -173,7 +175,7 @@ export class EditPodcastDialogComponent {
   }
 
   send(id: string, changes: PodcastPost) {
-    const dialogRef = this.dialog.open(EditPodcastSendComponent,  { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open(EditPodcastSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
