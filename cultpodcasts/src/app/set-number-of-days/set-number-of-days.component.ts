@@ -6,7 +6,11 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-set-number-of-days',
   standalone: true,
-  imports: [MatDialogModule, MatButtonModule, FormsModule],
+  imports: [
+    MatDialogModule, 
+    MatButtonModule,
+    FormsModule
+  ],
   templateUrl: './set-number-of-days.component.html',
   styleUrl: './set-number-of-days.component.sass'
 })
