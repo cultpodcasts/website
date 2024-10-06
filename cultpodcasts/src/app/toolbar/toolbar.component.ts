@@ -10,7 +10,7 @@ import { SiteService } from '../SiteService';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
@@ -195,12 +195,23 @@ export class ToolbarComponent {
             }
           }
           let podcastSnackBarRef = this.snackBar.open(message, "Ok", { duration: 3000 });
+          podcastSnackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify([id]);
+            this.router.navigate(["/episodes", episodeId])
+          });
         });
       } else {
+        let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
         if (result.updated) {
-          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+          snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
         } else if (result.noChange) {
-          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+          snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
+        if (snackBarRef) {
+          snackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify([id]);
+            this.router.navigate(["/episodes", episodeId])
+          });
         }
       }
     });
