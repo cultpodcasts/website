@@ -382,7 +382,7 @@ export class PodcastComponent {
       if (result.updated) {
         let message = "Podcast Indexed";
         if (result.episodeIds && result.episodeIds.length > 0) {
-          message += `. ${result.episodeIds.length} episodes updated`;
+          message += `. ${result.episodeIds.length} episode${result.episodeIds.length > 1 ? 's' : ''} updated`;
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
         if (result.episodeIds && result.episodeIds.length > 0) {
