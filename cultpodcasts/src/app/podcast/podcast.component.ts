@@ -380,7 +380,17 @@ export class PodcastComponent {
     dialogRef.componentInstance.index(this.results[0].podcastName);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        let snackBarRef = this.snackBar.open("Podcast Indexed", "Ok", { duration: 10000 });
+        let message = "Podcast Indexed";
+        if (result.episodeIds && result.episodeIds.length > 0) {
+          message += `. ${result.episodeIds.length} episodes updated`;
+        }
+        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+        if (result.episodeIds && result.episodeIds.length > 0) {
+          snackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify(result.episodeIds);
+            this.router.navigate(["/episodes", episodeId])
+          });
+        }
       } else if (result.podcastNotAutoIndex) {
         let snackBarRef = this.snackBar.open("Podcast not indexable", "Ok", { duration: 10000 });
       } else if (result.podcastNotFound) {
@@ -444,5 +454,4 @@ export class PodcastComponent {
       });
     await dialog.componentInstance.submit(share);
   }
-
 }

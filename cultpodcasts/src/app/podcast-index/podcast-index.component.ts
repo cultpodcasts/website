@@ -37,11 +37,11 @@ export class PodcastIndexComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/podcast/index/${encodeURIComponent(podcastName)}`, environment.api).toString();
-      this.http.post(episodeEndpoint, {}, { headers: headers, observe: "response" })
+      this.http.post<any>(episodeEndpoint, {}, { headers: headers, observe: "response" })
         .subscribe(
           {
             next: resp => {
-              this.dialogRef.close({ updated: true });
+              this.dialogRef.close({ updated: true, episodeIds: resp.body.episodeIds });
             },
             error: e => {
               if (e.status == 400) {
