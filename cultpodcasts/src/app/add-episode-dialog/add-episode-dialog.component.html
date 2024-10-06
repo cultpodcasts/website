@@ -1,0 +1,93 @@
+<h2 mat-dialog-title>Add Episode</h2>
+
+<mat-dialog-content>
+    @if (this.isLoading) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (this.isInError) {
+    <p id="error">An error occurred</p>
+    } @else {
+    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+        <mat-tab-group>
+            <mat-tab label="Details">
+                <label>
+                    <span>Podcast:</span>
+                    <p>{{this.podcastName}}</p>
+                </label>
+                <label>
+                    <span>Title:</span>
+                    <input type="text" [formControl]="form!.controls.title">
+                </label>
+                <label>
+                    <span>Description:</span>
+                    <textarea [formControl]="form!.controls.description"></textarea>
+                </label>
+            </mat-tab>
+            <mat-tab label="Flags">
+                <div class="flags">
+                    <label>
+                        <span>Posted:</span>
+                        <input type="checkbox" [formControl]="form!.controls.posted">
+                    </label>
+                    <label>
+                        <span>Tweeted:</span>
+                        <input type="checkbox" [formControl]="form!.controls.tweeted">
+                    </label>
+                    <label>
+                        <span>Ignored:</span>
+                        <input type="checkbox" [formControl]="form!.controls.ignored">
+                    </label>
+                    <label>
+                        <span>Removed:</span>
+                        <input type="checkbox" [formControl]="form!.controls.removed">
+                    </label>
+                    <label>
+                        <span>Explicit:</span>
+                        <input type="checkbox" [formControl]="form!.controls.explicit">
+                    </label>
+                </div>
+            </mat-tab>
+            <mat-tab label="Urls">
+                <label>
+                    <span>Spotify:</span>
+                    <input type="text" [formControl]="form!.controls.spotify">
+                </label>
+                <label>
+                    <span>Apple:</span>
+                    <input type="text" [formControl]="form!.controls.apple">
+                </label>
+                <label>
+                    <span>YouTube:</span>
+                    <input type="text" [formControl]="form!.controls.youtube">
+                </label>
+            </mat-tab>
+            <mat-tab label="Meta">
+                <label>
+                    <span>Release:</span>
+                    <input type="datetime-local" [formControl]="form!.controls.release">
+                </label>
+                <label>
+                    <span>Duration:</span>
+                    <input type="text" [formControl]="form!.controls.duration">
+                </label>
+                <label>
+                    <span>Subjects:</span>
+                    <mat-select [formControl]="form!.controls.subjects" multiple [sortComparator]="noCompareFunction">
+                        @for (subject of subjects; track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
+                </label>
+                <label>
+                    <span>Search Terms:</span>
+                    <input type="text" [formControl]="form!.controls.searchTerms">
+                </label>
+            </mat-tab>
+        </mat-tab-group>
+    </form>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Close</button>
+    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+</mat-dialog-actions>
