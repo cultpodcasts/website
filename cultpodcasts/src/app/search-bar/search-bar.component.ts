@@ -13,7 +13,14 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-search-bar',
   standalone: true,
-  imports: [NgIf, MatButtonModule, FormsModule, MatFormFieldModule, MatChipsModule, MatInputModule, MatIconModule],
+  imports: [
+    NgIf, 
+    MatButtonModule, 
+    FormsModule, 
+    MatFormFieldModule, 
+    MatChipsModule, 
+    MatInputModule, 
+    MatIconModule],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
   host: { ngSkipHydration: 'true' }

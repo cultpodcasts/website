@@ -11,7 +11,7 @@
     <p id="error">An error occurred</p>
     }
     }
-    <input mat-input type="text" [(ngModel)]="this.term">
+    <input matInput type="text" [(ngModel)]="this.term" (keydown.enter)="onSubmit()">
     }
 </mat-dialog-content>
 
