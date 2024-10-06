@@ -21,7 +21,7 @@ import { waitFor } from '../core.module';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
@@ -122,10 +122,17 @@ export class PodcastComponent {
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
+      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
       if (result.updated) {
-        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
       } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+        snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+      if (snackBarRef) {
+        snackBarRef.onAction().subscribe(() => {
+          const episodeId = JSON.stringify([id]);
+          this.router.navigate(["/episodes", episodeId])
+        });
       }
     });
   }
@@ -430,17 +437,7 @@ export class PodcastComponent {
             } else {
               episode = "Episode not created.";
             }
-            let podcast = "";
-            if (result.originResponse.success.podcast === "Created") {
-              podcast = "Podcast created.";
-            } else if (result.originResponse.success.podcast === "Enriched") {
-              podcast = "Podcast enriched.";
-            } else if (result.originResponse.success.podcast === "Ignored") {
-              podcast = "Podcast ignored.";
-            } else if (result.originResponse.success.podcast === "PodcastRemoved") {
-              podcast = "Podcast Removed.";
-            }
-            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${podcast} ${episode}`, edit ? "Edit" : "Ok", { duration: 10000 });
+            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${episode}`, edit ? "Edit" : "Ok", { duration: 10000 });
 
             if (edit) {
               snackBarRef.onAction().subscribe(() => {
