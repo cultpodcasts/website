@@ -4,7 +4,6 @@ import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { IShare } from '../IShare';
 import { ShareMode } from "../ShareMode";
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -92,15 +91,14 @@ export class SendPodcastComponent {
 
           if (this.isBrowser) {
             if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
-              const accessTokenOptions: GetTokenSilentlyOptions = {
-                authorizationParams: {
-                  audience: `https://api.cultpodcasts.com/`,
-                  scope: 'submit'
-                }
-              };
               let token: string | undefined;
               try {
-                token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
+                token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+                  authorizationParams: {
+                    audience: `https://api.cultpodcasts.com/`,
+                    scope: 'submit'
+                  }
+                }));
               } catch (e) {
                 console.error(e);
               }

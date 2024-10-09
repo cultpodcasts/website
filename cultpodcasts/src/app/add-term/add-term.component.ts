@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 
@@ -42,33 +41,34 @@ export class AddTermComponent {
   async onSubmit() {
     let headers: HttpHeaders = new HttpHeaders();
 
-    const accessTokenOptions: GetTokenSilentlyOptions = {
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'submit'
-      }
-    };
     let token: string | undefined;
     this.isSending = true;
     try {
-      token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
+      token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'admin'
+        }
+      }));
     } catch (e) {
       console.error(e);
     }
-    if (token) {
-      headers = headers.set("Authorization", "Bearer " + token);
-    }
     try {
-      const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/terms", environment.api).toString(), { term: this.term }, { headers: headers, observe: 'response' }));
-      if (resp.status == 200) {
-        this.isSending = false;
-        this.conflict = false;
-        this.dialogRef.close({ updated: true, term: this.term });
-      } else {
-        console.error(resp);
-        this.isInError = true;
-        this.isSending = false;
-        this.conflict = false;
+      if (token) {
+        console.log(token);
+        headers = headers.set("Authorization", "Bearer " + token);
+
+        const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/terms", environment.api).toString(), { term: this.term }, { headers: headers, observe: 'response' }));
+        if (resp.status == 200) {
+          this.isSending = false;
+          this.conflict = false;
+          this.dialogRef.close({ updated: true, term: this.term });
+        } else {
+          console.error(resp);
+          this.isInError = true;
+          this.isSending = false;
+          this.conflict = false;
+        }
       }
     } catch (error: any) {
       console.error(error);

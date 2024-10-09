@@ -24,6 +24,12 @@
         <span>Submit Url for Podcast</span>
       </button>
       }
+      @if (this.auth.roles.includes('Admin')) {
+      <button mat-menu-item (click)="renamePodcast()">
+        <mat-icon>arrow_right_alt</mat-icon>
+        <span>Rename Podcast</span>
+      </button>
+      }
       <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
         [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
         <mat-icon>arrow_upward</mat-icon>

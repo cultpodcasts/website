@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { ISimplePodcast } from './ISimplePodcast';
 import { ISimplePodcastsResult } from "./ISimplePodcastsResult";
 import { AuthServiceWrapper } from './AuthServiceWrapper';
-import { GetTokenSilentlyOptions } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../environments/environment';
@@ -19,15 +18,14 @@ export class PodcastsService {
     let headers: HttpHeaders = new HttpHeaders();
     if (this.isAuthenticated) {
       const podcastsEndpoint = new URL("/podcasts", environment.api);
-      const accessTokenOptions: GetTokenSilentlyOptions = {
-        authorizationParams: {
-          audience: `https://api.cultpodcasts.com/`,
-          scope: 'submit'
-        }
-      };
       let token: string | undefined;
       try {
-        token = await firstValueFrom(this.auth.authService.getAccessTokenSilently(accessTokenOptions));
+        token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+          authorizationParams: {
+            audience: `https://api.cultpodcasts.com/`,
+            scope: 'submit'
+          }
+        }));
       } catch (e) {
         console.error(e);
       }

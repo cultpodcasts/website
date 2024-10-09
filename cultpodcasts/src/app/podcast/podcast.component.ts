@@ -29,6 +29,7 @@ import { ShareMode } from '../ShareMode';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { IShare } from '../IShare';
+import { RenamePodcastDialogComponent } from '../rename-podcast-dialog/rename-podcast-dialog.component';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -451,4 +452,28 @@ export class PodcastComponent {
       });
     await dialog.componentInstance.submit(share);
   }
+
+  renamePodcast() {
+    const dialogRef = this.dialog.open(RenamePodcastDialogComponent, {
+      data: { podcastName: this.podcastName },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
+      const indexUpdated = result?.indexUpdated ? "" : " not";
+      if (result.updated) {
+        snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". Index ${indexUpdated} updated.`, "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+      if (result.updated && snackBarRef) {
+        snackBarRef.onAction().subscribe(() => {
+          this.router.navigate(["/podcast", result.newPodcastName])
+        });
+      }
+
+    });
+  }
+
 }
