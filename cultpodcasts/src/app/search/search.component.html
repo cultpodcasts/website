@@ -56,7 +56,9 @@
       </button>
       <mat-card-footer class="subjects">
         <div *ngFor="let subject of result.subjects" class="subject">
-          <a [routerLink]="['/subject', subject]">{{subject}}</a>
+          @if (!subject.startsWith("_")) {
+            <a [routerLink]="['/subject', subject]">{{subject}}</a>
+          }
         </div>
       </mat-card-footer>
     </mat-card-actions>
