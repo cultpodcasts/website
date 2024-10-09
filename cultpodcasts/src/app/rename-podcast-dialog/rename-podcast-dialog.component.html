@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Rename Podcast</h2>
+<form #newPodcastNameForm="ngForm">
+
+    <mat-dialog-content>
+        @if (this.isSending) {
+        <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+        } @else {
+        @if (this.conflict) {
+        <p>Conflicting podcast name</p>
+        }
+        @else if (this.isInError) {
+        <p>An error occurred</p>
+        }
+        <p>Rename "{{this.podcastName}}" to</p>
+        <input matInput type="text" (keydown.enter)="onSubmit()" class="form-control" id="newPodcastName" required
+            [(ngModel)]="this.newPodcastName" name="newPodcastName" #newPodcastNameField="ngModel"
+            (keyup)="checkControl(newPodcastNameField)">
+
+        <div *ngIf="newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)"
+            class="alert">
+            <div *ngIf="newPodcastNameField.hasError('required')">New podcast-name is required. </div>
+            <div *ngIf="newPodcastNameField.hasError('unsafe')">Invalid podcast name.</div>
+        </div>
+        }
+    </mat-dialog-content>
+
+    <mat-dialog-actions>
+        <button mat-raised-button (click)="close()">Close</button>
+        <button mat-raised-button [disabled]="newPodcastNameForm.invalid" (click)="onSubmit()">Submit</button>
+    </mat-dialog-actions>
+</form>
