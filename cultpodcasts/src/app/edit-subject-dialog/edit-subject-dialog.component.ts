@@ -173,6 +173,7 @@ export class EditSubjectDialogComponent {
         redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
         subjectType: this.translateForEntityE(this.form!.controls.subjectType)
       };
+
       if (this.create) {
         update.name = this.translateForEntity(this.form!.controls.name);
       }
@@ -198,6 +199,7 @@ export class EditSubjectDialogComponent {
     }
     return JSON.stringify(a) == JSON.stringify(b);
   }
+
   isSame(a: string | null | undefined, b: string | null | undefined): boolean {
     if (!a && !b) {
       return true;
@@ -219,7 +221,7 @@ export class EditSubjectDialogComponent {
   }
 
   send(id: string, changes: SubjectEntity) {
-    const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true, data: { create: this.create } });
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
       console.log(result)
