@@ -203,9 +203,9 @@ export class ToolbarComponent {
       } else {
         let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
         if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
         } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
         }
         if (snackBarRef) {
           snackBarRef.onAction().subscribe(() => {
