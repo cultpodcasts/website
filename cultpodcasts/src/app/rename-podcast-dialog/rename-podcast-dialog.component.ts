@@ -57,12 +57,20 @@ export class RenamePodcastDialogComponent {
         if (tokenCtr++ > 1) return;
         headers = headers.set("Authorization", "Bearer " + _token);
         const url: URL = new URL(`/podcast/name/${this.podcastName}`, environment.api);
-        const resp = firstValueFrom<HttpResponse<any>>(this.http.post(url.toString(), { newPodcastName: this.newPodcastName }, { headers: headers, observe: 'response' }));
+        const newPodcastName= this.newPodcastName.trim();
+        const resp = firstValueFrom<HttpResponse<any>>(
+          this.http.post(url.toString(),
+            { newPodcastName: newPodcastName },
+            { headers: headers, observe: 'response' }));
         resp.then(_resp => {
           if (_resp.status == 200) {
             this.isSending = false;
             this.conflict = false;
-            this.dialogRef.close({ updated: true, newPodcastName: this.newPodcastName, indexUpdated: _resp.body.indexState == "Executed" });
+            this.dialogRef.close({
+              updated: true,
+              newPodcastName: newPodcastName,
+              indexUpdated: _resp.body.indexState == "Executed"
+            });
           } else {
             console.error(_resp);
             this.isInError = true;
@@ -92,6 +100,4 @@ export class RenamePodcastDialogComponent {
       control.control.setErrors({ unsafe: true })
     }
   }
-
-
 }
