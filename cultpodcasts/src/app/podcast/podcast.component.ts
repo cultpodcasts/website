@@ -389,10 +389,12 @@ export class PodcastComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let message = "Podcast Indexed";
+        let action = "Ok";
         if (result.episodeIds && result.episodeIds.length > 0) {
           message += `. ${result.episodeIds.length} episode${result.episodeIds.length > 1 ? 's' : ''} updated`;
+          action = "Review";
         }
-        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+        let snackBarRef = this.snackBar.open(message, action, { duration: 10000 });
         if (result.episodeIds && result.episodeIds.length > 0) {
           snackBarRef.onAction().subscribe(() => {
             const episodeId = JSON.stringify(result.episodeIds);

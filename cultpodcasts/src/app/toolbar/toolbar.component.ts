@@ -194,7 +194,7 @@ export class ToolbarComponent {
               message = "Episode unchanged. Podcast updated";
             }
           }
-          let podcastSnackBarRef = this.snackBar.open(message, "Ok", { duration: 3000 });
+          let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: 3000 });
           podcastSnackBarRef.onAction().subscribe(() => {
             const episodeId = JSON.stringify([id]);
             this.router.navigate(["/episodes", episodeId])
