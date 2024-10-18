@@ -3,26 +3,8 @@
 <mat-dialog-content [formGroup]="form">
 
     <mat-form-field>
-        <input matInput placeholder="Podcast Url" [formControl]="url">
+        <input matInput placeholder="Podcast Url" [formControl]="url" (keyup.enter)="save()">
     </mat-form-field>
-
-    <mat-expansion-panel *ngIf="showAdvanced" (opened)="advancedOpenState = true" (closed)="advancedOpenState = false">
-        <mat-expansion-panel-header>
-            <mat-panel-title>
-                Advanced
-            </mat-panel-title>
-        </mat-expansion-panel-header>
-
-        <mat-form-field>
-            <mat-label>Podcast</mat-label>
-            <input type="text" matInput [matAutocomplete]="auto" [formControl]="podcast">
-            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
-                <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
-                    {{option.name}}
-                </mat-option>
-            </mat-autocomplete>
-        </mat-form-field>
-    </mat-expansion-panel>
 
 </mat-dialog-content>
 
