@@ -14,7 +14,7 @@
         <p>Rename "{{this.podcastName}}" to</p>
         <input matInput type="text" (keydown.enter)="onSubmit()" class="form-control" id="newPodcastName" required
             [(ngModel)]="this.newPodcastName" name="newPodcastName" #newPodcastNameField="ngModel"
-            (keyup)="checkControl(newPodcastNameField)">
+            (keyup)="checkControl(newPodcastNameField)" (keyup.enter)="onSubmit()">
 
         <div *ngIf="newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)"
             class="alert">

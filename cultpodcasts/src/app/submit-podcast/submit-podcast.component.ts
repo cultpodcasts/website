@@ -26,7 +26,6 @@ export class SubmitPodcastComponent implements OnInit {
 
   form!: FormGroup;
   advancedOpenState: boolean = false;
-  showAdvanced: boolean = false;
   podcast = new FormControl();
   url = new FormControl()
   filteredOptions: Observable<ISimplePodcast[]> | undefined;
@@ -34,9 +33,7 @@ export class SubmitPodcastComponent implements OnInit {
 
   constructor(
     private dialogRef: MatDialogRef<SubmitPodcastComponent>,
-    private featureSwitchService: FeatureSwtichService,
-    @Inject(MAT_DIALOG_DATA) data: any,
-    private podcastService: PodcastsService) {
+    @Inject(MAT_DIALOG_DATA) data: any) {
   }
 
   ngOnInit() {
@@ -48,20 +45,6 @@ export class SubmitPodcastComponent implements OnInit {
       url: this.url,
       podcast: this.podcast
     });
-    if (this.featureSwitchService.IsEnabled(FeatureSwitch.submitPodcastSelector)) {
-      var podcastResponse = this.podcastService.getPodcasts().then(result => {
-        if (result.results) {
-          this.options = result.results;
-          this.filteredOptions = this.podcast.valueChanges
-            .pipe(
-              startWith(''),
-              map(value => typeof value === 'string' ? value : value.name),
-              map(name => name ? this._filter(name) : this.options!.slice())
-            );
-          this.showAdvanced = true;
-        }
-      });
-    }
   }
 
   displayFn(podcast: ISimplePodcast): string {

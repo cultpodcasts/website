@@ -7,8 +7,6 @@ export class FeatureSwtichService {
         switch (featureSwitch) {
             case FeatureSwitch.auth0:
                 return true;
-            case FeatureSwitch.submitPodcastSelector:
-                return false;
             default:
                 return false;
         }
