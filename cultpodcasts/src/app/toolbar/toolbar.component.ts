@@ -128,6 +128,8 @@ export class ToolbarComponent {
               editExisting = true;
             } else if (result.originResponse.success.episode === "Ignored") {
               episode = "Episode ignored.";
+            } else if (result.originResponse.success.episode === "EpisodeAlreadyExists") {
+              episode = "Episode already exists.";
             } else {
               episode = "Episode not created.";
             }
