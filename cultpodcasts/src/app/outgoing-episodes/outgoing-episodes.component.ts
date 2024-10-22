@@ -20,6 +20,7 @@ import { SiteService } from '../SiteService';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
+import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -169,6 +170,20 @@ export class OutgoingEpisodesComponent {
       }
     });
   }
+
+  delete(id: string) {
+    const dialogRef = this.dialog.open(DeleteEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.deleted) {
+        let snackBarRef = this.snackBar.open("Episode deleted.", "Ok", { duration: 10000 });
+      }
+    });
+  }
+
 
   getEpisodes() {
     this.isLoading = true;
