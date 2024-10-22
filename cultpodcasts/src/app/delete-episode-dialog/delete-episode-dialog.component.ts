@@ -22,6 +22,7 @@ export class DeleteEpisodeDialogComponent {
   isInError: boolean = false;
   isSending: boolean = false;
   episodeId: string | undefined;
+  error: any | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -57,6 +58,7 @@ export class DeleteEpisodeDialogComponent {
               console.error(e);
               this.isSending = false;
               this.isInError = true;
+              this.error = e.error;
             }
           }
         )
