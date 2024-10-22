@@ -58,7 +58,7 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
-                <button mat-menu-item (click)="delete(result.id)">
+                <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
                     <mat-icon>delete</mat-icon>
                     <span>Delete Episode</span>
                 </button>

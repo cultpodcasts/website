@@ -5,6 +5,11 @@
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     } @else if (this.isInError) {
     <p id="error">An error occurred</p>
+    @if (this.error) {
+        @if (this.error.message) {
+            <p>{{this.error.message}}</p>
+        }
+    }
     } @else {
     Deleting an episode is permanent
     }
