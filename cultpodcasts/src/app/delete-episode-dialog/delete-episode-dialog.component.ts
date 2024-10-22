@@ -58,7 +58,11 @@ export class DeleteEpisodeDialogComponent {
               console.error(e);
               this.isSending = false;
               this.isInError = true;
-              this.error = e.error;
+              if (e.status == 403) {
+                this.error = { message: "You do not have permission" };
+              } else {
+                this.error = e.error;
+              }
             }
           }
         )
