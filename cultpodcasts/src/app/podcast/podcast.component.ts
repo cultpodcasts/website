@@ -439,6 +439,7 @@ export class PodcastComponent {
               episode = "Episode ignored.";
             } else if (result.originResponse.success.episode === "EpisodeAlreadyExists") {
               episode = "Episode already exists.";
+              edit = true;
             } else {
               episode = "Episode not created.";
             }
