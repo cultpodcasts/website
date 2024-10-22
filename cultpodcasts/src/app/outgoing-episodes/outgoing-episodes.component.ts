@@ -63,7 +63,7 @@ export class OutgoingEpisodesComponent {
   token: string = "";
 
   constructor(
-    private auth: AuthServiceWrapper,
+    protected auth: AuthServiceWrapper,
     private http: HttpClient,
     private route: ActivatedRoute,
     private dialog: MatDialog,

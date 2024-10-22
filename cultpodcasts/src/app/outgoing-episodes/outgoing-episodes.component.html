@@ -58,10 +58,12 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
+                @if (this.auth.roles.includes("Admin")) {
                 <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
                     <mat-icon>delete</mat-icon>
                     <span>Delete Episode</span>
                 </button>
+                }
             </mat-menu>
             <mat-card-title>
                 <span [outerHTML]="result.title"></span>
