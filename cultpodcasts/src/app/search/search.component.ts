@@ -71,8 +71,7 @@ export class SearchComponent {
 
   ngOnInit() {
     combineLatest(
-      this.route.params,
-      this.route.queryParams,
+      [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
         params,
         queryParams,
@@ -188,7 +187,7 @@ export class SearchComponent {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
-    const shortGuid= this.guidService.toBase64(item.id);
+    const shortGuid = this.guidService.toBase64(item.id);
     const share = {
       title: item.episodeTitle,
       text: description,

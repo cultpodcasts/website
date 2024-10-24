@@ -9,5 +9,6 @@ export const environment: IEnvironment = {
    assetHost: 'https://cultpodcasts.com',
    bundleAssetHost: 'https://cultpodcasts.com',
    shortner: 'https://s.cultpodcasts.com',
-   name: "prod"
+   name: "prod",
+   vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is"
 };
