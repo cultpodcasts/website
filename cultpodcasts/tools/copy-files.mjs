@@ -5,5 +5,6 @@ import { client, cloudflare, ssr, worker } from "./paths.mjs";
 
 fs.cpSync(client, cloudflare, { recursive: true });
 fs.cpSync(ssr, worker, { recursive: true });
-
 fs.renameSync(join(worker, "server.mjs"), join(worker, "index.js"));
+fs.cpSync(join(cloudflare, 'ngsw-worker.js'), join(cloudflare, 'ngsw-worker-dist.js'));
+fs.cpSync(join(cloudflare, 'remove-ngsw-worker.js'), join(cloudflare, 'ngsw-worker.js'));
