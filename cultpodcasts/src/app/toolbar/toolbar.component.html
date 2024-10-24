@@ -49,6 +49,10 @@
             <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
             <span>Add Term</span>
           </a>
+          <a (click)="subscribe()" mat-menu-item>
+            <mat-icon class="material-symbols-outlined">subscribe</mat-icon>
+            <span>Subscribe</span>
+          </a>
           }
           <a (click)="logout()" mat-menu-item>
             <mat-icon>logout</mat-icon>
@@ -91,6 +95,10 @@
       <a (click)="addTerm()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
         <span>Add Term</span>
+      </a>
+      <a (click)="subscribe()" mat-menu-item>
+        <mat-icon class="material-symbols-outlined">subscribe</mat-icon>
+        <span>Subcribe</span>
       </a>
       }
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>

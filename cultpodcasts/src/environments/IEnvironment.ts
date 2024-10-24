@@ -8,4 +8,5 @@ export interface IEnvironment {
     assetHost: string;
     shortner: string;
     name: string;
+    vapidPublicKey: string;
 }
