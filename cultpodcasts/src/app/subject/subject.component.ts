@@ -83,8 +83,7 @@ export class SubjectComponent {
 
   ngOnInit() {
     combineLatest(
-      this.route.params,
-      this.route.queryParams,
+      [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
         params,
         queryParams,
