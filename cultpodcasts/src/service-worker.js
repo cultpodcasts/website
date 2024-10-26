@@ -19,7 +19,7 @@ self.addEventListener('fetch', event => {
     }
 });
 
-this.scope.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     if (clients.openWindow) {
         if (event.notification && event.notification.data && event.notification.data.url) {
