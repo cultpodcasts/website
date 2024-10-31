@@ -18,10 +18,8 @@ export class WebPushService {
     var result = await navigator.permissions.query(req as PermissionDescriptor)
     if (result.state != "denied") {
       if (result.state == "granted") {
-        console.log("pre determineIfSubscriptionNeeded")
         await this.determineIfSubscriptionNeeded()
       } else if (result.state == "prompt") {
-        console.log("pre requestSubscription - 2")
         return await this.requestSubscription();
       }
     }
@@ -36,29 +34,28 @@ export class WebPushService {
       console.log(error);
     }
     if (existingSubscription == null) {
-      console.log("pre requestSubscription - 3")
       return await this.requestSubscription();
     }
     return true;
   }
 
   private async requestSubscription(): Promise<boolean> {
-    console.log("requestSubscription")
     try {
       const sub = await this.swPush.requestSubscription({
         serverPublicKey: environment.vapidPublicKey
       })
       const res = await this.notificationService.addPushSubscriber(sub);
       if (!res) {
+        console.error("Failed to register subscription")
         try {
           await this.swPush.unsubscribe();
         } catch (error) {
-          console.error("failure to unsubscribe subscription")
+          console.error("Failure to unsubscribe subscription")
           console.error(error);
         }
       }
     } catch (error) {
-      console.error("Could not subscribe to notifications");
+      console.error("Could not request subscription");
       console.log(error);
       try {
         await this.swPush.unsubscribe();
