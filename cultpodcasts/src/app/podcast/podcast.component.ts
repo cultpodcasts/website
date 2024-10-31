@@ -81,6 +81,7 @@ export class PodcastComponent {
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
+  authRoles: string[] = [];
 
   constructor(
     private router: Router,
@@ -96,6 +97,7 @@ export class PodcastComponent {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
+    this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
   private route = inject(ActivatedRoute);
 

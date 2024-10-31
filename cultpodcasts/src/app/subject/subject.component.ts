@@ -57,6 +57,7 @@ export class SubjectComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   isBrowser: boolean;
+  authRoles: string[] = [];
 
   constructor(
     private http: HttpClient,
@@ -71,6 +72,7 @@ export class SubjectComponent {
     private snackBar: MatSnackBar
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
   private route = inject(ActivatedRoute);

@@ -43,7 +43,6 @@ export class PostEpisodeDialogComponent {
       tweet: new FormControl(false, { nonNullable: true }),
       post: new FormControl(false, { nonNullable: true }),
     });
-
   }
 
   ngOnInit() {

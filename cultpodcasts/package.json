@@ -1,13 +1,13 @@
 {
   "name": "cultpodcasts",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "scripts": {
     "ng": "ng",
     "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --local-protocol https --kv kv",
     "build": "ng build && npm run process",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:cultpodcasts": "node dist/cultpodcasts/server/server.mjs",
+    "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
     "deploy": "npm run build && wrangler pages deploy dist/cloudflare"
   },
