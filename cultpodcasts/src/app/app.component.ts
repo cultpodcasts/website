@@ -48,14 +48,16 @@ export class AppComponent {
         if (roles.includes("Admin")) {
           var handled = await this.webPushService.subscribeToNotifications();
           if (!handled) {
-            this.dialog
-              .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
-              .afterClosed()
-              .subscribe(async result => {
-                if (result) {
-                  await this.webPushService.subscribeToNotifications();
-                }
-              });
+            if (localStorage.getItem("neverAskForNotifications") != "true") {
+              this.dialog
+                .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
+                .afterClosed()
+                .subscribe(async result => {
+                  if (result) {
+                    await this.webPushService.subscribeToNotifications();
+                  }
+                });
+            }
           }
         }
       });

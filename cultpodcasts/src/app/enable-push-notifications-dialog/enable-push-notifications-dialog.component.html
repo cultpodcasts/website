@@ -5,6 +5,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
+    <button mat-raised-button (click)="close(true)">Close &amp; never ask again</button>
+    <button mat-raised-button (click)="close(false)">Close</button>
     <button mat-raised-button (click)="ok()">Ok</button>
 </mat-dialog-actions>

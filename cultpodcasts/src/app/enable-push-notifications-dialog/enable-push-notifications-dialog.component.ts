@@ -21,7 +21,10 @@ export class EnablePushNotificationsDialogComponent {
     this.dialogRef.close(true);
   }
 
-  close() {
+  close(remember: boolean) {
+    if (remember) {
+      localStorage.setItem("neverAskForNotifications", "true");
+    }
     this.dialogRef.close(false);
   }
 }
