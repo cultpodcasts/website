@@ -15,7 +15,6 @@ export class PushSubscriptionService {
 
     async addPushSubscriber(sub: PushSubscription): Promise<boolean> {
         try {
-            console.log("register subscription with backend")
             let headers: HttpHeaders = new HttpHeaders();
             var token = await await firstValueFrom(this.auth.authService.getAccessTokenSilently({
                 authorizationParams: {

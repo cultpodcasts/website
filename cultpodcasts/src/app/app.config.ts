@@ -79,6 +79,7 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(),
     provideServiceWorker('service-worker.js', {
 //      enabled: !isDevMode(),
+      enabled: true,
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
     }),
     provideAnimations(),
