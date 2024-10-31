@@ -10,13 +10,13 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      @if (this.auth.roles.includes('Curator')) {
-        <button mat-menu-item id="edit" (click)="editSubject()">
-          <mat-icon>edit</mat-icon>
-          <span>Edit Subject</span>
-        </button>
-        }
-        <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
+      @if (this.authRoles.includes('Curator')) {
+      <button mat-menu-item id="edit" (click)="editSubject()">
+        <mat-icon>edit</mat-icon>
+        <span>Edit Subject</span>
+      </button>
+      }
+      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
         [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
@@ -65,7 +65,7 @@
       <mat-card-footer class="subjects">
         <div *ngFor="let subject of result.subjects" class="subject">
           @if (!subject.startsWith("_")) {
-            <a [routerLink]="['/subject', subject]">{{subject}}</a>
+          <a [routerLink]="['/subject', subject]">{{subject}}</a>
           }
         </div>
       </mat-card-footer>

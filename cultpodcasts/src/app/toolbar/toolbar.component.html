@@ -22,7 +22,7 @@
           </a>
         </mat-menu>
         <mat-menu #profile="matMenu">
-          @if (this.auth.roles.includes("Curator")) {
+          @if (this.authRoles.includes("Curator")) {
           <a [routerLink]="['/discovery']" mat-menu-item>
             <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
             <span>Discovery</span>
@@ -36,7 +36,7 @@
             <span>Review Outgoing</span>
           </a>
           }
-          @if (this.auth.roles.includes("Admin")) {
+          @if (this.authRoles.includes("Admin")) {
           <a (click)="runSearchIndexer()" mat-menu-item>
             <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
             <span>Run Search Indexer</span>
@@ -48,10 +48,6 @@
           <a (click)="addTerm()" mat-menu-item>
             <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
             <span>Add Term</span>
-          </a>
-          <a (click)="subscribe()" mat-menu-item>
-            <mat-icon class="material-symbols-outlined">subscribe</mat-icon>
-            <span>Subscribe</span>
           </a>
           }
           <a (click)="logout()" mat-menu-item>
@@ -69,7 +65,7 @@
         <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
         <span>Add Podcast</span>
       </a>
-      @if (this.auth.roles.includes("Curator")) {
+      @if (this.authRoles.includes("Curator")) {
       <a [routerLink]="['/discovery']" mat-menu-item>
         <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
         <span>Discovery</span>
@@ -83,7 +79,7 @@
         <span>Review Outgoing</span>
       </a>
       }
-      @if (this.auth.roles.includes("Admin")) {
+      @if (this.authRoles.includes("Admin")) {
       <a (click)="runSearchIndexer()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
         <span>Run Search Indexer</span>
@@ -95,10 +91,6 @@
       <a (click)="addTerm()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
         <span>Add Term</span>
-      </a>
-      <a (click)="subscribe()" mat-menu-item>
-        <mat-icon class="material-symbols-outlined">subscribe</mat-icon>
-        <span>Subcribe</span>
       </a>
       }
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>

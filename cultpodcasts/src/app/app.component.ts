@@ -8,6 +8,8 @@ import { DomSanitizer } from "@angular/platform-browser";
 import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
 import { SeoService } from './seo.service';
+import { WebPushService } from './web-push.service';
+import { AuthServiceWrapper } from './AuthServiceWrapper';
 
 @Component({
   selector: 'app-root',
@@ -27,7 +29,9 @@ export class AppComponent {
     private iconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: any,
-    private seoService: SeoService) {
+    private seoService: SeoService,
+    private webPushService: WebPushService,
+    protected auth: AuthServiceWrapper) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
     this.registerSvg();
@@ -36,6 +40,11 @@ export class AppComponent {
   ngOnInit() {
     if (this.isBrowser) {
       navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
+      this.auth.roles.subscribe(async roles => {
+        if (roles.includes("Admin")) {
+          await this.webPushService.subscribeToNotifications();
+        }
+      });
     }
   }
 

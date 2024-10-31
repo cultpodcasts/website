@@ -61,6 +61,7 @@ export class OutgoingEpisodesComponent {
   posted: boolean | undefined;
   tweeted: boolean | undefined;
   token: string = "";
+  authRoles: string[] = [];
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -74,6 +75,7 @@ export class OutgoingEpisodesComponent {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     title.setTitle("Review");
+    this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
   ngOnInit() {

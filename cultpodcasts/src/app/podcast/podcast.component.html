@@ -10,7 +10,7 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      @if (this.auth.roles.includes('Curator')) {
+      @if (this.authRoles.includes('Curator')) {
       <button mat-menu-item id="index" (click)="index()">
         <mat-icon>refresh</mat-icon>
         <span>Index Podcast</span>
@@ -24,7 +24,7 @@
         <span>Submit Url for Podcast</span>
       </button>
       }
-      @if (this.auth.roles.includes('Admin')) {
+      @if (this.authRoles.includes('Admin')) {
       <button mat-menu-item (click)="renamePodcast()">
         <mat-icon>arrow_right_alt</mat-icon>
         <span>Rename Podcast</span>
@@ -49,7 +49,7 @@
   </section>
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
-      @if (this.searchState.episodeUuid!='' && this.auth.roles.includes('Curator')) {
+      @if (this.searchState.episodeUuid!='' && this.authRoles.includes('Curator')) {
       <button mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>more_vert</mat-icon>
       </button>
@@ -94,7 +94,7 @@
       <mat-card-footer class="subjects">
         <div *ngFor="let subject of result.subjects" class="subject">
           @if (!subject.startsWith("_")) {
-            <a [routerLink]="['/subject', subject]">{{subject}}</a>
+          <a [routerLink]="['/subject', subject]">{{subject}}</a>
           }
         </div>
       </mat-card-footer>

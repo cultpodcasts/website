@@ -23,7 +23,6 @@ import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-inde
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
 import { AddTermComponent } from '../add-term/add-term.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
-import { WebPushService } from '../web-push.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -36,6 +35,7 @@ import { WebPushService } from '../web-push.service';
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
   isBrowser: boolean;
+  authRoles: string[] = [];
 
   constructor(
     protected siteService: SiteService,
@@ -44,11 +44,11 @@ export class ToolbarComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     @Inject(PLATFORM_ID) private platformId: any,
-    private router: Router,
-    private webPushService: WebPushService
+    private router: Router
 
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
   login() {
@@ -258,9 +258,4 @@ export class ToolbarComponent {
       }
     });
   }
-
-  subscribe() {
-    this.webPushService.subscribeToNotifications();
-  }
-
 }

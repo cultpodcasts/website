@@ -13,10 +13,9 @@ export class PushSubscriptiionService {
         private auth: AuthServiceWrapper) {
     }
 
-    async addPushSubscriber(sub: PushSubscription): Promise<Observable<any>> {
-        console.log(sub);
-
+    async addPushSubscriber(sub: PushSubscription): Promise<boolean> {
         try {
+            console.log("register subscription with backend")
             let headers: HttpHeaders = new HttpHeaders();
             var token = await await firstValueFrom(this.auth.authService.getAccessTokenSilently({
                 authorizationParams: {
@@ -28,13 +27,10 @@ export class PushSubscriptiionService {
                 headers = headers.set("Authorization", "Bearer " + token);
             }
             const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/pushsubscription", environment.api).toString(), sub, { headers: headers, observe: 'response' }));
-
-            return of({});
+            return true;
         } catch (error) {
             console.error(error);
-            return of({});
+            return false;
         }
-
     }
-
 }
