@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "scripts": {
     "ng": "ng",
     "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --local-protocol https --kv kv",
