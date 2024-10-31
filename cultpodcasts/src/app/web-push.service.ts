@@ -21,10 +21,6 @@ export class WebPushService {
         console.log("pre determineIfSubscriptionNeeded")
         await this.determineIfSubscriptionNeeded()
       } else if (result.state == "prompt") {
-        // result.onchange = async () => {
-        //   console.log("pre requestSubscription - 1")
-        //   await this.determineIfSubscriptionNeeded();
-        // }
         console.log("pre requestSubscription - 2")
         return await this.requestSubscription();
       }
