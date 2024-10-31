@@ -315,6 +315,15 @@ export class PodcastComponent {
             this.isLoading = false;
             this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
             this.showPagingNext = (this.searchState.page * pageSize) < count;
+            if (episodeUuid != "" && this.results.length == 1) {
+              const episode = this.results[0];
+              this.seoService.AddMetaTags({
+                description: this.podcastName,
+                title: `${episode.episodeTitle} | ${this.podcastName}`,
+                releaseDate: episode.release.toString(),
+                duration: episode.duration
+              });
+            }
           },
           error: (e) => {
             this.resultsHeading = "Something went wrong. Please try again.";
