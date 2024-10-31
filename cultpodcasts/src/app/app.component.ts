@@ -10,6 +10,8 @@ import { SearchBarComponent } from "./search-bar/search-bar.component";
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
 import { AuthServiceWrapper } from './AuthServiceWrapper';
+import { MatDialog } from '@angular/material/dialog';
+import { EnablePushNotificationsDialogComponent } from './enable-push-notifications-dialog/enable-push-notifications-dialog.component';
 
 @Component({
   selector: 'app-root',
@@ -31,7 +33,9 @@ export class AppComponent {
     @Inject(PLATFORM_ID) private platformId: any,
     private seoService: SeoService,
     private webPushService: WebPushService,
-    protected auth: AuthServiceWrapper) {
+    protected auth: AuthServiceWrapper,
+    private dialog: MatDialog
+  ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
     this.registerSvg();
@@ -42,7 +46,17 @@ export class AppComponent {
       navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
       this.auth.roles.subscribe(async roles => {
         if (roles.includes("Admin")) {
-          await this.webPushService.subscribeToNotifications();
+          var handled = await this.webPushService.subscribeToNotifications();
+          if (!handled) {
+            this.dialog
+              .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
+              .afterClosed()
+              .subscribe(async result => {
+                if (result) {
+                  await this.webPushService.subscribeToNotifications();
+                }
+              });
+          }
         }
       });
     }

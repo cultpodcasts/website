@@ -13,29 +13,41 @@ export class WebPushService {
   ) {
   }
 
-  async subscribeToNotifications() {
+  async subscribeToNotifications(): Promise<boolean> {
     var req = { name: "push", userVisibleOnly: true };
     var result = await navigator.permissions.query(req as PermissionDescriptor)
     if (result.state != "denied") {
       if (result.state == "granted") {
+        console.log("pre determineIfSubscriptionNeeded")
         await this.determineIfSubscriptionNeeded()
       } else if (result.state == "prompt") {
-        result.onchange = async () => {
-          await this.requestSubscription();
-        }
-        await this.requestSubscription();
+        // result.onchange = async () => {
+        //   console.log("pre requestSubscription - 1")
+        //   await this.determineIfSubscriptionNeeded();
+        // }
+        console.log("pre requestSubscription - 2")
+        return await this.requestSubscription();
       }
     }
+    return true;
   }
 
-  private async determineIfSubscriptionNeeded() {
-    var existingSubscription = await firstValueFrom(this.swPush.subscription);
-    if (existingSubscription == null) {
-      await this.requestSubscription();
+  private async determineIfSubscriptionNeeded(): Promise<boolean> {
+    let existingSubscription: PushSubscription | null = null;
+    try {
+      existingSubscription = await firstValueFrom(this.swPush.subscription);
+    } catch (error) {
+      console.log(error);
     }
+    if (existingSubscription == null) {
+      console.log("pre requestSubscription - 3")
+      return await this.requestSubscription();
+    }
+    return true;
   }
 
-  private async requestSubscription() {
+  private async requestSubscription(): Promise<boolean> {
+    console.log("requestSubscription")
     try {
       const sub = await this.swPush.requestSubscription({
         serverPublicKey: environment.vapidPublicKey
@@ -50,9 +62,19 @@ export class WebPushService {
         }
       }
     } catch (error) {
-      console.error("Could not subscribe to notifications", error);
-      await this.swPush.unsubscribe();
-      console.log("subscription unsubscribed");
+      console.error("Could not subscribe to notifications");
+      console.log(error);
+      try {
+        await this.swPush.unsubscribe();
+        console.log("subscription unsubscribed");
+      } catch (unsubError) {
+        console.log("unable to unsubscribe")
+      }
+      var req = await Notification.requestPermission();
+      if (req == "default") {
+        return false;
+      }
     }
+    return true;
   }
 }
