@@ -29,20 +29,26 @@ export class HomepageService {
       return await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
     } else if (this.isServer) {
       console.log("-2");
-      var r2Obj = await this.contentBucket.get("homepage");
-      if (r2Obj) {
-        console.log("-3");
-        var r2Json = await r2Obj?.text();
-        if (r2Json) {
-          console.log("-4");
-          return JSON.parse(r2Json) as IHomepage;
+      try {
+        var r2Obj = await this.contentBucket.get("homepage");
+        if (r2Obj) {
+          console.log("-3");
+          var r2Json = await r2Obj?.text();
+          if (r2Json) {
+            console.log("-4");
+            return JSON.parse(r2Json) as IHomepage;
+          } else {
+            console.log("-5");
+            throw new Error("No homepage text");
+          }
         } else {
-          console.log("-5");
-          throw new Error("No homepage text");
+          console.log("-6");
+          throw new Error("No homepage object");
         }
-      } else {
-        console.log("-6");
-        throw new Error("No homepage object");
+      } catch (e) {
+        console.log("error")
+        console.log(e)
+        throw e;
       }
     }
     console.log("-7");
