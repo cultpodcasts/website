@@ -81,7 +81,7 @@ export class HomeComponent {
   homepage: IHomepage | undefined;
   totalDuration: string = "";
 
-  async ngOnInit() {
+  ngOnInit() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
@@ -104,30 +104,32 @@ export class HomeComponent {
         this.nextPage = 2;
       }
 
-      try {
-        this.homepage = await this.homepageService.getHomepage();
-        this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
-        let start = (this.currentPage - 1) * pageSize;
-        this.podcastCount = this.homepage.recentEpisodes.length;
-        var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
-        this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          item.release = new Date(item.release);
-          if (!group[item.release.toLocaleDateString()]) {
-            group[item.release.toLocaleDateString()] = [];
-          }
-          group[item.release.toLocaleDateString()].push(item);
-          return group;
-        }, {});
-        this.isLoading = false;
-        this.showPagingPrevious = this.currentPage > 2;
-        this.showPagingPreviousInit = this.currentPage == 2;
-        this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-      } catch (error) {
-        this.errorText = JSON.stringify(error);
-        console.error(error);
-        this.isLoading = false;
-        this.isInError = true;
-      }
+      this.homepageService.getHomepage()
+        .then(data => {
+          this.homepage = data;
+          this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
+          let start = (this.currentPage - 1) * pageSize;
+          this.podcastCount = this.homepage.recentEpisodes.length;
+          var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
+          this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+            item.release = new Date(item.release);
+            if (!group[item.release.toLocaleDateString()]) {
+              group[item.release.toLocaleDateString()] = [];
+            }
+            group[item.release.toLocaleDateString()].push(item);
+            return group;
+          }, {});
+          this.isLoading = false;
+          this.showPagingPrevious = this.currentPage > 2;
+          this.showPagingPreviousInit = this.currentPage == 2;
+          this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+        })
+        .catch(error => {
+          this.errorText = JSON.stringify(error);
+          console.error(error);
+          this.isLoading = false;
+          this.isInError = true;
+        });
     });
   }
 
