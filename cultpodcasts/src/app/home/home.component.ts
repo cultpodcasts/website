@@ -28,6 +28,7 @@ export class HomeComponent {
   grouped: { [key: string]: IHomepageItem[]; };
   currentPage: number = 1;
   podcastCount: number | undefined;
+  errorText: string | undefined;
   constructor(
     private router: Router,
     private siteService: SiteService,
@@ -112,6 +113,8 @@ export class HomeComponent {
         this.showPagingPreviousInit = this.currentPage == 2;
         this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
       } catch (error) {
+        this.errorText = JSON.stringify(error);
+        console.error(error);
         this.isLoading = false;
         this.isInError = true;
       }
