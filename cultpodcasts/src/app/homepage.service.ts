@@ -30,6 +30,7 @@ export class HomepageService {
       homepageData = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
     } else if (this.isServer) {
       console.log("get homepage from r2")
+      console.log("r2= "+this.r2)
       var _homepageData = await this.r2.get("homepage");
       console.log("post get homepage from r2")
       if (_homepageData) {
