@@ -49,7 +49,6 @@ export class HomepageService {
       console.log("unknown platform")
       return Promise.reject('Unknown platform.');
     }
-    return homepageData;
   }
 }
 
