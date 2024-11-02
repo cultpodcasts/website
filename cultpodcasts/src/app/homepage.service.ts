@@ -34,6 +34,7 @@ export class HomepageService {
       console.log("post get homepage from r2")
       if (_homepageData) {
         console.log("got homepage from r2")
+        try {
         _homepageData.json<IHomepage>().then(data => {
           homepageData = data;
         })
@@ -41,6 +42,9 @@ export class HomepageService {
             return Promise.reject(error);
           })
         console.log("deserialised homepage from r2")
+        } catch (error) {
+          return Promise.reject(error);
+        }
       } else {
         console.log("no homepage found in r2")
         return Promise.reject("no homepage found in r2");
@@ -49,6 +53,10 @@ export class HomepageService {
       console.log("unknown platform")
       return Promise.reject('Unknown platform.');
     }
+    if (!homepageData) {
+      return Promise.reject("unable to obtain homepage-data");
+    }
+    return homepageData;
   }
 }
 
