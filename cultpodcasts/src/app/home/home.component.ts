@@ -103,7 +103,7 @@ export class HomeComponent {
       } else {
         this.nextPage = 2;
       }
-      try {
+
       this.homepageService.getHomepage()
         .then(data => {
           this.homepage = data;
@@ -130,9 +130,6 @@ export class HomeComponent {
           this.isLoading = false;
           this.isInError = true;
         });
-      } catch (error) {
-        console.error(error);
-      }
     });
   }
 
