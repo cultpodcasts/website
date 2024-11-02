@@ -27,7 +27,12 @@ export class HomepageService {
     var homepageData: IHomepage | undefined;
     if (this.isBrowser) {
       console.log("get homepage from api")
+      try {
       homepageData = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
+      } catch (error) {
+        console.error(error);
+        throw error;
+      }
     } else if (this.isServer) {
       var objects= await this.r2.list();
       var _homepageData = await this.r2.get("homepage");
