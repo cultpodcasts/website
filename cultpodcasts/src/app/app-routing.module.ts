@@ -5,14 +5,14 @@ import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
-import { HomeWrapperComponent } from './home-wrapper/home-wrapper.component';
 import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';
 import { EpisodesComponent } from './episodes/episodes.component';
 import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
+import { HomeComponent } from './home/home.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeWrapperComponent, title: "Cult Podcasts" },
+  { path: '', component: HomeComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent },
   { path: 'podcast/:podcastName', component: PodcastComponent },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent },

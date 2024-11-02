@@ -1,5 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
@@ -12,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
+import { HomepageService } from '../homepage.service';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -30,9 +30,10 @@ export class HomeComponent {
   podcastCount: number | undefined;
   constructor(
     private router: Router,
-    private http: HttpClient,
     private siteService: SiteService,
-    private guidService: GuidService) {
+    private guidService: GuidService,
+    private homepageService: HomepageService,
+  ) {
     this.grouped = {};
   }
   private route = inject(ActivatedRoute);
@@ -69,14 +70,14 @@ export class HomeComponent {
   homepage: IHomepage | undefined;
   totalDuration: string = "";
 
-  ngOnInit() {
+  async ngOnInit() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
         params,
         queryParams,
       })
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
+    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
 
       this.siteService.setQuery(null);
@@ -92,32 +93,28 @@ export class HomeComponent {
         this.nextPage = 2;
       }
 
-      let homepage = this.http.get<IHomepage>(new URL("/homepage", environment.api).toString())
-        .subscribe({
-          next: data => {
-            this.homepage = data;
-            this.totalDuration = data.totalDuration.split(".")[0] + " days";
-            let start = (this.currentPage - 1) * pageSize;
-            this.podcastCount = data.recentEpisodes.length;
-            var pageEpisodes = data.recentEpisodes.slice(start, start + pageSize);
-            this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-              item.release = new Date(item.release);
-              if (!group[item.release.toLocaleDateString()]) {
-                group[item.release.toLocaleDateString()] = [];
-              }
-              group[item.release.toLocaleDateString()].push(item);
-              return group;
-            }, {});
-            this.isLoading = false;
-            this.showPagingPrevious = this.currentPage > 2;
-            this.showPagingPreviousInit = this.currentPage == 2;
-            this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-          },
-          error: e => {
-            this.isLoading = false;
-            this.isInError = true;
+      try {
+        this.homepage = await this.homepageService.getHomepage();
+        this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
+        let start = (this.currentPage - 1) * pageSize;
+        this.podcastCount = this.homepage.recentEpisodes.length;
+        var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
+        this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+          item.release = new Date(item.release);
+          if (!group[item.release.toLocaleDateString()]) {
+            group[item.release.toLocaleDateString()] = [];
           }
-        });
+          group[item.release.toLocaleDateString()].push(item);
+          return group;
+        }, {});
+        this.isLoading = false;
+        this.showPagingPrevious = this.currentPage > 2;
+        this.showPagingPreviousInit = this.currentPage == 2;
+        this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+      } catch (error) {
+        this.isLoading = false;
+        this.isInError = true;
+      }
     });
   }
 

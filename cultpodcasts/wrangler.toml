@@ -10,12 +10,12 @@ env = "development"
 id = "663cd5c74988404dafbf67e1e06b21e8"
 binding = "kv"
 
+[[r2_buckets]]
+binding = "content"
+bucket_name = "content"
+
 [env.preview.vars]
 env = "staging"
 
 [env.production.vars]
 env = "production"
-
-[[env.production.kv_namespaces]]
-id = "663cd5c74988404dafbf67e1e06b21e8"
-binding = "kv"
