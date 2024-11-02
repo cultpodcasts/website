@@ -30,6 +30,7 @@ export class HomepageService {
     } else if (this.isServer) {
       console.log("-2");
       try {
+        console.log("-2.5");
         var r2Obj = await this.contentBucket.get("homepage");
         if (r2Obj) {
           console.log("-3");
