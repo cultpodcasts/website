@@ -29,17 +29,13 @@ export class HomepageService {
       console.log("get homepage from api")
       homepageData = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
     } else if (this.isServer) {
-      console.log("get homepage from r2")
-      console.log("r2= "+this.r2)
       var objects= await this.r2.list();
-      console.log("r2 objects= "+objects);
-      console.log("r2 objects length= "+objects.objects.length);
-      console.log("r2 names= "+objects.objects.map(x=>x.key).join(", "));
       var _homepageData = await this.r2.get("homepage");
       console.log("post get homepage from r2")
       if (_homepageData) {
         console.log("got homepage from r2")
         homepageData = await _homepageData.json<IHomepage>();
+        console.log(homepageData);
         console.log("deserialised homepage from r2")
       } else {
         console.log("no homepage found in r2")
