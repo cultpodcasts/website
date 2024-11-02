@@ -14,12 +14,12 @@ import { MatIconModule } from '@angular/material/icon';
   selector: 'app-search-bar',
   standalone: true,
   imports: [
-    NgIf, 
-    MatButtonModule, 
-    FormsModule, 
-    MatFormFieldModule, 
-    MatChipsModule, 
-    MatInputModule, 
+    NgIf,
+    MatButtonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatChipsModule,
+    MatInputModule,
     MatIconModule],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
@@ -44,7 +44,7 @@ export class SearchBarComponent {
   ngOnInit() {
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
-        this.searchBox.nativeElement.value = siteData.query;
+        this.searchBox.nativeElement.value = siteData.query ?? "";
         if (siteData.podcast != null) {
           this.searchChip = siteData.podcast;
           this.searchBoxMode = SearchBoxMode.Podcast;

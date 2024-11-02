@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { of, Observable, firstValueFrom } from "rxjs";
+import { firstValueFrom } from "rxjs";
 import { AuthServiceWrapper } from "./AuthServiceWrapper";
 import { HttpClient, HttpHeaders, HttpResponse } from "@angular/common/http";
 import { environment } from '../environments/environment';
