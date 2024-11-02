@@ -21,7 +21,17 @@ const pageParam: string = "page";
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.sass'],
   standalone: true,
-  imports: [NgIf, MatProgressBarModule, NgFor, MatCardModule, RouterLink, MatButtonModule, MatIconModule, DecimalPipe, KeyValuePipe],
+  imports: [
+    NgIf,
+    MatProgressBarModule,
+    NgFor,
+    MatCardModule,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    DecimalPipe,
+    KeyValuePipe
+  ],
   host: { ngSkipHydration: 'true' }
 })
 export class HomeComponent {
