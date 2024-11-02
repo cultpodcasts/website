@@ -26,15 +26,22 @@ export class HomepageService {
     console.log("getHomepage")
     var homepageData: IHomepage | undefined;
     if (this.isBrowser) {
+      console.log("get homepage from api")
       homepageData = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
     } else if (this.isServer) {
+      console.log("get homepage from r2")
       var _homepageData = await this.r2.get("homepage");
+      console.log("post get homepage from r2")
       if (_homepageData) {
+        console.log("got homepage from r2")
         homepageData = await _homepageData.json<IHomepage>();
+        console.log("deserialised homepage from r2")
       } else {
+        console.log("no homepage found in r2")
         throw new Error('No homepage object in r2.')
       }
     } else {
+      console.log("unknown platform")
       throw new Error('Unknown platform.');
     }
     return homepageData;
