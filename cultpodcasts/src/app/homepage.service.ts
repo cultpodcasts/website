@@ -15,48 +15,51 @@ export class HomepageService {
   constructor(
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: any,
-    @Optional() @Inject('content') private r2: R2Bucket
+    @Optional() @Inject('content') private contentBucket: R2Bucket
 
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
   }
 
-  async getHomepage(): Promise<IHomepage> {
-    console.log("getHomepage")
+  getHomepage(): Promise<IHomepage> {
     var homepageData: IHomepage | undefined;
     if (this.isBrowser) {
-      console.log("get homepage from api")
-      homepageData = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
+      firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()))
+        .then(d => homepageData = d)
+        .catch(e => Promise.reject(e));
     } else if (this.isServer) {
-      var objects = await this.r2.list();
-      var _homepageData = await this.r2.get("homepage");
-      console.log("post get homepage from r2")
-      if (_homepageData) {
-        console.log("got homepage from r2")
-        try {
-        _homepageData.json<IHomepage>().then(data => {
-          homepageData = data;
+      this.contentBucket.get("homepage")
+        .then(x => {
+          if (!x) {
+            return Promise.reject("No homepage data");
+          }
+          else {
+            console.log("got homepage data. deserialising")
+            x.text().then(d => {
+              console.log(d)
+              return Promise.resolve(JSON.parse(d) as IHomepage)
+            })
+              .catch(e => {
+                console.log(e);
+                return Promise.reject(e);
+              });
+          }
+          return Promise.reject("unknown")
         })
-          .catch(error => {
-            return Promise.reject(error);
-          })
-        console.log("deserialised homepage from r2")
-        } catch (error) {
-          return Promise.reject(error);
-        }
-      } else {
-        console.log("no homepage found in r2")
-        return Promise.reject("no homepage found in r2");
-      }
+        .then(data => homepageData = data)
+        .catch(e => {
+          console.log("caught " + e)
+          Promise.reject(e)
+        });
     } else {
       console.log("unknown platform")
-      return Promise.reject('Unknown platform.');
+      Promise.reject('Unknown platform.');
     }
     if (!homepageData) {
       return Promise.reject("unable to obtain homepage-data");
     }
-    return homepageData;
+    return Promise.resolve(homepageData);
   }
 }
 
