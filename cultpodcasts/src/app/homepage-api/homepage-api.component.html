@@ -1,0 +1,59 @@
+<section id="notices">
+    <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span
+        title="{{totalDuration}}">{{ homepage?.episodeCount ?? 30000 | number}}</span> podcasts on the subject of Cults.
+    </p>
+  </section>
+  <div id="progresswrapper">
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+  </div>
+  <section id="thisweek">
+    <h2>This weeks new releases. <span *ngIf="podcastCount">{{podcastCount}} Podcasts.</span></h2>
+    @if (this.isInError) {
+    <p>An error occurred.</p>
+    <p>{{this.errorText}}</p>
+    }
+    <div *ngFor="let dateItems of grouped | keyvalue: descDate">
+      <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
+        {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
+      <mat-card *ngFor="let item of dateItems.value" class="result">
+        <mat-card-header>
+          <mat-card-title><a
+              [routerLink]="['/podcast', item.podcastName, item.episodeId]">{{item.episodeTitle}}</a></mat-card-title>
+          <mat-card-subtitle>
+            <a [routerLink]="['/podcast', item.podcastName]">
+              {{item.podcastName}}</a>
+            <span class="duration"> [{{item.length.substring(1)}}]</span>
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="resultdescription">
+          <p>{{item.episodeDescription}}</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <a *ngIf="item.youtube" href="{{item.youtube}}" mat-icon-button>
+            <mat-icon svgIcon="youtube"></mat-icon>
+          </a>
+          <a *ngIf="item.spotify" href="{{item.spotify}}" mat-icon-button>
+            <mat-icon svgIcon="spotify"></mat-icon>
+          </a>
+          <a *ngIf="item.apple" href="{{item.apple}}" mat-icon-button>
+            <mat-icon svgIcon="apple-podcasts"></mat-icon>
+          </a>
+          <button mat-icon-button (click)="share(item)">
+            <mat-icon>share</mat-icon>
+          </button>
+          <mat-card-footer class="subjects">
+            <div *ngFor="let subject of item.subjects" class="subject">
+              @if (!subject.startsWith("_")) {
+                <a [routerLink]="['/subject', subject]">{{subject}}</a>
+              }
+            </div>
+          </mat-card-footer>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </section>
+  <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
+    <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/']">Previous</a>
+    <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
+    <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
+  </section>
