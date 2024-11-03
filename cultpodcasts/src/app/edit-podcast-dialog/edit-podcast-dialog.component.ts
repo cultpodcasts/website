@@ -162,7 +162,12 @@ export class EditPodcastDialogComponent {
     if (prev.primaryPostService != now.primaryPostService && !now.primaryPostService) changes.unsetPrimaryPostService = true;
     if (prev.spotifyId != now.spotifyId) changes.spotifyId = now.spotifyId;
     if (prev.removed != now.removed) changes.removed = now.removed;
-    if (prev.appleId != now.appleId) changes.appleId = now.appleId;
+    if (prev.appleId != now.appleId) {
+      changes.appleId = now.appleId;
+      if (now.appleId == null) {
+        changes.nullAppleId = true;
+      }
+    }
     if (prev.youTubePublicationDelay != now.youTubePublicationDelay) changes.youTubePublicationDelay = now.youTubePublicationDelay;
     if (prev.skipEnrichingFromYouTube != now.skipEnrichingFromYouTube) changes.skipEnrichingFromYouTube = now.skipEnrichingFromYouTube;
     if (prev.twitterHandle != now.twitterHandle) changes.twitterHandle = now.twitterHandle;

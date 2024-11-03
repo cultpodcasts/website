@@ -9,6 +9,7 @@ export interface PodcastPost {
     unsetPrimaryPostService?: boolean;
     spotifyId?: string;
     appleId?: number | null;
+    nullAppleId?: boolean;
     youTubePublicationDelay?: string;
     skipEnrichingFromYouTube?: boolean;
     twitterHandle?: string;
