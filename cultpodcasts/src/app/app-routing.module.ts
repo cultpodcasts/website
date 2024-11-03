@@ -22,7 +22,7 @@ export const routes: Routes = [
   { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
   { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"], title: "Review Episodes" } },
   { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"], title: "Outgoing Episodes" } },
-  { path: 'unauthorised', component: UnauthorisedComponent }
+  { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" }
 ];
 
 @NgModule({
