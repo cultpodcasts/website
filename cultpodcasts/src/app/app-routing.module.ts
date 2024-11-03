@@ -20,7 +20,7 @@ export const routes: Routes = [
   { path: 'subject/:subjectName/:query', component: SubjectComponent },
   { path: 'content/:path', component: ContentComponent },
   { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
-  { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
+  { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"], title: "Review" } },
   { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
 ];
