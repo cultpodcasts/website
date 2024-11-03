@@ -19,7 +19,7 @@ export const routes: Routes = [
   { path: 'subject/:subjectName', component: SubjectComponent },
   { path: 'subject/:subjectName/:query', component: SubjectComponent },
   { path: 'content/:path', component: ContentComponent },
-  { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
+  { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
   { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] } },
   { path: 'unauthorised', component: UnauthorisedComponent }
