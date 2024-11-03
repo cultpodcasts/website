@@ -8,7 +8,4 @@ import { SeoService } from '../seo.service';
     standalone: true
 })
 export class UnauthorisedComponent {
-    constructor(private seoService: SeoService) {
-        seoService.AddMetaTags({ title: "Unauthorised" });
-    }
 }

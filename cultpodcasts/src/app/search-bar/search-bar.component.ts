@@ -1,8 +1,8 @@
-import { Component, ElementRef, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { SearchBoxMode } from '../SearchBoxMode';
 import { Router } from '@angular/router';
 import { SiteService } from '../SiteService';
-import { NgIf, isPlatformBrowser } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,12 +14,12 @@ import { MatIconModule } from '@angular/material/icon';
   selector: 'app-search-bar',
   standalone: true,
   imports: [
-    NgIf, 
-    MatButtonModule, 
-    FormsModule, 
-    MatFormFieldModule, 
-    MatChipsModule, 
-    MatInputModule, 
+    NgIf,
+    MatButtonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatChipsModule,
+    MatInputModule,
     MatIconModule],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
@@ -32,19 +32,16 @@ export class SearchBarComponent {
 
   @ViewChild('searchBox', { static: true })
   searchBox: ElementRef | undefined;
-  isBrowser: boolean;
 
   constructor(
     private router: Router,
-    private siteService: SiteService,
-    @Inject(PLATFORM_ID) private platformId: any) {
-    this.isBrowser = isPlatformBrowser(platformId);
+    private siteService: SiteService) {
   }
 
   ngOnInit() {
     this.siteService.currentSiteData.subscribe(siteData => {
       if (this.searchBox) {
-        this.searchBox.nativeElement.value = siteData.query;
+        this.searchBox.nativeElement.value = siteData.query ?? "";
         if (siteData.podcast != null) {
           this.searchChip = siteData.podcast;
           this.searchBoxMode = SearchBoxMode.Podcast;
@@ -83,6 +80,4 @@ export class SearchBarComponent {
       this.router.navigate([url]);
     }
   }
-
-
 }

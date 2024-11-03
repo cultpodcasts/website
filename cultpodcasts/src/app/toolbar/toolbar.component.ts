@@ -1,7 +1,7 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { Component } from '@angular/core';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { FeatureSwtichService } from '../FeatureSwitchService';
-import { isPlatformBrowser, NgIf, AsyncPipe } from '@angular/common';
+import { NgIf, AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../FeatureSwitch';
 import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -34,7 +34,6 @@ import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
-  isBrowser: boolean;
   authRoles: string[] = [];
 
   constructor(
@@ -43,11 +42,9 @@ export class ToolbarComponent {
     protected featureSwtichService: FeatureSwtichService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    @Inject(PLATFORM_ID) private platformId: any,
     private router: Router
 
   ) {
-    this.isBrowser = isPlatformBrowser(platformId);
     auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
