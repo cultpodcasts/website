@@ -1,4 +1,4 @@
-import { Component, Inject, Optional, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -12,7 +12,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { NgIf, NgClass, NgFor, DatePipe, formatDate } from '@angular/common';
-import { SeoService } from '../seo.service';
 import { GuidService } from '../guid.service';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
