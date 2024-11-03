@@ -1,9 +1,8 @@
-import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
+import { Inject, Injectable, Optional } from '@angular/core';
 import { IHomepage } from './IHomepage';
 import { environment } from './../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { R2Bucket } from '@cloudflare/workers-types';
 
 @Injectable({
