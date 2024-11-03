@@ -25,7 +25,6 @@ import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { IShare } from '../IShare';
 import { RenamePodcastDialogComponent } from '../rename-podcast-dialog/rename-podcast-dialog.component';
-import { PodcastTagsService } from '../podcast-tags.service';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -82,8 +81,7 @@ export class PodcastApiComponent {
     private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private podcastTagsService: PodcastTagsService
+    private dialog: MatDialog
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
@@ -143,7 +141,7 @@ export class PodcastApiComponent {
   }
 
   populatePage(params: Params, queryParams: Params) {
-    const episodeUuid = this.podcastTagsService.getEpisodeUuid(params["query"])
+    const episodeUuid = this.guidService.getEpisodeUuid(params["query"])
     let query = "";
     if (episodeUuid == "") {
       query = params["query"] ?? "";
