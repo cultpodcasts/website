@@ -24,7 +24,7 @@ export class HomepageService {
 
   async getHomepage(): Promise<IHomepage> {
     var homepageData: IHomepage | undefined;
-    if (this.isBrowser || this.isServer) {
+    if (this.isBrowser) {
       console.log("-1")
       return await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
     } else if (this.isServer) {
