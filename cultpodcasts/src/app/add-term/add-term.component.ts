@@ -55,7 +55,6 @@ export class AddTermComponent {
     }
     try {
       if (token) {
-        console.log(token);
         headers = headers.set("Authorization", "Bearer " + token);
 
         const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/terms", environment.api).toString(), { term: this.term }, { headers: headers, observe: 'response' }));

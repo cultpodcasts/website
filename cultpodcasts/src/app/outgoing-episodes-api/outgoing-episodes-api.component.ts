@@ -99,7 +99,7 @@ export class OutgoingEpisodesApiComponent {
       }).catch(x => {
         this.isLoading = false;
         this.error = true;
-        console.log(x);
+        console.error(x);
       });
     })
 
@@ -204,7 +204,7 @@ export class OutgoingEpisodesApiComponent {
           error: e => {
             this.isLoading = false;
             this.error = true;
-            console.log(e);
+            console.error(e);
           }
         }
       );

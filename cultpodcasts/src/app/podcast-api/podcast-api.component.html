@@ -1,8 +1,8 @@
-<section id="results" *ngIf="count > 0" [class.episodePage]="this.searchState.episodeUuid!=''">
+<section id="results" *ngIf="count > 0">
     <div id="progresswrapper">
       <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
     </div>
-    <section id="resultsheading" *ngIf="!this.searchState.episodeUuid">
+    <section id="resultsheading">
       <h2>{{podcastName}} has {{count}} episode<ng-container *ngIf="count>1 || count==0">s</ng-container><ng-container
           *ngIf="this.searchState.query && this.searchState.query!=''">
           matching "{{this.searchState.query}}"</ng-container> found by CultPodcasts.com</h2>
@@ -49,23 +49,8 @@
     </section>
     <mat-card *ngFor="let result of results" class="result">
       <mat-card-header>
-        @if (this.searchState.episodeUuid!='' && this.authRoles.includes('Curator')) {
-        <button mat-icon-button [matMenuTriggerFor]="menu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="edit(result.id)">
-            <mat-icon>edit</mat-icon>
-            <span>Edit Episode</span>
-          </button>
-        </mat-menu>
-        }
         <mat-card-title>
-          @if (this.searchState.episodeUuid=='') {
           <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
-          } @else {
-          <span [outerHTML]="result.episodeTitle"></span>
-          }
         </mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', podcastName]">

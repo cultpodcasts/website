@@ -4,7 +4,7 @@ import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
 import { ISearchState } from '../ISearchState';
-import { ODataService } from '../OdataService'
+import { ODataService } from '../OdataService';
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -54,7 +54,6 @@ const sortParamDateDesc: string = "date-desc";
 export class PodcastApiComponent {
   searchState: ISearchState = {
     query: "",
-    episodeUuid: "",
     page: 1,
     sort: sortParamDateDesc,
     filter: null
@@ -88,9 +87,8 @@ export class PodcastApiComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    this.initialiseBrowser();
+    this.populatePage();
   }
-
 
   edit(id: string) {
     const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
@@ -129,94 +127,80 @@ export class PodcastApiComponent {
     });
   }
 
-  initialiseBrowser() {
+  populatePage() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
-      this.populatePage(params, queryParams)
-    });
-  }
+      let query = params["query"] ?? "";
+      this.isLoading = true;
 
-  populatePage(params: Params, queryParams: Params) {
-    const episodeUuid = this.guidService.getEpisodeUuid(params["query"])
-    let query = "";
-    if (episodeUuid == "") {
-      query = params["query"] ?? "";
-    }
-    this.isLoading = true;
+      this.searchState.query = query;
+      this.siteService.setQuery(this.searchState.query);
+      this.siteService.setPodcast(this.podcastName);
+      this.siteService.setSubject(null);
 
-    this.searchState.query = query;
-    this.siteService.setQuery(this.searchState.query);
-    this.searchState.episodeUuid = episodeUuid;
-    this.siteService.setEpisodeUuid(this.searchState.episodeUuid);
-
-    this.siteService.setPodcast(this.podcastName);
-    this.siteService.setSubject(null);
-
-    if (queryParams[pageParam]) {
-      this.searchState.page = parseInt(queryParams[pageParam]);
-      this.prevPage = this.searchState.page - 1;
-      this.nextPage = this.searchState.page + 1;
-    } else {
-      this.nextPage = 2;
-      this.searchState.page = 1;
-    }
-
-    if (queryParams[sortParam]) {
-      this.searchState.sort = queryParams[sortParam];
-    } else {
-      if (this.searchState.query) {
-        this.searchState.sort = sortParamRank;
+      if (queryParams[pageParam]) {
+        this.searchState.page = parseInt(queryParams[pageParam]);
+        this.prevPage = this.searchState.page - 1;
+        this.nextPage = this.searchState.page + 1;
       } else {
-        this.searchState.sort = sortParamDateDesc;
+        this.nextPage = 2;
+        this.searchState.page = 1;
       }
-    }
 
-    this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
-    if (this.searchState.episodeUuid) {
-      this.searchState.filter += ` and (id eq '${this.searchState.episodeUuid}')`;
-    }
-    this.siteService.setFilter(this.searchState.filter);
+      if (queryParams[sortParam]) {
+        this.searchState.sort = queryParams[sortParam];
+      } else {
+        if (this.searchState.query) {
+          this.searchState.sort = sortParamRank;
+        } else {
+          this.searchState.sort = sortParamDateDesc;
+        }
+      }
 
-    let currentTime = Date.now();
-    var sort: string = "";
-    if (this.searchState.sort == "date-asc") {
-      sort = "release asc";
-    } else if (this.searchState.sort == "date-desc") {
-      sort = "release desc";
-    }
+      this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
+      this.siteService.setFilter(this.searchState.filter);
 
-    this.oDataService.getEntities<ISearchResult>(
-      new URL("/search", environment.api).toString(),
-      {
-        search: this.searchState.query,
-        filter: this.searchState.filter,
-        searchMode: 'any',
-        queryType: 'simple',
-        count: true,
-        skip: (this.searchState.page - 1) * pageSize,
-        top: pageSize,
-        facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
-        orderby: sort
-      }).subscribe(
+      let currentTime = Date.now();
+      var sort: string = "";
+      if (this.searchState.sort == "date-asc") {
+        sort = "release asc";
+      } else if (this.searchState.sort == "date-desc") {
+        sort = "release desc";
+      }
+
+      this.oDataService.getEntities<ISearchResult>(
+        new URL("/search", environment.api).toString(),
         {
-          next: data => {
-            this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
-            this.count = count;
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          },
-          error: (e) => {
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
-          }
-        });
+          search: this.searchState.query,
+          filter: this.searchState.filter,
+          searchMode: 'any',
+          queryType: 'simple',
+          count: true,
+          skip: (this.searchState.page - 1) * pageSize,
+          top: pageSize,
+          facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
+          orderby: sort
+        }).subscribe(
+          {
+            next: data => {
+              this.results = data.entities;
+              var requestTime = (Date.now() - currentTime) / 1000;
+              const count = data.metadata.get("count");
+              this.count = count;
+              this.isLoading = false;
+              this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+              this.showPagingNext = (this.searchState.page * pageSize) < count;
+            },
+            error: (e) => {
+              this.resultsHeading = "Something went wrong. Please try again.";
+              this.isLoading = false;
+            }
+          });
+    });
   }
 
   setSort(sort: string) {
