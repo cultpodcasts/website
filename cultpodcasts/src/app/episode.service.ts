@@ -20,7 +20,7 @@ export class EpisodeService {
     @Optional() @Inject('kv') private kv: KVNamespace
   ) { }
 
-  public async getEpisodeDetailsFromR2(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
+  public async getEpisodeDetailsFromKv(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
     if (this.kv) {
       const key = this.guidService.toBase64(episodeId);
       const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);

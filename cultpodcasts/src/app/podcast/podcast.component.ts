@@ -53,7 +53,7 @@ export class PodcastComponent {
         let episodePageDetails: IPageDetails | undefined;
         try {
           if (this.isServer) {
-            episodePageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
+            episodePageDetails = await this.episodeService.getEpisodeDetailsFromKv(episodeUuid, this.podcastName);
           }
           if (!episodePageDetails) {
             var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);

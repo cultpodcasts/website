@@ -29,8 +29,7 @@ import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-
   standalone: true,
   imports: [MatToolbarModule, MatIconModule, MatMenuModule, RouterLink, NgIf, AsyncPipe],
   templateUrl: './toolbar.component.html',
-  styleUrl: './toolbar.component.sass',
-  host: { ngSkipHydration: 'true' }
+  styleUrl: './toolbar.component.sass'
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
