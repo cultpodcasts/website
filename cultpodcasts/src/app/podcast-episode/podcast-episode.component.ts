@@ -28,7 +28,6 @@ import { SiteService } from '../SiteService';
     MatCardModule,
     RouterLink,
     DatePipe
-
   ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
@@ -38,7 +37,6 @@ export class PodcastEpisodeComponent {
 
   podcastName: string = "";
   resultsHeading: string = "";
-  isLoading: boolean = true;
   authRoles: string[] = [];
 
   constructor(
@@ -65,8 +63,6 @@ export class PodcastEpisodeComponent {
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
-      const episodeUuid = this.guidService.getEpisodeUuid(params["query"])
-      this.isLoading = true;
     });
   }
 
