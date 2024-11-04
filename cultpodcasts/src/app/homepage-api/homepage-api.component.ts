@@ -2,7 +2,7 @@ import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate, isPlatformBrowser } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate, isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -39,18 +39,7 @@ export class HomepageApiComponent {
   currentPage: number = 1;
   podcastCount: number | undefined;
   errorText: string | undefined;
-  isBrowser: boolean;
-  constructor(
-    private router: Router,
-    private siteService: SiteService,
-    private guidService: GuidService,
-    private homepageService: HomepageService,
-    @Inject(PLATFORM_ID) private platformId: any,
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-    this.grouped = {};
-  }
-  private route = inject(ActivatedRoute);
+  isServer: boolean;
 
   prevPage: number = 0;
   nextPage: number = 0;
@@ -64,25 +53,20 @@ export class HomepageApiComponent {
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-  ToDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split("/")
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-  }
-
-  descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
-    var aD = this.ToDate(a.key);
-    var bD = this.ToDate(b.key);
-    if (aD > bD) {
-      return -1;
-    }
-    if (aD < bD) {
-      return 1
-    }
-    return 0;
-  }
-
   homepage: IHomepage | undefined;
   totalDuration: string = "";
+
+  constructor(
+    private router: Router,
+    private siteService: SiteService,
+    private guidService: GuidService,
+    private homepageService: HomepageService,
+    @Inject(PLATFORM_ID) private platformId: any,
+  ) {
+    this.isServer = isPlatformServer(platformId);
+    this.grouped = {};
+  }
+  private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
     waitFor(this.populatePage());
@@ -110,16 +94,22 @@ export class HomepageApiComponent {
       } else {
         this.nextPage = 2;
       }
-
-      let getHomepage: Promise<IHomepage>;
-      if (this.isBrowser) {
-        getHomepage = this.homepageService.getHomepageFromApi()
-      } else {
-        getHomepage = this.homepageService.getHomepageFromR2();
+      let homepageContent: IHomepage | undefined;
+      try {
+        if (this.isServer) {
+          homepageContent = await this.homepageService.getHomepageFromR2();
+        }
+        if (!homepageContent) {
+          homepageContent = await this.homepageService.getHomepageFromApi()
+        }
+      } catch (error) {
+        this.errorText = JSON.stringify(error);
+        console.error(error);
+        this.isLoading = false;
+        this.isInError = true;
       }
-
-      getHomepage.then(data => {
-        this.homepage = data;
+      if (homepageContent) {
+        this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
         let start = (this.currentPage - 1) * pageSize;
         this.podcastCount = this.homepage.recentEpisodes.length;
@@ -136,14 +126,28 @@ export class HomepageApiComponent {
         this.showPagingPrevious = this.currentPage > 2;
         this.showPagingPreviousInit = this.currentPage == 2;
         this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
-      })
-        .catch(error => {
-          this.errorText = JSON.stringify(error);
-          console.error(error);
-          this.isLoading = false;
-          this.isInError = true;
-        });
+      } else {
+        this.isLoading = false;
+        this.isInError = true;
+      }
     });
+  }
+
+  ToDate = (dateStr: string) => {
+    const [day, month, year] = dateStr.split("/")
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  }
+
+  descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
+    var aD = this.ToDate(a.key);
+    var bD = this.ToDate(b.key);
+    if (aD > bD) {
+      return -1;
+    }
+    if (aD < bD) {
+      return 1
+    }
+    return 0;
   }
 
   setPage(page: number) {

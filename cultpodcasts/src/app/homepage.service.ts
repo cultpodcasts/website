@@ -15,14 +15,17 @@ export class HomepageService {
     @Optional() @Inject('content') private contentBucket: R2Bucket
   ) { }
 
-  async getHomepageFromR2(): Promise<IHomepage> {
-    var r2Obj = await this.contentBucket.get("homepage");
-    if (r2Obj) {
-      var homepage = r2Obj.json<IHomepage>();
-      return homepage;
-    } else {
-      throw new Error("No homepage object");
+  async getHomepageFromR2(): Promise<IHomepage | undefined> {
+    if (this.contentBucket) {
+      var r2Obj = await this.contentBucket.get("homepage");
+      if (r2Obj) {
+        var homepage = r2Obj.json<IHomepage>();
+        return homepage;
+      } else {
+        throw new Error("No homepage object");
+      }
     }
+    return;
   }
 
   async getHomepageFromApi(): Promise<IHomepage> {

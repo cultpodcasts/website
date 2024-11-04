@@ -25,7 +25,6 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 
 export class PodcastComponent {
   podcastName: string = "";
-  isBrowser: boolean;
   isServer: boolean;
   episode: ISearchResult | undefined;
   isEpisode: boolean = false;
@@ -37,7 +36,6 @@ export class PodcastComponent {
     @Inject(PLATFORM_ID) private platformId: any,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
-    this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
   }
 
