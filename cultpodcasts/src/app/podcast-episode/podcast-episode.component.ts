@@ -13,6 +13,7 @@ import { GuidService } from '../guid.service';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { environment } from './../../environments/environment';
+import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -42,6 +43,7 @@ export class PodcastEpisodeComponent {
 
   constructor(
     private router: Router,
+    private siteService: SiteService,
     private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
@@ -52,6 +54,7 @@ export class PodcastEpisodeComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
+    this.siteService.setQuery("");
     this.populatePage();
   }
 
