@@ -7,9 +7,7 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 
 const serverConfig: ApplicationConfig = {
   providers: [
-    provideHttpClient(
-      withFetch()
-    ),
+    provideHttpClient(withFetch()),
     provideServerRendering(),
     {
       provide: AuthService,
