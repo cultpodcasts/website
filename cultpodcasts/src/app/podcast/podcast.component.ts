@@ -44,17 +44,18 @@ export class PodcastComponent {
   async populateTags(): Promise<any> {
     const params = await firstValueFrom(this.route.params);
     this.podcastName = params["podcastName"];
+    let pageDetails: IPageDetails = { title: this.podcastName };
     const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
     if (episodeUuid != "") {
+      let episodePageDetails:IPageDetails|undefined;
       try {
-        let pageDetails: IPageDetails | undefined;
         if (this.isServer) {
-          pageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
+          episodePageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
         }
-        if (!pageDetails) {
+        if (!episodePageDetails) {
           var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
           if (episode) {
-            pageDetails = {
+            episodePageDetails = {
               description: this.podcastName,
               title: `${episode.episodeTitle} | ${this.podcastName}`,
               releaseDate: episode.release.toString(),
@@ -65,15 +66,14 @@ export class PodcastComponent {
             }
           }
         }
-        if (pageDetails) {
-          this.seoService.AddMetaTags(pageDetails);
+        if (episodePageDetails) {
+          pageDetails= episodePageDetails;
         }
       } catch (error) {
         console.error(error);
-        this.seoService.AddMetaTags({ title: this.podcastName });
       }
-    } else {
-      this.seoService.AddMetaTags({ title: this.podcastName });
     }
+    console.log(pageDetails);
+    this.seoService.AddMetaTags(pageDetails);
   }
 }

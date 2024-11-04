@@ -112,8 +112,7 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
      * @returns Array of type ``T`` elements
      */
     private getEntities(data: any): T[] {
-        const keys = Object.keys(data).filter((key) => !key.startsWith("@odata"));
-        if (keys.length === 2 && keys[1] === "value") {
+        if (data.value) {
             return (data.value as T[]);
         }
         return [];

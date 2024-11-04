@@ -21,21 +21,23 @@ export class EpisodeService {
   ) { }
 
   public async getEpisodeDetailsFromR2(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
-    const key = this.guidService.toBase64(episodeId);
-    const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-    if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-      var episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-      if (episodeTitle) {
-        console.log("Added meta-tags from kv");
-        return {
-          description: podcastName,
-          title: `${episodeTitle} | ${podcastName}`,
-          releaseDate: episodeKvWithMetaData.metadata.releaseDate,
-          duration: episodeKvWithMetaData.metadata.duration
-        };
-      } else {
-        console.log("No episode name in kv");
-        return { title: podcastName };
+    if (this.kv) {
+      const key = this.guidService.toBase64(episodeId);
+      const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
+      if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
+        var episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
+        if (episodeTitle) {
+          console.log("Added meta-tags from kv");
+          return {
+            description: podcastName,
+            title: `${episodeTitle} | ${podcastName}`,
+            releaseDate: episodeKvWithMetaData.metadata.releaseDate,
+            duration: episodeKvWithMetaData.metadata.duration
+          };
+        } else {
+          console.log("No episode name in kv");
+          return { title: podcastName };
+        }
       }
     }
     return undefined;
@@ -55,7 +57,6 @@ export class EpisodeService {
         facets: [],
         orderby: "release desc"
       }))
-
     if (result.status == 200) {
       if (result.entities && result.entities.length == 1) {
         const episode = result.entities[0];
@@ -66,17 +67,18 @@ export class EpisodeService {
   }
 
   public async writeKv(episode: ISearchResult) {
-    const key = this.guidService.toBase64(episode.id);
-    const shortnerRecord: ShortnerRecord = {
-      episodeTitle: episode.episodeTitle,
-      releaseDate: episode.release.toLocaleDateString("en-GB"),
-      duration: episode.duration
-    };
-    const encodedPodcastName =
-      encodeURIComponent(episode.podcastName)
-        .replaceAll("(", "%28")
-        .replaceAll(")", "%29");
-    this.kv.put(key, encodedPodcastName + "/" + episode.id, { metadata: shortnerRecord });
-
+    if (this.kv) {
+      const key = this.guidService.toBase64(episode.id);
+      const shortnerRecord: ShortnerRecord = {
+        episodeTitle: episode.episodeTitle,
+        releaseDate: episode.release.toLocaleDateString("en-GB"),
+        duration: episode.duration
+      };
+      const encodedPodcastName =
+        encodeURIComponent(episode.podcastName)
+          .replaceAll("(", "%28")
+          .replaceAll(")", "%29");
+      this.kv.put(key, encodedPodcastName + "/" + episode.id, { metadata: shortnerRecord });
+    }
   }
 }
