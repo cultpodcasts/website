@@ -61,7 +61,7 @@ export class HomepageApiComponent {
     private siteService: SiteService,
     private guidService: GuidService,
     private homepageService: HomepageService,
-    @Inject(PLATFORM_ID) private platformId: any,
+    @Inject(PLATFORM_ID) platformId: any,
   ) {
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};

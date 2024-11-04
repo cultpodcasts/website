@@ -46,7 +46,6 @@ export class EditEpisodeDialogComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { episodeId: string },
-    private fb: FormBuilder,
     private dialog: MatDialog,
   ) {
     this.episodeId = data.episodeId;
@@ -68,7 +67,7 @@ export class EditEpisodeDialogComponent {
           {
             next: resp => {
               this.originalEpisode = resp;
-              this.podcastName= resp.podcastName;
+              this.podcastName = resp.podcastName;
               this.form = new FormGroup<EpisodeForm>({
                 title: new FormControl(resp.title, { nonNullable: true }),
                 description: new FormControl(resp.description, { nonNullable: true }),
@@ -146,7 +145,7 @@ export class EditEpisodeDialogComponent {
   }
 
   send(id: string, changes: EpisodePost) {
-    const dialogRef = this.dialog.open(EditEpisodeSendComponent,  { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

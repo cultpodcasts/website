@@ -4,7 +4,6 @@ import { environment } from './../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { R2Bucket } from '@cloudflare/workers-types';
-import { waitFor } from './core.module';
 
 @Injectable({
   providedIn: 'root'

@@ -72,13 +72,13 @@ export const appConfig: ApplicationConfig = {
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     },
-    provideHttpClient(withFetch(), 
-    withInterceptorsFromDi()),
+    provideHttpClient(withFetch(),
+      withInterceptorsFromDi()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(),
     provideServiceWorker('service-worker.js', {
-//      enabled: !isDevMode(),
+      //      enabled: !isDevMode(),
       enabled: true,
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
     }),

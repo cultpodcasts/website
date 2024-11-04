@@ -20,7 +20,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
   imports: [MatDialogModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, NgIf, MatExpansionModule, MatAutocompleteModule, NgFor, MatOptionModule, MatButtonModule, AsyncPipe]
 })
 export class SubmitPodcastComponent implements OnInit {
-
   form!: FormGroup;
   advancedOpenState: boolean = false;
   podcast = new FormControl();
@@ -29,8 +28,7 @@ export class SubmitPodcastComponent implements OnInit {
   options: ISimplePodcast[] | undefined;
 
   constructor(
-    private dialogRef: MatDialogRef<SubmitPodcastComponent>,
-    @Inject(MAT_DIALOG_DATA) data: any) {
+    private dialogRef: MatDialogRef<SubmitPodcastComponent>) {
   }
 
   ngOnInit() {

@@ -32,15 +32,14 @@ export class PodcastComponent {
     private seoService: SeoService,
     private guidService: GuidService,
     private episodeService: EpisodeService,
-    @Inject(PLATFORM_ID) private platformId: any,
-    @Optional() @Inject('kv') private kv: KVNamespace
-  ) {
+    @Inject(PLATFORM_ID) platformId: any  ) {
     this.isServer = isPlatformServer(platformId);
   }
 
   async ngOnInit(): Promise<any> {
     waitFor(this.populateTags());
   }
+
   private route = inject(ActivatedRoute);
 
   async populateTags(): Promise<any> {
@@ -79,6 +78,5 @@ export class PodcastComponent {
       }
       this.seoService.AddMetaTags(pageDetails);
     });
-
   }
 }

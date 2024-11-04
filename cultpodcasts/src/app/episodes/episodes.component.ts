@@ -11,6 +11,4 @@ import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
   templateUrl: './episodes.component.html',
   styleUrl: './episodes.component.sass'
 })
-export class EpisodesComponent {
-
-}
+export class EpisodesComponent { }

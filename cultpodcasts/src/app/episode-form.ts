@@ -10,9 +10,9 @@ export interface EpisodeForm {
     explicit: FormControl<boolean>,
     release: FormControl<string>,
     duration: FormControl<string>,
-    spotify: FormControl<URL|null>,
-    apple: FormControl<URL|null>,
-    youtube: FormControl<URL|null>,
+    spotify: FormControl<URL | null>,
+    apple: FormControl<URL | null>,
+    youtube: FormControl<URL | null>,
     subjects: FormControl<string[]>,
-    searchTerms: FormControl<string|null>,
+    searchTerms: FormControl<string | null>,
 }

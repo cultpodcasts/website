@@ -4,10 +4,8 @@ export interface SubjectEntity {
     associatedSubjects?: string[] | null;
     name?: string;
     subjectType?: string | null;
-
     enrichmentHashTags?: string[] | null;
     hashTag?: string | null;
-
     redditFlairTemplateId?: string | null;
     redditFlareText?: string | null;
 }

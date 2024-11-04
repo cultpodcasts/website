@@ -11,9 +11,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 })
 
 export class FirstLoginNoticeComponent {
-  constructor(private dialogRef: MatDialogRef<FirstLoginNoticeComponent>,
-    @Inject(MAT_DIALOG_DATA) data: any) {
-  }
+  constructor(private dialogRef: MatDialogRef<FirstLoginNoticeComponent>) { }
 
   close(proceed: boolean) {
     this.dialogRef.close({ continue: proceed });

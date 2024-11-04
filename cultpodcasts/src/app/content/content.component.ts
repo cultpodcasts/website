@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { TermsAndConditionsComponent } from '../terms-and-conditions/terms-and-conditions.component';
@@ -15,6 +15,7 @@ import { NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common';
 export class ContentComponent implements OnInit {
   private route = inject(ActivatedRoute);
   public content: string | undefined;
+
   ngOnInit() {
     combineLatest(
       [this.route.params, this.route.queryParams],

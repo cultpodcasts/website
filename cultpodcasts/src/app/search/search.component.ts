@@ -1,4 +1,4 @@
-import { Component,  inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { SearchApiComponent } from '../search-api/search-api.component';
@@ -12,13 +12,13 @@ const queryParam: string = "query";
   standalone: true,
   imports: [SearchApiComponent]
 })
-
 export class SearchComponent {
   private route = inject(ActivatedRoute);
 
-  constructor(private seoService: SeoService) {}
+  constructor(private seoService: SeoService) { }
+
   ngOnInit() {
-    this.route.params.subscribe(params=>{
+    this.route.params.subscribe(params => {
       let presentableQuery: string = params[queryParam];
       if ((presentableQuery.startsWith("'") && presentableQuery.endsWith("'")) ||
         (presentableQuery.startsWith("\"") && presentableQuery.endsWith("\""))) {

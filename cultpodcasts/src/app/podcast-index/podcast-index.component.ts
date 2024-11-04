@@ -16,7 +16,6 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrl: './podcast-index.component.sass'
 })
 export class PodcastIndexComponent {
-
   isSending: boolean = true;
   sendError: boolean = false;
 
@@ -38,24 +37,22 @@ export class PodcastIndexComponent {
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/podcast/index/${encodeURIComponent(podcastName)}`, environment.api).toString();
       this.http.post<any>(episodeEndpoint, {}, { headers: headers, observe: "response" })
-        .subscribe(
-          {
-            next: resp => {
-              this.dialogRef.close({ updated: true, episodeIds: resp.body.episodeIds });
-            },
-            error: e => {
-              if (e.status == 400) {
-                this.dialogRef.close({ podcastNotAutoIndex: true });
-              } else if (e.status == 404) {
-                this.dialogRef.close({ podcastNotFound: true });
-              } else {
-                this.isSending = false;
-                this.sendError = true;
-                console.error(e);
-              }
+        .subscribe({
+          next: resp => {
+            this.dialogRef.close({ updated: true, episodeIds: resp.body.episodeIds });
+          },
+          error: e => {
+            if (e.status == 400) {
+              this.dialogRef.close({ podcastNotAutoIndex: true });
+            } else if (e.status == 404) {
+              this.dialogRef.close({ podcastNotFound: true });
+            } else {
+              this.isSending = false;
+              this.sendError = true;
+              console.error(e);
             }
           }
-        )
+        })
     }).catch(x => {
       this.isSending = false;
       this.sendError = true;
@@ -66,5 +63,4 @@ export class PodcastIndexComponent {
   close() {
     this.dialogRef.close({ updated: false });
   }
-
 }

@@ -23,7 +23,7 @@ export class JsonUrlInterceptor implements HttpInterceptor {
       return false;
     }
     if (typeof value === 'string') {
-      if (this._urlFormat.test(value) && typeof(value)==="string") {
+      if (this._urlFormat.test(value) && typeof (value) === "string") {
         try {
           new URL(value);
           return true;
@@ -33,7 +33,7 @@ export class JsonUrlInterceptor implements HttpInterceptor {
       }
     } return false;
   }
-  
+
   convert(body: any) {
     if (body === null || body === undefined) {
       return body;

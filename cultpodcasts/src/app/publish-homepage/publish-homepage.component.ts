@@ -32,17 +32,15 @@ export class PublishHomepageComponent {
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`publish/homepage`, environment.api).toString();
       this.http.post<any>(episodeEndpoint, {}, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.close("Homepage published");
-            },
-            error: e => {
-              console.error(e);
-              this.close("Failed to publish homepage");
-            }
+        .subscribe({
+          next: resp => {
+            this.close("Homepage published");
+          },
+          error: e => {
+            console.error(e);
+            this.close("Failed to publish homepage");
           }
-        )
+        })
     }).catch(x => {
       console.error(x);
       this.close("An error occurred getting api-token");

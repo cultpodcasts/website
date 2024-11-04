@@ -1,9 +1,10 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { Subject, firstValueFrom, map } from 'rxjs';
+import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { IDiscoveryResult, IDiscoveryResults } from '../IDiscoveryResults';
+import { IDiscoveryResults } from '../IDiscoveryResults';
+import { IDiscoveryResult } from "../IDiscoveryResult";
 import { MatDialog } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -17,7 +18,7 @@ import { HideDirective } from '../hide.directive';
 import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgFor, DatePipe, isPlatformBrowser } from '@angular/common';
+import { NgIf, NgFor, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiteService } from '../SiteService';
 
@@ -66,8 +67,7 @@ export class DiscoveryApiComponent {
     private snackBar: MatSnackBar,
     private router: Router,
     private siteService: SiteService
-  ) {
-  }
+  ) { }
 
   ngOnInit() {
     this.siteService.setQuery(null);
@@ -87,25 +87,23 @@ export class DiscoveryApiComponent {
       headers = headers.set("Authorization", "Bearer " + _token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.isInError = false;
-              this.results = resp.results.map(x => this.enrichFocused(x));
-              this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
-              this.documentIds = resp.ids;
-              const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
-              if (dates.length > 0)
-                this.minDate = new Date(Math.min(...dates));
-              this.isLoading = false;
-              this.displaySave = true;
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
-            }
+        .subscribe({
+          next: resp => {
+            this.isInError = false;
+            this.results = resp.results.map(x => this.enrichFocused(x));
+            this.hasUnfocused = this.results.filter(x => !x.isFocused).length > 0;
+            this.documentIds = resp.ids;
+            const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
+            if (dates.length > 0)
+              this.minDate = new Date(Math.min(...dates));
+            this.isLoading = false;
+            this.displaySave = true;
+          },
+          error: e => {
+            this.isLoading = false;
+            this.isInError = true;
           }
-        )
+        })
     }).catch(x => {
       this.isLoading = false;
       this.isInError = true;

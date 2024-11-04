@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../SiteService';
@@ -148,9 +147,7 @@ export class SubjectApiComponent {
               this.results = data.entities;
               var requestTime = (Date.now() - currentTime) / 1000;
               const count = data.metadata.get("count");
-
               this.count = count;
-
               this.isLoading = false;
               this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
               this.showPagingNext = (this.searchState.page * pageSize) < count;
@@ -160,7 +157,6 @@ export class SubjectApiComponent {
               this.isLoading = false;
             }
           });
-
     });
   }
 

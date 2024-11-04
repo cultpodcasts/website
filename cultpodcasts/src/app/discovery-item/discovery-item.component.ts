@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { IDiscoveryResult } from '../IDiscoveryResults';
+import { IDiscoveryResult } from "../IDiscoveryResult";
 import { Observable, Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,7 +34,7 @@ export class DiscoveryItemComponent {
 
   duration(): string {
     if (this.result.duration) {
-      return "["+this.result.duration.split(".")[0].substring(1)+"]";
+      return "[" + this.result.duration.split(".")[0].substring(1) + "]";
     }
     return "Unknown";
   }

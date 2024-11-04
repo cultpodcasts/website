@@ -1,6 +1,5 @@
 import { FormControl } from "@angular/forms";
 
-
 export interface PodcastForm {
     spotifyId: FormControl<string>;
     appleId: FormControl<number | null | undefined>;

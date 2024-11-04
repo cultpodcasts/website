@@ -5,8 +5,6 @@ import { Injectable } from '@angular/core';
 })
 export class GuidService {
 
-  constructor() { }
-
   public toBase64(guid: string): string {
     const uuidBytes = this.guidToBytes(guid);
     const uuidBase64 = btoa(String.fromCharCode(...new Uint8Array(uuidBytes)));

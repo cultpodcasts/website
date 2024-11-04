@@ -13,9 +13,9 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
   styleUrl: './enable-push-notifications-dialog.component.sass'
 })
 export class EnablePushNotificationsDialogComponent {
-  constructor(private dialogRef: MatDialogRef<EnablePushNotificationsDialogComponent, any>) {
-
-  }
+  constructor(
+    private dialogRef: MatDialogRef<EnablePushNotificationsDialogComponent, any>
+  ) { }
 
   ok() {
     this.dialogRef.close(true);

@@ -81,7 +81,6 @@ export class SearchApiComponent {
         queryParams,
       })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
-
       const { params, queryParams } = res;
       this.searchState.query = params[queryParam];
       let presentableQuery: string = this.searchState.query;
@@ -116,8 +115,6 @@ export class SearchApiComponent {
         this.searchState.filter = null;
       }
 
-      let currentTime = Date.now();
-
       var sort: string = "";
       if (this.searchState.sort == "date-asc") {
         sort = "release asc";
@@ -140,7 +137,6 @@ export class SearchApiComponent {
         }).subscribe({
           next: data => {
             this.results = data.entities;
-            var requestTime = (Date.now() - currentTime) / 1000;
             const count = data.metadata.get("count");
             let resultsSummary: String = `${count} results`;
             if (count === 0) {

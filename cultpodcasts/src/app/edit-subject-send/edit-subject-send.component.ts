@@ -26,7 +26,7 @@ export class EditSubjectSendComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditSubjectSendComponent>,
     private auth: AuthServiceWrapper,
-    @Inject(MAT_DIALOG_DATA) public data: { create: boolean },
+    @Inject(MAT_DIALOG_DATA) public data: { create: boolean }
   ) {
     this.create = data.create;
   }
