@@ -22,8 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatInputModule,
     MatIconModule],
   templateUrl: './search-bar.component.html',
-  styleUrl: './search-bar.component.sass',
-  host: { ngSkipHydration: 'true' }
+  styleUrl: './search-bar.component.sass'
 })
 
 export class SearchBarComponent {
