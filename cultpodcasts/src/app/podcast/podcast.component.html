@@ -1,3 +1,7 @@
-@defer  {
-  <app-podcast-api></app-podcast-api>
+@defer {
+@if (this.episode) {
+<app-podcast-episode [episode]="this.episode"></app-podcast-episode>
+} @else {
+<app-podcast-api></app-podcast-api>
+}
 }

@@ -9,6 +9,8 @@ import { KVNamespace } from '@cloudflare/workers-types';
 import { EpisodeService } from '../episode.service';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { IPageDetails } from '../page-details';
+import { ISearchResult } from '../ISearchResult';
+import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 
 @Component({
   selector: 'app-podcast',
@@ -16,7 +18,8 @@ import { IPageDetails } from '../page-details';
   styleUrls: ['./podcast.component.sass'],
   standalone: true,
   imports: [
-    PodcastApiComponent
+    PodcastApiComponent,
+    PodcastEpisodeComponent
   ]
 })
 
@@ -24,6 +27,7 @@ export class PodcastComponent {
   podcastName: string = "";
   isBrowser: boolean;
   isServer: boolean;
+  episode: ISearchResult | undefined;
 
   constructor(
     private seoService: SeoService,
@@ -47,7 +51,7 @@ export class PodcastComponent {
     let pageDetails: IPageDetails = { title: this.podcastName };
     const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
     if (episodeUuid != "") {
-      let episodePageDetails:IPageDetails|undefined;
+      let episodePageDetails: IPageDetails | undefined;
       try {
         if (this.isServer) {
           episodePageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
@@ -55,6 +59,7 @@ export class PodcastComponent {
         if (!episodePageDetails) {
           var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
           if (episode) {
+            this.episode= episode;
             episodePageDetails = {
               description: this.podcastName,
               title: `${episode.episodeTitle} | ${this.podcastName}`,
@@ -67,7 +72,7 @@ export class PodcastComponent {
           }
         }
         if (episodePageDetails) {
-          pageDetails= episodePageDetails;
+          pageDetails = episodePageDetails;
         }
       } catch (error) {
         console.error(error);

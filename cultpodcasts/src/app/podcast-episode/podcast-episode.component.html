@@ -1,0 +1,51 @@
+<section id="results"class="episodePage">
+    <mat-card  class="result">
+      <mat-card-header>
+        @if (this.authRoles.includes('Curator')) {
+        <button mat-icon-button [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="edit(this.episode.id)">
+            <mat-icon>edit</mat-icon>
+            <span>Edit Episode</span>
+          </button>
+        </mat-menu>
+        }
+        <mat-card-title>
+          <span [outerHTML]="this.episode.episodeTitle"></span>
+        </mat-card-title>
+        <mat-card-subtitle>
+          <a [routerLink]="['/podcast', podcastName]">
+            {{this.podcastName}}
+          </a>
+        </mat-card-subtitle>
+        <mat-card-subtitle>{{this.episode.release | date:'d MMM yyyy'}}
+          [{{this.episode.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="resultdescription">
+        <p>{{this.episode.episodeDescription}}</p>
+      </mat-card-content>
+      <mat-card-actions>
+        <a *ngIf="this.episode.youtube" href="{{this.episode.youtube}}" mat-icon-button>
+          <mat-icon svgIcon="youtube"></mat-icon>
+        </a>
+        <a *ngIf="this.episode.spotify" href="{{this.episode.spotify}}" mat-icon-button>
+          <mat-icon svgIcon="spotify"></mat-icon>
+        </a>
+        <a *ngIf="this.episode.apple" href="{{this.episode.apple}}" mat-icon-button>
+          <mat-icon svgIcon="apple-podcasts"></mat-icon>
+        </a>
+        <button mat-icon-button (click)="share(this.episode)">
+          <mat-icon>share</mat-icon>
+        </button>
+        <mat-card-footer class="subjects">
+          <div *ngFor="let subject of this.episode.subjects" class="subject">
+            @if (!subject.startsWith("_")) {
+            <a [routerLink]="['/subject', subject]">{{subject}}</a>
+            }
+          </div>
+        </mat-card-footer>
+      </mat-card-actions>
+    </mat-card>
+  </section>

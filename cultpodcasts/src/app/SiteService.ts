@@ -6,7 +6,6 @@ import { BehaviorSubject } from 'rxjs';
 export class SiteService {
     private _siteData: ISiteData = {
         query: "",
-        episodeUuid: "",
         filter: null,
         podcast: null,
         subject: null
@@ -21,11 +20,6 @@ export class SiteService {
 
     setQuery(query: string | null) {
         this._siteData.query = query;
-        this.messageSource.next(this._siteData);
-    }
-
-    setEpisodeUuid(episodeUuid: string) {
-        this._siteData.episodeUuid = episodeUuid;
         this.messageSource.next(this._siteData);
     }
 

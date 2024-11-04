@@ -1,5 +1,5 @@
 import { Component,  inject } from '@angular/core';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { SearchApiComponent } from '../search-api/search-api.component';
 
