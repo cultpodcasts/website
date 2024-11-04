@@ -43,7 +43,7 @@ export class RunSearchIndexerComponent {
               }
             },
             error: e => {
-              console.log(e);
+              console.error(e);
               if (e.error.status) {
                 this.close(e.error.status);
               } else {
@@ -53,7 +53,7 @@ export class RunSearchIndexerComponent {
           }
         )
     }).catch(x => {
-      console.log(x);
+      console.error(x);
       this.close("An error occurred getting api-token");
     });
   }

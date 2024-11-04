@@ -35,7 +35,7 @@ export class EpisodeService {
             duration: episodeKvWithMetaData.metadata.duration
           };
         } else {
-          console.log("No episode name in kv");
+          console.warn("No episode name in kv");
           return { title: podcastName };
         }
       }

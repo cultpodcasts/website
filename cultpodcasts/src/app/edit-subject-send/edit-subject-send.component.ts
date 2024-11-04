@@ -60,7 +60,7 @@ export class EditSubjectSendComponent {
                 } else {
                   this.isSending = false;
                   this.sendError = true;
-                  console.log(e);
+                  console.error(e);
                 }
               }
             }
@@ -76,7 +76,7 @@ export class EditSubjectSendComponent {
               error: e => {
                 this.isSending = false;
                 this.sendError = true;
-                console.log(e);
+                console.error(e);
               }
             }
           );
@@ -84,7 +84,7 @@ export class EditSubjectSendComponent {
     }).catch(x => {
       this.isSending = false;
       this.sendError = true;
-      console.log(x);
+      console.error(x);
     });
   }
 

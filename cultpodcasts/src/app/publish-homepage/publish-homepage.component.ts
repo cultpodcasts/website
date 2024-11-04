@@ -35,17 +35,16 @@ export class PublishHomepageComponent {
         .subscribe(
           {
             next: resp => {
-              console.log(resp);
               this.close("Homepage published");
             },
             error: e => {
-              console.log(e);
+              console.error(e);
               this.close("Failed to publish homepage");
             }
           }
         )
     }).catch(x => {
-      console.log(x);
+      console.error(x);
       this.close("An error occurred getting api-token");
     });
   }

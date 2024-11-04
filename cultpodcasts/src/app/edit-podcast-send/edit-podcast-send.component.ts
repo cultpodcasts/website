@@ -46,14 +46,14 @@ export class EditPodcastSendComponent {
             error: e => {
               this.isSending = false;
               this.sendError = true;
-              console.log(e);
+              console.error(e);
             }
           }
         )
     }).catch(x => {
       this.isSending = false;
       this.sendError = true;
-      console.log(x);
+      console.error(x);
     });
   }
 

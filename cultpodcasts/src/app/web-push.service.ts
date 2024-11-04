@@ -31,7 +31,7 @@ export class WebPushService {
     try {
       existingSubscription = await firstValueFrom(this.swPush.subscription);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     if (existingSubscription == null) {
       return await this.requestSubscription();
@@ -56,12 +56,12 @@ export class WebPushService {
       }
     } catch (error) {
       console.error("Could not request subscription");
-      console.log(error);
+      console.error(error);
       try {
         await this.swPush.unsubscribe();
-        console.log("subscription unsubscribed");
+        console.warn("subscription unsubscribed");
       } catch (unsubError) {
-        console.log("unable to unsubscribe")
+        console.error("unable to unsubscribe")
       }
       var req = await Notification.requestPermission();
       if (req == "default") {

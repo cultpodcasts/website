@@ -78,7 +78,6 @@ export class PodcastComponent {
         console.error(error);
       }
     }
-    console.log(pageDetails);
     this.seoService.AddMetaTags(pageDetails);
   }
 }
