@@ -28,6 +28,7 @@ export class PodcastComponent {
   isBrowser: boolean;
   isServer: boolean;
   episode: ISearchResult | undefined;
+  isEpisode: boolean = false;
 
   constructor(
     private seoService: SeoService,
@@ -51,6 +52,7 @@ export class PodcastComponent {
     let pageDetails: IPageDetails = { title: this.podcastName };
     const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
     if (episodeUuid != "") {
+      this.isEpisode = true;
       let episodePageDetails: IPageDetails | undefined;
       try {
         if (this.isServer) {
@@ -59,7 +61,7 @@ export class PodcastComponent {
         if (!episodePageDetails) {
           var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
           if (episode) {
-            this.episode= episode;
+            this.episode = episode;
             episodePageDetails = {
               description: this.podcastName,
               title: `${episode.episodeTitle} | ${this.podcastName}`,
