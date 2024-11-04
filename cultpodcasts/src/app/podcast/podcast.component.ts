@@ -1,13 +1,12 @@
 import { Component, Inject, inject, Optional, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { waitFor } from '../core.module';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
 import { KVNamespace } from '@cloudflare/workers-types';
 import { EpisodeService } from '../episode.service';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { isPlatformServer } from '@angular/common';
 import { IPageDetails } from '../page-details';
 import { ISearchResult } from '../ISearchResult';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
@@ -25,7 +24,6 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 
 export class PodcastComponent {
   podcastName: string = "";
-  isBrowser: boolean;
   isServer: boolean;
   episode: ISearchResult | undefined;
   isEpisode: boolean = false;
@@ -37,7 +35,6 @@ export class PodcastComponent {
     @Inject(PLATFORM_ID) private platformId: any,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) {
-    this.isBrowser = isPlatformBrowser(platformId);
     this.isServer = isPlatformServer(platformId);
   }
 
