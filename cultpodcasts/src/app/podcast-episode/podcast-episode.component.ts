@@ -13,6 +13,7 @@ import { GuidService } from '../guid.service';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { environment } from './../../environments/environment';
+import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -43,7 +44,8 @@ export class PodcastEpisodeComponent {
     private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private siteService: SiteService,
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
@@ -60,6 +62,9 @@ export class PodcastEpisodeComponent {
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
+      this.siteService.setQuery(null);
+      this.siteService.setPodcast(this.podcastName);
+      this.siteService.setSubject(null);
     });
   }
 

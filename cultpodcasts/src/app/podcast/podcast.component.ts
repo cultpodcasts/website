@@ -47,39 +47,41 @@ export class PodcastComponent {
   private route = inject(ActivatedRoute);
 
   async populateTags(): Promise<any> {
-    const params = await firstValueFrom(this.route.params);
-    this.podcastName = params["podcastName"];
-    let pageDetails: IPageDetails = { title: this.podcastName };
-    const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
-    if (episodeUuid != "") {
-      this.isEpisode = true;
-      let episodePageDetails: IPageDetails | undefined;
-      try {
-        if (this.isServer) {
-          episodePageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
-        }
-        if (!episodePageDetails) {
-          var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
-          if (episode) {
-            this.episode = episode;
-            episodePageDetails = {
-              description: this.podcastName,
-              title: `${episode.episodeTitle} | ${this.podcastName}`,
-              releaseDate: episode.release.toString(),
-              duration: episode.duration
-            };
-            if (this.isServer) {
-              await this.episodeService.writeKv(episode);
+    this.route.params.subscribe(async params => {
+      this.podcastName = params["podcastName"];
+      let pageDetails: IPageDetails = { title: this.podcastName };
+      const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
+      this.isEpisode = episodeUuid != "";
+      if (this.isEpisode) {
+        let episodePageDetails: IPageDetails | undefined;
+        try {
+          if (this.isServer) {
+            episodePageDetails = await this.episodeService.getEpisodeDetailsFromR2(episodeUuid, this.podcastName);
+          }
+          if (!episodePageDetails) {
+            var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
+            if (episode) {
+              this.episode = episode;
+              episodePageDetails = {
+                description: this.podcastName,
+                title: `${episode.episodeTitle} | ${this.podcastName}`,
+                releaseDate: episode.release.toString(),
+                duration: episode.duration
+              };
+              if (this.isServer) {
+                await this.episodeService.writeKv(episode);
+              }
             }
           }
+          if (episodePageDetails) {
+            pageDetails = episodePageDetails;
+          }
+        } catch (error) {
+          console.error(error);
         }
-        if (episodePageDetails) {
-          pageDetails = episodePageDetails;
-        }
-      } catch (error) {
-        console.error(error);
       }
-    }
-    this.seoService.AddMetaTags(pageDetails);
+      this.seoService.AddMetaTags(pageDetails);
+    });
+
   }
 }
