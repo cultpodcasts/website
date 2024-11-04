@@ -10,8 +10,7 @@ import { PushSubscriptionService } from './PushSubscriptionService';
 export class WebPushService {
   constructor(private swPush: SwPush,
     private notificationService: PushSubscriptionService
-  ) {
-  }
+  ) {  }
 
   async subscribeToNotifications(): Promise<boolean> {
     var req = { name: "push", userVisibleOnly: true };

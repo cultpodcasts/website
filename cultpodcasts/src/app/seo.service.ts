@@ -1,4 +1,4 @@
-import { PlatformLocation, isPlatformServer, formatDate } from '@angular/common';
+import { isPlatformServer, formatDate } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details';
@@ -15,9 +15,7 @@ export class SeoService {
     private meta: Meta,
     private titie: Title,
     @Inject(PLATFORM_ID) platformId: any,
-    @Optional() @Inject('url') private url: URL,
-    private location: PlatformLocation
-
+    @Optional() @Inject('url') private url: URL
   ) {
     this.isServer = isPlatformServer(platformId);
   }

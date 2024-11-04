@@ -57,7 +57,7 @@ export class RenamePodcastDialogComponent {
         if (tokenCtr++ > 1) return;
         headers = headers.set("Authorization", "Bearer " + _token);
         const url: URL = new URL(`/podcast/name/${this.podcastName}`, environment.api);
-        const newPodcastName= this.newPodcastName.trim();
+        const newPodcastName = this.newPodcastName.trim();
         const resp = firstValueFrom<HttpResponse<any>>(
           this.http.post(url.toString(),
             { newPodcastName: newPodcastName },
@@ -88,7 +88,7 @@ export class RenamePodcastDialogComponent {
           this.isInError = true;
         })
       }).catch(_error => {
-
+        console.error(_error);
       });
     } catch (e) {
       console.error(e);

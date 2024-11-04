@@ -36,8 +36,7 @@ export class PostEpisodeDialogComponent {
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string },
-    private fb: FormBuilder) {
+    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
     this.episodeId = data.episodeId;
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
@@ -57,28 +56,26 @@ export class PostEpisodeDialogComponent {
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
       this.http.get<Episode>(episodeEndpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.isSending = false;
-              this.hasPosted = resp.posted;
-              this.hasTweeted = resp.tweeted;
-              if (resp.posted) {
-                this.form?.controls.post.disable();
-              }
-              if (resp.tweeted) {
-                this.form?.controls.tweet.disable();
-              }
-              if (resp.tweeted && resp.posted) {
-                this.dialogRef.close({ noChange: true });
-              }
-            },
-            error: e => {
-              this.isSending = false;
-              this.isInError = true;
+        .subscribe({
+          next: resp => {
+            this.isSending = false;
+            this.hasPosted = resp.posted;
+            this.hasTweeted = resp.tweeted;
+            if (resp.posted) {
+              this.form?.controls.post.disable();
             }
+            if (resp.tweeted) {
+              this.form?.controls.tweet.disable();
+            }
+            if (resp.tweeted && resp.posted) {
+              this.dialogRef.close({ noChange: true });
+            }
+          },
+          error: e => {
+            this.isSending = false;
+            this.isInError = true;
           }
-        )
+        })
     }).catch(x => {
       this.isSending = false;
       this.isInError = true;

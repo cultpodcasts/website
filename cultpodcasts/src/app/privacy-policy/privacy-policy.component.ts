@@ -11,8 +11,8 @@ import { Title } from '@angular/platform-browser';
 })
 export class PrivacyPolicyComponent {
   constructor(
-    private title: Title,
-    private seoService: SeoService) {
+    title: Title,
+    seoService: SeoService) {
     title.setTitle("Privacy Policy");
     seoService.AddMetaTags({ title: "Privacy Policy" });
   }

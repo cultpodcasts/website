@@ -54,8 +54,7 @@ export class EpisodesApiComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService
-  ) {
-  }
+  ) { }
 
   ngOnInit() {
     this.siteService.setQuery(null);
@@ -100,7 +99,6 @@ export class EpisodesApiComponent {
         })
       });
     })
-
   }
 
   setSort(sort: string) {

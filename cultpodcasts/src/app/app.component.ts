@@ -30,8 +30,8 @@ export class AppComponent {
   constructor(
     private iconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
-    @Inject(PLATFORM_ID) private platformId: any,
-    private seoService: SeoService,
+    @Inject(PLATFORM_ID) platformId: any,
+    seoService: SeoService,
     private webPushService: WebPushService,
     protected auth: AuthServiceWrapper,
     private dialog: MatDialog

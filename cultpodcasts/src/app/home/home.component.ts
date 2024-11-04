@@ -10,6 +10,4 @@ import { HomepageApiComponent } from '../homepage-api/homepage-api.component';
     HomepageApiComponent
   ]
 })
-export class HomeComponent {
-
-}
+export class HomeComponent { }

@@ -47,7 +47,6 @@ export class EditPodcastDialogComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastName: string },
-    private fb: FormBuilder,
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;

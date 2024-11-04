@@ -1,9 +1,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
-import { ODataEntitiesResponse, ODataEntityResponse } from './models/odata-response';
+import { ODataEntitiesResponse } from './models/odata-response';
 import { ISearchRequest } from "./ISearchRequest";
 
 /**
@@ -19,8 +19,7 @@ export class ODataService {
      * 
      * @param httpClient - The ``HttpClient`` to be used for queries.
      */
-    constructor(private httpClient: HttpClient) {
-    }
+    constructor(private httpClient: HttpClient) { }
 
     /**
      * Queries a OData-enabled enpoint for a entities of type ``T``. The response also 

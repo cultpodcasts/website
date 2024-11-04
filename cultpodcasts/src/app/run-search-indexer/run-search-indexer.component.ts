@@ -16,8 +16,7 @@ import { environment } from './../../environments/environment';
 export class RunSearchIndexerComponent {
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private dialogRef: MatDialogRef<RunSearchIndexerComponent>,
-    @Inject(MAT_DIALOG_DATA) data: any) {
+    private dialogRef: MatDialogRef<RunSearchIndexerComponent>) {
   }
 
   ngOnInit() {

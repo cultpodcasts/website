@@ -14,7 +14,7 @@ import { SubjectApiComponent } from '../subject-api/subject-api.component';
 export class SubjectComponent {
   private route = inject(ActivatedRoute);
 
-  constructor(private seoService: SeoService) {}
+  constructor(private seoService: SeoService) { }
 
   ngOnInit() {
     this.route.params.subscribe(params => {

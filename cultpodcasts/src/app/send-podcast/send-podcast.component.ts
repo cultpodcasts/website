@@ -9,7 +9,8 @@ import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NgIf } from '@angular/common';
-import { SubmitDialogResponse, SubmitUrlOriginResponse } from '../submit-url-origin-response';
+import { SubmitDialogResponse } from '../submit-url-origin-response';
+import { SubmitUrlOriginResponse } from "../SubmitUrlOriginResponse";
 
 @Component({
   selector: 'app-send-podcast',
@@ -83,9 +84,7 @@ export class SendPodcastComponent {
 
         if (url) {
           const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
-
           let headers: HttpHeaders = new HttpHeaders();
-
           if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
             let token: string | undefined;
             try {

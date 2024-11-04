@@ -1,4 +1,3 @@
-
 export interface PodcastPost {
     removed?: boolean;
     indexAllEpisodes?: boolean;

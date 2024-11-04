@@ -14,7 +14,7 @@ import { environment } from './../../environments/environment';
 import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
 import { Flair } from '../flair';
 import { MatSelectModule } from '@angular/material/select';
-import { KeyValue, KeyValuePipe, NgFor } from '@angular/common';
+import { KeyValuePipe, NgFor } from '@angular/common';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -248,5 +248,4 @@ export class EditSubjectDialogComponent {
     }
     return "";
   }
-
 }

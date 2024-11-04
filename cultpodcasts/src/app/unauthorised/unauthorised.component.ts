@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { SeoService } from '../seo.service';
 
 @Component({
     selector: 'app-unauthorised',
@@ -7,5 +6,4 @@ import { SeoService } from '../seo.service';
     styleUrls: ['./unauthorised.component.sass'],
     standalone: true
 })
-export class UnauthorisedComponent {
-}
+export class UnauthorisedComponent { }

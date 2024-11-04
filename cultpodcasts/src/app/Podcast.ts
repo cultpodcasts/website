@@ -1,4 +1,3 @@
-
 export interface Podcast {
     id?: string;
     removed: boolean;
@@ -7,7 +6,7 @@ export interface Podcast {
     releaseAuthority: string;
     primaryPostService: string;
     spotifyId: string;
-    appleId?: number|null;
+    appleId?: number | null;
     youTubePublicationDelay: string;
     skipEnrichingFromYouTube: boolean;
     twitterHandle: string;
@@ -15,5 +14,5 @@ export interface Podcast {
     descriptionRegex: string;
     episodeMatchRegex: string;
     episodeIncludeTitleRegex: string;
-    defaultSubject: string|null|undefined;
+    defaultSubject: string | null | undefined;
 }

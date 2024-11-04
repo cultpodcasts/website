@@ -7,13 +7,11 @@ import { environment } from './../environments/environment';
 import { ISearchResult } from './ISearchResult';
 import { ODataService } from './OdataService';
 import { firstValueFrom } from 'rxjs';
-import { Episode } from './episode';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EpisodeService {
-
   constructor(
     private guidService: GuidService,
     private oDataService: ODataService,

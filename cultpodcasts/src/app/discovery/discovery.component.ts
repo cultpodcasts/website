@@ -10,6 +10,4 @@ import { DiscoveryApiComponent } from '../discovery-api/discovery-api.component'
     DiscoveryApiComponent
 ]
 })
-export class DiscoveryComponent {
-
-}
+export class DiscoveryComponent {}

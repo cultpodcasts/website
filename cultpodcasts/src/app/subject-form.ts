@@ -5,10 +5,8 @@ export interface SubjectForm {
     aliases: FormControl<string[] | null | undefined>;
     associatedSubjects: FormControl<string[] | null | undefined>;
     subjectType: FormControl<string | null | undefined>;
-
     enrichmentHashTags: FormControl<string[] | null | undefined>;
     hashTag: FormControl<string | null | undefined>;
-
     redditFlairTemplateId: FormControl<string | null | undefined>;
     redditFlareText: FormControl<string | null | undefined>;
 }

@@ -4,7 +4,7 @@ export interface IHomepageItem {
   episodeTitle: string;
   episodeDescription: string;
   length: string;
-  release: Date;  
+  release: Date;
   spotify: URL | undefined;
   apple: URL | undefined;
   youtube: URL | undefined;

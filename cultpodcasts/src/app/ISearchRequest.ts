@@ -6,6 +6,6 @@ export interface ISearchRequest {
     queryType: string;
     facets: string[];
     search: string | null;
-    filter: string|null;
+    filter: string | null;
     orderby: string;
 }
