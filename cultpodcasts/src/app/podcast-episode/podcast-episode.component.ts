@@ -13,7 +13,6 @@ import { GuidService } from '../guid.service';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { environment } from './../../environments/environment';
-import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -33,7 +32,7 @@ import { SiteService } from '../SiteService';
   styleUrl: './podcast-episode.component.sass'
 })
 export class PodcastEpisodeComponent {
-  @Input() episode!: ISearchResult;
+  @Input() episode!: ISearchResult | undefined;
 
   podcastName: string = "";
   resultsHeading: string = "";
@@ -41,13 +40,11 @@ export class PodcastEpisodeComponent {
 
   constructor(
     private router: Router,
-    private siteService: SiteService,
     private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
-    this.siteService.setQuery(null);
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
   private route = inject(ActivatedRoute);
