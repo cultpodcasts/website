@@ -47,12 +47,12 @@ export class PodcastEpisodeComponent {
     private snackBar: MatSnackBar,
     private dialog: MatDialog
   ) {
+    this.siteService.setQuery(null);
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    this.siteService.setQuery("");
     this.populatePage();
   }
 
