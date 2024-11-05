@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, isDevMode, importProvidersFrom, provideExperimentalZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app-routing.module';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -34,6 +34,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideExperimentalZonelessChangeDetection(),
     importProvidersFrom(
       BrowserModule,
       AppRoutingModule,
@@ -73,7 +74,6 @@ export const appConfig: ApplicationConfig = {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     },
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(),
     provideServiceWorker('service-worker.js', {

@@ -1,4 +1,4 @@
-import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
+import { Component, ExperimentalPendingTasks, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
@@ -12,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
-import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -44,11 +43,12 @@ export class HomepageApiComponent {
   prevPage: number = 0;
   nextPage: number = 0;
 
-  isLoading: boolean = true;
+  isLoading: boolean = false;
   isInError: boolean = false;
   showPagingPrevious: boolean = false;
   showPagingPreviousInit: boolean = false;
   showPagingNext: boolean = false;
+  taskService = inject(ExperimentalPendingTasks);
 
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -61,7 +61,7 @@ export class HomepageApiComponent {
     private siteService: SiteService,
     private guidService: GuidService,
     private homepageService: HomepageService,
-    @Inject(PLATFORM_ID) platformId: any,
+    @Inject(PLATFORM_ID) platformId: any
   ) {
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
@@ -69,7 +69,9 @@ export class HomepageApiComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+    const taskCleanup = this.taskService.add();
+    await this.populatePage();
+    taskCleanup();
   }
 
   async populatePage(): Promise<any> {
@@ -97,7 +99,7 @@ export class HomepageApiComponent {
       let homepageContent: IHomepage | undefined;
       try {
         if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
+          homepageContent = await this.homepageService.getHomepageFromKv();
         }
         if (!homepageContent) {
           homepageContent = await this.homepageService.getHomepageFromApi()

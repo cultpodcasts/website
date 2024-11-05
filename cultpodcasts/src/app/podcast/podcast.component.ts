@@ -1,10 +1,8 @@
-import { Component, Inject, inject, Optional, PLATFORM_ID } from '@angular/core';
+import { Component, ExperimentalPendingTasks, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
-import { waitFor } from '../core.module';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
-import { KVNamespace } from '@cloudflare/workers-types';
 import { EpisodeService } from '../episode.service';
 import { isPlatformServer } from '@angular/common';
 import { IPageDetails } from '../page-details';
@@ -27,6 +25,7 @@ export class PodcastComponent {
   isServer: boolean;
   episode: ISearchResult | undefined;
   isEpisode: boolean = false;
+  taskService = inject(ExperimentalPendingTasks);
 
   constructor(
     private seoService: SeoService,
@@ -37,7 +36,9 @@ export class PodcastComponent {
   }
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populateTags());
+    const taskCleanup = this.taskService.add();
+    await this.populateTags();
+    taskCleanup();
   }
 
   private route = inject(ActivatedRoute);
