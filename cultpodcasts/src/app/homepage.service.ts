@@ -12,8 +12,28 @@ import { waitFor } from './core.module';
 export class HomepageService {
   constructor(
     private http: HttpClient,
-    @Optional() @Inject('content') private contentBucket: R2Bucket
+    @Optional() @Inject('content') private contentBucket: R2Bucket,
+    @Optional() @Inject('kvcontent') private kvcontent: KVNamespace
   ) { }
+
+  async getHomepageFromKv(): Promise<IHomepage | undefined> {
+    console.log(`kv: ${this.kvcontent}`);
+    if (this.kvcontent) {
+      const key = "homepage";
+      const homepageJson = await this.kvcontent.getWithMetadata<{ published: string }>(key);
+      console.log(`homepageJson: ${homepageJson}`);
+      if (homepageJson != null && homepageJson.metadata != null) {
+        var published = homepageJson.metadata.published;
+        console.log(`published: ${published}`);
+        if (homepageJson.value) {
+          const homepage=  JSON.parse(homepageJson.value);
+          console.log(`homepage: ${homepage}`);
+          return homepage;
+        }
+      }
+    }
+    return undefined;
+  }
 
   async getHomepageFromR2(): Promise<IHomepage | undefined> {
     if (this.contentBucket) {

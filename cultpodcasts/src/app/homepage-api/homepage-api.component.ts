@@ -13,7 +13,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
 import { waitFor } from '../core.module';
-import { join } from 'path';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -70,7 +69,7 @@ export class HomepageApiComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    await this.populatePage();
+    await waitFor(this.populatePage());
   }
 
   async populatePage(): Promise<any> {
@@ -98,7 +97,7 @@ export class HomepageApiComponent {
       let homepageContent: IHomepage | undefined;
       try {
         if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
+          homepageContent = await this.homepageService.getHomepageFromKv();
         }
         if (!homepageContent) {
           homepageContent = await this.homepageService.getHomepageFromApi()

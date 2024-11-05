@@ -10,6 +10,10 @@ env = "development"
 id = "663cd5c74988404dafbf67e1e06b21e8"
 binding = "kv"
 
+[[kv_namespaces]]
+id = "5b6337aba22a46a483fb1180c76c8ec9"
+binding = "kvcontent"
+
 [[r2_buckets]]
 binding = "content"
 bucket_name = "content"
@@ -24,6 +28,10 @@ env = "production"
 id = "663cd5c74988404dafbf67e1e06b21e8"
 binding = "kv"
 
+[[env.preview.kv_namespaces]]
+id = "5b6337aba22a46a483fb1180c76c8ec9"
+binding = "kvcontent"
+
 [[env.preview.r2_buckets]]
 binding = "content"
 bucket_name = "content"
@@ -31,6 +39,10 @@ bucket_name = "content"
 [[env.production.kv_namespaces]]
 id = "663cd5c74988404dafbf67e1e06b21e8"
 binding = "kv"
+
+[[env.production.kv_namespaces]]
+id = "5b6337aba22a46a483fb1180c76c8ec9"
+binding = "kvcontent"
 
 [[env.production.r2_buckets]]
 binding = "content"

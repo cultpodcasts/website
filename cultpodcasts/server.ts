@@ -5,6 +5,7 @@ import bootstrap from "./src/main.server";
 interface Env {
 	ASSETS: { fetch: typeof fetch };
 	kv: KVNamespace;
+	kvcontent: KVNamespace;
 	content: R2Bucket;
 }
 
@@ -26,6 +27,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 		platformProviders: [
 			{ provide: 'url', useValue: url },
 			{ provide: 'kv', useValue: env.kv },
+			{ provide: 'kvcontent', useValue: env.kvcontent },
 			{ provide: 'content', useValue: env.content }
 		]
 	});
