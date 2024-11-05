@@ -102,4 +102,9 @@ export class PodcastEpisodeComponent {
     };
     window.navigator.share(share);
   }
+
+  search() {
+    let url = `search/${this.podcastName}`;
+    this.router.navigate([url]);
+  }
 }

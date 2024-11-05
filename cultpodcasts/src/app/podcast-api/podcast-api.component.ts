@@ -196,6 +196,7 @@ export class PodcastApiComponent {
               this.showPagingNext = (this.searchState.page * pageSize) < count;
             },
             error: (e) => {
+              console.error(e);
               this.resultsHeading = "Something went wrong. Please try again.";
               this.isLoading = false;
             }
