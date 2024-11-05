@@ -97,9 +97,6 @@ export class HomepageApiComponent {
       let homepageContent: IHomepage | undefined;
       try {
         homepageContent = await this.homepageService.getHomepageFromApi();
-        if (this.isServer) {
-          homepageContent.recentEpisodes = homepageContent.recentEpisodes.slice(0, Math.min(homepageContent.recentEpisodes.length, pageSize + 1));
-        }
       } catch (error) {
         this.errorText = JSON.stringify(error);
         console.error(error);
@@ -113,7 +110,6 @@ export class HomepageApiComponent {
         this.podcastCount = this.homepage.recentEpisodes.length;
         var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
         this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          item.release = new Date(item.release);
           if (!group[item.release.toLocaleDateString()]) {
             group[item.release.toLocaleDateString()] = [];
           }
