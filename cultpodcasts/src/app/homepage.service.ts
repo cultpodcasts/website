@@ -4,7 +4,6 @@ import { environment } from './../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { R2Bucket, KVNamespace } from '@cloudflare/workers-types';
-import { waitFor } from './core.module';
 
 @Injectable({
   providedIn: 'root'
@@ -37,9 +36,9 @@ export class HomepageService {
 
   async getHomepageFromR2(): Promise<IHomepage | undefined> {
     if (this.contentBucket) {
-      var r2Obj = await waitFor(this.contentBucket.get("homepage"));
+      var r2Obj = await this.contentBucket.get("homepage");
       if (r2Obj) {
-        var homepage = await waitFor(r2Obj.json<IHomepage>());
+        var homepage = await r2Obj.json<IHomepage>();
         return homepage;
       } else {
         throw new Error("No homepage object");
