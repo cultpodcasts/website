@@ -80,6 +80,8 @@ export class HomepageApiComponent {
       })
     ).subscribe(async (res: { params: Params; queryParams: Params }) => {
       const { params, queryParams } = res;
+      console.log(`queryparams[page]= ${queryParams["page"]}`);
+      console.log(`params[page]= ${params["page"]}`);
 
       this.siteService.setQuery(null);
       this.siteService.setPodcast(null);
