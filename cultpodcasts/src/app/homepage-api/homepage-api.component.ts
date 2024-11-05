@@ -70,7 +70,7 @@ export class HomepageApiComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+    await this.populatePage();
   }
 
   async populatePage(): Promise<any> {
