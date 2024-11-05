@@ -98,7 +98,7 @@ export class HomepageApiComponent {
       let homepageContent: IHomepage | undefined;
       try {
         if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
+          homepageContent = await waitFor(this.homepageService.getHomepageFromR2());
           console.log(`Homepage-content: ${homepageContent}`);
           console.log(JSON.stringify(homepageContent));
         }
