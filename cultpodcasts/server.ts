@@ -1,6 +1,7 @@
 import { renderApplication } from "@angular/platform-server";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
+import { ExperimentalPendingTasks, inject } from "@angular/core";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -13,6 +14,7 @@ interface Env {
 // so that we can export it when we process the Angular output.
 // See tools/bundle.mjs
 async function workerFetchHandler(request: Request, env: Env) {
+	const taskService = inject(ExperimentalPendingTasks)
 	const url = new URL(request.url);
 	console.log("render SSR", url.href);
 
@@ -21,6 +23,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
 	const document = await indexResponse.text();
 
+	const taskCleanup = taskService.add();
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,
@@ -31,6 +34,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 			{ provide: 'content', useValue: env.content }
 		]
 	});
+	taskCleanup();
 
 	console.log("rendered SSR");
 	return new Response(content, indexResponse);
@@ -43,3 +47,4 @@ export default {
 		)
 	}
 };
+
