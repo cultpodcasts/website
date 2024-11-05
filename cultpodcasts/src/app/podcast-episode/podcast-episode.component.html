@@ -50,4 +50,13 @@
     </mat-card-actions>
   </mat-card>
 </section>
+} @else {
+  <section id="resultsheading">
+    <h2>Episode not found.</h2>
+  </section>
+  <section>
+    <div id="cta-button">
+      <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
+    </div>
+  </section>
 }
