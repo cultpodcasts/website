@@ -13,6 +13,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
 import { waitFor } from '../core.module';
+import { join } from 'path';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -98,6 +99,8 @@ export class HomepageApiComponent {
       try {
         if (this.isServer) {
           homepageContent = await this.homepageService.getHomepageFromR2();
+          console.log(`Homepage-content: ${homepageContent}`);
+          console.log(JSON.stringify(homepageContent));
         }
         if (!homepageContent) {
           homepageContent = await this.homepageService.getHomepageFromApi()
