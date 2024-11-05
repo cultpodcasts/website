@@ -27,6 +27,7 @@ export class HomepageService {
         throw new Error("No homepage object");
       }
     }
+    console.log(`no homepage content`);
     return;
   }
 
