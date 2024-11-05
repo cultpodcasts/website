@@ -8,7 +8,7 @@ export async function waitFor<T>(prom: Promise<T> | Observable<T>): Promise<T> {
   }
   const macroTask = Zone.current
     .scheduleMacroTask(
-      `WAITFOR-0.000001`,
+      `WAITFOR-0.00000001`,
       () => { },
       {},
       () => { }
