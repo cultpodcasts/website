@@ -12,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
-import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -68,8 +67,8 @@ export class HomepageApiComponent {
   }
   private route = inject(ActivatedRoute);
 
-  async ngOnInit(): Promise<any> {
-    await waitFor(this.populatePage());
+  ngOnInit() {
+    this.populatePage();
   }
 
   async populatePage(): Promise<any> {
@@ -110,7 +109,7 @@ export class HomepageApiComponent {
         this.podcastCount = this.homepage.recentEpisodes.length;
         var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
         this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          const localeDateString= item.release.toLocaleDateString('en-GB');
+          const localeDateString = item.release.toLocaleDateString('en-GB');
           if (!group[localeDateString]) {
             group[localeDateString] = [];
           }
