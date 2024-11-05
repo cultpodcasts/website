@@ -15,10 +15,13 @@ export class HomepageService {
   ) { }
 
   async getHomepageFromR2(): Promise<IHomepage | undefined> {
+    console.log(`this.contentBucket: ${this.contentBucket}`);
     if (this.contentBucket) {
       var r2Obj = await this.contentBucket.get("homepage");
+      console.log(`r2Obj: ${r2Obj}`);
       if (r2Obj) {
         var homepage = r2Obj.json<IHomepage>();
+        console.log(`homepage: ${homepage}`);
         return homepage;
       } else {
         throw new Error("No homepage object");
