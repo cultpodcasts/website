@@ -21,7 +21,7 @@ export class HomepageService {
       var r2Obj = await waitFor(this.contentBucket.get("homepage"));
       console.log(`r2Obj: ${r2Obj}`);
       if (r2Obj) {
-        var homepage = await r2Obj.json<IHomepage>();
+        var homepage = await waitFor(r2Obj.json<IHomepage>());
         console.log(`homepage: ${homepage}`);
         return homepage;
       } else {
