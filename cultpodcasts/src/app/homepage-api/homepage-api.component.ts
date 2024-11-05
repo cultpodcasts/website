@@ -44,7 +44,7 @@ export class HomepageApiComponent {
   prevPage: number = 0;
   nextPage: number = 0;
 
-  isLoading: boolean = true;
+  isLoading: boolean = false;
   isInError: boolean = false;
   showPagingPrevious: boolean = false;
   showPagingPreviousInit: boolean = false;
