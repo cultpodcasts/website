@@ -1,8 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate, isPlatformServer } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -54,13 +54,16 @@ export class HomepageApiComponent {
 
   homepage: IHomepage | undefined;
   totalDuration: string = "";
+  isServer: boolean;
 
   constructor(
     private router: Router,
     private siteService: SiteService,
     private guidService: GuidService,
-    private homepageService: HomepageService
+    private homepageService: HomepageService,
+    @Inject(PLATFORM_ID) platformId: any,
   ) {
+    this.isServer = isPlatformServer(platformId);
     this.grouped = {};
   }
   private route = inject(ActivatedRoute);
@@ -93,7 +96,10 @@ export class HomepageApiComponent {
       }
       let homepageContent: IHomepage | undefined;
       try {
-        homepageContent = await this.homepageService.getHomepageFromApi()
+        homepageContent = await this.homepageService.getHomepageFromApi();
+        if (this.isServer) {
+          homepageContent.recentEpisodes = homepageContent.recentEpisodes.slice(0, Math.min(homepageContent.recentEpisodes.length, pageSize + 1));
+        }
       } catch (error) {
         this.errorText = JSON.stringify(error);
         console.error(error);
