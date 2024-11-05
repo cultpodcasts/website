@@ -86,7 +86,7 @@ export class PodcastApiComponent {
   }
   private route = inject(ActivatedRoute);
 
-  async ngOnInit(): Promise<any> {
+  ngOnInit() {
     this.populatePage();
   }
 

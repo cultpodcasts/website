@@ -37,7 +37,7 @@ export class PodcastComponent {
   }
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populateTags());
+    await waitFor(this.populateTags());
   }
 
   private route = inject(ActivatedRoute);

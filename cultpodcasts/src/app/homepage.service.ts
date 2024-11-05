@@ -28,7 +28,10 @@ export class HomepageService {
   }
 
   async getHomepageFromApi(): Promise<IHomepage> {
-    return await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
+    console.log("pre get honepage from api");
+    const homepage = await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
+    console.log("post get honepage from api");
+    return homepage;
   }
 }
 

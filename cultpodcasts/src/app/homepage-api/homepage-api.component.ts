@@ -1,8 +1,8 @@
-import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate, isPlatformServer } from '@angular/common';
+import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -39,7 +39,6 @@ export class HomepageApiComponent {
   currentPage: number = 1;
   podcastCount: number | undefined;
   errorText: string | undefined;
-  isServer: boolean;
 
   prevPage: number = 0;
   nextPage: number = 0;
@@ -60,16 +59,14 @@ export class HomepageApiComponent {
     private router: Router,
     private siteService: SiteService,
     private guidService: GuidService,
-    private homepageService: HomepageService,
-    @Inject(PLATFORM_ID) platformId: any,
+    private homepageService: HomepageService
   ) {
-    this.isServer = isPlatformServer(platformId);
     this.grouped = {};
   }
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+    await waitFor(this.populatePage());
   }
 
   async populatePage(): Promise<any> {
@@ -96,12 +93,7 @@ export class HomepageApiComponent {
       }
       let homepageContent: IHomepage | undefined;
       try {
-        if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
-        }
-        if (!homepageContent) {
-          homepageContent = await this.homepageService.getHomepageFromApi()
-        }
+        homepageContent = await this.homepageService.getHomepageFromApi()
       } catch (error) {
         this.errorText = JSON.stringify(error);
         console.error(error);
