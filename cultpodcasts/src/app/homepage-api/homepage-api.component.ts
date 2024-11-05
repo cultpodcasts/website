@@ -110,10 +110,11 @@ export class HomepageApiComponent {
         this.podcastCount = this.homepage.recentEpisodes.length;
         var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
         this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          if (!group[item.release.toLocaleDateString()]) {
-            group[item.release.toLocaleDateString()] = [];
+          const localeDateString= item.release.toLocaleDateString('en-GB');
+          if (!group[localeDateString]) {
+            group[localeDateString] = [];
           }
-          group[item.release.toLocaleDateString()].push(item);
+          group[localeDateString].push(item);
           return group;
         }, {});
         this.isLoading = false;
