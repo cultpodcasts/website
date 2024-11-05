@@ -105,6 +105,7 @@ export class HomepageApiComponent {
       if (homepageContent) {
         this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
+        console.log(`this.currentPage: ${this.currentPage}`);
         let start = (this.currentPage - 1) * pageSize;
         this.podcastCount = this.homepage.recentEpisodes.length;
         var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
