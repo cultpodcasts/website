@@ -33,7 +33,24 @@ import { SiteService } from '../SiteService';
   styleUrl: './podcast-episode.component.sass'
 })
 export class PodcastEpisodeComponent {
-  @Input() episode!: ISearchResult | undefined;
+
+  @Input()
+  get episode(): ISearchResult | undefined {
+    return this._episode;
+  }
+  set episode(val: ISearchResult | undefined) {
+    this._episode = val;
+    this.isLoading = false;
+  }
+
+  @Input()
+  set parentLoaded(val: boolean) {
+    this._parentLoaded = val;
+    this.isLoading = !this._parentLoaded;
+  }
+
+  private _episode: ISearchResult | undefined;
+  private _parentLoaded: boolean = false;
 
   podcastName: string = "";
   resultsHeading: string = "";
@@ -66,7 +83,6 @@ export class PodcastEpisodeComponent {
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName);
       this.siteService.setSubject(null);
-      this.isLoading = false;
     });
   }
 

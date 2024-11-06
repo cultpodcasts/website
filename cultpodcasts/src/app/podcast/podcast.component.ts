@@ -27,12 +27,13 @@ export class PodcastComponent {
   isServer: boolean;
   episode: ISearchResult | undefined;
   isEpisode: boolean = false;
+  isLoading: boolean = true;
 
   constructor(
     private seoService: SeoService,
     private guidService: GuidService,
     private episodeService: EpisodeService,
-    @Inject(PLATFORM_ID) platformId: any  ) {
+    @Inject(PLATFORM_ID) platformId: any) {
     this.isServer = isPlatformServer(platformId);
   }
 
@@ -77,6 +78,7 @@ export class PodcastComponent {
         }
       }
       this.seoService.AddMetaTags(pageDetails);
+      this.isLoading = false;
     });
   }
 }
