@@ -38,6 +38,7 @@ export class PodcastEpisodeComponent {
   podcastName: string = "";
   resultsHeading: string = "";
   authRoles: string[] = [];
+  isLoading: boolean = true;
 
   constructor(
     private router: Router,
@@ -65,6 +66,7 @@ export class PodcastEpisodeComponent {
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName);
       this.siteService.setSubject(null);
+      this.isLoading = false;
     });
   }
 
@@ -103,8 +105,8 @@ export class PodcastEpisodeComponent {
     window.navigator.share(share);
   }
 
-  search() {
-    let url = `search/${this.podcastName}`;
+  podcastPage() {
+    let url = `podcast/${this.podcastName}`;
     this.router.navigate([url]);
   }
 }
