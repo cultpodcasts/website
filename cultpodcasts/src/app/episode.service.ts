@@ -46,7 +46,7 @@ export class EpisodeService {
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: `(podcastName eq '${podcastName}' and id eq '${episodeId}')`,
+        filter: `(podcastName eq '${podcastName}') and (id eq '${episodeId}')`,
         searchMode: 'any',
         queryType: 'simple',
         count: false,
