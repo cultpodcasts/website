@@ -90,10 +90,14 @@
   <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
   <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
 </section>
-<section *ngIf="count === 0 && !isLoading">
+@if (count === 0 && !isLoading) {
+<section id="resultsheading">
   <h2>There were no results for "{{podcastName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span>
   </h2>
+</section>
+<section>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>
 </section>
+}
