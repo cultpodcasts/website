@@ -37,7 +37,7 @@ const pageParam: string = "page";
 export class HomepageApiComponent {
   grouped: { [key: string]: IHomepageItem[]; };
   currentPage: number = 1;
-  podcastCount: number | undefined;
+  episodesThisWeek: number | undefined;
   errorText: string | undefined;
   isServer: boolean;
 
@@ -55,6 +55,7 @@ export class HomepageApiComponent {
 
   homepage: IHomepage | undefined;
   totalDuration: string = "";
+  totalEpisodes: number | undefined;
 
   constructor(
     private router: Router,
@@ -94,41 +95,56 @@ export class HomepageApiComponent {
       } else {
         this.nextPage = 2;
       }
-      let homepageContent: IHomepage | undefined;
-      try {
-        if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
+      if (this.isServer) {
+        try {
+          this.isLoading = false;
+          let homepageContent = await this.homepageService.getPreProcessedHomepageFromApi();
+          this.totalDuration = `${homepageContent.totalDurationDays} days`;
+          this.grouped = homepageContent.episodesByDay;
+          this.showPagingNext = homepageContent.hasNext;
+          this.episodesThisWeek = homepageContent.episodesThisWeek;
+          this.totalEpisodes = homepageContent.episodeCount;
+        } catch (e) {
+          console.error(e);
         }
-        if (!homepageContent) {
-          homepageContent = await this.homepageService.getHomepageFromApi()
-        }
-      } catch (error) {
-        this.errorText = JSON.stringify(error);
-        console.error(error);
-        this.isLoading = false;
-        this.isInError = true;
-      }
-      if (homepageContent) {
-        this.homepage = homepageContent;
-        this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
-        let start = (this.currentPage - 1) * pageSize;
-        this.podcastCount = this.homepage.recentEpisodes.length;
-        var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
-        this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          item.release = new Date(item.release);
-          if (!group[item.release.toLocaleDateString()]) {
-            group[item.release.toLocaleDateString()] = [];
-          }
-          group[item.release.toLocaleDateString()].push(item);
-          return group;
-        }, {});
-        this.isLoading = false;
-        this.showPagingPrevious = this.currentPage > 2;
-        this.showPagingPreviousInit = this.currentPage == 2;
-        this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
       } else {
-        this.isLoading = false;
-        this.isInError = true;
+        try {
+          let homepageContent: IHomepage | undefined;
+          try {
+            if (!homepageContent) {
+              homepageContent = await this.homepageService.getHomepageFromApi();
+            }
+          } catch (error) {
+            this.errorText = JSON.stringify(error);
+            console.error(error);
+            this.isLoading = false;
+            this.isInError = true;
+          }
+          if (homepageContent) {
+            this.homepage = homepageContent;
+            this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
+            let start = (this.currentPage - 1) * pageSize;
+            this.episodesThisWeek = this.homepage.recentEpisodes.length;
+            this.totalEpisodes = this.homepage.episodeCount;
+            var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
+            this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+              if (!group[item.release.toLocaleDateString()]) {
+                group[item.release.toLocaleDateString()] = [];
+              }
+              group[item.release.toLocaleDateString()].push(item);
+              return group;
+            }, {});
+            this.isLoading = false;
+            this.showPagingPrevious = this.currentPage > 2;
+            this.showPagingPreviousInit = this.currentPage == 2;
+            this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+          } else {
+            this.isLoading = false;
+            this.isInError = true;
+          }
+        } catch (e) {
+          console.error(e)
+        }
       }
     });
   }

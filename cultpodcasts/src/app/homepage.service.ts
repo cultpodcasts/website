@@ -4,6 +4,7 @@ import { environment } from './../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { R2Bucket } from '@cloudflare/workers-types';
+import { IPreProcessedHomepage } from './IPreProcessedHomepage';
 
 @Injectable({
   providedIn: 'root'
@@ -30,5 +31,13 @@ export class HomepageService {
   async getHomepageFromApi(): Promise<IHomepage> {
     return await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
   }
-}
 
+  async getPreProcessedHomepageFromApi(): Promise<IPreProcessedHomepage> {
+      const json = await firstValueFrom(this.http.get<any>(new URL("/homepage-ssr", environment.api).toString()))
+        .catch(e => {
+          console.error("in .catch function")
+          console.error(e)
+        });
+      return json as IPreProcessedHomepage;
+  }
+}
