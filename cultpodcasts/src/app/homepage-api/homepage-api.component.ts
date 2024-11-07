@@ -128,10 +128,10 @@ export class HomepageApiComponent {
             this.totalEpisodes = this.homepage.episodeCount;
             var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
             this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-              if (!group[item.release.toLocaleDateString()]) {
-                group[item.release.toLocaleDateString()] = [];
+              if (!group[item.releaseDayDisplay]) {
+                group[item.releaseDayDisplay] = [];
               }
-              group[item.release.toLocaleDateString()].push(item);
+              group[item.releaseDayDisplay].push(item);
               return group;
             }, {});
             this.isLoading = false;

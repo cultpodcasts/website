@@ -17,7 +17,7 @@
   <p>{{this.errorText}}</p>
   }
   <div *ngFor="let dateItems of grouped | keyvalue">
-    <h3>Remove date calcs</h3>
+    <h3>{{dateItems.key}}</h3>
     <mat-card *ngFor="let item of dateItems.value" class="result">
       <mat-card-header>
         <mat-card-title><a
