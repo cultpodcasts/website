@@ -64,7 +64,7 @@ export class HomepageApiComponent {
     private homepageService: HomepageService,
     @Inject(PLATFORM_ID) platformId: any,
   ) {
-    console.log("homepage-start")
+    console.log("homepage start")
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
     console.log("constructor finished")
@@ -72,7 +72,9 @@ export class HomepageApiComponent {
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
+    console.log("on-init start")
     await this.populatePage();
+    console.log("on-init finished")
   }
 
   async populatePage(): Promise<any> {
@@ -83,6 +85,7 @@ export class HomepageApiComponent {
         queryParams,
       })
     ).subscribe(async (res: { params: Params; queryParams: Params }) => {
+      console.log("subscribe start")
       const { params, queryParams } = res;
 
       this.siteService.setQuery(null);
@@ -100,7 +103,9 @@ export class HomepageApiComponent {
       if (this.isServer) {
         try {
           this.isLoading = false;
+console.log("get-preprocessed-homepage-from-api start")
           let homepageContent = await this.homepageService.getPreProcessedHomepageFromApi();
+console.log("get-preprocessed-homepage-from-api finished")
           this.totalDuration = `${homepageContent.totalDurationDays} days`;
           this.grouped = homepageContent.episodesByDay;
           this.showPagingNext = homepageContent.hasNext;
@@ -114,7 +119,9 @@ export class HomepageApiComponent {
           let homepageContent: IHomepage | undefined;
           try {
             if (!homepageContent) {
+              console.log("get-homepage-from-api start")
               homepageContent = await this.homepageService.getHomepageFromApi();
+              console.log("get-homepage-from-api finished")
             }
           } catch (error) {
             this.errorText = JSON.stringify(error);
@@ -148,6 +155,7 @@ export class HomepageApiComponent {
           console.error(e)
         }
       }
+      console.log("subscribe finished")
     });
   }
 
