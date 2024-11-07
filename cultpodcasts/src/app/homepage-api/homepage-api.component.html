@@ -16,7 +16,7 @@
   <p>An error occurred.</p>
   <p>{{this.errorText}}</p>
   }
-  <div *ngFor="let dateItems of grouped | keyvalue: descDate">
+  <div *ngFor="let dateItems of grouped | keyvalue">
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
     <mat-card *ngFor="let item of dateItems.value" class="result">
