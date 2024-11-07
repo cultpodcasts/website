@@ -67,11 +67,12 @@ export class HomepageApiComponent {
     console.log("homepage-start")
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
+    console.log("constructor finished")
   }
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+    await this.populatePage();
   }
 
   async populatePage(): Promise<any> {
