@@ -64,6 +64,7 @@ export class HomepageApiComponent {
     private homepageService: HomepageService,
     @Inject(PLATFORM_ID) platformId: any,
   ) {
+    console.log("homepage-start")
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
   }
