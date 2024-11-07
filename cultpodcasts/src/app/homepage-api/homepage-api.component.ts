@@ -154,18 +154,6 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
-    var aD = this.ToDate(a.key);
-    var bD = this.ToDate(b.key);
-    if (aD > bD) {
-      return -1;
-    }
-    if (aD < bD) {
-      return 1
-    }
-    return 0;
-  }
-
   setPage(page: number) {
     var url = `/`;
     this.currentPage += page;
