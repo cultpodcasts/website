@@ -38,7 +38,9 @@ export class AppComponent {
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
-    this.registerSvg();
+    if (this.isBrowser) {
+      this.registerSvg();
+    }
   }
 
   ngOnInit() {
