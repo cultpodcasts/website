@@ -3,8 +3,8 @@
   "version": "1.0.9",
   "scripts": {
     "ng": "ng",
-    "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-06-14 --local-protocol https --kv kv",
-    "build": "ng build && npm run process",
+    "start": "npm run build && wrangler pages dev dist/cloudflare --compatibility-date=2024-09-02 --local-protocol https --kv kv --r2 content",
+    "build": "ng build --configuration development && npm run process",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
@@ -48,6 +48,6 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "5.4",
-    "wrangler": "^3.84.1"
+    "wrangler": "^3.86.0"
   }
 }
