@@ -1,10 +1,11 @@
-import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { Component } from '@angular/core';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
+import { IndexerState } from '../indexer-state';
 
 @Component({
   selector: 'app-run-search-indexer',
@@ -30,34 +31,31 @@ export class RunSearchIndexerComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`searchindex/run`, environment.api).toString();
-      this.http.post<any>(episodeEndpoint, {}, { headers: headers })
+      this.http.post<IndexerState>(episodeEndpoint, {}, { headers: headers })
         .subscribe(
           {
             next: resp => {
               console.log(resp);
-              if (resp.status) {
-                this.close(resp.status);
-              } else {
-                this.close("Unknown state");
-              }
+              this.close({ indexerState: resp });
             },
             error: e => {
               console.error(e);
-              if (e.error.status) {
-                this.close(e.error.status);
+              const indexerState = e.error as IndexerState;
+              if (indexerState.state) {
+                this.close({ indexerState: indexerState });
               } else {
-                this.close("An error occurred running search-index");
+                this.close({ message: "An error occurred running search-index" });
               }
             }
           }
         )
     }).catch(x => {
       console.error(x);
-      this.close("An error occurred getting api-token");
+      this.close({ message: "An error occurred getting api-token" });
     });
   }
 
-  close(message: string) {
-    this.dialogRef.close(message);
+  close(res: { message?: string, indexerState?: IndexerState }) {
+    this.dialogRef.close(res);
   }
 }

@@ -23,6 +23,7 @@ import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-inde
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
 import { AddTermComponent } from '../add-term/add-term.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { IndexerState } from '../indexer-state';
 
 @Component({
   selector: 'app-toolbar',
@@ -224,13 +225,53 @@ export class ToolbarComponent {
   }
 
   runSearchIndexer() {
-    const dialogRef = this.dialog.open(RunSearchIndexerComponent, {
+    const dialogRef = this.dialog.open<RunSearchIndexerComponent, any, { message?: string, indexerState?: IndexerState }>(RunSearchIndexerComponent, {
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef = this.snackBar.open(result.replace(/([A-Z])/g, ' $1').trim(), "Ok", { duration: 10000 });
+      let message: string;
+      if (result?.message) {
+        message = result.message;
+      } else {
+        if (result?.indexerState?.state == "Executed") {
+          message = "Index Success";
+        } else if (result?.indexerState?.state == "AlreadyRunning" || result?.indexerState?.state == "TooManyRequests") {
+          var status = result.indexerState.state.replace(/([A-Z])/g, ' $1').trim();
+          if (result.indexerState.nextRun) {
+            message = `${status}. Run Index in ${this.timespanToDisplay(result.indexerState.nextRun)}`;
+          } else if (result.indexerState.lastRan) {
+            message = `${status}. Index last executed ${this.timespanToDisplay(result.indexerState.lastRan)} ago`;
+          } else {
+            message = status;
+          }
+        } else if (result?.indexerState?.state == "Failure") {
+          message = "Index Failure";
+        } else {
+          message = "Unknown Failure.";
+        }
+      }
+      let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
     });
+  }
+
+  timespanToDisplay(timespan: string): string {
+    // 00:02:43.7817276
+    var timeComponent = timespan.split(".")[0];
+    var components = timeComponent.split(":");
+    let result = "";
+    if (components[0] != "00") {
+      result += `${components[0]}:`;
+    }
+    if (components[1] != "00") {
+      result += `${components[1]}:`;
+    }
+    if (result == "") {
+      result = `${components[2]} seconds`;
+    } else {
+      result += components[2];
+    }
+    return result;
   }
 
   publishHomepage() {
