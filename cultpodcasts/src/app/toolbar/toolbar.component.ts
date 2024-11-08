@@ -261,13 +261,17 @@ export class ToolbarComponent {
     var components = timeComponent.split(":");
     let result = "";
     if (components[0] != "00") {
-      result += `${components[0]}:`;
+      result += `${parseInt(components[0])}:`;
     }
     if (components[1] != "00") {
-      result += `${components[1]}:`;
+      if (result == "") {
+        result += `${parseInt(components[1])}:`;
+      } else {
+        result += `${components[1]}:`;
+      }
     }
     if (result == "") {
-      result = `${components[2]} seconds`;
+      result = `${parseInt(components[2])} seconds`;
     } else {
       result += components[2];
     }
