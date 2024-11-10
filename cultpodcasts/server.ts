@@ -20,7 +20,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 
 		let chunkContent:Response;
 		try {
-		 chunkContent= await env.ASSETS.fetch(new Request(chunkPath));
+		 chunkContent= await env.ASSETS.fetch(new Request(new URL("/", chunkPath)));
 		} catch (error) {
 			return new Response(JSON.stringify(error));
 		}
