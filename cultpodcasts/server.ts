@@ -14,11 +14,12 @@ interface Env {
 async function workerFetchHandler(request: Request, env: Env) {
 	const url = new URL(request.url);
 
-	const chunkPattern= /(search|podcast|subject)(\/chunk-[A-Z0-9]{8}\.js)/;
+	const chunkPattern = /(search|podcast|subject)(\/chunk-[A-Z0-9]{8}\.js)/;
 	if (chunkPattern.test(url.pathname)) {
-		const chunkPath= chunkPattern.exec(url.pathname)![2];
-		const chunkContent= await env.ASSETS.fetch(new Request(chunkPath));
-		return chunkContent;
+		const chunkPath = chunkPattern.exec(url.pathname)![2];
+		return Response.redirect(url.protocol + "//" + url.hostname + chunkPath, 302);
+		//		const chunkContent= await env.ASSETS.fetch(new Request(chunkPath));
+		//		return chunkContent;
 		//return Response.redirect(chunkPattern.exec(url.pathname)![2], 302)
 	}
 
