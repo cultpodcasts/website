@@ -13,6 +13,12 @@ interface Env {
 // See tools/bundle.mjs
 async function workerFetchHandler(request: Request, env: Env) {
 	const url = new URL(request.url);
+
+	const chunkPattern = /(search|podcast|subject)(\/chunk-[A-Z0-9]{8}\.js)/;
+	if (chunkPattern.test(url.pathname)) {
+		return await env.ASSETS.fetch(new Request(new URL(chunkPattern.exec(url.pathname)![2], url)));
+	}
+
 	console.log("render SSR", url.href);
 
 	// Get the root `index.html` content.
