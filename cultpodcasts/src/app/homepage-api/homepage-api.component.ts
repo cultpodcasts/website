@@ -37,7 +37,7 @@ const pageParam: string = "page";
 export class HomepageApiComponent {
   grouped: { [key: string]: IHomepageItem[]; };
   currentPage: number = 1;
-  podcastCount: number | undefined;
+  episodesThisWeek: number | undefined;
   errorText: string | undefined;
   isServer: boolean;
 
@@ -55,6 +55,7 @@ export class HomepageApiComponent {
 
   homepage: IHomepage | undefined;
   totalDuration: string = "";
+  totalEpisodes: number | undefined;
 
   constructor(
     private router: Router,
@@ -63,13 +64,17 @@ export class HomepageApiComponent {
     private homepageService: HomepageService,
     @Inject(PLATFORM_ID) platformId: any,
   ) {
+    console.log("homepage start")
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
+    console.log("constructor finished")
   }
   private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+    console.log("on-init start")
+    await this.populatePage();
+    console.log("on-init finished")
   }
 
   async populatePage(): Promise<any> {
@@ -80,6 +85,7 @@ export class HomepageApiComponent {
         queryParams,
       })
     ).subscribe(async (res: { params: Params; queryParams: Params }) => {
+      console.log("subscribe start")
       const { params, queryParams } = res;
 
       this.siteService.setQuery(null);
@@ -94,60 +100,63 @@ export class HomepageApiComponent {
       } else {
         this.nextPage = 2;
       }
-      let homepageContent: IHomepage | undefined;
-      try {
-        if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
+      if (this.isServer) {
+        try {
+          this.isLoading = false;
+console.log("get-preprocessed-homepage-from-api start")
+          let homepageContent = await this.homepageService.getPreProcessedHomepageFromApi();
+console.log("get-preprocessed-homepage-from-api finished")
+          this.totalDuration = `${homepageContent.totalDurationDays} days`;
+          this.grouped = homepageContent.episodesByDay;
+          this.showPagingNext = homepageContent.hasNext;
+          this.episodesThisWeek = homepageContent.episodesThisWeek;
+          this.totalEpisodes = homepageContent.episodeCount;
+        } catch (e) {
+          console.error(e);
         }
-        if (!homepageContent) {
-          homepageContent = await this.homepageService.getHomepageFromApi()
-        }
-      } catch (error) {
-        this.errorText = JSON.stringify(error);
-        console.error(error);
-        this.isLoading = false;
-        this.isInError = true;
-      }
-      if (homepageContent) {
-        this.homepage = homepageContent;
-        this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
-        let start = (this.currentPage - 1) * pageSize;
-        this.podcastCount = this.homepage.recentEpisodes.length;
-        var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
-        this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
-          item.release = new Date(item.release);
-          if (!group[item.release.toLocaleDateString()]) {
-            group[item.release.toLocaleDateString()] = [];
-          }
-          group[item.release.toLocaleDateString()].push(item);
-          return group;
-        }, {});
-        this.isLoading = false;
-        this.showPagingPrevious = this.currentPage > 2;
-        this.showPagingPreviousInit = this.currentPage == 2;
-        this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
       } else {
-        this.isLoading = false;
-        this.isInError = true;
+        try {
+          let homepageContent: IHomepage | undefined;
+          try {
+            if (!homepageContent) {
+              console.log("get-homepage-from-api start")
+              homepageContent = await this.homepageService.getHomepageFromApi();
+              console.log("get-homepage-from-api finished")
+            }
+          } catch (error) {
+            this.errorText = JSON.stringify(error);
+            console.error(error);
+            this.isLoading = false;
+            this.isInError = true;
+          }
+          if (homepageContent) {
+            this.homepage = homepageContent;
+            this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
+            let start = (this.currentPage - 1) * pageSize;
+            this.episodesThisWeek = this.homepage.recentEpisodes.length;
+            this.totalEpisodes = this.homepage.episodeCount;
+            var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
+            this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+              if (!group[item.releaseDayDisplay]) {
+                group[item.releaseDayDisplay] = [];
+              }
+              group[item.releaseDayDisplay].push(item);
+              return group;
+            }, {});
+            this.isLoading = false;
+            this.showPagingPrevious = this.currentPage > 2;
+            this.showPagingPreviousInit = this.currentPage == 2;
+            this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
+          } else {
+            this.isLoading = false;
+            this.isInError = true;
+          }
+        } catch (e) {
+          console.error(e)
+        }
       }
+      console.log("subscribe finished")
     });
-  }
-
-  ToDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split("/")
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-  }
-
-  descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
-    var aD = this.ToDate(a.key);
-    var bD = this.ToDate(b.key);
-    if (aD > bD) {
-      return -1;
-    }
-    if (aD < bD) {
-      return 1
-    }
-    return 0;
   }
 
   setPage(page: number) {
