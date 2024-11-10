@@ -23,6 +23,7 @@
             "outputPath": "dist",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "baseHref": "/",
             "polyfills": [
               "zone.js"
             ],
@@ -67,7 +68,8 @@
                   "maximumError": "4kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "baseHref": "/"
             },
             "staging": {
               "budgets": [
@@ -83,6 +85,7 @@
                 }
               ],
               "outputHashing": "all",
+              "baseHref": "/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -95,6 +98,7 @@
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true,
+              "baseHref": "/"
             }
           },
           "defaultConfiguration": "production"
