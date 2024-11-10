@@ -41,7 +41,8 @@
               "src/service-worker.js",
               "src/remove-ngsw-worker.js",
               "src/_routes.json",
-              "src/ngsw-worker-dist.js"
+              "src/ngsw-worker-dist.js",
+              "src/404.html"
             ],
             "styles": [
               "@angular/material/prebuilt-themes/cyan-orange.css",
