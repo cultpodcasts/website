@@ -2,13 +2,7 @@
 	"version": 1,
 	"include": [
 		"/",
-		"/content/*",
-		"/podcast/*",
-		"/subject/*",
-		"/search/*",
-		"/outgoingEpisodes",
-		"/discovery",
-		"/unauthorised"
+		"/content/*"
 	],
 	"exclude": []
 }
