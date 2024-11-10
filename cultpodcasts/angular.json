@@ -49,7 +49,10 @@
             "scripts": [],
             "serviceWorker": "ngsw-config.json",
             "server": "src/main.server.ts",
-            "prerender": true,
+            "prerender": {
+              "routesFile": "prerender-routes",
+              "discoverRoutes": false
+            },
             "ssr": {
               "entry": "server.ts"
             }
