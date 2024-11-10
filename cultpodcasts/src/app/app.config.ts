@@ -66,9 +66,7 @@ export const appConfig: ApplicationConfig = {
         redirect_uri: environment.assetHost
       }
     }),
-    {
-      provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true
-    },
+    { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     },
