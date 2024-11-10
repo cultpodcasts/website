@@ -16,8 +16,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 
 	const chunkPattern= /(search|podcast|subject)(\/chunk-[A-Z0-9]{8}\.js)/;
 	if (chunkPattern.test(url.pathname)) {
-		const chunk= await env.ASSETS.fetch(chunkPattern.exec(url.pathname)![2]);
-		return new Response("Chunk detected: "+chunk);
+		return new Response("Chunk detected: "+JSON.stringify(chunkPattern.exec(url.pathname)));
 		//return Response.redirect(chunkPattern.exec(url.pathname)![2], 302)
 	}
 
