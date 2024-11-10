@@ -17,6 +17,15 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const chunkPattern = /(search|podcast|subject)(\/chunk-[A-Z0-9]{8}\.js)/;
 	if (chunkPattern.test(url.pathname)) {
 		const chunkPath = chunkPattern.exec(url.pathname)![2];
+
+		let chunkContent:Response;
+		try {
+		 chunkContent= await env.ASSETS.fetch(new Request(chunkPath));
+		} catch (error) {
+			return new Response(JSON.stringify(error));
+		}
+		return chunkContent;
+
 		return Response.redirect(url.protocol + "//" + url.hostname + chunkPath, 302);
 		//		const chunkContent= await env.ASSETS.fetch(new Request(chunkPath));
 		//		return chunkContent;
