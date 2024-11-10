@@ -16,7 +16,7 @@ import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './SiteService';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { APP_BASE_HREF, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -66,9 +66,6 @@ export const appConfig: ApplicationConfig = {
         redirect_uri: environment.assetHost
       }
     }),
-    {
-      provide: APP_BASE_HREF, useValue: "/"
-    },
     { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
