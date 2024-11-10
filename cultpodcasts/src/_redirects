@@ -1,4 +1,3 @@
-/podcast/chunk-*.js /chunk-:splat.js
-/subject/chunk-*.js /chunk-:splat.js
-/search/chunk-*.js /chunk-:splat.js
-/test /testpassed
+/podcast/chunk-* /chunk-:splat
+/subject/chunk-* /chunk-:splat
+/search/chunk-* /chunk-:splat
