@@ -12,17 +12,17 @@ import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes
 import { HomeComponent } from './home/home.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent, title: "Cult Podcasts" },
-  { path: 'search/:query', component: SearchComponent },
-  { path: 'podcast/:podcastName', component: PodcastComponent },
-  { path: 'podcast/:podcastName/:query', component: PodcastComponent },
-  { path: 'subject/:subjectName', component: SubjectComponent },
-  { path: 'subject/:subjectName/:query', component: SubjectComponent },
-  { path: 'content/:path', component: ContentComponent },
-  { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
-  { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Review Episodes" },
-  { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Outgoing Episodes" },
-  { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" }
+  { path: '/', component: HomeComponent, title: "Cult Podcasts", pathMatch: "full" },
+  { path: '/search/:query', component: SearchComponent, pathMatch: "full" },
+  { path: '/podcast/:podcastName', component: PodcastComponent, pathMatch: "full" },
+  { path: '/podcast/:podcastName/:query', component: PodcastComponent, pathMatch: "full" },
+  { path: '/subject/:subjectName', component: SubjectComponent, pathMatch: "full" },
+  { path: '/subject/:subjectName/:query', component: SubjectComponent, pathMatch: "full" },
+  { path: '/content/:path', component: ContentComponent, pathMatch: "full" },
+  { path: '/discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery", pathMatch: "full" },
+  { path: '/episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Review Episodes", pathMatch: "full" },
+  { path: '/outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Outgoing Episodes", pathMatch: "full" },
+  { path: '/unauthorised', component: UnauthorisedComponent, title: "Unauthorised", pathMatch: "full" }
 ];
 
 @NgModule({
