@@ -18,9 +18,9 @@ async function workerFetchHandler(request: Request, env: Env) {
 	if (chunkPattern.test(url.pathname)) {
 		const chunkPath = chunkPattern.exec(url.pathname)![2];
 
-		let chunkContent:Response;
+		let chunkContent: Response;
 		try {
-		 chunkContent= await env.ASSETS.fetch(new Request(new URL("/", chunkPath)));
+			chunkContent = await env.ASSETS.fetch(new Request(new URL(chunkPath, url)));
 		} catch (error) {
 			return new Response(JSON.stringify(error));
 		}
