@@ -13,8 +13,9 @@ export const hasRoleGuard: CanActivateFn = (route, state) => {
           const roles: string[] = e["https://api.cultpodcasts.com/roles"];
           const expectedRoles: string[] = route.data['roles'];
           const hasRole: boolean = expectedRoles.some((role) => roles.includes(role));
-          if (!hasRole)
+          if (!hasRole) {
             router.navigate(['/unauthorised']);
+          }
           return hasRole;
         }
         router.navigate(['/unauthorised']);
@@ -26,6 +27,7 @@ export const hasRoleGuard: CanActivateFn = (route, state) => {
       })
     );
   } else {
+    router.navigate(['/unauthorised']);
     return of(false);
   }
 }

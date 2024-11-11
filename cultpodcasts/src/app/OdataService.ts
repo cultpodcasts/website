@@ -3,7 +3,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
-import { ODataEntitiesResponse } from './models/odata-response';
+import { ODataEntitiesResponse, ODataEntitiesWithFacetsResponse } from './models/odata-response';
 import { ISearchRequest } from "./ISearchRequest";
 
 /**
@@ -34,4 +34,11 @@ export class ODataService {
             .post<any>(url, searchRequest, { observe: 'response' })
             .pipe(map(response => new ODataEntitiesResponse<T>(response)));
     }
+
+    getEntitiesWithFacets<T>(url: string, searchRequest: ISearchRequest): Observable<ODataEntitiesWithFacetsResponse<T>> {
+        return this.httpClient
+            .post<any>(url, searchRequest, { observe: 'response' })
+            .pipe(map(response => new ODataEntitiesWithFacetsResponse<T>(response)));
+    }
+
 }
