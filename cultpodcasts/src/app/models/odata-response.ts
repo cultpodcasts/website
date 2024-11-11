@@ -1,6 +1,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 import { HttpResponse } from "@angular/common/http";
+import { SearchResultsFacets } from "../search-results-facets";
 
 /**
  * Base class for all OData Responses.
@@ -116,5 +117,22 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
             return (data.value as T[]);
         }
         return [];
+    }
+}
+
+export class ODataEntitiesWithFacetsResponse<T> extends ODataEntitiesResponse<T> {
+
+    public readonly facets: SearchResultsFacets;
+
+    constructor(response: HttpResponse<any>) {
+        super(response);
+        this.facets = this.getFacets(response.body);
+    }
+
+    private getFacets(data: any): SearchResultsFacets {
+        if (data["@search.facets"]) {
+            return (data["@search.facets"] as SearchResultsFacets);
+        }
+        return {};
     }
 }

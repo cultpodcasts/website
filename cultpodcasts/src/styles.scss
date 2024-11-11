@@ -239,6 +239,16 @@ footer {
             --mdc-checkbox-disabled-unselected-icon-color: #666;
         }
 
+        .mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) {
+            background-color: white;
+        }
+        .mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark {
+            color: var(--mdc-chip-selected-label-text-color, var(--mat-app-on-secondary-container));
+        }
+        .mat-expansion-panel-header-description {
+            color: var(--mat-expansion-header-text-color, var(--mat-app-on-surface));
+        }
+
     }
 }
 
