@@ -8,6 +8,7 @@ import { DiscoveryApiComponent } from '../discovery-api/discovery-api.component'
   standalone: true,
   imports: [
     DiscoveryApiComponent
-]
+  ],
+  host: { ngSkipHydration: 'true' },
 })
-export class DiscoveryComponent {}
+export class DiscoveryComponent { }
