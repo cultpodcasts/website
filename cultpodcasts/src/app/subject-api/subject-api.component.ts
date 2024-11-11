@@ -265,7 +265,7 @@ export class SubjectApiComponent {
 
   podcastsChange($event: MatChipListboxChange) {
     var items: { count: number, value: string }[] = $event.value;
-    this.podcasts = items.map(x => x.value);
+    this.podcasts = items.map(x => x.value.replaceAll("'", "''"));
     this.searchState.page = 1;
     if (this.podcasts.length == 0) {
       this.podcastFilter = "";
