@@ -5,8 +5,7 @@
 		"/content/*",
 		"/podcast/*",
 		"/subject/*",
-		"/search/*",
-		"/episodes/*"
+		"/search/*"
 	],
 	"exclude": []
 }
