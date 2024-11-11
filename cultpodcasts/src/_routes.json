@@ -6,10 +6,7 @@
 		"/podcast/*",
 		"/subject/*",
 		"/search/*",
-		"/outgoingEpisodes",
-		"/discovery",
-		"/episodes/*",
-		"/unauthorised"
+		"/episodes/*"
 	],
 	"exclude": []
 }
