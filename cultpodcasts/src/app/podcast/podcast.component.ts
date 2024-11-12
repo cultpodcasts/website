@@ -8,7 +8,6 @@ import { isPlatformServer } from '@angular/common';
 import { IPageDetails } from '../page-details';
 import { ISearchResult } from '../ISearchResult';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
-import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-podcast',
@@ -49,6 +48,7 @@ export class PodcastComponent {
       const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
       this.isEpisode = episodeUuid != "";
       if (this.isEpisode) {
+        if (this.isServer) {
         this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
           .then(episodePageDetails => {
             if (episodePageDetails) {
@@ -61,6 +61,28 @@ export class PodcastComponent {
             this.seoService.AddMetaTags(pageDetails);
             this.isLoading = false;
           });
+        } else {
+          this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
+          .then(episode=>{
+            this.episode= episode;
+            const episodePageDetails = {
+              description: this.podcastName,
+              title: `${episode!.episodeTitle} | ${this.podcastName}`,
+              releaseDate: episode!.release.toString(),
+              duration: episode!.duration
+            };
+          })
+          .catch(e=>{
+            console.error(e);
+          })
+          .finally(()=>{
+            this.seoService.AddMetaTags(pageDetails);
+            this.isLoading= false;
+          });
+        }
+      } else {
+        this.seoService.AddMetaTags(pageDetails);
+        this.isLoading = false;
       }
     });
   }
