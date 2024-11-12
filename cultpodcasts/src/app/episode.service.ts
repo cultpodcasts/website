@@ -7,6 +7,7 @@ import { environment } from './../environments/environment';
 import { ISearchResult } from './ISearchResult';
 import { ODataService } from './OdataService';
 import { firstValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -15,6 +16,7 @@ export class EpisodeService {
   constructor(
     private guidService: GuidService,
     private oDataService: ODataService,
+    private http: HttpClient,
     @Optional() @Inject('kv') private kv: KVNamespace
   ) { }
 
@@ -39,6 +41,10 @@ export class EpisodeService {
       }
     }
     return undefined;
+  }
+
+  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
+    return await firstValueFrom(this.http.get<IPageDetails>(new URL(`/pagedetails/${podcastName.replaceAll("'", "''")}/${episodeId}`, environment.api).toString()));
   }
 
   public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<ISearchResult | undefined> {

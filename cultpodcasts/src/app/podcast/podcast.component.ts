@@ -1,6 +1,5 @@
 import { Component, Inject, inject, Optional, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
-import { waitFor } from '../core.module';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
@@ -37,7 +36,7 @@ export class PodcastComponent {
   }
 
   async ngOnInit(): Promise<any> {
-    waitFor(this.populateTags());
+    await this.populateTags();
   }
 
   private route = inject(ActivatedRoute);
@@ -51,24 +50,8 @@ export class PodcastComponent {
       if (this.isEpisode) {
         let episodePageDetails: IPageDetails | undefined;
         try {
-          if (this.isServer) {
-            episodePageDetails = await this.episodeService.getEpisodeDetailsFromKv(episodeUuid, this.podcastName);
-          }
-          if (!episodePageDetails) {
-            var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
-            if (episode) {
-              this.episode = episode;
-              episodePageDetails = {
-                description: this.podcastName,
-                title: `${episode.episodeTitle} | ${this.podcastName}`,
-                releaseDate: episode.release.toString(),
-                duration: episode.duration
-              };
-              if (this.isServer) {
-                await this.episodeService.writeKv(episode);
-              }
-            }
-          }
+//          episodePageDetails = await this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName);
+          console.log(episodePageDetails);
           if (episodePageDetails) {
             pageDetails = episodePageDetails;
           }
