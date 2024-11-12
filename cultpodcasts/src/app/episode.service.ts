@@ -43,8 +43,11 @@ export class EpisodeService {
     return undefined;
   }
 
-  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
-    return await firstValueFrom(this.http.get<IPageDetails>(new URL(`/pagedetails/${podcastName.replaceAll("'", "''")}/${episodeId}`, environment.api).toString()));
+  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr:boolean): Promise<IPageDetails | undefined> {
+    const ssrSuffix= ssr? "?ssr=true":"";
+    let host:string= environment.api;
+    const url= new URL(`/pagedetails/${podcastName.replaceAll("'", "''")}/${episodeId}${ssrSuffix}`, host).toString();
+    return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
   public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<ISearchResult | undefined> {

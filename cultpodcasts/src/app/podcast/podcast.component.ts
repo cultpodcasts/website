@@ -8,6 +8,7 @@ import { isPlatformServer } from '@angular/common';
 import { IPageDetails } from '../page-details';
 import { ISearchResult } from '../ISearchResult';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-podcast',
@@ -35,32 +36,32 @@ export class PodcastComponent {
     this.isServer = isPlatformServer(platformId);
   }
 
-  async ngOnInit(): Promise<any> {
-    await this.populateTags();
+  ngOnInit() {
+    this.populateTags();
   }
 
   private route = inject(ActivatedRoute);
 
-  async populateTags(): Promise<any> {
+  populateTags() {
     this.route.params.subscribe(async params => {
       this.podcastName = params["podcastName"];
       let pageDetails: IPageDetails = { title: this.podcastName };
       const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
       this.isEpisode = episodeUuid != "";
       if (this.isEpisode) {
-        let episodePageDetails: IPageDetails | undefined;
-        try {
-//          episodePageDetails = await this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName);
-          console.log(episodePageDetails);
-          if (episodePageDetails) {
-            pageDetails = episodePageDetails;
-          }
-        } catch (error) {
-          console.error(error);
-        }
+        this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
+          .then(episodePageDetails => {
+            if (episodePageDetails) {
+              pageDetails = episodePageDetails;
+            }
+          })
+          .catch(e => {
+            console.error(e)
+          }).finally(() => {
+            this.seoService.AddMetaTags(pageDetails);
+            this.isLoading = false;
+          });
       }
-      this.seoService.AddMetaTags(pageDetails);
-      this.isLoading = false;
     });
   }
 }
