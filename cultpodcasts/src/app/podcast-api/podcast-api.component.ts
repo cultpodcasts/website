@@ -382,14 +382,15 @@ export class PodcastApiComponent {
   }
 
   subjectsChange($event: MatChipListboxChange) {
+    const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
     this.subjects = items.map(x => x.value.replaceAll("'", "''"));
     this.searchState.page = 1;
     if (this.subjects.length == 0) {
       this.subjectsFilter = "";
     } else {
-      var subjectsameList = this.subjects.join("|");
-      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '|'))`;
+      var subjectsameList = this.subjects.join(delimiter);
+      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
     this.execSearch(false);
   }
