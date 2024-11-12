@@ -19,6 +19,10 @@ fi
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 
+echo "Build"
 npx npm run build --configuration "${env}"
+
+echo "Process"
 npx npm run process
-echo build complete
+
+echo "Build complete"
