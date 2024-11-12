@@ -65,7 +65,7 @@ export class PodcastComponent {
           this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
           .then(episode=>{
             this.episode= episode;
-            const episodePageDetails = {
+            pageDetails = {
               description: this.podcastName,
               title: `${episode!.episodeTitle} | ${this.podcastName}`,
               releaseDate: episode!.release.toString(),
