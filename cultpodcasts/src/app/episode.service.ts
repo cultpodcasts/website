@@ -21,10 +21,10 @@ export class EpisodeService {
 
 
 
-  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr:boolean): Promise<IPageDetails | undefined> {
-    const ssrSuffix= ssr? "?ssr=true":"";
-    let host:string= environment.api;
-    const url= new URL(`/pagedetails/${podcastName.replaceAll("'", "''")}/${episodeId}${ssrSuffix}`, host).toString();
+  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr: boolean): Promise<IPageDetails | undefined> {
+    const ssrSuffix = ssr ? "?ssr=true" : "";
+    let host: string = environment.api;
+    const url = new URL(`/pagedetails/${encodeURIComponent(podcastName.replaceAll("'", "''"))}/${episodeId}${ssrSuffix}`, host).toString();
     return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 

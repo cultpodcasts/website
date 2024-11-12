@@ -49,36 +49,36 @@ export class PodcastComponent {
       this.isEpisode = episodeUuid != "";
       if (this.isEpisode) {
         if (this.isServer) {
-        this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
-          .then(episodePageDetails => {
-            if (episodePageDetails) {
-              pageDetails = episodePageDetails;
-            }
-          })
-          .catch(e => {
-            console.error(e)
-          }).finally(() => {
-            this.seoService.AddMetaTags(pageDetails);
-            this.isLoading = false;
-          });
+          this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
+            .then(episodePageDetails => {
+              if (episodePageDetails) {
+                pageDetails = episodePageDetails;
+              }
+            })
+            .catch(e => {
+              console.error(e)
+            }).finally(() => {
+              this.seoService.AddMetaTags(pageDetails);
+              this.isLoading = false;
+            });
         } else {
           this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
-          .then(episode=>{
-            this.episode= episode;
-            pageDetails = {
-              description: this.podcastName,
-              title: `${episode!.episodeTitle} | ${this.podcastName}`,
-              releaseDate: episode!.release.toString(),
-              duration: episode!.duration
-            };
-          })
-          .catch(e=>{
-            console.error(e);
-          })
-          .finally(()=>{
-            this.seoService.AddMetaTags(pageDetails);
-            this.isLoading= false;
-          });
+            .then(episode => {
+              this.episode = episode;
+              pageDetails = {
+                description: this.podcastName,
+                title: `${episode!.episodeTitle} | ${this.podcastName}`,
+                releaseDate: episode!.release.toString(),
+                duration: episode!.duration
+              };
+            })
+            .catch(e => {
+              console.error(e);
+            })
+            .finally(() => {
+              this.seoService.AddMetaTags(pageDetails);
+              this.isLoading = false;
+            });
         }
       } else {
         this.seoService.AddMetaTags(pageDetails);
