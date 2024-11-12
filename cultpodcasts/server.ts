@@ -4,8 +4,6 @@ import bootstrap from "./src/main.server";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
-	kv: KVNamespace;
-	content: R2Bucket;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -24,9 +22,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 		document,
 		url: url.pathname,
 		platformProviders: [
-			{ provide: 'url', useValue: url },
-			{ provide: 'kv', useValue: env.kv },
-			{ provide: 'content', useValue: env.content }
+			{ provide: 'url', useValue: url }
 		]
 	});
 

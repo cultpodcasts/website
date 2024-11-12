@@ -1,6 +1,5 @@
 import { Component, Inject, inject, Optional, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
-import { waitFor } from '../core.module';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
@@ -36,48 +35,55 @@ export class PodcastComponent {
     this.isServer = isPlatformServer(platformId);
   }
 
-  async ngOnInit(): Promise<any> {
-    waitFor(this.populateTags());
+  ngOnInit() {
+    this.populateTags();
   }
 
   private route = inject(ActivatedRoute);
 
-  async populateTags(): Promise<any> {
+  populateTags() {
     this.route.params.subscribe(async params => {
       this.podcastName = params["podcastName"];
       let pageDetails: IPageDetails = { title: this.podcastName };
       const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
       this.isEpisode = episodeUuid != "";
       if (this.isEpisode) {
-        let episodePageDetails: IPageDetails | undefined;
-        try {
-          if (this.isServer) {
-            episodePageDetails = await this.episodeService.getEpisodeDetailsFromKv(episodeUuid, this.podcastName);
-          }
-          if (!episodePageDetails) {
-            var episode = await this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName);
-            if (episode) {
-              this.episode = episode;
-              episodePageDetails = {
-                description: this.podcastName,
-                title: `${episode.episodeTitle} | ${this.podcastName}`,
-                releaseDate: episode.release.toString(),
-                duration: episode.duration
-              };
-              if (this.isServer) {
-                await this.episodeService.writeKv(episode);
-              }
+        if (this.isServer) {
+        this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
+          .then(episodePageDetails => {
+            if (episodePageDetails) {
+              pageDetails = episodePageDetails;
             }
-          }
-          if (episodePageDetails) {
-            pageDetails = episodePageDetails;
-          }
-        } catch (error) {
-          console.error(error);
+          })
+          .catch(e => {
+            console.error(e)
+          }).finally(() => {
+            this.seoService.AddMetaTags(pageDetails);
+            this.isLoading = false;
+          });
+        } else {
+          this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
+          .then(episode=>{
+            this.episode= episode;
+            const episodePageDetails = {
+              description: this.podcastName,
+              title: `${episode!.episodeTitle} | ${this.podcastName}`,
+              releaseDate: episode!.release.toString(),
+              duration: episode!.duration
+            };
+          })
+          .catch(e=>{
+            console.error(e);
+          })
+          .finally(()=>{
+            this.seoService.AddMetaTags(pageDetails);
+            this.isLoading= false;
+          });
         }
+      } else {
+        this.seoService.AddMetaTags(pageDetails);
+        this.isLoading = false;
       }
-      this.seoService.AddMetaTags(pageDetails);
-      this.isLoading = false;
     });
   }
 }

@@ -12,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
-import { waitFor } from '../core.module';
 
 const pageSize: number = 20;
 const pageParam: string = "page";
@@ -68,11 +67,11 @@ export class HomepageApiComponent {
   }
   private route = inject(ActivatedRoute);
 
-  async ngOnInit(): Promise<any> {
-    waitFor(this.populatePage());
+  ngOnInit() {
+    this.populatePage();
   }
 
-  async populatePage(): Promise<any> {
+  populatePage() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
@@ -96,9 +95,6 @@ export class HomepageApiComponent {
       }
       let homepageContent: IHomepage | undefined;
       try {
-        if (this.isServer) {
-          homepageContent = await this.homepageService.getHomepageFromR2();
-        }
         if (!homepageContent) {
           homepageContent = await this.homepageService.getHomepageFromApi()
         }

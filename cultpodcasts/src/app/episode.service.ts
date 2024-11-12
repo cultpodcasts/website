@@ -7,6 +7,7 @@ import { environment } from './../environments/environment';
 import { ISearchResult } from './ISearchResult';
 import { ODataService } from './OdataService';
 import { firstValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -15,30 +16,16 @@ export class EpisodeService {
   constructor(
     private guidService: GuidService,
     private oDataService: ODataService,
-    @Optional() @Inject('kv') private kv: KVNamespace
+    private http: HttpClient
   ) { }
 
-  public async getEpisodeDetailsFromKv(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
-    if (this.kv) {
-      const key = this.guidService.toBase64(episodeId);
-      const episodeKvWithMetaData = await this.kv.getWithMetadata<ShortnerRecord>(key);
-      if (episodeKvWithMetaData != null && episodeKvWithMetaData.metadata != null) {
-        var episodeTitle = episodeKvWithMetaData.metadata.episodeTitle;
-        if (episodeTitle) {
-          console.log("Added meta-tags from kv");
-          return {
-            description: podcastName,
-            title: `${episodeTitle} | ${podcastName}`,
-            releaseDate: episodeKvWithMetaData.metadata.releaseDate,
-            duration: episodeKvWithMetaData.metadata.duration
-          };
-        } else {
-          console.warn("No episode name in kv");
-          return { title: podcastName };
-        }
-      }
-    }
-    return undefined;
+
+
+  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr:boolean): Promise<IPageDetails | undefined> {
+    const ssrSuffix= ssr? "?ssr=true":"";
+    let host:string= environment.api;
+    const url= new URL(`/pagedetails/${podcastName.replaceAll("'", "''")}/${episodeId}${ssrSuffix}`, host).toString();
+    return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
   public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<ISearchResult | undefined> {
@@ -62,21 +49,5 @@ export class EpisodeService {
       }
     }
     return undefined;
-  }
-
-  public async writeKv(episode: ISearchResult) {
-    if (this.kv) {
-      const key = this.guidService.toBase64(episode.id);
-      const shortnerRecord: ShortnerRecord = {
-        episodeTitle: episode.episodeTitle,
-        releaseDate: episode.release.toLocaleDateString("en-GB"),
-        duration: episode.duration
-      };
-      const encodedPodcastName =
-        encodeURIComponent(episode.podcastName)
-          .replaceAll("(", "%28")
-          .replaceAll(")", "%29");
-      this.kv.put(key, encodedPodcastName + "/" + episode.id, { metadata: shortnerRecord });
-    }
   }
 }
