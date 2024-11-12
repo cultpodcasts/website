@@ -1,6 +1,6 @@
 export interface SearchResultsFacets {
     podcastName?: SearchResultFacet[];
-    subject?: SearchResultFacet[];
+    subjects?: SearchResultFacet[];
 }
 
 export interface SearchResultFacet {

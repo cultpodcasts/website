@@ -264,14 +264,15 @@ export class SubjectApiComponent {
   }
 
   podcastsChange($event: MatChipListboxChange) {
+    const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
     this.podcasts = items.map(x => x.value.replaceAll("'", "''"));
     this.searchState.page = 1;
     if (this.podcasts.length == 0) {
       this.podcastFilter = "";
     } else {
-      var podcastsNameList = this.podcasts.join("|");
-      this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '|')`;
+      var podcastsNameList = this.podcasts.join(delimiter);
+      this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     this.execSearch(false);
   }

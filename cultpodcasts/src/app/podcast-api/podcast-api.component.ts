@@ -25,6 +25,9 @@ import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { IShare } from '../IShare';
 import { RenamePodcastDialogComponent } from '../rename-podcast-dialog/rename-podcast-dialog.component';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
+import { SearchResultsFacets } from '../search-results-facets';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -46,7 +49,10 @@ const sortParamDateDesc: string = "date-desc";
     NgFor,
     MatCardModule,
     RouterLink,
-    DatePipe
+    DatePipe,
+    MatExpansionModule,
+    MatChipListbox,
+    MatChipOption
   ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
@@ -67,11 +73,14 @@ export class PodcastApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   results: ISearchResult[] = [];
+  facets: SearchResultsFacets = {};
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
   authRoles: string[] = [];
+  subjects: string[] = [];
+  subjectsFilter: string = "";
 
   constructor(
     private router: Router,
@@ -164,44 +173,53 @@ export class PodcastApiComponent {
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
 
-      let currentTime = Date.now();
-      var sort: string = "";
-      if (this.searchState.sort == "date-asc") {
-        sort = "release asc";
-      } else if (this.searchState.sort == "date-desc") {
-        sort = "release desc";
-      }
-
-      this.oDataService.getEntities<ISearchResult>(
-        new URL("/search", environment.api).toString(),
-        {
-          search: this.searchState.query,
-          filter: this.searchState.filter,
-          searchMode: 'any',
-          queryType: 'simple',
-          count: true,
-          skip: (this.searchState.page - 1) * pageSize,
-          top: pageSize,
-          facets: ["podcastName,count:10,sort:count", "subjects,count:10,sort:count"],
-          orderby: sort
-        }).subscribe(
-          {
-            next: data => {
-              this.results = data.entities;
-              var requestTime = (Date.now() - currentTime) / 1000;
-              const count = data.metadata.get("count");
-              this.count = count;
-              this.isLoading = false;
-              this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-              this.showPagingNext = (this.searchState.page * pageSize) < count;
-            },
-            error: (e) => {
-              console.error(e);
-              this.resultsHeading = "Something went wrong. Please try again.";
-              this.isLoading = false;
-            }
-          });
+      this.execSearch(true);
     });
+  }
+
+  execSearch(initial: boolean) {
+    let currentTime = Date.now();
+    var sort: string = "";
+    if (this.searchState.sort == "date-asc") {
+      sort = "release asc";
+    } else if (this.searchState.sort == "date-desc") {
+      sort = "release desc";
+    }
+
+    this.oDataService.getEntitiesWithFacets<ISearchResult>(
+      new URL("/search", environment.api).toString(),
+      {
+        search: this.searchState.query,
+        filter:
+          this.searchState.filter +
+          this.subjectsFilter,
+        searchMode: 'any',
+        queryType: 'simple',
+        count: true,
+        skip: (this.searchState.page - 1) * pageSize,
+        top: pageSize,
+        facets: ["subjects,count:1000,sort:count"],
+        orderby: sort
+      }).subscribe(
+        {
+          next: data => {
+            this.results = data.entities;
+            if (initial) {
+              this.facets = data.facets;
+            }
+            var requestTime = (Date.now() - currentTime) / 1000;
+            const count = data.metadata.get("count");
+            this.count = count;
+            this.isLoading = false;
+            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+            this.showPagingNext = (this.searchState.page * pageSize) < count;
+          },
+          error: (e) => {
+            console.error(e);
+            this.resultsHeading = "Something went wrong. Please try again.";
+            this.isLoading = false;
+          }
+        });
   }
 
   setSort(sort: string) {
@@ -361,5 +379,19 @@ export class PodcastApiComponent {
         });
       }
     });
+  }
+
+  subjectsChange($event: MatChipListboxChange) {
+    const delimiter = '£';
+    var items: { count: number, value: string }[] = $event.value;
+    this.subjects = items.map(x => x.value.replaceAll("'", "''"));
+    this.searchState.page = 1;
+    if (this.subjects.length == 0) {
+      this.subjectsFilter = "";
+    } else {
+      var subjectsameList = this.subjects.join(delimiter);
+      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
+    }
+    this.execSearch(false);
   }
 }
