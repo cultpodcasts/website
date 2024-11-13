@@ -5,6 +5,7 @@ export interface EpisodePost {
     description?: string;
     posted?: boolean;
     tweeted?: boolean;
+    bluesky?: boolean;
     ignored?: boolean;
     removed?: boolean;
     explicit?: boolean;

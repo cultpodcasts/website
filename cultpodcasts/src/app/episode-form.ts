@@ -5,6 +5,7 @@ export interface EpisodeForm {
     description: FormControl<string>,
     posted: FormControl<boolean>,
     tweeted: FormControl<boolean>,
+    blueskyPosted: FormControl<boolean>,
     ignored: FormControl<boolean>,
     removed: FormControl<boolean>,
     explicit: FormControl<boolean>,
