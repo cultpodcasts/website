@@ -80,5 +80,8 @@ export class AppComponent {
     this.iconRegistry.addSvgIcon(`youtube`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/youtube.svg"));
     this.iconRegistry.addSvgIcon(`apple-podcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/apple-podcasts.svg"));
     this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/profile.svg"));
+    this.iconRegistry.addSvgIcon(`bluesky`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bluesky.svg"));
+    this.iconRegistry.addSvgIcon(`visible`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/visible.svg"));
+    this.iconRegistry.addSvgIcon(`removed`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/removed.svg"));
   }
 }

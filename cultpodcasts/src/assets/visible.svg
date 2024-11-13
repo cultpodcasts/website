@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="768px" height="768px">
+  <ellipse style="stroke-width: 0px; fill: rgb(255, 255, 255);" cx="12" cy="12" rx="12" ry="12" transform="matrix(0.9999999999999999, 0, 0, 1, -1.7763568394002505e-15, 4.440892098500626e-16)"/>
+  <path d="M20.595 11.38C15.855 6.60001 8.145 6.60001 3.405 11.38L2.645 12.14C2.445 12.34 2.445 12.66 2.645 12.86L3.405 13.62C8.145 18.4 15.855 18.4 20.595 13.62L21.355 12.86C21.555 12.66 21.555 12.34 21.355 12.14L20.595 11.38Z" stroke="#0F0F0F" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" style="fill: rgb(255, 255, 255);" transform="matrix(0.9999999999999999, 0, 0, 1, -1.7763568394002505e-15, 4.440892098500626e-16)"/>
+  <path d="M12.0049 15.06C13.4188 15.06 14.5649 13.9139 14.5649 12.5C14.5649 11.0862 13.4188 9.94 12.0049 9.94C10.5911 9.94 9.44495 11.0862 9.44495 12.5C9.44495 13.9139 10.5911 15.06 12.0049 15.06Z" stroke="#0F0F0F" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" style="fill: rgb(255, 255, 255);" transform="matrix(0.9999999999999999, 0, 0, 1, -1.7763568394002505e-15, 4.440892098500626e-16)"/>
+</svg>

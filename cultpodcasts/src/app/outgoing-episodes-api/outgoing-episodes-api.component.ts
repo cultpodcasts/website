@@ -20,6 +20,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
+import { EpisodePublishResponse } from '../episode-publish-response';
+import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
+import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -41,7 +45,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     DatePipe,
     MatCheckboxModule,
     MatMenuItem,
-    FormsModule
+    FormsModule,
+    EpisodeStatusComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
@@ -58,6 +63,7 @@ export class OutgoingEpisodesApiComponent {
   days: number | undefined;
   posted: boolean | undefined;
   tweeted: boolean | undefined;
+  blueskyPosted: boolean | undefined;
   token: string = "";
   authRoles: string[] = [];
 
@@ -108,6 +114,7 @@ export class OutgoingEpisodesApiComponent {
   reset() {
     this.posted = undefined;
     this.tweeted = undefined;
+    this.blueskyPosted = undefined;
     this.days = undefined;
     this.ngOnInit()
   }
@@ -140,27 +147,22 @@ export class OutgoingEpisodesApiComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open(PostEpisodeDialogComponent, {
-      data: { episodeId: id },
-      disableClose: true,
-      autoFocus: true
-    });
+    const dialogRef = this.dialog
+      .open<PostEpisodeDialogComponent, any, {
+        response?: EpisodePublishResponse,
+        expectation?: PostEpisodeModel,
+        noChange?: boolean
+      }>(PostEpisodeDialogComponent, {
+        data: { episodeId: id },
+        disableClose: true,
+        autoFocus: true
+      });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.noChange) {
+      if (result!.noChange) {
         let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
-      } else if (result.response) {
-        let message: string = "Episode tweeted and posted";
-        if (!result.response.tweeted && result.response.posted) {
-          message = "Episode posted";
-          if (result.expectation.tweet) {
-            message += ". Failed to tweet";
-          }
-        } else if (result.response.tweeted && !result.response.posted) {
-          message = "Episode tweeted";
-          if (result.expectation.post) {
-            message += ". Failed to post";
-          }
-        }
+      } else if (result?.response && result.expectation) {
+        var messageBuilde = new EpisodePublishResponseAdaptor();
+        const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       }
     });
@@ -192,6 +194,8 @@ export class OutgoingEpisodesApiComponent {
       url.searchParams.append("tweeted", this.tweeted.toString());
     if (this.posted)
       url.searchParams.append("posted", this.posted.toString());
+    if (this.blueskyPosted)
+      url.searchParams.append("blueskyPosted", this.blueskyPosted.toString())
     const episodeEndpoint = url.toString();
     this.http.get<Episode[]>(episodeEndpoint, { headers: headers, observe: "response" })
       .subscribe(

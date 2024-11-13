@@ -7,6 +7,7 @@ export interface Episode {
     description: string,
     posted: boolean,
     tweeted: boolean,
+    bluesky?: boolean | null,
     ignored: boolean,
     removed: boolean,
     explicit: boolean,
