@@ -109,7 +109,7 @@ export class EditSubjectDialogComponent {
                 name: new FormControl(""!, { nonNullable: true }),
                 aliases: new FormControl([], { nonNullable: false }),
                 associatedSubjects: new FormControl([], { nonNullable: false }),
-                subjectType: new FormControl(SubjectType.Unset.toString(), { nonNullable: true }),
+                subjectType: new FormControl(SubjectType[SubjectType.Unset], { nonNullable: true }),
                 enrichmentHashTags: new FormControl([], { nonNullable: false }),
                 hashTag: new FormControl("", { nonNullable: false }),
                 redditFlairTemplateId: new FormControl("", { nonNullable: false }),
