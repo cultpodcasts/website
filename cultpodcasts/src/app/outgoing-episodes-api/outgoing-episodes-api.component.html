@@ -17,12 +17,13 @@
         </button>
         <mat-menu #options="matMenu">
             <div mat-menu-item>
-                <mat-checkbox [disabled]="tweeted||false" [(ngModel)]="posted"
-                    (change)="getEpisodes()">Posted</mat-checkbox>
+                <mat-checkbox [(ngModel)]="posted" (change)="getEpisodes()">Posted</mat-checkbox>
             </div>
             <div mat-menu-item>
-                <mat-checkbox [disabled]="posted||false" [(ngModel)]="tweeted"
-                    (change)="getEpisodes()">Tweeted</mat-checkbox>
+                <mat-checkbox [(ngModel)]="tweeted" (change)="getEpisodes()">Tweeted</mat-checkbox>
+            </div>
+            <div mat-menu-item>
+                <mat-checkbox [(ngModel)]="blueskyPosted" (change)="getEpisodes()">Bluesky</mat-checkbox>
             </div>
             <button mat-menu-item (click)="openSetDays()">
                 <mat-icon>calendar_month</mat-icon>
@@ -79,23 +80,7 @@
         </mat-card-header>
         <mat-card-content class="resultdescription">
             <p>{{result.description}}</p>
-            @if (!result.posted || !result.tweeted || result.ignored || result.removed) {
-            <p>
-                @if (!result.posted) {
-                Unposted
-                }
-                @if (!result.tweeted) {
-                Untweeted
-                }
-                @if (result.ignored) {
-                <strong>Ignored</strong>
-                }
-                @if (result.removed) {
-                <strong>Removed</strong>
-                }
-
-            </p>
-            }
+            <app-episode-status [episode]="result"></app-episode-status>
         </mat-card-content>
         <mat-card-actions>
             <a *ngIf="result.urls.youtube" href="{{result.urls.youtube}}" mat-icon-button>

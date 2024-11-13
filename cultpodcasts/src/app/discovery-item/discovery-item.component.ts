@@ -13,7 +13,17 @@ import { MatCardModule } from '@angular/material/card';
   templateUrl: './discovery-item.component.html',
   styleUrls: ['./discovery-item.component.sass'],
   standalone: true,
-  imports: [MatCardModule, NgClass, HideDirective, NgIf, MatButtonModule, MatIconModule, NgFor, RouterLink, DatePipe]
+  imports: [
+    MatCardModule,
+    NgClass,
+    HideDirective,
+    NgIf,
+    MatButtonModule,
+    MatIconModule,
+    NgFor,
+    RouterLink,
+    DatePipe
+  ]
 })
 
 export class DiscoveryItemComponent {

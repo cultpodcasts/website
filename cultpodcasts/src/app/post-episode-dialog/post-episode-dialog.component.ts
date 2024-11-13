@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { PostEpisodeModel } from '../post-episode-model';
 import { Episode } from '../episode';
+import { EpisodePublishResponse } from '../episode-publish-response';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -32,6 +33,7 @@ export class PostEpisodeDialogComponent {
   episodeId: string | undefined;
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
+  hasBlueskyPosted: boolean = false;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -41,6 +43,7 @@ export class PostEpisodeDialogComponent {
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
       post: new FormControl(false, { nonNullable: true }),
+      blueskyPost: new FormControl(false, { nonNullable: true })
     });
   }
 
@@ -61,13 +64,17 @@ export class PostEpisodeDialogComponent {
             this.isSending = false;
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
-            if (resp.posted) {
+            this.hasBlueskyPosted = resp.bluesky == true;
+            if (this.hasPosted) {
               this.form?.controls.post.disable();
             }
-            if (resp.tweeted) {
+            if (this.hasTweeted) {
               this.form?.controls.tweet.disable();
             }
-            if (resp.tweeted && resp.posted) {
+            if (this.hasBlueskyPosted) {
+              this.form?.controls.blueskyPost.disable();
+            }
+            if (this.hasTweeted && this.hasPosted && this.hasBlueskyPosted) {
               this.dialogRef.close({ noChange: true });
             }
           },
@@ -97,6 +104,10 @@ export class PostEpisodeDialogComponent {
       change = true;
       model.post = true;
     }
+    if (!this.hasBlueskyPosted && this.form?.controls.blueskyPost.value) {
+      change = true;
+      model.blueskyPost = true;
+    }
     if (change) {
       this.isSending = true;
       var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
@@ -109,7 +120,7 @@ export class PostEpisodeDialogComponent {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
         const episodeEndpoint = new URL(`/episode/publish/${this.episodeId}`, environment.api).toString();
-        this.http.post<any>(episodeEndpoint, model, { headers: headers })
+        this.http.post<EpisodePublishResponse>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {
               next: resp => {

@@ -16,6 +16,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { SiteService } from '../SiteService';
+import { EpisodePublishResponse } from '../episode-publish-response';
+import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
+import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -33,7 +37,8 @@ const sortParamDateDesc: string = "date-desc";
     NgFor,
     MatCardModule,
     RouterLink,
-    DatePipe
+    DatePipe,
+    EpisodeStatusComponent
   ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass'
@@ -129,27 +134,21 @@ export class EpisodesApiComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open(PostEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, {
+      response?: EpisodePublishResponse,
+      expectation?: PostEpisodeModel,
+      noChange?: boolean
+    }>(PostEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.noChange) {
+      if (result!.noChange) {
         let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
-      } else if (result.response) {
-        let message: string = "Episode tweeted and posted";
-        if (!result.response.tweeted && result.response.posted) {
-          message = "Episode posted";
-          if (result.expectation.tweet) {
-            message += ". Failed to tweet";
-          }
-        } else if (result.response.tweeted && !result.response.posted) {
-          message = "Episode tweeted";
-          if (result.expectation.post) {
-            message += ". Failed to post";
-          }
-        }
+      } else if (result?.response && result.expectation) {
+        var messageBuilde = new EpisodePublishResponseAdaptor();
+        const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       }
     });
