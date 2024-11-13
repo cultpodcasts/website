@@ -20,6 +20,7 @@ import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-
 import { SearchResultsFacets } from '../search-results-facets';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
+import { FacetState } from '../facet-state';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -99,6 +100,17 @@ export class SubjectApiComponent {
         queryParams,
       })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const navigation = this.router.getCurrentNavigation();
+      let initial = true;
+      if (navigation) {
+        const facetState = navigation.extras.state as FacetState;
+        if (facetState) {
+          initial = false;
+          this.facets = facetState.searchResultsFacets;
+          this.podcasts = facetState.podcasts!;
+        }
+      }
+
       const { params, queryParams } = res;
       this.subjectName = params["subjectName"];
 
@@ -129,7 +141,7 @@ export class SubjectApiComponent {
       this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
 
-      this.execSearch(true);
+      this.execSearch(initial);
     });
   }
 
@@ -171,6 +183,7 @@ export class SubjectApiComponent {
             this.showPagingNext = (this.searchState.page * pageSize) < count;
           },
           error: (e) => {
+            console.error(e);
             this.resultsHeading = "Something went wrong. Please try again.";
             this.isLoading = false;
           }
@@ -215,7 +228,11 @@ export class SubjectApiComponent {
         params[sortParam] = this.searchState.sort;
       }
     }
-    this.router.navigate([url], { queryParams: params });
+    const facetState: FacetState = {
+      searchResultsFacets: this.facets,
+      podcasts: this.podcasts
+    };
+    this.router.navigate([url], { queryParams: params, state: facetState });
   }
 
   search() {
@@ -267,13 +284,17 @@ export class SubjectApiComponent {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
     this.podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    this.searchState.page = 1;
     if (this.podcasts.length == 0) {
       this.podcastFilter = "";
     } else {
       var podcastsNameList = this.podcasts.join(delimiter);
       this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
-    this.execSearch(false);
+    if (this.searchState.page > 1) {
+      this.setPage(1 - this.searchState.page);
+    }
+    else {
+      this.execSearch(false);
+    }
   }
 }

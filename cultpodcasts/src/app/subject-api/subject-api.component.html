@@ -47,7 +47,9 @@
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="this.podcastsChange($event)">
       @for (podcastName of this.facets.podcastName; track podcastName.value) {
-      <mat-chip-option [value]="podcastName">{{podcastName.value}} ({{podcastName.count}})</mat-chip-option>
+      <mat-chip-option [value]="podcastName"
+        [selected]="this.podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
+        ({{podcastName.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
   </mat-expansion-panel>

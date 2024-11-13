@@ -147,7 +147,6 @@ export class PodcastApiComponent {
       if (navigation) {
         const facetState = navigation.extras.state as FacetState;
         if (facetState) {
-          console.log(facetState);
           initial = false;
           this.facets = facetState.searchResultsFacets;
           this.subjects = facetState.subjects!;
@@ -166,11 +165,9 @@ export class PodcastApiComponent {
 
       if (queryParams[pageParam]) {
         this.searchState.page = parseInt(queryParams[pageParam]);
-        console.log(`set page to ${this.searchState.page}`)
         this.prevPage = this.searchState.page - 1;
         this.nextPage = this.searchState.page + 1;
       } else {
-        this.searchState.page = 1;
         this.nextPage = 2;
         this.searchState.page = 1;
       }
@@ -410,13 +407,10 @@ export class PodcastApiComponent {
       var subjectsameList = this.subjects.join(delimiter);
       this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
-    console.log(this.searchState.page);
     if (this.searchState.page > 1) {
-      console.log("reset to page 1")
       this.setPage(1 - this.searchState.page);
     }
     else {
-      console.log("re exec search")
       this.execSearch(false);
     }
   }
