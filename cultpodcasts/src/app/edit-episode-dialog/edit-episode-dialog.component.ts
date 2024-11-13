@@ -8,7 +8,7 @@ import { Episode } from '../episode';
 import { Subject } from '../subject';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
@@ -73,6 +73,7 @@ export class EditEpisodeDialogComponent {
                 description: new FormControl(resp.description, { nonNullable: true }),
                 posted: new FormControl(resp.posted, { nonNullable: true }),
                 tweeted: new FormControl(resp.tweeted, { nonNullable: true }),
+                blueskyPosted: new FormControl(resp.bluesky ?? false, { nonNullable: true }),
                 ignored: new FormControl(resp.ignored, { nonNullable: true }),
                 explicit: new FormControl(resp.explicit, { nonNullable: true }),
                 removed: new FormControl(resp.removed, { nonNullable: true }),
@@ -121,6 +122,7 @@ export class EditEpisodeDialogComponent {
         description: this.form!.controls.description.value,
         posted: this.form!.controls.posted.value,
         tweeted: this.form!.controls.tweeted.value,
+        bluesky: this.form!.controls.blueskyPosted.value,
         ignored: this.form!.controls.ignored.value,
         removed: this.form!.controls.removed.value,
         explicit: this.form!.controls.explicit.value,
@@ -162,12 +164,13 @@ export class EditEpisodeDialogComponent {
     if (prev.explicit != now.explicit) changes.explicit = now.explicit;
     if (prev.ignored != now.ignored) changes.ignored = now.ignored;
     if (prev.posted != now.posted) changes.posted = now.posted;
+    if (prev.tweeted != now.tweeted) changes.tweeted = now.tweeted;
+    if (prev.bluesky ?? false != now.bluesky ?? false) changes.bluesky = now.bluesky ?? false;
     if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
     if (prev.subjects != now.subjects) changes.subjects = now.subjects;
     if (prev.title != now.title) changes.title = now.title;
-    if (prev.tweeted != now.tweeted) changes.tweeted = now.tweeted;
     if (prev.urls.apple?.toString() != now.urls.apple?.toString()) changes.urls.apple = now.urls.apple;
     if (prev.urls.spotify?.toString() != now.urls.spotify?.toString()) changes.urls.spotify = now.urls.spotify;
     if (prev.urls.youtube?.toString() != now.urls.youtube?.toString()) changes.urls.youtube = now.urls.youtube;

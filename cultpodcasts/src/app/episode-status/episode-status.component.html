@@ -1,5 +1,4 @@
 @if (_episode) {
-@if (!_episode.posted || !_episode.tweeted || _episode.ignored || _episode.removed) {
 <p id="status">
     <mat-icon svgIcon="reddit" [ngClass]="{'not':!_episode.posted}"></mat-icon>
     <mat-icon svgIcon="twitter" [ngClass]="{'not':!_episode.tweeted}"></mat-icon>
@@ -11,5 +10,4 @@
     <mat-icon svgIcon="removed" title="removed"></mat-icon>
     }
 </p>
-}
 }
