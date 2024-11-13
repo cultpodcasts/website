@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, isDevMode } from '@angular/core';
 import { version, buildDate, commitHash } from "src/environments/version";
 import { SeoService } from '../seo.service';
 import { Title } from '@angular/platform-browser';
+import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'privacy-policy',
@@ -18,6 +19,6 @@ export class PrivacyPolicyComponent {
   }
 
   getVersion(): string {
-    return `Version ${version}, commit ${commitHash}, built at ${buildDate}`;
+    return `Version ${version}, commit ${commitHash}, built at ${buildDate}. Env '${environment.name}', dev-mode '${isDevMode()}'.`;
   }
 }
