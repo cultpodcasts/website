@@ -42,11 +42,19 @@
             <mat-tab label="Services">
                 <label>
                     <span>Release Authority:</span>
-                    <input type="text" [formControl]="form!.controls.releaseAuthority">
+                    <select matNativeControl [formControl]="form!.controls.releaseAuthority">
+                        @for (podcastService of podcastServices; track $index) {
+                        <option [value]="podcastService">{{podcastService}}</option>
+                        }
+                    </select>
                 </label>
                 <label>
                     <span>Primary Post Service:</span>
-                    <input type="text" [formControl]="form!.controls.primaryPostService">
+                    <select matNativeControl [formControl]="form!.controls.primaryPostService">
+                        @for (podcastService of podcastServices; track $index) {
+                        <option [value]="podcastService">{{podcastService}}</option>
+                        }
+                    </select>
                 </label>
             </mat-tab>
             <mat-tab label="Flags">

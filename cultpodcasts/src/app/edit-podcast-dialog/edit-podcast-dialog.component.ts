@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,6 +15,7 @@ import { environment } from './../../environments/environment';
 import { Subject } from '../subject';
 import { PodcastPost } from '../PodcastPost';
 import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
+import { PodcastServiceType } from './PodcastServiceType'
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
@@ -36,6 +37,10 @@ export class EditPodcastDialogComponent {
   isLoading: boolean = true;
   isInError: boolean = false;
   notFound: boolean = false;
+  podcastServices = Object
+    .values(PodcastServiceType)
+    .filter(value => typeof value !== 'number')
+    .map(x => x as keyof typeof PodcastServiceType)
 
   form: FormGroup<PodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
@@ -73,8 +78,8 @@ export class EditPodcastDialogComponent {
                 removed: new FormControl(resp.removed, { nonNullable: true }),
                 indexAllEpisodes: new FormControl(resp.indexAllEpisodes, { nonNullable: true }),
                 bypassShortEpisodeChecking: new FormControl(resp.bypassShortEpisodeChecking, { nonNullable: true }),
-                releaseAuthority: new FormControl(resp.releaseAuthority, { nonNullable: true }),
-                primaryPostService: new FormControl(resp.primaryPostService, { nonNullable: true }),
+                releaseAuthority: new FormControl(resp.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
+                primaryPostService: new FormControl(resp.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
                 spotifyId: new FormControl(resp.spotifyId, { nonNullable: true }),
                 appleId: new FormControl(resp.appleId, { nonNullable: false }),
                 youTubePublicationDelay: new FormControl(resp.youTubePublicationDelay, { nonNullable: true }),
@@ -127,8 +132,8 @@ export class EditPodcastDialogComponent {
         removed: this.form!.controls.removed.value,
         indexAllEpisodes: this.form!.controls.indexAllEpisodes.value,
         bypassShortEpisodeChecking: this.form!.controls.bypassShortEpisodeChecking.value,
-        releaseAuthority: this.form!.controls.releaseAuthority.value,
-        primaryPostService: this.form!.controls.primaryPostService.value,
+        releaseAuthority: this.form!.controls.releaseAuthority.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : this.form!.controls.releaseAuthority.value,
+        primaryPostService: this.form!.controls.primaryPostService.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : this.form!.controls.primaryPostService.value,
         spotifyId: this.form!.controls.spotifyId.value,
         appleId: this.form!.controls.appleId.value,
         youTubePublicationDelay: this.form!.controls.youTubePublicationDelay.value,
@@ -156,9 +161,9 @@ export class EditPodcastDialogComponent {
     if (prev.indexAllEpisodes != now.indexAllEpisodes) changes.indexAllEpisodes = now.indexAllEpisodes;
     if (prev.bypassShortEpisodeChecking != now.bypassShortEpisodeChecking) changes.bypassShortEpisodeChecking = now.bypassShortEpisodeChecking;
     if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority) changes.releaseAuthority = now.releaseAuthority;
-    if (prev.releaseAuthority != now.releaseAuthority && !now.releaseAuthority) changes.unsetReleaseAuthority = true;
+    if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority == undefined) changes.unsetReleaseAuthority = true;
     if (prev.primaryPostService != now.primaryPostService && now.primaryPostService) changes.primaryPostService = now.primaryPostService;
-    if (prev.primaryPostService != now.primaryPostService && !now.primaryPostService) changes.unsetPrimaryPostService = true;
+    if (prev.primaryPostService != now.primaryPostService && now.primaryPostService == undefined) changes.unsetPrimaryPostService = true;
     if (prev.spotifyId != now.spotifyId) changes.spotifyId = now.spotifyId;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.appleId != now.appleId) {
