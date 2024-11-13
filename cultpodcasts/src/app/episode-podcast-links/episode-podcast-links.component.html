@@ -1,0 +1,32 @@
+@if (_episode) {
+
+@if (_episode.urls.youtube) {
+<a href="{{_episode.urls.youtube}}" mat-icon-button>
+    <mat-icon svgIcon="youtube"></mat-icon>
+</a>
+} @else if (_episode.youTubePodcast) {
+<button mat-icon-button disabled="true">
+    <mat-icon svgIcon="youtube" class="not"></mat-icon>
+</button>
+}
+
+@if (_episode.urls.spotify) {
+<a href="{{_episode.urls.spotify}}" mat-icon-button>
+    <mat-icon svgIcon="spotify"></mat-icon>
+</a>
+} @else if (_episode.spotifyPodcast) {
+<button mat-icon-button disabled="true">
+    <mat-icon svgIcon="spotify" class="not"></mat-icon>
+</button>
+}
+
+@if (_episode.urls.apple) {
+<a href="{{_episode.urls.apple}}" mat-icon-button>
+    <mat-icon svgIcon="apple-podcasts"></mat-icon>
+</a>
+} @else if (_episode.applePodcast) {
+<button mat-icon-button disabled="true">
+    <mat-icon svgIcon="apple-podcasts" class="not"></mat-icon>
+</button>
+}
+}

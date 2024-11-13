@@ -15,5 +15,8 @@ export interface Episode {
     duration: string,
     urls: EpisodeUrls,
     subjects: string[],
-    searchTerms?: string | null
+    searchTerms?: string | null,
+    youTubePodcast?: boolean,
+    spotifyPodcast?: boolean,
+    applePodcast?: boolean
 }

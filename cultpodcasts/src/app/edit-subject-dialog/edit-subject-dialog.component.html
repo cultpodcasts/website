@@ -24,7 +24,11 @@
                 </label>
                 <label>
                     <span>Subject Type:</span>
-                    <input type="text" [formControl]="form!.controls.subjectType">
+                    <select matNativeControl [formControl]="form!.controls.subjectType">
+                        @for (subjectType of subjectTypes; track $index) {
+                        <option [value]="subjectType">{{subjectType}}</option>
+                        }
+                    </select>
                 </label>
             </mat-tab>
             <mat-tab label="Hash Tags">

@@ -24,6 +24,7 @@ import { EpisodePublishResponse } from '../episode-publish-response';
 import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
+import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -46,8 +47,9 @@ const daysKey: string = "pref.outgoing-episodes.days";
     MatCheckboxModule,
     MatMenuItem,
     FormsModule,
-    EpisodeStatusComponent
-  ],
+    EpisodeStatusComponent,
+    EpisodePodcastLinksComponent
+],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
 })
@@ -180,7 +182,6 @@ export class OutgoingEpisodesApiComponent {
       }
     });
   }
-
 
   getEpisodes() {
     this.isLoading = true;

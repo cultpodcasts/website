@@ -14,7 +14,8 @@ import { environment } from './../../environments/environment';
 import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
 import { Flair } from '../flair';
 import { MatSelectModule } from '@angular/material/select';
-import { KeyValuePipe, NgFor } from '@angular/common';
+import { KeyValuePipe } from '@angular/common';
+import { SubjectType } from './SubjectType';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -27,7 +28,6 @@ import { KeyValuePipe, NgFor } from '@angular/common';
     MatTabsModule,
     MatFormFieldModule,
     MatSelectModule,
-    NgFor,
     KeyValuePipe
   ],
   templateUrl: './edit-subject-dialog.component.html',
@@ -37,6 +37,10 @@ export class EditSubjectDialogComponent {
   subjectName: string | undefined;
   isLoading: boolean = true;
   isInError: boolean = false;
+  subjectTypes = Object
+    .values(SubjectType)
+    .filter(value => typeof value !== 'number')
+    .map(x => x as keyof typeof SubjectType)
 
   form: FormGroup<SubjectForm> | undefined;
   originalSubject: SubjectEntity | undefined;
@@ -85,7 +89,7 @@ export class EditSubjectDialogComponent {
                         name: new FormControl(resp.name!, { nonNullable: true }),
                         aliases: new FormControl(resp.aliases, { nonNullable: false }),
                         associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
-                        subjectType: new FormControl(resp.subjectType, { nonNullable: false }),
+                        subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
                         enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
                         hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
                         redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
@@ -105,7 +109,7 @@ export class EditSubjectDialogComponent {
                 name: new FormControl(""!, { nonNullable: true }),
                 aliases: new FormControl([], { nonNullable: false }),
                 associatedSubjects: new FormControl([], { nonNullable: false }),
-                subjectType: new FormControl("", { nonNullable: false }),
+                subjectType: new FormControl(SubjectType[SubjectType.Unset], { nonNullable: true }),
                 enrichmentHashTags: new FormControl([], { nonNullable: false }),
                 hashTag: new FormControl("", { nonNullable: false }),
                 redditFlairTemplateId: new FormControl("", { nonNullable: false }),
@@ -171,8 +175,9 @@ export class EditSubjectDialogComponent {
         hashTag: this.translateForEntity(this.form!.controls.hashTag),
         redditFlairTemplateId: this.translateForEntityG(this.form!.controls.redditFlairTemplateId),
         redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
-        subjectType: this.translateForEntityE(this.form!.controls.subjectType)
+        subjectType: this.form!.controls.subjectType.value
       };
+
 
       if (this.create) {
         update.name = this.translateForEntity(this.form!.controls.name);
@@ -216,7 +221,7 @@ export class EditSubjectDialogComponent {
     if (!this.isSame(prev.hashTag, now.hashTag)) changes.hashTag = now.hashTag;
     if (!this.isSame(prev.redditFlairTemplateId, now.redditFlairTemplateId)) changes.redditFlairTemplateId = now.redditFlairTemplateId;
     if (!this.isSame(prev.redditFlareText, now.redditFlareText)) changes.redditFlareText = now.redditFlareText;
-    if (!this.isSame(prev.subjectType, now.subjectType)) changes.subjectType = now.subjectType;
+    if (prev.subjectType != now.subjectType?.toString()) changes.subjectType = now.subjectType;
     return changes;
   }
 

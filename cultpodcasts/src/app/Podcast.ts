@@ -3,8 +3,8 @@ export interface Podcast {
     removed: boolean;
     indexAllEpisodes: boolean;
     bypassShortEpisodeChecking: boolean;
-    releaseAuthority: string;
-    primaryPostService: string;
+    releaseAuthority?: string;
+    primaryPostService?: string;
     spotifyId: string;
     appleId?: number | null;
     youTubePublicationDelay: string;
