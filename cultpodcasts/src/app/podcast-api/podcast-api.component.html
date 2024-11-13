@@ -61,7 +61,8 @@
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="this.subjectsChange($event)">
       @for (subject of this.facets.subjects; track subject.value) {
-      <mat-chip-option [value]="subject">{{subject.value}} ({{subject.count}})</mat-chip-option>
+      <mat-chip-option [value]="subject" [selected]="this.subjects.indexOf(subject.value)>=0">{{subject.value}}
+        ({{subject.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
   </mat-expansion-panel>

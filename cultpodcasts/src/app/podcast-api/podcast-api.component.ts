@@ -28,6 +28,7 @@ import { RenamePodcastDialogComponent } from '../rename-podcast-dialog/rename-po
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets';
+import { FacetState } from '../facet-state';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -141,6 +142,17 @@ export class PodcastApiComponent {
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
+      const navigation = this.router.getCurrentNavigation();
+      let initial = true;
+      if (navigation) {
+        const facetState = navigation.extras.state as FacetState;
+        if (facetState) {
+          initial = false;
+          this.facets = facetState.searchResultsFacets;
+          this.subjects = facetState.subjects!;
+        }
+      }
+
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
       let query = params["query"] ?? "";
@@ -173,7 +185,7 @@ export class PodcastApiComponent {
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
 
-      this.execSearch(true);
+      this.execSearch(initial);
     });
   }
 
@@ -260,7 +272,11 @@ export class PodcastApiComponent {
         params[sortParam] = this.searchState.sort;
       }
     }
-    this.router.navigate([url], { queryParams: params });
+    const facetState: FacetState = {
+      searchResultsFacets: this.facets,
+      subjects: this.subjects
+    };
+    this.router.navigate([url], { queryParams: params, state: facetState });
   }
 
   search() {
@@ -385,13 +401,17 @@ export class PodcastApiComponent {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
     this.subjects = items.map(x => x.value.replaceAll("'", "''"));
-    this.searchState.page = 1;
     if (this.subjects.length == 0) {
       this.subjectsFilter = "";
     } else {
       var subjectsameList = this.subjects.join(delimiter);
       this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
-    this.execSearch(false);
+    if (this.searchState.page > 1) {
+      this.setPage(1 - this.searchState.page);
+    }
+    else {
+      this.execSearch(false);
+    }
   }
 }
