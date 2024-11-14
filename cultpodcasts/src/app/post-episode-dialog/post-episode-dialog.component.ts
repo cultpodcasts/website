@@ -67,12 +67,36 @@ export class PostEpisodeDialogComponent {
             this.hasBlueskyPosted = resp.bluesky == true;
             if (this.hasPosted) {
               this.form?.controls.post.disable();
+            } else {
+              if (!resp.ignored && !resp.removed &&
+                ((!resp.youTubePodcast || resp.urls.youtube) &&
+                  (!resp.applePodcast || resp.urls.apple) &&
+                  (!resp.spotifyPodcast || resp.urls.spotify)
+                )) {
+                this.form?.controls.post.setValue(true);
+              }
             }
+            const readyForSocial: boolean = !resp.ignored && !resp.removed &&
+              ((resp.primaryPostService == "Spotify" && resp.spotifyPodcast == true && resp.urls.spotify != null) ||
+                (resp.primaryPostService == "YouTube" && resp.youTubePodcast == true && resp.urls.youtube != null) ||
+                (resp.primaryPostService == null && (
+                  (resp.youTubePodcast == true && resp.urls.youtube != null) ||
+                  (!(resp.youTubePodcast == true) && (resp.spotifyPodcast == true) && resp.urls.spotify != null) ||
+                  (!(resp.youTubePodcast == true) && !(resp.spotifyPodcast == true) && (resp.applePodcast == true) && resp.urls.apple != null)
+                )));
             if (this.hasTweeted) {
               this.form?.controls.tweet.disable();
+            } else {
+              if (readyForSocial) {
+                this.form?.controls.tweet.setValue(true);
+              }
             }
             if (this.hasBlueskyPosted) {
               this.form?.controls.blueskyPost.disable();
+            } else {
+              if (readyForSocial) {
+                this.form?.controls.blueskyPost.setValue(true);
+              }
             }
             if (this.hasTweeted && this.hasPosted && this.hasBlueskyPosted) {
               this.dialogRef.close({ noChange: true });
