@@ -93,6 +93,10 @@ export class SubjectApiComponent {
   showPagingNext: boolean = false;
 
   ngOnInit() {
+    this.populatePage();
+  }
+
+  populatePage() {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({
