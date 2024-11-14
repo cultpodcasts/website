@@ -45,6 +45,9 @@
             </button>
         </mat-menu>
     </section>
+    @if (!isLoading && episodes?.length==0) {
+    <p>No outgoing episodes. Adjust the filters to broaden the range of episodes checked.</p>
+    }
     <mat-card *ngFor="let result of episodes" class="result">
         <mat-card-header>
             <button mat-icon-button [matMenuTriggerFor]="menu">

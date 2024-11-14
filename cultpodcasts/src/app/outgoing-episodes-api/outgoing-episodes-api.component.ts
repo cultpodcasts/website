@@ -49,7 +49,7 @@ const daysKey: string = "pref.outgoing-episodes.days";
     FormsModule,
     EpisodeStatusComponent,
     EpisodePodcastLinksComponent
-],
+  ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
 })
@@ -65,7 +65,7 @@ export class OutgoingEpisodesApiComponent {
   days: number | undefined;
   posted: boolean | undefined;
   tweeted: boolean | undefined;
-  blueskyPosted: boolean | undefined;
+  blueskyPosted: boolean | undefined = true;
   token: string = "";
   authRoles: string[] = [];
 
@@ -116,7 +116,7 @@ export class OutgoingEpisodesApiComponent {
   reset() {
     this.posted = undefined;
     this.tweeted = undefined;
-    this.blueskyPosted = undefined;
+    this.blueskyPosted = true;
     this.days = undefined;
     this.ngOnInit()
   }
