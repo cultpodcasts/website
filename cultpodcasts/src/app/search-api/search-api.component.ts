@@ -274,11 +274,12 @@ export class SearchApiComponent {
       var podcastsNameList = this.podcasts.join(delimiter);
       this.podcastsFilter = `search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
+    const reset = { subjects: true };
     if (this.searchState.page > 1) {
-      this.setPage(1 - this.searchState.page, { subjects: true, podcasts: true });
+      this.setPage(1 - this.searchState.page, reset);
     }
     else {
-      this.execSearch(false, { subjects: true, podcasts: true });
+      this.execSearch(false, reset);
     }
   }
   subjectsChange($event: MatChipListboxChange) {
@@ -291,11 +292,12 @@ export class SearchApiComponent {
       var subjectsameList = this.subjects.join(delimiter);
       this.subjectsFilter = `subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
+    const reset = { podcasts: true };
     if (this.searchState.page > 1) {
-      this.setPage(1 - this.searchState.page, { podcasts: true, subjects: true });
+      this.setPage(1 - this.searchState.page, reset);
     }
     else {
-      this.execSearch(false, { podcasts: true, subjects: true });
+      this.execSearch(false, reset);
     }
   }
 }
