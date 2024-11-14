@@ -8,6 +8,7 @@ export interface PodcastForm {
     primaryPostService: FormControl<string>;
     youTubePublicationDelay: FormControl<string>;
     twitterHandle: FormControl<string>;
+    blueskyHandle: FormControl<string>;
     removed: FormControl<boolean>;
     indexAllEpisodes: FormControl<boolean>;
     bypassShortEpisodeChecking: FormControl<boolean>;
