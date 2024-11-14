@@ -24,7 +24,7 @@ export class EpisodePublishResponseAdaptor {
             if (response.blueskyPosted) {
                 successes.push("bluesky-posted");
             } else {
-                failures.push("b;uesky-post");
+                failures.push("bluesky-post");
             }
         }
         if (failures.length == 0) {

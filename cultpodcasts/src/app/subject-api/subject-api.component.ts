@@ -177,7 +177,10 @@ export class SubjectApiComponent {
           next: data => {
             this.results = data.entities;
             if (initial) {
-              this.facets = data.facets;
+              this.facets = {
+                podcastName: data.facets.podcastName,
+                subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
+              };
             }
             var requestTime = (Date.now() - currentTime) / 1000;
             const count = data.metadata.get("count");

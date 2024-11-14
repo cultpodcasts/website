@@ -186,7 +186,10 @@ export class SearchApiComponent {
         next: data => {
           this.results = data.entities;
           if (initial) {
-            this.facets = data.facets;
+            this.facets = {
+              podcastName: data.facets.podcastName,
+              subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
+            };
           } else {
             if (reset && reset.podcasts) {
               this.facets.podcastName = data.facets.podcastName;
@@ -301,6 +304,7 @@ export class SearchApiComponent {
     }
   }
 }
+
 function buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {
   let filter: string = "";
   if (baseFilter && baseFilter != "") {

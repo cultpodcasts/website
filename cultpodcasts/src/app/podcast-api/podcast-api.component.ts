@@ -175,26 +175,28 @@ export class PodcastApiComponent {
         top: pageSize,
         facets: ["subjects,count:1000,sort:count"],
         orderby: sort
-      }).subscribe(
-        {
-          next: data => {
-            this.results = data.entities;
-            if (initial) {
-              this.facets = data.facets;
-            }
-            var requestTime = (Date.now() - currentTime) / 1000;
-            const count = data.metadata.get("count");
-            this.count = count;
-            this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
-          },
-          error: (e) => {
-            console.error(e);
-            this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
+      }).subscribe({
+        next: data => {
+          this.results = data.entities;
+          if (initial) {
+            this.facets = {
+              podcastName: data.facets.podcastName,
+              subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
+            };
           }
-        });
+          var requestTime = (Date.now() - currentTime) / 1000;
+          const count = data.metadata.get("count");
+          this.count = count;
+          this.isLoading = false;
+          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
+          this.showPagingNext = (this.searchState.page * pageSize) < count;
+        },
+        error: (e) => {
+          console.error(e);
+          this.resultsHeading = "Something went wrong. Please try again.";
+          this.isLoading = false;
+        }
+      });
   }
 
   edit(id: string) {
@@ -233,7 +235,7 @@ export class PodcastApiComponent {
       }
     });
   }
-  
+
   setSort(sort: string) {
     var url = `/podcast/${this.podcastName}`;
     var query = this.siteService.getSiteData().query;
