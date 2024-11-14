@@ -86,10 +86,6 @@ export class PostEpisodeDialogComponent {
                 )));
             if (this.hasTweeted) {
               this.form?.controls.tweet.disable();
-            } else {
-              if (readyForSocial) {
-                this.form?.controls.tweet.setValue(true);
-              }
             }
             if (this.hasBlueskyPosted) {
               this.form?.controls.blueskyPost.disable();
