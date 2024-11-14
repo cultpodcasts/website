@@ -34,9 +34,10 @@
     </mat-menu>
   </section>
 
+  @if (this.facets.podcastName && this.facets.podcastName.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Podcasts ({{this.facets.podcastName?.length}})</mat-panel-title>
+      <mat-panel-title>Podcasts ({{this.facets.podcastName!.length}})</mat-panel-title>
       <mat-panel-description>
         @if (this.podcasts.length==0) {
         All Selected
@@ -53,6 +54,7 @@
       }
     </mat-chip-listbox>
   </mat-expansion-panel>
+  }
 
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>

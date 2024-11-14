@@ -48,9 +48,10 @@
     </mat-menu>
   </section>
 
+  @if (this.facets.subjects && this.facets.subjects.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Subjects ({{this.facets.subjects?.length}})</mat-panel-title>
+      <mat-panel-title>Subjects ({{this.facets.subjects!.length}})</mat-panel-title>
       <mat-panel-description>
         @if (this.subjects.length==0) {
         All Selected
@@ -66,7 +67,7 @@
       }
     </mat-chip-listbox>
   </mat-expansion-panel>
-
+  }
   <mat-card *ngFor="let result of results" class="result">
     <mat-card-header>
       <mat-card-title>
