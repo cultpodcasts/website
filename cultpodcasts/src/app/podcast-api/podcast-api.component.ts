@@ -74,12 +74,12 @@ export class PodcastApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   results: ISearchResult[] = [];
-  facets: SearchResultsFacets = {};
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
   showPagingNext: boolean = false;
   authRoles: string[] = [];
+  facets: SearchResultsFacets = {};
   subjects: string[] = [];
   subjectsFilter: string = "";
 
@@ -96,45 +96,8 @@ export class PodcastApiComponent {
   }
   private route = inject(ActivatedRoute);
 
-  async ngOnInit(): Promise<any> {
+  ngOnInit() {
     this.populatePage();
-  }
-
-  edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
-      data: { episodeId: id },
-      disableClose: true,
-      autoFocus: true
-    });
-    dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result.updated) {
-        snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-      } else if (result.noChange) {
-        snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-      }
-      if (snackBarRef) {
-        snackBarRef.onAction().subscribe(() => {
-          const episodeId = JSON.stringify([id]);
-          this.router.navigate(["/episodes", episodeId])
-        });
-      }
-    });
-  }
-
-  editPodcast() {
-    const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
-      data: { podcastName: this.podcastName },
-      disableClose: true,
-      autoFocus: true
-    });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
-      } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
-      }
-    });
   }
 
   populatePage() {
@@ -234,6 +197,43 @@ export class PodcastApiComponent {
         });
   }
 
+  edit(id: string) {
+    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
+      if (result.updated) {
+        snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
+      } else if (result.noChange) {
+        snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
+      }
+      if (snackBarRef) {
+        snackBarRef.onAction().subscribe(() => {
+          const episodeId = JSON.stringify([id]);
+          this.router.navigate(["/episodes", episodeId])
+        });
+      }
+    });
+  }
+
+  editPodcast() {
+    const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
+      data: { podcastName: this.podcastName },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
+  }
+  
   setSort(sort: string) {
     var url = `/podcast/${this.podcastName}`;
     var query = this.siteService.getSiteData().query;
