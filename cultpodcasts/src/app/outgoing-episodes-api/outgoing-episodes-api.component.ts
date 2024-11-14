@@ -110,7 +110,6 @@ export class OutgoingEpisodesApiComponent {
         console.error(x);
       });
     })
-
   }
 
   reset() {
