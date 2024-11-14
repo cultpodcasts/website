@@ -12,6 +12,7 @@ export interface PodcastPost {
     youTubePublicationDelay?: string;
     skipEnrichingFromYouTube?: boolean;
     twitterHandle?: string;
+    blueskyHandle?: string;
     titleRegex?: string;
     descriptionRegex?: string;
     episodeMatchRegex?: string;

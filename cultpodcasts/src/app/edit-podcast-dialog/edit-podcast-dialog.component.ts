@@ -85,6 +85,7 @@ export class EditPodcastDialogComponent {
                 youTubePublicationDelay: new FormControl(resp.youTubePublicationDelay, { nonNullable: true }),
                 skipEnrichingFromYouTube: new FormControl(resp.skipEnrichingFromYouTube, { nonNullable: true }),
                 twitterHandle: new FormControl(resp.twitterHandle, { nonNullable: true }),
+                blueskyHandle: new FormControl(resp.blueskyHandle, { nonNullable: true }),
                 titleRegex: new FormControl(resp.titleRegex, { nonNullable: true }),
                 descriptionRegex: new FormControl(resp.descriptionRegex, { nonNullable: true }),
                 episodeMatchRegex: new FormControl(resp.episodeMatchRegex, { nonNullable: true }),
@@ -139,6 +140,7 @@ export class EditPodcastDialogComponent {
         youTubePublicationDelay: this.form!.controls.youTubePublicationDelay.value,
         skipEnrichingFromYouTube: this.form!.controls.skipEnrichingFromYouTube.value,
         twitterHandle: this.form!.controls.twitterHandle.value,
+        blueskyHandle: this.form!.controls.blueskyHandle.value,
         titleRegex: this.form!.controls.titleRegex.value,
         descriptionRegex: this.form!.controls.descriptionRegex.value,
         episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
@@ -175,6 +177,7 @@ export class EditPodcastDialogComponent {
     if (prev.youTubePublicationDelay != now.youTubePublicationDelay) changes.youTubePublicationDelay = now.youTubePublicationDelay;
     if (prev.skipEnrichingFromYouTube != now.skipEnrichingFromYouTube) changes.skipEnrichingFromYouTube = now.skipEnrichingFromYouTube;
     if (prev.twitterHandle != now.twitterHandle) changes.twitterHandle = now.twitterHandle;
+    if (prev.blueskyHandle != now.blueskyHandle) changes.blueskyHandle = now.blueskyHandle;
     if (prev.titleRegex != now.titleRegex) changes.titleRegex = now.titleRegex;
     if (prev.descriptionRegex != now.descriptionRegex) changes.descriptionRegex = now.descriptionRegex;
     if (prev.episodeMatchRegex != now.episodeMatchRegex) changes.episodeMatchRegex = now.episodeMatchRegex;
