@@ -18,5 +18,7 @@ export interface Episode {
     searchTerms?: string | null,
     youTubePodcast?: boolean,
     spotifyPodcast?: boolean,
-    applePodcast?: boolean
+    applePodcast?: boolean,
+    releaseAuthority?: string,
+    primaryPostService?: string
 }
