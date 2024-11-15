@@ -26,7 +26,6 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       this.existingPodcast= data.existingPodcast;
       if ( data.response.episode === "Created" || data.response.episode === "Enriched" || data.response.episode === "EpisodeAlreadyExists") {
         this.action= "Edit";
-
         snackBarRef.onAction().subscribe(() => {
           this.editSubmittedEpisode(data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
         });
