@@ -55,11 +55,6 @@ export class SubmitPodcastComponent implements OnInit {
     return podcast && podcast.name ? podcast.name : '';
   }
 
-  private _filter(name: string): ISimplePodcast[] {
-    const filterValue = name.toLowerCase();
-    return this.options!.filter(option => option.name.toLowerCase().indexOf(filterValue) >= 0);
-  }
-
   save() {
     if (this.form.valid) {
       this.dialogRef.close(

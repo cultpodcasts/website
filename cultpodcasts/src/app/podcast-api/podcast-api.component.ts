@@ -29,6 +29,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets';
 import { FacetState } from '../facet-state';
+import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -346,29 +347,7 @@ export class PodcastApiComponent {
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            let episode: string;
-            let edit: boolean = false;
-            if (result.originResponse.success.episode === "Created") {
-              episode = "Episode created.";
-              edit = true;
-            } else if (result.originResponse.success.episode === "Enriched") {
-              episode = "Episode enriched.";
-              edit = true;
-            } else if (result.originResponse.success.episode === "Ignored") {
-              episode = "Episode ignored.";
-            } else if (result.originResponse.success.episode === "EpisodeAlreadyExists") {
-              episode = "Episode already exists.";
-              edit = true;
-            } else {
-              episode = "Episode not created.";
-            }
-            let snackBarRef = this.snackBar.open(`Podcast Sent direct to database. ${episode}`, edit ? "Edit" : "Ok", { duration: 10000 });
-
-            if (edit) {
-              snackBarRef.onAction().subscribe(() => {
-                this.edit(result.originResponse!.success!.episodeId!)
-              });
-            }
+            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: true, response: result.originResponse?.success } });
           } else {
             let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }
