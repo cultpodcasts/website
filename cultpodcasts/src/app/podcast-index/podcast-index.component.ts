@@ -40,8 +40,8 @@ export class PodcastIndexComponent {
       this.http.post<IndexPodcastResponse>(indexEndpoint, {}, { headers: headers, observe: "response" })
         .subscribe({
           next: resp => {
-            console.log(resp);
-            this.dialogRef.close({ updated: true, episodeIds: resp.body?.indexedEpisodes?.map(x=>x.episodeId) });
+            console.log(resp.body);
+            this.dialogRef.close({ updated: true, episodeIds: resp.body?.indexedEpisodes?.map(x => x.episodeId) });
           },
           error: e => {
             if (e.status == 400) {

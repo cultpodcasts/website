@@ -163,10 +163,6 @@ export class SearchApiComponent {
       sort = "release desc";
     }
 
-    console.log(this.searchState.filter)
-    console.log(this.podcastsFilter)
-    console.log(this.subjectsFilter)
-
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
       {
