@@ -1,6 +1,6 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
+import { MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { UrlValidator } from '../url-validator';
 import { ISimplePodcast } from '../ISimplePodcast';
 import { Observable } from 'rxjs';
@@ -8,7 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatOptionModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
@@ -17,7 +16,17 @@ import { MatFormFieldModule } from '@angular/material/form-field';
   templateUrl: './submit-podcast.component.html',
   styleUrls: ['./submit-podcast.component.sass'],
   standalone: true,
-  imports: [MatDialogModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, NgIf, MatExpansionModule, MatAutocompleteModule, NgFor, MatOptionModule, MatButtonModule, AsyncPipe]
+  imports: [
+    MatDialogModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatExpansionModule,
+    MatAutocompleteModule,
+    MatOptionModule,
+    MatButtonModule
+  ]
 })
 export class SubmitPodcastComponent implements OnInit {
   form!: FormGroup;
@@ -44,11 +53,6 @@ export class SubmitPodcastComponent implements OnInit {
 
   displayFn(podcast: ISimplePodcast): string {
     return podcast && podcast.name ? podcast.name : '';
-  }
-
-  private _filter(name: string): ISimplePodcast[] {
-    const filterValue = name.toLowerCase();
-    return this.options!.filter(option => option.name.toLowerCase().indexOf(filterValue) >= 0);
   }
 
   save() {

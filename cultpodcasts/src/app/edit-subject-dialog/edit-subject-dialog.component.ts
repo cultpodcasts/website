@@ -15,7 +15,7 @@ import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send
 import { Flair } from '../flair';
 import { MatSelectModule } from '@angular/material/select';
 import { KeyValuePipe } from '@angular/common';
-import { SubjectType } from './SubjectType';
+import { SubjectType } from "../subject-type";
 
 @Component({
   selector: 'app-edit-subject-dialog',

@@ -1,0 +1,51 @@
+@if (!this.existingPodcast) {
+<span>
+    @if (this.data.response.podcast==="Created") {
+    Podcast Created.
+    } @else if (this.data.response.podcast=== "Enriched") {
+    Podcast Enriched.
+    } @else if (this.data.response.podcast=== "Ignored") {
+    Podcast Ignored.
+    } @else if (this.data.response.podcast==="PodcastRemoved") {
+    Podcast Removed.
+    }
+</span>
+}
+<span>
+    @if (this.data.response.episode==="Created") {
+    Episode created.
+    } @else if (this.data.response.episode === "Enriched") {
+    Episode enriched.
+    } @else if (this.data.response.episode === "Ignored") {
+    Episode ignored.
+    } @else if (this.data.response.episode === "EpisodeAlreadyExists") {
+    Episode already exists.
+    } @else {
+    Episode not created.
+    }
+</span>
+@if (this.data.response.episodeDetails) {
+<span>
+    <span id="service-icons">
+        @if (this.data.response.episodeDetails.spotify) {
+        <img src="/assets/spotify.svg">
+        }
+        @if (this.data.response.episodeDetails.apple) {
+        <img src="/assets/apple-podcasts.svg">
+        }
+        @if (this.data.response.episodeDetails.youtube) {
+        <img src="/assets/youtube.svg">
+        }
+    </span>
+    @if (this.data.response.episodeDetails.subjects.length > 0) {
+    {{this.data.response.episodeDetails.subjects.length}}
+    @if(this.data.response.episodeDetails.subjects.length>1){
+    subjects
+    } @else {
+    subject
+    }
+    }
+</span>
+}
+<button mat-raised-button color="accent" (click)="snackBarRef.dismissWithAction()"
+    class="mat-mdc-snack-bar-action mdc-button mat-mdc-button">{{this.action }}</button>
