@@ -7,6 +7,7 @@ import { environment } from './../../environments/environment';
 import { NgIf } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
+import { IndexPodcastResponse } from '../index-podcast-response';
 
 @Component({
   selector: 'app-podcast-index',
@@ -35,11 +36,12 @@ export class PodcastIndexComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/podcast/index/${encodeURIComponent(podcastName)}`, environment.api).toString();
-      this.http.post<any>(episodeEndpoint, {}, { headers: headers, observe: "response" })
+      const indexEndpoint = new URL(`/podcast/index/${encodeURIComponent(podcastName)}`, environment.api).toString();
+      this.http.post<IndexPodcastResponse>(indexEndpoint, {}, { headers: headers, observe: "response" })
         .subscribe({
           next: resp => {
-            this.dialogRef.close({ updated: true, episodeIds: resp.body.episodeIds });
+            console.log(resp);
+            this.dialogRef.close({ updated: true, episodeIds: resp.body?.indexedEpisodes?.map(x=>x.episodeId) });
           },
           error: e => {
             if (e.status == 400) {
