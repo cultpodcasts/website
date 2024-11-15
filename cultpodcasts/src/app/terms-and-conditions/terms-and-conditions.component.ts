@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { SeoService } from '../seo.service';
-import { Title } from '@angular/platform-browser';
 
 @Component({
     selector: 'terms-and-conditions',

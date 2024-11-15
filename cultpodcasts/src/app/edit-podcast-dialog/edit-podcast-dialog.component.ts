@@ -15,7 +15,7 @@ import { environment } from './../../environments/environment';
 import { Subject } from '../subject';
 import { PodcastPost } from '../PodcastPost';
 import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
-import { PodcastServiceType } from './PodcastServiceType'
+import { PodcastServiceType } from "../podcast-service-type";
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
