@@ -11,6 +11,10 @@
           <mat-icon>edit</mat-icon>
           <span>Edit Episode</span>
         </button>
+        <button mat-menu-item (click)="post(this.episode.id)">
+          <mat-icon>send</mat-icon>
+          <span>Post Episode</span>
+        </button>
       </mat-menu>
       }
       <mat-card-title>

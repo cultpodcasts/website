@@ -14,6 +14,10 @@ import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { environment } from './../../environments/environment';
 import { SiteService } from '../SiteService';
+import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { EpisodePublishResponse } from '../episode-publish-response';
+import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -123,5 +127,26 @@ export class PodcastEpisodeComponent {
   podcastPage() {
     let url = `podcast/${this.podcastName}`;
     this.router.navigate([url]);
+  }
+
+  post(id: string) {
+    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, {
+      response?: EpisodePublishResponse,
+      expectation?: PostEpisodeModel,
+      noChange?: boolean
+    }>(PostEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result!.noChange) {
+        let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
+      } else if (result?.response && result.expectation) {
+        var messageBuilde = new EpisodePublishResponseAdaptor();
+        const message = messageBuilde.createMessage(result.response, result.expectation);
+        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+      }
+    });
   }
 }
