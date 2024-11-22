@@ -1,9 +1,9 @@
 <h2 mat-dialog-title>Edit Episode</h2>
 
 <mat-dialog-content>
-    @if (this.isLoading) {
+    @if (isLoading) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (this.isInError) {
+    } @else if (isInError) {
     <p id="error">An error occurred</p>
     } @else {
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
@@ -11,7 +11,7 @@
             <mat-tab label="Details">
                 <label>
                     <span>Podcast:</span>
-                    <p>{{this.podcastName}}</p>
+                    <p>{{podcastName}}</p>
                 </label>
                 <label>
                     <span>Title:</span>

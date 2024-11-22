@@ -1,6 +1,6 @@
 @defer {
-@if (this.isEpisode) {
-<app-podcast-episode [episode]="this.episode" [parentLoaded]="!this.isLoading"></app-podcast-episode>
+@if (isEpisode) {
+<app-podcast-episode [episode]="episode" [parentLoaded]="!isLoading"></app-podcast-episode>
 } @else {
 <app-podcast-api></app-podcast-api>
 }

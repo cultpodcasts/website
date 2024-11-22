@@ -1,10 +1,10 @@
 <h2 mat-dialog-title>Edit Podcast</h2>
 
 <mat-dialog-content>
-    @if (this.isLoading) {
+    @if (isLoading) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (this.isInError) {
-    @if (this.notFound) {
+    } @else if (isInError) {
+    @if (notFound) {
     <p id="error">Podcast not found.</p>
     } @else {
     <p id="error">An error occurred</p>

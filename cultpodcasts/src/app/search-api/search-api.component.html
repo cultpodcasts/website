@@ -26,42 +26,42 @@
     </mat-menu>
   </section>
 
-  @if (this.facets.subjects && this.facets.subjects.length > 0) {
+  @if (facets.subjects && facets.subjects.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Subjects ({{this.facets.subjects!.length}})</mat-panel-title>
+      <mat-panel-title>Subjects ({{facets.subjects!.length}})</mat-panel-title>
       <mat-panel-description>
-        @if (this.subjects.length==0) {
+        @if (subjects.length==0) {
         All Selected
         } @else {
-        {{this.subjects.length}} Selected
+        {{subjects.length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
-    <mat-chip-listbox multiple (change)="this.subjectsChange($event)">
-      @for (subject of this.facets.subjects; track subject.value) {
-      <mat-chip-option [value]="subject" [selected]="this.subjects.indexOf(subject.value)>=0">{{subject.value}}
+    <mat-chip-listbox multiple (change)="subjectsChange($event)">
+      @for (subject of facets.subjects; track subject.value) {
+      <mat-chip-option [value]="subject" [selected]="subjects.indexOf(subject.value)>=0">{{subject.value}}
         ({{subject.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
   </mat-expansion-panel>
   }
 
-  @if (this.facets.podcastName && this.facets.podcastName.length > 0) {
+  @if (facets.podcastName && facets.podcastName.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Podcasts ({{this.facets.podcastName!.length}})</mat-panel-title>
+      <mat-panel-title>Podcasts ({{facets.podcastName!.length}})</mat-panel-title>
       <mat-panel-description>
-        @if (this.podcasts.length==0) {
+        @if (podcasts.length==0) {
         All Selected
         } @else {
-        {{this.podcasts.length}} Selected
+        {{podcasts.length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
-    <mat-chip-listbox multiple (change)="this.podcastsChange($event)">
-      @for (podcast of this.facets.podcastName; track podcast.value) {
-      <mat-chip-option [value]="podcast" [selected]="this.subjects.indexOf(podcast.value)>=0">{{podcast.value}}
+    <mat-chip-listbox multiple (change)="podcastsChange($event)">
+      @for (podcast of facets.podcastName; track podcast.value) {
+      <mat-chip-option [value]="podcast" [selected]="subjects.indexOf(podcast.value)>=0">{{podcast.value}}
         ({{podcast.count}})</mat-chip-option>
       }
     </mat-chip-listbox>

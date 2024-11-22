@@ -1,9 +1,9 @@
-<h2 mat-dialog-title>{{this.create?"Add":"Edit"}} Subject</h2>
+<h2 mat-dialog-title>{{create?"Add":"Edit"}} Subject</h2>
 
 <mat-dialog-content>
-    @if (this.isLoading) {
+    @if (isLoading) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (this.isInError) {
+    } @else if (isInError) {
     <p id="error">An error occurred</p>
     } @else {
 
@@ -12,7 +12,7 @@
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
-                    <input type="text" [formControl]="form!.controls.name" [readonly]="!this.create">
+                    <input type="text" [formControl]="form!.controls.name" [readonly]="!create">
                 </label>
                 <label>
                     <span>Aliases:</span>
@@ -47,7 +47,7 @@
                     <mat-select [formControl]="form!.controls.redditFlairTemplateId" id="flair" [style]="styleSelect()"
                         panelClass="flairs">
                         <mat-option [value]="">No Subject</mat-option>
-                        @for (flair of this.flairs | keyvalue; track flair.key) {
+                        @for (flair of flairs | keyvalue; track flair.key) {
                         <mat-option [value]="flair.key"
                             [style]="styleOption(flair.value)">{{flair.key.substring(0,8)}}</mat-option>
                         }
