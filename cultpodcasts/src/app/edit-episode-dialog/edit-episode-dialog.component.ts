@@ -18,7 +18,6 @@ import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send
 
 @Component({
   selector: 'app-edit-episode-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

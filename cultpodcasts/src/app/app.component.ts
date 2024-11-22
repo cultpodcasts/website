@@ -17,7 +17,6 @@ import { EnablePushNotificationsDialogComponent } from './enable-push-notificati
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  standalone: true,
   imports: [RouterOutlet, MatIconModule, ToolbarComponent, SearchBarComponent]
 })
 

@@ -40,7 +40,6 @@ const sortParamDateDesc: string = "date-desc";
 
 @Component({
   selector: 'app-podcast-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,

@@ -11,7 +11,6 @@ import { IndexPodcastResponse } from '../index-podcast-response';
 
 @Component({
   selector: 'app-podcast-index',
-  standalone: true,
   imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './podcast-index.component.html',
   styleUrl: './podcast-index.component.sass'

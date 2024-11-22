@@ -18,7 +18,6 @@ const pageParam: string = "page";
 
 @Component({
   selector: 'app-homepage-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,

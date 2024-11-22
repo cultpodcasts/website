@@ -19,7 +19,6 @@ import { SubjectType } from "../subject-type";
 
 @Component({
   selector: 'app-edit-subject-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

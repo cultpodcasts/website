@@ -25,7 +25,6 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 
 @Component({
   selector: 'app-toolbar',
-  standalone: true,
   imports: [MatToolbarModule, MatIconModule, MatMenuModule, RouterLink, NgIf, AsyncPipe],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass'

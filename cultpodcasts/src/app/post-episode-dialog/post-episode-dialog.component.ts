@@ -15,7 +15,6 @@ import { EpisodePublishResponse } from '../episode-publish-response';
 
 @Component({
   selector: 'app-post-episode-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

@@ -19,7 +19,6 @@ import { PodcastServiceType } from "../podcast-service-type";
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

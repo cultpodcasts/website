@@ -21,7 +21,6 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 
 @Component({
   selector: 'app-podcast-episode',
-  standalone: true,
   imports: [
     NgIf,
     MatButtonModule,

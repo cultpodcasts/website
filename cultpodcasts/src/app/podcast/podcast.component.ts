@@ -13,7 +13,6 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
   selector: 'app-podcast',
   templateUrl: './podcast.component.html',
   styleUrls: ['./podcast.component.sass'],
-  standalone: true,
   imports: [
     PodcastApiComponent,
     PodcastEpisodeComponent

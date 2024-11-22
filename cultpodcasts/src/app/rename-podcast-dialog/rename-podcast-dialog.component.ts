@@ -11,7 +11,6 @@ import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'app-rename-podcast-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

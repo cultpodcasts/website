@@ -5,7 +5,6 @@ import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-episode-status',
-  standalone: true,
   imports: [
     NgClass,
     MatIconModule

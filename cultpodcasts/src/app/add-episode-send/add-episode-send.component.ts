@@ -11,7 +11,6 @@ import { EpisodePost } from '../EpisodePost';
 
 @Component({
   selector: 'app-add-episode-send',
-  standalone: true,
   imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './add-episode-send.component.html',
   styleUrl: './add-episode-send.component.sass'

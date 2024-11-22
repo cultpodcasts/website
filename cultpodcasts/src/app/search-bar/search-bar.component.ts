@@ -12,7 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-search-bar',
-  standalone: true,
   imports: [
     NgIf,
     MatButtonModule,
@@ -20,7 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatFormFieldModule,
     MatChipsModule,
     MatInputModule,
-    MatIconModule],
+    MatIconModule
+  ],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass'
 })
