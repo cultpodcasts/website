@@ -31,7 +31,6 @@ const sortParamDateDesc: string = "date-desc";
 
 @Component({
   selector: 'app-subject-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,

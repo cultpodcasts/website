@@ -9,7 +9,6 @@ const queryParam: string = "query";
   selector: 'app-search',
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.sass'],
-  standalone: true,
   imports: [SearchApiComponent]
 })
 export class SearchComponent {

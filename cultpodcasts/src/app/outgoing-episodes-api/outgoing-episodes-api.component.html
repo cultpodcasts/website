@@ -28,18 +28,18 @@
             <button mat-menu-item (click)="openSetDays()">
                 <mat-icon>calendar_month</mat-icon>
                 <span>Set duration
-                    @if (this.days) {
-                    ({{this.days}})
+                    @if (days) {
+                    ({{days}})
                     }
                 </span>
             </button>
             <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-                [ngClass]="this.sortDirection==sortParamDateAsc?'selected':''">
+                [ngClass]="sortDirection==sortParamDateAsc?'selected':''">
                 <mat-icon>arrow_upward</mat-icon>
                 <span>Date ascending</span>
             </button>
             <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-                [ngClass]="this.sortDirection==sortParamDateDesc?'selected':''">
+                [ngClass]="sortDirection==sortParamDateDesc?'selected':''">
                 <mat-icon>arrow_downward</mat-icon>
                 <span>Date descending</span>
             </button>
@@ -62,7 +62,7 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
-                @if (this.authRoles.includes("Admin")) {
+                @if (authRoles.includes("Admin")) {
                 <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
                     <mat-icon>delete</mat-icon>
                     <span>Delete Episode</span>

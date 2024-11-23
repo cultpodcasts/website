@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
   selector: 'app-confirm',
   templateUrl: './confirm.component.html',
   styleUrls: ['./confirm.component.sass'],
-  standalone: true,
   imports: [MatDialogModule, MatButtonModule]
 })
 export class ConfirmComponent {

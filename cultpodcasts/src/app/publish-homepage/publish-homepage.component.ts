@@ -8,7 +8,6 @@ import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'app-publish-homepage',
-  standalone: true,
   imports: [MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './publish-homepage.component.html',
   styleUrl: './publish-homepage.component.sass'

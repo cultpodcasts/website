@@ -4,7 +4,6 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-enable-push-notifications-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatButtonModule,

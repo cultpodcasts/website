@@ -11,7 +11,6 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-edit-subject-send',
-  standalone: true,
   imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-subject-send.component.html',
   styleUrl: './edit-subject-send.component.sass'

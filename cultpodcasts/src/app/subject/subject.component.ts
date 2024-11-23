@@ -7,7 +7,6 @@ import { SubjectApiComponent } from '../subject-api/subject-api.component';
   selector: 'app-subject',
   templateUrl: './subject.component.html',
   styleUrls: ['./subject.component.sass'],
-  standalone: true,
   imports: [SubjectApiComponent]
 })
 

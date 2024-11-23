@@ -15,7 +15,6 @@ import { NgIf } from '@angular/common';
   selector: 'app-discovery-submit',
   templateUrl: './discovery-submit.component.html',
   styleUrls: ['./discovery-submit.component.sass'],
-  standalone: true,
   imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 

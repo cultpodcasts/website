@@ -32,7 +32,6 @@ const daysKey: string = "pref.outgoing-episodes.days";
 
 @Component({
   selector: 'app-outgoing-episodes-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,

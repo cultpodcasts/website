@@ -1,9 +1,9 @@
 <h2 mat-dialog-title>Post Episode</h2>
 
 <mat-dialog-content>
-    @if (this.isSending) {
+    @if (isSending) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (this.isInError) {
+    } @else if (isInError) {
     <p id="error">An error occurred</p>
     } @else {
     <form id="post" [formGroup]="form!" (ngSubmit)="onSubmit()">
@@ -27,5 +27,5 @@
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button [disabled]="this.isSending" (click)="onSubmit()">Submit</button>
+    <button mat-raised-button [disabled]="isSending" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

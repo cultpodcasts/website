@@ -9,7 +9,6 @@ import { IndexerState } from '../indexer-state';
 
 @Component({
   selector: 'app-run-search-indexer',
-  standalone: true,
   imports: [MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './run-search-indexer.component.html',
   styleUrl: './run-search-indexer.component.sass'

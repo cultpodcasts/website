@@ -27,7 +27,6 @@ const sortParamDateDesc: string = "date-desc";
 
 @Component({
   selector: 'app-episodes-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,
@@ -41,7 +40,7 @@ const sortParamDateDesc: string = "date-desc";
     DatePipe,
     EpisodeStatusComponent,
     EpisodePodcastLinksComponent
-],
+  ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass'
 })

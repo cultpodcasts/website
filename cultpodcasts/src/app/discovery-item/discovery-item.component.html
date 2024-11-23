@@ -1,9 +1,9 @@
 <mat-card 
     class="result" 
-    [ngClass]="{'error': this.errored}"
+    [ngClass]="{'error': errored}"
     (click)="handleResult($event, result)" 
     attr.data-id="{{result.id}}"
-    [appHide]="(resultsFilter==='selected' && !this.selected) || (resultsFilter=='errored' && !this.selected)">
+    [appHide]="(resultsFilter==='selected' && !selected) || (resultsFilter=='errored' && !selected)">
     <mat-card-header>
         <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
         <mat-card-subtitle

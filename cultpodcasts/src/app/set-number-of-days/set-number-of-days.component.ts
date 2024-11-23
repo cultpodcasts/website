@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-set-number-of-days',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatButtonModule,
@@ -16,7 +15,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class SetNumberOfDaysComponent {
   days: any;
-  
+
   constructor(private dialogRef: MatDialogRef<SetNumberOfDaysComponent>,
     @Inject(MAT_DIALOG_DATA) data: any) {
     this.days = data.days;

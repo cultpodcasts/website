@@ -9,7 +9,6 @@ import { NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common';
   selector: 'app-content',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.sass'],
-  standalone: true,
   imports: [NgSwitch, NgSwitchCase, PrivacyPolicyComponent, TermsAndConditionsComponent, NgSwitchDefault]
 })
 export class ContentComponent implements OnInit {

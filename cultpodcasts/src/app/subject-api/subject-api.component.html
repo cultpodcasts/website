@@ -4,13 +4,13 @@
   </div>
   <section id="resultsheading">
     <h2>{{subjectName}} has {{count}} episode<span *ngIf="count>1 || count==0">s</span><span
-        *ngIf="this.searchState.query && this.searchState.query!=''">
-        matching "{{this.searchState.query}}"</span></h2>
+        *ngIf="searchState.query && searchState.query!=''">
+        matching "{{searchState.query}}"</span></h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      @if (this.authRoles.includes('Curator')) {
+      @if (authRoles.includes('Curator')) {
       <button mat-menu-item id="edit" (click)="editSubject()">
         <mat-icon>edit</mat-icon>
         <span>Edit Subject</span>
@@ -34,22 +34,22 @@
     </mat-menu>
   </section>
 
-  @if (this.facets.podcastName && this.facets.podcastName.length > 0) {
+  @if (facets.podcastName && facets.podcastName.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Podcasts ({{this.facets.podcastName!.length}})</mat-panel-title>
+      <mat-panel-title>Podcasts ({{facets.podcastName!.length}})</mat-panel-title>
       <mat-panel-description>
-        @if (this.podcasts.length==0) {
+        @if (podcasts.length==0) {
         All Selected
         } @else {
-        {{this.podcasts.length}} Selected
+        {{podcasts.length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
-    <mat-chip-listbox multiple (change)="this.podcastsChange($event)">
-      @for (podcastName of this.facets.podcastName; track podcastName.value) {
+    <mat-chip-listbox multiple (change)="podcastsChange($event)">
+      @for (podcastName of facets.podcastName; track podcastName.value) {
       <mat-chip-option [value]="podcastName"
-        [selected]="this.podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
+        [selected]="podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
         ({{podcastName.count}})</mat-chip-option>
       }
     </mat-chip-listbox>

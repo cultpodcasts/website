@@ -15,7 +15,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
   selector: 'app-submit-podcast',
   templateUrl: './submit-podcast.component.html',
   styleUrls: ['./submit-podcast.component.sass'],
-  standalone: true,
   imports: [
     MatDialogModule,
     FormsModule,

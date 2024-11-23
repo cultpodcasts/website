@@ -9,7 +9,6 @@ import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'app-delete-episode-dialog',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

@@ -16,7 +16,6 @@ import { SubmitUrlOriginResponse } from "../SubmitUrlOriginResponse";
   selector: 'app-send-podcast',
   templateUrl: './send-podcast.component.html',
   styleUrls: ['./send-podcast.component.sass'],
-  standalone: true,
   imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
 })
 

@@ -10,7 +10,6 @@ import { environment } from './../../environments/environment';
 
 @Component({
   selector: 'app-add-term',
-  standalone: true,
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,

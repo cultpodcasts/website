@@ -12,7 +12,6 @@ import { MatCardModule } from '@angular/material/card';
   selector: 'discovery-item',
   templateUrl: './discovery-item.component.html',
   styleUrls: ['./discovery-item.component.sass'],
-  standalone: true,
   imports: [
     MatCardModule,
     NgClass,

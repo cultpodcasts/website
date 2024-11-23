@@ -24,7 +24,6 @@ import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-discovery-api',
-  standalone: true,
   imports: [
     NgIf,
     MatProgressBarModule,
