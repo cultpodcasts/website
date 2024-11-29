@@ -82,6 +82,9 @@
         [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
+      @if (result.image) {
+        <img src="{{result.image}}" >
+      }
       <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>

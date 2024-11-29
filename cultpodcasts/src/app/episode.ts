@@ -20,5 +20,6 @@ export interface Episode {
     spotifyPodcast?: boolean,
     applePodcast?: boolean,
     releaseAuthority?: string,
-    primaryPostService?: string
+    primaryPostService?: string,
+    image?: URL
 }

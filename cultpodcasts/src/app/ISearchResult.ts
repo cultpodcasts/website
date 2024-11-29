@@ -10,4 +10,5 @@ export interface ISearchResult {
   apple: URL | undefined;
   youtube: URL | undefined;
   subjects: string[] | undefined
+  image: URL | undefined;
 }
