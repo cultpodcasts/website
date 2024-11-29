@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { firstValueFrom, forkJoin, Observable } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -86,15 +86,15 @@ export class EpisodesApiComponent {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
 
-        const episodeResponses: Observable<Episode>[] = [];
+        const episodeResponses: Observable<Episode|null>[] = [];
         episodeIds.forEach(episodeId => {
           const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers })
+          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes = episodes;
+            this.episodes = episodes.filter(x=>x!=null);
             this.isLoading = false;
           },
           error: e => {
@@ -105,6 +105,21 @@ export class EpisodesApiComponent {
         })
       });
     })
+  }
+
+  handleRequest(that:any) {
+    return function (observable: Observable<any>) {
+      return observable.pipe(
+        map((result) => {
+          return result;
+        }),
+        catchError((err) => {
+          console.log(err);
+          that.error= true;
+          return of(null);
+        })
+      );
+    };
   }
 
   setSort(sort: string) {
