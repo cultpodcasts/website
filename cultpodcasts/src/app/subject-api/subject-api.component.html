@@ -1,11 +1,15 @@
-<section id="results" *ngIf="count > 0">
+@if (count > 0) {
+<section id="results">
   <div id="progresswrapper">
-    <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+    @if (isLoading) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
   </div>
   <section id="resultsheading">
-    <h2>{{subjectName}} has {{count}} episode<span *ngIf="count>1 || count==0">s</span><span
-        *ngIf="searchState.query && searchState.query!=''">
-        matching "{{searchState.query}}"</span></h2>
+    <h2>{{subjectName}} has {{count}} episode@if (count>1 || count==0){s}
+      @if (searchState.query && searchState.query!='') {
+      matching "{{searchState.query}}"
+      }</h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
     </button>
@@ -26,11 +30,13 @@
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      <button *ngIf="searchState.query" mat-menu-item id="rank" (click)="setSort(sortParamRank)"
+      @if (searchState.query) {
+      <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
         [ngClass]="searchState.sort==sortParamRank?'selected':''">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>
+      }
     </mat-menu>
   </section>
 
@@ -48,15 +54,15 @@
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="podcastsChange($event)">
       @for (podcastName of facets.podcastName; track podcastName.value) {
-      <mat-chip-option [value]="podcastName"
-        [selected]="podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
+      <mat-chip-option [value]="podcastName" [selected]="podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
         ({{podcastName.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
   </mat-expansion-panel>
   }
 
-  <mat-card *ngFor="let result of results" class="result">
+  @for (result of results; track result.id) {
+  <mat-card class="result">
     <mat-card-header>
       <mat-card-title>
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
@@ -71,41 +77,62 @@
     </mat-card-header>
     <mat-card-content class="resultdescription">
       @if (result.image) {
-        <img src="{{result.image}}" >
-      }
-      <p>{{result.episodeDescription}}</p>
+        @defer (on viewport) {
+        <img src="{{result.image}}">
+        } @placeholder {
+        <span class="img"></span>
+        }
+        }
+        <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <a *ngIf="result.youtube" href="{{result.youtube}}" mat-icon-button>
+      @if (result.youtube) {
+      <a href="{{result.youtube}}" mat-icon-button>
         <mat-icon svgIcon="youtube"></mat-icon>
       </a>
-      <a *ngIf="result.spotify" href="{{result.spotify}}" mat-icon-button>
+      }
+      @if (result.spotify) {
+      <a href="{{result.spotify}}" mat-icon-button>
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="result.apple" href="{{result.apple}}" mat-icon-button>
+      }
+      @if (result.apple) {
+      <a href="{{result.apple}}" mat-icon-button>
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
+      }
       <button mat-icon-button (click)="share(result)">
         <mat-icon>share</mat-icon>
       </button>
       <mat-card-footer class="subjects">
-        <div *ngFor="let subject of result.subjects" class="subject">
+        @for (subject of result.subjects; track subject) {
+        <div class="subject">
           @if (!subject.startsWith("_")) {
           <a [routerLink]="['/subject', subject]">{{subject}}</a>
           }
         </div>
+        }
       </mat-card-footer>
     </mat-card-actions>
   </mat-card>
+  }
 </section>
-<section *ngIf="showPagingPrevious || showPagingNext" id="paging">
-  <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
-  <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
+} 
+@if (showPagingPrevious || showPagingNext) {
+<section id="paging">
+  @if (showPagingPrevious) {
+    <a mat-button id="previous" (click)="setPage(-1)">Previous</a>
+  }
+  @if (showPagingNext) {
+    <a mat-button id="next" (click)="setPage(1)">Next</a>
+  }
 </section>
-<section *ngIf="count === 0 && !isLoading">
-  <h2>There were no results for "{{subjectName}}"<span *ngIf="searchState.query"> and "{{searchState.query}}"</span>
-  </h2>
+}
+@if (count === 0 && !isLoading) {
+<section>
+  <h2>There were no results for "{{subjectName}}"@if (searchState.query){ and "{{searchState.query}}"}</h2>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>
 </section>
+}

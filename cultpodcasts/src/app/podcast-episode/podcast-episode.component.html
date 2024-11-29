@@ -30,29 +30,37 @@
     </mat-card-header>
     <mat-card-content class="resultdescription">
       @if (episode.image) {
-        <img src="{{episode.image}}" >
+      <img src="{{episode.image}}">
       }
       <p>{{episode.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <a *ngIf="episode.youtube" href="{{episode.youtube}}" mat-icon-button>
+      @if (episode.youtube) {
+      <a href="{{episode.youtube}}" mat-icon-button>
         <mat-icon svgIcon="youtube"></mat-icon>
       </a>
-      <a *ngIf="episode.spotify" href="{{episode.spotify}}" mat-icon-button>
+      }
+      @if (episode.spotify) {
+      <a href="{{episode.spotify}}" mat-icon-button>
         <mat-icon svgIcon="spotify"></mat-icon>
       </a>
-      <a *ngIf="episode.apple" href="{{episode.apple}}" mat-icon-button>
+      }
+      @if (episode.apple) {
+      <a href="{{episode.apple}}" mat-icon-button>
         <mat-icon svgIcon="apple-podcasts"></mat-icon>
       </a>
+      }
       <button mat-icon-button (click)="share(episode)">
         <mat-icon>share</mat-icon>
       </button>
       <mat-card-footer class="subjects">
-        <div *ngFor="let subject of episode.subjects" class="subject">
+        @for (subject of episode.subjects; track subject) {
+        <div class="subject">
           @if (!subject.startsWith("_")) {
           <a [routerLink]="['/subject', subject]">{{subject}}</a>
           }
         </div>
+        }
       </mat-card-footer>
     </mat-card-actions>
   </mat-card>

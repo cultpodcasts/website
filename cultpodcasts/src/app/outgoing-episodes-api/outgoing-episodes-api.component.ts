@@ -8,7 +8,7 @@ import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe, NgClass, NgFor, NgIf } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,13 +34,11 @@ const daysKey: string = "pref.outgoing-episodes.days";
 @Component({
   selector: 'app-outgoing-episodes-api',
   imports: [
-    NgIf,
     MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
     NgClass,
-    NgFor,
     MatCardModule,
     RouterLink,
     DatePipe,

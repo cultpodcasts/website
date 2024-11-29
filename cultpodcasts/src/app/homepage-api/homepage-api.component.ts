@@ -2,7 +2,7 @@ import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, NgIf, NgFor, DecimalPipe, KeyValuePipe, formatDate, isPlatformServer } from '@angular/common';
+import { KeyValue, DecimalPipe, KeyValuePipe, formatDate, isPlatformServer } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { environment } from './../../environments/environment';
@@ -16,9 +16,7 @@ import { HomepageService } from '../homepage.service';
 @Component({
   selector: 'app-homepage-api',
   imports: [
-    NgIf,
     MatProgressBarModule,
-    NgFor,
     MatCardModule,
     RouterLink,
     MatButtonModule,
