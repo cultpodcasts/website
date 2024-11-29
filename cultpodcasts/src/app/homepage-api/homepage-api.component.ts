@@ -13,9 +13,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
 
-const pageSize: number = 20;
-const pageParam: string = "page";
-
 @Component({
   selector: 'app-homepage-api',
   imports: [
@@ -34,13 +31,9 @@ const pageParam: string = "page";
 })
 export class HomepageApiComponent {
   grouped: { [key: string]: IHomepageItem[]; };
-  currentPage: number = 1;
   podcastCount: number | undefined;
   errorText: string | undefined;
   isServer: boolean;
-
-  prevPage: number = 0;
-  nextPage: number = 0;
 
   isLoading: boolean = true;
   isInError: boolean = false;
@@ -84,14 +77,6 @@ export class HomepageApiComponent {
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
-      this.currentPage = 1;
-      if (queryParams[pageParam]) {
-        this.currentPage = parseInt(queryParams[pageParam]);
-        this.prevPage = this.currentPage - 1;
-        this.nextPage = this.currentPage + 1;
-      } else {
-        this.nextPage = 2;
-      }
       let homepageContent: IHomepage | undefined;
       try {
         if (!homepageContent) {
@@ -106,10 +91,8 @@ export class HomepageApiComponent {
       if (homepageContent) {
         this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
-        let start = (this.currentPage - 1) * pageSize;
         this.podcastCount = this.homepage.recentEpisodes.length;
-        var pageEpisodes = this.homepage.recentEpisodes.slice(start, start + pageSize);
-        this.grouped = pageEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
           item.release = new Date(item.release);
           if (!group[item.release.toLocaleDateString()]) {
             group[item.release.toLocaleDateString()] = [];
@@ -118,9 +101,6 @@ export class HomepageApiComponent {
           return group;
         }, {});
         this.isLoading = false;
-        this.showPagingPrevious = this.currentPage > 2;
-        this.showPagingPreviousInit = this.currentPage == 2;
-        this.showPagingNext = (this.currentPage * pageSize) < this.homepage.recentEpisodes.length;
       } else {
         this.isLoading = false;
         this.isInError = true;
@@ -143,16 +123,6 @@ export class HomepageApiComponent {
       return 1
     }
     return 0;
-  }
-
-  setPage(page: number) {
-    var url = `/`;
-    this.currentPage += page;
-    var params: Params = {};
-    if (this.currentPage > 1) {
-      params["page"] = this.currentPage;
-    }
-    this.router.navigate([url], { queryParams: params });
   }
 
   share(item: IHomepageItem) {

@@ -25,6 +25,7 @@ import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
+import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -228,5 +229,20 @@ export class OutgoingEpisodesApiComponent {
           }
         }
       });
+  }
+
+  editPodcast(podcastName: string) {
+    const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
+      data: { podcastName: podcastName },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      }
+    });
   }
 }

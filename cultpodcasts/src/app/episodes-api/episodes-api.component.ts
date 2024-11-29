@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { firstValueFrom, forkJoin, Observable } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -21,6 +21,8 @@ import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
+import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
+import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -52,6 +54,7 @@ export class EpisodesApiComponent {
   error: boolean = false;
   isLoading: boolean = true;
   sortDirection: string = sortParamDateDesc;
+  authRoles: string[] = [];
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -60,7 +63,9 @@ export class EpisodesApiComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService
-  ) { }
+  ) {
+    this.auth.roles.subscribe(roles => this.authRoles = roles);
+  }
 
   ngOnInit() {
     this.siteService.setQuery(null);
@@ -86,15 +91,15 @@ export class EpisodesApiComponent {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
 
-        const episodeResponses: Observable<Episode>[] = [];
+        const episodeResponses: Observable<Episode | null>[] = [];
         episodeIds.forEach(episodeId => {
           const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers })
+          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes = episodes;
+            this.episodes = episodes.filter(x => x != null);
             this.isLoading = false;
           },
           error: e => {
@@ -105,6 +110,21 @@ export class EpisodesApiComponent {
         })
       });
     })
+  }
+
+  handleRequest(that: any) {
+    return function (observable: Observable<any>) {
+      return observable.pipe(
+        map((result) => {
+          return result;
+        }),
+        catchError((err) => {
+          console.log(err);
+          that.error = true;
+          return of(null);
+        })
+      );
+    };
   }
 
   setSort(sort: string) {
@@ -151,6 +171,34 @@ export class EpisodesApiComponent {
         var messageBuilde = new EpisodePublishResponseAdaptor();
         const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+      }
+    });
+  }
+
+  delete(id: string) {
+    const dialogRef = this.dialog.open(DeleteEpisodeDialogComponent, {
+      data: { episodeId: id },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.deleted) {
+        let snackBarRef = this.snackBar.open("Episode deleted.", "Ok", { duration: 10000 });
+      }
+    });
+  }
+
+  editPodcast(podcastName: string) {
+    const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
+      data: { podcastName: podcastName },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
+      } else if (result.noChange) {
+        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
     });
   }

@@ -26,6 +26,9 @@
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="resultdescription">
+          @if (item.image) {
+            <img src="{{item.image}}">
+          }
           <p>{{item.episodeDescription}}</p>
         </mat-card-content>
         <mat-card-actions>
@@ -51,9 +54,4 @@
         </mat-card-actions>
       </mat-card>
     </div>
-  </section>
-  <section *ngIf="showPagingPreviousInit || showPagingPrevious || showPagingNext" id="paging">
-    <a mat-button id="previous" *ngIf="showPagingPreviousInit" [routerLink]="['/']">Previous</a>
-    <a mat-button id="previous" *ngIf="showPagingPrevious" (click)="setPage(-1)">Previous</a>
-    <a mat-button id="next" *ngIf="showPagingNext" (click)="setPage(1)">Next</a>
   </section>
