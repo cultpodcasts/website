@@ -62,6 +62,12 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
+                @if (authRoles.includes("Curator") && result.podcastName) {
+                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit Podcast</span>
+                </button>
+                }
                 @if (authRoles.includes("Admin")) {
                 <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
                     <mat-icon>delete</mat-icon>
