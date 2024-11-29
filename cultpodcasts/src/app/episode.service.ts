@@ -19,8 +19,6 @@ export class EpisodeService {
     private http: HttpClient
   ) { }
 
-
-
   public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr: boolean): Promise<IPageDetails | undefined> {
     const ssrSuffix = ssr ? "?ssr=true" : "";
     let host: string = environment.api;

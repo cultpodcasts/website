@@ -7,7 +7,7 @@
             An error occurred.
         </p>
     </ng-container>
-        <section id="resultsheading">
+    <section id="resultsheading">
         <h2>Review</h2>
         <button id="sort" mat-icon-button [matMenuTriggerFor]="sort" *ngIf="!isLoading && !error">
             <mat-icon>more_vert</mat-icon>
@@ -39,6 +39,18 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
+                @if (authRoles.includes("Curator") && result.podcastName) {
+                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit Podcast</span>
+                </button>
+                }
+                @if (authRoles.includes("Admin")) {
+                <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete Episode</span>
+                </button>
+                }
             </mat-menu>
             <mat-card-title>
                 <span [outerHTML]="result.title"></span>
