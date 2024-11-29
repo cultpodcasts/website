@@ -1,6 +1,6 @@
 import { Component, inject, Input } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { DatePipe, formatDate, NgFor, NgIf } from '@angular/common';
+import { DatePipe, formatDate } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,11 +22,9 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 @Component({
   selector: 'app-podcast-episode',
   imports: [
-    NgIf,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgFor,
     MatCardModule,
     RouterLink,
     DatePipe

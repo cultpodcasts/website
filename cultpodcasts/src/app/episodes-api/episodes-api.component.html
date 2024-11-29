@@ -1,17 +1,23 @@
 <section id="results">
     <div id="progresswrapper">
-        <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+        @if (isLoading) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        }
     </div>
-    <ng-container *ngIf="!isLoading && error">
+    @if (!isLoading && error) {
+    <ng-container>
         <p id="error">
             An error occurred.
         </p>
     </ng-container>
+    }
     <section id="resultsheading">
         <h2>Review</h2>
-        <button id="sort" mat-icon-button [matMenuTriggerFor]="sort" *ngIf="!isLoading && !error">
+        @if (!isLoading && !error) {
+        <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
             <mat-icon>more_vert</mat-icon>
         </button>
+        }
         <mat-menu #sort="matMenu">
             <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
                 [ngClass]="sortDirection==sortParamDateAsc?'selected':''">
@@ -25,7 +31,8 @@
             </button>
         </mat-menu>
     </section>
-    <mat-card *ngFor="let result of episodes" class="result">
+    @for (result of episodes; track result.id){
+    <mat-card class="result">
         <mat-card-header>
             <button mat-icon-button [matMenuTriggerFor]="menu">
                 <mat-icon>more_vert</mat-icon>
@@ -66,7 +73,11 @@
         </mat-card-header>
         <mat-card-content class="resultdescription">
             @if (result.image) {
+            @defer (on viewport) {
             <img src="{{result.image}}">
+            } @placeholder {
+            <span class="img"></span>
+            }
             }
             <p>{{result.description}}</p>
             <app-episode-status [episode]="result"></app-episode-status>
@@ -74,18 +85,25 @@
         <mat-card-actions>
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
             <mat-card-footer class="subjects">
-                <div *ngFor="let subject of result.subjects" class="subject">
+                @for (subject of result.subjects; track subject) {
+                <div class="subject">
                     <a [routerLink]="['/subject', subject]">{{subject}}</a>
                 </div>
+                }
             </mat-card-footer>
         </mat-card-actions>
     </mat-card>
+    }
 </section>
-<ng-container *ngIf="!isLoading && error">
+@if (!isLoading && error) {
+<ng-container>
     <div id="cta-button">
         <button mat-flat-button color="primary" (click)="ngOnInit()">Try again</button>
     </div>
 </ng-container>
-<div id="cta-button" *ngIf="!isLoading && !error">
+}
+@if (!isLoading && !error) {
+<div id="cta-button">
     <button mat-flat-button color="primary" (click)="ngOnInit()">Refresh</button>
 </div>
+}

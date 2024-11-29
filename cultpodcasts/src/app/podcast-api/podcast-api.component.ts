@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, formatDate } from '@angular/common';
+import { NgClass, DatePipe, formatDate } from '@angular/common';
 import { GuidService } from '../guid.service';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
@@ -41,13 +41,11 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-podcast-api',
   imports: [
-    NgIf,
     MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
     NgClass,
-    NgFor,
     MatCardModule,
     RouterLink,
     DatePipe,
