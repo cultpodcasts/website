@@ -30,6 +30,7 @@ import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/ma
 import { SearchResultsFacets } from '../search-results-facets';
 import { FacetState } from '../facet-state';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -51,8 +52,9 @@ const sortParamDateDesc: string = "date-desc";
     DatePipe,
     MatExpansionModule,
     MatChipListbox,
-    MatChipOption
-  ],
+    MatChipOption,
+    EpisodeImageComponent
+],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
 })

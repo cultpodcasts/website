@@ -76,14 +76,8 @@
         [{{result.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
-      @if (result.image) {
-        @defer (on viewport) {
-        <img src="{{result.image}}">
-        } @placeholder {
-        <span class="img"></span>
-        }
-        }
-        <p>{{result.episodeDescription}}</p>
+      <app-episode-image [imageUrl]="result.image"></app-episode-image>
+      <p>{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
       @if (result.youtube) {

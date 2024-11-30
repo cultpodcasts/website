@@ -18,6 +18,7 @@ import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-
 import { EpisodePublishResponse } from '../episode-publish-response';
 import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 @Component({
   selector: 'app-podcast-episode',
@@ -27,8 +28,9 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
     MatIconModule,
     MatCardModule,
     RouterLink,
-    DatePipe
-  ],
+    DatePipe,
+    EpisodeImageComponent
+],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
 })

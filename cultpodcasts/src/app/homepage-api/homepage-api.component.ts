@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
+import { EpisodeImageComponent } from '../episode-image/episode-image.component';
 
 @Component({
   selector: 'app-homepage-api',
@@ -22,7 +23,8 @@ import { HomepageService } from '../homepage.service';
     MatButtonModule,
     MatIconModule,
     DecimalPipe,
-    KeyValuePipe
+    KeyValuePipe,
+    EpisodeImageComponent
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
