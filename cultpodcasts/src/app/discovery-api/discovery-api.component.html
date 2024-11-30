@@ -9,7 +9,7 @@
     <h2>Discovery results@if (minDate){ since {{minDate| date:'d MMM yyyy H:mm'}}}
     </h2>
   </section>
-  @if (!isLoading && !isInError && results?.length == 0) {
+  @if (!isLoading && !isInError && results.length == 0) {
   <h3>There are no discovery results</h3>
   }
   @if (isInError) {
