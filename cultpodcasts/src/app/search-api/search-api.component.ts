@@ -17,6 +17,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets';
 import { FacetState } from '../facet-state';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -40,8 +41,9 @@ const sortParamDateDesc: string = "date-desc";
     DatePipe,
     MatExpansionModule,
     MatChipListbox,
-    MatChipOption
-  ],
+    MatChipOption,
+    EpisodeImageComponent
+],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass'
 })
