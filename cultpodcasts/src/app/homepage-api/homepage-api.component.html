@@ -22,46 +22,6 @@
   <div>
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
-
-<!-- start-->
-
-
-<mat-card class="result">
-  <mat-card-header>
-    <mat-card-title><a>episodeTitle</a></mat-card-title>
-    <mat-card-subtitle>
-      <a>podcastName</a>
-      <span class="duration"> duration</span>
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content class="resultdescription">
-    <app-episode-image imageUrl="https://i.scdn.co/image/ab6765630000ba8a901a2e710a2718c84e1084ba"></app-episode-image>
-    <p>episodeDescription</p>
-  </mat-card-content>
-  <mat-card-actions>
-    <a  mat-icon-button>
-      <mat-icon svgIcon="youtube"></mat-icon>
-    </a>
-    <a  mat-icon-button>
-      <mat-icon svgIcon="spotify"></mat-icon>
-    </a>
-    <a mat-icon-button>
-      <mat-icon svgIcon="apple-podcasts"></mat-icon>
-    </a>
-    <button mat-icon-button >
-      <mat-icon>share</mat-icon>
-    </button>
-    <mat-card-footer class="subjects">
-      <div class="subject">
-        <a >subject</a>
-      </div>
-    </mat-card-footer>
-  </mat-card-actions>
-</mat-card>
-
-
-
-<!-- end -->
     @for (item of dateItems.value; track item.episodeId) {
     <mat-card class="result" id="{{item.episodeId}}">
       <mat-card-header>
