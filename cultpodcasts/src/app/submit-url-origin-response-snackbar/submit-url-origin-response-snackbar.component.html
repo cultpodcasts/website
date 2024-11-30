@@ -1,51 +1,59 @@
-@if (!existingPodcast) {
-<span>
-    @if (data.response.podcast==="Created") {
-    Podcast Created.
-    } @else if (data.response.podcast=== "Enriched") {
-    Podcast Enriched.
-    } @else if (data.response.podcast=== "Ignored") {
-    Podcast Ignored.
-    } @else if (data.response.podcast==="PodcastRemoved") {
-    Podcast Removed.
-    }
-</span>
-}
-<span>
-    @if (data.response.episode==="Created") {
-    Episode created.
-    } @else if (data.response.episode === "Enriched") {
-    Episode enriched.
-    } @else if (data.response.episode === "Ignored") {
-    Episode ignored.
-    } @else if (data.response.episode === "EpisodeAlreadyExists") {
-    Episode already exists.
-    } @else {
-    Episode not created.
-    }
-</span>
-@if (data.response.episodeDetails) {
-<span>
-    <span id="service-icons">
-        @if (data.response.episodeDetails.spotify) {
-        <img src="/assets/spotify.svg">
+<div id="wrapper">
+    <div matSnackBarLabel>
+        @if (!existingPodcast) {
+        <span>
+            @if (data.response.podcast==="Created") {
+            Podcast Created.
+            } @else if (data.response.podcast=== "Enriched") {
+            Podcast Enriched.
+            } @else if (data.response.podcast=== "Ignored") {
+            Podcast Ignored.
+            } @else if (data.response.podcast==="PodcastRemoved") {
+            Podcast Removed.
+            }
+        </span>
         }
-        @if (data.response.episodeDetails.apple) {
-        <img src="/assets/apple-podcasts.svg">
+        <span>
+            @if (data.response.episode==="Created") {
+            Episode created.
+            } @else if (data.response.episode === "Enriched") {
+            Episode enriched.
+            } @else if (data.response.episode === "Ignored") {
+            Episode ignored.
+            } @else if (data.response.episode === "EpisodeAlreadyExists") {
+            Episode already exists.
+            } @else {
+            Episode not created.
+            }
+        </span>
+        @if (data.response.episodeDetails) {
+        <span>
+            <span id="service-icons">
+                @if (data.response.episodeDetails.spotify) {
+                <img src="/assets/spotify.svg">
+                }
+                @if (data.response.episodeDetails.apple) {
+                <img src="/assets/apple-podcasts.svg">
+                }
+                @if (data.response.episodeDetails.youtube) {
+                <img src="/assets/youtube.svg">
+                }
+            </span>
+            @if (data.response.episodeDetails.subjects.length > 0) {
+            {{data.response.episodeDetails.subjects.length}}
+            @if(data.response.episodeDetails.subjects.length>1){
+            subjects
+            } @else {
+            subject
+            }
+            }
+        </span>
         }
-        @if (data.response.episodeDetails.youtube) {
-        <img src="/assets/youtube.svg">
-        }
-    </span>
-    @if (data.response.episodeDetails.subjects.length > 0) {
-    {{data.response.episodeDetails.subjects.length}}
-    @if(data.response.episodeDetails.subjects.length>1){
-    subjects
-    } @else {
-    subject
-    }
-    }
-</span>
-}
-<button mat-raised-button color="accent" (click)="snackBarRef.dismissWithAction()"
-    class="mat-mdc-snack-bar-action mdc-button mat-mdc-button">{{action }}</button>
+    </div>
+
+    <div matSnackBarActions>
+        <button  id="action"  mat-button matSnackBarAction class="mat-mdc-snack-bar-action mdc-button mat-mdc-button" (click)="action()">
+            {{actionText}}
+        </button>
+    </div>
+</div>
