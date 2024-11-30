@@ -9,13 +9,12 @@ import { SubmitDiscoveryResponse } from '../ISubmitDiscoveryResponse';
 import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-discovery-submit',
   templateUrl: './discovery-submit.component.html',
   styleUrls: ['./discovery-submit.component.sass'],
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class DiscoverySubmitComponent {

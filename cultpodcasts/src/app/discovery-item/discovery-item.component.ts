@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { HideDirective } from '../hide.directive';
-import { NgClass, NgIf, NgFor, DatePipe } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
@@ -16,10 +16,8 @@ import { MatCardModule } from '@angular/material/card';
     MatCardModule,
     NgClass,
     HideDirective,
-    NgIf,
     MatButtonModule,
     MatIconModule,
-    NgFor,
     RouterLink,
     DatePipe
   ]

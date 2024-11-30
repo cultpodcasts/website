@@ -1,24 +1,36 @@
 <h2 mat-dialog-title>Sending Podcast</h2>
 
 <mat-dialog-content>
-
-    <mat-spinner style="margin:0 auto;" mode="indeterminate" *ngIf="isSending"></mat-spinner>
-    <div *ngIf="urlShareError">
+    @if (isSending) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    }
+    @if (urlShareError) {
+    <div>
         <p>Please share from Spotify, Apple Podcasts or YouTube</p>
     </div>
-    <div *ngIf="urlTextError">
+    }
+    @if (urlTextError) {
+    <div>
         <p>Unrecognised url. Please check Url is valid Spotify, Apple Podcasts or YouTube address</p>
     </div>
-    <div *ngIf="unknownError">
+    }
+    @if (unknownError) {
+    <div>
         <p>Unable to send the Podcast</p>
     </div>
-    <div *ngIf="submitError">
+    }
+    @if (submitError) {
+    <div>
         <p>Error sending Url to CultPodcasts.com</p>
     </div>
-    <p *ngIf="urlShareError || urlTextError">URL: {{shareUrl}}</p>
-
+    }
+    @if (urlShareError || urlTextError) {
+    <p>URL: {{shareUrl}}</p>
+    }
 </mat-dialog-content>
 
-<mat-dialog-actions *ngIf="urlShareError || urlTextError || unknownError || submitError">
+@if (urlShareError || urlTextError || unknownError || submitError) {
+<mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>
+}

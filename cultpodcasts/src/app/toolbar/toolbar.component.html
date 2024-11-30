@@ -6,56 +6,57 @@
       <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
       <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
       <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter" class="socialbutton"></a>
-      <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
-        <div *ngIf="auth.authService.user$ | async as user; else unAuthenticatedButton"
-          class="socialbutton button">
-          <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
-        </div>
-        <ng-template #unAuthenticatedButton>
-          <img src="/assets/profile.svg" alt="Profile" class="socialbutton button"
-            [matMenuTriggerFor]="loggedOutProfile">
-        </ng-template>
-        <mat-menu #loggedOutProfile="matMenu">
-          <a (click)="login()" mat-menu-item>
-            <mat-icon>login</mat-icon>
-            <span>Login</span>
-          </a>
-        </mat-menu>
-        <mat-menu #profile="matMenu">
-          @if (authRoles.includes("Curator")) {
-          <a [routerLink]="['/discovery']" mat-menu-item>
-            <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
-            <span>Discovery</span>
-          </a>
-          <a mat-menu-item (click)="openSubmitSubject()">
-            <mat-icon class="material-symbols-outlined">add</mat-icon>
-            <span>Create Subject</span>
-          </a>
-          <a mat-menu-item (click)="openReviewOutgoing()">
-            <mat-icon class="material-symbols-outlined">search_check</mat-icon>
-            <span>Review Outgoing</span>
-          </a>
-          }
-          @if (authRoles.includes("Admin")) {
-          <a (click)="runSearchIndexer()" mat-menu-item>
-            <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
-            <span>Run Search Indexer</span>
-          </a>
-          <a (click)="publishHomepage()" mat-menu-item>
-            <mat-icon class="material-symbols-outlined">publish</mat-icon>
-            <span>Publish Homepage</span>
-          </a>
-          <a (click)="addTerm()" mat-menu-item>
-            <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
-            <span>Add Term</span>
-          </a>
-          }
-          <a (click)="logout()" mat-menu-item>
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </a>
-        </mat-menu>
-      </ng-container>
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
+
+      @if (auth.authService.user$ | async; as user) {
+      <div class="socialbutton button">
+        <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
+      </div>
+      } @else {
+      <img src="/assets/profile.svg" alt="Profile" class="socialbutton button" [matMenuTriggerFor]="loggedOutProfile">
+      }
+
+      <mat-menu #loggedOutProfile="matMenu">
+        <a (click)="login()" mat-menu-item>
+          <mat-icon>login</mat-icon>
+          <span>Login</span>
+        </a>
+      </mat-menu>
+      <mat-menu #profile="matMenu">
+        @if (authRoles.includes("Curator")) {
+        <a [routerLink]="['/discovery']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
+          <span>Discovery</span>
+        </a>
+        <a mat-menu-item (click)="openSubmitSubject()">
+          <mat-icon class="material-symbols-outlined">add</mat-icon>
+          <span>Create Subject</span>
+        </a>
+        <a mat-menu-item (click)="openReviewOutgoing()">
+          <mat-icon class="material-symbols-outlined">search_check</mat-icon>
+          <span>Review Outgoing</span>
+        </a>
+        }
+        @if (authRoles.includes("Admin")) {
+        <a (click)="runSearchIndexer()" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
+          <span>Run Search Indexer</span>
+        </a>
+        <a (click)="publishHomepage()" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">publish</mat-icon>
+          <span>Publish Homepage</span>
+        </a>
+        <a (click)="addTerm()" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
+          <span>Add Term</span>
+        </a>
+        }
+        <a (click)="logout()" mat-menu-item>
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </a>
+      </mat-menu>
+      }
     </div>
     <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
       <mat-icon>more_vert</mat-icon>
@@ -101,20 +102,20 @@
         <mat-icon svgIcon="twitter"></mat-icon>
         <span>Twitter</span>
       </a>
-      <ng-container *ngIf="featureSwtichService.IsEnabled(FeatureSwitch.auth0)">
-        <ng-container *ngIf="auth.authService.user$ | async as user; else unAuthenticatedMenuItem">
-          <a (click)="logout()" mat-menu-item>
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </a>
-        </ng-container>
-        <ng-template #unAuthenticatedMenuItem>
-          <a (click)="login()" mat-menu-item>
-            <mat-icon>login</mat-icon>
-            <span mat-mdc-menu-item-text>Login</span>
-          </a>
-        </ng-template>
-      </ng-container>
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
+
+      @if (auth.authService.user$ | async; as user) {
+      <a (click)="logout()" mat-menu-item>
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </a>
+      } @else {
+      <a (click)="login()" mat-menu-item>
+        <mat-icon>login</mat-icon>
+        <span mat-mdc-menu-item-text>Login</span>
+      </a>
+      }
+      }
     </mat-menu>
   </mat-toolbar>
 </section>

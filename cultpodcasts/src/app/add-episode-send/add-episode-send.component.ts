@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +10,7 @@ import { EpisodePost } from '../EpisodePost';
 
 @Component({
   selector: 'app-add-episode-send',
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './add-episode-send.component.html',
   styleUrl: './add-episode-send.component.sass'
 })

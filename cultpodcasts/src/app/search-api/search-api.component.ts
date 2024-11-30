@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgClass, NgFor, DatePipe, formatDate } from '@angular/common';
+import { NgClass, DatePipe, formatDate } from '@angular/common';
 import { GuidService } from '../guid.service';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
@@ -19,12 +19,10 @@ import { SearchResultsFacets } from '../search-results-facets';
 import { FacetState } from '../facet-state';
 
 const pageSize: number = 20;
-
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const queryParam: string = "query";
 const filterParam: string = "filter";
-
 const sortParamRank: string = "rank";
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -32,13 +30,11 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-search-api',
   imports: [
-    NgIf,
     MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
     NgClass,
-    NgFor,
     MatCardModule,
     RouterLink,
     DatePipe,

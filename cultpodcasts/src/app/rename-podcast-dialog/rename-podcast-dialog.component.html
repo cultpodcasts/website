@@ -16,11 +16,17 @@
             [(ngModel)]="newPodcastName" name="newPodcastName" #newPodcastNameField="ngModel"
             (keyup)="checkControl(newPodcastNameField)" (keyup.enter)="onSubmit()">
 
-        <div *ngIf="newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)"
-            class="alert">
-            <div *ngIf="newPodcastNameField.hasError('required')">New podcast-name is required. </div>
-            <div *ngIf="newPodcastNameField.hasError('unsafe')">Invalid podcast name.</div>
+        @if (newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)) {
+        <div class="alert">
+            @if (newPodcastNameField.hasError('required')) {
+            <div>New podcast-name is required. </div>
+            }
+            @if (newPodcastNameField.hasError('unsafe')) {
+            <div>Invalid podcast name.</div>
+            }
         </div>
+
+        }
         }
     </mat-dialog-content>
 
