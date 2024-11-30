@@ -1,7 +1,9 @@
 @if (imageUrl) {
-@defer (on viewport) {
-<img src="{{imageUrl}}">
-} @placeholder {
-<span class="img"></span>
-}
+<div id="container">
+    @defer (on viewport) {
+    <img src="{{imageUrl}}">
+    } @placeholder {
+    <span class="placeholder"></span>
+    }
+</div>
 }

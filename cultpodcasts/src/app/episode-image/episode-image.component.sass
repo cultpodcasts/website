@@ -1,16 +1,10 @@
-img,.img
-    max-height: 300px
-    max-width: 100%
-    margin: 0 auto 10px
-    display: block
-
-.img
-    height: 300px
-
-@media screen and (max-width: 599px) 
-    img,.img
-        max-height: 200px
-
-    .img
-        height: 200px
-
+#container
+    width: 100%
+    aspect-ratio: 16/9
+    margin-bottom: 10px
+    img
+        object-fit: cover
+        max-width: 100%
+        max-height: 100%
+        margin: 0 auto
+        display: block
