@@ -26,6 +26,7 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -46,8 +47,9 @@ const daysKey: string = "pref.outgoing-episodes.days";
     MatMenuItem,
     FormsModule,
     EpisodeStatusComponent,
-    EpisodePodcastLinksComponent
-  ],
+    EpisodePodcastLinksComponent,
+    EpisodeImageComponent
+],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
 })

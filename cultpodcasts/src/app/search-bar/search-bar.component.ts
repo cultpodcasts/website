@@ -2,7 +2,6 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { SearchBoxMode } from '../SearchBoxMode';
 import { Router } from '@angular/router';
 import { SiteService } from '../SiteService';
-import { NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,7 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-search-bar',
   imports: [
-    NgIf,
     MatButtonModule,
     FormsModule,
     MatFormFieldModule,

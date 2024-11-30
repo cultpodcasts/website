@@ -29,9 +29,7 @@
         [{{episode.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
-      @if (episode.image) {
-      <img src="{{episode.image}}">
-      }
+      <app-episode-image [imageUrl]="episode.image"></app-episode-image>
       <p>{{episode.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>

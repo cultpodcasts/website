@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component, Inject } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
@@ -16,7 +15,6 @@ import { environment } from './../../environments/environment';
     MatProgressSpinnerModule,
     MatButtonModule,
     FormsModule,
-    NgIf
   ],
   templateUrl: './rename-podcast-dialog.component.html',
   styleUrl: './rename-podcast-dialog.component.sass'

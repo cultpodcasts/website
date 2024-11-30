@@ -13,8 +13,9 @@ import { Router } from '@angular/router';
   templateUrl: './submit-url-origin-response-snackbar.component.html',
   styleUrl: './submit-url-origin-response-snackbar.component.sass'
 })
+
 export class SubmitUrlOriginResponseSnackbarComponent {
-  action: string = "OK";
+  actionText: string = "OK";
   existingPodcast: boolean;
   constructor(
     private dialog: MatDialog,
@@ -24,11 +25,10 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse }) {
     this.existingPodcast = data.existingPodcast;
     if (data.response.episode === "Created" || data.response.episode === "Enriched" || data.response.episode === "EpisodeAlreadyExists") {
-      this.action = "Edit";
+      this.actionText = "Edit";
       snackBarRef.onAction().subscribe(() => {
         this.editSubmittedEpisode(data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
       });
-
     }
   }
 
@@ -90,5 +90,8 @@ export class SubmitUrlOriginResponseSnackbarComponent {
         }
       }
     });
+  }
+  action() {
+    this.snackBarRef.dismissWithAction()
   }
 }

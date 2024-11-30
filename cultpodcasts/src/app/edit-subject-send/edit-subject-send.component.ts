@@ -1,7 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { SubjectEntity } from '../subject-entity';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { NgIf } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -11,7 +10,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-edit-subject-send',
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-subject-send.component.html',
   styleUrl: './edit-subject-send.component.sass'
 })

@@ -1,0 +1,9 @@
+@if (imageUrl) {
+<div id="container">
+    @defer (on viewport) {
+    <img src="{{imageUrl}}">
+    } @placeholder {
+    <span class="placeholder"></span>
+    }
+</div>
+}

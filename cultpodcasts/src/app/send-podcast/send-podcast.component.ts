@@ -8,7 +8,6 @@ import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { NgIf } from '@angular/common';
 import { SubmitDialogResponse } from '../submit-url-origin-response';
 import { SubmitUrlOriginResponse } from "../SubmitUrlOriginResponse";
 
@@ -16,7 +15,7 @@ import { SubmitUrlOriginResponse } from "../SubmitUrlOriginResponse";
   selector: 'app-send-podcast',
   templateUrl: './send-podcast.component.html',
   styleUrls: ['./send-podcast.component.sass'],
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule]
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class SendPodcastComponent {

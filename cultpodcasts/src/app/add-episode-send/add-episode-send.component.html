@@ -1,14 +1,18 @@
 <h2 mat-dialog-title>Updating New Episode</h2>
 
 <mat-dialog-content>
-
-    <mat-spinner style="margin:0 auto;" mode="indeterminate" *ngIf="isSending"></mat-spinner>
-    <div *ngIf="sendError">
+    @if (isSending) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    }
+    @if (sendError) {
+    <div>
         <p>An error occured updating episode</p>
     </div>
-
+    }
 </mat-dialog-content>
 
-<mat-dialog-actions *ngIf="sendError">
+@if (sendError) {
+<mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>
+}

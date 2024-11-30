@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -11,7 +10,7 @@ import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-edit-podcast-send',
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-podcast-send.component.html',
   styleUrl: './edit-podcast-send.component.sass'
 })

@@ -106,7 +106,7 @@
         },
         "serve": {
           "options": {
-            "disableHostCheck": true,
+            "host": "local.cultpodcasts.com",
             "ssl": true
           },
           "builder": "@angular-devkit/build-angular:dev-server",

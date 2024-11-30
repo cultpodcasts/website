@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { FeatureSwtichService } from '../FeatureSwitchService';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../FeatureSwitch';
 import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -25,7 +25,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 
 @Component({
   selector: 'app-toolbar',
-  imports: [MatToolbarModule, MatIconModule, MatMenuModule, RouterLink, NgIf, AsyncPipe],
+  imports: [MatToolbarModule, MatIconModule, MatMenuModule, RouterLink, AsyncPipe],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass'
 })

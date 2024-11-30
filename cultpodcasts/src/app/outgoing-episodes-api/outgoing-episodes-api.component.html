@@ -95,13 +95,7 @@
             </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="resultdescription">
-            @if (result.image) {
-            @defer (on viewport) {
-            <img src="{{result.image}}">
-            } @placeholder {
-            <span class="img"></span>
-            }
-            }
+            <app-episode-image [imageUrl]="result.image"></app-episode-image>
             <p>{{result.description}}</p>
             <app-episode-status [episode]="result"></app-episode-status>
         </mat-card-content>

@@ -18,16 +18,14 @@ import { HideDirective } from '../hide.directive';
 import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-discovery-api',
   imports: [
-    NgIf,
     MatProgressBarModule,
-    NgFor,
     DiscoveryItemComponent,
     MatDividerModule,
     HideDirective,

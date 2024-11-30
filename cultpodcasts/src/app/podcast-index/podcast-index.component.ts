@@ -4,14 +4,13 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { NgIf } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { IndexPodcastResponse } from '../index-podcast-response';
 
 @Component({
   selector: 'app-podcast-index',
-  imports: [MatDialogModule, NgIf, MatProgressSpinnerModule, MatButtonModule],
+  imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './podcast-index.component.html',
   styleUrl: './podcast-index.component.sass'
 })

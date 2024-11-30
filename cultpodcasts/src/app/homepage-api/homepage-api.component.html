@@ -1,6 +1,6 @@
 <section id="notices">
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span
-      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 30000 | number}}</span> podcasts on the subject of Cults.
+      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 37000 | number}}</span> podcasts on the subject of Cults.
   </p>
 </section>
 <div id="progresswrapper">
@@ -34,13 +34,7 @@
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
-        @if (item.image) {
-        @defer (on viewport) {
-        <img src="{{item.image}}">
-        } @placeholder {
-        <span class="img"></span>
-        }
-        }
+        <app-episode-image [imageUrl]="item.image"></app-episode-image>
         <p>{{item.episodeDescription}}</p>
       </mat-card-content>
       <mat-card-actions>
