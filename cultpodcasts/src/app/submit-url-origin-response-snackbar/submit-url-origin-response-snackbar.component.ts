@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
 })
 
 export class SubmitUrlOriginResponseSnackbarComponent {
-  actionText: string = "OK";
+  actionText: string = "Ok";
   existingPodcast: boolean;
   constructor(
     private dialog: MatDialog,
