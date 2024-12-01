@@ -29,4 +29,16 @@
     <mat-icon svgIcon="apple-podcasts" class="not"></mat-icon>
 </button>
 }
+
+@if (_episode.urls.bbc) {
+<a href="{{_episode.urls.bbc}}" mat-icon-button>
+    <mat-icon svgIcon="bbc-iplayer"></mat-icon>
+</a>
+}
+
+@if (_episode.urls.internetArchive) {
+<a href="{{_episode.urls.internetArchive}}" mat-icon-button>
+    <mat-icon svgIcon="internet-archive"></mat-icon>
+</a>
+}
 }
