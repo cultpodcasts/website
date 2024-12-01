@@ -1,7 +1,7 @@
 export interface EpisodeUrls {
-    spotify?: URL | null,
-    apple?: URL | null,
-    youtube?: URL | null,
-    bbc?: URL | null,
-    internetArchive?: URL | null
+    spotify?: URL | null | string,
+    apple?: URL | null | string,
+    youtube?: URL | null | string,
+    bbc?: URL | null | string,
+    internetArchive?: URL | null | string
 }

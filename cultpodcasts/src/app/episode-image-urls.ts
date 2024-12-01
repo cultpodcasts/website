@@ -1,6 +1,6 @@
 export interface EpisodeImageUrls {
-    spotify?: URL | null;
-    apple?: URL | null;
-    youtube?: URL | null;
-    other?: URL | null;
+    spotify?: URL | null | string;
+    apple?: URL | null | string;
+    youtube?: URL | null | string;
+    other?: URL | null | string;
 }

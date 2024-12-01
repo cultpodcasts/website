@@ -15,7 +15,7 @@ export interface Episode {
     release: Date,
     duration: string,
     urls: EpisodeUrls,
-    images: EpisodeImageUrls,
+    images?: EpisodeImageUrls,
     subjects: string[],
     searchTerms?: string | null,
     youTubePodcast?: boolean,

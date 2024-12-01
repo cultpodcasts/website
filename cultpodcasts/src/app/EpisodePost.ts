@@ -12,8 +12,8 @@ export interface EpisodePost {
     explicit?: boolean;
     release?: string;
     duration?: string;
-    urls: EpisodeUrls;
-    images: EpisodeImageUrls;
+    urls?: EpisodeUrls;
+    images?: EpisodeImageUrls;
     subjects?: string[];
     searchTerms?: string | null;
 }
