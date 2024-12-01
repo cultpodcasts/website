@@ -24,5 +24,4 @@ export class EpisodePodcastLinksComponent {
   set episode(e: Episode) {
     this._episode = e;
   }
-
 }
