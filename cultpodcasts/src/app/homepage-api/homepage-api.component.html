@@ -22,15 +22,15 @@
   <div>
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
-    @for (item of dateItems.value; track item.episodeId) {
-    <mat-card class="result" id="{{item.episodeId}}">
+    @for (item of dateItems.value; track item.id) {
+    <mat-card class="result" id="{{item.id}}">
       <mat-card-header>
         <mat-card-title><a
-            [routerLink]="['/podcast', item.podcastName, item.episodeId]">{{item.episodeTitle}}</a></mat-card-title>
+            [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a></mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
             {{item.podcastName}}</a>
-          <span class="duration"> [{{item.length.substring(1)}}]</span>
+          <span class="duration"> [{{item.duration.substring(1)}}]</span>
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
@@ -38,24 +38,7 @@
         <p>{{item.episodeDescription}}</p>
       </mat-card-content>
       <mat-card-actions>
-        @if (item.youtube) {
-        <a href="{{item.youtube}}" mat-icon-button>
-          <mat-icon svgIcon="youtube"></mat-icon>
-        </a>
-        }
-        @if (item.spotify) {
-        <a href="{{item.spotify}}" mat-icon-button>
-          <mat-icon svgIcon="spotify"></mat-icon>
-        </a>
-        }
-        @if (item.apple) {
-        <a href="{{item.apple}}" mat-icon-button>
-          <mat-icon svgIcon="apple-podcasts"></mat-icon>
-        </a>
-        }
-        <button mat-icon-button (click)="share(item)">
-          <mat-icon>share</mat-icon>
-        </button>
+        <app-episode-links [episode]="item"></app-episode-links>
         <mat-card-footer class="subjects">
           @for (subject of item.subjects; track subject) {
           <div class="subject">

@@ -5,6 +5,7 @@ import { environment } from './../../environments/environment';
 import { formatDate } from '@angular/common';
 import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
+import { IEpisode } from '../IEpisode';
 
 @Component({
   selector: 'app-episode-links',
@@ -17,7 +18,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class EpisodeLinksComponent {
   @Input()
-  episode: ISearchResult | undefined;
+  episode: IEpisode | undefined;
 
   get spotify(): URL | undefined {
     return this.episode?.spotify;
@@ -41,7 +42,7 @@ export class EpisodeLinksComponent {
 
   constructor(private guidService: GuidService) { }
 
-  share(item: ISearchResult) {
+  share(item: IEpisode) {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";

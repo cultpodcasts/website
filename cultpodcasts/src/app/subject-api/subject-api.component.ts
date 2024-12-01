@@ -11,8 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgClass, DatePipe, formatDate } from '@angular/common';
-import { GuidService } from '../guid.service';
+import { NgClass, DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -22,6 +21,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { FacetState } from '../facet-state';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
+import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -44,7 +44,8 @@ const sortParamDateDesc: string = "date-desc";
     MatExpansionModule,
     MatChipListbox,
     MatChipOption,
-    EpisodeImageComponent
+    EpisodeImageComponent,
+    EpisodeLinksComponent
 ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'
@@ -59,10 +60,8 @@ export class SubjectApiComponent {
 
   subjectName: string = "";
   count: number = 0;
-
   prevPage: number = 0;
   nextPage: number = 0;
-
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -74,7 +73,6 @@ export class SubjectApiComponent {
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
@@ -247,19 +245,6 @@ export class SubjectApiComponent {
       url += ` ${this.searchState.query}`;
     }
     this.router.navigate([url]);
-  }
-
-  share(item: ISearchResult) {
-    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
-    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
-    description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
-    const shortGuid = this.guidService.toBase64(item.id);
-    const share = {
-      title: item.episodeTitle,
-      text: description,
-      url: `${environment.shortner}/${shortGuid}`
-    };
-    window.navigator.share(share);
   }
 
   editSubject() {
