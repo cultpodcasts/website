@@ -11,13 +11,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgClass, DatePipe, formatDate } from '@angular/common';
-import { GuidService } from '../guid.service';
+import { NgClass, DatePipe } from '@angular/common';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets';
 import { FacetState } from '../facet-state';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
+import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -42,8 +42,9 @@ const sortParamDateDesc: string = "date-desc";
     MatExpansionModule,
     MatChipListbox,
     MatChipOption,
-    EpisodeImageComponent
-],
+    EpisodeImageComponent,
+    EpisodeLinksComponent
+  ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass'
 })
@@ -58,7 +59,6 @@ export class SearchApiComponent {
 
   prevPage: number = 0;
   nextPage: number = 0;
-
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -77,8 +77,7 @@ export class SearchApiComponent {
   constructor(
     private router: Router,
     private siteService: SiteService,
-    private oDataService: ODataService,
-    private guidService: GuidService) {
+    private oDataService: ODataService) {
   }
   private route = inject(ActivatedRoute);
 
@@ -245,19 +244,6 @@ export class SearchApiComponent {
       resetSubjects: reset?.subjects,
     };
     this.router.navigate([url], { queryParams: params, state: facetState });
-  }
-
-  share(item: ISearchResult) {
-    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
-    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
-    description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
-    const shortGuid = this.guidService.toBase64(item.id);
-    const share = {
-      title: item.episodeTitle,
-      text: description,
-      url: `${environment.shortner}/${shortGuid}`
-    };
-    window.navigator.share(share);
   }
 
   podcastsChange($event: MatChipListboxChange) {

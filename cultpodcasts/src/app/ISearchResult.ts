@@ -9,6 +9,8 @@ export interface ISearchResult {
   spotify: URL | undefined;
   apple: URL | undefined;
   youtube: URL | undefined;
+  bbc: URL | undefined;
+  internetArchive: URL | undefined;
   subjects: string[] | undefined
   image: URL | undefined;
 }
