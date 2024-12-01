@@ -1,3 +1,4 @@
+import { EpisodeImageUrls } from "./episode-image-urls";
 import { EpisodeUrls } from "./episode-urls";
 
 export interface Episode {
@@ -14,6 +15,7 @@ export interface Episode {
     release: Date,
     duration: string,
     urls: EpisodeUrls,
+    images: EpisodeImageUrls,
     subjects: string[],
     searchTerms?: string | null,
     youTubePodcast?: boolean,

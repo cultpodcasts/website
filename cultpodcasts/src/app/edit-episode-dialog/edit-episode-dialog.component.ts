@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../EpisodePost';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -25,7 +26,8 @@ import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send
     ReactiveFormsModule,
     MatTabsModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatExpansionModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
   styleUrl: './edit-episode-dialog.component.sass'
@@ -79,8 +81,14 @@ export class EditEpisodeDialogComponent {
                 release: new FormControl(this.dateToLocalISO(resp.release), { nonNullable: true }),
                 duration: new FormControl(resp.duration, { nonNullable: true }),
                 spotify: new FormControl(resp.urls.spotify || null),
+                spotifyImage: new FormControl(resp.images?.spotify || null),
                 apple: new FormControl(resp.urls.apple || null),
+                appleImage: new FormControl(resp.images?.apple || null),
                 youtube: new FormControl(resp.urls.youtube || null),
+                youtubeImage: new FormControl(resp.images?.youtube || null),
+                otherImage: new FormControl(resp.images?.other || null),
+                bbc: new FormControl(resp.urls.bbc || null),
+                internetArchive: new FormControl(resp.urls.internetArchive || null),
                 subjects: new FormControl(resp.subjects, { nonNullable: true }),
                 searchTerms: new FormControl(resp.searchTerms || null),
               });
@@ -130,7 +138,15 @@ export class EditEpisodeDialogComponent {
         urls: {
           spotify: this.form!.controls.spotify.value,
           apple: this.form!.controls.apple.value,
-          youtube: this.form!.controls.youtube.value
+          youtube: this.form!.controls.youtube.value,
+          bbc: this.form!.controls.bbc.value,
+          internetArchive: this.form!.controls.internetArchive.value
+        },
+        images: {
+          spotify: this.form!.controls.spotifyImage.value,
+          apple: this.form!.controls.appleImage.value,
+          youtube: this.form!.controls.youtubeImage.value,
+          other: this.form!.controls.otherImage.value
         },
         subjects: this.form!.controls.subjects.value,
         searchTerms: this.form!.controls.searchTerms.value
@@ -157,7 +173,7 @@ export class EditEpisodeDialogComponent {
 
   getChanges(prev: Episode, now: Episode): EpisodePost {
     const nowReleaseDate = new Date(now.release).toISOString();
-    var changes: EpisodePost = { urls: {} };
+    var changes: EpisodePost = { urls: {}, images: {} };
     if (prev.description != now.description) changes.description = now.description;
     if (prev.duration != now.duration) changes.duration = now.duration;
     if (prev.explicit != now.explicit) changes.explicit = now.explicit;
@@ -173,6 +189,12 @@ export class EditEpisodeDialogComponent {
     if (prev.urls.apple?.toString() != now.urls.apple?.toString()) changes.urls.apple = now.urls.apple;
     if (prev.urls.spotify?.toString() != now.urls.spotify?.toString()) changes.urls.spotify = now.urls.spotify;
     if (prev.urls.youtube?.toString() != now.urls.youtube?.toString()) changes.urls.youtube = now.urls.youtube;
+    if (prev.urls.bbc?.toString() != now.urls.bbc?.toString()) changes.urls.bbc = now.urls.bbc;
+    if (prev.urls.internetArchive?.toString() != now.urls.internetArchive?.toString()) changes.urls.internetArchive = now.urls.internetArchive;
+    if (prev.images.apple?.toString() != now.images.apple?.toString()) changes.images.apple = now.images.apple;
+    if (prev.images.spotify?.toString() != now.images.spotify?.toString()) changes.images.spotify = now.images.spotify;
+    if (prev.images.youtube?.toString() != now.images.youtube?.toString()) changes.images.youtube = now.images.youtube;
+    if (prev.images.other?.toString() != now.images.other?.toString()) changes.images.other = now.images.other;
     return changes;
   }
 
