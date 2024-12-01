@@ -1,0 +1,30 @@
+@if (episode) {
+@if (youtube) {
+<a href="{{youtube}}" mat-icon-button>
+    <mat-icon svgIcon="youtube"></mat-icon>
+</a>
+}
+@if (spotify) {
+<a href="{{spotify}}" mat-icon-button>
+    <mat-icon svgIcon="spotify"></mat-icon>
+</a>
+}
+@if (applePodcasts) {
+<a href="{{applePodcasts}}" mat-icon-button>
+    <mat-icon svgIcon="apple-podcasts"></mat-icon>
+</a>
+}
+@if (bbc) {
+<a href="{{bbc}}" mat-icon-button>
+    <mat-icon svgIcon="bbc-iplayer"></mat-icon>
+</a>
+}
+@if (internetArchive) {
+<a href="{{internetArchive}}" mat-icon-button>
+    <mat-icon svgIcon="internet-archive"></mat-icon>
+</a>
+}
+<button mat-icon-button (click)="share(episode)">
+    <mat-icon>share</mat-icon>
+</button>
+}

@@ -1,14 +1,5 @@
-export interface ISearchResult {
-  podcastName: string;
-  id: string;
-  episodeTitle: string;
-  episodeDescription: string;
-  duration: string;
-  release: Date;
+import { IEpisode } from "./IEpisode";
+
+export interface ISearchResult extends IEpisode {
   explicit: boolean;
-  spotify: URL | undefined;
-  apple: URL | undefined;
-  youtube: URL | undefined;
-  subjects: string[] | undefined
-  image: URL | undefined;
 }

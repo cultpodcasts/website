@@ -1,3 +1,4 @@
+import { EpisodeImageUrls } from "./episode-image-urls";
 import { EpisodeUrls } from "./episode-urls";
 
 export interface EpisodePost {
@@ -11,7 +12,8 @@ export interface EpisodePost {
     explicit?: boolean;
     release?: string;
     duration?: string;
-    urls: EpisodeUrls;
+    urls?: EpisodeUrls;
+    images?: EpisodeImageUrls;
     subjects?: string[];
     searchTerms?: string | null;
 }

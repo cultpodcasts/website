@@ -29,6 +29,8 @@ export class SendPodcastComponent {
   spotify: RegExp = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
+  bbc: RegExp = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/iplayer\/episode\/[\w]+\/[A-Za-z\d\-_]+/;
+  internetArchve: RegExp = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_]+/;
   isAuthenticated: boolean = false;
   originResponse: SubmitUrlOriginResponse | undefined;
 
@@ -47,9 +49,13 @@ export class SendPodcastComponent {
     let matchedUrl: string | undefined;
     let url: URL | undefined;
 
-    if (this.spotify.test(data.url.toString()) ||
+    if (
+      this.spotify.test(data.url.toString()) ||
       this.youtube.test(data.url.toString()) ||
-      this.apple.test(data.url.toString())) {
+      this.apple.test(data.url.toString()) ||
+      this.bbc.test(data.url.toString()) ||
+      this.internetArchve.test(data.url.toString())
+    ) {
       this.isSending = true;
 
       if (this.spotify.test(data.url.toString())) {
@@ -64,6 +70,16 @@ export class SendPodcastComponent {
         }
       } else if (this.apple.test(data.url.toString())) {
         let match = data.url.toString().match(this.apple);
+        if (match != null) {
+          matchedUrl = match[0];
+        }
+      } else if (this.bbc.test(data.url.toString())) {
+        let match = data.url.toString().match(this.bbc);
+        if (match != null) {
+          matchedUrl = match[0];
+        }
+      } else if (this.internetArchve.test(data.url.toString())) {
+        let match = data.url.toString().match(this.internetArchve);
         if (match != null) {
           matchedUrl = match[0];
         }

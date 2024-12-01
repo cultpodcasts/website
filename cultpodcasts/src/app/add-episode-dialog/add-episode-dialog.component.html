@@ -63,6 +63,39 @@
                     <span>YouTube:</span>
                     <input type="text" [formControl]="form!.controls.youtube">
                 </label>
+                <mat-accordion>
+                    <mat-expansion-panel>
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>More</mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <label>
+                            <span>BBC:</span>
+                            <input type="text" [formControl]="form!.controls.bbc">
+                        </label>
+                        <label>
+                            <span>Internet Archive:</span>
+                            <input type="text" [formControl]="form!.controls.internetArchive">
+                        </label>
+                    </mat-expansion-panel>
+                </mat-accordion>
+            </mat-tab>
+            <mat-tab label="Images">
+                <label>
+                    <span>Spotify:</span>
+                    <input type="text" [formControl]="form!.controls.spotifyImage">
+                </label>
+                <label>
+                    <span>Apple:</span>
+                    <input type="text" [formControl]="form!.controls.appleImage">
+                </label>
+                <label>
+                    <span>YouTube:</span>
+                    <input type="text" [formControl]="form!.controls.youtubeImage">
+                </label>
+                <label>
+                    <span>Other:</span>
+                    <input type="text" [formControl]="form!.controls.otherImage">
+                </label>
             </mat-tab>
             <mat-tab label="Meta">
                 <label>

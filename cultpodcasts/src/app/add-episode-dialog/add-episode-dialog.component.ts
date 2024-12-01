@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../EpisodePost';
 import { AddEpisodeSendComponent } from '../add-episode-send/add-episode-send.component';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -25,7 +26,8 @@ import { AddEpisodeSendComponent } from '../add-episode-send/add-episode-send.co
     ReactiveFormsModule,
     MatTabsModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatExpansionModule
   ],
   templateUrl: './add-episode-dialog.component.html',
   styleUrl: './add-episode-dialog.component.sass'
@@ -82,8 +84,14 @@ export class AddEpisodeDialogComponent {
                 release: new FormControl(this.dateToLocalISO(resp.release), { nonNullable: true }),
                 duration: new FormControl(resp.duration, { nonNullable: true }),
                 spotify: new FormControl(resp.urls.spotify || null),
+                spotifyImage: new FormControl(resp.images?.spotify || null),
                 apple: new FormControl(resp.urls.apple || null),
+                appleImage: new FormControl(resp.images?.apple || null),
                 youtube: new FormControl(resp.urls.youtube || null),
+                youtubeImage: new FormControl(resp.images?.youtube || null),
+                otherImage: new FormControl(resp.images?.other || null),
+                bbc: new FormControl(resp.urls.bbc || null),
+                internetArchive: new FormControl(resp.urls.internetArchive || null),
                 subjects: new FormControl(resp.subjects, { nonNullable: true }),
                 searchTerms: new FormControl(resp.searchTerms || null),
               });
@@ -133,14 +141,22 @@ export class AddEpisodeDialogComponent {
         urls: {
           spotify: this.form!.controls.spotify.value,
           apple: this.form!.controls.apple.value,
-          youtube: this.form!.controls.youtube.value
+          youtube: this.form!.controls.youtube.value,
+          bbc: this.form!.controls.bbc.value,
+          internetArchive: this.form!.controls.internetArchive.value
+        },
+        images: {
+          spotify: this.form!.controls.spotifyImage.value,
+          apple: this.form!.controls.appleImage.value,
+          youtube: this.form!.controls.youtubeImage.value,
+          other: this.form!.controls.otherImage.value
         },
         subjects: this.form!.controls.subjects.value,
         searchTerms: this.form!.controls.searchTerms.value
       };
 
       var changes = this.getChanges(this.originalEpisode!, update);
-      if (Object.keys(changes).length == 1 && Object.keys(changes.urls).length == 0) {
+      if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, isNewPodcast: this.isNewPodcast, podcastName: this.podcastName });
       } else {
         this.send(this.episodeId, changes);
@@ -160,7 +176,7 @@ export class AddEpisodeDialogComponent {
 
   getChanges(prev: Episode, now: Episode): EpisodePost {
     const nowReleaseDate = new Date(now.release).toISOString();
-    var changes: EpisodePost = { urls: {} };
+    var changes: EpisodePost = {};
     if (prev.description != now.description) changes.description = now.description;
     if (prev.duration != now.duration) changes.duration = now.duration;
     if (prev.explicit != now.explicit) changes.explicit = now.explicit;
@@ -173,10 +189,45 @@ export class AddEpisodeDialogComponent {
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
     if (prev.subjects != now.subjects) changes.subjects = now.subjects;
     if (prev.title != now.title) changes.title = now.title;
-    if (prev.urls.apple?.toString() != now.urls.apple?.toString()) changes.urls.apple = now.urls.apple;
-    if (prev.urls.spotify?.toString() != now.urls.spotify?.toString()) changes.urls.spotify = now.urls.spotify;
-    if (prev.urls.youtube?.toString() != now.urls.youtube?.toString()) changes.urls.youtube = now.urls.youtube;
+
+    if ((!this.areEqual(prev.urls?.apple, now.urls?.apple)) ||
+      (!this.areEqual(prev.urls?.spotify, now.urls?.spotify)) ||
+      (!this.areEqual(prev.urls?.youtube, now.urls?.youtube)) ||
+      (!this.areEqual(prev.urls?.bbc, now.urls?.bbc)) ||
+      (!this.areEqual(prev.urls?.internetArchive, now.urls?.internetArchive))) {
+      changes.urls = {};
+    }
+    if (!this.areEqual(prev.urls?.apple, now.urls?.apple)) changes.urls!.apple = now.urls?.apple ?? "";
+    if (!this.areEqual(prev.urls?.spotify, now.urls?.spotify)) changes.urls!.spotify = now.urls?.spotify ?? "";
+    if (!this.areEqual(prev.urls?.youtube, now.urls?.youtube)) changes.urls!.youtube = now.urls?.youtube ?? "";
+    if (!this.areEqual(prev.urls?.bbc, now.urls?.bbc)) changes.urls!.bbc = now.urls?.bbc ?? "";
+    if (!this.areEqual(prev.urls?.internetArchive, now.urls?.internetArchive)) changes.urls!.internetArchive = now.urls?.internetArchive ?? "";
+
+    if ((!this.areEqual(prev.images?.apple, now.images?.apple)) ||
+      (!this.areEqual(prev.images?.spotify, now.images?.spotify)) ||
+      (!this.areEqual(prev.images?.youtube, now.images?.youtube)) ||
+      (!this.areEqual(prev.images?.other, now.images?.other))) {
+      changes.images = {};
+    }
+    if (!this.areEqual(prev.images?.apple, now.images?.apple)) changes.images!.apple = now.images?.apple ?? "";
+    if (!this.areEqual(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? "";
+    if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
+    if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
     return changes;
+  }
+
+  areEqual(url1: URL | null | undefined | string, url2: URL | null | undefined | string): boolean {
+    let result: boolean;
+    if ((url1 == undefined || url1 == null) && (url2 == undefined || url2 == null)) {
+      result = true;
+    } else if ((url1 == undefined || url1 == null) && (url2 != undefined && url2 != null)) {
+      result = false;
+    } else if ((url2 == undefined || url2 == null) && (url1 != undefined && url1 != null)) {
+      result = false;
+    } else {
+      result = url1!.toString() === url2!.toString()
+    }
+    return result;
   }
 
   dateToLocalISO(date: Date) {

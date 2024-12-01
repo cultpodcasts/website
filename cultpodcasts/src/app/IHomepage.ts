@@ -1,7 +1,7 @@
-import { IHomepageItem } from './IHomepageItem';
+import { IEpisode } from "./IEpisode";
 
 export interface IHomepage {
-  recentEpisodes: IHomepageItem[];
+  recentEpisodes: IEpisode[];
   episodeCount: number;
   totalDuration: string;
 }

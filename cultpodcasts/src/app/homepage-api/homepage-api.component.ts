@@ -1,11 +1,9 @@
 import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
-import { IHomepageItem } from '../IHomepageItem';
-import { KeyValue, DecimalPipe, KeyValuePipe, formatDate, isPlatformServer } from '@angular/common';
+import { KeyValue, DecimalPipe, KeyValuePipe, isPlatformServer } from '@angular/common';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { environment } from './../../environments/environment';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +11,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
+import { IEpisode } from '../IEpisode';
+import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 
 @Component({
   selector: 'app-homepage-api',
@@ -24,13 +24,14 @@ import { EpisodeImageComponent } from '../episode-image/episode-image.component'
     MatIconModule,
     DecimalPipe,
     KeyValuePipe,
-    EpisodeImageComponent
-  ],
+    EpisodeImageComponent,
+    EpisodeLinksComponent
+],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
 })
 export class HomepageApiComponent {
-  grouped: { [key: string]: IHomepageItem[]; };
+  grouped: { [key: string]: IEpisode[]; };
   podcastCount: number | undefined;
   errorText: string | undefined;
   isServer: boolean;
@@ -92,7 +93,7 @@ export class HomepageApiComponent {
         this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
         this.podcastCount = this.homepage.recentEpisodes.length;
-        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: IHomepageItem[] }, item) => {
+        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: IEpisode[] }, item) => {
           item.release = new Date(item.release);
           if (!group[item.release.toLocaleDateString()]) {
             group[item.release.toLocaleDateString()] = [];
@@ -113,7 +114,7 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  descDate = (a: KeyValue<string, IHomepageItem[]>, b: KeyValue<string, IHomepageItem[]>): number => {
+  descDate = (a: KeyValue<string, IEpisode[]>, b: KeyValue<string, IEpisode[]>): number => {
     var aD = this.ToDate(a.key);
     var bD = this.ToDate(b.key);
     if (aD > bD) {
@@ -123,18 +124,5 @@ export class HomepageApiComponent {
       return 1
     }
     return 0;
-  }
-
-  share(item: IHomepageItem) {
-    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
-    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
-    description = description + " [" + item.length.split(".")[0].substring(1) + "]";
-    const shortGuid = this.guidService.toBase64(item.episodeId);
-    const share = {
-      title: item.episodeTitle,
-      text: description,
-      url: `${environment.shortner}/${shortGuid}`
-    };
-    window.navigator.share(share);
   }
 }

@@ -33,24 +33,7 @@
       <p>{{episode.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
-      @if (episode.youtube) {
-      <a href="{{episode.youtube}}" mat-icon-button>
-        <mat-icon svgIcon="youtube"></mat-icon>
-      </a>
-      }
-      @if (episode.spotify) {
-      <a href="{{episode.spotify}}" mat-icon-button>
-        <mat-icon svgIcon="spotify"></mat-icon>
-      </a>
-      }
-      @if (episode.apple) {
-      <a href="{{episode.apple}}" mat-icon-button>
-        <mat-icon svgIcon="apple-podcasts"></mat-icon>
-      </a>
-      }
-      <button mat-icon-button (click)="share(episode)">
-        <mat-icon>share</mat-icon>
-      </button>
+      <app-episode-links [episode]="episode"></app-episode-links>
       <mat-card-footer class="subjects">
         @for (subject of episode.subjects; track subject) {
         <div class="subject">

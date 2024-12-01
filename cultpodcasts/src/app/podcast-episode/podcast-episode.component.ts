@@ -1,6 +1,6 @@
 import { Component, inject, Input } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
-import { DatePipe, formatDate } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,16 +9,15 @@ import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { GuidService } from '../guid.service';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { environment } from './../../environments/environment';
 import { SiteService } from '../SiteService';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { EpisodePublishResponse } from '../episode-publish-response';
 import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
+import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 
 @Component({
   selector: 'app-podcast-episode',
@@ -29,7 +28,8 @@ import { EpisodeImageComponent } from "../episode-image/episode-image.component"
     MatCardModule,
     RouterLink,
     DatePipe,
-    EpisodeImageComponent
+    EpisodeImageComponent,
+    EpisodeLinksComponent
 ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
@@ -61,7 +61,6 @@ export class PodcastEpisodeComponent {
 
   constructor(
     private router: Router,
-    private guidService: GuidService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
@@ -108,19 +107,6 @@ export class PodcastEpisodeComponent {
         });
       }
     });
-  }
-
-  share(item: ISearchResult) {
-    let description = `"${item.episodeTitle}" - ${item.podcastName}`;
-    description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
-    description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
-    const shortGuid = this.guidService.toBase64(item.id);
-    const share = {
-      title: item.episodeTitle,
-      text: description,
-      url: `${environment.shortner}/${shortGuid}`
-    };
-    window.navigator.share(share);
   }
 
   podcastPage() {
