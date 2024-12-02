@@ -1,4 +1,4 @@
-export interface PodcastPost {
+export interface EditPodcastPost {
     removed?: boolean;
     indexAllEpisodes?: boolean;
     bypassShortEpisodeChecking?: boolean;

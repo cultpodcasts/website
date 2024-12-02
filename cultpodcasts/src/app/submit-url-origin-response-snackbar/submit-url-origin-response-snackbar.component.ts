@@ -4,8 +4,8 @@ import { SubmitUrlOriginSuccessResponse } from '../SubmitUrlOriginSuccessRespons
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dialog.component';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { Router } from '@angular/router';
+import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dialog.component';
 
 @Component({
   selector: 'app-submit-url-origin-response-snackbar',
@@ -49,7 +49,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     }
     dialogRef.afterClosed().subscribe(async result => {
       if (result.isNewPodcast) {
-        const podcastDialog = this.dialog.open(EditPodcastDialogComponent, {
+        const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
           data: { podcastName: result.podcastName },
           disableClose: true,
           autoFocus: true
@@ -91,6 +91,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       }
     });
   }
+
   action() {
     this.snackBarRef.dismissWithAction()
   }
