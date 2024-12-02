@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Edit Podcast</h2>
+<h2 mat-dialog-title>Add Podcast</h2>
 
 <mat-dialog-content>
     @if (isLoading) {
@@ -10,10 +10,13 @@
     <p id="error">An error occurred</p>
     }
     } @else {
-    <p>{{this.podcastName}}</p>
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
+                <label>
+                    <span>Name:</span>
+                    <input type="text" [formControl]="form!.controls.podcastName">
+                </label>
                 <label>
                     <span>Spotify Id:</span>
                     <input type="text" [formControl]="form!.controls.spotifyId">

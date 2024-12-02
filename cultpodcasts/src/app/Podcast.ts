@@ -1,5 +1,6 @@
 export interface Podcast {
     id?: string;
+    name?: string;
     removed: boolean;
     indexAllEpisodes: boolean;
     bypassShortEpisodeChecking: boolean;

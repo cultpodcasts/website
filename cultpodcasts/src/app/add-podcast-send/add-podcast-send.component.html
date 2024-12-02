@@ -1,0 +1,20 @@
+<h2 mat-dialog-title>Add Podcast</h2>
+
+<mat-dialog-content>
+
+    @if (isSending) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    }
+    @if (sendError) {
+    <div>
+        <p>An error occured updating podcast</p>
+    </div>
+    }
+
+</mat-dialog-content>
+
+@if (sendError) {
+<mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Close</button>
+</mat-dialog-actions>
+}

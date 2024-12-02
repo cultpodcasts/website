@@ -8,17 +8,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { EditPodcastForm } from "../EditPodcastForm";
 import { Podcast } from '../Podcast';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Subject } from '../subject';
-import { EditPodcastPost } from "../EditPodcastPost";
-import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
 import { PodcastServiceType } from "../podcast-service-type";
+import { AddPodcastSendComponent } from '../add-podcast-send/add-podcast-send.component';
+import { AddPodcastForm } from '../AddPodcastForm';
+import { AddPodcastPost } from '../AddPodcastPost';
 
 @Component({
-  selector: 'app-edit-podcast-dialog-component',
+  selector: 'app-add-podcast-dialog-component',
   imports: [
     MatDialogModule,
     MatProgressSpinnerModule,
@@ -28,10 +28,10 @@ import { PodcastServiceType } from "../podcast-service-type";
     MatFormFieldModule,
     MatSelectModule
   ],
-  templateUrl: './edit-podcast-dialog.component.html',
-  styleUrl: './edit-podcast-dialog.component.sass'
+  templateUrl: './add-podcast-dialog.component.html',
+  styleUrl: './add-podcast-dialog.component.sass'
 })
-export class EditPodcastDialogComponent {
+export class AddPodcastDialogComponent {
   podcastName: string;
   isLoading: boolean = true;
   isInError: boolean = false;
@@ -41,7 +41,7 @@ export class EditPodcastDialogComponent {
     .filter(value => typeof value !== 'number')
     .map(x => x as keyof typeof PodcastServiceType)
 
-  form: FormGroup<EditPodcastForm> | undefined;
+  form: FormGroup<AddPodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
   subjects: string[] = [];
   podcastId: string | undefined;
@@ -49,7 +49,7 @@ export class EditPodcastDialogComponent {
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
+    private dialogRef: MatDialogRef<AddPodcastDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastName: string },
     private dialog: MatDialog,
   ) {
@@ -73,7 +73,8 @@ export class EditPodcastDialogComponent {
             next: resp => {
               this.podcastId = resp.id;
               this.originalPodcast = resp;
-              this.form = new FormGroup<EditPodcastForm>({
+              this.form = new FormGroup<AddPodcastForm>({
+                podcastName: new FormControl(this.podcastName, { nonNullable: true }),
                 removed: new FormControl(resp.removed, { nonNullable: true }),
                 indexAllEpisodes: new FormControl(resp.indexAllEpisodes, { nonNullable: true }),
                 bypassShortEpisodeChecking: new FormControl(resp.bypassShortEpisodeChecking, { nonNullable: true }),
@@ -129,6 +130,7 @@ export class EditPodcastDialogComponent {
   onSubmit() {
     if (this.form?.valid) {
       const update: Podcast = {
+        name: this.form!.controls.podcastName.value,
         removed: this.form!.controls.removed.value,
         indexAllEpisodes: this.form!.controls.indexAllEpisodes.value,
         bypassShortEpisodeChecking: this.form!.controls.bypassShortEpisodeChecking.value,
@@ -156,8 +158,9 @@ export class EditPodcastDialogComponent {
     }
   }
 
-  getChanges(prev: Podcast, now: Podcast): EditPodcastPost {
-    var changes: EditPodcastPost = {};
+  getChanges(prev: Podcast, now: Podcast): AddPodcastPost {
+    var changes: AddPodcastPost = {};
+    if (prev.name != now.name) changes.podcastName = now.name;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.indexAllEpisodes != now.indexAllEpisodes) changes.indexAllEpisodes = now.indexAllEpisodes;
     if (prev.bypassShortEpisodeChecking != now.bypassShortEpisodeChecking) changes.bypassShortEpisodeChecking = now.bypassShortEpisodeChecking;
@@ -185,8 +188,8 @@ export class EditPodcastDialogComponent {
     return changes;
   }
 
-  send(id: string, changes: EditPodcastPost) {
-    const dialogRef = this.dialog.open(EditPodcastSendComponent, { disableClose: true, autoFocus: true });
+  send(id: string, changes: AddPodcastPost) {
+    const dialogRef = this.dialog.open(AddPodcastSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

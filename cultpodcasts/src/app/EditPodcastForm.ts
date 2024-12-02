@@ -1,6 +1,6 @@
 import { FormControl } from "@angular/forms";
 
-export interface PodcastForm {
+export interface EditPodcastForm {
     spotifyId: FormControl<string>;
     appleId: FormControl<number | null | undefined>;
     defaultSubject: FormControl<string | null | undefined>;
@@ -18,3 +18,6 @@ export interface PodcastForm {
     episodeMatchRegex: FormControl<string>;
     episodeIncludeTitleRegex: FormControl<string>;
 }
+
+
+

@@ -5,26 +5,26 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from './../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { EditPodcastPost } from "../EditPodcastPost";
 import { firstValueFrom } from 'rxjs';
+import { AddPodcastPost } from '../AddPodcastPost';
 
 @Component({
-  selector: 'app-edit-podcast-send',
+  selector: 'app-add-podcast-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
-  templateUrl: './edit-podcast-send.component.html',
-  styleUrl: './edit-podcast-send.component.sass'
+  templateUrl: './add-podcast-send.component.html',
+  styleUrl: './add-podcast-send.component.sass'
 })
-export class EditPodcastSendComponent {
+export class AddPodcastSendComponent {
   isSending: boolean = true;
   sendError: boolean = false;
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<EditPodcastSendComponent>,
+    private dialogRef: MatDialogRef<AddPodcastSendComponent>,
     private auth: AuthServiceWrapper) {
   }
 
-  public submit(podcastId: string, changes: EditPodcastPost) {
+  public submit(podcastId: string, changes: AddPodcastPost) {
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -35,7 +35,7 @@ export class EditPodcastSendComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/podcast/${podcastId}`, environment.api).toString();
-      this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
+      this.http.put(episodeEndpoint, changes, { headers: headers, observe: "response" })
         .subscribe(
           {
             next: resp => {
