@@ -21,9 +21,7 @@
         <p class="showDescription">
             {{result.showDescription}}</p>
         }
-        @if (result.imageUrl) {
-        <img [src]="result.imageUrl">
-        }
+        <app-episode-image [imageUrl]="result.imageUrl"></app-episode-image>
         <p class="resultdescription">{{result.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>

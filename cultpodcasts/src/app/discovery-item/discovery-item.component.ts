@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { HideDirective } from '../hide.directive';
 import { NgClass, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 @Component({
   selector: 'discovery-item',
@@ -19,7 +20,8 @@ import { MatCardModule } from '@angular/material/card';
     MatButtonModule,
     MatIconModule,
     RouterLink,
-    DatePipe
+    DatePipe,
+    EpisodeImageComponent
   ]
 })
 
