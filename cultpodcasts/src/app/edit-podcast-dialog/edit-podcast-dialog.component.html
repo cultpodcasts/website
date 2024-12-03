@@ -6,6 +6,8 @@
     } @else if (isInError) {
     @if (notFound) {
     <p id="error">Podcast not found.</p>
+    } @else if (conflict) {
+    <p id="error">Multiple podcasts found</p>
     } @else {
     <p id="error">An error occurred</p>
     }

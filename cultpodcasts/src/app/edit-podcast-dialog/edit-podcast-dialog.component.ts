@@ -36,6 +36,7 @@ export class EditPodcastDialogComponent {
   isLoading: boolean = true;
   isInError: boolean = false;
   notFound: boolean = false;
+  conflict: boolean = false;
   podcastServices = Object
     .values(PodcastServiceType)
     .filter(value => typeof value !== 'number')
@@ -112,6 +113,8 @@ export class EditPodcastDialogComponent {
               this.isInError = true;
               if (e.status == 404) {
                 this.notFound = true;
+              } else if (e.status == 409) {
+                this.conflict = true;
               }
             }
           }
