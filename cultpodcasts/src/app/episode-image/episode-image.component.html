@@ -1,7 +1,7 @@
 @if (imageUrl) {
 <div id="container">
     @defer (on viewport) {
-    <img src="{{imageUrl}}">
+    <img src="{{imageUrl}}" [ngClass]="{'cropped': isCropped}">
     } @placeholder {
     <span class="placeholder"></span>
     }
