@@ -23,6 +23,7 @@ import { EpisodeStatusComponent } from "../episode-status/episode-status.compone
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -39,8 +40,9 @@ const sortParamDateDesc: string = "date-desc";
     RouterLink,
     DatePipe,
     EpisodeStatusComponent,
-    EpisodePodcastLinksComponent
-  ],
+    EpisodePodcastLinksComponent,
+    EpisodeImageComponent
+],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass'
 })

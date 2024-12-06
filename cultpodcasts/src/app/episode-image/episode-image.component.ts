@@ -8,15 +8,14 @@ import { Component, Input, input } from '@angular/core';
   styleUrl: './episode-image.component.sass'
 })
 export class EpisodeImageComponent {
-  @Input()
-  imageUrl: URL | undefined | string;
+  @Input({ required: true })
+  imageUrl: URL | undefined;
 
   get isCropped(): boolean {
-    if (this.imageUrl) {
-      let url = this.imageUrl.toString();
-      if (url.indexOf("https://i.ytimg.com") == 0 && url.indexOf("maxresdefault") == -1) {
-        return true;
-      }
+    if (this.imageUrl &&
+      this.imageUrl.host.indexOf("i.ytimg.com") == 0 &&
+      this.imageUrl.pathname.indexOf("maxresdefault") == -1) {
+      return true;
     }
     return false;
   }
