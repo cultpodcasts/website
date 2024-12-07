@@ -6,10 +6,12 @@
     }
   </div>
   <section id="resultsheading">
-    <h2>Discovery results@if (minDate){ since {{minDate| date:'d MMM yyyy H:mm'}}}
-    </h2>
+    <h2>Discovery results@if (minDate){ since {{minDate| date:'d MMM yyyy H:mm'}}}</h2>
+    @if (!isLoading && !isInError && results && results.length>0) {
+    <h3>{{results.length}} results</h3>
+    }
   </section>
-  @if (!isLoading && !isInError && results.length == 0) {
+  @if (!isLoading && !isInError && results?.length == 0) {
   <h3>There are no discovery results</h3>
   }
   @if (isInError) {
@@ -18,7 +20,7 @@
     <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
   </div>
   }
-  @if (!isLoading) {
+  @if (!isLoading && results) {
   @for ( result of results | discoveryItemFilter: {isFocused: true}; track $index){
   <discovery-item (changeState)="handleEvent($event)" [result]="result"
     [selectedEvent]="submittedSubject.asObservable()" [resultFilterEvent]="resultsFilterSubject.asObservable()"

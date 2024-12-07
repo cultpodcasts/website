@@ -4,7 +4,7 @@
     <mat-card-header>
         <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
         <mat-card-subtitle
-            [ngClass]="result.matchingPodcasts.length>1 ? 'multipleMatchingPodcasts' : result.matchingPodcasts.length==1 ? 'matchedPodcast' : ''">
+            [ngClass]="result.matchingPodcasts.length > 1 ? 'multipleMatchingPodcasts' : result.matchingPodcasts.length==1 ? 'matchedPodcast' : ''">
             @if (result.matchingPodcasts.length==0) {
             {{result.showName}}
             }

@@ -41,7 +41,7 @@ import { SiteService } from '../SiteService';
 export class DiscoveryApiComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
-  results: IDiscoveryResult[] = [];
+  results: IDiscoveryResult[] | undefined;
   documentIds: string[] = [];
   selectedIds: string[] = [];
   isLoading: boolean = true;
