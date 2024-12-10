@@ -9,15 +9,17 @@
   }
 </div>
 <section id="thisweek">
+  @if (isInError) {
+  <p>An error occurred.</p>
+  <div id="cta-button">
+    <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
+  </div>
+  } @else {
   <h2>This weeks new releases.
     @if (podcastCount) {
     <span>{{podcastCount}} Podcasts.</span>
     }
   </h2>
-  @if (isInError) {
-  <p>An error occurred.</p>
-  <p>{{errorText}}</p>
-  }
   @for (dateItems of grouped | keyvalue: descDate; track descDate) {
   <div>
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
@@ -52,5 +54,6 @@
     </mat-card>
     }
   </div>
+  }
   }
 </section>
