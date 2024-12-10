@@ -34,7 +34,12 @@ export class BookmarkComponent {
     );
   }
 
-  protected bookmarksHasEpisodeId(episodeId: string): boolean {
-    return this.profileService.bookmarks.has(episodeId);
+  async bookmark(): Promise<any> {
+    var bookmarked = this.profileService.bookmarks.has(this.episodeId!);
+    if (bookmarked) {
+      await this.profileService.removeBookmark(this.episodeId);
+    } else {
+      await this.profileService.addBookmark(this.episodeId);
+    }
   }
 }

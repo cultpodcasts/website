@@ -1,5 +1,5 @@
 @if (isAuthenticated$ | async; as boolean) {
-<button mat-icon-button>
+<button mat-icon-button (click)="bookmark()">
     <mat-icon>
         @if (isBookmarked$ | async; as boolean){
         bookmark
