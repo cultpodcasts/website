@@ -1,7 +1,7 @@
-@if (isAuthenticated$) {
+@if (isAuthenticated$ | async; as boolean) {
 <button mat-icon-button>
     <mat-icon>
-        @if (isBookmarked){
+        @if (isBookmarked$ | async; as boolean){
         bookmark
         }@else{
         bookmark_add

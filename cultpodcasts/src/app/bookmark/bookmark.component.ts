@@ -1,14 +1,16 @@
 import { Component, Input } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-bookmark',
   imports: [
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    AsyncPipe
   ],
   templateUrl: './bookmark.component.html',
   styleUrl: './bookmark.component.sass'
@@ -16,7 +18,7 @@ import { MatButtonModule } from '@angular/material/button';
 export class BookmarkComponent {
   @Input()
   episodeId: string | undefined;
-  isBookmarked: boolean = false;
+  isBookmarked$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   isAuthenticated$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
@@ -24,8 +26,12 @@ export class BookmarkComponent {
   ) { }
 
   ngOnInit() {
-    this.profileService.isAuthenticated$.subscribe(isAuthenticated => this.isAuthenticated$.next(isAuthenticated));
-    this.isBookmarked = this.bookmarksHasEpisodeId(this.episodeId!);
+    this.profileService.isAuthenticated$.subscribe(isAuthenticated =>
+      this.isAuthenticated$.next(isAuthenticated)
+    );
+    this.profileService.bookmarks$.subscribe(bookmarks =>
+      this.isBookmarked$.next(bookmarks.has(this.episodeId!))
+    );
   }
 
   protected bookmarksHasEpisodeId(episodeId: string): boolean {
