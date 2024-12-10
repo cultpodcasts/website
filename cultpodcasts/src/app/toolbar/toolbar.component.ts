@@ -25,7 +25,13 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 
 @Component({
   selector: 'app-toolbar',
-  imports: [MatToolbarModule, MatIconModule, MatMenuModule, RouterLink, AsyncPipe],
+  imports: [
+    MatToolbarModule,
+    MatIconModule,
+    MatMenuModule,
+    RouterLink,
+    AsyncPipe
+  ],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass'
 })

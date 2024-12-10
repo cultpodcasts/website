@@ -2,17 +2,17 @@ import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { IHomepage } from '../IHomepage';
 import { SiteService } from '../SiteService';
 import { KeyValue, DecimalPipe, KeyValuePipe, isPlatformServer } from '@angular/common';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { GuidService } from '../guid.service';
 import { HomepageService } from '../homepage.service';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
 import { IEpisode } from '../IEpisode';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
+import { BookmarkComponent } from "../bookmark/bookmark.component";
 
 @Component({
   selector: 'app-homepage-api',
@@ -25,15 +25,15 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
     DecimalPipe,
     KeyValuePipe,
     EpisodeImageComponent,
-    EpisodeLinksComponent
-],
+    EpisodeLinksComponent,
+    BookmarkComponent
+  ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
 })
 export class HomepageApiComponent {
   grouped: { [key: string]: IEpisode[]; };
   podcastCount: number | undefined;
-  errorText: string | undefined;
   isServer: boolean;
 
   isLoading: boolean = true;
@@ -49,9 +49,7 @@ export class HomepageApiComponent {
   totalDuration: string = "";
 
   constructor(
-    private router: Router,
     private siteService: SiteService,
-    private guidService: GuidService,
     private homepageService: HomepageService,
     @Inject(PLATFORM_ID) platformId: any,
   ) {
@@ -84,7 +82,6 @@ export class HomepageApiComponent {
           homepageContent = await this.homepageService.getHomepageFromApi()
         }
       } catch (error) {
-        this.errorText = JSON.stringify(error);
         console.error(error);
         this.isLoading = false;
         this.isInError = true;
@@ -102,6 +99,7 @@ export class HomepageApiComponent {
           return group;
         }, {});
         this.isLoading = false;
+        this.isInError = false;
       } else {
         this.isLoading = false;
         this.isInError = true;
