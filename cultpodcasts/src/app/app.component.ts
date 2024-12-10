@@ -9,9 +9,9 @@ import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
-import { AuthServiceWrapper } from './AuthServiceWrapper';
 import { MatDialog } from '@angular/material/dialog';
 import { EnablePushNotificationsDialogComponent } from './enable-push-notifications-dialog/enable-push-notifications-dialog.component';
+import { ProfileService } from './profile.service';
 
 @Component({
   selector: 'app-root',
@@ -32,35 +32,40 @@ export class AppComponent {
     @Inject(PLATFORM_ID) platformId: any,
     seoService: SeoService,
     private webPushService: WebPushService,
-    protected auth: AuthServiceWrapper,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private profileService: ProfileService
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
     this.registerSvg();
   }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<any> {
     if (this.isBrowser) {
-      navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
-      this.auth.roles.subscribe(async roles => {
-        if (roles.includes("Admin")) {
-          var handled = await this.webPushService.subscribeToNotifications();
-          if (!handled) {
-            if (localStorage.getItem("neverAskForNotifications") != "true") {
-              this.dialog
-                .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
-                .afterClosed()
-                .subscribe(async result => {
-                  if (result) {
-                    await this.webPushService.subscribeToNotifications();
-                  }
-                });
-            }
+      this.initialiseBrowser();
+      await this.profileService.init();
+    }
+  }
+
+  initialiseBrowser() {
+    navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
+    this.profileService.roles.subscribe(async roles => {
+      if (roles.includes("Admin")) {
+        var handled = await this.webPushService.subscribeToNotifications();
+        if (!handled) {
+          if (localStorage.getItem("neverAskForNotifications") != "true") {
+            this.dialog
+              .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
+              .afterClosed()
+              .subscribe(async result => {
+                if (result) {
+                  await this.webPushService.subscribeToNotifications();
+                }
+              });
           }
         }
-      });
-    }
+      }
+    });
   }
 
   async onSwMessage(message: any) {

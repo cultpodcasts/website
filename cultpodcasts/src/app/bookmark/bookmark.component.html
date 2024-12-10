@@ -1,0 +1,10 @@
+@if (isAuthenticated$) {
+<button mat-icon-button>
+    <mat-icon>
+        @if (isBookmarked){
+        bookmark
+        }@else{
+        bookmark_add
+        }</mat-icon>
+</button>
+}

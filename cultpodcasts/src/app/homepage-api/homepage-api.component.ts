@@ -12,6 +12,7 @@ import { HomepageService } from '../homepage.service';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
 import { IEpisode } from '../IEpisode';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
+import { BookmarkComponent } from "../bookmark/bookmark.component";
 
 @Component({
   selector: 'app-homepage-api',
@@ -24,7 +25,8 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
     DecimalPipe,
     KeyValuePipe,
     EpisodeImageComponent,
-    EpisodeLinksComponent
+    EpisodeLinksComponent,
+    BookmarkComponent
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'

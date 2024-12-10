@@ -10,7 +10,10 @@ import { environment } from './../environments/environment';
 export class PodcastsService {
   isAuthenticated: boolean = false;
 
-  constructor(private http: HttpClient, private auth: AuthServiceWrapper) {
+  constructor(
+    private http: HttpClient,
+    private auth: AuthServiceWrapper
+  ) {
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
