@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, input, InputSignal } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
 import { BehaviorSubject } from 'rxjs';
@@ -16,10 +16,13 @@ import { AsyncPipe } from '@angular/common';
   styleUrl: './bookmark.component.sass'
 })
 export class BookmarkComponent {
-  @Input()
-  episodeId: string | undefined;
+  episodeId = input.required<string>();
+  hasMenu: InputSignal<boolean> = input<boolean>(false);
   isBookmarked$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   isAuthenticated$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+
+  @HostBinding('class.has-menu')
+  get hasMenuGet() { return this.hasMenu() }
 
   constructor(
     private profileService: ProfileService
@@ -30,16 +33,16 @@ export class BookmarkComponent {
       this.isAuthenticated$.next(isAuthenticated)
     );
     this.profileService.bookmarks$.subscribe(bookmarks =>
-      this.isBookmarked$.next(bookmarks.has(this.episodeId!))
+      this.isBookmarked$.next(bookmarks.has(this.episodeId()))
     );
   }
 
   async bookmark(): Promise<any> {
-    var bookmarked = this.profileService.bookmarks.has(this.episodeId!);
+    var bookmarked = this.profileService.bookmarks.has(this.episodeId());
     if (bookmarked) {
-      await this.profileService.removeBookmark(this.episodeId);
+      await this.profileService.removeBookmark(this.episodeId());
     } else {
-      await this.profileService.addBookmark(this.episodeId);
+      await this.profileService.addBookmark(this.episodeId());
     }
   }
 }

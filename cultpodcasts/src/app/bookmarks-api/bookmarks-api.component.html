@@ -1,0 +1,102 @@
+<section id="results">
+    <div id="progresswrapper">
+        @if (isLoading) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        }
+    </div>
+    @if (!isLoading && error) {
+    <ng-container>
+        <p id="error">
+            An error occurred.
+        </p>
+    </ng-container>
+    }
+    <section id="resultsheading">
+        <h2>Bookmarks</h2>
+        @if (!isLoading && !error) {
+        <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
+            <mat-icon>more_vert</mat-icon>
+        </button>
+        }
+        <mat-menu #sort="matMenu">
+            <button mat-menu-item id="dateaddedasc" (click)="setSort(sortMode.addDatedAsc)"
+                [ngClass]="{'selected': sortDirection==sortMode.addDatedAsc}">
+                <mat-icon>arrow_upward</mat-icon>
+                <span>Date Bookmarked</span>
+            </button>
+            <button mat-menu-item id="dateaddeddesc" (click)="setSort(sortMode.addDatedDesc)"
+                [ngClass]="{'selected': sortDirection==sortMode.addDatedDesc}">
+                <mat-icon>arrow_downward</mat-icon>
+                <span>Date Bookmarked Descending</span>
+            </button>
+            <button mat-menu-item id="releasedateasc" (click)="setSort(sortMode.releaseDateAsc)"
+                [ngClass]="{'selected': sortDirection==sortMode.releaseDateAsc}">
+                <mat-icon>arrow_upward</mat-icon>
+                <span>Date Released Ascending</span>
+            </button>
+            <button mat-menu-item id="releasedatedesc" (click)="setSort(sortMode.releaseDateDesc)"
+                [ngClass]="{'selected': sortDirection==sortMode.releaseDateDesc}">
+                <mat-icon>arrow_downward</mat-icon>
+                <span>Date Released Descending</span>
+            </button>
+        </mat-menu>
+    </section>
+    @if (!isLoading && noBookmarks) {
+    <p>You have no bookmarks. Use the <mat-icon>bookmark_add</mat-icon> icon to save your favourites.</p>
+    }
+    @for (result of sortedEpisodes; track result.id){
+    <mat-card class="result">
+        <mat-card-header>
+            <app-bookmark [episodeId]="result.id" [hasMenu]="authRoles.includes('Curator')" />
+            @if (authRoles.includes("Curator") && result.podcastName) {
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+                <button mat-menu-item (click)="edit(result.id)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Edit Episode</span>
+                </button>
+                <button mat-menu-item (click)="post(result.id)">
+                    <mat-icon>send</mat-icon>
+                    <span>Post Episode</span>
+                </button>
+            </mat-menu>
+            }
+            <mat-card-title>
+                <span [outerHTML]="result.title"></span>
+            </mat-card-title>
+            <mat-card-subtitle>
+                <a [routerLink]="['/podcast', result.podcastName]">
+                    {{result.podcastName}}
+                </a>
+            </mat-card-subtitle>
+            <mat-card-subtitle>{{result.release | date:'d MMM yyyy H:mm'}}
+                [{{result.duration.split(".")[0].substring(1)}}]
+            </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="resultdescription">
+            <app-episode-image [imageUrl]="result.image"></app-episode-image>
+            <p>{{result.description}}</p>
+        </mat-card-content>
+        <mat-card-actions>
+            <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+            <mat-card-footer class="subjects">
+                @for (subject of result.subjects; track subject) {
+                <div class="subject">
+                    <a [routerLink]="['/subject', subject]">{{subject}}</a>
+                </div>
+                }
+            </mat-card-footer>
+        </mat-card-actions>
+    </mat-card>
+    }
+</section>
+
+@if (!isLoading && error) {
+<ng-container>
+    <div id="cta-button">
+        <button mat-flat-button color="primary" (click)="ngOnInit()">Try again</button>
+    </div>
+</ng-container>
+}

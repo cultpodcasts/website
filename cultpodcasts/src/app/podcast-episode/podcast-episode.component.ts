@@ -18,6 +18,7 @@ import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
+import { BookmarkComponent } from "../bookmark/bookmark.component";
 
 @Component({
   selector: 'app-podcast-episode',
@@ -29,7 +30,8 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
     RouterLink,
     DatePipe,
     EpisodeImageComponent,
-    EpisodeLinksComponent
+    EpisodeLinksComponent,
+    BookmarkComponent
 ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'

@@ -73,6 +73,7 @@
   @for (result of results; track result.id) {
   <mat-card class="result">
     <mat-card-header>
+      <app-bookmark [episodeId]="result.id"/>
       <mat-card-title>
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>

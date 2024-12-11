@@ -23,6 +23,10 @@
         </a>
       </mat-menu>
       <mat-menu #profile="matMenu">
+        <a [routerLink]="['/bookmarks']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">bookmarks</mat-icon>
+          <span>Bookmarks</span>
+        </a>
         @if (authRoles.includes("Curator")) {
         <a [routerLink]="['/discovery']" mat-menu-item>
           <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
@@ -62,6 +66,12 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
+      @if (auth.authService.isAuthenticated$ | async) {
+        <a [routerLink]="['/bookmarks']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">bookmarks</mat-icon>
+          <span>Bookmarks</span>
+        </a>
+        }
       <a (click)="openSubmitPodcast()" mat-menu-item>
         <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
         <span>Add Podcast</span>

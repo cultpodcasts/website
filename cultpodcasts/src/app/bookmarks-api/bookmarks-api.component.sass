@@ -11,8 +11,9 @@
     padding-top: 5px
     display: -webkit-box
     -webkit-box-orient: vertical
-    -webkit-line-clamp: 6
     overflow: hidden
+mat-card-title
+    margin-right: 40px
 #resultsheading
     display: flex
     margin-bottom: 10px
@@ -27,7 +28,19 @@ button.selected
     span
         font-weight: bold
 mat-card-header
-    mat-card-title
-        margin-right: 24px
-mat-expansion-panel
-    margin-bottom: 10px
+    .mdc-icon-button
+        position: absolute
+        top: 12px
+        right: 12px
+        margin-right: 0
+#error
+    margin-left: 12px
+app-episode-podcast-links
+    display: inherit
+mat-card-content img,mat-card-content span.img
+    max-height: 300px
+    max-width: 100%
+    margin: 0 auto 10px
+    display: block
+
+
