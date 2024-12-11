@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, HostBinding, input, InputSignal } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
 import { BehaviorSubject } from 'rxjs';
@@ -17,8 +17,12 @@ import { AsyncPipe } from '@angular/common';
 })
 export class BookmarkComponent {
   episodeId = input.required<string>();
+  hasMenu: InputSignal<boolean> = input<boolean>(false);
   isBookmarked$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   isAuthenticated$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+
+  @HostBinding('class.has-menu')
+  get hasMenuGet() { return this.hasMenu() }
 
   constructor(
     private profileService: ProfileService
