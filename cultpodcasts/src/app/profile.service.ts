@@ -78,6 +78,7 @@ export class ProfileService {
       console.error(error);
     }
   }
+
   async addBookmark(episodeId: string): Promise<any> {
     if (episodeId == "")
       return;
