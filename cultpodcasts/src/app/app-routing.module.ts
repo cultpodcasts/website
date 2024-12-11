@@ -4,12 +4,14 @@ import { RouterModule, Routes } from '@angular/router';
 import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
+import { isUserGuard } from './isUserGuard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';
 import { EpisodesComponent } from './episodes/episodes.component';
 import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
 import { HomeComponent } from './home/home.component';
+import { BookmarksComponent } from './bookmarks/bookmarks.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },
@@ -22,7 +24,8 @@ export const routes: Routes = [
   { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
   { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Review Episodes" },
   { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Outgoing Episodes" },
-  { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" }
+  { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" },
+  { path: 'bookmarks', component: BookmarksComponent, canActivate: [isUserGuard], title: 'My Bookmarks' }
 ];
 
 @NgModule({
