@@ -18,7 +18,6 @@ async function workerFetchHandler(request: Request, env: Env) {
 	if (url.pathname.startsWith(podcastPrefix)) {
 		const podcast = url.pathname.split("/")[2];
 		const newPodcastName = await env.redirects.get(decodeURIComponent(podcast));
-		console.log("kv-redirect-search", podcast, newPodcastName);
 		if (newPodcastName) {
 			const targetPath =
 				podcastPrefix +
@@ -27,6 +26,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 			const target = new URL(
 				targetPath,
 				new URL("/", url))
+			console.log("redirect", url, target);
 			return Response.redirect(target, 301);
 		}
 	}
