@@ -54,7 +54,9 @@ export class ProfileService {
     return { isUser: false, success: true, episodeIds: [] };
   }
 
-  async removeBookmark(episodeId: string | undefined): Promise<any> {
+  async removeBookmark(episodeId: string): Promise<any> {
+    if (episodeId == "")
+      return;
     try {
       let token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -76,7 +78,9 @@ export class ProfileService {
       console.error(error);
     }
   }
-  async addBookmark(episodeId: string | undefined): Promise<any> {
+  async addBookmark(episodeId: string): Promise<any> {
+    if (episodeId == "")
+      return;
     try {
       let token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
