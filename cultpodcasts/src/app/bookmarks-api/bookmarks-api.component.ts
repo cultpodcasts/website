@@ -109,6 +109,7 @@ export class BookmarksApiComponent {
         this.error = false;
         this.isLoading = false;
         this.noBookmarks = true;
+        this.episodes = [];
       }
     });
   }
