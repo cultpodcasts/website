@@ -11,3 +11,15 @@ env = "staging"
 
 [env.production.vars]
 env = "production"
+
+[[kv_namespaces]]
+binding = "redirects"
+id = "19eea88f0cb14548bcab925238a68cc4"
+
+[[env.preview.kv_namespaces]]
+binding = "redirects"
+id = "19eea88f0cb14548bcab925238a68cc4"
+
+[[env.production.kv_namespaces]]
+binding = "redirects"
+id = "19eea88f0cb14548bcab925238a68cc4"
