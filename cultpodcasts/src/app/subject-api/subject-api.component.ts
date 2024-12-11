@@ -22,6 +22,7 @@ import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/ma
 import { FacetState } from '../facet-state';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
+import { BookmarkComponent } from "../bookmark/bookmark.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -45,7 +46,8 @@ const sortParamDateDesc: string = "date-desc";
     MatChipListbox,
     MatChipOption,
     EpisodeImageComponent,
-    EpisodeLinksComponent
+    EpisodeLinksComponent,
+    BookmarkComponent
 ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'
