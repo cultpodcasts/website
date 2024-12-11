@@ -3,6 +3,7 @@ import { AuthServiceWrapper } from './AuthServiceWrapper';
 import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../environments/environment';
+import { uuidPattern } from './uuidPattern';
 
 @Injectable({
   providedIn: 'root'
@@ -55,7 +56,7 @@ export class ProfileService {
   }
 
   async removeBookmark(episodeId: string): Promise<any> {
-    if (episodeId == "")
+    if (episodeId == "" || !uuidPattern.test(episodeId))
       return;
     try {
       let token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
@@ -66,8 +67,8 @@ export class ProfileService {
       }));
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/bookmark`, environment.api).toString();
-      var resp = await firstValueFrom(this.http.delete<any>(episodeEndpoint, { body: { episodeId: episodeId }, headers: headers, observe: 'response' }));
+      const episodeEndpoint = new URL(`/bookmark/${episodeId}`, environment.api).toString();
+      var resp = await firstValueFrom(this.http.delete<any>(episodeEndpoint, { headers: headers, observe: 'response' }));
       if (resp.status != 200) {
         console.error(resp);
       } else {
@@ -80,7 +81,7 @@ export class ProfileService {
   }
 
   async addBookmark(episodeId: string): Promise<any> {
-    if (episodeId == "")
+    if (episodeId == "" || !uuidPattern.test(episodeId))
       return;
     try {
       let token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
@@ -91,9 +92,8 @@ export class ProfileService {
       }));
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/bookmark`, environment.api).toString();
-      var resp = await firstValueFrom(this.http.post<any>(episodeEndpoint, { episodeId: episodeId }, { headers: headers, observe: 'response' }));
-      console.log(resp.status);
+      const episodeEndpoint = new URL(`/bookmark/${episodeId}`, environment.api).toString();
+      var resp = await firstValueFrom(this.http.post<any>(episodeEndpoint, null, { headers: headers, observe: 'response' }));
       if (resp.status != 200) {
         console.error(resp);
       } else {

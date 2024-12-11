@@ -3,7 +3,6 @@ import { CanActivateFn, Router } from "@angular/router";
 import { map, catchError, of } from "rxjs";
 import { AuthServiceWrapper } from "./AuthServiceWrapper";
 
-
 export const isUserGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const user$ = inject(AuthServiceWrapper).authService.user$;
