@@ -32,7 +32,7 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent
-],
+  ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
 })
@@ -59,6 +59,7 @@ export class PodcastEpisodeComponent {
   podcastName: string = "";
   resultsHeading: string = "";
   authRoles: string[] = [];
+  isSignedIn: boolean = false;
   isLoading: boolean = true;
 
   constructor(
@@ -69,6 +70,7 @@ export class PodcastEpisodeComponent {
     private siteService: SiteService,
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
   private route = inject(ActivatedRoute);
 
