@@ -28,7 +28,7 @@
     <mat-card class="result" id="{{item.id}}">
       <mat-card-header>
         <app-bookmark [episodeId]="item.id" />
-        <mat-card-title><a
+        <mat-card-title [class.hasBookmark]="isSignedIn"><a
             [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a></mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">

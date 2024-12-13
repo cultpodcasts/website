@@ -13,6 +13,7 @@ import { EpisodeImageComponent } from '../episode-image/episode-image.component'
 import { IEpisode } from '../IEpisode';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 
 @Component({
   selector: 'app-homepage-api',
@@ -47,14 +48,20 @@ export class HomepageApiComponent {
 
   homepage: IHomepage | undefined;
   totalDuration: string = "";
+  isSignedIn: boolean = false;
 
   constructor(
     private siteService: SiteService,
     private homepageService: HomepageService,
+    protected auth: AuthServiceWrapper,
     @Inject(PLATFORM_ID) platformId: any,
   ) {
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
+    this.auth.isSignedIn.subscribe(isSignedIn => {
+      console.log("is-signed-in", isSignedIn);
+      this.isSignedIn = isSignedIn
+    });
   }
   private route = inject(ActivatedRoute);
 
