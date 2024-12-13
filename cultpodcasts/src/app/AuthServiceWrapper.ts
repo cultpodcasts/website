@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
     roles: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+    isSignedIn: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
     constructor(public authService: AuthService) {
         if (authService.user$) {
@@ -18,6 +19,9 @@ export class AuthServiceWrapper {
                         localStorage.setItem("hasLoggedIn", "true");
                     }
                 }
+            });
+            authService.isAuthenticated$.subscribe(isAuthenticated => {
+                this.isSignedIn.next(isAuthenticated);
             });
         }
     }

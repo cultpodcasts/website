@@ -53,11 +53,12 @@ export class BookmarksApiComponent {
   error: boolean = false;
   private episodes: Episode[] = [];
   protected sortedEpisodes: Episode[] = [];
-
   sortDirection: sortMode = sortMode.addDatedDesc;
   protected sortMode = sortMode;
   authRoles: string[] = [];
+  isSignedIn: boolean = false;
   noBookmarks: boolean = false;
+  
   constructor(
     private profileService: ProfileService,
     private auth: AuthServiceWrapper,
@@ -66,6 +67,7 @@ export class BookmarksApiComponent {
     private snackBar: MatSnackBar
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   ngOnInit() {

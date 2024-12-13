@@ -63,7 +63,9 @@
                 </button>
             </mat-menu>
             }
-            <mat-card-title>
+            <mat-card-title
+                [class.hasMenu]="authRoles.includes('Curator')"
+                [class.hasBookmark]="isSignedIn">
                 <span [outerHTML]="result.title"></span>
             </mat-card-title>
             <mat-card-subtitle>
