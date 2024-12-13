@@ -101,7 +101,6 @@ export class SearchApiComponent {
       })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const navigation = this.router.getCurrentNavigation();
-      let reset: { podcasts?: boolean, subjects?: boolean } | undefined;
       let initial = true;
       if (navigation) {
         const facetState = navigation.extras.state as FacetState;
@@ -110,23 +109,22 @@ export class SearchApiComponent {
           this.facets = facetState.searchResultsFacets;
           if (!facetState.resetPodcasts) {
             this.podcasts = facetState.podcasts!;
-          } else {
-            if (!reset) {
-              reset = {};
-            }
-            reset.podcasts = true;
           }
           if (!facetState.resetSubjects) {
             this.subjects = facetState.subjects!;
-          } else {
-            if (!reset) {
-              reset = {};
-            }
-            reset.subjects = true;
           }
         }
       }
 
+      if (initial) {
+        this.podcastsFilter= "";
+        this.subjectsFilter= "";
+        this.podcasts= [];
+        this.subjects= [];
+        this.facets.subjects=[];
+        this.facets.podcastName=[];
+      }
+ 
       const { params, queryParams } = res;
       this.searchState.query = params[queryParam];
       this.isLoading = true;
@@ -154,12 +152,13 @@ export class SearchApiComponent {
       } else {
         this.searchState.filter = "";
       }
-      this.execSearch(initial, reset);
+      this.execSearch(initial);
     });
   }
 
   execSearch(initial: boolean, reset?: { podcasts?: boolean, subjects?: boolean }) {
     var sort: string = "";
+
     if (this.searchState.sort == "date-asc") {
       sort = "release asc";
     } else if (this.searchState.sort == "date-desc") {
@@ -190,10 +189,10 @@ export class SearchApiComponent {
               subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
             };
           } else {
-            if (reset && reset.podcasts) {
+            if (reset?.podcasts) {
               this.facets.podcastName = data.facets.podcastName;
             }
-            if (reset && reset.subjects) {
+            if (reset?.subjects) {
               this.facets.subjects = data.facets.subjects;
             }
           }

@@ -58,10 +58,7 @@ export class HomepageApiComponent {
   ) {
     this.isServer = isPlatformServer(platformId);
     this.grouped = {};
-    this.auth.isSignedIn.subscribe(isSignedIn => {
-      console.log("is-signed-in", isSignedIn);
-      this.isSignedIn = isSignedIn
-    });
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
   private route = inject(ActivatedRoute);
 
