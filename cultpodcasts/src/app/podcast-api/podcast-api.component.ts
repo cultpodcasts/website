@@ -57,7 +57,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent
-],
+  ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
 })
@@ -85,6 +85,7 @@ export class PodcastApiComponent {
   facets: SearchResultsFacets = {};
   subjects: string[] = [];
   subjectsFilter: string = "";
+  isSignedIn: boolean = false;
 
   constructor(
     private router: Router,
@@ -95,6 +96,7 @@ export class PodcastApiComponent {
     private dialog: MatDialog
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
   private route = inject(ActivatedRoute);
 

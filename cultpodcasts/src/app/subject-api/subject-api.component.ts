@@ -48,7 +48,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent
-],
+  ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'
 })
@@ -70,6 +70,7 @@ export class SubjectApiComponent {
   authRoles: string[] = [];
   podcasts: string[] = [];
   podcastFilter: string = "";
+  isSignedIn: boolean = false;
 
   constructor(
     private router: Router,
@@ -80,6 +81,7 @@ export class SubjectApiComponent {
     private snackBar: MatSnackBar
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   private route = inject(ActivatedRoute);

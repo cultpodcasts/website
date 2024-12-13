@@ -19,6 +19,7 @@ import { FacetState } from '../facet-state';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { AuthServiceWrapper } from '../AuthServiceWrapper';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -46,7 +47,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent
-],
+  ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass'
 })
@@ -75,11 +76,15 @@ export class SearchApiComponent {
   podcasts: string[] = [];
   subjectsFilter: string = "";
   podcastsFilter: string = "";
+  isSignedIn: boolean= false;
 
   constructor(
     private router: Router,
     private siteService: SiteService,
-    private oDataService: ODataService) {
+    private oDataService: ODataService,
+    protected auth: AuthServiceWrapper
+  ) {
+    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
   private route = inject(ActivatedRoute);
 

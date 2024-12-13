@@ -40,7 +40,7 @@ export class RunSearchIndexerComponent {
             error: e => {
               console.error(e);
               const indexerState = e.error as IndexerState;
-              if (indexerState.state) {
+              if (indexerState?.state) {
                 this.close({ indexerState: indexerState });
               } else {
                 this.close({ message: "An error occurred running search-index" });
