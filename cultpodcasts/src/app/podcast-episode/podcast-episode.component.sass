@@ -15,6 +15,9 @@
     overflow: hidden
 mat-card-title.hasMenu.hasBookmark
     margin-right: 78px
+@media screen and (max-width: 400px)
+    mat-card-title.hasMenu.hasBookmark
+        margin-right: 64px
 mat-card-title.hasMenu,
 mat-card-title.hasBookmark 
     margin-right: 30px
@@ -37,3 +40,8 @@ mat-card-header
         top: 12px
         right: 12px
         margin-right: 0
+@media screen and (max-width: 400px)
+    mat-card-header
+        .mdc-icon-button
+            right: 0
+
