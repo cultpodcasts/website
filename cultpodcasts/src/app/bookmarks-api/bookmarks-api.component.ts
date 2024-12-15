@@ -22,6 +22,7 @@ import { EpisodePublishResponse } from '../episode-publish-response';
 import { PostEpisodeModel } from '../post-episode-model';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -43,8 +44,9 @@ export enum sortMode {
     DatePipe,
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
-    BookmarkComponent
-  ],
+    BookmarkComponent,
+    SubjectsComponent
+],
   templateUrl: './bookmarks-api.component.html',
   styleUrl: './bookmarks-api.component.sass'
 })

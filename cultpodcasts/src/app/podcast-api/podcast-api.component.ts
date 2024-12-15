@@ -32,6 +32,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -56,8 +57,9 @@ const sortParamDateDesc: string = "date-desc";
     MatChipOption,
     EpisodeImageComponent,
     EpisodeLinksComponent,
-    BookmarkComponent
-  ],
+    BookmarkComponent,
+    SubjectsComponent
+],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
 })

@@ -102,12 +102,7 @@
         <mat-card-actions>
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
             <mat-card-footer class="subjects">
-                @for (subject of result.subjects; track subject) {
-                <div class="subject">
-                    <a [routerLink]="['/subject', subject]">{{subject}}</a>
-                </div>
-                }
-            </mat-card-footer>
+                <app-subjects [subjects]="result.subjects!" [showHidden]="true"></app-subjects>            </mat-card-footer>
         </mat-card-actions>
     </mat-card>
     }

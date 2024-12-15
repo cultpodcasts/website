@@ -24,6 +24,7 @@ import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-p
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -41,7 +42,8 @@ const sortParamDateDesc: string = "date-desc";
     DatePipe,
     EpisodeStatusComponent,
     EpisodePodcastLinksComponent,
-    EpisodeImageComponent
+    EpisodeImageComponent,
+    SubjectsComponent
 ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass'

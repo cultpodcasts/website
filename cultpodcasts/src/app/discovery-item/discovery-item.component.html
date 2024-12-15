@@ -51,11 +51,7 @@
         </a>
         }
         <mat-card-footer class="subjects">
-            @for (subject of result.subjects; track subject) {
-            <div class="subject">
-                <a [routerLink]="['/subject', subject]">{{subject}}</a>
-            </div>
-            }
+            <app-subjects [subjects]="result.subjects!" [showHidden]="true"></app-subjects>
         </mat-card-footer>
     </mat-card-actions>
 </mat-card>
