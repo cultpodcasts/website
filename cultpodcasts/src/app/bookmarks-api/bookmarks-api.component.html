@@ -42,7 +42,7 @@
         </mat-menu>
     </section>
     @if (!isLoading && noBookmarks) {
-    <p>You have no bookmarks. Use the <mat-icon>bookmark_add</mat-icon> icon to save your favourites.</p>
+    <p>You have no bookmarks. Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your favourites.</p>
     }
     @for (result of sortedEpisodes; track result.id){
     <mat-card class="result">
