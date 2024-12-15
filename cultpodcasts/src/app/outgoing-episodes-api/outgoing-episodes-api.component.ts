@@ -27,6 +27,7 @@ import { EpisodeStatusComponent } from "../episode-status/episode-status.compone
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -48,7 +49,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     FormsModule,
     EpisodeStatusComponent,
     EpisodePodcastLinksComponent,
-    EpisodeImageComponent
+    EpisodeImageComponent,
+    SubjectsComponent
 ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'

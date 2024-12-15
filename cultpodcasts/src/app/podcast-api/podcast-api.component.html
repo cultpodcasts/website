@@ -46,7 +46,7 @@
         <span>Date descending</span>
       </button>
       @if (searchState.query) {
-        <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
+      <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
         [ngClass]="searchState.sort==sortParamRank?'selected':''">
         <mat-icon></mat-icon>
         <span>Rank</span>
@@ -78,7 +78,7 @@
   @for (result of results; track result.id) {
   <mat-card class="result">
     <mat-card-header>
-      <app-bookmark [episodeId]="result.id"/>
+      <app-bookmark [episodeId]="result.id" />
       <mat-card-title [class.hasBookmark]="isSignedIn">
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
@@ -97,13 +97,7 @@
     <mat-card-actions>
       <app-episode-links [episode]="result"></app-episode-links>
       <mat-card-footer class="subjects">
-        @for (subject of result.subjects; track subject) {
-        <div class="subject">
-          @if (!subject.startsWith("_")) {
-          <a [routerLink]="['/subject', subject]">{{subject}}</a>
-          }
-        </div>
-        }
+        <app-subjects [subjects]="result.subjects!"></app-subjects>
       </mat-card-footer>
     </mat-card-actions>
   </mat-card>

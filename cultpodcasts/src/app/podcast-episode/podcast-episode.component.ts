@@ -19,6 +19,7 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 @Component({
   selector: 'app-podcast-episode',
@@ -31,8 +32,9 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
     DatePipe,
     EpisodeImageComponent,
     EpisodeLinksComponent,
-    BookmarkComponent
-  ],
+    BookmarkComponent,
+    SubjectsComponent
+],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
 })

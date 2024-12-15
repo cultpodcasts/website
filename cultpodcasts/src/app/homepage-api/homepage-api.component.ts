@@ -14,6 +14,7 @@ import { IEpisode } from '../IEpisode';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { SubjectsComponent } from "../subjects/subjects.component";
 
 @Component({
   selector: 'app-homepage-api',
@@ -27,8 +28,9 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
     KeyValuePipe,
     EpisodeImageComponent,
     EpisodeLinksComponent,
-    BookmarkComponent
-  ],
+    BookmarkComponent,
+    SubjectsComponent
+],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
 })

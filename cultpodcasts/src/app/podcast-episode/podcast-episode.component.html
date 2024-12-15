@@ -18,9 +18,7 @@
         </button>
       </mat-menu>
       }
-      <mat-card-title
-        [class.hasMenu]="authRoles.includes('Curator')" 
-        [class.hasBookmark]="isSignedIn">
+      <mat-card-title [class.hasMenu]="authRoles.includes('Curator')" [class.hasBookmark]="isSignedIn">
         <span [outerHTML]="episode.episodeTitle"></span>
       </mat-card-title>
       <mat-card-subtitle>
@@ -38,13 +36,7 @@
     <mat-card-actions>
       <app-episode-links [episode]="episode"></app-episode-links>
       <mat-card-footer class="subjects">
-        @for (subject of episode.subjects; track subject) {
-        <div class="subject">
-          @if (!subject.startsWith("_")) {
-          <a [routerLink]="['/subject', subject]">{{subject}}</a>
-          }
-        </div>
-        }
+        <app-subjects [subjects]="episode.subjects!"></app-subjects>
       </mat-card-footer>
     </mat-card-actions>
   </mat-card>
