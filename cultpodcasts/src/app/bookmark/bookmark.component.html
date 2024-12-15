@@ -1,10 +1,7 @@
 @if (isAuthenticated$ | async; as boolean) {
 <button mat-icon-button (click)="bookmark()">
-    <mat-icon>
-        @if (isBookmarked$ | async; as boolean){
+    <mat-icon [class.material-symbols-outlined]="(isBookmarked$ | async) ? false : true">
         bookmark
-        }@else{
-        bookmark_add
-        }</mat-icon>
+    </mat-icon>
 </button>
 }

@@ -112,6 +112,7 @@ export class BookmarksApiComponent {
         this.isLoading = false;
         this.noBookmarks = true;
         this.episodes = [];
+        this.sortedEpisodes= [];
       }
     });
   }
