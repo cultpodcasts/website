@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 
 @Component({
   selector: 'app-episode-podcast-links',
@@ -13,8 +14,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule
-  ],
+    MatCardModule,
+    ApplePodcastsSvgComponent
+],
   templateUrl: './episode-podcast-links.component.html',
   styleUrl: './episode-podcast-links.component.sass'
 })

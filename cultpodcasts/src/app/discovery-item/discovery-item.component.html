@@ -47,7 +47,7 @@
         }
         @if (result.urls.apple) {
         <a href="{{result.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-            <mat-icon svgIcon="apple-podcasts"></mat-icon>
+            <app-apple-podcasts-svg></app-apple-podcasts-svg>
         </a>
         }
         <mat-card-footer class="subjects">

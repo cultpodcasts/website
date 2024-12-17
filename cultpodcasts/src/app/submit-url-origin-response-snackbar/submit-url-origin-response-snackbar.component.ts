@@ -6,10 +6,15 @@ import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dia
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { Router } from '@angular/router';
 import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dialog.component';
+import { MatIconModule } from '@angular/material/icon';
+import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 
 @Component({
   selector: 'app-submit-url-origin-response-snackbar',
-  imports: [],
+  imports: [
+    MatIconModule,
+    ApplePodcastsSvgComponent
+],
   templateUrl: './submit-url-origin-response-snackbar.component.html',
   styleUrl: './submit-url-origin-response-snackbar.component.sass'
 })

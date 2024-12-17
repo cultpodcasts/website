@@ -30,13 +30,13 @@
         <span>
             <span id="service-icons">
                 @if (data.response.episodeDetails.spotify) {
-                <img src="/assets/spotify.svg">
+                    <mat-icon svgIcon="spotify"></mat-icon>
                 }
                 @if (data.response.episodeDetails.apple) {
-                <img src="/assets/apple-podcasts.svg">
+                    <app-apple-podcasts-svg></app-apple-podcasts-svg>
                 }
                 @if (data.response.episodeDetails.youtube) {
-                <img src="/assets/youtube.svg">
+                    <mat-icon svgIcon="youtube"></mat-icon>
                 }
             </span>
             @if (data.response.episodeDetails.subjects.length > 0) {
