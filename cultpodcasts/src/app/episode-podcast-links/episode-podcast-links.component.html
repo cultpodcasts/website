@@ -22,11 +22,11 @@
 
 @if (_episode.urls.apple) {
 <a href="{{_episode.urls.apple}}" mat-icon-button>
-    <app-apple-podcasts-svg></app-apple-podcasts-svg>
+    <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
 </a>
 } @else if (_episode.applePodcast) {
 <button mat-icon-button disabled="true">
-    <app-apple-podcasts-svg class="not"></app-apple-podcasts-svg>
+    <mat-icon><app-apple-podcasts-svg class="not"></app-apple-podcasts-svg></mat-icon>
 </button>
 }
 
