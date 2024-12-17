@@ -6,13 +6,15 @@ import { formatDate } from '@angular/common';
 import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
 import { IEpisode } from '../IEpisode';
+import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 
 @Component({
   selector: 'app-episode-links',
   imports: [
     MatIconModule,
     MatButtonModule,
-  ],
+    ApplePodcastsSvgComponent
+],
   templateUrl: './episode-links.component.html',
   styleUrl: './episode-links.component.sass'
 })
