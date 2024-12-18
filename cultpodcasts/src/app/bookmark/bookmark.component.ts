@@ -1,16 +1,18 @@
 import { Component, HostBinding, input, InputSignal } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
-import { BehaviorSubject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { AsyncPipe } from '@angular/common';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-bookmark',
   imports: [
     MatIconModule,
     MatButtonModule,
-    AsyncPipe
+    AsyncPipe,
+    MatProgressSpinnerModule
   ],
   templateUrl: './bookmark.component.html',
   styleUrl: './bookmark.component.sass'
@@ -18,8 +20,10 @@ import { AsyncPipe } from '@angular/common';
 export class BookmarkComponent {
   episodeId = input.required<string>();
   hasMenu: InputSignal<boolean> = input<boolean>(false);
-  isBookmarked$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-  isAuthenticated$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  isBookmarked$: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+  isAuthenticated$: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+  waitingCallback: boolean = true;
+  private isBookmarked: boolean | undefined;
 
   @HostBinding('class.has-menu')
   get hasMenuGet() { return this.hasMenu() }
@@ -32,13 +36,19 @@ export class BookmarkComponent {
     this.profileService.isAuthenticated$.subscribe(isAuthenticated =>
       this.isAuthenticated$.next(isAuthenticated)
     );
-    this.profileService.bookmarks$.subscribe(bookmarks =>
-      this.isBookmarked$.next(bookmarks.has(this.episodeId()))
-    );
+    this.profileService.bookmarks$.subscribe(bookmarks => {
+      const state: boolean = bookmarks.has(this.episodeId());
+      if (this.waitingCallback && state != this.isBookmarked) {
+        this.waitingCallback = false;
+      }
+      this.isBookmarked$.next(state)
+      this.isBookmarked = state;
+    });
   }
 
   async bookmark(): Promise<any> {
     var bookmarked = this.profileService.bookmarks.has(this.episodeId());
+    this.waitingCallback = true;
     if (bookmarked) {
       await this.profileService.removeBookmark(this.episodeId());
     } else {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AuthServiceWrapper } from './AuthServiceWrapper';
-import { BehaviorSubject, firstValueFrom, Observable } from 'rxjs';
+import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../environments/environment';
 import { uuidPattern } from './uuidPattern';
@@ -9,10 +9,10 @@ import { uuidPattern } from './uuidPattern';
   providedIn: 'root'
 })
 export class ProfileService {
-  roles: BehaviorSubject<string[]> = this.auth.roles;
+  roles: ReplaySubject<string[]> = this.auth.roles;
   isAuthenticated$: Observable<boolean> = this.auth.authService.isAuthenticated$;
   public bookmarks: Set<string> = new Set([]);
-  bookmarks$: BehaviorSubject<Set<string>> = new BehaviorSubject<Set<string>>(this.bookmarks);
+  bookmarks$: ReplaySubject<Set<string>> = new ReplaySubject<Set<string>>();
 
   constructor(
     private http: HttpClient,
