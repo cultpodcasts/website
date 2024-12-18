@@ -4,8 +4,8 @@ import { ReplaySubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
-    roles: ReplaySubject<string[]> = new ReplaySubject<string[]>();
-    isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+    roles: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
+    isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
 
     constructor(public authService: AuthService) {
         if (authService.user$) {
