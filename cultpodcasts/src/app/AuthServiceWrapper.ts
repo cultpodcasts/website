@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
-import { BehaviorSubject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
-    roles: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
-    isSignedIn: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+    roles: ReplaySubject<string[]> = new ReplaySubject<string[]>();
+    isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>();
 
     constructor(public authService: AuthService) {
         if (authService.user$) {
