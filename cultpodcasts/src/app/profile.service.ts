@@ -12,7 +12,7 @@ export class ProfileService {
   roles: ReplaySubject<string[]> = this.auth.roles;
   isAuthenticated$: Observable<boolean> = this.auth.authService.isAuthenticated$;
   public bookmarks: Set<string> = new Set([]);
-  bookmarks$: ReplaySubject<Set<string>> = new ReplaySubject<Set<string>>();
+  bookmarks$: ReplaySubject<Set<string>> = new ReplaySubject<Set<string>>(1);
 
   constructor(
     private http: HttpClient,

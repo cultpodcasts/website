@@ -20,8 +20,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class BookmarkComponent {
   episodeId = input.required<string>();
   hasMenu: InputSignal<boolean> = input<boolean>(false);
-  isBookmarked$: ReplaySubject<boolean> = new ReplaySubject<boolean>();
-  isAuthenticated$: ReplaySubject<boolean> = new ReplaySubject<boolean>();
+  isBookmarked$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
+  isAuthenticated$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
   waitingCallback: boolean = true;
   private isBookmarked: boolean | undefined;
 
