@@ -6,7 +6,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
-import { AsyncPipe, DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,12 +27,10 @@ import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 
 export enum sortMode {
   addDatedAsc = 1,
-  addDatedDesc,
-  releaseDateDesc,
-  releaseDateAsc
+  addDatedDesc
 }
 
-const take: number = 10;
+const take: number = 3;
 
 @Component({
   selector: 'app-bookmarks-api',
@@ -41,6 +39,7 @@ const take: number = 10;
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
+    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
@@ -57,12 +56,14 @@ const take: number = 10;
 export class BookmarksApiComponent {
   protected isLoading: boolean = true;
   protected isSubsequentLoading$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
+  protected isSubsequentLoading: boolean = false;;
   protected error: boolean = false;
   protected sortMode = sortMode;
   protected authRoles: string[] = [];
   protected isSignedIn: boolean = false;
   protected noBookmarks: boolean = false;
   protected episodes$: ReplaySubject<Episode[]> = new ReplaySubject<Episode[]>(1);
+  protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> = new Set<string>();
   private episodes: Episode[] = [];
@@ -97,7 +98,8 @@ export class BookmarksApiComponent {
       return;
     }
     if (!first) {
-      this.isSubsequentLoading$.next(true);
+      this.isSubsequentLoading = true;
+      this.isSubsequentLoading$.next(this.isSubsequentLoading);
     }
     if (this.bookmarks.size > 0) {
       this.noBookmarks = false;
@@ -112,7 +114,13 @@ export class BookmarksApiComponent {
         headers = headers.set("Authorization", "Bearer " + _token);
 
         const episodeResponses: Observable<Episode | null>[] = [];
-        Array.from(this.bookmarks).slice(start, end).forEach(episodeId => {
+        let orderedBookmarks = Array.from(this.bookmarks);
+        if (this.sortDirection == sortMode.addDatedDesc) {
+          orderedBookmarks = orderedBookmarks.reverse();
+        }
+        const items = orderedBookmarks.slice(start, end);
+
+        items.forEach(episodeId => {
           const episodeEndpoint = new URL(`/public/episode/${episodeId}`, environment.api).toString();
           const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
           episodeResponses.push(get);
@@ -121,12 +129,14 @@ export class BookmarksApiComponent {
           next: episodes => {
             this.episodes = this.episodes.concat(episodes.filter(x => x != null));
             this.episodes$.next(this.episodes);
+
             this.isLoading = false;
-            this.isSubsequentLoading$.next(false);
+            this.isSubsequentLoading = false;
+            this.isSubsequentLoading$.next(this.isSubsequentLoading);
 
             if (first && this.bookmarks.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.isScrolledToBottom()) {
+                if (this.isScrolledToBottom() && this.episodes.length > 0 && !this.isSubsequentLoading) {
                   this.page++;
                   await this.batch();
                 }
@@ -136,7 +146,8 @@ export class BookmarksApiComponent {
           error: e => {
             this.error = true;
             this.isLoading = false;
-            this.isSubsequentLoading$.next(false);
+            this.isSubsequentLoading = false;
+            this.isSubsequentLoading$.next(this.isSubsequentLoading);
             console.error(e);
           }
         })
@@ -144,7 +155,8 @@ export class BookmarksApiComponent {
     } else {
       this.error = false;
       this.isLoading = false;
-      this.isSubsequentLoading$.next(false);
+      this.isSubsequentLoading = false;
+      this.isSubsequentLoading$.next(this.isSubsequentLoading);
       this.noBookmarks = true;
     }
   }
@@ -200,10 +212,18 @@ export class BookmarksApiComponent {
     });
   }
 
+  setSort(mode: sortMode) {
+    this.sortDirection = mode;
+    this.isLoading = true;
+    this.episodes = [];
+    this.episodes$.next(this.episodes);
+    this.page = 0;
+    this.batch(true);
+  }
+
   private isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - 1;
     return scrollPosition >= threshold;
   }
-
 }
