@@ -87,7 +87,7 @@ export class BookmarksApiComponent {
   async populatePage() {
     this.profileService.bookmarks$.subscribe(async bookmarks => {
       this.bookmarks = bookmarks;
-      await this.batch(true);
+      await this.reset();
     });
   }
 
@@ -95,6 +95,9 @@ export class BookmarksApiComponent {
     const start = this.page * take;
     const end = start + take;
     if (start >= this.bookmarks.size) {
+      if (this.bookmarks.size == 0) {
+        this.zeroBookmarks();
+      }
       return;
     }
     if (!first) {
@@ -153,12 +156,16 @@ export class BookmarksApiComponent {
         })
       });
     } else {
-      this.error = false;
-      this.isLoading = false;
-      this.isSubsequentLoading = false;
-      this.isSubsequentLoading$.next(this.isSubsequentLoading);
-      this.noBookmarks = true;
+      this.zeroBookmarks();
     }
+  }
+
+  zeroBookmarks() {
+    this.error = false;
+    this.isLoading = false;
+    this.isSubsequentLoading = false;
+    this.isSubsequentLoading$.next(this.isSubsequentLoading);
+    this.noBookmarks = true;
   }
 
   handleRequest(that: any) {
@@ -212,13 +219,17 @@ export class BookmarksApiComponent {
     });
   }
 
-  setSort(mode: sortMode) {
-    this.sortDirection = mode;
+  async reset() {
     this.isLoading = true;
     this.episodes = [];
     this.episodes$.next(this.episodes);
     this.page = 0;
-    this.batch(true);
+    await this.batch(true);
+  }
+
+  async setSort(mode: sortMode) {
+    this.sortDirection = mode;
+    await this.reset();
   }
 
   private isScrolledToBottom(): boolean {
