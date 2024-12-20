@@ -15,12 +15,11 @@
         <h2>Bookmarks</h2>
     </section>
     @if (!isLoading && noBookmarks) {
-    <p>You have no bookmarks. Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your favourites.</p>
+    <p>You have no bookmarks. Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your
+        favourites.</p>
     }
 
-{{episodeItems.length}}
-
-    @for (result of episodeItems; track result.id){
+    @for (result of episodes$ | async ; track result.id){
     <mat-card class="result">
         <mat-card-header>
             <app-bookmark [episodeId]="result.id" [hasMenu]="authRoles.includes('Curator')" />
@@ -39,10 +38,9 @@
                 </button>
             </mat-menu>
             }
-            <mat-card-title
-                [class.hasMenu]="authRoles.includes('Curator')"
-                [class.hasBookmark]="isSignedIn">
-                <a [routerLink]="['/podcast', result.podcastName, result.id]"><span [outerHTML]="result.title"></span></a>
+            <mat-card-title [class.hasMenu]="authRoles.includes('Curator')" [class.hasBookmark]="isSignedIn">
+                <a [routerLink]="['/podcast', result.podcastName, result.id]"><span
+                        [outerHTML]="result.title"></span></a>
             </mat-card-title>
             <mat-card-subtitle>
                 <a [routerLink]="['/podcast', result.podcastName]">
@@ -65,6 +63,12 @@
         </mat-card-actions>
     </mat-card>
     }
+    @if (isSubsequentLoading$ | async) {
+    <div class="progresswrapper">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+    }
+
 </section>
 
 @if (!isLoading && error) {
