@@ -29,22 +29,15 @@
                 <mat-icon>arrow_downward</mat-icon>
                 <span>Date Bookmarked Descending</span>
             </button>
-            <button mat-menu-item id="releasedateasc" (click)="setSort(sortMode.releaseDateAsc)"
-                [ngClass]="{'selected': sortDirection==sortMode.releaseDateAsc}">
-                <mat-icon>arrow_upward</mat-icon>
-                <span>Date Released Ascending</span>
-            </button>
-            <button mat-menu-item id="releasedatedesc" (click)="setSort(sortMode.releaseDateDesc)"
-                [ngClass]="{'selected': sortDirection==sortMode.releaseDateDesc}">
-                <mat-icon>arrow_downward</mat-icon>
-                <span>Date Released Descending</span>
-            </button>
+
         </mat-menu>
     </section>
     @if (!isLoading && noBookmarks) {
-    <p>You have no bookmarks. Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your favourites.</p>
+    <p>You have no bookmarks. Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your
+        favourites.</p>
     }
-    @for (result of sortedEpisodes; track result.id){
+
+    @for (result of episodes$ | async ; track result.id){
     <mat-card class="result">
         <mat-card-header>
             <app-bookmark [episodeId]="result.id" [hasMenu]="authRoles.includes('Curator')" />
@@ -63,10 +56,9 @@
                 </button>
             </mat-menu>
             }
-            <mat-card-title
-                [class.hasMenu]="authRoles.includes('Curator')"
-                [class.hasBookmark]="isSignedIn">
-                <a [routerLink]="['/podcast', result.podcastName, result.id]">{{result.title}}</a>
+            <mat-card-title [class.hasMenu]="authRoles.includes('Curator')" [class.hasBookmark]="isSignedIn">
+                <a [routerLink]="['/podcast', result.podcastName, result.id]"><span
+                        [outerHTML]="result.title"></span></a>
             </mat-card-title>
             <mat-card-subtitle>
                 <a [routerLink]="['/podcast', result.podcastName]">
@@ -89,6 +81,12 @@
         </mat-card-actions>
     </mat-card>
     }
+    @if (isSubsequentLoading$ | async) {
+    <div class="progresswrapper">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+    }
+
 </section>
 
 @if (!isLoading && error) {

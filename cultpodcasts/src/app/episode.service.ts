@@ -1,8 +1,5 @@
-import { Inject, Injectable, Optional } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { IPageDetails } from './page-details';
-import { KVNamespace } from '@cloudflare/workers-types';
-import { ShortnerRecord } from './shortner-record';
-import { GuidService } from './guid.service';
 import { environment } from './../environments/environment';
 import { ISearchResult } from './ISearchResult';
 import { ODataService } from './OdataService';
@@ -14,7 +11,6 @@ import { HttpClient } from '@angular/common/http';
 })
 export class EpisodeService {
   constructor(
-    private guidService: GuidService,
     private oDataService: ODataService,
     private http: HttpClient
   ) { }
