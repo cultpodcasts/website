@@ -70,7 +70,7 @@
             </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="resultdescription">
-            <app-episode-image [imageUrl]="result.image"></app-episode-image>
+            <app-episode-image [apiEpisode]="result" [linksOverlay]="true"></app-episode-image>
             <p>{{result.description}}</p>
         </mat-card-content>
         <mat-card-actions>

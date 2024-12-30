@@ -30,7 +30,7 @@
         [{{episode.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
-      <app-episode-image [imageUrl]="episode.image"></app-episode-image>
+      <app-episode-image [searchResult]="episode" [linksOverlay]="true"></app-episode-image>
       <p>{{episode.episodeDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
