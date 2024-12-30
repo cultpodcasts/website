@@ -21,18 +21,18 @@
       </button>
       }
       <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-        [ngClass]="searchState.sort==sortParamDateAsc?'selected':''">
+        [class.selected]="searchState.sort==sortParamDateAsc">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
       </button>
       <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-        [ngClass]="searchState.sort==sortParamDateDesc?'selected':''">
+        [class.selected]="searchState.sort==sortParamDateDesc">
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
       @if (searchState.query) {
       <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
-        [ngClass]="searchState.sort==sortParamRank?'selected':''">
+        [class.selected]="searchState.sort==sortParamRank">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>

@@ -8,7 +8,7 @@ import { Episode } from '../episode';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -40,7 +40,6 @@ const daysKey: string = "pref.outgoing-episodes.days";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
@@ -51,7 +50,7 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
 })

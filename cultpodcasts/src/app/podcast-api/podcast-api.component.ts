@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgClass, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -48,7 +48,6 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
@@ -59,7 +58,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeLinksComponent,
     BookmarkComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
 })

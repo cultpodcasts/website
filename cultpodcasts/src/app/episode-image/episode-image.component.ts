@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { IEpisode } from '../IEpisode';
 import { Episode } from '../episode';

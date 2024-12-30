@@ -20,12 +20,12 @@
         }
         <mat-menu #sort="matMenu">
             <button mat-menu-item id="dateaddedasc" (click)="setSort(sortMode.addDatedAsc)"
-                [ngClass]="{'selected': sortDirection==sortMode.addDatedAsc}">
+                [class.selected]="sortDirection==sortMode.addDatedAsc">
                 <mat-icon>arrow_upward</mat-icon>
                 <span>Date Bookmarked</span>
             </button>
             <button mat-menu-item id="dateaddeddesc" (click)="setSort(sortMode.addDatedDesc)"
-                [ngClass]="{'selected': sortDirection==sortMode.addDatedDesc}">
+                [class.selected]="sortDirection==sortMode.addDatedDesc">
                 <mat-icon>arrow_downward</mat-icon>
                 <span>Date Bookmarked Descending</span>
             </button>

@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgClass, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -39,7 +39,6 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
@@ -50,7 +49,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeLinksComponent,
     BookmarkComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'
 })
