@@ -1,12 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { Episode } from '../episode';
 import { MatIconModule } from '@angular/material/icon';
-import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-episode-status',
   imports: [
-    NgClass,
     MatIconModule
   ],
   templateUrl: './episode-status.component.html',

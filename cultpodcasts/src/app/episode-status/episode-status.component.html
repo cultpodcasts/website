@@ -1,8 +1,8 @@
 @if (_episode) {
 <p id="status">
-    <mat-icon svgIcon="reddit" [ngClass]="{'not':!_episode.posted}"></mat-icon>
-    <mat-icon svgIcon="twitter" [ngClass]="{'not':!_episode.tweeted}"></mat-icon>
-    <mat-icon svgIcon="bluesky" [ngClass]="{'not':!_episode.bluesky}"></mat-icon>
+    <mat-icon svgIcon="reddit" [class.not]="!_episode.posted"></mat-icon>
+    <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted"></mat-icon>
+    <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky"></mat-icon>
     @if (_episode.ignored) {
     <mat-icon svgIcon="visible" title="ignored"></mat-icon>
     }

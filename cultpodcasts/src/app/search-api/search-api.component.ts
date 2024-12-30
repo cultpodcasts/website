@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { NgClass, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets';
@@ -38,7 +38,6 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
@@ -49,7 +48,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeLinksComponent,
     BookmarkComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass'
 })
@@ -78,7 +77,7 @@ export class SearchApiComponent {
   podcasts: string[] = [];
   subjectsFilter: string = "";
   podcastsFilter: string = "";
-  isSignedIn: boolean= false;
+  isSignedIn: boolean = false;
 
   constructor(
     private router: Router,
@@ -119,14 +118,14 @@ export class SearchApiComponent {
       }
 
       if (initial) {
-        this.podcastsFilter= "";
-        this.subjectsFilter= "";
-        this.podcasts= [];
-        this.subjects= [];
-        this.facets.subjects=[];
-        this.facets.podcastName=[];
+        this.podcastsFilter = "";
+        this.subjectsFilter = "";
+        this.podcasts = [];
+        this.subjects = [];
+        this.facets.subjects = [];
+        this.facets.podcastName = [];
       }
- 
+
       const { params, queryParams } = res;
       this.searchState.query = params[queryParam];
       this.isLoading = true;

@@ -4,7 +4,7 @@ import { Observable, Subscription } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { HideDirective } from '../hide.directive';
-import { NgClass, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
@@ -16,7 +16,6 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
   styleUrls: ['./discovery-item.component.sass'],
   imports: [
     MatCardModule,
-    NgClass,
     HideDirective,
     MatButtonModule,
     MatIconModule,
@@ -24,7 +23,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
     EpisodeImageComponent,
     SubjectsComponent,
     ApplePodcastsSvgComponent
-]
+  ]
 })
 
 export class DiscoveryItemComponent {

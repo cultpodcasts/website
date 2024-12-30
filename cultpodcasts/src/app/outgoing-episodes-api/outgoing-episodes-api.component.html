@@ -40,12 +40,12 @@
                 </span>
             </button>
             <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-                [ngClass]="sortDirection==sortParamDateAsc?'selected':''">
+                [class.selected]="sortDirection==sortParamDateAsc">
                 <mat-icon>arrow_upward</mat-icon>
                 <span>Date ascending</span>
             </button>
             <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-                [ngClass]="sortDirection==sortParamDateDesc?'selected':''">
+                [class.selected]="sortDirection==sortParamDateDesc">
                 <mat-icon>arrow_downward</mat-icon>
                 <span>Date descending</span>
             </button>

@@ -6,7 +6,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
-import { AsyncPipe, DatePipe, NgClass } from '@angular/common';
+import { AsyncPipe, DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -39,7 +39,6 @@ const take: number = 3;
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    NgClass,
     MatCardModule,
     RouterLink,
     DatePipe,
