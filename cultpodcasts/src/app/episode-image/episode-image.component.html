@@ -1,6 +1,6 @@
 @if (this.imageUrl) {
-<div class="container" (click)="overlay($event, true)">
-    <div class="overlay" [ngClass]="{'show':overlayVisible}">
+<div class="container" (click)="overlay($event, true)" [class.hasOverlay]="linksOverlay">
+    <div class="overlay" [class.show]="overlayVisible">
         <button class="close" mat-icon-button (click)="overlay($event, false)">
             <mat-icon>close</mat-icon>
         </button>
@@ -50,7 +50,7 @@
         </div>
     </div>
     @defer (on viewport) {
-    <img src="{{this.imageUrl}}" [class.cropped]="isCropped" [class.hasOverlay]="linksOverlay">
+    <img src="{{this.imageUrl}}" [class.cropped]="isCropped">
     } @placeholder {
     <span class="placeholder"></span>
     }

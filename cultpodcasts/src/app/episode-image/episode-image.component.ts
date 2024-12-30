@@ -13,8 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
   imports: [
     MatIconModule,
     MatButtonModule,
-    ApplePodcastsSvgComponent,
-    NgClass
+    ApplePodcastsSvgComponent
   ],
   templateUrl: './episode-image.component.html',
   styleUrl: './episode-image.component.sass'
