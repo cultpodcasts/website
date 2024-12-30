@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core';
-import { ISearchResult } from '../ISearchResult';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from './../../environments/environment';
 import { formatDate } from '@angular/common';
