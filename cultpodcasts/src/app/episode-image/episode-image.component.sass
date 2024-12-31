@@ -28,15 +28,21 @@
         z-index: 2
     .overlay.show
         display: block
+        backdrop-filter: blur(4px)
         .close
             position: absolute
             right: 10px
             top: 10px
+        p
+            display: flex
+            justify-content: center
+            align-items: end
+            height: 33%
+            margin-bottom: 40px
         .linksWrapper
             display: flex
-            align-items: center
+            align-items: start
             justify-content: center
-            height: 100%
             .links
                 margin: 0 auto
                 div
