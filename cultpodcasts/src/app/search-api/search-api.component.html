@@ -101,10 +101,10 @@
 @if (showPagingPrevious || showPagingNext) {
 <section id="paging">
   @if (showPagingPrevious) {
-  <a mat-button id="previous" (click)="setPage(-1)">Previous</a>
+  <button mat-flat-button color="primary" id="previous" (click)="setPage(-1)">Previous</button>
   }
   @if (showPagingNext) {
-  <a mat-button id="next" (click)="setPage(1)">Next</a>
+  <button mat-flat-button color="primary" id="next" (click)="setPage(1)">Next</button>
   }
 </section>
 }
