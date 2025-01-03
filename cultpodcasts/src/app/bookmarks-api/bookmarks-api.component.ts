@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, ReplaySubject } from 'rxjs';
@@ -54,8 +54,7 @@ const take: number = 3;
 })
 export class BookmarksApiComponent {
   protected isLoading: boolean = true;
-  protected isSubsequentLoading$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
-  protected isSubsequentLoading: boolean = false;
+  protected isSubsequentLoading = signal<boolean>(false);
   protected error: boolean = false;
   protected sortMode = sortMode;
   protected authRoles: string[] = [];
@@ -103,8 +102,7 @@ export class BookmarksApiComponent {
       return;
     }
     if (!first) {
-      this.isSubsequentLoading = true;
-      this.isSubsequentLoading$.next(this.isSubsequentLoading);
+      this.isSubsequentLoading.set(true);
     }
     if (this.bookmarks!.size > 0) {
       this.noBookmarks = false;
@@ -136,12 +134,11 @@ export class BookmarksApiComponent {
             this.episodes$.next(this.episodes);
 
             this.isLoading = false;
-            this.isSubsequentLoading = false;
-            this.isSubsequentLoading$.next(this.isSubsequentLoading);
+            this.isSubsequentLoading.set(false);
 
             if (first && this.bookmarks!.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.isScrolledToBottom() && this.episodes.length > 0 && !this.isSubsequentLoading) {
+                if (this.isScrolledToBottom() && this.episodes.length > 0 && !this.isSubsequentLoading()) {
                   this.page++;
                   await this.batch();
                 }
@@ -151,8 +148,7 @@ export class BookmarksApiComponent {
           error: e => {
             this.error = true;
             this.isLoading = false;
-            this.isSubsequentLoading = false;
-            this.isSubsequentLoading$.next(this.isSubsequentLoading);
+            this.isSubsequentLoading.set(false);
             console.error(e);
           }
         })
@@ -165,8 +161,7 @@ export class BookmarksApiComponent {
   zeroBookmarks() {
     this.error = false;
     this.isLoading = false;
-    this.isSubsequentLoading = false;
-    this.isSubsequentLoading$.next(this.isSubsequentLoading);
+    this.isSubsequentLoading.set(false);
     this.noBookmarks = true;
   }
 
