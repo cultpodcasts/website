@@ -55,7 +55,7 @@ const take: number = 3;
 export class BookmarksApiComponent {
   protected isLoading: boolean = true;
   protected isSubsequentLoading$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
-  protected isSubsequentLoading: boolean = false;;
+  protected isSubsequentLoading: boolean = false;
   protected error: boolean = false;
   protected sortMode = sortMode;
   protected authRoles: string[] = [];
@@ -64,7 +64,7 @@ export class BookmarksApiComponent {
   protected episodes$: ReplaySubject<Episode[]> = new ReplaySubject<Episode[]>(1);
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
-  private bookmarks: Set<string> = new Set<string>();
+  private bookmarks: Set<string> | undefined;
   private episodes: Episode[] = [];
 
   constructor(
@@ -85,16 +85,19 @@ export class BookmarksApiComponent {
 
   async populatePage() {
     this.profileService.bookmarks$.subscribe(async bookmarks => {
-      this.bookmarks = bookmarks;
-      await this.reset();
+      console.log("bookmarks", bookmarks);
+      if (!this.bookmarks) {
+        this.bookmarks = bookmarks;
+        this.batch(true);
+      }
     });
   }
 
   async batch(first: boolean = false) {
     const start = this.page * take;
     const end = start + take;
-    if (start >= this.bookmarks.size) {
-      if (this.bookmarks.size == 0) {
+    if (start >= this.bookmarks!.size) {
+      if (this.bookmarks!.size == 0) {
         this.zeroBookmarks();
       }
       return;
@@ -103,7 +106,7 @@ export class BookmarksApiComponent {
       this.isSubsequentLoading = true;
       this.isSubsequentLoading$.next(this.isSubsequentLoading);
     }
-    if (this.bookmarks.size > 0) {
+    if (this.bookmarks!.size > 0) {
       this.noBookmarks = false;
       var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -116,7 +119,7 @@ export class BookmarksApiComponent {
         headers = headers.set("Authorization", "Bearer " + _token);
 
         const episodeResponses: Observable<Episode | null>[] = [];
-        let orderedBookmarks = Array.from(this.bookmarks);
+        let orderedBookmarks = Array.from(this.bookmarks!);
         if (this.sortDirection == sortMode.addDatedDesc) {
           orderedBookmarks = orderedBookmarks.reverse();
         }
@@ -136,7 +139,7 @@ export class BookmarksApiComponent {
             this.isSubsequentLoading = false;
             this.isSubsequentLoading$.next(this.isSubsequentLoading);
 
-            if (first && this.bookmarks.size > take) {
+            if (first && this.bookmarks!.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
                 if (this.isScrolledToBottom() && this.episodes.length > 0 && !this.isSubsequentLoading) {
                   this.page++;
