@@ -70,7 +70,7 @@
   </mat-expansion-panel>
   }
 
-  @for (result of results; track result.id) {
+  @for (result of results(); track result.id) {
   <mat-card class="result">
     <mat-card-header>
       <app-bookmark [episodeId]="result.id" />
@@ -98,13 +98,8 @@
   </mat-card>
   }
 </section>
-@if (showPagingPrevious || showPagingNext) {
-<section id="paging">
-  @if (showPagingPrevious) {
-  <button mat-flat-button color="primary" id="previous" (click)="setPage(-1)">Previous</button>
-  }
-  @if (showPagingNext) {
-  <button mat-flat-button color="primary" id="next" (click)="setPage(1)">Next</button>
-  }
-</section>
+@if (isSubsequentLoading()) {
+<div class="progresswrapper">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
 }
