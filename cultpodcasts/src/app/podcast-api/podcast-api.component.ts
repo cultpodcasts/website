@@ -380,7 +380,7 @@ export class PodcastApiComponent {
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 1;
+    const threshold = document.documentElement.scrollHeight - 11;
     return scrollPosition >= threshold;
   }
 }

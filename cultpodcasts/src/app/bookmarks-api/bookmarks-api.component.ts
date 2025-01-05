@@ -59,7 +59,7 @@ export class BookmarksApiComponent {
   protected authRoles: string[] = [];
   protected isSignedIn: boolean = false;
   protected noBookmarks: boolean = false;
-  protected episodes= signal<Episode[]>([]);
+  protected episodes = signal<Episode[]>([]);
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
@@ -128,7 +128,7 @@ export class BookmarksApiComponent {
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes.update(v=>v.concat(episodes.filter(x => x != null)));
+            this.episodes.update(v => v.concat(episodes.filter(x => x != null)));
 
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
@@ -227,7 +227,7 @@ export class BookmarksApiComponent {
 
   private isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 1;
+    const threshold = document.documentElement.scrollHeight - 11;
     return scrollPosition >= threshold;
   }
 }

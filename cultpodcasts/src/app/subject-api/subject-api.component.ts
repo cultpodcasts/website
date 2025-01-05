@@ -284,7 +284,8 @@ export class SubjectApiComponent {
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 1;
+    const threshold = document.documentElement.scrollHeight - 11;
+    console.log("isScrolledToBottom", scrollPosition, threshold, scrollPosition >= threshold);
     return scrollPosition >= threshold;
   }
 }
