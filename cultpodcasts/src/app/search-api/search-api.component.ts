@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -21,8 +21,9 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { ScrollDispatcher } from '@angular/cdk/scrolling';
 
-const pageSize: number = 20;
+const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const queryParam: string = "query";
@@ -67,7 +68,6 @@ export class SearchApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  results: ISearchResult[] = [];
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
@@ -78,12 +78,15 @@ export class SearchApiComponent {
   subjectsFilter: string = "";
   podcastsFilter: string = "";
   isSignedIn: boolean = false;
+  protected isSubsequentLoading = signal<boolean>(false);
+  protected results = signal<ISearchResult[]>([]);
 
   constructor(
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    protected auth: AuthServiceWrapper
+    protected auth: AuthServiceWrapper,
+    private scrollDisplatcher: ScrollDispatcher
   ) {
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
@@ -170,7 +173,7 @@ export class SearchApiComponent {
       new URL("/search", environment.api).toString(),
       {
         search: this.searchState.query,
-        filter: buildFilter(
+        filter: this.buildFilter(
           this.searchState.filter,
           this.podcastsFilter,
           this.subjectsFilter),
@@ -183,7 +186,21 @@ export class SearchApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
-          this.results = data.entities;
+          if (data.entities.length && !this.results().length) {
+            this.scrollDisplatcher.scrolled().subscribe(async () => {
+              if (this.isScrolledToBottom() && !this.isSubsequentLoading()) {
+                this.isSubsequentLoading.set(true);
+                this.searchState.page++;
+                this.execSearch(false);
+              }
+            });
+          }
+          if (initial) {
+            this.results.set(data.entities);
+          } else {
+            this.results.update(v => v.concat(data.entities));
+          }
+          this.isSubsequentLoading.set(false);
           if (initial) {
             this.facets = {
               podcastName: data.facets.podcastName,
@@ -233,26 +250,6 @@ export class SearchApiComponent {
     this.router.navigate([url], { queryParams: params });
   }
 
-  setPage(page: number, reset?: { podcasts?: boolean, subjects?: boolean }) {
-    var url = `/search/${this.searchState.query}`;
-    this.searchState.page += page;
-    var params: Params = {};
-    if (this.searchState.page != null && this.searchState.page > 1) {
-      params["page"] = this.searchState.page;
-    }
-    if (this.searchState.sort != sortParamRank) {
-      params[sortParam] = this.searchState.sort;
-    }
-    const facetState: FacetState = {
-      searchResultsFacets: this.facets,
-      podcasts: this.podcasts,
-      subjects: this.subjects,
-      resetPodcasts: reset?.podcasts,
-      resetSubjects: reset?.subjects,
-    };
-    this.router.navigate([url], { queryParams: params, state: facetState });
-  }
-
   podcastsChange($event: MatChipListboxChange) {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
@@ -264,13 +261,10 @@ export class SearchApiComponent {
       this.podcastsFilter = `search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     const reset = { subjects: true };
-    if (this.searchState.page > 1) {
-      this.setPage(1 - this.searchState.page, reset);
-    }
-    else {
-      this.execSearch(false, reset);
-    }
+    this.searchState.page = 1;
+    this.execSearch(true, reset);
   }
+
   subjectsChange($event: MatChipListboxChange) {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
@@ -282,32 +276,34 @@ export class SearchApiComponent {
       this.subjectsFilter = `subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
     const reset = { podcasts: true };
-    if (this.searchState.page > 1) {
-      this.setPage(1 - this.searchState.page, reset);
-    }
-    else {
-      this.execSearch(false, reset);
-    }
+    this.searchState.page = 1;
+    this.execSearch(true, reset);
   }
-}
 
-function buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {
-  let filter: string = "";
-  if (baseFilter && baseFilter != "") {
-    filter = baseFilter;
+  isScrolledToBottom(): boolean {
+    const scrollPosition = window.scrollY + window.innerHeight;
+    const threshold = document.documentElement.scrollHeight - 1;
+    return scrollPosition >= threshold;
   }
-  if (podcastsFilter && podcastsFilter != "") {
-    if (filter.length > 0) {
-      filter += " and ";
+
+  buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {
+    let filter: string = "";
+    if (baseFilter && baseFilter != "") {
+      filter = baseFilter;
     }
-    filter += podcastsFilter;
-  }
-  if (subjectsFilter && subjectsFilter != "") {
-    if (filter.length > 0) {
-      filter += " and ";
+    if (podcastsFilter && podcastsFilter != "") {
+      if (filter.length > 0) {
+        filter += " and ";
+      }
+      filter += podcastsFilter;
     }
-    filter += subjectsFilter;
+    if (subjectsFilter && subjectsFilter != "") {
+      if (filter.length > 0) {
+        filter += " and ";
+      }
+      filter += subjectsFilter;
+    }
+    return filter;
   }
-  return filter;
 }
 

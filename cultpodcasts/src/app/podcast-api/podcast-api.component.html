@@ -75,7 +75,7 @@
     </mat-chip-listbox>
   </mat-expansion-panel>
   }
-  @for (result of results; track result.id) {
+  @for (result of results(); track result.id) {
   <mat-card class="result">
     <mat-card-header>
       <app-bookmark [episodeId]="result.id" />
@@ -104,16 +104,13 @@
   }
 </section>
 }
-@if (showPagingPrevious || showPagingNext) {
-<section id="paging">
-  @if (showPagingPrevious) {
-  <button mat-flat-button color="primary" id="previous" (click)="setPage(-1)">Previous</button>
-  }
-  @if (showPagingNext) {
-  <button mat-flat-button color="primary" id="next" (click)="setPage(1)">Next</button>
-  }
-</section>
+
+@if (isSubsequentLoading()) {
+  <div class="progresswrapper">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
 }
+
 @if (count === 0 && !isLoading) {
 <section id="resultsheading">
   <h2>There were no results for "{{podcastName}}"@if (searchState.query) { and "{{searchState.query}}"}</h2>

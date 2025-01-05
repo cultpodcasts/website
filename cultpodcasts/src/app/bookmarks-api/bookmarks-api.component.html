@@ -37,7 +37,7 @@
         favourites.</p>
     }
 
-    @for (result of episodes$ | async ; track result.id){
+    @for (result of episodes() ; track result.id){
     <mat-card class="result">
         <mat-card-header>
             <app-bookmark [episodeId]="result.id" [hasMenu]="authRoles.includes('Curator')" />

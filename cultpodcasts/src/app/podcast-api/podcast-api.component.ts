@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ISearchResult } from '../ISearchResult';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -33,6 +33,7 @@ import { EpisodeImageComponent } from "../episode-image/episode-image.component"
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { ScrollDispatcher } from '@angular/cdk/scrolling';
 
 const pageSize: number = 20;
 const sortParam: string = "sort";
@@ -77,7 +78,7 @@ export class PodcastApiComponent {
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
-  results: ISearchResult[] = [];
+  protected results = signal<ISearchResult[]>([]);
   resultsHeading: string = "";
   isLoading: boolean = true;
   showPagingPrevious: boolean = false;
@@ -87,6 +88,7 @@ export class PodcastApiComponent {
   subjects: string[] = [];
   subjectsFilter: string = "";
   isSignedIn: boolean = false;
+  protected isSubsequentLoading = signal<boolean>(false);
 
   constructor(
     private router: Router,
@@ -94,7 +96,8 @@ export class PodcastApiComponent {
     private oDataService: ODataService,
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private scrollDisplatcher: ScrollDispatcher
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
@@ -182,7 +185,23 @@ export class PodcastApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
-          this.results = data.entities;
+
+          if (data.entities.length && !this.results().length) {
+            this.scrollDisplatcher.scrolled().subscribe(async () => {
+              if (this.isScrolledToBottom() && !this.isSubsequentLoading()) {
+                this.isSubsequentLoading.set(true);
+                this.searchState.page++;
+                this.execSearch(false);
+              }
+            });
+          }
+          if (initial) {
+            this.results.set(data.entities);
+          } else {
+            this.results.update(v => v.concat(data.entities));
+          }
+          this.isSubsequentLoading.set(false);
+
           if (initial) {
             this.facets = {
               podcastName: data.facets.podcastName,
@@ -260,31 +279,7 @@ export class PodcastApiComponent {
     this.router.navigate([url], { queryParams: params });
   }
 
-  setPage(page: number) {
-    var url = `/podcast/${this.podcastName}`;
-    if (this.searchState.query && this.searchState.query != "") {
-      url += "/" + this.searchState.query;
-    }
-    this.searchState.page += page;
-    var params: Params = {};
-    if (this.searchState.page != null && this.searchState.page > 1) {
-      params["page"] = this.searchState.page;
-    }
-    if (this.searchState.query) {
-      if (this.searchState.sort != sortParamRank) {
-        params[sortParam] = this.searchState.sort;
-      }
-    } else {
-      if (this.searchState.sort != sortParamDateDesc) {
-        params[sortParam] = this.searchState.sort;
-      }
-    }
-    const facetState: FacetState = {
-      searchResultsFacets: this.facets,
-      subjects: this.subjects
-    };
-    this.router.navigate([url], { queryParams: params, state: facetState });
-  }
+
 
   search() {
     let url = `search/${this.podcastName}`;
@@ -296,7 +291,7 @@ export class PodcastApiComponent {
 
   index() {
     const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.index(this.results[0].podcastName);
+    dialogRef.componentInstance.index(this.results()[0].podcastName);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let message = "Podcast Indexed";
@@ -379,11 +374,13 @@ export class PodcastApiComponent {
       var subjectsameList = this.subjects.join(delimiter);
       this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
-    if (this.searchState.page > 1) {
-      this.setPage(1 - this.searchState.page);
-    }
-    else {
-      this.execSearch(false);
-    }
+    this.searchState.page = 1;
+    this.execSearch(true);
+  }
+
+  isScrolledToBottom(): boolean {
+    const scrollPosition = window.scrollY + window.innerHeight;
+    const threshold = document.documentElement.scrollHeight - 1;
+    return scrollPosition >= threshold;
   }
 }

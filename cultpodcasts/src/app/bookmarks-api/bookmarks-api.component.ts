@@ -6,7 +6,7 @@ import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
 import { Episode } from '../episode';
-import { AsyncPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,7 +30,7 @@ export enum sortMode {
   addDatedDesc
 }
 
-const take: number = 3;
+const take: number = 10;
 
 @Component({
   selector: 'app-bookmarks-api',
@@ -46,8 +46,7 @@ const take: number = 3;
     EpisodeImageComponent,
     BookmarkComponent,
     SubjectsComponent,
-    ScrollingModule,
-    AsyncPipe
+    ScrollingModule
   ],
   templateUrl: './bookmarks-api.component.html',
   styleUrl: './bookmarks-api.component.sass'
@@ -60,11 +59,10 @@ export class BookmarksApiComponent {
   protected authRoles: string[] = [];
   protected isSignedIn: boolean = false;
   protected noBookmarks: boolean = false;
-  protected episodes$: ReplaySubject<Episode[]> = new ReplaySubject<Episode[]>(1);
+  protected episodes= signal<Episode[]>([]);
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
-  private episodes: Episode[] = [];
 
   constructor(
     private profileService: ProfileService,
@@ -130,15 +128,14 @@ export class BookmarksApiComponent {
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes = this.episodes.concat(episodes.filter(x => x != null));
-            this.episodes$.next(this.episodes);
+            this.episodes.update(v=>v.concat(episodes.filter(x => x != null)));
 
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
 
             if (first && this.bookmarks!.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.isScrolledToBottom() && this.episodes.length > 0 && !this.isSubsequentLoading()) {
+                if (this.isScrolledToBottom() && this.episodes().length > 0 && !this.isSubsequentLoading()) {
                   this.page++;
                   await this.batch();
                 }
@@ -218,8 +215,7 @@ export class BookmarksApiComponent {
 
   async reset() {
     this.isLoading = true;
-    this.episodes = [];
-    this.episodes$.next(this.episodes);
+    this.episodes.set([]);
     this.page = 0;
     await this.batch(true);
   }
