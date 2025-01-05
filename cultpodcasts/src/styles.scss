@@ -45,19 +45,6 @@ p {
     line-height: 1.3em;
 }
 
-#paging {
-    display: -webkit-flex;
-    display: flex;
-    list-style-type: none;
-    padding: 0;
-    justify-content: flex-end;
-    margin: 0 8px 25px 8px;
-
-    #previous {
-        margin-right: auto;
-    }
-}
-
 mat-card-footer.subjects {
     width: 100%;
     text-align: right;
