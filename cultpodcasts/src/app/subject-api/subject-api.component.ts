@@ -26,7 +26,7 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 
-const pageSize: number = 20;
+const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const sortParamRank: string = "rank";
