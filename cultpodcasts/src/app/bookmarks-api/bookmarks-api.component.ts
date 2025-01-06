@@ -25,6 +25,7 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
+import { SiteService } from '../SiteService';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -73,13 +74,17 @@ export class BookmarksApiComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private scrollDisplatcher: ScrollDispatcher,
-    private infiniteScrollStrategy: InfiniteScrollStrategy
+    private infiniteScrollStrategy: InfiniteScrollStrategy,
+    private siteService: SiteService
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   ngOnInit() {
+    this.siteService.setQuery(null);
+    this.siteService.setPodcast(null);
+    this.siteService.setSubject(null);
     this.populatePage();
   }
 
