@@ -78,8 +78,6 @@ export class SubjectApiComponent {
   facets: SearchResultsFacets = {};
   resultsHeading: string = "";
   isLoading: boolean = true;
-  showPagingPrevious: boolean = false;
-  showPagingNext: boolean = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<ISearchResult[]>([]);
 
@@ -175,7 +173,8 @@ export class SubjectApiComponent {
           next: data => {
             if (data.entities.length && !this.results().length) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.isScrolledToBottom() && !this.isSubsequentLoading()) {
+                if (this.results().length < count &&
+                  this.isScrolledToBottom() && !this.isSubsequentLoading()) {
                   this.isSubsequentLoading.set(true);
                   this.searchState.page++;
                   this.execSearch(false);
@@ -197,8 +196,6 @@ export class SubjectApiComponent {
             const count = data.metadata.get("count");
             this.count = count;
             this.isLoading = false;
-            this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = this.infiniteScrollStrategy.getTally(this.searchState.page) < count;
           },
           error: (e) => {
             console.error(e);

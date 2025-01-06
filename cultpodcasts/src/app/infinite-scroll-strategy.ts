@@ -17,11 +17,4 @@ export class InfiniteScrollStrategy {
         }
         return total
     }
-
-    public getTally(page: number): number {
-        let total =
-            this.getSkip(page) +
-            this.getTake(page);
-        return total
-    }
 }

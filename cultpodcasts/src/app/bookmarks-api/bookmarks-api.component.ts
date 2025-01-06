@@ -134,7 +134,12 @@ export class BookmarksApiComponent {
             this.isSubsequentLoading.set(false);
             if (first && this.bookmarks!.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.isScrolledToBottom() && this.episodes().length > 0 && !this.isSubsequentLoading()) {
+                if (
+                  this.bookmarks &&
+                  this.episodes().length < this.bookmarks.size &&
+                  this.isScrolledToBottom() &&
+                  this.episodes().length > 0 &&
+                  !this.isSubsequentLoading()) {
                   this.page++;
                   await this.batch();
                 }

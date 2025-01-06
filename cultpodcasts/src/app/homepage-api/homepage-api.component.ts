@@ -38,13 +38,8 @@ export class HomepageApiComponent {
   grouped: { [key: string]: IEpisode[]; };
   podcastCount: number | undefined;
   isServer: boolean;
-
   isLoading: boolean = true;
   isInError: boolean = false;
-  showPagingPrevious: boolean = false;
-  showPagingPreviousInit: boolean = false;
-  showPagingNext: boolean = false;
-
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
