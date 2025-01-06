@@ -17,8 +17,7 @@
     </mat-card-header>
     <mat-card-content>
         @if (result.showDescription && result.matchingPodcasts.length==0) {
-        <p class="showDescription">
-            {{result.showDescription}}</p>
+        <p class="showDescription" [innerHTML]="result.showDescription"></p>
         }
         <app-episode-image [discoveryResult]="result"></app-episode-image>
         <p class="resultdescription">{{result.episodeDescription}}</p>
