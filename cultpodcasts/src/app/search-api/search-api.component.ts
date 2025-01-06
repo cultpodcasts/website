@@ -70,8 +70,6 @@ export class SearchApiComponent {
 
   resultsHeading: string = "";
   isLoading: boolean = true;
-  showPagingPrevious: boolean = false;
-  showPagingNext: boolean = false;
   facets: SearchResultsFacets = {};
   subjects: string[] = [];
   podcasts: string[] = [];
@@ -186,9 +184,12 @@ export class SearchApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
+          const count: number = data.metadata.get("count");
           if (data.entities.length && !this.results().length) {
             this.scrollDisplatcher.scrolled().subscribe(async () => {
-              if (this.isScrolledToBottom() && !this.isSubsequentLoading()) {
+              if (this.results().length < count &&
+                this.isScrolledToBottom() &&
+                !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
                 this.searchState.page++;
                 this.execSearch(false);
@@ -214,7 +215,6 @@ export class SearchApiComponent {
               this.facets.subjects = data.facets.subjects;
             }
           }
-          const count = data.metadata.get("count");
           let resultsSummary: String = `${count} results`;
           if (count === 0) {
             resultsSummary = `0 results`;
@@ -230,8 +230,6 @@ export class SearchApiComponent {
 
           this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
           this.isLoading = false;
-          this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-          this.showPagingNext = this.infiniteScrollStrategy.getTally(this.searchState.page) < count;
         },
         error: (e) => {
           console.error(e);
