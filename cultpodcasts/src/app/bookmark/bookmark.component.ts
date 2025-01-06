@@ -5,6 +5,7 @@ import { ReplaySubject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SiteService } from '../SiteService';
 
 @Component({
   selector: 'app-bookmark',
@@ -29,10 +30,15 @@ export class BookmarkComponent {
   get hasMenuGet() { return this.hasMenu() }
 
   constructor(
-    private profileService: ProfileService
+    private profileService: ProfileService,
+    private siteService: SiteService
   ) { }
 
   ngOnInit() {
+    this.siteService.setQuery(null);
+    this.siteService.setPodcast(null);
+    this.siteService.setSubject(null);
+
     this.profileService.isAuthenticated$.subscribe(isAuthenticated =>
       this.isAuthenticated$.next(isAuthenticated)
     );
