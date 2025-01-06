@@ -20,7 +20,7 @@
         <p class="showDescription" [innerHTML]="result.showDescription"></p>
         }
         <app-episode-image [discoveryResult]="result"></app-episode-image>
-        <p class="resultdescription">{{result.episodeDescription}}</p>
+        <p class="resultdescription" [innerHTML]="result.episodeDescription"></p>
     </mat-card-content>
     <mat-card-actions>
         @if (result.urls.youtube!=null) {
