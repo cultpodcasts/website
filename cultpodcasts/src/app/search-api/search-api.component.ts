@@ -169,10 +169,6 @@ export class SearchApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-
-    const skip = this.infiniteScrollStrategy.getSkip(this.searchState.page);
-    const top = this.infiniteScrollStrategy.getTake(this.searchState.page);
-    console.log("page", this.searchState.page, "skip", skip, "top", top, "tally", this.infiniteScrollStrategy.getTally(this.searchState.page));
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
       {
@@ -184,8 +180,8 @@ export class SearchApiComponent {
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: skip,
-        top: top,
+        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
+        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
         facets: ["podcastName,count:1000,sort:count", "subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
