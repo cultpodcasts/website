@@ -156,7 +156,6 @@ export class SubjectApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-    let currentTime = Date.now();
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
       {
@@ -195,7 +194,6 @@ export class SubjectApiComponent {
                 subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
               };
             }
-            var requestTime = (Date.now() - currentTime) / 1000;
             const count = data.metadata.get("count");
             this.count = count;
             this.isLoading = false;
