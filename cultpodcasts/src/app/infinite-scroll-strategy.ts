@@ -1,5 +1,3 @@
-import { get } from "http";
-
 export class InfiniteScrollStrategy {
     public getYThreshold(page: number): number {
         return 1000;
@@ -26,5 +24,4 @@ export class InfiniteScrollStrategy {
             this.getTake(page);
         return total
     }
-
 }
