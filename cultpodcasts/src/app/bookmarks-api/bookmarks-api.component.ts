@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
-import { catchError, firstValueFrom, forkJoin, map, Observable, of, ReplaySubject } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
@@ -24,6 +24,7 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
+import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -51,6 +52,7 @@ const take: number = 10;
   templateUrl: './bookmarks-api.component.html',
   styleUrl: './bookmarks-api.component.sass'
 })
+
 export class BookmarksApiComponent {
   protected isLoading: boolean = true;
   protected isSubsequentLoading = signal<boolean>(false);
@@ -70,7 +72,8 @@ export class BookmarksApiComponent {
     private http: HttpClient,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher
+    private scrollDisplatcher: ScrollDispatcher,
+    private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
@@ -113,14 +116,12 @@ export class BookmarksApiComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-
         const episodeResponses: Observable<Episode | null>[] = [];
         let orderedBookmarks = Array.from(this.bookmarks!);
         if (this.sortDirection == sortMode.addDatedDesc) {
           orderedBookmarks = orderedBookmarks.reverse();
         }
         const items = orderedBookmarks.slice(start, end);
-
         items.forEach(episodeId => {
           const episodeEndpoint = new URL(`/public/episode/${episodeId}`, environment.api).toString();
           const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
@@ -129,10 +130,8 @@ export class BookmarksApiComponent {
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
             this.episodes.update(v => v.concat(episodes.filter(x => x != null)));
-
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
-
             if (first && this.bookmarks!.size > take) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
                 if (this.isScrolledToBottom() && this.episodes().length > 0 && !this.isSubsequentLoading()) {
@@ -227,7 +226,7 @@ export class BookmarksApiComponent {
 
   private isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 11;
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
   }
 }

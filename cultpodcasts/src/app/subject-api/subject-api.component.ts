@@ -25,8 +25,8 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 
-const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const sortParamRank: string = "rank";
@@ -54,6 +54,7 @@ const sortParamDateDesc: string = "date-desc";
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'
 })
+
 export class SubjectApiComponent {
   searchState: ISearchState = {
     query: "",
@@ -73,9 +74,7 @@ export class SubjectApiComponent {
   podcasts: string[] = [];
   podcastFilter: string = "";
   isSignedIn: boolean = false;
-
   private route = inject(ActivatedRoute);
-
   facets: SearchResultsFacets = {};
   resultsHeading: string = "";
   isLoading: boolean = true;
@@ -91,7 +90,8 @@ export class SubjectApiComponent {
     protected auth: AuthServiceWrapper,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher
+    private scrollDisplatcher: ScrollDispatcher,
+    private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
@@ -119,10 +119,8 @@ export class SubjectApiComponent {
           this.podcasts = facetState.podcasts!;
         }
       }
-
       const { params, queryParams } = res;
       this.subjectName = params["subjectName"];
-
       this.isLoading = true;
       this.searchState.query = this.searchState.query = params["query"] ?? "";
       this.siteService.setQuery(this.searchState.query);
@@ -136,7 +134,6 @@ export class SubjectApiComponent {
         this.nextPage = 2;
         this.searchState.page = 1;
       }
-
       if (queryParams[sortParam]) {
         this.searchState.sort = queryParams[sortParam];
       } else {
@@ -146,10 +143,8 @@ export class SubjectApiComponent {
           this.searchState.sort = sortParamDateDesc;
         }
       }
-
       this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
-
       this.execSearch(initial);
     });
   }
@@ -161,7 +156,6 @@ export class SubjectApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-
     let currentTime = Date.now();
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
@@ -173,8 +167,8 @@ export class SubjectApiComponent {
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: (this.searchState.page - 1) * pageSize,
-        top: pageSize,
+        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
+        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
         facets: ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
         orderby: sort
       }).subscribe(
@@ -195,7 +189,6 @@ export class SubjectApiComponent {
               this.results.update(v => v.concat(data.entities));
             }
             this.isSubsequentLoading.set(false);
-
             if (initial) {
               this.facets = {
                 podcastName: data.facets.podcastName,
@@ -207,7 +200,7 @@ export class SubjectApiComponent {
             this.count = count;
             this.isLoading = false;
             this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-            this.showPagingNext = (this.searchState.page * pageSize) < count;
+            this.showPagingNext = this.infiniteScrollStrategy.getTally(this.searchState.page) < count;
           },
           error: (e) => {
             console.error(e);
@@ -284,8 +277,7 @@ export class SubjectApiComponent {
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 11;
-    console.log("isScrolledToBottom", scrollPosition, threshold, scrollPosition >= threshold);
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
     return scrollPosition >= threshold;
   }
 }

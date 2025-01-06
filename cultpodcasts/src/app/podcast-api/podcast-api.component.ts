@@ -34,8 +34,8 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 
-const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const sortParamRank: string = "rank";
@@ -63,6 +63,7 @@ const sortParamDateDesc: string = "date-desc";
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'
 })
+
 export class PodcastApiComponent {
   searchState: ISearchState = {
     query: "",
@@ -89,6 +90,7 @@ export class PodcastApiComponent {
   subjectsFilter: string = "";
   isSignedIn: boolean = false;
   protected isSubsequentLoading = signal<boolean>(false);
+  private route = inject(ActivatedRoute);
 
   constructor(
     private router: Router,
@@ -97,12 +99,12 @@ export class PodcastApiComponent {
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private scrollDisplatcher: ScrollDispatcher
+    private scrollDisplatcher: ScrollDispatcher,
+    private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
-  private route = inject(ActivatedRoute);
 
   ngOnInit() {
     this.populatePage();
@@ -123,17 +125,14 @@ export class PodcastApiComponent {
           this.subjects = facetState.subjects!;
         }
       }
-
       const { params, queryParams } = res;
       this.podcastName = params["podcastName"];
       let query = params["query"] ?? "";
       this.isLoading = true;
-
       this.searchState.query = query;
       this.siteService.setQuery(this.searchState.query);
       this.siteService.setPodcast(this.podcastName);
       this.siteService.setSubject(null);
-
       if (queryParams[pageParam]) {
         this.searchState.page = parseInt(queryParams[pageParam]);
         this.prevPage = this.searchState.page - 1;
@@ -142,7 +141,6 @@ export class PodcastApiComponent {
         this.nextPage = 2;
         this.searchState.page = 1;
       }
-
       if (queryParams[sortParam]) {
         this.searchState.sort = queryParams[sortParam];
       } else {
@@ -152,23 +150,19 @@ export class PodcastApiComponent {
           this.searchState.sort = sortParamDateDesc;
         }
       }
-
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
-
       this.execSearch(initial);
     });
   }
 
   execSearch(initial: boolean) {
-    let currentTime = Date.now();
     var sort: string = "";
     if (this.searchState.sort == "date-asc") {
       sort = "release asc";
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
       {
@@ -179,13 +173,12 @@ export class PodcastApiComponent {
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: (this.searchState.page - 1) * pageSize,
-        top: pageSize,
+        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
+        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
         facets: ["subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
         next: data => {
-
           if (data.entities.length && !this.results().length) {
             this.scrollDisplatcher.scrolled().subscribe(async () => {
               if (this.isScrolledToBottom() && !this.isSubsequentLoading()) {
@@ -201,19 +194,17 @@ export class PodcastApiComponent {
             this.results.update(v => v.concat(data.entities));
           }
           this.isSubsequentLoading.set(false);
-
           if (initial) {
             this.facets = {
               podcastName: data.facets.podcastName,
               subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
             };
           }
-          var requestTime = (Date.now() - currentTime) / 1000;
           const count = data.metadata.get("count");
           this.count = count;
           this.isLoading = false;
           this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-          this.showPagingNext = (this.searchState.page * pageSize) < count;
+          this.showPagingNext = this.infiniteScrollStrategy.getTally(this.searchState.page) < count;
         },
         error: (e) => {
           console.error(e);
@@ -278,8 +269,6 @@ export class PodcastApiComponent {
     }
     this.router.navigate([url], { queryParams: params });
   }
-
-
 
   search() {
     let url = `search/${this.podcastName}`;
@@ -380,7 +369,7 @@ export class PodcastApiComponent {
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 11;
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
     return scrollPosition >= threshold;
   }
 }

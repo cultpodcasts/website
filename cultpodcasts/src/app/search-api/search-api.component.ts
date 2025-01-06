@@ -22,8 +22,8 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../AuthServiceWrapper';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 
-const pageSize: number = 10;
 const sortParam: string = "sort";
 const pageParam: string = "page";
 const queryParam: string = "query";
@@ -86,7 +86,8 @@ export class SearchApiComponent {
     private siteService: SiteService,
     private oDataService: ODataService,
     protected auth: AuthServiceWrapper,
-    private scrollDisplatcher: ScrollDispatcher
+    private scrollDisplatcher: ScrollDispatcher,
+    private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
@@ -169,6 +170,9 @@ export class SearchApiComponent {
       sort = "release desc";
     }
 
+    const skip = this.infiniteScrollStrategy.getSkip(this.searchState.page);
+    const top = this.infiniteScrollStrategy.getTake(this.searchState.page);
+    console.log("page", this.searchState.page, "skip", skip, "top", top, "tally", this.infiniteScrollStrategy.getTally(this.searchState.page));
     this.oDataService.getEntitiesWithFacets<ISearchResult>(
       new URL("/search", environment.api).toString(),
       {
@@ -180,8 +184,8 @@ export class SearchApiComponent {
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: (this.searchState.page - 1) * pageSize,
-        top: pageSize,
+        skip: skip,
+        top: top,
         facets: ["podcastName,count:1000,sort:count", "subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
@@ -231,7 +235,7 @@ export class SearchApiComponent {
           this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
           this.isLoading = false;
           this.showPagingPrevious = this.searchState.page != undefined && this.searchState.page > 1;
-          this.showPagingNext = (this.searchState.page * pageSize) < count;
+          this.showPagingNext = this.infiniteScrollStrategy.getTally(this.searchState.page) < count;
         },
         error: (e) => {
           console.error(e);
@@ -282,7 +286,7 @@ export class SearchApiComponent {
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - 11;
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
     return scrollPosition >= threshold;
   }
 

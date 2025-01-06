@@ -31,6 +31,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -81,5 +82,6 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAnimations(),
     provideAnimationsAsync(),
+    InfiniteScrollStrategy
   ]
 };
