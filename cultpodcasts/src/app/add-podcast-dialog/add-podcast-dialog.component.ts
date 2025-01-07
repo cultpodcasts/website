@@ -6,16 +6,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Podcast } from '../Podcast';
+import { Podcast } from '../podcast.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { Subject } from '../subject';
-import { PodcastServiceType } from "../podcast-service-type";
+import { Subject } from '../subject.interface';
+import { PodcastServiceType } from "../podcast-service-type.enum";
 import { AddPodcastSendComponent } from '../add-podcast-send/add-podcast-send.component';
-import { AddPodcastForm } from '../AddPodcastForm';
-import { AddPodcastPost } from '../AddPodcastPost';
+import { AddPodcastForm } from '../add-podcast-form.interface';
+import { AddPodcastPost } from '../add-podcast-post.interface';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',

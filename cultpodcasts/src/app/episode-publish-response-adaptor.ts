@@ -1,5 +1,5 @@
-import { EpisodePublishResponse } from "./episode-publish-response";
-import { PostEpisodeModel } from "./post-episode-model";
+import { EpisodePublishResponse } from "./episode-publish-response.interface";
+import { PostEpisodeModel } from "./post-episode-model.interface";
 
 export class EpisodePublishResponseAdaptor {
     createMessage(response: EpisodePublishResponse, expectation: PostEpisodeModel): string {

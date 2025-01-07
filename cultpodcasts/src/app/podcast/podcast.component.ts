@@ -5,8 +5,8 @@ import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
 import { EpisodeService } from '../episode.service';
 import { isPlatformServer } from '@angular/common';
-import { IPageDetails } from '../page-details';
-import { ISearchResult } from '../ISearchResult';
+import { IPageDetails } from '../page-details.interface';
+import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 
 @Component({
@@ -22,7 +22,7 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 export class PodcastComponent {
   podcastName: string = "";
   isServer: boolean;
-  episode: ISearchResult | undefined;
+  episode: SearchResult | undefined;
   isEpisode: boolean = false;
   isLoading: boolean = true;
 

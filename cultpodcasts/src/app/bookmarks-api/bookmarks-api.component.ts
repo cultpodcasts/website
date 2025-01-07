@@ -2,10 +2,10 @@ import { Component, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
-import { Episode } from '../episode';
+import { ApiEpisode } from '../api-episode.interface';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,14 +18,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response';
-import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponse } from '../episode-publish-response.interface';
+import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -62,7 +62,7 @@ export class BookmarksApiComponent {
   protected authRoles: string[] = [];
   protected isSignedIn: boolean = false;
   protected noBookmarks: boolean = false;
-  protected episodes = signal<Episode[]>([]);
+  protected episodes = signal<ApiEpisode[]>([]);
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
@@ -121,7 +121,7 @@ export class BookmarksApiComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeResponses: Observable<Episode | null>[] = [];
+        const episodeResponses: Observable<ApiEpisode | null>[] = [];
         let orderedBookmarks = Array.from(this.bookmarks!);
         if (this.sortDirection == sortMode.addDatedDesc) {
           orderedBookmarks = orderedBookmarks.reverse();
@@ -129,7 +129,7 @@ export class BookmarksApiComponent {
         const items = orderedBookmarks.slice(start, end);
         items.forEach(episodeId => {
           const episodeEndpoint = new URL(`/public/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
+          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({

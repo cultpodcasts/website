@@ -1,7 +1,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { SearchBoxMode } from '../SearchBoxMode';
+import { SearchBoxMode } from '../search-box-mode.enum';
 import { Router } from '@angular/router';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';

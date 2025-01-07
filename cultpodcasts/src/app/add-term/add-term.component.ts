@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 

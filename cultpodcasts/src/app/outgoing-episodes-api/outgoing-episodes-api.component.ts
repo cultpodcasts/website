@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { Episode } from '../episode';
+import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,13 +15,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response';
-import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponse } from '../episode-publish-response.interface';
+import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
@@ -58,7 +58,7 @@ export class OutgoingEpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  episodes: Episode[] | undefined;
+  episodes: ApiEpisode[] | undefined;
   error: boolean = false;
   isLoading: boolean = true;
   sortDirection: string = sortParamDateDesc;
@@ -123,11 +123,11 @@ export class OutgoingEpisodesApiComponent {
 
   setSort(sort: string) {
     if (sort != sortParamDateDesc) {
-      this.episodes = this.episodes?.sort((a: Episode, b: Episode) => {
+      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
         return a.release.getTime() - b.release.getTime();
       })
     } else {
-      this.episodes = this.episodes?.sort((a: Episode, b: Episode) => {
+      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
         return b.release.getTime() - a.release.getTime();
       })
     }
@@ -198,7 +198,7 @@ export class OutgoingEpisodesApiComponent {
     if (this.blueskyPosted)
       url.searchParams.append("blueskyPosted", this.blueskyPosted.toString())
     const episodeEndpoint = url.toString();
-    this.http.get<Episode[]>(episodeEndpoint, { headers: headers, observe: "response" })
+    this.http.get<ApiEpisode[]>(episodeEndpoint, { headers: headers, observe: "response" })
       .subscribe(
         {
           next: resp => {

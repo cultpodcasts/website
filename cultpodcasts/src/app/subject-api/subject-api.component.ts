@@ -1,10 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { ISearchResult } from '../ISearchResult';
+import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { SiteService } from '../SiteService';
-import { ISearchState } from '../ISearchState';
-import { ODataService } from '../OdataService'
+import { SiteService } from '../site.service';
+import { SearchState } from '../search-state.interface';
+import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,14 +12,14 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
-import { SearchResultsFacets } from '../search-results-facets';
+import { SearchResultsFacets } from '../search-results-facets.interface';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
-import { FacetState } from '../facet-state';
+import { FacetState } from '../facet-state.interface';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
@@ -56,7 +56,7 @@ const sortParamDateDesc: string = "date-desc";
 })
 
 export class SubjectApiComponent {
-  searchState: ISearchState = {
+  searchState: SearchState = {
     query: "",
     page: 1,
     sort: sortParamDateDesc,
@@ -79,7 +79,7 @@ export class SubjectApiComponent {
   resultsHeading: string = "";
   isLoading: boolean = true;
   protected isSubsequentLoading = signal<boolean>(false);
-  protected results = signal<ISearchResult[]>([]);
+  protected results = signal<SearchResult[]>([]);
 
   constructor(
     private router: Router,
@@ -154,7 +154,7 @@ export class SubjectApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-    this.oDataService.getEntitiesWithFacets<ISearchResult>(
+    this.oDataService.getEntitiesWithFacets<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: this.searchState.query,

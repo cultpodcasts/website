@@ -1,6 +1,6 @@
 import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
-import { IHomepage } from '../IHomepage';
-import { SiteService } from '../SiteService';
+import { Homepage } from '../homepage.interface';
+import { SiteService } from '../site.service';
 import { KeyValue, DecimalPipe, KeyValuePipe, isPlatformServer } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -10,10 +10,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HomepageService } from '../homepage.service';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
-import { IEpisode } from '../IEpisode';
+import { Episode } from '../episode.interface';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 
 @Component({
@@ -35,7 +35,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
   styleUrl: './homepage-api.component.sass'
 })
 export class HomepageApiComponent {
-  grouped: { [key: string]: IEpisode[]; };
+  grouped: { [key: string]: Episode[]; };
   podcastCount: number | undefined;
   isServer: boolean;
   isLoading: boolean = true;
@@ -43,7 +43,7 @@ export class HomepageApiComponent {
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
   Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-  homepage: IHomepage | undefined;
+  homepage: Homepage | undefined;
   totalDuration: string = "";
   isSignedIn: boolean = false;
 
@@ -77,7 +77,7 @@ export class HomepageApiComponent {
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
-      let homepageContent: IHomepage | undefined;
+      let homepageContent: Homepage | undefined;
       try {
         if (!homepageContent) {
           homepageContent = await this.homepageService.getHomepageFromApi()
@@ -91,7 +91,7 @@ export class HomepageApiComponent {
         this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
         this.podcastCount = this.homepage.recentEpisodes.length;
-        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: IEpisode[] }, item) => {
+        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: Episode[] }, item) => {
           item.release = new Date(item.release);
           if (!group[item.release.toLocaleDateString()]) {
             group[item.release.toLocaleDateString()] = [];
@@ -113,7 +113,7 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  descDate = (a: KeyValue<string, IEpisode[]>, b: KeyValue<string, IEpisode[]>): number => {
+  descDate = (a: KeyValue<string, Episode[]>, b: KeyValue<string, Episode[]>): number => {
     var aD = this.ToDate(a.key);
     var bD = this.ToDate(b.key);
     if (aD > bD) {

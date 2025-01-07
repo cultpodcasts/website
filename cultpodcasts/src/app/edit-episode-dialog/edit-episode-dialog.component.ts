@@ -1,19 +1,19 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { Episode } from '../episode';
-import { Subject } from '../subject';
+import { ApiEpisode } from '../api-episode.interface';
+import { Subject } from '../subject.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { EpisodeForm } from '../episode-form';
+import { EpisodeForm } from '../episode-form.interface';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { EpisodePost } from '../EpisodePost';
+import { EpisodePost } from '../episode-post.interface';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 
@@ -39,7 +39,7 @@ export class EditEpisodeDialogComponent {
   subjects: string[] = [];
 
   form: FormGroup<EpisodeForm> | undefined;
-  originalEpisode: Episode | undefined;
+  originalEpisode: ApiEpisode | undefined;
   podcastName: string | undefined;
 
   constructor(
@@ -63,7 +63,7 @@ export class EditEpisodeDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
-      this.http.get<Episode>(episodeEndpoint, { headers: headers })
+      this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe(
           {
             next: resp => {
@@ -123,7 +123,7 @@ export class EditEpisodeDialogComponent {
   onSubmit() {
     if (this.form?.valid) {
 
-      const update: Episode = {
+      const update: ApiEpisode = {
         id: this.episodeId,
         title: this.form!.controls.title.value,
         description: this.form!.controls.description.value,
@@ -171,7 +171,7 @@ export class EditEpisodeDialogComponent {
     });
   }
 
-  getChanges(prev: Episode, now: Episode): EpisodePost {
+  getChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePost {
     const nowReleaseDate = new Date(now.release).toISOString();
     var changes: EpisodePost = {};
 

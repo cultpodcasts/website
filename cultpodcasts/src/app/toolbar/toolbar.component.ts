@@ -1,26 +1,26 @@
 import { Component } from '@angular/core';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { FeatureSwtichService } from '../FeatureSwitchService';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { FeatureSwtichService } from '../feature-switch-service';
 import { AsyncPipe } from '@angular/common';
-import { FeatureSwitch } from '../FeatureSwitch';
+import { FeatureSwitch } from '../feature-switch.enum';
 import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
-import { IShare } from '../IShare';
-import { ShareMode } from "../ShareMode";
-import { SubmitDialogResponse } from '../submit-url-origin-response';
+import { Share } from '../share.interface';
+import { ShareMode } from "../share-mode.enum";
+import { SubmitDialogResponse } from '../submit-dialog-response.interface';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
 import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
 import { AddTermComponent } from '../add-term/add-term.component';
-import { IndexerState } from '../indexer-state';
+import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 
 @Component({
@@ -111,7 +111,7 @@ export class ToolbarComponent {
     });
   }
 
-  async sendPodcast(share: IShare) {
+  async sendPodcast(share: Share) {
     const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()

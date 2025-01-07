@@ -3,10 +3,10 @@ import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { EpisodePost } from '../EpisodePost';
+import { EpisodePost } from '../episode-post.interface';
 
 @Component({
   selector: 'app-add-episode-send',

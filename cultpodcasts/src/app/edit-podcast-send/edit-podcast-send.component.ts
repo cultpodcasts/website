@@ -4,8 +4,8 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from './../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { EditPodcastPost } from "../EditPodcastPost";
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { EditPodcastPost } from "../edit-podcast-post.interface";
 import { firstValueFrom } from 'rxjs';
 
 @Component({

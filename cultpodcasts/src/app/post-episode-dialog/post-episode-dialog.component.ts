@@ -5,13 +5,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { PostForm } from '../PostForm';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { PostForm } from '../post-form.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { PostEpisodeModel } from '../post-episode-model';
-import { Episode } from '../episode';
-import { EpisodePublishResponse } from '../episode-publish-response';
+import { PostEpisodeModel } from '../post-episode-model.interface';
+import { ApiEpisode } from '../api-episode.interface';
+import { EpisodePublishResponse } from '../episode-publish-response.interface';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -57,7 +57,7 @@ export class PostEpisodeDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
-      this.http.get<Episode>(episodeEndpoint, { headers: headers })
+      this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
             this.isSending = false;

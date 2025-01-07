@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { SwPush } from '@angular/service-worker';
 import { environment } from './../environments/environment';
 import { firstValueFrom } from 'rxjs';
-import { PushSubscriptionService } from './PushSubscriptionService';
+import { PushSubscriptionService } from './push-subscription.service';
 
 @Injectable({
   providedIn: 'root'

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { catchError, map, of } from 'rxjs';
-import { AuthServiceWrapper } from './AuthServiceWrapper';
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
 
 export const hasRoleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);

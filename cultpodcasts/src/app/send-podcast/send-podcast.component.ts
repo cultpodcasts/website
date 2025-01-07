@@ -1,15 +1,15 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { IShare } from '../IShare';
-import { ShareMode } from "../ShareMode";
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { Share } from '../share.interface';
+import { ShareMode } from "../share-mode.enum";
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { SubmitDialogResponse } from '../submit-url-origin-response';
-import { SubmitUrlOriginResponse } from "../SubmitUrlOriginResponse";
+import { SubmitDialogResponse } from '../submit-dialog-response.interface';
+import { SubmitUrlOriginResponse } from "../submit-url-origin-response.interface";
 
 @Component({
   selector: 'app-send-podcast',
@@ -45,7 +45,7 @@ export class SendPodcastComponent {
     this.dialogRef.close({ submitted: this.submitted, originResponse: this.originResponse, });
   }
 
-  public async submit(data: IShare) {
+  public async submit(data: Share) {
     let matchedUrl: string | undefined;
     let url: URL | undefined;
 

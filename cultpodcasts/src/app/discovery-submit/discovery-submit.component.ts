@@ -1,12 +1,12 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
-import { IDiscoverySubmit } from '../IDiscoverySubmit';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { DiscoverySubmit } from '../discovery-submit.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { SubmitDiscoveryResponse } from '../ISubmitDiscoveryResponse';
-import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
+import { SubmitDiscoveryResponse } from '../submit-discovery-response.interface';
+import { SubmitDiscoveryState } from '../submit-discovery-state.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
@@ -21,7 +21,7 @@ export class DiscoverySubmitComponent {
   isAuthenticated: boolean = false;
   isSending: boolean = false;
 
-  submitState: ISubmitDiscoveryState = {
+  submitState: SubmitDiscoveryState = {
     hasErrors: false,
     erroredItems: [],
     allErrored: false,
@@ -30,12 +30,12 @@ export class DiscoverySubmitComponent {
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<DiscoverySubmitComponent, ISubmitDiscoveryState>,
+    private dialogRef: MatDialogRef<DiscoverySubmitComponent, SubmitDiscoveryState>,
     private auth: AuthServiceWrapper) {
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
-  public async submit(data: IDiscoverySubmit) {
+  public async submit(data: DiscoverySubmit) {
     try {
       var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {

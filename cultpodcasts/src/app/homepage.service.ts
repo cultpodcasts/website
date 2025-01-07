@@ -1,9 +1,8 @@
-import { Inject, Injectable, Optional } from '@angular/core';
-import { IHomepage } from './IHomepage';
+import { Injectable } from '@angular/core';
+import { Homepage } from './homepage.interface';
 import { environment } from './../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { R2Bucket } from '@cloudflare/workers-types';
 
 @Injectable({
   providedIn: 'root'
@@ -13,8 +12,8 @@ export class HomepageService {
     private http: HttpClient
   ) { }
 
-  async getHomepageFromApi(): Promise<IHomepage> {
-    return await firstValueFrom(this.http.get<IHomepage>(new URL("/homepage", environment.api).toString()));
+  async getHomepageFromApi(): Promise<Homepage> {
+    return await firstValueFrom(this.http.get<Homepage>(new URL("/homepage", environment.api).toString()));
   }
 }
 
