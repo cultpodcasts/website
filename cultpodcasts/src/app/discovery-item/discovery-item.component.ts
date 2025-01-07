@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { IDiscoveryResult } from "../IDiscoveryResult";
+import { DiscoveryResult } from "../discovery-result.interface";
 import { Observable, Subscription } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,7 +27,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
 })
 
 export class DiscoveryItemComponent {
-  @Input() result!: IDiscoveryResult;
+  @Input() result!: DiscoveryResult;
   @Output() changeState = new EventEmitter<{ id: string, selected: boolean }>();
   @Input() selectedEvent: Observable<boolean> | undefined;
   @Input() resultFilterEvent: Observable<string> | undefined;
@@ -73,7 +73,7 @@ export class DiscoveryItemComponent {
     }
   }
 
-  handleResult($event: Event, result: IDiscoveryResult) {
+  handleResult($event: Event, result: DiscoveryResult) {
     if (this.submitted)
       return;
     const selectedClass: string = "selected";

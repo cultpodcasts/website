@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from "@angular/material/dialog";
-import { UrlValidator } from '../url-validator';
-import { ISimplePodcast } from '../ISimplePodcast';
+import { UrlValidator } from '../url.validator';
+import { SimplePodcast } from '../simple-podcast.interface';
 import { Observable } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatOptionModule } from '@angular/material/core';
@@ -32,8 +32,8 @@ export class SubmitPodcastComponent implements OnInit {
   advancedOpenState: boolean = false;
   podcast = new FormControl();
   url = new FormControl()
-  filteredOptions: Observable<ISimplePodcast[]> | undefined;
-  options: ISimplePodcast[] | undefined;
+  filteredOptions: Observable<SimplePodcast[]> | undefined;
+  options: SimplePodcast[] | undefined;
 
   constructor(
     private dialogRef: MatDialogRef<SubmitPodcastComponent>) {
@@ -50,7 +50,7 @@ export class SubmitPodcastComponent implements OnInit {
     });
   }
 
-  displayFn(podcast: ISimplePodcast): string {
+  displayFn(podcast: SimplePodcast): string {
     return podcast && podcast.name ? podcast.name : '';
   }
 

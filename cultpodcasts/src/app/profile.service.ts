@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { AuthServiceWrapper } from './AuthServiceWrapper';
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../environments/environment';
-import { uuidPattern } from './uuidPattern';
+import { uuidPattern } from './uuid-pattern.regexp';
 
 @Injectable({
   providedIn: 'root'

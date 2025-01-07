@@ -1,7 +1,7 @@
 import { isPlatformServer, formatDate } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { IPageDetails } from './page-details';
+import { IPageDetails } from './page-details.interface';
 
 const siteName: string = "Cult Podcasts";
 

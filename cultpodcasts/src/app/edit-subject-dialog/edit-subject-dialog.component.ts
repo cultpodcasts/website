@@ -5,17 +5,17 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angu
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
-import { SubjectForm } from '../subject-form';
-import { SubjectEntity } from '../subject-entity';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { SubjectForm } from '../subject-form.interface';
+import { SubjectEntity } from '../subject-entity.interface';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
-import { Flair } from '../flair';
+import { Flair } from '../flair.interface';
 import { MatSelectModule } from '@angular/material/select';
 import { KeyValuePipe } from '@angular/common';
-import { SubjectType } from "../subject-type";
+import { SubjectType } from "../subject-type.enum";
 
 @Component({
   selector: 'app-edit-subject-dialog',

@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Episode } from '../episode';
+import { ApiEpisode } from '../api-episode.interface';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -11,9 +11,9 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './episode-status.component.sass'
 })
 export class EpisodeStatusComponent {
-  protected _episode: Episode | undefined;
+  protected _episode: ApiEpisode | undefined;
   @Input({ required: true })
-  set episode(e: Episode) {
+  set episode(e: ApiEpisode) {
     this._episode = e;
   }
 }

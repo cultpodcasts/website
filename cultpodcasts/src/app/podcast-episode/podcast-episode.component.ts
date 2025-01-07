@@ -1,5 +1,5 @@
 import { Component, inject, Input } from '@angular/core';
-import { ISearchResult } from '../ISearchResult';
+import { SearchResult } from '../search-result.interface';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,13 +8,13 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response';
-import { PostEpisodeModel } from '../post-episode-model';
+import { EpisodePublishResponse } from '../episode-publish-response.interface';
+import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
@@ -41,10 +41,10 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 export class PodcastEpisodeComponent {
 
   @Input()
-  get episode(): ISearchResult | undefined {
+  get episode(): SearchResult | undefined {
     return this._episode;
   }
-  set episode(val: ISearchResult | undefined) {
+  set episode(val: SearchResult | undefined) {
     this._episode = val;
     this.isLoading = false;
   }
@@ -55,7 +55,7 @@ export class PodcastEpisodeComponent {
     this.isLoading = !this._parentLoaded;
   }
 
-  private _episode: ISearchResult | undefined;
+  private _episode: SearchResult | undefined;
   private _parentLoaded: boolean = false;
 
   podcastName: string = "";

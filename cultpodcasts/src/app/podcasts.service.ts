@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { ISimplePodcast } from './ISimplePodcast';
-import { ISimplePodcastsResult } from "./ISimplePodcastsResult";
-import { AuthServiceWrapper } from './AuthServiceWrapper';
+import { SimplePodcast } from './simple-podcast.interface';
+import { SimplePodcastsResult } from "./simple-podcasts-result.interface";
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../environments/environment';
@@ -17,7 +17,7 @@ export class PodcastsService {
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
-  async getPodcasts(): Promise<ISimplePodcastsResult> {
+  async getPodcasts(): Promise<SimplePodcastsResult> {
     let headers: HttpHeaders = new HttpHeaders();
     if (this.isAuthenticated) {
       const podcastsEndpoint = new URL("/podcasts", environment.api);
@@ -38,7 +38,7 @@ export class PodcastsService {
         return { unauthorised: true, error: false, results: undefined };
       }
       try {
-        const results: ISimplePodcast[] = await firstValueFrom(this.http.get<ISimplePodcast[]>(podcastsEndpoint.toString(), { headers: headers }));
+        const results: SimplePodcast[] = await firstValueFrom(this.http.get<SimplePodcast[]>(podcastsEndpoint.toString(), { headers: headers }));
         return { unauthorised: false, error: false, results: results };
       } catch (error) {
         return { unauthorised: false, error: true, results: undefined };

@@ -1,10 +1,10 @@
 import { Component, Inject } from '@angular/core';
-import { SubjectEntity } from '../subject-entity';
+import { SubjectEntity } from '../subject-entity.interface';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { environment } from './../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 

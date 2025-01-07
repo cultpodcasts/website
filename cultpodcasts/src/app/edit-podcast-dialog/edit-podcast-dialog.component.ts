@@ -6,16 +6,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { EditPodcastForm } from "../EditPodcastForm";
-import { Podcast } from '../Podcast';
+import { EditPodcastForm } from "../edit-podcast-form.interface";
+import { Podcast } from '../podcast.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { Subject } from '../subject';
-import { EditPodcastPost } from "../EditPodcastPost";
+import { Subject } from '../subject.interface';
+import { EditPodcastPost } from "../edit-podcast-post.interface";
 import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
-import { PodcastServiceType } from "../podcast-service-type";
+import { PodcastServiceType } from "../podcast-service-type.enum";
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',

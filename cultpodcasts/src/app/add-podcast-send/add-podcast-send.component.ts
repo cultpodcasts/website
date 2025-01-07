@@ -4,9 +4,9 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { environment } from './../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
-import { AddPodcastPost } from '../AddPodcastPost';
+import { AddPodcastPost } from '../add-podcast-post.interface';
 
 @Component({
   selector: 'app-add-podcast-send',

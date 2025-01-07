@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
-import { SubmitUrlOriginSuccessResponse } from '../SubmitUrlOriginSuccessResponse';
+import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dialog.component';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';

@@ -1,10 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { ISearchResult } from '../ISearchResult';
+import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { SiteService } from '../SiteService';
-import { ISearchState } from '../ISearchState';
-import { ODataService } from '../OdataService'
+import { SiteService } from '../site.service';
+import { SearchState } from '../search-state.interface';
+import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,12 +14,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
-import { SearchResultsFacets } from '../search-results-facets';
-import { FacetState } from '../facet-state';
+import { SearchResultsFacets } from '../search-results-facets.interface';
+import { FacetState } from '../facet-state.interface';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
@@ -55,7 +55,7 @@ const sortParamDateDesc: string = "date-desc";
 })
 
 export class SearchApiComponent {
-  searchState: ISearchState = {
+  searchState: SearchState = {
     query: "",
     page: 1,
     sort: sortParamRank,
@@ -77,7 +77,7 @@ export class SearchApiComponent {
   podcastsFilter: string = "";
   isSignedIn: boolean = false;
   protected isSubsequentLoading = signal<boolean>(false);
-  protected results = signal<ISearchResult[]>([]);
+  protected results = signal<SearchResult[]>([]);
 
   constructor(
     private router: Router,
@@ -167,7 +167,7 @@ export class SearchApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-    this.oDataService.getEntitiesWithFacets<ISearchResult>(
+    this.oDataService.getEntitiesWithFacets<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: this.searchState.query,

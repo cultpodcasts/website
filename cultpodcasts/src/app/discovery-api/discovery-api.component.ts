@@ -1,17 +1,17 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { IDiscoveryResults } from '../IDiscoveryResults';
-import { IDiscoveryResult } from "../IDiscoveryResult";
+import { DiscoveryResults } from '../discovery-results.interface';
+import { DiscoveryResult } from "../discovery-result.interface";
 import { MatDialog } from '@angular/material/dialog';
 import { DiscoverySubmitComponent } from '../discovery-submit/discovery-submit.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import { MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
-import { ISubmitDiscoveryState } from '../ISubmitDiscoveryState';
-import { DiscoveryItemFilter } from '../discovery-item-filterr';
+import { SubmitDiscoveryState } from '../submit-discovery-state.interface';
+import { DiscoveryItemFilter } from '../discovery-item-filter.pipe-transform';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { HideDirective } from '../hide.directive';
@@ -20,7 +20,7 @@ import { DiscoveryItemComponent } from '../discovery-item/discovery-item.compone
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { SiteService } from '../SiteService';
+import { SiteService } from '../site.service';
 
 @Component({
   selector: 'app-discovery-api',
@@ -41,7 +41,7 @@ import { SiteService } from '../SiteService';
 export class DiscoveryApiComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
-  results: IDiscoveryResult[] | undefined;
+  results: DiscoveryResult[] | undefined;
   documentIds: string[] = [];
   selectedIds: string[] = [];
   isLoading: boolean = true;
@@ -83,7 +83,7 @@ export class DiscoveryApiComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
-      this.http.get<IDiscoveryResults>(endpoint, { headers: headers })
+      this.http.get<DiscoveryResults>(endpoint, { headers: headers })
         .subscribe({
           next: resp => {
             this.isInError = false;
@@ -128,7 +128,7 @@ export class DiscoveryApiComponent {
     this.submittedSubject.next(true);
 
     const dialog = this.dialog
-      .open<DiscoverySubmitComponent, any, ISubmitDiscoveryState>(DiscoverySubmitComponent, { disableClose: true, autoFocus: true });
+      .open<DiscoverySubmitComponent, any, SubmitDiscoveryState>(DiscoverySubmitComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
       .subscribe(async result => {
@@ -177,7 +177,7 @@ export class DiscoveryApiComponent {
     this.saveDisabled = this.selectedIds.length === 0;
   }
 
-  private enrichFocused(result: IDiscoveryResult): IDiscoveryResult {
+  private enrichFocused(result: DiscoveryResult): DiscoveryResult {
     result.isFocused = result.matchingPodcasts.length > 0 ||
       result.subjects.length > 0 ||
       (result.youTubeViews != undefined && result.youTubeViews > 100) ||

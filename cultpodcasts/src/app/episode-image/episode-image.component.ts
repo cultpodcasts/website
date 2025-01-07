@@ -1,10 +1,10 @@
 import { Component, Input } from '@angular/core';
-import { IEpisode } from '../IEpisode';
-import { Episode } from '../episode';
-import { IDiscoveryResult } from '../IDiscoveryResult';
+import { Episode } from '../episode.interface';
+import { ApiEpisode } from '../api-episode.interface';
+import { DiscoveryResult } from '../discovery-result.interface';
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-svg.component';
-import { ISearchResult } from '../ISearchResult';
+import { SearchResult } from '../search-result.interface';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
@@ -19,13 +19,13 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class EpisodeImageComponent {
   @Input()
-  searchResult: IEpisode | ISearchResult | undefined;
+  searchResult: Episode | SearchResult | undefined;
 
   @Input()
-  apiEpisode: Episode | undefined;
+  apiEpisode: ApiEpisode | undefined;
 
   @Input()
-  discoveryResult: IDiscoveryResult | undefined;
+  discoveryResult: DiscoveryResult | undefined;
 
   @Input()
   linksOverlay: boolean = false;

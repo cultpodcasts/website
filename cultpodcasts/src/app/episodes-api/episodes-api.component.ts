@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthServiceWrapper } from '../AuthServiceWrapper';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { Episode } from '../episode';
+import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,9 +15,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { SiteService } from '../SiteService';
-import { EpisodePublishResponse } from '../episode-publish-response';
-import { PostEpisodeModel } from '../post-episode-model';
+import { SiteService } from '../site.service';
+import { EpisodePublishResponse } from '../episode-publish-response.interface';
+import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
@@ -51,7 +51,7 @@ export class EpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  episodes: Episode[] | undefined;
+  episodes: ApiEpisode[] | undefined;
   error: boolean = false;
   isLoading: boolean = true;
   sortDirection: string = sortParamDateDesc;
@@ -92,10 +92,10 @@ export class EpisodesApiComponent {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
 
-        const episodeResponses: Observable<Episode | null>[] = [];
+        const episodeResponses: Observable<ApiEpisode | null>[] = [];
         episodeIds.forEach(episodeId => {
           const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<Episode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
+          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({
@@ -130,11 +130,11 @@ export class EpisodesApiComponent {
 
   setSort(sort: string) {
     if (sort != sortParamDateDesc) {
-      this.episodes = this.episodes?.sort((a: Episode, b: Episode) => {
+      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
         return a.release.getTime() - b.release.getTime();
       })
     } else {
-      this.episodes = this.episodes?.sort((a: Episode, b: Episode) => {
+      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
         return b.release.getTime() - a.release.getTime();
       })
     }

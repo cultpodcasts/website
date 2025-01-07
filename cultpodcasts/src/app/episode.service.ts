@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { IPageDetails } from './page-details';
+import { IPageDetails } from './page-details.interface';
 import { environment } from './../environments/environment';
-import { ISearchResult } from './ISearchResult';
-import { ODataService } from './OdataService';
+import { SearchResult } from './search-result.interface';
+import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
@@ -22,8 +22,8 @@ export class EpisodeService {
     return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
-  public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<ISearchResult | undefined> {
-    var result = await firstValueFrom(this.oDataService.getEntities<ISearchResult>(
+  public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<SearchResult | undefined> {
+    var result = await firstValueFrom(this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",

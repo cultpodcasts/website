@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { Episode } from '../episode';
+import { ApiEpisode } from '../api-episode.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
@@ -21,9 +21,9 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
   styleUrl: './episode-podcast-links.component.sass'
 })
 export class EpisodePodcastLinksComponent {
-  protected _episode: Episode | undefined;
+  protected _episode: ApiEpisode | undefined;
   @Input({ required: true })
-  set episode(e: Episode) {
+  set episode(e: ApiEpisode) {
     this._episode = e;
   }
 }

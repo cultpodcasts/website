@@ -1,6 +1,6 @@
 import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ShareMode } from "./ShareMode";
+import { ShareMode } from "./share-mode.enum";
 import { isPlatformBrowser } from '@angular/common';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 import { MatIconModule, MatIconRegistry } from "@angular/material/icon";

@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
-import { isUserGuard } from './isUserGuard';
+import { isUserGuard } from './is-user.guard';
 import { UnauthorisedComponent } from './unauthorised/unauthorised.component';
 import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';

@@ -1,7 +1,7 @@
 import { mergeApplicationConfig, ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideServerRendering } from '@angular/platform-server';
 import { appConfig } from './app.config';
-import { FakeAuthServiceWrapper } from './FakeAuthServiceWrapper';
+import { FakeAuthServiceWrapper } from './fake-auth-service-wrapper';
 import { AuthService } from '@auth0/auth0-angular';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 
