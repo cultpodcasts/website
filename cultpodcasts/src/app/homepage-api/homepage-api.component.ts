@@ -10,7 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HomepageService } from '../homepage.service';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
-import { Episode } from '../episode.interface';
+import { HomepageEpisode } from "../homepage-episode.interface";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -35,7 +35,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
   styleUrl: './homepage-api.component.sass'
 })
 export class HomepageApiComponent {
-  grouped: { [key: string]: Episode[]; };
+  grouped: { [key: string]: HomepageEpisode[]; };
   podcastCount: number | undefined;
   isServer: boolean;
   isLoading: boolean = true;
@@ -91,7 +91,7 @@ export class HomepageApiComponent {
         this.homepage = homepageContent;
         this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
         this.podcastCount = this.homepage.recentEpisodes.length;
-        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: Episode[] }, item) => {
+        this.grouped = this.homepage.recentEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
           item.release = new Date(item.release);
           if (!group[item.release.toLocaleDateString()]) {
             group[item.release.toLocaleDateString()] = [];
@@ -113,7 +113,7 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  descDate = (a: KeyValue<string, Episode[]>, b: KeyValue<string, Episode[]>): number => {
+  descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
     var aD = this.ToDate(a.key);
     var bD = this.ToDate(b.key);
     if (aD > bD) {

@@ -7,6 +7,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { EpisodePost } from '../episode-post.interface';
+import { EpisodeChangeResponse } from '../episode-change-response.interface';
 
 @Component({
   selector: 'app-edit-episode-send',
@@ -35,11 +36,11 @@ export class EditEpisodeSendComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
       const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-      this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
+      this.http.post<EpisodeChangeResponse>(episodeEndpoint, changes, { headers: headers, observe: "response" })
         .subscribe(
           {
             next: resp => {
-              this.dialogRef.close({ updated: true });
+              this.dialogRef.close({ updated: true, response: resp});
             },
             error: e => {
               this.isSending = false;

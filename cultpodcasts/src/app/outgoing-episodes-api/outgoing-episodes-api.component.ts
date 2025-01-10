@@ -28,6 +28,7 @@ import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-p
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -134,16 +135,21 @@ export class OutgoingEpisodesApiComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-      } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      if (result) {
+        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+          console.error(result.response);
+        }
+        if (result.updated) {
+          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        } else if (result.noChange) {
+          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
       }
     });
   }

@@ -20,6 +20,7 @@ import { EpisodeImageComponent } from "../episode-image/episode-image.component"
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -34,7 +35,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
     EpisodeLinksComponent,
     BookmarkComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
 })
@@ -94,23 +95,28 @@ export class PodcastEpisodeComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result.updated) {
-        snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-      } else if (result.noChange) {
-        snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-      }
-      if (snackBarRef) {
-        snackBarRef.onAction().subscribe(() => {
-          const episodeId = JSON.stringify([id]);
-          this.router.navigate(["/episodes", episodeId])
-        });
+      if (result) {
+        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+          console.error(result.response);
+        }
+        if (result.updated) {
+          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
+        } else if (result.noChange) {
+          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
+        }
+        if (snackBarRef) {
+          snackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify([id]);
+            this.router.navigate(["/episodes", episodeId])
+          });
+        }
       }
     });
   }

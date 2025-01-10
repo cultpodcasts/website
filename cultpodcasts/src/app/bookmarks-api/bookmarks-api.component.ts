@@ -26,6 +26,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { SiteService } from '../site.service';
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -187,16 +188,21 @@ export class BookmarksApiComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-      } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      if (result) {
+        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+          console.error(result.response);
+        }
+        if (result.updated) {
+          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        } else if (result.noChange) {
+          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
       }
     });
   }

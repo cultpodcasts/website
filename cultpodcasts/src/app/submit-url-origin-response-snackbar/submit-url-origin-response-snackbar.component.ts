@@ -8,13 +8,14 @@ import { Router } from '@angular/router';
 import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dialog.component';
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 @Component({
   selector: 'app-submit-url-origin-response-snackbar',
   imports: [
     MatIconModule,
     ApplePodcastsSvgComponent
-],
+  ],
   templateUrl: './submit-url-origin-response-snackbar.component.html',
   styleUrl: './submit-url-origin-response-snackbar.component.sass'
 })
@@ -46,13 +47,16 @@ export class SubmitUrlOriginResponseSnackbarComponent {
         autoFocus: true
       });
     } else {
-      dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+      dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
         data: { episodeId: id },
         disableClose: true,
         autoFocus: true
       });
     }
     dialogRef.afterClosed().subscribe(async result => {
+      if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+        console.error(result.response);
+      }
       if (result.isNewPodcast) {
         const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
           data: { podcastName: result.podcastName },

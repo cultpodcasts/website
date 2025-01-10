@@ -1,5 +1,5 @@
-import { Episode } from "./episode.interface";
+import { HomepageEpisode } from "./homepage-episode.interface";
 
-export interface SearchResult extends Episode {
+export interface SearchResult extends HomepageEpisode {
   explicit: boolean;
 }

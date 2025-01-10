@@ -16,6 +16,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../episode-post.interface';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { EpisodeChangeResponse } from '../episode-change-response.interface';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -162,11 +163,11 @@ export class EditEpisodeDialogComponent {
   }
 
   send(id: string, changes: EpisodePost) {
-    const dialogRef = this.dialog.open(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, {updated:boolean, response:EpisodeChangeResponse} >(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        this.dialogRef.close({ updated: true });
+      if (result && result.updated) {
+        this.dialogRef.close({ updated: true, response: result.response });
       }
     });
   }

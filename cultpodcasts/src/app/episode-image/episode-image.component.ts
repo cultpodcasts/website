@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Episode } from '../episode.interface';
+import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApiEpisode } from '../api-episode.interface';
 import { DiscoveryResult } from '../discovery-result.interface';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +19,7 @@ import { MatButtonModule } from '@angular/material/button';
 })
 export class EpisodeImageComponent {
   @Input()
-  searchResult: Episode | SearchResult | undefined;
+  searchResult: HomepageEpisode | SearchResult | undefined;
 
   @Input()
   apiEpisode: ApiEpisode | undefined;
