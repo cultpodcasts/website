@@ -4,7 +4,7 @@ import { environment } from './../../environments/environment';
 import { formatDate } from '@angular/common';
 import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
-import { Episode } from '../episode.interface';
+import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 
 @Component({
@@ -19,7 +19,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
 })
 export class EpisodeLinksComponent {
   @Input()
-  episode: Episode | undefined;
+  episode: HomepageEpisode | undefined;
 
   get spotify(): URL | undefined {
     return this.episode?.spotify;
@@ -43,7 +43,7 @@ export class EpisodeLinksComponent {
 
   constructor(private guidService: GuidService) { }
 
-  share(item: Episode) {
+  share(item: HomepageEpisode) {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
     description = description + " [" + item.duration.split(".")[0].substring(1) + "]";

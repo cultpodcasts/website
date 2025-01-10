@@ -1,7 +1,7 @@
-import { Episode } from "./episode.interface";
+import { HomepageEpisode } from "./homepage-episode.interface";
 
 export interface Homepage {
-  recentEpisodes: Episode[];
+  recentEpisodes: HomepageEpisode[];
   episodeCount: number;
   totalDuration: string;
 }

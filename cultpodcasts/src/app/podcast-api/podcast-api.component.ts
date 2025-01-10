@@ -35,6 +35,7 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -180,8 +181,8 @@ export class PodcastApiComponent {
           if (data.entities.length && !this.results().length) {
             this.scrollDisplatcher.scrolled().subscribe(async () => {
               if (this.results().length < count &&
-              this.isScrolledToBottom() && 
-              !this.isSubsequentLoading()) {
+                this.isScrolledToBottom() &&
+                !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
                 this.searchState.page++;
                 this.execSearch(false);
@@ -213,23 +214,28 @@ export class PodcastApiComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result.updated) {
-        snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-      } else if (result.noChange) {
-        snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-      }
-      if (snackBarRef) {
-        snackBarRef.onAction().subscribe(() => {
-          const episodeId = JSON.stringify([id]);
-          this.router.navigate(["/episodes", episodeId])
-        });
+      if (result) {
+        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+          console.error(result.response);
+        }
+        if (result.updated) {
+          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
+        } else if (result.noChange) {
+          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
+        }
+        if (snackBarRef) {
+          snackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify([id]);
+            this.router.navigate(["/episodes", episodeId])
+          });
+        }
       }
     });
   }

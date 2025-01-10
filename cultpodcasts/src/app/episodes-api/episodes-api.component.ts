@@ -25,6 +25,7 @@ import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-ep
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -43,7 +44,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass'
 })
@@ -141,16 +142,21 @@ export class EpisodesApiComponent {
   }
 
   edit(id: string) {
-    const dialogRef = this.dialog.open(EditEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-      } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+      if (result) {
+        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+          console.error(result.response);
+        }
+        if (result.updated) {
+          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        } else if (result.noChange) {
+          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
       }
     });
   }
@@ -172,6 +178,9 @@ export class EpisodesApiComponent {
         var messageBuilde = new EpisodePublishResponseAdaptor();
         const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+        if (result.response.failedTweetContent) {
+          console.error(result.response.failedTweetContent)
+        }
       }
     });
   }
