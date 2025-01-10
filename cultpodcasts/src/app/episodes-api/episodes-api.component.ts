@@ -178,6 +178,9 @@ export class EpisodesApiComponent {
         var messageBuilde = new EpisodePublishResponseAdaptor();
         const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+        if (result.response.failedTweetContent) {
+          console.error(result.response.failedTweetContent)
+        }
       }
     });
   }
