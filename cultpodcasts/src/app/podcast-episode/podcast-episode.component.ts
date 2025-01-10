@@ -103,7 +103,7 @@ export class PodcastEpisodeComponent {
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
       if (result) {
-        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
+        if (result.response) {
           console.error(result.response);
         }
         if (result.updated) {
@@ -137,15 +137,15 @@ export class PodcastEpisodeComponent {
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
+      if (result?.response?.failedTweetContent) {
+        console.error(result.response.failedTweetContent)
+      }
       if (result!.noChange) {
         let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
       } else if (result?.response && result.expectation) {
-        var messageBuilde = new EpisodePublishResponseAdaptor();
-        const message = messageBuilde.createMessage(result.response, result.expectation);
+        var messageBuilder = new EpisodePublishResponseAdaptor();
+        const message = messageBuilder.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-        if (result.response.failedTweetContent) {
-          console.error(result.response.failedTweetContent)
-        }
       }
     });
   }

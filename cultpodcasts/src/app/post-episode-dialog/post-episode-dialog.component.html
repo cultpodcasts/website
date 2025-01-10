@@ -27,5 +27,5 @@
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button [disabled]="isSending" (click)="onSubmit()">Submit</button>
+    <button mat-raised-button [disabled]="isSending" (click)="onSubmit()" [disabled]="isInError">Submit</button>
 </mat-dialog-actions>

@@ -172,15 +172,15 @@ export class EpisodesApiComponent {
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
+      if (result?.response?.failedTweetContent) {
+        console.error(result.response.failedTweetContent)
+      }
       if (result!.noChange) {
         let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
       } else if (result?.response && result.expectation) {
         var messageBuilde = new EpisodePublishResponseAdaptor();
         const message = messageBuilde.createMessage(result.response, result.expectation);
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-        if (result.response.failedTweetContent) {
-          console.error(result.response.failedTweetContent)
-        }
       }
     });
   }
