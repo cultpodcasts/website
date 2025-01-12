@@ -11,6 +11,8 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
 })
 export class EpisodePublishResponseSnackbarComponent {
   message: string | undefined;
+  failedTweet: string | undefined;
+  showCopyTweet: boolean = false;
 
   constructor(
     public snackBarRef: MatSnackBarRef<EpisodePublishResponseSnackbarComponent>,
@@ -22,22 +24,30 @@ export class EpisodePublishResponseSnackbarComponent {
     });
   }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<any> {
     if (this.data?.response?.failedTweetContent) {
       console.error(this.data.response.failedTweetContent)
     }
-
     if (this.data.noChange) {
       this.message = "No change made";
     } else if (this.data.response && this.data.expectation) {
       this.message = this.messageBuilder.createMessage(this.data.response, this.data.expectation);
+      if (this.data.expectation.tweet && this.data.response.failedTweetContent) {
+        if (!this.data.response.tweeted) {
+          this.showCopyTweet = true;
+        }
+      }
     } else {
       this.message = "Unknown state";
     }
   }
 
+  async copyTweet() {
+    await navigator.clipboard.writeText(this.data.response!.failedTweetContent!)
+    this.action();
+  }
+
   action() {
     this.snackBarRef.dismissWithAction()
   }
-
 }
