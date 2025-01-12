@@ -33,7 +33,6 @@ export class PostEpisodeDialogComponent {
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
   hasBlueskyPosted: boolean = false;
-  resp: EpisodePublishResponse | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -110,7 +109,7 @@ export class PostEpisodeDialogComponent {
   }
 
   close() {
-    this.dialogRef.close({ closed: true, response: this.resp });
+    this.dialogRef.close({ closed: true });
   }
 
   onSubmit() {
@@ -148,13 +147,15 @@ export class PostEpisodeDialogComponent {
                 this.dialogRef.close({ response: resp, expectation: model })
               },
               error: e => {
-                if (e.status==400) {
-                  this.resp = e.error as EpisodePublishResponse;
-                  console.error(this.resp);
-                }
                 console.error(e);
                 this.isSending = false;
-                this.isInError = true;
+                if (e.status == 400) {
+                  const _resp = e.error as EpisodePublishResponse;
+                  console.error(_resp);
+                  this.dialogRef.close({ response: _resp, expectation: model })
+                } else {
+                  this.isInError = true;
+                }
               }
             }
           )

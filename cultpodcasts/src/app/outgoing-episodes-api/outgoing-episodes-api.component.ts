@@ -22,13 +22,13 @@ import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-da
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EpisodePublishResponse } from '../episode-publish-response.interface';
 import { PostEpisodeModel } from '../post-episode-model.interface';
-import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -166,16 +166,7 @@ export class OutgoingEpisodesApiComponent {
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result?.response?.failedTweetContent) {
-        console.error(result.response.failedTweetContent)
-      }
-      if (result!.noChange) {
-        let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
-      } else if (result?.response && result.expectation) {
-        var messageBuilde = new EpisodePublishResponseAdaptor();
-        const message = messageBuilde.createMessage(result.response, result.expectation);
-        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      }
+      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });
   }
 

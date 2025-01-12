@@ -20,13 +20,13 @@ import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { EpisodePublishResponse } from '../episode-publish-response.interface';
 import { PostEpisodeModel } from '../post-episode-model.interface';
-import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { SiteService } from '../site.service';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -218,16 +218,7 @@ export class BookmarksApiComponent {
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result?.response?.failedTweetContent) {
-        console.error(result.response.failedTweetContent)
-      }
-      if (result!.noChange) {
-        let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
-      } else if (result?.response && result.expectation) {
-        var messageBuilde = new EpisodePublishResponseAdaptor();
-        const message = messageBuilde.createMessage(result.response, result.expectation);
-        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      }
+      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });
   }
 
