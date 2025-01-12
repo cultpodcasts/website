@@ -32,6 +32,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
+import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -82,6 +83,7 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAnimations(),
     provideAnimationsAsync(),
-    InfiniteScrollStrategy
+    InfiniteScrollStrategy,
+    EpisodePublishResponseAdaptor
   ]
 };

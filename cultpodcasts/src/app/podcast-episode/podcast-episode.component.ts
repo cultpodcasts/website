@@ -13,14 +13,13 @@ import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { SiteService } from '../site.service';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response.interface';
-import { PostEpisodeModel } from '../post-episode-model.interface';
-import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { PostEpisodeDialogResponseInterface } from '../post-episode-dialog-response.interface';
+import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -124,26 +123,13 @@ export class PodcastEpisodeComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, {
-      response?: EpisodePublishResponse,
-      expectation?: PostEpisodeModel,
-      noChange?: boolean
-    }>(PostEpisodeDialogComponent, {
+    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponseInterface>(PostEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result?.response?.failedTweetContent) {
-        console.error(result.response.failedTweetContent)
-      }
-      if (result!.noChange) {
-        let snackBarRef = this.snackBar.open("No change made", "Ok", { duration: 10000 });
-      } else if (result?.response && result.expectation) {
-        var messageBuilder = new EpisodePublishResponseAdaptor();
-        const message = messageBuilder.createMessage(result.response, result.expectation);
-        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      }
+      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });
   }
 }
