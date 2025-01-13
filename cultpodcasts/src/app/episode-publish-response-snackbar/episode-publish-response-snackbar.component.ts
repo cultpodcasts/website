@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { PostEpisodeDialogResponseInterface } from '../post-episode-dialog-response.interface';
+import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 
@@ -16,7 +16,7 @@ export class EpisodePublishResponseSnackbarComponent {
 
   constructor(
     public snackBarRef: MatSnackBarRef<EpisodePublishResponseSnackbarComponent>,
-    @Inject(MAT_SNACK_BAR_DATA) private data: PostEpisodeDialogResponseInterface,
+    @Inject(MAT_SNACK_BAR_DATA) private data: PostEpisodeDialogResponse,
     private messageBuilder: EpisodePublishResponseAdaptor
   ) {
     snackBarRef.onAction().subscribe(() => {

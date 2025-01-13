@@ -18,7 +18,7 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { PostEpisodeDialogResponseInterface } from '../post-episode-dialog-response.interface';
+import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 
 @Component({
@@ -123,11 +123,12 @@ export class PodcastEpisodeComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponseInterface>(PostEpisodeDialogComponent, {
-      data: { episodeId: id },
-      disableClose: true,
-      autoFocus: true
-    });
+    const dialogRef = this.dialog
+      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId: id },
+        disableClose: true,
+        autoFocus: true
+      });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });

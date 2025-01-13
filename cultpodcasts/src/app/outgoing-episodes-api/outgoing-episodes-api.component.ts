@@ -20,8 +20,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response.interface';
-import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
@@ -29,6 +27,7 @@ import { EpisodeImageComponent } from "../episode-image/episode-image.component"
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
+import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -156,11 +155,7 @@ export class OutgoingEpisodesApiComponent {
 
   post(id: string) {
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, any, {
-        response?: EpisodePublishResponse,
-        expectation?: PostEpisodeModel,
-        noChange?: boolean
-      }>(PostEpisodeDialogComponent, {
+      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
         data: { episodeId: id },
         disableClose: true,
         autoFocus: true
