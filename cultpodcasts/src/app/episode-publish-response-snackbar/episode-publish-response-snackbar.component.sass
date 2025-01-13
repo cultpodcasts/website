@@ -1,14 +1,17 @@
 #wrapper
   display: flex
-  
-#action
-    height: auto
-    padding-right: 0
-    margin-right: -4px
-    
-div[matSnackBarActions]
-    display: flex
-    flex-shrink: 0
-    align-items: center
-    box-sizing: border-box
-    margin-left: auto
+  .label
+    padding: 14px 8px 14px 16px
+  div[matSnackBarActions]
+      display: flex
+      flex-shrink: 0
+      align-items: center
+      box-sizing: border-box
+      margin-left: auto
+  button
+    height: var(--mdc-text-button-container-height)
+
+.mdc-snackbar__label
+  padding: 0
+
+

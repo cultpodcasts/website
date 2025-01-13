@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ViewEncapsulation } from '@angular/core';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
@@ -7,7 +7,8 @@ import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adapt
   selector: 'app-episode-publish-response-snackbar',
   imports: [],
   templateUrl: './episode-publish-response-snackbar.component.html',
-  styleUrl: './episode-publish-response-snackbar.component.sass'
+  styleUrl: './episode-publish-response-snackbar.component.sass', 
+  encapsulation: ViewEncapsulation.None
 })
 export class EpisodePublishResponseSnackbarComponent {
   message: string | undefined;
@@ -20,7 +21,6 @@ export class EpisodePublishResponseSnackbarComponent {
     private messageBuilder: EpisodePublishResponseAdaptor
   ) {
     snackBarRef.onAction().subscribe(() => {
-      console.log("EpisodePublishResponseSnackbarComponent", "action")
     });
   }
 

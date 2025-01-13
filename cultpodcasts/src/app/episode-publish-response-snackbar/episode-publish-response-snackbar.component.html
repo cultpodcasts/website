@@ -1,12 +1,27 @@
 <div id="wrapper">
-    <div matSnackBarLabel>{{message}}</div>
+    <div matSnackBarLabel class="label">{{message}}</div>
 
     <div matSnackBarActions>
         @if (showCopyTweet){
-        <button id="action" mat-button matSnackBarAction class="mat-mdc-snack-bar-action mdc-button mat-mdc-button"
-            (click)="copyTweet()">Copy Tweet</button>
+        <button class="action" mat-button matsnackbaraction
+            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
+            mat-ripple-loader-class-name="mat-mdc-button-ripple" (click)="copyTweet()">
+            <span class="mat-mdc-button-persistent-ripple mdc-button__ripple"></span>
+            <span class="mdc-button__label"> Copy Tweet </span>
+            <span class="mat-mdc-focus-indicator"></span>
+            <span class="mat-mdc-button-touch-target"></span>
+            <span class="mat-ripple mat-mdc-button-ripple"></span>
+        </button>
         }
-        <button id="action" mat-button matSnackBarAction class="mat-mdc-snack-bar-action mdc-button mat-mdc-button"
-            (click)="action()">Ok</button>
+
+        <button class="action" mat-button matsnackbaraction
+            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
+            mat-ripple-loader-class-name="mat-mdc-button-ripple" (click)="action()">
+            <span class="mat-mdc-button-persistent-ripple mdc-button__ripple"></span>
+            <span class="mdc-button__label"> Ok </span>
+            <span class="mat-mdc-focus-indicator"></span>
+            <span class="mat-mdc-button-touch-target"></span>
+            <span class="mat-ripple mat-mdc-button-ripple"></span>
+        </button>
     </div>
 </div>
