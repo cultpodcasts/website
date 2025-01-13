@@ -16,8 +16,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { SiteService } from '../site.service';
-import { EpisodePublishResponse } from '../episode-publish-response.interface';
-import { PostEpisodeModel } from '../post-episode-model.interface';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
@@ -26,6 +24,7 @@ import { EpisodeImageComponent } from "../episode-image/episode-image.component"
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
+import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -162,15 +161,12 @@ export class EpisodesApiComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, {
-      response?: EpisodePublishResponse,
-      expectation?: PostEpisodeModel,
-      noChange?: boolean
-    }>(PostEpisodeDialogComponent, {
-      data: { episodeId: id },
-      disableClose: true,
-      autoFocus: true
-    });
+    const dialogRef = this.dialog
+      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId: id },
+        disableClose: true,
+        autoFocus: true
+      });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });

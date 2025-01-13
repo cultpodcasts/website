@@ -18,8 +18,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { EpisodePublishResponse } from '../episode-publish-response.interface';
-import { PostEpisodeModel } from '../post-episode-model.interface';
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
@@ -27,6 +25,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { SiteService } from '../site.service';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
+import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -208,15 +207,12 @@ export class BookmarksApiComponent {
   }
 
   post(id: string) {
-    const dialogRef = this.dialog.open<PostEpisodeDialogComponent, any, {
-      response?: EpisodePublishResponse,
-      expectation?: PostEpisodeModel,
-      noChange?: boolean
-    }>(PostEpisodeDialogComponent, {
-      data: { episodeId: id },
-      disableClose: true,
-      autoFocus: true
-    });
+    const dialogRef = this.dialog
+      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId: id },
+        disableClose: true,
+        autoFocus: true
+      });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
     });
