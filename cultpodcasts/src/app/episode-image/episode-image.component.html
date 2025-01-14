@@ -1,5 +1,6 @@
 @if (this.imageUrl) {
-<div class="container" (click)="overlay($event, true)" [class.hasOverlay]="linksOverlay && !overlayVisible" [class.overlayVisible]="overlayVisible">
+<div class="container" (click)="overlay($event, true)" [class.hasOverlay]="linksOverlay && !overlayVisible"
+    [class.overlayVisible]="overlayVisible">
     <div class="overlay" [class.show]="overlayVisible">
         <button class="close" mat-icon-button (click)="overlay($event, false)">
             <mat-icon>close</mat-icon>
@@ -31,12 +32,20 @@
                     <label><a href="{{applePodcasts}}">Apple</a></label>
                 </div>
                 }
-                @if (bbc) {
+                @if (bbciPlayer) {
                 <div class="link">
-                    <a href="{{bbc}}" mat-icon-button>
+                    <a href="{{bbciPlayer}}" mat-icon-button>
                         <mat-icon svgIcon="bbc-iplayer"></mat-icon>
                     </a>
-                    <label><a href="{{bbc}}">BBC</a></label>
+                    <label><a href="{{bbciPlayer}}">BBC iPlayer</a></label>
+                </div>
+                }
+                @if (bbcSounds) {
+                <div class="link">
+                    <a href="{{bbcSounds}}" mat-icon-button>
+                        <mat-icon svgIcon="bbc-sounds"></mat-icon>
+                    </a>
+                    <label><a href="{{bbcSounds}}">BBC Sounds</a></label>
                 </div>
                 }
                 @if (internetArchive) {

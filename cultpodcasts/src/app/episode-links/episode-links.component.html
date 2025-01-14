@@ -15,9 +15,14 @@
         <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
     </a>
     }
-    @if (bbc) {
-    <a href="{{bbc}}" mat-icon-button>
+    @if (bbciPlayer) {
+    <a href="{{bbciPlayer}}" mat-icon-button>
         <mat-icon svgIcon="bbc-iplayer"></mat-icon>
+    </a>
+    }
+    @if (bbcSounds) {
+    <a href="{{bbcSounds}}" mat-icon-button>
+        <mat-icon svgIcon="bbc-sounds"></mat-icon>
     </a>
     }
     @if (internetArchive) {

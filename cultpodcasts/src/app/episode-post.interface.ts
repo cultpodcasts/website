@@ -1,6 +1,5 @@
 import { EpisodeImageUrls } from "./episode-image-urls.interface";
-import { EpisodeUrls } from "./episode-urls.interface";
-
+import { EpisodePostUrls } from "./episode-post-urls.interface";
 export interface EpisodePost {
     title?: string;
     description?: string;
@@ -12,7 +11,7 @@ export interface EpisodePost {
     explicit?: boolean;
     release?: string;
     duration?: string;
-    urls?: EpisodeUrls;
+    urls?: EpisodePostUrls;
     images?: EpisodeImageUrls;
     subjects?: string[];
     searchTerms?: string | null;

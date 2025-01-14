@@ -31,7 +31,11 @@ export class SeoService {
       if (pageDetails.description) {
         let description = pageDetails.description;
         if (pageDetails.releaseDate) {
-          description = description + ", " + formatDate(pageDetails.releaseDate, 'mediumDate', 'en-US');
+          try {
+            description = description + ", " + formatDate(pageDetails.releaseDate, 'mediumDate', 'en-US');
+          } catch (e) {
+            console.error(e, "Failure to parse date", pageDetails.releaseDate);
+          }
         }
         if (pageDetails.duration) {
           description = description + " [" + pageDetails.duration.split(".")[0].substring(1) + "]";

@@ -33,8 +33,18 @@ export class EpisodeLinksComponent {
     return this.episode?.youtube;
   }
 
-  get bbc(): URL | undefined {
-    return this.episode?.bbc;
+  get bbciPlayer(): URL | undefined {
+    if (this.episode?.bbc && this.episode.bbc.pathname.startsWith("/iplayer/")) {
+      return this.episode?.bbc;
+    }
+    return undefined;
+  }
+
+  get bbcSounds(): URL | undefined {
+    if (this.episode?.bbc && this.episode.bbc.pathname.startsWith("/sounds/")) {
+      return this.episode?.bbc;
+    }
+    return undefined;
   }
 
   get internetArchive(): URL | undefined {
