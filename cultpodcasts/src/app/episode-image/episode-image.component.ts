@@ -112,7 +112,7 @@ export class EpisodeImageComponent {
     return undefined;
   }
 
-  get bbc(): URL | undefined {
+  private get bbc(): URL | undefined {
     if (this.searchResult) {
       return this.searchResult.bbc;
     } else if (this.apiEpisode) {
@@ -123,6 +123,20 @@ export class EpisodeImageComponent {
           return new URL(this.apiEpisode.urls.bbc);
         }
       }
+    }
+    return undefined;
+  }
+
+  get bbciPlayer(): URL | undefined {
+    if (this.bbc && this.bbc.pathname.startsWith("/iplayer/")) {
+      return this.bbc;
+    }
+    return undefined;
+  }
+
+  get bbcSounds(): URL | undefined {
+    if (this.bbc && this.bbc.pathname.startsWith("/sounds/")) {
+      return this.bbc;
     }
     return undefined;
   }

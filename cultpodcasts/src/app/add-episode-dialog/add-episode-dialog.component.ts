@@ -138,13 +138,7 @@ export class AddEpisodeDialogComponent {
         explicit: this.form!.controls.explicit.value,
         release: new Date(this.form!.controls.release.value),
         duration: this.form!.controls.duration.value,
-        urls: {
-          spotify: this.form!.controls.spotify.value,
-          apple: this.form!.controls.apple.value,
-          youtube: this.form!.controls.youtube.value,
-          bbc: this.form!.controls.bbc.value,
-          internetArchive: this.form!.controls.internetArchive.value
-        },
+        urls: {},
         images: {
           spotify: this.form!.controls.spotifyImage.value,
           apple: this.form!.controls.appleImage.value,
@@ -154,6 +148,21 @@ export class AddEpisodeDialogComponent {
         subjects: this.form!.controls.subjects.value,
         searchTerms: this.form!.controls.searchTerms.value
       };
+      if (this.form!.controls.spotify.value) {
+        update.urls.spotify = new URL(this.form!.controls.spotify.value);
+      }
+      if (this.form!.controls.apple.value) {
+        update.urls.apple = new URL(this.form!.controls.apple.value);
+      }
+      if (this.form!.controls.youtube.value) {
+        update.urls.youtube = new URL(this.form!.controls.youtube.value);
+      }
+      if (this.form!.controls.bbc.value) {
+        update.urls.bbc = new URL(this.form!.controls.bbc.value);
+      }
+      if (this.form!.controls.internetArchive.value) {
+        update.urls.internetArchive = new URL(this.form!.controls.internetArchive.value);
+      }
 
       var changes = this.getChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
