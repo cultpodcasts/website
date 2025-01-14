@@ -30,11 +30,11 @@
 </button>
 }
 
-@if (   _episode.urls.bbc && 
-        ( _episode.urls.bbc.pathname.startsWith("/iplayer/") || 
-        _episode.urls.bbc.pathname.startsWith("/sounds/"))) {
+@if ( _episode.urls.bbc &&
+( _episode.urls.bbc.pathname.startsWith("/iplayer/") ||
+_episode.urls.bbc.pathname.startsWith("/sounds/"))) {
 <a href="{{_episode.urls.bbc}}" mat-icon-button>
-    @if (_episode.urls.bbc?.pathname?.startsWith("/iplayer/")) {
+    @if (_episode.urls.bbc.pathname.startsWith("/iplayer/")) {
     <mat-icon svgIcon="bbc-iplayer"></mat-icon>
     } @else {
     <mat-icon svgIcon="bbc-sounds"></mat-icon>
