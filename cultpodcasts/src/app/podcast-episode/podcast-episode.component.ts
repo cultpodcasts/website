@@ -130,7 +130,8 @@ export class PodcastEpisodeComponent {
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
-      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent, { duration: 10000, data: result })
+      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
+        { duration: 10000, data: { postEpisodeDialogResponse: result, episodeId: id } });
     });
   }
 }
