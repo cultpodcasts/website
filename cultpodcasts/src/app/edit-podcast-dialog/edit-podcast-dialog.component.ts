@@ -91,6 +91,11 @@ export class EditPodcastDialogComponent {
                 episodeMatchRegex: new FormControl(resp.episodeMatchRegex, { nonNullable: true }),
                 episodeIncludeTitleRegex: new FormControl(resp.episodeIncludeTitleRegex, { nonNullable: true }),
                 defaultSubject: new FormControl(resp.defaultSubject, { nonNullable: false }),
+                ignoreAllEpisodes: new FormControl(resp.ignoreAllEpisodes, { nonNullable: true }),
+                youTubeChannelId: new FormControl(resp.youTubeChannelId, { nonNullable: true }),
+                youTubePlaylistId: new FormControl(resp.youTubePlaylistId, { nonNullable: true }),
+                ignoredAssociatedSubjects: new FormControl<string[]>(resp.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
+                ignoredSubjects: new FormControl<string[]>(resp.ignoredSubjects ?? [], { nonNullable: true })
               });
               const subjectsEndpoint = new URL("/subjects", environment.api).toString();
               this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
@@ -147,7 +152,12 @@ export class EditPodcastDialogComponent {
         descriptionRegex: this.form!.controls.descriptionRegex.value,
         episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
         episodeIncludeTitleRegex: this.form!.controls.episodeIncludeTitleRegex.value,
-        defaultSubject: this.form!.controls.defaultSubject.value
+        defaultSubject: this.form!.controls.defaultSubject.value,
+        ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
+        youTubeChannelId: this.form!.controls.youTubeChannelId.value,
+        youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
+        ignoredAssociatedSubjects: this.form!.controls.ignoredAssociatedSubjects.value,
+        ignoredSubjects: this.form!.controls.ignoredSubjects.value
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -185,6 +195,11 @@ export class EditPodcastDialogComponent {
     if (prev.episodeMatchRegex != now.episodeMatchRegex) changes.episodeMatchRegex = now.episodeMatchRegex;
     if (prev.episodeIncludeTitleRegex != now.episodeIncludeTitleRegex) changes.episodeIncludeTitleRegex = now.episodeIncludeTitleRegex;
     if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject;
+    if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
+    if (prev.youTubeChannelId != now.youTubeChannelId) changes.youTubeChannelId = now.youTubeChannelId;
+    if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
+    if ((prev.ignoredAssociatedSubjects ?? []).join("|") != (now.ignoredAssociatedSubjects ?? []).join("|")) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
+    if ((prev.ignoredSubjects ?? []).join("|") != (now.ignoredSubjects ?? []).join("|")) changes.ignoredSubjects = now.ignoredSubjects;
     return changes;
   }
 

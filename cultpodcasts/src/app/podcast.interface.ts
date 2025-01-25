@@ -17,4 +17,9 @@ export interface Podcast {
     episodeMatchRegex: string;
     episodeIncludeTitleRegex: string;
     defaultSubject: string | null | undefined;
+    ignoreAllEpisodes: boolean;
+    youTubeChannelId: string;
+    youTubePlaylistId: string;
+    ignoredAssociatedSubjects?: string[];
+    ignoredSubjects?: string[];
 }

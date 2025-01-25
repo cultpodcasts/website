@@ -18,4 +18,9 @@ export interface EditPodcastPost {
     episodeMatchRegex?: string;
     episodeIncludeTitleRegex?: string;
     defaultSubject?: string | null;
+    ignoreAllEpisodes?: boolean;
+    youTubeChannelId?: string;
+    youTubePlaylistId?: string;
+    ignoredAssociatedSubjects?: string[];
+    ignoredSubjects?: string[];
 }
