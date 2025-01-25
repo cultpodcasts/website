@@ -26,6 +26,20 @@
                     <input type="number" [formControl]="form!.controls.appleId">
                 </label>
                 <label>
+                    <span>YouTube Id:</span>
+                    <input type="number" [formControl]="form!.controls.youTubeChannelId" readonly>
+                </label>
+                <label>
+                    <span>YouTube Playlist Id:</span>
+                    <input type="number" [formControl]="form!.controls.youTubePlaylistId">
+                </label>
+                <label>
+                    <span>YouTube Publication Delay:</span>
+                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay">
+                </label>
+            </mat-tab>
+            <mat-tab label="Subjects">
+                <label>
                     <span>Default Subject:</span>
                     <mat-select [formControl]="form!.controls.defaultSubject">
                         <mat-option [value]="">No Subject</mat-option>
@@ -34,10 +48,8 @@
                         }
                     </mat-select>
                 </label>
-                <label>
-                    <span>YouTube Publication Delay:</span>
-                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay">
-                </label>
+            </mat-tab>
+            <mat-tab label="Social">
                 <label>
                     <span>Twitter Handle:</span>
                     <input type="text" [formControl]="form!.controls.twitterHandle">
@@ -82,6 +94,10 @@
                     <label>
                         <span>Skip Enriching From YouTube:</span>
                         <input type="checkbox" [formControl]="form!.controls.skipEnrichingFromYouTube">
+                    </label>
+                    <label>
+                        <span>Ignore All Episodes:</span>
+                        <input type="checkbox" [formControl]="form!.controls.ignoreAllEpisodes">
                     </label>
                 </div>
             </mat-tab>

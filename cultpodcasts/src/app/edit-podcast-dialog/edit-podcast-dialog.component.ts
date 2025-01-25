@@ -196,7 +196,6 @@ export class EditPodcastDialogComponent {
     if (prev.episodeIncludeTitleRegex != now.episodeIncludeTitleRegex) changes.episodeIncludeTitleRegex = now.episodeIncludeTitleRegex;
     if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject;
     if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
-    if (prev.youTubeChannelId != now.youTubeChannelId) changes.youTubeChannelId = now.youTubeChannelId;
     if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
     if ((prev.ignoredAssociatedSubjects ?? []).join("|") != (now.ignoredAssociatedSubjects ?? []).join("|")) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
     if ((prev.ignoredSubjects ?? []).join("|") != (now.ignoredSubjects ?? []).join("|")) changes.ignoredSubjects = now.ignoredSubjects;
