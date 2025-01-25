@@ -47,6 +47,16 @@
                         }
                     </mat-select>
                 </label>
+                <label>
+                    <span>Ignored Subjects:</span>
+                    <mat-select [formControl]="form!.controls.ignoredSubjects" multiple [sortComparator]="noCompareFunction">
+                        @for (subject of subjects; track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
+                </label>
+
+
             </mat-tab>
             <mat-tab label="Social">
                 <label>

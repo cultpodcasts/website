@@ -211,4 +211,7 @@ export class AddPodcastDialogComponent {
       }
     });
   }
+  noCompareFunction() {
+    return 0;
+  }
 }

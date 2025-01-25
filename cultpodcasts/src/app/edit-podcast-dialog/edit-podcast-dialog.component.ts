@@ -211,4 +211,8 @@ export class EditPodcastDialogComponent {
       }
     });
   }
+
+  noCompareFunction() {
+    return 0;
+  }
 }
