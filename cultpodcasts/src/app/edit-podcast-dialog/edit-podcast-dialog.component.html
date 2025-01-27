@@ -26,11 +26,11 @@
                 </label>
                 <label>
                     <span>YouTube Id:</span>
-                    <input type="number" [formControl]="form!.controls.youTubeChannelId" readonly>
+                    <input type="text" [formControl]="form!.controls.youTubeChannelId" readonly>
                 </label>
                 <label>
                     <span>YouTube Playlist Id:</span>
-                    <input type="number" [formControl]="form!.controls.youTubePlaylistId">
+                    <input type="text" [formControl]="form!.controls.youTubePlaylistId">
                 </label>
                  <label>
                     <span>YouTube Publication Delay:</span>
@@ -42,7 +42,7 @@
                     <span>Default Subject:</span>
                     <mat-select [formControl]="form!.controls.defaultSubject">
                         <mat-option [value]="">No Subject</mat-option>
-                        @for (subject of subjects; track subject) {
+                        @for (subject of defaultSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                     </mat-select>
@@ -50,7 +50,7 @@
                 <label>
                     <span>Ignored Subjects:</span>
                     <mat-select [formControl]="form!.controls.ignoredSubjects" multiple [sortComparator]="noCompareFunction">
-                        @for (subject of subjects; track subject) {
+                        @for (subject of ignoredSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                     </mat-select>

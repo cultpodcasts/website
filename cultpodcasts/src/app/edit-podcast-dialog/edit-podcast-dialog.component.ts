@@ -10,7 +10,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { EditPodcastForm } from "../edit-podcast-form.interface";
 import { Podcast } from '../podcast.interface';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Subject } from '../subject.interface';
 import { EditPodcastPost } from "../edit-podcast-post.interface";
@@ -44,7 +44,8 @@ export class EditPodcastDialogComponent {
 
   form: FormGroup<EditPodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
-  subjects: string[] = [];
+  defaultSubjects: string[] = [];
+  ignoredSubjects: string[] = [];
   podcastId: string | undefined;
 
   constructor(
@@ -57,77 +58,74 @@ export class EditPodcastDialogComponent {
     this.podcastName = data.podcastName;
   }
 
-  ngOnInit() {
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+  async ngOnInit(): Promise<any> {
+    var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
         scope: 'curate'
       }
     }));
-    token.then(_token => {
+    try {
       let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
+      headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
-      this.http.get<Podcast>(episodeEndpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.podcastId = resp.id;
-              this.originalPodcast = resp;
-              this.form = new FormGroup<EditPodcastForm>({
-                removed: new FormControl(resp.removed, { nonNullable: true }),
-                indexAllEpisodes: new FormControl(resp.indexAllEpisodes, { nonNullable: true }),
-                bypassShortEpisodeChecking: new FormControl(resp.bypassShortEpisodeChecking, { nonNullable: true }),
-                releaseAuthority: new FormControl(resp.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-                primaryPostService: new FormControl(resp.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-                spotifyId: new FormControl(resp.spotifyId, { nonNullable: true }),
-                appleId: new FormControl(resp.appleId, { nonNullable: false }),
-                youTubePublicationDelay: new FormControl(resp.youTubePublicationDelay, { nonNullable: true }),
-                skipEnrichingFromYouTube: new FormControl(resp.skipEnrichingFromYouTube, { nonNullable: true }),
-                twitterHandle: new FormControl(resp.twitterHandle, { nonNullable: true }),
-                blueskyHandle: new FormControl(resp.blueskyHandle, { nonNullable: true }),
-                titleRegex: new FormControl(resp.titleRegex, { nonNullable: true }),
-                descriptionRegex: new FormControl(resp.descriptionRegex, { nonNullable: true }),
-                episodeMatchRegex: new FormControl(resp.episodeMatchRegex, { nonNullable: true }),
-                episodeIncludeTitleRegex: new FormControl(resp.episodeIncludeTitleRegex, { nonNullable: true }),
-                defaultSubject: new FormControl(resp.defaultSubject, { nonNullable: false }),
-                ignoreAllEpisodes: new FormControl(resp.ignoreAllEpisodes, { nonNullable: true }),
-                youTubeChannelId: new FormControl(resp.youTubeChannelId, { nonNullable: true }),
-                youTubePlaylistId: new FormControl(resp.youTubePlaylistId, { nonNullable: true }),
-                ignoredAssociatedSubjects: new FormControl<string[]>(resp.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
-                ignoredSubjects: new FormControl<string[]>(resp.ignoredSubjects ?? [], { nonNullable: true })
-              });
-              const subjectsEndpoint = new URL("/subjects", environment.api).toString();
-              this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
-                next: d => {
-                  let initial: string[] = [];
-                  if (resp.defaultSubject != null) {
-                    initial.push(resp.defaultSubject);
-                  }
-                  this.subjects = [...initial].concat(d.filter(x => resp.defaultSubject == null || resp.defaultSubject != x.name).map(x => x.name));
-                  this.isLoading = false;
-                },
-                error: e => {
-                  this.isLoading = false;
-                  this.isInError = true;
-                }
-              })
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
-              if (e.status == 404) {
-                this.notFound = true;
-              } else if (e.status == 409) {
-                this.conflict = true;
-              }
-            }
-          }
-        )
-    }).catch(x => {
+      const subjectsEndpoint = new URL("/subjects", environment.api).toString();
+
+      var resp = await firstValueFrom(forkJoin(
+        {
+          podcast: this.http.get<Podcast>(episodeEndpoint, { headers: headers, observe: "response" }),
+          subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers })
+        }
+      ));
+
+      if (resp.podcast.status == 200 && resp.podcast.body) {
+        this.podcastId = resp.podcast.body.id;
+        this.originalPodcast = resp.podcast.body;
+        this.form = new FormGroup<EditPodcastForm>({
+          removed: new FormControl(resp.podcast.body.removed, { nonNullable: true }),
+          indexAllEpisodes: new FormControl(resp.podcast.body.indexAllEpisodes, { nonNullable: true }),
+          bypassShortEpisodeChecking: new FormControl(resp.podcast.body.bypassShortEpisodeChecking, { nonNullable: true }),
+          releaseAuthority: new FormControl(resp.podcast.body.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
+          primaryPostService: new FormControl(resp.podcast.body.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
+          spotifyId: new FormControl(resp.podcast.body.spotifyId, { nonNullable: true }),
+          appleId: new FormControl(resp.podcast.body.appleId, { nonNullable: false }),
+          youTubePublicationDelay: new FormControl(resp.podcast.body.youTubePublicationDelay, { nonNullable: true }),
+          skipEnrichingFromYouTube: new FormControl(resp.podcast.body.skipEnrichingFromYouTube, { nonNullable: true }),
+          twitterHandle: new FormControl(resp.podcast.body.twitterHandle, { nonNullable: true }),
+          blueskyHandle: new FormControl(resp.podcast.body.blueskyHandle, { nonNullable: true }),
+          titleRegex: new FormControl(resp.podcast.body.titleRegex, { nonNullable: true }),
+          descriptionRegex: new FormControl(resp.podcast.body.descriptionRegex, { nonNullable: true }),
+          episodeMatchRegex: new FormControl(resp.podcast.body.episodeMatchRegex, { nonNullable: true }),
+          episodeIncludeTitleRegex: new FormControl(resp.podcast.body.episodeIncludeTitleRegex, { nonNullable: true }),
+          defaultSubject: new FormControl(resp.podcast.body.defaultSubject, { nonNullable: false }),
+          ignoreAllEpisodes: new FormControl(resp.podcast.body.ignoreAllEpisodes, { nonNullable: true }),
+          youTubeChannelId: new FormControl(resp.podcast.body.youTubeChannelId, { nonNullable: true }),
+          youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
+          ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
+          ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true })
+        });
+        let initial: string[] = [];
+        if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
+          initial.push(resp.podcast.body.defaultSubject);
+        }
+        this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
+        const ignoredSubjects= resp.podcast.body.ignoredSubjects??[];
+        this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
+        this.isLoading = false;
+      } else {
+        this.isLoading = false;
+        this.isInError = true;
+        if (resp.podcast.status == 404) {
+          this.notFound = true;
+        } else if (resp.podcast.status == 409) {
+          this.conflict = true;
+        }
+      }
+    } catch (e) {
+      console.error(e);
       this.isLoading = false;
       this.isInError = true;
-    });
+    }
   }
 
   close() {

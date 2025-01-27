@@ -27,11 +27,11 @@
                 </label>
                 <label>
                     <span>YouTube Id:</span>
-                    <input type="number" [formControl]="form!.controls.youTubeChannelId" readonly>
+                    <input type="text" [formControl]="form!.controls.youTubeChannelId" readonly>
                 </label>
                 <label>
                     <span>YouTube Playlist Id:</span>
-                    <input type="number" [formControl]="form!.controls.youTubePlaylistId">
+                    <input type="text" [formControl]="form!.controls.youTubePlaylistId">
                 </label>
                 <label>
                     <span>YouTube Publication Delay:</span>
@@ -55,6 +55,10 @@
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                     </mat-select>
+                </label>
+                <label>
+                    <span>Ignored Associated Subjects:</span>
+
                 </label>
             </mat-tab>
             <mat-tab label="Social">
