@@ -9,13 +9,15 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Podcast } from '../podcast.interface';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { Subject } from '../subject.interface';
 import { PodcastServiceType } from "../podcast-service-type.enum";
 import { AddPodcastSendComponent } from '../add-podcast-send/add-podcast-send.component';
 import { AddPodcastForm } from '../add-podcast-form.interface';
 import { AddPodcastPost } from '../add-podcast-post.interface';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -26,7 +28,9 @@ import { AddPodcastPost } from '../add-podcast-post.interface';
     ReactiveFormsModule,
     MatTabsModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatInputModule,
+    MatCheckboxModule
   ],
   templateUrl: './add-podcast-dialog.component.html',
   styleUrl: './add-podcast-dialog.component.sass'
@@ -43,7 +47,8 @@ export class AddPodcastDialogComponent {
 
   form: FormGroup<AddPodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
-  subjects: string[] = [];
+  defaultSubjects: string[] = [];
+  ignoredSubjects: string[] = [];
   podcastId: string | undefined;
 
   constructor(
@@ -56,71 +61,71 @@ export class AddPodcastDialogComponent {
     this.podcastName = data.podcastName;
   }
 
-  ngOnInit() {
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+  async ngOnInit(): Promise<any> {
+    var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
         scope: 'curate'
       }
     }));
-    token.then(_token => {
+    try {
       let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
+      headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
-      this.http.get<Podcast>(episodeEndpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.podcastId = resp.id;
-              this.originalPodcast = resp;
-              this.form = new FormGroup<AddPodcastForm>({
-                podcastName: new FormControl(this.podcastName, { nonNullable: true }),
-                removed: new FormControl(resp.removed, { nonNullable: true }),
-                indexAllEpisodes: new FormControl(resp.indexAllEpisodes, { nonNullable: true }),
-                bypassShortEpisodeChecking: new FormControl(resp.bypassShortEpisodeChecking, { nonNullable: true }),
-                releaseAuthority: new FormControl(resp.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-                primaryPostService: new FormControl(resp.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-                spotifyId: new FormControl(resp.spotifyId, { nonNullable: true }),
-                appleId: new FormControl(resp.appleId, { nonNullable: false }),
-                youTubePublicationDelay: new FormControl(resp.youTubePublicationDelay, { nonNullable: true }),
-                skipEnrichingFromYouTube: new FormControl(resp.skipEnrichingFromYouTube, { nonNullable: true }),
-                twitterHandle: new FormControl(resp.twitterHandle, { nonNullable: true }),
-                blueskyHandle: new FormControl(resp.blueskyHandle, { nonNullable: true }),
-                titleRegex: new FormControl(resp.titleRegex, { nonNullable: true }),
-                descriptionRegex: new FormControl(resp.descriptionRegex, { nonNullable: true }),
-                episodeMatchRegex: new FormControl(resp.episodeMatchRegex, { nonNullable: true }),
-                episodeIncludeTitleRegex: new FormControl(resp.episodeIncludeTitleRegex, { nonNullable: true }),
-                defaultSubject: new FormControl(resp.defaultSubject, { nonNullable: false }),
-              });
-              const subjectsEndpoint = new URL("/subjects", environment.api).toString();
-              this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
-                next: d => {
-                  let initial: string[] = [];
-                  if (resp.defaultSubject != null) {
-                    initial.push(resp.defaultSubject);
-                  }
-                  this.subjects = [...initial].concat(d.filter(x => resp.defaultSubject == null || resp.defaultSubject != x.name).map(x => x.name));
-                  this.isLoading = false;
-                },
-                error: e => {
-                  this.isLoading = false;
-                  this.isInError = true;
-                }
-              })
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
-              if (e.status == 404) {
-                this.notFound = true;
-              }
-            }
-          }
-        )
-    }).catch(x => {
+      const subjectsEndpoint = new URL("/subjects", environment.api).toString();
+      var resp = await firstValueFrom(forkJoin(
+        {
+          podcast: this.http.get<Podcast>(episodeEndpoint, { headers: headers, observe: "response" }),
+          subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers })
+        }
+      ));
+      if (resp.podcast.status == 200 && resp.podcast.body) {
+        this.podcastId = resp.podcast.body.id;
+        this.originalPodcast = resp.podcast.body;
+        this.form = new FormGroup<AddPodcastForm>({
+          podcastName: new FormControl(this.podcastName, { nonNullable: true }),
+          removed: new FormControl(resp.podcast.body.removed, { nonNullable: true }),
+          indexAllEpisodes: new FormControl(resp.podcast.body.indexAllEpisodes, { nonNullable: true }),
+          bypassShortEpisodeChecking: new FormControl(resp.podcast.body.bypassShortEpisodeChecking, { nonNullable: true }),
+          releaseAuthority: new FormControl(resp.podcast.body.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
+          primaryPostService: new FormControl(resp.podcast.body.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
+          spotifyId: new FormControl(resp.podcast.body.spotifyId, { nonNullable: true }),
+          appleId: new FormControl(resp.podcast.body.appleId, { nonNullable: false }),
+          youTubePublicationDelay: new FormControl(resp.podcast.body.youTubePublicationDelay, { nonNullable: true }),
+          skipEnrichingFromYouTube: new FormControl(resp.podcast.body.skipEnrichingFromYouTube, { nonNullable: true }),
+          twitterHandle: new FormControl(resp.podcast.body.twitterHandle, { nonNullable: true }),
+          blueskyHandle: new FormControl(resp.podcast.body.blueskyHandle, { nonNullable: true }),
+          titleRegex: new FormControl(resp.podcast.body.titleRegex, { nonNullable: true }),
+          descriptionRegex: new FormControl(resp.podcast.body.descriptionRegex, { nonNullable: true }),
+          episodeMatchRegex: new FormControl(resp.podcast.body.episodeMatchRegex, { nonNullable: true }),
+          episodeIncludeTitleRegex: new FormControl(resp.podcast.body.episodeIncludeTitleRegex, { nonNullable: true }),
+          defaultSubject: new FormControl(resp.podcast.body.defaultSubject, { nonNullable: false }),
+          ignoreAllEpisodes: new FormControl(resp.podcast.body.ignoreAllEpisodes, { nonNullable: true }),
+          youTubeChannelId: new FormControl(resp.podcast.body.youTubeChannelId, { nonNullable: true }),
+          youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
+          ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
+          ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true })
+        });
+        let initial: string[] = [];
+        if (resp.podcast.body.defaultSubject != null) {
+          initial.push(resp.podcast.body.defaultSubject);
+        }
+        this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
+        const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
+        this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
+        this.isLoading = false;
+      } else {
+        this.isLoading = false;
+        this.isInError = true;
+        if (resp.podcast.status == 404) {
+          this.notFound = true;
+        }
+      }
+    } catch (e) {
+      console.error(e);
       this.isLoading = false;
       this.isInError = true;
-    });
+    }
   }
 
   close() {
@@ -146,7 +151,12 @@ export class AddPodcastDialogComponent {
         descriptionRegex: this.form!.controls.descriptionRegex.value,
         episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
         episodeIncludeTitleRegex: this.form!.controls.episodeIncludeTitleRegex.value,
-        defaultSubject: this.form!.controls.defaultSubject.value
+        defaultSubject: this.form!.controls.defaultSubject.value,
+        ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
+        youTubeChannelId: this.form!.controls.youTubeChannelId.value,
+        youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
+        ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
+        ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects)
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -185,7 +195,37 @@ export class AddPodcastDialogComponent {
     if (prev.episodeMatchRegex != now.episodeMatchRegex) changes.episodeMatchRegex = now.episodeMatchRegex;
     if (prev.episodeIncludeTitleRegex != now.episodeIncludeTitleRegex) changes.episodeIncludeTitleRegex = now.episodeIncludeTitleRegex;
     if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject;
+    if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
+    if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
+    if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
+    if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     return changes;
+  }
+
+  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    if (!a && b?.length == 0) {
+      return true;
+    }
+    if (a?.length == 0 && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
+  }
+
+  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
+    if (x.value) {
+      const valueS: any = x.value;
+      if (valueS.push) {
+        return x.value;
+      } else if (valueS.split) {
+        const valueSt: string = valueS;
+        return valueSt.split(",");
+      }
+    };
+    return [];
   }
 
   send(id: string, changes: AddPodcastPost) {
@@ -196,5 +236,8 @@ export class AddPodcastDialogComponent {
         this.dialogRef.close({ updated: true });
       }
     });
+  }
+  noCompareFunction() {
+    return 0;
   }
 }

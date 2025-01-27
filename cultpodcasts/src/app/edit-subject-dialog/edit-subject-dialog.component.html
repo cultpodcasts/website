@@ -6,21 +6,20 @@
     } @else if (isInError) {
     <p id="error">An error occurred</p>
     } @else {
-
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
-                    <input type="text" [formControl]="form!.controls.name" [readonly]="!create">
+                    <input type="text" [formControl]="form!.controls.name" [readonly]="!create" matInput>
                 </label>
                 <label>
                     <span>Aliases:</span>
-                    <textarea [formControl]="form!.controls.aliases"></textarea>
+                    <textarea [formControl]="form!.controls.aliases" matInput cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Associated Subjects:</span>
-                    <textarea type="text" [formControl]="form!.controls.associatedSubjects"></textarea>
+                    <textarea type="text" [formControl]="form!.controls.associatedSubjects" matInput cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Subject Type:</span>
@@ -34,11 +33,11 @@
             <mat-tab label="Hash Tags">
                 <label>
                     <span>Hash Tags:</span>
-                    <input type="text" [formControl]="form!.controls.hashTag">
+                    <input type="text" [formControl]="form!.controls.hashTag" matInput>
                 </label>
                 <label>
                     <span>Enrichment Hash Tags:</span>
-                    <textarea [formControl]="form!.controls.enrichmentHashTags"></textarea>
+                    <textarea [formControl]="form!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
                 </label>
             </mat-tab>
             <mat-tab label="Reddit">
@@ -55,7 +54,7 @@
                 </label>
                 <label>
                     <span>Flair Text:</span>
-                    <input type="text" [formControl]="form!.controls.redditFlareText">
+                    <input type="text" [formControl]="form!.controls.redditFlareText" matInput>
                 </label>
             </mat-tab>
         </mat-tab-group>

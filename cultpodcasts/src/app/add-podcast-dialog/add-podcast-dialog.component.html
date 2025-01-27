@@ -15,36 +15,59 @@
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
-                    <input type="text" [formControl]="form!.controls.podcastName">
+                    <input type="text" [formControl]="form!.controls.podcastName" matInput>
                 </label>
                 <label>
                     <span>Spotify Id:</span>
-                    <input type="text" [formControl]="form!.controls.spotifyId">
+                    <input type="text" [formControl]="form!.controls.spotifyId" matInput>
                 </label>
                 <label>
                     <span>Apple Id:</span>
-                    <input type="number" [formControl]="form!.controls.appleId">
+                    <input type="number" [formControl]="form!.controls.appleId" matInput>
                 </label>
+                <label>
+                    <span>YouTube Id:</span>
+                    <input type="text" [formControl]="form!.controls.youTubeChannelId" readonly matInput>
+                </label>
+                <label>
+                    <span>YouTube Playlist Id:</span>
+                    <input type="text" [formControl]="form!.controls.youTubePlaylistId" matInput>
+                </label>
+                <label>
+                    <span>YouTube Publication Delay:</span>
+                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay" matInput>
+                </label>
+            </mat-tab>
+            <mat-tab label="Subjects">
                 <label>
                     <span>Default Subject:</span>
                     <mat-select [formControl]="form!.controls.defaultSubject">
                         <mat-option [value]="">No Subject</mat-option>
-                        @for (subject of subjects; track subject) {
+                        @for (subject of defaultSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                     </mat-select>
                 </label>
                 <label>
-                    <span>YouTube Publication Delay:</span>
-                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay">
+                    <span>Ignored Subjects:</span>
+                    <mat-select [formControl]="form!.controls.ignoredSubjects" multiple [sortComparator]="noCompareFunction">
+                        @for (subject of ignoredSubjects; track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
                 </label>
                 <label>
+                    <span>Ignored Associated Subjects:</span>
+                </label>
+            </mat-tab>
+            <mat-tab label="Social">
+                <label>
                     <span>Twitter Handle:</span>
-                    <input type="text" [formControl]="form!.controls.twitterHandle">
+                    <input type="text" [formControl]="form!.controls.twitterHandle" matInput>
                 </label>
                 <label>
                     <span>Bluesky Handle:</span>
-                    <input type="text" [formControl]="form!.controls.blueskyHandle">
+                    <input type="text" [formControl]="form!.controls.blueskyHandle" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Services">
@@ -69,38 +92,42 @@
                 <div class="flags">
                     <label>
                         <span>Removed:</span>
-                        <input type="checkbox" [formControl]="form!.controls.removed">
+                        <mat-checkbox [formControl]="form!.controls.removed"/>
                     </label>
                     <label>
                         <span>Index All Episodes:</span>
-                        <input type="checkbox" [formControl]="form!.controls.indexAllEpisodes">
+                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes"/>
                     </label>
                     <label>
                         <span>Bypass Short Episode Checking:</span>
-                        <input type="checkbox" [formControl]="form!.controls.bypassShortEpisodeChecking">
+                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking"/>
                     </label>
                     <label>
                         <span>Skip Enriching From YouTube:</span>
-                        <input type="checkbox" [formControl]="form!.controls.skipEnrichingFromYouTube">
+                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube"/>
+                    </label>
+                    <label>
+                        <span>Ignore All Episodes:</span>
+                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes"/>
                     </label>
                 </div>
             </mat-tab>
             <mat-tab label="Regexs">
                 <label>
                     <span>Title Regex:</span>
-                    <input type="text" [formControl]="form!.controls.titleRegex">
+                    <input type="text" [formControl]="form!.controls.titleRegex" matInput>
                 </label>
                 <label>
                     <span>Description Regex:</span>
-                    <input type="text" [formControl]="form!.controls.descriptionRegex">
+                    <input type="text" [formControl]="form!.controls.descriptionRegex" matInput>
                 </label>
                 <label>
                     <span>Episode Match Regex:</span>
-                    <input type="text" [formControl]="form!.controls.episodeMatchRegex">
+                    <input type="text" [formControl]="form!.controls.episodeMatchRegex" matInput>
                 </label>
                 <label>
                     <span>Episode Include Title Regex:</span>
-                    <input type="text" [formControl]="form!.controls.episodeIncludeTitleRegex">
+                    <input type="text" [formControl]="form!.controls.episodeIncludeTitleRegex" matInput>
                 </label>
             </mat-tab>
         </mat-tab-group>

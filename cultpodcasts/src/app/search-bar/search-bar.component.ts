@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 @Component({
   selector: 'app-search-bar',
@@ -17,7 +18,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatFormFieldModule,
     MatChipsModule,
     MatInputModule,
-    MatIconModule
+    MatIconModule,
+    TextFieldModule
   ],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass'

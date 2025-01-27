@@ -16,6 +16,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../episode-post.interface';
 import { AddEpisodeSendComponent } from '../add-episode-send/add-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -27,7 +30,11 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatTabsModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatExpansionModule
+    MatExpansionModule,
+    CdkTextareaAutosize,
+    TextFieldModule,
+    MatInputModule,
+    MatCheckboxModule
   ],
   templateUrl: './add-episode-dialog.component.html',
   styleUrl: './add-episode-dialog.component.sass'
@@ -196,7 +203,7 @@ export class AddEpisodeDialogComponent {
     if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
-    if (prev.subjects != now.subjects) changes.subjects = now.subjects;
+    if (!this.isSameA(prev.subjects, now.subjects)) changes.subjects = now.subjects;
     if (prev.title != now.title) changes.title = now.title;
 
     if ((!this.areEqual(prev.urls?.apple, now.urls?.apple)) ||
@@ -237,6 +244,19 @@ export class AddEpisodeDialogComponent {
       result = url1!.toString() === url2!.toString()
     }
     return result;
+  }
+
+  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    if (!a && b?.length == 0) {
+      return true;
+    }
+    if (a?.length == 0 && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
   }
 
   dateToLocalISO(date: Date) {

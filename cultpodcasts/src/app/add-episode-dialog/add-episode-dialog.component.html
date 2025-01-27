@@ -15,53 +15,53 @@
                 </label>
                 <label>
                     <span>Title:</span>
-                    <input type="text" [formControl]="form!.controls.title">
+                    <input type="text" [formControl]="form!.controls.title" matInput>
                 </label>
                 <label>
                     <span>Description:</span>
-                    <textarea [formControl]="form!.controls.description"></textarea>
+                    <textarea [formControl]="form!.controls.description" matInput cdkTextareaAutosize cdkAutosizeMaxRows="5"></textarea>
                 </label>
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
                     <label>
                         <span>Posted:</span>
-                        <input type="checkbox" [formControl]="form!.controls.posted">
+                        <mat-checkbox [formControl]="form!.controls.posted"/>
                     </label>
                     <label>
                         <span>Tweeted:</span>
-                        <input type="checkbox" [formControl]="form!.controls.tweeted">
+                        <mat-checkbox [formControl]="form!.controls.tweeted"/>
                     </label>
                     <label>
                         <span>Bluesky Post:</span>
-                        <input type="checkbox" [formControl]="form!.controls.blueskyPosted">
+                        <mat-checkbox [formControl]="form!.controls.blueskyPosted"/>
                     </label>
                     <label>
                         <span>Ignored:</span>
-                        <input type="checkbox" [formControl]="form!.controls.ignored">
+                        <mat-checkbox [formControl]="form!.controls.ignored"/>
                     </label>
                     <label>
                         <span>Removed:</span>
-                        <input type="checkbox" [formControl]="form!.controls.removed">
+                        <mat-checkbox [formControl]="form!.controls.removed"/>
                     </label>
                     <label>
                         <span>Explicit:</span>
-                        <input type="checkbox" [formControl]="form!.controls.explicit">
+                        <mat-checkbox [formControl]="form!.controls.explicit"/>
                     </label>
                 </div>
             </mat-tab>
             <mat-tab label="Urls">
                 <label>
                     <span>Spotify:</span>
-                    <input type="text" [formControl]="form!.controls.spotify">
+                    <input type="text" [formControl]="form!.controls.spotify" matInput>
                 </label>
                 <label>
                     <span>Apple:</span>
-                    <input type="text" [formControl]="form!.controls.apple">
+                    <input type="text" [formControl]="form!.controls.apple" matInput>
                 </label>
                 <label>
                     <span>YouTube:</span>
-                    <input type="text" [formControl]="form!.controls.youtube">
+                    <input type="text" [formControl]="form!.controls.youtube" matInput>
                 </label>
                 <mat-accordion>
                     <mat-expansion-panel>
@@ -70,11 +70,11 @@
                         </mat-expansion-panel-header>
                         <label>
                             <span>BBC:</span>
-                            <input type="text" [formControl]="form!.controls.bbc">
+                            <input type="text" [formControl]="form!.controls.bbc" matInput>
                         </label>
                         <label>
                             <span>Internet Archive:</span>
-                            <input type="text" [formControl]="form!.controls.internetArchive">
+                            <input type="text" [formControl]="form!.controls.internetArchive" matInput>
                         </label>
                     </mat-expansion-panel>
                 </mat-accordion>
@@ -82,29 +82,29 @@
             <mat-tab label="Images">
                 <label>
                     <span>Spotify:</span>
-                    <input type="text" [formControl]="form!.controls.spotifyImage">
+                    <input type="text" [formControl]="form!.controls.spotifyImage" matInput>
                 </label>
                 <label>
                     <span>Apple:</span>
-                    <input type="text" [formControl]="form!.controls.appleImage">
+                    <input type="text" [formControl]="form!.controls.appleImage" matInput>
                 </label>
                 <label>
                     <span>YouTube:</span>
-                    <input type="text" [formControl]="form!.controls.youtubeImage">
+                    <input type="text" [formControl]="form!.controls.youtubeImage" matInput>
                 </label>
                 <label>
                     <span>Other:</span>
-                    <input type="text" [formControl]="form!.controls.otherImage">
+                    <input type="text" [formControl]="form!.controls.otherImage" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Meta">
                 <label>
                     <span>Release:</span>
-                    <input type="datetime-local" [formControl]="form!.controls.release">
+                    <input type="datetime-local" [formControl]="form!.controls.release" matInput>
                 </label>
                 <label>
                     <span>Duration:</span>
-                    <input type="text" [formControl]="form!.controls.duration">
+                    <input type="text" [formControl]="form!.controls.duration" matInput>
                 </label>
                 <label>
                     <span>Subjects:</span>
@@ -116,7 +116,7 @@
                 </label>
                 <label>
                     <span>Search Terms:</span>
-                    <input type="text" [formControl]="form!.controls.searchTerms">
+                    <input type="text" [formControl]="form!.controls.searchTerms" matInput>
                 </label>
             </mat-tab>
         </mat-tab-group>

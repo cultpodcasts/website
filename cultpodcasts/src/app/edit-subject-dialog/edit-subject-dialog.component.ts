@@ -16,6 +16,8 @@ import { Flair } from '../flair.interface';
 import { MatSelectModule } from '@angular/material/select';
 import { KeyValuePipe } from '@angular/common';
 import { SubjectType } from "../subject-type.enum";
+import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -27,7 +29,10 @@ import { SubjectType } from "../subject-type.enum";
     MatTabsModule,
     MatFormFieldModule,
     MatSelectModule,
-    KeyValuePipe
+    KeyValuePipe,
+    CdkTextareaAutosize,
+    TextFieldModule,
+    MatInputModule
   ],
   templateUrl: './edit-subject-dialog.component.html',
   styleUrl: './edit-subject-dialog.component.sass'

@@ -10,6 +10,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 @Component({
   selector: 'app-submit-podcast',
@@ -24,7 +25,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     MatExpansionModule,
     MatAutocompleteModule,
     MatOptionModule,
-    MatButtonModule
+    MatButtonModule,
+    TextFieldModule
   ]
 })
 export class SubmitPodcastComponent implements OnInit {

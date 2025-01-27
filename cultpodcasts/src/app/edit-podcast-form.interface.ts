@@ -17,6 +17,11 @@ export interface EditPodcastForm {
     descriptionRegex: FormControl<string>;
     episodeMatchRegex: FormControl<string>;
     episodeIncludeTitleRegex: FormControl<string>;
+    ignoreAllEpisodes: FormControl<boolean>;
+    youTubeChannelId: FormControl<string>;
+    youTubePlaylistId: FormControl<string>;
+    ignoredAssociatedSubjects: FormControl<string[]>;
+    ignoredSubjects: FormControl<string[]>;
 }
 
 
