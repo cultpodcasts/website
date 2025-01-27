@@ -202,7 +202,7 @@ export class EditEpisodeDialogComponent {
     if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
-    if (prev.subjects != now.subjects) changes.subjects = now.subjects;
+    if (!this.isSameA(prev.subjects, now.subjects)) changes.subjects = now.subjects;
     if (prev.title != now.title) changes.title = now.title;
 
     if ((!this.areEqual(prev.urls?.apple, now.urls?.apple)) ||
@@ -243,6 +243,19 @@ export class EditEpisodeDialogComponent {
       result = url1!.toString() === url2!.toString()
     }
     return result;
+  }
+
+  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    if (!a && b?.length == 0) {
+      return true;
+    }
+    if (a?.length == 0 && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
   }
 
   dateToLocalISO(date: Date) {
