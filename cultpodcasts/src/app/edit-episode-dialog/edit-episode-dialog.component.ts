@@ -1,4 +1,6 @@
 import { Component, Inject } from '@angular/core';
+import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
+import { MatInputModule } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -17,6 +19,7 @@ import { EpisodePost } from '../episode-post.interface';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodeChangeResponse } from '../episode-change-response.interface';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -28,7 +31,11 @@ import { EpisodeChangeResponse } from '../episode-change-response.interface';
     MatTabsModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatExpansionModule
+    MatExpansionModule,
+    CdkTextareaAutosize,
+    TextFieldModule,
+    MatInputModule,
+    MatCheckboxModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
   styleUrl: './edit-episode-dialog.component.sass'

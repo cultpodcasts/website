@@ -16,6 +16,9 @@ import { Subject } from '../subject.interface';
 import { EditPodcastPost } from "../edit-podcast-post.interface";
 import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
 import { PodcastServiceType } from "../podcast-service-type.enum";
+import { MatInputModule } from '@angular/material/input';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
@@ -26,7 +29,10 @@ import { PodcastServiceType } from "../podcast-service-type.enum";
     ReactiveFormsModule,
     MatTabsModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatInputModule,
+    TextFieldModule,
+    MatCheckboxModule
   ],
   templateUrl: './edit-podcast-dialog.component.html',
   styleUrl: './edit-podcast-dialog.component.sass'
@@ -109,7 +115,7 @@ export class EditPodcastDialogComponent {
           initial.push(resp.podcast.body.defaultSubject);
         }
         this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
-        const ignoredSubjects= resp.podcast.body.ignoredSubjects??[];
+        const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
         this.isLoading = false;
       } else {

@@ -16,6 +16,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../episode-post.interface';
 import { AddEpisodeSendComponent } from '../add-episode-send/add-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -27,7 +30,11 @@ import { MatExpansionModule } from '@angular/material/expansion';
     MatTabsModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatExpansionModule
+    MatExpansionModule,
+    CdkTextareaAutosize,
+    TextFieldModule,
+    MatInputModule,
+    MatCheckboxModule
   ],
   templateUrl: './add-episode-dialog.component.html',
   styleUrl: './add-episode-dialog.component.sass'

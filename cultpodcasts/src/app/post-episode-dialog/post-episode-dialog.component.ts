@@ -12,6 +12,9 @@ import { environment } from './../../environments/environment';
 import { PostEpisodeModel } from '../post-episode-model.interface';
 import { ApiEpisode } from '../api-episode.interface';
 import { EpisodePublishResponse } from '../episode-publish-response.interface';
+import { TextFieldModule } from '@angular/cdk/text-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -20,7 +23,10 @@ import { EpisodePublishResponse } from '../episode-publish-response.interface';
     MatProgressSpinnerModule,
     MatButtonModule,
     ReactiveFormsModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatInputModule,
+    TextFieldModule,
+    MatCheckboxModule
   ],
   templateUrl: './post-episode-dialog.component.html',
   styleUrl: './post-episode-dialog.component.sass'

@@ -16,6 +16,8 @@ import { PodcastServiceType } from "../podcast-service-type.enum";
 import { AddPodcastSendComponent } from '../add-podcast-send/add-podcast-send.component';
 import { AddPodcastForm } from '../add-podcast-form.interface';
 import { AddPodcastPost } from '../add-podcast-post.interface';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -26,7 +28,9 @@ import { AddPodcastPost } from '../add-podcast-post.interface';
     ReactiveFormsModule,
     MatTabsModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatInputModule,
+    MatCheckboxModule
   ],
   templateUrl: './add-podcast-dialog.component.html',
   styleUrl: './add-podcast-dialog.component.sass'
@@ -43,7 +47,8 @@ export class AddPodcastDialogComponent {
 
   form: FormGroup<AddPodcastForm> | undefined;
   originalPodcast: Podcast | undefined;
-  subjects: string[] = [];
+  defaultSubjects: string[] = [];
+  ignoredSubjects: string[] = [];
   podcastId: string | undefined;
 
   constructor(
@@ -104,7 +109,7 @@ export class AddPodcastDialogComponent {
                   if (resp.defaultSubject != null) {
                     initial.push(resp.defaultSubject);
                   }
-                  this.subjects = [...initial].concat(d.filter(x => resp.defaultSubject == null || resp.defaultSubject != x.name).map(x => x.name));
+                  this.defaultSubjects = [...initial].concat(d.filter(x => resp.defaultSubject == null || resp.defaultSubject != x.name).map(x => x.name));
                   this.isLoading = false;
                 },
                 error: e => {
