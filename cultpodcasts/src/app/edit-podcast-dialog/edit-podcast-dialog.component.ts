@@ -160,8 +160,8 @@ export class EditPodcastDialogComponent {
         ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
-        ignoredAssociatedSubjects: this.form!.controls.ignoredAssociatedSubjects.value,
-        ignoredSubjects: this.form!.controls.ignoredSubjects.value
+        ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
+        ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects)
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -201,9 +201,35 @@ export class EditPodcastDialogComponent {
     if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject;
     if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
     if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
-    if ((prev.ignoredAssociatedSubjects ?? []).join("|") != (now.ignoredAssociatedSubjects ?? []).join("|")) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
-    if ((prev.ignoredSubjects ?? []).join("|") != (now.ignoredSubjects ?? []).join("|")) changes.ignoredSubjects = now.ignoredSubjects;
+    if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
+    if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     return changes;
+  }
+
+  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    if (!a && b?.length == 0) {
+      return true;
+    }
+    if (a?.length == 0 && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
+  }
+
+  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
+    if (x.value) {
+      const valueS: any = x.value;
+      if (valueS.push) {
+        return x.value;
+      } else if (valueS.split) {
+        const valueSt: string = valueS;
+        return valueSt.split(",");
+      }
+    };
+    return [];
   }
 
   send(id: string, changes: EditPodcastPost) {
