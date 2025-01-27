@@ -202,7 +202,7 @@ export class EditEpisodeDialogComponent {
     if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
-    if (prev.subjects.join("|") != now.subjects.join("|")) changes.subjects = now.subjects;
+    if (prev.subjects != now.subjects) changes.subjects = now.subjects;
     if (prev.title != now.title) changes.title = now.title;
 
     if ((!this.areEqual(prev.urls?.apple, now.urls?.apple)) ||
