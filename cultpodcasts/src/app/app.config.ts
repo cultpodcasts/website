@@ -1,10 +1,7 @@
-import { ApplicationConfig, provideZoneChangeDetection, isDevMode, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app-routing.module';
 import { provideServiceWorker } from '@angular/service-worker';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
@@ -15,22 +12,6 @@ import { environment } from '../environments/environment';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './site.service';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgIf } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
 
@@ -38,27 +19,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(
       BrowserModule,
-      AppRoutingModule,
-      MatInputModule,
-      MatIconModule,
-      MatButtonModule,
-      FormsModule,
-      ReactiveFormsModule,
-      NgIf,
-      MatCardModule,
-      MatExpansionModule,
-      MatToolbarModule,
-      MatProgressBarModule,
-      MatMenuModule,
-      MatDialogModule,
-      MatProgressSpinnerModule,
-      MatSnackBarModule,
-      MatChipsModule,
-      MatAutocompleteModule,
-      MatFormFieldModule,
-      MatDividerModule,
-      MatBadgeModule,
-      MatButtonToggleModule
+      AppRoutingModule
     ),
     SiteService,
     provideAuth0({

@@ -12,7 +12,6 @@ import { MatDialog } from "@angular/material/dialog";
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
-import { Share } from '../share.interface';
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from '../submit-dialog-response.interface';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
@@ -22,6 +21,13 @@ import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.c
 import { AddTermComponent } from '../add-term/add-term.component';
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
+import { MatBadgeModule } from '@angular/material/badge';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from './../../environments/environment';
+import { firstValueFrom } from 'rxjs';
+import { DiscoveryInfo } from '../discovery-info.interface';
+import { Share } from '../share.interface';
+
 
 @Component({
   selector: 'app-toolbar',
@@ -30,7 +36,8 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
     MatIconModule,
     MatMenuModule,
     RouterLink,
-    AsyncPipe
+    AsyncPipe,
+    MatBadgeModule
   ],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass'
@@ -38,6 +45,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
   authRoles: string[] = [];
+  disoveryInfo: DiscoveryInfo | undefined;
 
   constructor(
     protected siteService: SiteService,
@@ -45,9 +53,39 @@ export class ToolbarComponent {
     protected featureSwtichService: FeatureSwtichService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {
-    auth.roles.subscribe(roles => this.authRoles = roles);
+  }
+
+  ngOnInit() {
+    this.auth.roles.subscribe(roles => {
+      this.authRoles = roles
+      if (roles.includes("Curator")) {
+        var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+          authorizationParams: {
+            audience: `https://api.cultpodcasts.com/`,
+            scope: 'curate'
+          }
+        }));
+        token.then(_token => {
+          let headers: HttpHeaders = new HttpHeaders();
+          headers = headers.set("Authorization", "Bearer " + _token);
+          const endpoint = new URL("/discovery-info", environment.api).toString();
+          this.http.get<DiscoveryInfo>(endpoint, { headers: headers })
+            .subscribe({
+              next: resp => {
+                this.disoveryInfo = resp;
+              },
+              error: e => {
+                console.error(e);
+              }
+            })
+        }).catch(e => {
+          console.error(e);
+        });
+      }
+    });
   }
 
   login() {

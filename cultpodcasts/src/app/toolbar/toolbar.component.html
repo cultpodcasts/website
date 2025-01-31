@@ -9,7 +9,7 @@
       @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
 
       @if (auth.authService.user$ | async; as user) {
-      <div class="socialbutton button">
+      <div class="socialbutton button" [matBadge]="disoveryInfo?.documentCount" [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">
         <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
       </div>
       } @else {
@@ -30,7 +30,9 @@
         @if (authRoles.includes("Curator")) {
         <a [routerLink]="['/discovery']" mat-menu-item>
           <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
-          <span>Discovery</span>
+          <span>Discovery@if(disoveryInfo!=undefined && disoveryInfo.documentCount>0){
+            <span> ({{disoveryInfo.numberOfResults}})</span>
+            }</span>
         </a>
         <a mat-menu-item (click)="openSubmitSubject()">
           <mat-icon class="material-symbols-outlined">add</mat-icon>
@@ -63,15 +65,15 @@
       }
     </div>
     <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon>more_vert</mat-icon>
+      <mat-icon [matBadge]="disoveryInfo?.documentCount" [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
       @if (auth.authService.isAuthenticated$ | async) {
-        <a [routerLink]="['/bookmarks']" mat-menu-item>
-          <mat-icon class="material-symbols-outlined">bookmarks</mat-icon>
-          <span>Bookmarks</span>
-        </a>
-        }
+      <a [routerLink]="['/bookmarks']" mat-menu-item>
+        <mat-icon class="material-symbols-outlined">bookmarks</mat-icon>
+        <span>Bookmarks</span>
+      </a>
+      }
       <a (click)="openSubmitPodcast()" mat-menu-item>
         <mat-icon svgIcon="add-podcast" style="color:black"></mat-icon>
         <span>Add Podcast</span>
@@ -79,7 +81,9 @@
       @if (authRoles.includes("Curator")) {
       <a [routerLink]="['/discovery']" mat-menu-item>
         <mat-icon class="material-symbols-outlined">manage_search</mat-icon>
-        <span>Discovery</span>
+        <span>Discovery@if(disoveryInfo!=undefined && disoveryInfo.documentCount>0){
+          <span> ({{disoveryInfo.numberOfResults}})</span>
+          }</span>
       </a>
       <a mat-menu-item (click)="openSubmitSubject()">
         <mat-icon class="material-symbols-outlined">add</mat-icon>
