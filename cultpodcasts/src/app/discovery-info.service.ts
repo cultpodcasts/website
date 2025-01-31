@@ -14,6 +14,7 @@ export class DiscoveryInfoService {
   public discoveryInfo: ReplaySubject<DiscoveryInfo> = new ReplaySubject<DiscoveryInfo>(1);
   roles: string[] = [];
   timer: Subscription | undefined;
+  currentDiscoveryInfo: DiscoveryInfo | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -44,7 +45,10 @@ export class DiscoveryInfoService {
           this.http.get<DiscoveryInfo>(endpoint, { headers: headers })
             .subscribe({
               next: resp => {
-                this.discoveryInfo.next(resp);
+                if (!this.same(this.currentDiscoveryInfo, resp)) {
+                  this.currentDiscoveryInfo = resp;
+                  this.discoveryInfo.next(this.currentDiscoveryInfo);
+                }
               },
               error: e => {
                 console.error(e);
@@ -55,6 +59,12 @@ export class DiscoveryInfoService {
         });
       }
     });
+  }
+
+  same(a: DiscoveryInfo | undefined, b: DiscoveryInfo): boolean {
+    return a?.documentCount === b?.documentCount &&
+      a.numberOfResults === b.numberOfResults &&
+      a.discoveryBegan === b.discoveryBegan;
   }
 
   ngOnDestroy() {
