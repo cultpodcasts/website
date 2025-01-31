@@ -22,12 +22,9 @@ import { AddTermComponent } from '../add-term/add-term.component';
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from './../../environments/environment';
-import { firstValueFrom } from 'rxjs';
 import { DiscoveryInfo } from '../discovery-info.interface';
 import { Share } from '../share.interface';
-
+import { DiscoveryInfoService } from '../discovery-info.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -54,37 +51,17 @@ export class ToolbarComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
-    private http: HttpClient
+    protected discoveryInfoService: DiscoveryInfoService
   ) {
+    discoveryInfoService.discoveryInfo.subscribe(info => {
+      console.log("discovery-infoo", info);
+      this.disoveryInfo = info;
+    });
   }
 
   ngOnInit() {
     this.auth.roles.subscribe(roles => {
-      this.authRoles = roles
-      if (roles.includes("Curator")) {
-        var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-          authorizationParams: {
-            audience: `https://api.cultpodcasts.com/`,
-            scope: 'curate'
-          }
-        }));
-        token.then(_token => {
-          let headers: HttpHeaders = new HttpHeaders();
-          headers = headers.set("Authorization", "Bearer " + _token);
-          const endpoint = new URL("/discovery-info", environment.api).toString();
-          this.http.get<DiscoveryInfo>(endpoint, { headers: headers })
-            .subscribe({
-              next: resp => {
-                this.disoveryInfo = resp;
-              },
-              error: e => {
-                console.error(e);
-              }
-            })
-        }).catch(e => {
-          console.error(e);
-        });
-      }
+      this.authRoles = roles;
     });
   }
 

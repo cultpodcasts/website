@@ -9,6 +9,7 @@ import { SubmitDiscoveryResponse } from '../submit-discovery-response.interface'
 import { SubmitDiscoveryState } from '../submit-discovery-state.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DiscoveryInfoService } from '../discovery-info.service';
 
 @Component({
   selector: 'app-discovery-submit',
@@ -31,7 +32,8 @@ export class DiscoverySubmitComponent {
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, SubmitDiscoveryState>,
-    private auth: AuthServiceWrapper) {
+    private auth: AuthServiceWrapper,
+    private discoveryInfoSvc: DiscoveryInfoService) {
     auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
@@ -69,6 +71,7 @@ export class DiscoverySubmitComponent {
           const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
           this.submitState.allErrored = sameMembers(this.submitState.erroredItems, data.resultIds);
         } else {
+          this.discoveryInfoSvc.getDiscoveryInfo();
           this.close();
         }
       } else {
