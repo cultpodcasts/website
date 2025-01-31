@@ -16,7 +16,7 @@ export class DiscoveryInfoService {
   timer: Subscription | undefined;
 
   constructor(
-    protected auth: AuthServiceWrapper,
+    private auth: AuthServiceWrapper,
     private http: HttpClient
   ) {
     this.auth.roles.subscribe(roles => {
