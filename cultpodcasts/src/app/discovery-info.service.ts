@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
-import { firstValueFrom, ReplaySubject, timer } from 'rxjs';
+import { firstValueFrom, ReplaySubject, Subscription, timer } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './..//environments/environment';
 import { DiscoveryInfo } from './discovery-info.interface';
@@ -13,7 +13,7 @@ const interval = 60000;
 export class DiscoveryInfoService {
   public discoveryInfo: ReplaySubject<DiscoveryInfo> = new ReplaySubject<DiscoveryInfo>(1);
   roles: string[] = [];
-  timer: any;
+  timer: Subscription | undefined;
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -58,6 +58,8 @@ export class DiscoveryInfoService {
   }
 
   ngOnDestroy() {
-    this.timer.unsubscribe();
+    if (this.timer) {
+      this.timer.unsubscribe();
+    }
   }
 }
