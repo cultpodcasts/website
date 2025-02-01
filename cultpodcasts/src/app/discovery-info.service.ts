@@ -64,7 +64,7 @@ export class DiscoveryInfoService {
   same(a: DiscoveryInfo | undefined, b: DiscoveryInfo): boolean {
     return a?.documentCount === b?.documentCount &&
       a.numberOfResults === b.numberOfResults &&
-      a.discoveryBegan === b.discoveryBegan;
+      a.discoveryBegan?.getTime() === b.discoveryBegan?.getTime();
   }
 
   ngOnDestroy() {
