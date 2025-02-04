@@ -2,8 +2,8 @@ import { IEnvironment } from "./IEnvironment";
 
 export const environment: IEnvironment = {
    auth0: {
-      clientId: "o1YtyIzzhBEQ7c7IEZzovb1TGov1AGSs",
-      domain: "cultpodcasts-staging.uk.auth0.com"
+      clientId: "LbMkF8xiBGeuHGl7aBrzvkNuzWr3ryCt",
+      domain: "auth.cultpodcasts.com"
    },
    api: 'https://api.cultpodcasts.com',
    assetHost: 'https://34c3225f.website-83e.pages.dev',
