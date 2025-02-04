@@ -1,4 +1,5 @@
 @if (isAuthenticated$ | async; as boolean) {
+@if (showBookmark) {
 <button mat-icon-button (click)="bookmark()">
     @if (!waitingCallback) {
     <mat-icon [class.material-symbols-outlined]="(isBookmarked$ | async) ? false : true">
@@ -8,4 +9,5 @@
     <mat-spinner></mat-spinner>
     }
 </button>
+}
 }
