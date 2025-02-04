@@ -4,6 +4,7 @@ import { firstValueFrom, Observable, ReplaySubject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../environments/environment';
 import { uuidPattern } from './uuid-pattern.regexp';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,7 @@ export class ProfileService {
   constructor(
     private http: HttpClient,
     private auth: AuthServiceWrapper,
+    private snackBar: MatSnackBar
   ) {
   }
 
@@ -27,12 +29,15 @@ export class ProfileService {
         if (bookmarksResponse.isUser && bookmarksResponse.success) {
           this.bookmarks = new Set(bookmarksResponse.episodeIds);
           this.bookmarks$.next(this.bookmarks);
+        } else if (!bookmarksResponse.success && bookmarksResponse.error) {
+          const errorMessage = `Failed to retrieve bookmarks: ${bookmarksResponse.error.status}:${bookmarksResponse.error.statusText} '${bookmarksResponse.error.error.message}'`;
+          this.snackBar.open(errorMessage, "Dismiss", { duration: 5000 });
         }
       }
     });
   }
 
-  private async getBookmarks(): Promise<{ isUser: boolean, success: boolean, episodeIds: string[] }> {
+  private async getBookmarks(): Promise<{ isUser: boolean, success: boolean, episodeIds: string[], error?: any }> {
     let authenticated = await firstValueFrom(this.auth.authService.isAuthenticated$);
     if (authenticated) {
       try {
@@ -49,7 +54,7 @@ export class ProfileService {
         return { isUser: true, success: true, episodeIds: resp };
       } catch (error) {
         console.error(error);
-        return { isUser: true, success: false, episodeIds: [] };
+        return { isUser: true, success: false, episodeIds: [], error: error };
       }
     }
     return { isUser: false, success: true, episodeIds: [] };

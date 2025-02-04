@@ -1,7 +1,7 @@
 import { Component, HostBinding, input, InputSignal } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
-import { ReplaySubject } from 'rxjs';
+import { ReplaySubject, timer } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -24,6 +24,7 @@ export class BookmarkComponent {
   isAuthenticated$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
   waitingCallback: boolean = true;
   private isBookmarked: boolean | undefined;
+  protected showBookmark: boolean = true;
 
   @HostBinding('class.has-menu')
   get hasMenuGet() { return this.hasMenu() }
@@ -43,6 +44,12 @@ export class BookmarkComponent {
       }
       this.isBookmarked$.next(state)
       this.isBookmarked = state;
+    });
+    timer(10000).subscribe(() => {
+      if (this.waitingCallback) {
+        this.waitingCallback = false;
+        this.showBookmark= false;
+      }
     });
   }
 
