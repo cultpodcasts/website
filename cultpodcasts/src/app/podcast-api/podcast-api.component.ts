@@ -223,7 +223,7 @@ export class PodcastApiComponent {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
       if (result) {
         if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
-          console.error(result.response);
+          console.error("Failure to remove tweet/bluesky-post", result.response);
         }
         if (result.updated) {
           snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
