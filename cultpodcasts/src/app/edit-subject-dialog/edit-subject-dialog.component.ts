@@ -182,7 +182,6 @@ export class EditSubjectDialogComponent {
         subjectType: this.form!.controls.subjectType.value
       };
 
-
       if (this.create) {
         update.name = this.translateForEntity(this.form!.controls.name);
       }
@@ -225,7 +224,7 @@ export class EditSubjectDialogComponent {
     if (!this.isSame(prev.hashTag, now.hashTag)) changes.hashTag = now.hashTag;
     if (!this.isSame(prev.redditFlairTemplateId, now.redditFlairTemplateId)) changes.redditFlairTemplateId = now.redditFlairTemplateId;
     if (!this.isSame(prev.redditFlareText, now.redditFlareText)) changes.redditFlareText = now.redditFlareText;
-    if (prev.subjectType != now.subjectType?.toString()) changes.subjectType = now.subjectType;
+    if ((prev.subjectType ?? SubjectType[SubjectType.Unset].toString()) != now.subjectType?.toString()) changes.subjectType = now.subjectType;
     return changes;
   }
 
