@@ -148,9 +148,6 @@ export class EpisodesApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result) {
-        if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
-          console.error("Failure to remove tweet/bluesky-post", result.response);
-        }
         if (result.updated) {
           let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
         } else if (result.noChange) {

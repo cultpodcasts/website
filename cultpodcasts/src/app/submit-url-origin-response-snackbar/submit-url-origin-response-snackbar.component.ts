@@ -54,9 +54,6 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       });
     }
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.response && !result.response.blueskyPostDeleted || !result.response?.tweetDeleted) {
-        console.error("Failure to remove tweet/bluesky-post", result.response);
-      }
       if (result.isNewPodcast) {
         const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
           data: { podcastName: result.podcastName },
