@@ -28,5 +28,34 @@
         ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "homepage",
+      "urls": [
+        "https://api.cultpodcasts.com/homepage",
+        "https://127.0.0.1:8787/homepage"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "5m",
+        "timeout": "5s",
+        "refreshAhead": "10s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "api",
+      "urls": [
+        "https://api.cultpodcasts.com/**",
+        "https://127.0.0.1:8787/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "5m",
+        "timeout": "30s",
+        "strategy": "freshness"
+      }
+    }
   ]
 }
