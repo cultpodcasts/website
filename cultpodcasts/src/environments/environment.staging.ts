@@ -3,7 +3,7 @@ import { IEnvironment } from "./IEnvironment";
 export const environment: IEnvironment = {
    auth0: {
       clientId: "o1YtyIzzhBEQ7c7IEZzovb1TGov1AGSs",
-      domain: "cultpodcasts-staging.uk.auth0.com"
+      domain: "auth-staging.cultpodcasts.com"
    },
    api: 'https://api.cultpodcasts.com',
    assetHost: 'https://feature-api-caching.website-83e.pages.dev',
