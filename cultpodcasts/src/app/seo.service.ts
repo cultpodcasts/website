@@ -38,7 +38,11 @@ export class SeoService {
           }
         }
         if (pageDetails.duration) {
-          description = description + " [" + pageDetails.duration.split(".")[0].substring(1) + "]";
+          let duration: string = pageDetails.duration.split(".")[0];
+          if (duration.startsWith("0")) {
+            duration = duration.substring(1);
+          }
+          description = description + " [" + duration + "]";
         }
         this.meta.updateTag({ name: "description", content: description });
         this.meta.updateTag({ property: "og:description", content: description });

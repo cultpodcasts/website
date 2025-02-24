@@ -13,7 +13,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
     MatIconModule,
     MatButtonModule,
     ApplePodcastsSvgComponent
-],
+  ],
   templateUrl: './episode-links.component.html',
   styleUrl: './episode-links.component.sass'
 })
@@ -56,9 +56,14 @@ export class EpisodeLinksComponent {
   share(item: HomepageEpisode) {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
-    description = description + " [" + item.duration.split(".")[0].substring(1) + "]";
+
+    let duration: string = item.duration.split(".")[0];
+    if (duration.startsWith("0")) {
+      duration = duration.substring(1);
+    }
+    description = description + " [" + duration + "]";
     const shortGuid = this.guidService.toBase64(item.id);
-    const share = {
+    const share: ShareData = {
       title: item.episodeTitle,
       text: description,
       url: `${environment.shortner}/${shortGuid}`

@@ -183,6 +183,9 @@ export class EditEpisodeDialogComponent {
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {
+        if (result.response && (result.response.blueskyPostDeleted == false || !result.response.tweetDeleted == false)) {
+          console.error("Failure to remove tweet/bluesky-post", result.response);
+        }
         this.dialogRef.close({ updated: true, response: result.response });
       }
     });
