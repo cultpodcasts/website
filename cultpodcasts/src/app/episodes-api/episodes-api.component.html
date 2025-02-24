@@ -68,7 +68,7 @@
                 </a>
             </mat-card-subtitle>
             <mat-card-subtitle>{{result.release | date:'d MMM yyyy H:mm'}}
-                [{{result.duration.split(".")[0].substring(1)}}]
+                [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]
             </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="resultdescription">

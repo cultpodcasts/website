@@ -27,7 +27,7 @@
         </a>
       </mat-card-subtitle>
       <mat-card-subtitle>{{episode.release | date:'d MMM yyyy'}}
-        [{{episode.duration.split(".")[0].substring(1)}}]</mat-card-subtitle>
+        [{{episode.duration.startsWith("0")?episode.duration.split(".")[0].substring(1):episode.duration.split(".")[0]}}]</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="resultdescription">
       <app-episode-image [searchResult]="episode" [linksOverlay]="true"></app-episode-image>

@@ -33,7 +33,7 @@
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
             {{item.podcastName}}</a>
-          <span class="duration"> [{{item.duration.substring(1)}}]</span>
+          <span class="duration"> [{{item.duration[0]!="0"?item.duration.substring(1):item.duration}}]</span>
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content class="resultdescription">
