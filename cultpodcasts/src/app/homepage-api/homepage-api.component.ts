@@ -1,7 +1,7 @@
-import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { KeyValue, DecimalPipe, KeyValuePipe, isPlatformServer } from '@angular/common';
+import { KeyValue, DecimalPipe, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,14 +30,13 @@ import { SubjectsComponent } from "../subjects/subjects.component";
     EpisodeLinksComponent,
     BookmarkComponent,
     SubjectsComponent
-],
+  ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
 })
 export class HomepageApiComponent {
   grouped: { [key: string]: HomepageEpisode[]; };
   podcastCount: number | undefined;
-  isServer: boolean;
   isLoading: boolean = true;
   isInError: boolean = false;
   Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -50,10 +49,8 @@ export class HomepageApiComponent {
   constructor(
     private siteService: SiteService,
     private homepageService: HomepageService,
-    protected auth: AuthServiceWrapper,
-    @Inject(PLATFORM_ID) platformId: any,
+    protected auth: AuthServiceWrapper
   ) {
-    this.isServer = isPlatformServer(platformId);
     this.grouped = {};
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
