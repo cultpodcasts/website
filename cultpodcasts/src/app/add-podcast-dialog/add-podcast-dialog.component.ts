@@ -151,7 +151,7 @@ export class AddPodcastDialogComponent {
         descriptionRegex: this.form!.controls.descriptionRegex.value,
         episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
         episodeIncludeTitleRegex: this.form!.controls.episodeIncludeTitleRegex.value,
-        defaultSubject: this.form!.controls.defaultSubject.value,
+        defaultSubject: this.form!.controls.defaultSubject.value ?? "",
         ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
