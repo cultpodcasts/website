@@ -151,7 +151,7 @@ export class AddPodcastDialogComponent {
         descriptionRegex: this.form!.controls.descriptionRegex.value,
         episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
         episodeIncludeTitleRegex: this.form!.controls.episodeIncludeTitleRegex.value,
-        defaultSubject: this.form!.controls.defaultSubject.value ?? "",
+        defaultSubject: this.form!.controls.defaultSubject.value,
         ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
@@ -194,7 +194,7 @@ export class AddPodcastDialogComponent {
     if (prev.descriptionRegex != now.descriptionRegex) changes.descriptionRegex = now.descriptionRegex;
     if (prev.episodeMatchRegex != now.episodeMatchRegex) changes.episodeMatchRegex = now.episodeMatchRegex;
     if (prev.episodeIncludeTitleRegex != now.episodeIncludeTitleRegex) changes.episodeIncludeTitleRegex = now.episodeIncludeTitleRegex;
-    if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject;
+    if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject ?? "";
     if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
     if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
     if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
