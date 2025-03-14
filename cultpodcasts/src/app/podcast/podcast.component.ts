@@ -1,4 +1,4 @@
-import { Component, Inject, inject, Optional, PLATFORM_ID } from '@angular/core';
+import { Component, Inject, inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
@@ -55,7 +55,7 @@ export class PodcastComponent {
               }
             })
             .catch(e => {
-              console.error(e)
+              console.error(JSON.stringify(e));
             }).finally(() => {
               this.seoService.AddMetaTags(pageDetails);
               this.isLoading = false;
