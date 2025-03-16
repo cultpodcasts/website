@@ -1,5 +1,5 @@
 import { renderApplication } from "@angular/platform-server";
-import { KVNamespace, PagesFunction } from '@cloudflare/workers-types';
+import { KVNamespace } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 
 interface Env {
@@ -51,8 +51,10 @@ async function workerFetchHandler(request: Request, env: Env) {
 	return new Response(content, indexResponse);
 }
 
-export const onRequest: PagesFunction<Env> = async (context) => {
-	return (globalThis as any)["__zone_symbol__Promise"].resolve(
-		workerFetchHandler(context.request, context.env)
-	)
+export default {
+	fetch: (request: Request, env: Env) => {
+		return (globalThis as any)["__zone_symbol__Promise"].resolve(
+			workerFetchHandler(request, env)
+		)
+	}
 };
