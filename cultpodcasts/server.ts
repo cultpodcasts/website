@@ -5,7 +5,7 @@ import bootstrap from "./src/main.server";
 interface Env {
 	ASSETS: { fetch: typeof fetch };
 	redirects: KVNamespace;
-	ssrSecret: string|null;
+	ssrSecret: string;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -51,10 +51,8 @@ async function workerFetchHandler(request: Request, env: Env) {
 	return new Response(content, indexResponse);
 }
 
-export default {
-	fetch: (request: Request, env: Env) => {
-		return (globalThis as any)["__zone_symbol__Promise"].resolve(
-			workerFetchHandler(request, env)
-		)
-	}
+export const onRequest: PagesFunction<Env> = async (context) => {
+	return (globalThis as any)["__zone_symbol__Promise"].resolve(
+		workerFetchHandler(context.request, context.env)
+	)
 };
