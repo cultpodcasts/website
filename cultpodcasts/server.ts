@@ -15,7 +15,6 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const url = new URL(request.url);
 
 	console.log("render SSR", url.href);
-	console.log("ssrSecret", env.ssrSecret);
 	const podcastPrefix = "/podcast/";
 	if (url.pathname.startsWith(podcastPrefix)) {
 		const podcast = url.pathname.split("/")[2];

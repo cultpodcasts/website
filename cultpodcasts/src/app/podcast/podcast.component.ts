@@ -49,19 +49,15 @@ console.log("populateTags");
       this.isEpisode = episodeUuid != "";
       if (this.isEpisode) {
         if (this.isServer) {
-console.log("pre-getEpisodeDetailsFromKvViaApi");
           this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
             .then(episodePageDetails => {
-console.log("post-getEpisodeDetailsFromKvViaApi");
               if (episodePageDetails) {
                 pageDetails = episodePageDetails;
               }
             })
             .catch(e => {
-console.log("post-getEpisodeDetailsFromKvViaApi ERROR");
-              console.error(JSON.stringify(e));
+              console.error("Error calling episodeService.getEpisodeDetailsFromKvViaApi: ", JSON.stringify(e));
             }).finally(() => {
-console.error("pageDetails: "+JSON.stringify(pageDetails));
               this.seoService.AddMetaTags(pageDetails);
               this.isLoading = false;
             });
