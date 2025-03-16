@@ -41,7 +41,6 @@ export class PodcastComponent {
   private route = inject(ActivatedRoute);
 
   populateTags() {
-console.log("populateTags");
     this.route.params.subscribe(async params => {
       this.podcastName = params["podcastName"];
       let pageDetails: IPageDetails = { title: this.podcastName };
