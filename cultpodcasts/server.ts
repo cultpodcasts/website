@@ -1,10 +1,11 @@
 import { renderApplication } from "@angular/platform-server";
-import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
+import { KVNamespace } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
 	redirects: KVNamespace;
+	ssrSecret: string;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -40,7 +41,8 @@ async function workerFetchHandler(request: Request, env: Env) {
 		document,
 		url: url.pathname,
 		platformProviders: [
-			{ provide: 'url', useValue: url }
+			{ provide: 'url', useValue: url },
+			{ provide: 'ssrSecret', useValue: env.ssrSecret }
 		]
 	});
 

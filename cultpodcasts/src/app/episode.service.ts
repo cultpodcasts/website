@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, Optional } from '@angular/core';
 import { IPageDetails } from './page-details.interface';
 import { environment } from './../environments/environment';
 import { SearchResult } from './search-result.interface';
 import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -12,14 +12,21 @@ import { HttpClient } from '@angular/common/http';
 export class EpisodeService {
   constructor(
     private oDataService: ODataService,
-    private http: HttpClient
+    private http: HttpClient,
+    @Optional() @Inject('ssrSecret') private ssrSecret: string
   ) { }
 
   public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr: boolean): Promise<IPageDetails | undefined> {
     const ssrSuffix = ssr ? "?ssr=true" : "";
     let host: string = environment.api;
     const url = new URL(`/pagedetails/${encodeURIComponent(podcastName.replaceAll("'", "%27"))}/${episodeId}${ssrSuffix}`, host).toString();
-    return await firstValueFrom(this.http.get<IPageDetails>(url));
+    const headers: HttpHeaders = new HttpHeaders();
+    headers.set("Accept", "application/json");
+    if (this.ssrSecret) {
+      console.log("Setting secret header ending in", this.ssrSecret.slice(-2));
+      headers.set("x-ssr-secret", this.ssrSecret);
+    }
+    return await firstValueFrom(this.http.get<IPageDetails>(url, { headers: headers }));
   }
 
   public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<SearchResult | undefined> {
