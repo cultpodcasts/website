@@ -21,6 +21,7 @@ export class EpisodeService {
     const ssrSuffix = ssr ? "?ssr=true" : "";
     let host: string = environment.api;
     const url = new URL(`/pagedetails/${encodeURIComponent(podcastName.replaceAll("'", "%27"))}/${episodeId}${ssrSuffix}`, host).toString();
+    console.log("url:" , url);
     const headers: HttpHeaders = new HttpHeaders();
     headers.set("Accept", "application/json");
     if (ssr && this.ssrSecret) {
