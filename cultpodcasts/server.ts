@@ -5,7 +5,7 @@ import bootstrap from "./src/main.server";
 interface Env {
 	ASSETS: { fetch: typeof fetch };
 	redirects: KVNamespace;
-	ssrSecret: string;
+	ssrSecret: string|null;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -15,6 +15,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const url = new URL(request.url);
 
 	console.log("render SSR", url.href);
+	console.log("ssrSecret", env.ssrSecret);
 	const podcastPrefix = "/podcast/";
 	if (url.pathname.startsWith(podcastPrefix)) {
 		const podcast = url.pathname.split("/")[2];
