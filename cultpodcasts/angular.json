@@ -32,6 +32,7 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+              "src/.well-known",
               "src/manifest.webmanifest",
               "src/manifest-dark.webmanifest",
               "src/robots.txt",
