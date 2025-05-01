@@ -55,7 +55,7 @@ export class PodcastComponent {
               }
             })
             .catch(e => {
-              console.error(JSON.stringify(e));
+              console.error("Error calling episodeService.getEpisodeDetailsFromKvViaApi: ", JSON.stringify(e));
             }).finally(() => {
               this.seoService.AddMetaTags(pageDetails);
               this.isLoading = false;
