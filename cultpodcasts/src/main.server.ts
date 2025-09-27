@@ -1,4 +1,4 @@
-import { bootstrapApplication } from '@angular/platform-browser';
+import { bootstrapApplication, BootstrapContext } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { config } from './app/app.config.server';
 import { environment } from './environments/environment';
@@ -12,6 +12,6 @@ try {
     console.error("Unable to ignore tls-reject errors");
 }
 
-const bootstrap = () => bootstrapApplication(AppComponent, config);
+const bootstrap = (context: BootstrapContext) => bootstrapApplication(AppComponent, config, context);
 
 export default bootstrap;
