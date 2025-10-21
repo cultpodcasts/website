@@ -114,7 +114,7 @@ export class PodcastApiComponent {
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
     ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const navigation = this.router.getCurrentNavigation();
+      const navigation = this.router.currentNavigation();
       let initial = true;
       if (navigation) {
         const facetState = navigation.extras.state as FacetState;

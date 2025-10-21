@@ -3,13 +3,13 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { TermsAndConditionsComponent } from '../terms-and-conditions/terms-and-conditions.component';
 import { PrivacyPolicyComponent } from '../privacy-policy/privacy-policy.component';
-import { NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common';
+
 
 @Component({
   selector: 'app-content',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.sass'],
-  imports: [NgSwitch, NgSwitchCase, PrivacyPolicyComponent, TermsAndConditionsComponent, NgSwitchDefault]
+  imports: [PrivacyPolicyComponent, TermsAndConditionsComponent]
 })
 export class ContentComponent implements OnInit {
   private route = inject(ActivatedRoute);
