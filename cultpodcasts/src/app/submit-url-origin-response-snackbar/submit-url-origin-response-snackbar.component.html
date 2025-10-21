@@ -30,29 +30,32 @@
         <span>
             <span id="service-icons">
                 @if (data.response.episodeDetails.spotify) {
-                    <mat-icon svgIcon="spotify"></mat-icon>
+                <mat-icon svgIcon="spotify"></mat-icon>
                 }
                 @if (data.response.episodeDetails.apple) {
-                    <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+                <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
                 }
                 @if (data.response.episodeDetails.youtube) {
-                    <mat-icon svgIcon="youtube"></mat-icon>
+                <mat-icon svgIcon="youtube"></mat-icon>
                 }
             </span>
             @if (data.response.episodeDetails.subjects.length > 0) {
-            {{data.response.episodeDetails.subjects.length}}
-            @if(data.response.episodeDetails.subjects.length>1){
-            subjects
-            } @else {
-            subject
-            }
+            <span title="Subjects: {{data.response.episodeDetails.subjects.join(', ')}}">
+                {{data.response.episodeDetails.subjects.length}}
+                @if(data.response.episodeDetails.subjects.length>1){
+                subjects
+                } @else {
+                subject
+                }
+            </span>
             }
         </span>
         }
     </div>
 
     <div matSnackBarActions>
-        <button id="action" mat-button matSnackBarAction class="mat-mdc-snack-bar-action mdc-button mat-mdc-button"
+        <button id="action" mat-button matSnackBarAction
+            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
             (click)="action()">
             {{actionText}}
         </button>
