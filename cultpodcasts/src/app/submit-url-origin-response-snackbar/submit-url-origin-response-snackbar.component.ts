@@ -22,6 +22,7 @@ import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.inter
 
 export class SubmitUrlOriginResponseSnackbarComponent {
   actionText: string = "Ok";
+  showReviewButton: boolean = false;
   existingPodcast: boolean;
   constructor(
     private dialog: MatDialog,
@@ -32,6 +33,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     this.existingPodcast = data.existingPodcast;
     if (data.response.episode === "Created" || data.response.episode === "Enriched" || data.response.episode === "EpisodeAlreadyExists") {
       this.actionText = "Edit";
+      this.showReviewButton = true;
       snackBarRef.onAction().subscribe(() => {
         this.editSubmittedEpisode(data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
       });
@@ -76,10 +78,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             }
           }
           let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: 3000 });
-          podcastSnackBarRef.onAction().subscribe(() => {
-            const episodeId = JSON.stringify([id]);
-            this.router.navigate(["/episodes", episodeId])
-          });
+          podcastSnackBarRef.onAction().subscribe(() => this.navigateToEpisodeReview(id));
         });
       } else {
         let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
@@ -89,16 +88,22 @@ export class SubmitUrlOriginResponseSnackbarComponent {
           snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
         }
         if (snackBarRef) {
-          snackBarRef.onAction().subscribe(() => {
-            const episodeId = JSON.stringify([id]);
-            this.router.navigate(["/episodes", episodeId])
-          });
+          snackBarRef.onAction().subscribe(() => this.navigateToEpisodeReview(id));
         }
       }
     });
   }
 
   action() {
-    this.snackBarRef.dismissWithAction()
+    this.snackBarRef.dismissWithAction();
+  }
+
+  review() {
+    this.navigateToEpisodeReview(this.data.response.episodeId!);
+  }
+
+  private navigateToEpisodeReview(episodeId: string) {
+    const id = JSON.stringify([episodeId]);
+    this.router.navigate(["/episodes", id])
   }
 }

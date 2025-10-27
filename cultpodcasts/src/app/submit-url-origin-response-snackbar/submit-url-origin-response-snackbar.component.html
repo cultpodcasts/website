@@ -54,6 +54,13 @@
     </div>
 
     <div matSnackBarActions>
+        @if (showReviewButton) {
+        <button id="action" mat-button matSnackBarAction
+            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
+            (click)="review()">
+            Review
+        </button>
+        }
         <button id="action" mat-button matSnackBarAction
             class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
             (click)="action()">
