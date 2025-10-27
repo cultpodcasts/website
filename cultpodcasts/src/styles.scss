@@ -105,6 +105,7 @@ body {
 mat-card {
     mat-card-title {
         a {
+            color: var(--mat-app-text-color);
             text-decoration: none;
         }
     }
@@ -115,6 +116,7 @@ mat-card {
         padding-bottom: 10px;
 
         a {
+            color: var(--mat-theme-text-secondary);
             text-decoration: dashed underline 1px;
             text-underline-offset: 5px;
             line-height: 1.5em
