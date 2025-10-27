@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
@@ -25,6 +25,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
+import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -58,6 +59,7 @@ export class EpisodesApiComponent {
   authRoles: string[] = [];
 
   constructor(
+    private router: Router,
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private route: ActivatedRoute,
@@ -77,6 +79,7 @@ export class EpisodesApiComponent {
     this.error = false;
     this.episodes = [];
     this.route.params.subscribe(params => {
+      this.isLoading = true;
       var serialisedEpisodeId = params['episodeIds'];
       let episodeIds: string[] = [];
       if (serialisedEpisodeId) {
@@ -197,4 +200,31 @@ export class EpisodesApiComponent {
       }
     });
   }
+
+  index(podcastName: string) {
+    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
+    dialogRef.componentInstance.index(podcastName);
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result.updated) {
+        let message = "Podcast Indexed";
+        let action = "Ok";
+        if (result.episodeIds && result.episodeIds.length > 0) {
+          message += `. ${result.episodeIds.length} episode${result.episodeIds.length > 1 ? 's' : ''} updated`;
+          action = "Review";
+        }
+        let snackBarRef = this.snackBar.open(message, action, { duration: 10000 });
+        if (result.episodeIds && result.episodeIds.length > 0) {
+          snackBarRef.onAction().subscribe(() => {
+            const episodeId = JSON.stringify(result.episodeIds);
+            this.router.navigate(["/episodes", episodeId])
+          });
+        }
+      } else if (result.podcastNotAutoIndex) {
+        let snackBarRef = this.snackBar.open("Podcast not indexable", "Ok", { duration: 10000 });
+      } else if (result.podcastNotFound) {
+        let snackBarRef = this.snackBar.open("Podcast not found", "Ok", { duration: 10000 });
+      }
+    });
+  }
 }
+
