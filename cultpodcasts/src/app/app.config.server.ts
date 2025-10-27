@@ -1,5 +1,5 @@
+import { provideServerRendering } from '@angular/ssr';
 import { mergeApplicationConfig, ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { provideServerRendering } from '@angular/platform-server';
 import { appConfig } from './app.config';
 import { FakeAuthServiceWrapper } from './fake-auth-service-wrapper';
 import { AuthService } from '@auth0/auth0-angular';
