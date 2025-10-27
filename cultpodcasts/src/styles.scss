@@ -17,6 +17,16 @@ body {
     height: 100%;
 }
 
+html {
+    background-color: #303030;
+}
+
+@media (prefers-color-scheme: light) {
+    html {
+        background-color: #fafafa;
+    }
+}
+
 body {
     margin: 0;
     padding: 0;
