@@ -57,7 +57,7 @@ footer {
     padding-left: 5px;
     position: sticky;
     bottom: 0;
-    background-color: var(--mat-toolbar-container-background-color, var(--mat-sys-surface));
+    background-color: var(--mat-sys-surface);
     height: 1.7em;
     padding-top: 5px;
     margin-bottom: 3px;
@@ -73,7 +73,6 @@ footer {
     a {
         height: 24px;
         text-decoration: none;
-        color: var(--mat-toolbar-container-text-color);
         display: inline-block;
     }
 
@@ -93,7 +92,6 @@ body {
     --mat-card-subtitle-text-line-height: 22px !important;
     --mat-card-subtitle-text-size: 14px !important;
     --mat-card-subtitle-text-weight: 500 !important;
-    --mat-card-elevated-container-color: #424242;
 
     h2 {
         font-size: 20px !important;
@@ -107,7 +105,6 @@ body {
 mat-card {
     mat-card-title {
         a {
-            color: var(--mat-app-text-color);
             text-decoration: none;
         }
     }
@@ -118,7 +115,6 @@ mat-card {
         padding-bottom: 10px;
 
         a {
-            color: var(--mat-theme-text-secondary);
             text-decoration: dashed underline 1px;
             text-underline-offset: 5px;
             line-height: 1.5em
@@ -127,7 +123,6 @@ mat-card {
         a:hover {
             text-decoration: none;
         }
-
     }
 
     mat-card-content {
@@ -168,7 +163,6 @@ mat-card-actions {
 
 @media screen and (max-width: 400px) {
     mat-card-actions {
-
         a[mat-icon-button],
         button[mat-icon-button] {
             margin-right: 12px;
@@ -176,10 +170,8 @@ mat-card-actions {
     }
 
     mat-card {
-
         margin-left: 3px;
         margin-right: 3px;
-
         .mat-mdc-card-header,
         .mdc-card__actions,
         .mat-mdc-card-content {
