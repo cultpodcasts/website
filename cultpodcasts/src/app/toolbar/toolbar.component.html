@@ -4,12 +4,14 @@
         alt="image"><span>Cult Podcasts</span></a>
     <div id="socialbuttons">
       <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
       <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
       <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter" class="socialbutton"></a>
+      }
       @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
-
       @if (auth.authService.user$ | async; as user) {
-      <div class="socialbutton button" [matBadge]="disoveryInfo?.documentCount" [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">
+      <div class="socialbutton button" [matBadge]="disoveryInfo?.documentCount"
+        [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">
         <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
       </div>
       } @else {
@@ -65,7 +67,8 @@
       }
     </div>
     <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon [matBadge]="disoveryInfo?.documentCount" [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">more_vert</mat-icon>
+      <mat-icon [matBadge]="disoveryInfo?.documentCount"
+        [matBadgeHidden]="disoveryInfo==undefined || disoveryInfo.documentCount==0">more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
       @if (auth.authService.isAuthenticated$ | async) {
@@ -108,6 +111,7 @@
         <span>Add Term</span>
       </a>
       }
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
       <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
         <mat-icon svgIcon="reddit"></mat-icon>
         <span>Reddit</span>
@@ -116,6 +120,7 @@
         <mat-icon svgIcon="twitter"></mat-icon>
         <span>Twitter</span>
       </a>
+      }
       @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
 
       @if (auth.authService.user$ | async; as user) {
