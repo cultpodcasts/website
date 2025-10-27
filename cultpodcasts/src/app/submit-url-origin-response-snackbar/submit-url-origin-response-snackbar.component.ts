@@ -78,7 +78,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             }
           }
           let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: 3000 });
-          podcastSnackBarRef.onAction().subscribe(() => this.navigateToEpisodeReview(id));
+          podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
         });
       } else {
         let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
@@ -88,7 +88,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
           snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
         }
         if (snackBarRef) {
-          snackBarRef.onAction().subscribe(() => this.navigateToEpisodeReview(id));
+          snackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
         }
       }
     });
@@ -98,12 +98,13 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     this.snackBarRef.dismissWithAction();
   }
 
-  review() {
-    this.navigateToEpisodeReview(this.data.response.episodeId!);
+  async review() {
+    console.log("Navigating to episode review for episode ID:", this.data.response.episodeId);
+    await this.navigateToEpisodeReview(this.data.response.episodeId!);
   }
 
-  private navigateToEpisodeReview(episodeId: string) {
+  private async navigateToEpisodeReview(episodeId: string) {
     const id = JSON.stringify([episodeId]);
-    this.router.navigate(["/episodes", id])
+    await this.router.navigate(["/episodes", id])
   }
 }
