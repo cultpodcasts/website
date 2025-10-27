@@ -99,7 +99,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   }
 
   async review() {
-    console.log("Navigating to episode review for episode ID:", this.data.response.episodeId);
+    this.snackBarRef.dismiss();
     await this.navigateToEpisodeReview(this.data.response.episodeId!);
   }
 
