@@ -20,6 +20,7 @@ $light-theme: mat.m2-define-light-theme((color: (primary: mat.m2-define-palette(
 
 // Apply the dark theme by default
 @include mat.core-theme($dark-theme);
+
 @include mat.button-theme($dark-theme);
 
 // Apply the light theme only when the user prefers light themes.
@@ -27,6 +28,7 @@ $light-theme: mat.m2-define-light-theme((color: (primary: mat.m2-define-palette(
     // Use the `-color` mixins to only apply color styles without reapplying the same
     // typography and density styles.
     @include mat.core-color($light-theme);
+
     @include mat.button-color($light-theme);
 }
 
@@ -106,76 +108,76 @@ footer {
 
 @media (prefers-color-scheme: light) {
     body {
-        --mdc-chip-selected-label-text-color: #335a59 !important;
-        --mdc-chip-label-text-color: #335a59 !important;
+        --mat-chip-selected-label-text-color: #335a59 !important;
+        --mat-chip-label-text-color: #335a59 !important;
 
         .mat-mdc-chip-highlighted {
-            --mdc-chip-selected-label-text-color: #335a59 !important;
-            --mdc-chip-label-text-color: #335a59 !important;
+            --mat-chip-selected-label-text-color: #335a59 !important;
+            --mat-chip-label-text-color: #335a59 !important;
         }
 
-        --mdc-elevated-card-container-color: white !important;
+        --mat-card-elevated-container-color: white !important;
         --mat-card-subtitle-text-color: #757575;
-        --mdc-filled-text-field-caret-color: #3f51b5;
-        --mdc-filled-text-field-focus-active-indicator-color: #3f51b5;
-        --mdc-filled-text-field-focus-label-text-color: rgba(63, 81, 181, .87);
-        --mdc-filled-text-field-container-color: whitesmoke;
-        --mdc-filled-text-field-disabled-container-color: #fafafa;
-        --mdc-filled-text-field-label-text-color: rgba(0, 0, 0, .6);
-        --mdc-filled-text-field-disabled-label-text-color: rgba(0, 0, 0, .38);
-        --mdc-filled-text-field-input-text-color: rgba(0, 0, 0, .87);
-        --mdc-filled-text-field-disabled-input-text-color: rgba(0, 0, 0, .38);
-        --mdc-filled-text-field-input-text-placeholder-color: rgba(0, 0, 0, .6);
-        --mdc-filled-text-field-error-focus-label-text-color: #f44336;
-        --mdc-filled-text-field-error-label-text-color: #f44336;
-        --mdc-filled-text-field-error-caret-color: #f44336;
-        --mdc-filled-text-field-active-indicator-color: rgba(0, 0, 0, .42);
-        --mdc-filled-text-field-disabled-active-indicator-color: rgba(0, 0, 0, .06);
-        --mdc-filled-text-field-hover-active-indicator-color: rgba(0, 0, 0, .87);
-        --mdc-filled-text-field-error-active-indicator-color: #f44336;
-        --mdc-filled-text-field-error-focus-active-indicator-color: #f44336;
-        --mdc-filled-text-field-error-hover-active-indicator-color: #f44336;
-        --mdc-outlined-text-field-caret-color: #3f51b5;
-        --mdc-outlined-text-field-focus-outline-color: #3f51b5;
-        --mdc-outlined-text-field-focus-label-text-color: rgba(63, 81, 181, .87);
-        --mdc-outlined-text-field-label-text-color: rgba(0, 0, 0, .6);
-        --mdc-outlined-text-field-disabled-label-text-color: rgba(0, 0, 0, .38);
-        --mdc-outlined-text-field-input-text-color: rgba(0, 0, 0, .87);
-        --mdc-outlined-text-field-disabled-input-text-color: rgba(0, 0, 0, .38);
-        --mdc-outlined-text-field-input-text-placeholder-color: rgba(0, 0, 0, .6);
-        --mdc-outlined-text-field-error-caret-color: #f44336;
-        --mdc-outlined-text-field-error-focus-label-text-color: #f44336;
-        --mdc-outlined-text-field-error-label-text-color: #f44336;
-        --mdc-outlined-text-field-outline-color: rgba(0, 0, 0, .38);
-        --mdc-outlined-text-field-disabled-outline-color: rgba(0, 0, 0, .06);
-        --mdc-outlined-text-field-hover-outline-color: rgba(0, 0, 0, .87);
-        --mdc-outlined-text-field-error-focus-outline-color: #f44336;
-        --mdc-outlined-text-field-error-hover-outline-color: #f44336;
-        --mdc-outlined-text-field-error-outline-color: #f44336;
+        --mat-form-field-filled-caret-color: #3f51b5;
+        --mat-form-field-filled-focus-active-indicator-color: #3f51b5;
+        --mat-form-field-filled-focus-label-text-color: rgba(63, 81, 181, .87);
+        --mat-form-field-filled-container-color: whitesmoke;
+        --mat-form-field-filled-disabled-container-color: #fafafa;
+        --mat-form-field-filled-label-text-color: rgba(0, 0, 0, .6);
+        --mat-form-field-filled-disabled-label-text-color: rgba(0, 0, 0, .38);
+        --mat-form-field-filled-input-text-color: rgba(0, 0, 0, .87);
+        --mat-form-field-filled-disabled-input-text-color: rgba(0, 0, 0, .38);
+        --mat-form-field-filled-input-text-placeholder-color: rgba(0, 0, 0, .6);
+        --mat-form-field-filled-error-focus-label-text-color: #f44336;
+        --mat-form-field-filled-error-label-text-color: #f44336;
+        --mat-form-field-filled-error-caret-color: #f44336;
+        --mat-form-field-filled-active-indicator-color: rgba(0, 0, 0, .42);
+        --mat-form-field-filled-disabled-active-indicator-color: rgba(0, 0, 0, .06);
+        --mat-form-field-filled-hover-active-indicator-color: rgba(0, 0, 0, .87);
+        --mat-form-field-filled-error-active-indicator-color: #f44336;
+        --mat-form-field-filled-error-focus-active-indicator-color: #f44336;
+        --mat-form-field-filled-error-hover-active-indicator-color: #f44336;
+        --mat-form-field-outlined-caret-color: #3f51b5;
+        --mat-form-field-outlined-focus-outline-color: #3f51b5;
+        --mat-form-field-outlined-focus-label-text-color: rgba(63, 81, 181, .87);
+        --mat-form-field-outlined-label-text-color: rgba(0, 0, 0, .6);
+        --mat-form-field-outlined-disabled-label-text-color: rgba(0, 0, 0, .38);
+        --mat-form-field-outlined-input-text-color: rgba(0, 0, 0, .87);
+        --mat-form-field-outlined-disabled-input-text-color: rgba(0, 0, 0, .38);
+        --mat-form-field-outlined-input-text-placeholder-color: rgba(0, 0, 0, .6);
+        --mat-form-field-outlined-error-caret-color: #f44336;
+        --mat-form-field-outlined-error-focus-label-text-color: #f44336;
+        --mat-form-field-outlined-error-label-text-color: #f44336;
+        --mat-form-field-outlined-outline-color: rgba(0, 0, 0, .38);
+        --mat-form-field-outlined-disabled-outline-color: rgba(0, 0, 0, .06);
+        --mat-form-field-outlined-hover-outline-color: rgba(0, 0, 0, .87);
+        --mat-form-field-outlined-error-focus-outline-color: #f44336;
+        --mat-form-field-outlined-error-hover-outline-color: #f44336;
+        --mat-form-field-outlined-error-outline-color: #f44336;
         --mat-form-field-disabled-input-text-placeholder-color: rgba(0, 0, 0, .38);
         --mat-toolbar-container-background-color: whitesmoke;
-        --mat-toolbar-container-text-color: rgba(0, 0, 0, .87) --mdc-linear-progress-active-indicator-color: #3f51b5;
-        --mat-tab-header-active-hover-label-text-color: black;
-        --mat-tab-header-active-label-text-color: black;
-        --mat-tab-header-inactive-label-text-color: black;
-        --mat-tab-header-active-focus-label-text-color: black;
-        --mat-tab-header-inactive-hover-label-text-color: black;
-        --mat-tab-header-inactive-focus-label-text-color: black;
+        --mat-toolbar-container-text-color: rgba(0, 0, 0, .87) --mat-progress-bar-active-indicator-color: #3f51b5;
+        --mat-tab-active-hover-label-text-color: black;
+        --mat-tab-active-label-text-color: black;
+        --mat-tab-inactive-label-text-color: black;
+        --mat-tab-active-focus-label-text-color: black;
+        --mat-tab-inactive-hover-label-text-color: black;
+        --mat-tab-inactive-focus-label-text-color: black;
         --mat-select-enabled-trigger-text-color: black;
         --mat-select-enabled-arrow-color: black;
         --mat-select-panel-background-color: whitesmoke;
 
-        --mdc-linear-progress-track-color: rgba(63, 81, 181, .25);
+        --mat-progress-bar-track-color: rgba(63, 81, 181, .25);
 
         .mat-mdc-progress-bar .mdc-linear-progress__buffer-dots {
             background-color: #3f51b540;
-            background-color: var(--mdc-linear-progress-track-color, rgba(63, 81, 181, .25))
+            background-color: var(--mat-progress-bar-track-color, rgba(63, 81, 181, .25))
         }
 
         --mat-menu-container-color: whitesmoke;
         --mat-menu-item-label-text-color: black;
-        --mdc-dialog-container-color: whitesmoke;
-        --mdc-dialog-subhead-color: black;
+        --mat-dialog-container-color: whitesmoke;
+        --mat-dialog-subhead-color: black;
         --mat-menu-item-icon-color: black;
         --mat-expansion-container-background-color: #ddd4d4;
         --mat-expansion-container-text-color: black;
@@ -183,7 +185,7 @@ footer {
         --mat-expansion-header-indicator-color: black;
         --mat-autocomplete-background-color: #c9bbbb;
         --mat-icon-color: black;
-        --mdc-dialog-supporting-text-color: black;
+        --mat-dialog-supporting-text-color: black;
         --mat-checkbox-label-text-color: black;
 
         .mat-accent.mat-mdc-checkbox {
@@ -195,7 +197,7 @@ footer {
         }
 
         .mdc-checkbox__background {
-            --mdc-checkbox-unselected-icon-color: black;
+            --mat-checkbox-unselected-icon-color: black;
         }
 
         .mat-mdc-checkbox.mat-mdc-checkbox-disabled label {
@@ -205,17 +207,17 @@ footer {
 
         .mdc-checkbox:hover .mdc-checkbox__native-control:not(:checked)~.mdc-checkbox__background,
         .mdc-checkbox:hover .mdc-checkbox__native-control:not(:indeterminate)~.mdc-checkbox__background {
-            --mdc-checkbox-unselected-hover-icon-color: #666;
+            --mat-checkbox-unselected-hover-icon-color: #666;
         }
         .mdc-checkbox--disabled .mdc-checkbox__background {
-            --mdc-checkbox-disabled-unselected-icon-color: #666;
+            --mat-checkbox-disabled-unselected-icon-color: #666;
         }
 
         .mat-mdc-standard-chip.mdc-evolution-chip--selected:not(.mdc-evolution-chip--disabled) {
             background-color: white;
         }
         .mat-mdc-standard-chip:not(.mdc-evolution-chip--disabled) .mdc-evolution-chip__checkmark {
-            color: var(--mdc-chip-selected-label-text-color, var(--mat-app-on-secondary-container));
+            color: var(--mat-chip-selected-label-text-color, var(--mat-app-on-secondary-container));
         }
         .mat-expansion-panel-header-description {
             color: var(--mat-expansion-header-text-color, var(--mat-app-on-surface));
@@ -231,7 +233,7 @@ body {
     --mat-card-subtitle-text-line-height: 22px !important;
     --mat-card-subtitle-text-size: 14px !important;
     --mat-card-subtitle-text-weight: 500 !important;
-    --mdc-elevated-card-container-color: #424242;
+    --mat-card-elevated-container-color: #424242;
 
     h2 {
         font-size: 20px !important;
@@ -256,7 +258,7 @@ mat-card {
         padding-bottom: 10px;
 
         a {
-            color: var(--mdc-theme-text-secondary);
+            color: var(--mat-theme-text-secondary);
             text-decoration: dashed underline 1px;
             text-underline-offset: 5px;
             line-height: 1.5em
