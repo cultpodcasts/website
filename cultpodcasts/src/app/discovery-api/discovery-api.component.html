@@ -41,9 +41,9 @@
       <mat-button-toggle value="selected">Selected</mat-button-toggle>
     </mat-button-toggle-group>
     @if (displaySave) {
-    <button mat-raised-button class="mat-primary" (click)="close()" disabled="{{closeDisabled}}">Close</button>
-    <button mat-raised-button class="mat-primary" (click)="save()" disabled="{{saveDisabled}}"
-      [matBadge]="selectedIds.length" [matBadgeHidden]="saveDisabled">Save</button>
+    <button matButton="tonal" (click)="close()" disabled="{{closeDisabled}}">Close</button>
+    <button matButton="tonal" (click)="save()" disabled="{{saveDisabled}}" [matBadge]="selectedIds.length"
+      [matBadgeHidden]="saveDisabled">Save</button>
     }
   </div>
   }
