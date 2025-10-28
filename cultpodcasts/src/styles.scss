@@ -108,7 +108,6 @@ body {
 }
 
 mat-card {
-    background-color: #424242 !important;
     mat-card-title {
         a {
             color: var(--mat-app-text-color);
@@ -144,13 +143,19 @@ mat-card {
     }
 }
 
+mat-card:not(.selected) {
+    background-color: #424242 !important;
+}
+
+
 @media (prefers-color-scheme: light) {
-    mat-card {
+    mat-card:not(.selected) {
         background-color: #ffffff !important;
     }
 }
 
 mat-card-actions {
+
     a[mat-icon-button],
     button[mat-icon-button] {
         margin-right: 25px;
