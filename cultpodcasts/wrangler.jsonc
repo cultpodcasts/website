@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "website",
+  "pages_build_output_dir": "dist/cloudflare",
+  "compatibility_date": "2025-09-27",
+  "vars": {
+    "env": "development"
+  },
+  "env": {
+    "preview": {
+      "vars": {
+        "env": "staging"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "redirects",
+          "id": "19eea88f0cb14548bcab925238a68cc4"
+        }
+      ]
+    },
+    "production": {
+      "vars": {
+        "env": "production"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "redirects",
+          "id": "19eea88f0cb14548bcab925238a68cc4"
+        }
+      ]
+    }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "redirects",
+      "id": "19eea88f0cb14548bcab925238a68cc4"
+    }
+  ]
+}
