@@ -73,7 +73,7 @@ export class SubjectApiComponent {
   authRoles: string[] = [];
   podcasts: string[] = [];
   podcastFilter: string = "";
-  langFilter = ` and search.in(lang, '', ',')`;
+  langFilter = ` and lang eq null`;
   isSignedIn: boolean = false;
   private route = inject(ActivatedRoute);
   facets: SearchResultsFacets = {};
