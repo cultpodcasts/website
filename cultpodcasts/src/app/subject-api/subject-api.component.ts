@@ -165,7 +165,7 @@ export class SubjectApiComponent {
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
         top: this.infiniteScrollStrategy.getTake(this.searchState.page),
-        facets: ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count", "lang,count:4,sort:count"],
+        facets: ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
         orderby: sort
       }).subscribe(
         {
