@@ -9,6 +9,8 @@ export class FeatureSwtichService {
                 return true;
             case FeatureSwitch.socials:
                 return false;
+            case FeatureSwitch.reddit:
+                return true;
             default:
                 return false;
         }
