@@ -295,4 +295,6 @@
     <li>By email: support&#64;cultpodcasts.com</li>
 </ul>
 
-<p id="version">{{getVersion()}}</p>
+<p id="version">Version {{metadata.version}}, Commit {{metadata.commitHash}}.</p>
+<p>Built at {{metadata.buildDate.toString()}}.</p>
+<p>Environment '{{metadata.environmentName}}', Dev-Build '{{metadata.isDevMode}}'.</p>

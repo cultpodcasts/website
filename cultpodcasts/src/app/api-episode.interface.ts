@@ -23,5 +23,6 @@ export interface ApiEpisode {
     applePodcast?: boolean,
     releaseAuthority?: string,
     primaryPostService?: string,
-    image?: URL
+    image?: URL,
+    lang?: string | null
 }

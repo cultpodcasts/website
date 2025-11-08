@@ -11,14 +11,19 @@ import { environment } from './../../environments/environment';
   standalone: true
 })
 export class PrivacyPolicyComponent {
+
+  protected metadata = {
+    version: version,
+    buildDate: new Date(buildDate),
+    commitHash: commitHash,
+    environmentName: environment.name,
+    isDevMode: isDevMode()  
+  }
+
   constructor(
     title: Title,
     seoService: SeoService) {
     title.setTitle("Privacy Policy");
     seoService.AddMetaTags({ title: "Privacy Policy" });
-  }
-
-  getVersion(): string {
-    return `Version ${version}, commit ${commitHash}, built at ${buildDate}. Env '${environment.name}', dev-mode '${isDevMode()}'.`;
   }
 }

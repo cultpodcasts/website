@@ -15,4 +15,5 @@ export interface EpisodePost {
     images?: EpisodeImageUrls;
     subjects?: string[];
     searchTerms?: string | null;
+    lang?: string;
 }

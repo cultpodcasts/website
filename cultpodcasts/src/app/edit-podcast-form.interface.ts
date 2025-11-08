@@ -22,7 +22,5 @@ export interface EditPodcastForm {
     youTubePlaylistId: FormControl<string>;
     ignoredAssociatedSubjects: FormControl<string[]>;
     ignoredSubjects: FormControl<string[]>;
+    lang: FormControl<string | null>;
 }
-
-
-
