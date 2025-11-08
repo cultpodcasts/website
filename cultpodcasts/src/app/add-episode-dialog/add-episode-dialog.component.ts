@@ -101,6 +101,7 @@ export class AddEpisodeDialogComponent {
                 internetArchive: new FormControl(resp.urls.internetArchive || null),
                 subjects: new FormControl(resp.subjects, { nonNullable: true }),
                 searchTerms: new FormControl(resp.searchTerms || null),
+                lang: new FormControl(resp.lang || null)
               });
               const subjectsEndpoint = new URL("/subjects", environment.api).toString();
               this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
@@ -153,7 +154,8 @@ export class AddEpisodeDialogComponent {
           other: this.form!.controls.otherImage.value
         },
         subjects: this.form!.controls.subjects.value,
-        searchTerms: this.form!.controls.searchTerms.value
+        searchTerms: this.form!.controls.searchTerms.value,
+        lang: this.form!.controls.lang.value
       };
       if (this.form!.controls.spotify.value) {
         update.urls.spotify = new URL(this.form!.controls.spotify.value);
@@ -229,6 +231,7 @@ export class AddEpisodeDialogComponent {
     if (!this.areEqual(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? "";
     if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
     if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
+    if (!this.areEqual(prev.lang ?? "", now.lang ?? "")) changes.lang = now.lang ?? "";
     return changes;
   }
 
