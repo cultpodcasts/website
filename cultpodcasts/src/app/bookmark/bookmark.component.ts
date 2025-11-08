@@ -1,4 +1,4 @@
-import { Component, HostBinding, input, InputSignal } from '@angular/core';
+import { Component, HostBinding, input, InputSignal, Signal, signal } from '@angular/core';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
 import { ReplaySubject } from 'rxjs';
@@ -24,6 +24,7 @@ export class BookmarkComponent {
   isAuthenticated$: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
   waitingCallback: boolean = true;
   private isBookmarked: boolean | undefined;
+  bookmarkTimeout: Signal<boolean> = timerSignal(5000);
 
   @HostBinding('class.has-menu')
   get hasMenuGet() { return this.hasMenu() }
@@ -55,4 +56,12 @@ export class BookmarkComponent {
       await this.profileService.addBookmark(this.episodeId());
     }
   }
+
+
 }
+function timerSignal(ms: number): Signal<boolean> {
+  const done = signal(false);
+  setTimeout(() => done.set(true), ms);
+  return done.asReadonly();
+}
+

@@ -4,7 +4,7 @@
     <mat-icon [class.material-symbols-outlined]="(isBookmarked$ | async) ? false : true">
         bookmark
     </mat-icon>
-    } @else {
+    } @else if (!bookmarkTimeout()) {
     <mat-spinner></mat-spinner>
     }
 </button>
