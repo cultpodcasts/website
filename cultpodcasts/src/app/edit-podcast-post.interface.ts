@@ -22,4 +22,5 @@ export interface EditPodcastPost {
     youTubePlaylistId?: string;
     ignoredAssociatedSubjects?: string[];
     ignoredSubjects?: string[];
+    lang?: string;
 }

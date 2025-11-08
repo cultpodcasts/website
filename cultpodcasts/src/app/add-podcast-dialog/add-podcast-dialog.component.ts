@@ -104,7 +104,8 @@ export class AddPodcastDialogComponent {
           youTubeChannelId: new FormControl(resp.podcast.body.youTubeChannelId, { nonNullable: true }),
           youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
           ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
-          ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true })
+          ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
+          lang: new FormControl(resp.podcast.body.lang || null)
         });
         let initial: string[] = [];
         if (resp.podcast.body.defaultSubject != null) {
@@ -156,7 +157,8 @@ export class AddPodcastDialogComponent {
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
         ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
-        ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects)
+        ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
+        lang: this.form!.controls.lang.value
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -199,6 +201,7 @@ export class AddPodcastDialogComponent {
     if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
     if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
+    if ((prev.lang ?? "") != (now.lang ?? "")) changes.lang = now.lang ?? "";
     return changes;
   }
 

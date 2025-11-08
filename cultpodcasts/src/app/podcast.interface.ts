@@ -22,4 +22,5 @@ export interface Podcast {
     youTubePlaylistId: string;
     ignoredAssociatedSubjects?: string[];
     ignoredSubjects?: string[];
+    lang?: string | null;
 }

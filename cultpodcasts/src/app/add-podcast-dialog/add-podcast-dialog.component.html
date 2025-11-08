@@ -70,7 +70,7 @@
                     <input type="text" [formControl]="form!.controls.blueskyHandle" matInput>
                 </label>
             </mat-tab>
-            <mat-tab label="Services">
+            <mat-tab label="Meta">
                 <label>
                     <span>Release Authority:</span>
                     <select matNativeControl [formControl]="form!.controls.releaseAuthority">
@@ -86,6 +86,10 @@
                         <option [value]="podcastService">{{podcastService}}</option>
                         }
                     </select>
+                </label>
+                <label>
+                    <span>Language:</span>
+                    <input type="text" [formControl]="form!.controls.lang" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Flags">
