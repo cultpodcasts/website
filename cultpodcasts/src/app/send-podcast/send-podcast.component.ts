@@ -79,10 +79,7 @@ export class SendPodcastComponent {
           matchedUrl = match[0];
         }
       } else if (this.internetArchve.test(data.url.toString())) {
-        let match = data.url.toString().match(this.internetArchve);
-        if (match != null) {
-          matchedUrl = match[0];
-        }
+        matchedUrl = data.url.toString();
       }
 
       if (matchedUrl) {
