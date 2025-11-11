@@ -30,7 +30,7 @@ export class SendPodcastComponent {
   youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
   apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
   bbc: RegExp = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za-z\d\-_]+)|(sounds\/play\/[\w]+))/;
-  internetArchve: RegExp = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_]+/;
+  internetArchve: RegExp = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
   isAuthenticated: boolean = false;
   originResponse: SubmitUrlOriginResponse | undefined;
 
