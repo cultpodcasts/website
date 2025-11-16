@@ -19,7 +19,7 @@ export class SubjectsComponent {
   @Input()
   stopPropagation: boolean = false;
 
-  propagate($event: Event) {
+  stopPropagate($event: Event) {
     if (this.stopPropagation) {
       $event.stopPropagation();
     }

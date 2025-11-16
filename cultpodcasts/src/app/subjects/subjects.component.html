@@ -1,7 +1,7 @@
 @for (subject of subjects; track subject) {
 <div class="subject">
     @if (!subject.startsWith("_") || showHidden) {
-    <a [routerLink]="['/subject', subject]" (click)="propagate($event)">{{subject}}</a>
+    <a [routerLink]="['/subject', subject]" (click)="stopPropagate($event)">{{subject}}</a>
     }
 </div>
 }

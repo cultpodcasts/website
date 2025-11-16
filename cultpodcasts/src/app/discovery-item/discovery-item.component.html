@@ -8,7 +8,7 @@
             {{result.showName}}
             } @else if (result.matchingPodcasts.length==1) {
             <a [routerLink]="['/podcast', result.matchingPodcasts[0]]" (click)="allowLink($event)">
-                {{ result.matchingPodcasts[0]}}
+                {{result.matchingPodcasts[0]}}
             </a>
             } @else {
             {{result.matchingPodcasts.join(",")}}
