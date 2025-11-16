@@ -9,12 +9,14 @@ import { MatCardModule } from '@angular/material/card';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'discovery-item',
   templateUrl: './discovery-item.component.html',
   styleUrls: ['./discovery-item.component.sass'],
   imports: [
+    RouterLink,
     MatCardModule,
     HideDirective,
     MatButtonModule,

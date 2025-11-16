@@ -6,8 +6,11 @@
             [class.matchedPodcast]="result.matchingPodcasts.length==1">
             @if (result.matchingPodcasts.length==0) {
             {{result.showName}}
-            }
-            @if (result.matchingPodcasts.length>0) {
+            } @else if (result.matchingPodcasts.length==1) {
+            <a [routerLink]="['/podcast', result.matchingPodcasts[0]]" (click)="allowLink($event)">
+                {{result.matchingPodcasts[0]}}
+            </a>
+            } @else {
             {{result.matchingPodcasts.join(",")}}
             }
         </mat-card-subtitle>
@@ -49,7 +52,7 @@
         </a>
         }
         <mat-card-footer class="subjects">
-            <app-subjects [subjects]="result.subjects!" [showHidden]="true"></app-subjects>
+            <app-subjects [subjects]="result.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
         </mat-card-footer>
     </mat-card-actions>
 </mat-card>

@@ -16,4 +16,12 @@ export class SubjectsComponent {
   @Input()
   showHidden: boolean = false;
 
+  @Input()
+  stopPropagation: boolean = false;
+
+  stopPropagate($event: Event) {
+    if (this.stopPropagation) {
+      $event.stopPropagation();
+    }
+  }
 }
