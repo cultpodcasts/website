@@ -151,11 +151,11 @@ export class PodcastApiComponent {
       }
       this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
-      this.execSearch(initial);
+      this.execSearch(initial, initial);
     });
   }
 
-  execSearch(initial: boolean) {
+  execSearch(reset: boolean, subsequent: boolean) {
     var sort: string = "";
     if (this.searchState.sort == "date-asc") {
       sort = "release asc";
@@ -185,17 +185,17 @@ export class PodcastApiComponent {
                 !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
                 this.searchState.page++;
-                this.execSearch(false);
+                this.execSearch(false, false);
               }
             });
           }
-          if (initial) {
+          if (reset) {
             this.results.set(data.entities);
           } else {
             this.results.update(v => v.concat(data.entities));
           }
           this.isSubsequentLoading.set(false);
-          if (initial) {
+          if (subsequent) {
             this.facets = {
               podcastName: data.facets.podcastName,
               subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
@@ -365,7 +365,7 @@ export class PodcastApiComponent {
       this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
     this.searchState.page = 1;
-    this.execSearch(true);
+    this.execSearch(true, false);
   }
 
   isScrolledToBottom(): boolean {
@@ -373,4 +373,9 @@ export class PodcastApiComponent {
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
     return scrollPosition >= threshold;
   }
+
+  isSelected(o1: any, o2: any): boolean {
+    return true;
+  }
+
 }
