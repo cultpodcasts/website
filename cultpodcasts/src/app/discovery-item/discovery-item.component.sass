@@ -44,12 +44,16 @@ mat-card
             display: flex
             min-width: 160px
 mat-card.selected
-    background-color: #394141
+    background-color: #547c7cff
     .matchedPodcast
         color: var(--mat-theme-text-primary-on-background)
 mat-card.error
         border-color: red
         border-width: 3px
+
+@media (prefers-color-scheme: dark)
+    mat-card.selected
+        border-color: #ffffff;
 
 @media (prefers-color-scheme: light)
     mat-card.selected

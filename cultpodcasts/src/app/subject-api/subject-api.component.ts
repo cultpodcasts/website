@@ -144,11 +144,11 @@ export class SubjectApiComponent {
       }
       this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.searchState.filter);
-      this.execSearch(initial);
+      this.execSearch(initial, initial);
     });
   }
 
-  execSearch(initial: boolean) {
+  execSearch(initial: boolean, subsequent: boolean) {
     var sort: string = "";
     if (this.searchState.sort == "date-asc") {
       sort = "release asc";
@@ -176,7 +176,7 @@ export class SubjectApiComponent {
                   this.isScrolledToBottom() && !this.isSubsequentLoading()) {
                   this.isSubsequentLoading.set(true);
                   this.searchState.page++;
-                  this.execSearch(false);
+                  this.execSearch(false, false);
                 }
               });
             }
@@ -186,7 +186,7 @@ export class SubjectApiComponent {
               this.results.update(v => v.concat(data.entities));
             }
             this.isSubsequentLoading.set(false);
-            if (initial) {
+            if (subsequent) {
               this.facets = {
                 podcastName: data.facets.podcastName,
                 subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
@@ -266,7 +266,7 @@ export class SubjectApiComponent {
       this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     this.searchState.page = 1;
-    this.execSearch(true);
+    this.execSearch(true, false);
   }
 
   isScrolledToBottom(): boolean {

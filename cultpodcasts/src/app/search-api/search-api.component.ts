@@ -155,11 +155,11 @@ export class SearchApiComponent {
       } else {
         this.searchState.filter = "";
       }
-      this.execSearch(initial);
+      this.execSearch(initial, undefined, { podcasts: initial, subjects: initial });
     });
   }
 
-  execSearch(initial: boolean, reset?: { podcasts?: boolean, subjects?: boolean }) {
+  execSearch(initial: boolean, reset?: { podcasts?: boolean, subjects?: boolean }, subsequent?: { podcasts?: boolean, subjects?: boolean }) {
     var sort: string = "";
 
     if (this.searchState.sort == "date-asc") {
@@ -192,7 +192,7 @@ export class SearchApiComponent {
                 !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
                 this.searchState.page++;
-                this.execSearch(false);
+                this.execSearch(false, undefined, { podcasts: false, subjects: false });
               }
             });
           }
@@ -202,11 +202,13 @@ export class SearchApiComponent {
             this.results.update(v => v.concat(data.entities));
           }
           this.isSubsequentLoading.set(false);
-          if (initial) {
-            this.facets = {
-              podcastName: data.facets.podcastName,
-              subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
-            };
+          if (subsequent) {
+            if (subsequent.podcasts) {
+              this.facets.podcastName = data.facets.podcastName;
+            }
+            if (subsequent.subjects) {
+              this.facets.subjects = data.facets.subjects?.filter(x => !x.value.startsWith("_"));
+            }
           } else {
             if (reset?.podcasts) {
               this.facets.podcastName = data.facets.podcastName;
