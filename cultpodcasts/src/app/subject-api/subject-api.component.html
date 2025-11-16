@@ -64,7 +64,7 @@
   @for (result of results(); track result.id) {
   <mat-card class="result">
     <mat-card-header>
-      <app-bookmark [episodeId]="result.id"/>
+      <app-bookmark [episodeId]="result.id" />
       <mat-card-title [class.hasBookmark]="isSignedIn">
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
@@ -89,12 +89,12 @@
   </mat-card>
   }
 </section>
-} 
+}
 
 @if (isSubsequentLoading()) {
-  <div class="progresswrapper">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  </div>
+<div class="progresswrapper">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
 }
 
 @if (count === 0 && !isLoading) {
