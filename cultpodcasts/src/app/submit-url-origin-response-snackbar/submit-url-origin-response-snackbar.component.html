@@ -1,70 +1,68 @@
-<div id="wrapper">
-    <div matSnackBarLabel>
-        @if (!existingPodcast) {
-        <span>
-            @if (data.response.podcast==="Created") {
-            Podcast Created.
-            } @else if (data.response.podcast=== "Enriched") {
-            Podcast Enriched.
-            } @else if (data.response.podcast=== "Ignored") {
-            Podcast Ignored.
-            } @else if (data.response.podcast==="PodcastRemoved") {
-            Podcast Removed.
+<span matSnackBarLabel>
+    @if (!existingPodcast) {
+    <span>
+        @if (data.response.podcast==="Created") {
+        Podcast Created.
+        } @else if (data.response.podcast=== "Enriched") {
+        Podcast Enriched.
+        } @else if (data.response.podcast=== "Ignored") {
+        Podcast Ignored.
+        } @else if (data.response.podcast==="PodcastRemoved") {
+        Podcast Removed.
+        }
+    </span>
+    }
+    <span>
+        @if (data.response.episode==="Created") {
+        Episode created.
+        } @else if (data.response.episode === "Enriched") {
+        Episode enriched.
+        } @else if (data.response.episode === "Ignored") {
+        Episode ignored.
+        } @else if (data.response.episode === "EpisodeAlreadyExists") {
+        Episode already exists.
+        } @else {
+        Episode not created.
+        }
+    </span>
+    @if (data.response.episodeDetails) {
+    <span>
+        <span id="service-icons">
+            @if (data.response.episodeDetails.spotify) {
+            <mat-icon svgIcon="spotify"></mat-icon>
+            }
+            @if (data.response.episodeDetails.apple) {
+            <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+            }
+            @if (data.response.episodeDetails.youtube) {
+            <mat-icon svgIcon="youtube"></mat-icon>
             }
         </span>
-        }
-        <span>
-            @if (data.response.episode==="Created") {
-            Episode created.
-            } @else if (data.response.episode === "Enriched") {
-            Episode enriched.
-            } @else if (data.response.episode === "Ignored") {
-            Episode ignored.
-            } @else if (data.response.episode === "EpisodeAlreadyExists") {
-            Episode already exists.
+        @if (data.response.episodeDetails.subjects.length > 0) {
+        <span title="Subjects: {{data.response.episodeDetails.subjects.join(', ')}}">
+            {{data.response.episodeDetails.subjects.length}}
+            @if(data.response.episodeDetails.subjects.length>1){
+            subjects
             } @else {
-            Episode not created.
-            }
-        </span>
-        @if (data.response.episodeDetails) {
-        <span>
-            <span id="service-icons">
-                @if (data.response.episodeDetails.spotify) {
-                <mat-icon svgIcon="spotify"></mat-icon>
-                }
-                @if (data.response.episodeDetails.apple) {
-                <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
-                }
-                @if (data.response.episodeDetails.youtube) {
-                <mat-icon svgIcon="youtube"></mat-icon>
-                }
-            </span>
-            @if (data.response.episodeDetails.subjects.length > 0) {
-            <span title="Subjects: {{data.response.episodeDetails.subjects.join(', ')}}">
-                {{data.response.episodeDetails.subjects.length}}
-                @if(data.response.episodeDetails.subjects.length>1){
-                subjects
-                } @else {
-                subject
-                }
-            </span>
+            subject
             }
         </span>
         }
-    </div>
+    </span>
+    }
+</span>
 
-    <div matSnackBarActions>
-        @if (showReviewButton) {
-        <button id="action" mat-button matSnackBarAction
-            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
-            (click)="review()">
-            Review
-        </button>
-        }
-        <button id="action" mat-button matSnackBarAction
-            class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
-            (click)="action()">
-            {{actionText}}
-        </button>
-    </div>
-</div>
+<span matSnackBarActions>
+    @if (showReviewButton) {
+    <button id="action" matButton matSnackBarAction
+        class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
+        (click)="review()">
+        Review
+    </button>
+    }
+    <button id="action" matButton matSnackBarAction
+        class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
+        (click)="action()">
+        {{actionText}}
+    </button>
+</span>

@@ -10,6 +10,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 
+const medium = 15 * 1000;
+const long = 30 * 1000;
+
 @Component({
   selector: 'app-submit-url-origin-response-snackbar',
   imports: [
@@ -77,15 +80,15 @@ export class SubmitUrlOriginResponseSnackbarComponent {
               message = "Episode unchanged. Podcast updated";
             }
           }
-          let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: 3000 });
+          let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: medium });
           podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
         });
       } else {
         let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
         if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
+          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: long });
         } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
+          snackBarRef = this.snackBar.open("No change", "Review", { duration: medium });
         }
         if (snackBarRef) {
           snackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
