@@ -13,6 +13,9 @@ try {
     console.error("Unable to ignore tls-reject errors");
 }
 
-const bootstrap = (context: BootstrapContext) => bootstrapApplication(AppComponent, {...config, providers: [provideZoneChangeDetection(), ...config.providers]}, context);
+const bootstrap = (context: BootstrapContext) => bootstrapApplication(
+    AppComponent,
+    { ...config, providers: [provideZoneChangeDetection(), ...config.providers] },
+    context);
 
 export default bootstrap;
