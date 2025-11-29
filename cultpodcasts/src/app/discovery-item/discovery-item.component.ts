@@ -44,15 +44,15 @@ export class DiscoveryItemComponent {
   resultsFilter: string = "";
   errored: boolean = false;
 
-  duration(): string {
+  duration(): { known: boolean, text: string } {
     if (this.result.duration) {
       let duration: string = this.result.duration.split(".")[0];
       if (duration.startsWith("0")) {
         duration = duration.substring(1);
       }
-      return "[" + duration + "]";
+      return { known: true, text: duration };
     }
-    return "Unknown";
+    return { known: false, text: "Unknown" };
   }
 
   ngOnInit() {
