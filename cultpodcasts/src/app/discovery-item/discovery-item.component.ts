@@ -82,7 +82,6 @@ export class DiscoveryItemComponent {
   handleResult($event: Event, result: DiscoveryResult) {
     if (this.submitted)
       return;
-    const selectedClass: string = "selected";
     let element: Element = $event.target as Element;
     var isButton = false;
     isButton = element.getAttribute("mat-icon-button") != null;
@@ -91,13 +90,8 @@ export class DiscoveryItemComponent {
       isButton = isButton || element.getAttribute("mat-icon-button") != null;
     }
     let selected = false;
-    if (!isButton) {
-      if (element.className.split(" ").includes(selectedClass)) {
-        element.className = element.className.split(" ").filter(x => x != selectedClass).join(" ");
-      } else {
-        selected = true;
-        element.className = element.className.split(" ").concat(selectedClass).join(" ");
-      }
+    if (!isButton && !this.selected) {
+      selected = true;
     }
     this.selected = selected;
     this.changeState.emit({ id: this.result.id, selected: selected });
