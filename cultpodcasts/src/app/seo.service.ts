@@ -29,7 +29,8 @@ export class SeoService {
     const htmlTItle = title
       .replaceAll("&amp;", "&")
       .replaceAll("&#39;", "'")
-      .replaceAll("&quot;", '"');
+      .replaceAll("&quot;", '"')
+      .replaceAll("&apos;", "'");
     this.title.setTitle(htmlTItle);
 
     if (this.isServer) {
