@@ -113,12 +113,16 @@ mat-card {
             color: var(--mat-app-text-color);
             text-decoration: none;
         }
+        word-wrap: anywhere;
+        overflow-wrap: anywhere;
     }
 
     mat-card-subtitle {
         font-size: 1.3em !important;
         margin-top: 10px;
         padding-bottom: 10px;
+        word-wrap: anywhere;
+        overflow-wrap: anywhere;
 
         a {
             color: var(--mat-theme-text-secondary);
@@ -155,7 +159,6 @@ mat-card:not(.selected) {
 }
 
 mat-card-actions {
-
     a[mat-icon-button],
     button[mat-icon-button] {
         margin-right: 25px;
