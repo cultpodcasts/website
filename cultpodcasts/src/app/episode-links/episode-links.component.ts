@@ -6,6 +6,7 @@ import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
 import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
+import { BBCServiceResolver } from "../service-resolver";
 
 @Component({
   selector: 'app-episode-links',
@@ -34,16 +35,14 @@ export class EpisodeLinksComponent {
   }
 
   get bbciPlayer(): URL | undefined {
-    if (this.episode?.bbc &&
-      (this.episode.bbc.pathname.startsWith("/iplayer/") ||
-        this.episode.bbc.pathname.startsWith("/news/av-embeds/"))) {
+    if (this.episode?.bbc && BBCServiceResolver.isIplayer(this.episode.bbc)) {
       return this.episode?.bbc;
     }
     return undefined;
   }
 
   get bbcSounds(): URL | undefined {
-    if (this.episode?.bbc && this.episode.bbc.pathname.startsWith("/sounds/")) {
+    if (this.episode?.bbc && BBCServiceResolver.isSounds(this.episode.bbc)) {
       return this.episode?.bbc;
     }
     return undefined;

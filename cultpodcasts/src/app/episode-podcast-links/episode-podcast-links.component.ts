@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
+import { BBCServiceResolver } from '../service-resolver';
 
 @Component({
   selector: 'app-episode-podcast-links',
@@ -16,12 +17,27 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
     MatIconModule,
     MatCardModule,
     ApplePodcastsSvgComponent
-],
+  ],
   templateUrl: './episode-podcast-links.component.html',
   styleUrl: './episode-podcast-links.component.sass'
 })
 export class EpisodePodcastLinksComponent {
+
   protected _episode: ApiEpisode | undefined;
+
+  private isBBC(): boolean {
+    return this._episode?.urls.bbc != null &&
+      BBCServiceResolver.isBBC(this._episode.urls.bbc);
+  }
+
+  protected isSounds(): boolean {
+    return this.isBBC() && BBCServiceResolver.isSounds(this._episode!.urls.bbc!);
+  }
+
+  protected isIplayer(): boolean {
+    return this.isBBC() && BBCServiceResolver.isIplayer(this._episode!.urls.bbc!);
+  }
+
   @Input({ required: true })
   set episode(e: ApiEpisode) {
     this._episode = e;
