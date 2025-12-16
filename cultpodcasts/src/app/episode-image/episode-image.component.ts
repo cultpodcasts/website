@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-svg.component';
 import { SearchResult } from '../search-result.interface';
 import { MatButtonModule } from '@angular/material/button';
+import { BBCServiceResolver } from '../service-resolver';
 
 @Component({
   selector: 'app-episode-image',
@@ -128,14 +129,14 @@ export class EpisodeImageComponent {
   }
 
   get bbciPlayer(): URL | undefined {
-    if (this.bbc && this.bbc.pathname.startsWith("/iplayer/")) {
+    if (this.bbc && BBCServiceResolver.isIplayer(this.bbc)) {
       return this.bbc;
     }
     return undefined;
   }
 
   get bbcSounds(): URL | undefined {
-    if (this.bbc && this.bbc.pathname.startsWith("/sounds/")) {
+    if (this.bbc && BBCServiceResolver.isSounds(this.bbc)) {
       return this.bbc;
     }
     return undefined;
