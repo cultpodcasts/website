@@ -34,7 +34,9 @@ export class EpisodeLinksComponent {
   }
 
   get bbciPlayer(): URL | undefined {
-    if (this.episode?.bbc && this.episode.bbc.pathname.startsWith("/iplayer/")) {
+    if (this.episode?.bbc &&
+      (this.episode.bbc.pathname.startsWith("/iplayer/") ||
+        this.episode.bbc.pathname.startsWith("/news/av-embeds/"))) {
       return this.episode?.bbc;
     }
     return undefined;
