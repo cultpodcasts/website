@@ -53,15 +53,17 @@ export class EditPodcastDialogComponent {
   defaultSubjects: string[] = [];
   ignoredSubjects: string[] = [];
   podcastId: string | undefined;
+  episodeId: string | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string },
+    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string | undefined },
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;
+    this.episodeId = data.episodeId;
   }
 
   async ngOnInit(): Promise<any> {
@@ -74,7 +76,12 @@ export class EditPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
+      let episodeEndpoint: string;
+      if (this.episodeId) {
+        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}/${this.episodeId}`, environment.api).toString();
+      } else {
+        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
+      }
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
 
       var resp = await firstValueFrom(forkJoin(

@@ -13,7 +13,7 @@ export class SeoService {
 
   constructor(
     private meta: Meta,
-    private titie: Title,
+    private title: Title,
     @Inject(PLATFORM_ID) platformId: any,
     @Optional() @Inject('url') private url: URL
   ) {
@@ -23,9 +23,15 @@ export class SeoService {
   AddMetaTags(pageDetails: IPageDetails) {
     let title: string = siteName;
     if (pageDetails.title) {
-      title = `${pageDetails.title} | ${siteName}`;
+      const pageDetailsTItle = pageDetails.title;
+      title = `${pageDetailsTItle} | ${siteName}`;
     }
-    this.titie.setTitle(title);
+    const htmlTItle = title
+      .replaceAll("&amp;", "&")
+      .replaceAll("&#39;", "'")
+      .replaceAll("&quot;", '"')
+      .replaceAll("&apos;", "'");
+    this.title.setTitle(htmlTItle);
 
     if (this.isServer) {
       if (pageDetails.description) {
@@ -47,7 +53,7 @@ export class SeoService {
         this.meta.updateTag({ name: "description", content: description });
         this.meta.updateTag({ property: "og:description", content: description });
       }
-      this.meta.updateTag({ property: "og:title", content: title });
+      this.meta.updateTag({ property: "og:title", content: htmlTItle });
     }
   }
 
