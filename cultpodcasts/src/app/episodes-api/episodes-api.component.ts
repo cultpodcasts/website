@@ -186,9 +186,9 @@ export class EpisodesApiComponent {
     });
   }
 
-  editPodcast(podcastName: string) {
+  editPodcast(podcastName: string, episodeId?: string) {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
-      data: { podcastName: podcastName },
+      data: { podcastName: podcastName, episodeId: episodeId },
       disableClose: true,
       autoFocus: true
     });
