@@ -4,7 +4,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
 import { Subject } from '../subject.interface';
@@ -20,6 +20,7 @@ import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodeChangeResponse } from '../episode-change-response.interface';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { KeyValuePipe } from '@angular/common';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -35,7 +36,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     CdkTextareaAutosize,
     TextFieldModule,
     MatInputModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    KeyValuePipe
   ],
   templateUrl: './edit-episode-dialog.component.html',
   styleUrl: './edit-episode-dialog.component.sass'
@@ -45,6 +47,7 @@ export class EditEpisodeDialogComponent {
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
+  languages: { [key: string]: string } = {};
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
@@ -60,71 +63,65 @@ export class EditEpisodeDialogComponent {
     this.episodeId = data.episodeId;
   }
 
-  ngOnInit() {
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+  async ngOnInit(): Promise<any> {
+    var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
         scope: 'curate'
       }
     }));
-    token.then(_token => {
+    try {
       let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
+      headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
-      this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
-        .subscribe(
-          {
-            next: resp => {
-              this.originalEpisode = resp;
-              this.podcastName = resp.podcastName;
-              this.form = new FormGroup<EpisodeForm>({
-                title: new FormControl(resp.title, { nonNullable: true }),
-                description: new FormControl(resp.description, { nonNullable: true }),
-                posted: new FormControl(resp.posted, { nonNullable: true }),
-                tweeted: new FormControl(resp.tweeted, { nonNullable: true }),
-                blueskyPosted: new FormControl(resp.bluesky ?? false, { nonNullable: true }),
-                ignored: new FormControl(resp.ignored, { nonNullable: true }),
-                explicit: new FormControl(resp.explicit, { nonNullable: true }),
-                removed: new FormControl(resp.removed, { nonNullable: true }),
-                release: new FormControl(this.dateToLocalISO(resp.release), { nonNullable: true }),
-                duration: new FormControl(resp.duration, { nonNullable: true }),
-                spotify: new FormControl(resp.urls.spotify || null),
-                spotifyImage: new FormControl(resp.images?.spotify || null),
-                apple: new FormControl(resp.urls.apple || null),
-                appleImage: new FormControl(resp.images?.apple || null),
-                youtube: new FormControl(resp.urls.youtube || null),
-                youtubeImage: new FormControl(resp.images?.youtube || null),
-                otherImage: new FormControl(resp.images?.other || null),
-                bbc: new FormControl(resp.urls.bbc || null),
-                internetArchive: new FormControl(resp.urls.internetArchive || null),
-                subjects: new FormControl(resp.subjects, { nonNullable: true }),
-                searchTerms: new FormControl(resp.searchTerms || null),
-                lang: new FormControl(resp.lang || null),
-                twitterHandles: new FormControl<string[]>(resp.twitterHandles ?? [], { nonNullable: true }),
-                blueskyHandles: new FormControl<string[]>(resp.blueskyHandles ?? [], { nonNullable: true })
-              });
-              const subjectsEndpoint = new URL("/subjects", environment.api).toString();
-              this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
-                next: d => {
-                  this.subjects = resp.subjects.concat(d.filter(x => !resp.subjects.includes(x.name)).map(x => x.name));
-                  this.isLoading = false;
-                },
-                error: e => {
-                  this.isLoading = false;
-                  this.isInError = true;
-                }
-              })
-            },
-            error: e => {
-              this.isLoading = false;
-              this.isInError = true;
-            }
-          }
-        )
-    }).catch(x => {
+
+      const subjectsEndpoint = new URL("/subjects", environment.api).toString();
+      const languagesEndpoint = new URL("/languages", environment.api).toString();
+
+      var resp = await firstValueFrom(forkJoin(
+        {
+          episode: this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }),
+          subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }),
+          languages: this.http.get<{ [key: string]: string }>(languagesEndpoint, { headers: headers })
+        }
+      ));
+
+      this.originalEpisode = resp.episode;
+      this.podcastName = resp.episode.podcastName;
+      this.form = new FormGroup<EpisodeForm>({
+        title: new FormControl(resp.episode.title, { nonNullable: true }),
+        description: new FormControl(resp.episode.description, { nonNullable: true }),
+        posted: new FormControl(resp.episode.posted, { nonNullable: true }),
+        tweeted: new FormControl(resp.episode.tweeted, { nonNullable: true }),
+        blueskyPosted: new FormControl(resp.episode.bluesky ?? false, { nonNullable: true }),
+        ignored: new FormControl(resp.episode.ignored, { nonNullable: true }),
+        explicit: new FormControl(resp.episode.explicit, { nonNullable: true }),
+        removed: new FormControl(resp.episode.removed, { nonNullable: true }),
+        release: new FormControl(this.dateToLocalISO(resp.episode.release), { nonNullable: true }),
+        duration: new FormControl(resp.episode.duration, { nonNullable: true }),
+        spotify: new FormControl(resp.episode.urls.spotify || null),
+        spotifyImage: new FormControl(resp.episode.images?.spotify || null),
+        apple: new FormControl(resp.episode.urls.apple || null),
+        appleImage: new FormControl(resp.episode.images?.apple || null),
+        youtube: new FormControl(resp.episode.urls.youtube || null),
+        youtubeImage: new FormControl(resp.episode.images?.youtube || null),
+        otherImage: new FormControl(resp.episode.images?.other || null),
+        bbc: new FormControl(resp.episode.urls.bbc || null),
+        internetArchive: new FormControl(resp.episode.urls.internetArchive || null),
+        subjects: new FormControl(resp.episode.subjects, { nonNullable: true }),
+        searchTerms: new FormControl(resp.episode.searchTerms || null),
+        lang: new FormControl(resp.episode.lang || "unset"),
+        twitterHandles: new FormControl<string[]>(resp.episode.twitterHandles ?? [], { nonNullable: true }),
+        blueskyHandles: new FormControl<string[]>(resp.episode.blueskyHandles ?? [], { nonNullable: true })
+      });
+      this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
+      this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
+      this.isLoading = false;
+    } catch (e) {
+      console.error(e);
       this.isLoading = false;
       this.isInError = true;
-    });
+    }
   }
 
   close() {
@@ -237,7 +234,7 @@ export class EditEpisodeDialogComponent {
     if (!this.areEqual(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? "";
     if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
     if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
-    if (!this.areEqual(prev.lang ?? "", now.lang ?? "")) changes.lang = now.lang ?? "";
+    if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.twitterHandles, now.twitterHandles)) changes.twitterHandles = now.twitterHandles;
     if (!this.isSameA(prev.blueskyHandles, now.blueskyHandles)) changes.blueskyHandles = now.blueskyHandles;
     return changes;

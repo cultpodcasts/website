@@ -103,7 +103,11 @@
                 </label>
                 <label>
                     <span>Language:</span>
-                    <input type="text" [formControl]="form!.controls.lang" matInput>
+                    <select matNativeControl [formControl]="form!.controls.lang">
+                        @for (language of languages | keyvalue:null; track language) {
+                        <option [value]="language.key">{{language.value}}</option>
+                        }
+                    </select>
                 </label>
             </mat-tab>
             <mat-tab label="Images">

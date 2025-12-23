@@ -221,10 +221,25 @@ export class EditPodcastDialogComponent {
     if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
     if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
-    if ((prev.lang ?? "") != (now.lang ?? "")) changes.lang = now.lang ?? "";
+    if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
     return changes;
   }
+
+  areEqual(url1: URL | null | undefined | string, url2: URL | null | undefined | string): boolean {
+    let result: boolean;
+    if ((url1 == undefined || url1 == null) && (url2 == undefined || url2 == null)) {
+      result = true;
+    } else if ((url1 == undefined || url1 == null) && (url2 != undefined && url2 != null)) {
+      result = false;
+    } else if ((url2 == undefined || url2 == null) && (url1 != undefined && url1 != null)) {
+      result = false;
+    } else {
+      result = url1!.toString() === url2!.toString()
+    }
+    return result;
+  }
+
 
   isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
     if (!a && !b) {
