@@ -8,4 +8,5 @@ export interface SubjectEntity {
     hashTag?: string | null;
     redditFlairTemplateId?: string | null;
     redditFlareText?: string | null;
+    knownTerms?: string[] | undefined;
 }

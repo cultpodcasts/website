@@ -117,7 +117,7 @@ export class EditPodcastDialogComponent {
           ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
           lang: new FormControl(resp.podcast.body.lang || null),
-          knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
+          knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true })
         });
         let initial: string[] = [];
         if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
