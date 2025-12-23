@@ -137,7 +137,8 @@ export class OutgoingEpisodesApiComponent {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result) {
@@ -229,7 +230,8 @@ export class OutgoingEpisodesApiComponent {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
       data: { podcastName: podcastName },
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

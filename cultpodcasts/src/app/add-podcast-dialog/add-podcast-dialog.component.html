@@ -38,6 +38,30 @@
                     <input type="text" [formControl]="form!.controls.youTubePublicationDelay" matInput>
                 </label>
             </mat-tab>
+            <mat-tab label="Flags">
+                <div class="flags">
+                    <label>
+                        <span>Removed:</span>
+                        <mat-checkbox [formControl]="form!.controls.removed"/>
+                    </label>
+                    <label>
+                        <span>Index All Episodes:</span>
+                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes"/>
+                    </label>
+                    <label>
+                        <span>Bypass Short Episode Checking:</span>
+                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking"/>
+                    </label>
+                    <label>
+                        <span>Skip Enriching From YouTube:</span>
+                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube"/>
+                    </label>
+                    <label>
+                        <span>Ignore All Episodes:</span>
+                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes"/>
+                    </label>
+                </div>
+            </mat-tab>
             <mat-tab label="Subjects">
                 <label>
                     <span>Default Subject:</span>
@@ -58,6 +82,11 @@
                 </label>
                 <label>
                     <span>Ignored Associated Subjects:</span>
+                    <textarea matInput [formControl]="form!.controls.ignoredAssociatedSubjects"></textarea>
+                </label>
+                <label>
+                    <span>Known Terms</span>
+                    <input type="text" [formControl]="form!.controls.knownTerms" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Social">
@@ -91,30 +120,6 @@
                     <span>Language:</span>
                     <input type="text" [formControl]="form!.controls.lang" matInput>
                 </label>
-            </mat-tab>
-            <mat-tab label="Flags">
-                <div class="flags">
-                    <label>
-                        <span>Removed:</span>
-                        <mat-checkbox [formControl]="form!.controls.removed"/>
-                    </label>
-                    <label>
-                        <span>Index All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes"/>
-                    </label>
-                    <label>
-                        <span>Bypass Short Episode Checking:</span>
-                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking"/>
-                    </label>
-                    <label>
-                        <span>Skip Enriching From YouTube:</span>
-                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube"/>
-                    </label>
-                    <label>
-                        <span>Ignore All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes"/>
-                    </label>
-                </div>
             </mat-tab>
             <mat-tab label="Regexs">
                 <label>

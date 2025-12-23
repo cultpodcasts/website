@@ -23,4 +23,5 @@ export interface EditPodcastForm {
     ignoredAssociatedSubjects: FormControl<string[]>;
     ignoredSubjects: FormControl<string[]>;
     lang: FormControl<string | null>;
+    knownTerms: FormControl<string[]>;
 }

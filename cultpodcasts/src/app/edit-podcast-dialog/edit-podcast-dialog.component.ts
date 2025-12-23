@@ -116,7 +116,8 @@ export class EditPodcastDialogComponent {
           youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
           ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
-          lang: new FormControl(resp.podcast.body.lang || null)
+          lang: new FormControl(resp.podcast.body.lang || null),
+          knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
         });
         let initial: string[] = [];
         if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
@@ -170,7 +171,8 @@ export class EditPodcastDialogComponent {
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
         ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
         ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
-        lang: this.form!.controls.lang.value
+        lang: this.form!.controls.lang.value,
+        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms)
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -213,6 +215,7 @@ export class EditPodcastDialogComponent {
     if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     if ((prev.lang ?? "") != (now.lang ?? "")) changes.lang = now.lang ?? "";
+    if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
     return changes;
   }
 

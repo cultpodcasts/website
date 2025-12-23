@@ -235,7 +235,8 @@ export class SubjectApiComponent {
     const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
       data: { subjectName: this.subjectName },
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
@@ -246,7 +247,8 @@ export class SubjectApiComponent {
           const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
             data: { subjectName: result.conflict },
             disableClose: true,
-            autoFocus: true
+            autoFocus: true,
+            width: '90%'
           });
         });
       } else if (result.noChange) {

@@ -49,13 +49,15 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       dialogRef = this.dialog.open(AddEpisodeDialogComponent, {
         data: { episodeId: id, isNewPodcast: isNewPodcast },
         disableClose: true,
-        autoFocus: true
+        autoFocus: true,
+        width: '90%'
       });
     } else {
       dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
         data: { episodeId: id },
         disableClose: true,
-        autoFocus: true
+        autoFocus: true,
+        width: '90%'
       });
     }
     dialogRef.afterClosed().subscribe(async result => {
@@ -63,7 +65,8 @@ export class SubmitUrlOriginResponseSnackbarComponent {
         const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
           data: { podcastName: result.podcastName },
           disableClose: true,
-          autoFocus: true
+          autoFocus: true,
+          width: '90%'
         });
         podcastDialog.afterClosed().subscribe(async podcastResult => {
           let message: string;
