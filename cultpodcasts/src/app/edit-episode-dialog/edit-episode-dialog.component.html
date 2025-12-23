@@ -124,6 +124,16 @@
                     <input type="text" [formControl]="form!.controls.otherImage" matInput>
                 </label>
             </mat-tab>
+            <mat-tab label="Guests">
+                <label>
+                    <span>Twitter handles:</span>
+                    <input type="text" [formControl]="form!.controls.twitterHandles" matInput>
+                </label>
+                <label>
+                    <span>Bluesky handles:</span>
+                    <input type="text" [formControl]="form!.controls.blueskyHandles" matInput>
+                </label>
+            </mat-tab>
         </mat-tab-group>
     </form>
     }

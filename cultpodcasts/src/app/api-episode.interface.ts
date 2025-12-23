@@ -25,5 +25,7 @@ export interface ApiEpisode {
     primaryPostService?: string;
     image?: URL;
     lang?: string | null;
-    knownTerms?: string[] | undefined
+    knownTerms?: string[] | undefined;
+    twitterHandles?: string[] | undefined;
+    blueskyHandles?: string[] | undefined;
 }
