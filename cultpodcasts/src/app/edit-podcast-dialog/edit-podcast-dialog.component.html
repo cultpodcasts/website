@@ -119,6 +119,16 @@
                 <label>
                     <span>Language:</span>
                     <input type="text" [formControl]="form!.controls.lang" matInput>
+
+                    <mat-select [formControl]="form!.controls.lang">
+                        <mat-option [value]="">No Language</mat-option>
+                        @for (language of languages | keyvalue; track language) {
+                        <mat-option [value]="language.key">{{language.value}}</mat-option>
+                        }
+                    </mat-select>
+
+
+
                 </label>
             </mat-tab>
             <mat-tab label="Regexs">
