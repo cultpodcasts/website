@@ -118,14 +118,11 @@
                 </label>
                 <label>
                     <span>Language:</span>
-                    <input type="text" [formControl]="form!.controls.lang" matInput>
-
-                    <mat-select [formControl]="form!.controls.lang">
-                        <mat-option [value]="">No Language</mat-option>
-                        @for (language of languages | keyvalue; track language) {
-                        <mat-option [value]="language.key">{{language.value}}</mat-option>
+                    <select matNativeControl [formControl]="form!.controls.lang">
+                        @for (language of languages | keyvalue:null; track language) {
+                        <option [value]="language.key">{{language.value}}</option>
                         }
-                    </mat-select>
+                    </select>
 
 
 

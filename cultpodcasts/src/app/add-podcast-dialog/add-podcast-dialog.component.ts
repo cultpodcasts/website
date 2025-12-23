@@ -18,6 +18,7 @@ import { AddPodcastForm } from '../add-podcast-form.interface';
 import { AddPodcastPost } from '../add-podcast-post.interface';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { KeyValuePipe } from '@angular/common';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -30,7 +31,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    KeyValuePipe
   ],
   templateUrl: './add-podcast-dialog.component.html',
   styleUrl: './add-podcast-dialog.component.sass'
@@ -49,6 +51,7 @@ export class AddPodcastDialogComponent {
   originalPodcast: Podcast | undefined;
   defaultSubjects: string[] = [];
   ignoredSubjects: string[] = [];
+  languages: { [key: string]: string } = {};
   podcastId: string | undefined;
 
   constructor(
@@ -108,7 +111,7 @@ export class AddPodcastDialogComponent {
           youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
           ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
-          lang: new FormControl(resp.podcast.body.lang || null),
+          lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
           knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
         });
         let initial: string[] = [];
@@ -118,6 +121,7 @@ export class AddPodcastDialogComponent {
         this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
+        this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
         this.isLoading = false;
       } else {
         this.isLoading = false;

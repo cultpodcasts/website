@@ -121,7 +121,7 @@ export class EditPodcastDialogComponent {
           youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
           ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
-          lang: new FormControl(resp.podcast.body.lang || null),
+          lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
           knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true })
         });
         let initial: string[] = [];
@@ -131,7 +131,7 @@ export class EditPodcastDialogComponent {
         this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
-        this.languages= resp.languages;
+        this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
 
         this.isLoading = false;
       } else {

@@ -42,23 +42,23 @@
                 <div class="flags">
                     <label>
                         <span>Removed:</span>
-                        <mat-checkbox [formControl]="form!.controls.removed"/>
+                        <mat-checkbox [formControl]="form!.controls.removed" />
                     </label>
                     <label>
                         <span>Index All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes"/>
+                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes" />
                     </label>
                     <label>
                         <span>Bypass Short Episode Checking:</span>
-                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking"/>
+                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking" />
                     </label>
                     <label>
                         <span>Skip Enriching From YouTube:</span>
-                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube"/>
+                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube" />
                     </label>
                     <label>
                         <span>Ignore All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes"/>
+                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes" />
                     </label>
                 </div>
             </mat-tab>
@@ -74,7 +74,8 @@
                 </label>
                 <label>
                     <span>Ignored Subjects:</span>
-                    <mat-select [formControl]="form!.controls.ignoredSubjects" multiple [sortComparator]="noCompareFunction">
+                    <mat-select [formControl]="form!.controls.ignoredSubjects" multiple
+                        [sortComparator]="noCompareFunction">
                         @for (subject of ignoredSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
@@ -118,7 +119,11 @@
                 </label>
                 <label>
                     <span>Language:</span>
-                    <input type="text" [formControl]="form!.controls.lang" matInput>
+                    <select matNativeControl [formControl]="form!.controls.lang">
+                        @for (language of languages | keyvalue:null; track language) {
+                        <option [value]="language.key">{{language.value}}</option>
+                        }
+                    </select>
                 </label>
             </mat-tab>
             <mat-tab label="Regexs">
