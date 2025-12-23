@@ -101,7 +101,9 @@ export class AddEpisodeDialogComponent {
                 internetArchive: new FormControl(resp.urls.internetArchive || null),
                 subjects: new FormControl(resp.subjects, { nonNullable: true }),
                 searchTerms: new FormControl(resp.searchTerms || null),
-                lang: new FormControl(resp.lang || null)
+                lang: new FormControl(resp.lang || null),
+                twitterHandles: new FormControl<string[]>(resp.twitterHandles ?? [], { nonNullable: true }),
+                blueskyHandles: new FormControl<string[]>(resp.blueskyHandles ?? [], { nonNullable: true })
               });
               const subjectsEndpoint = new URL("/subjects", environment.api).toString();
               this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }).subscribe({
@@ -155,7 +157,9 @@ export class AddEpisodeDialogComponent {
         },
         subjects: this.form!.controls.subjects.value,
         searchTerms: this.form!.controls.searchTerms.value,
-        lang: this.form!.controls.lang.value
+        lang: this.form!.controls.lang.value,
+        twitterHandles: this.translateForEntityA(this.form!.controls.twitterHandles),
+        blueskyHandles: this.translateForEntityA(this.form!.controls.blueskyHandles)
       };
       if (this.form!.controls.spotify.value) {
         update.urls.spotify = new URL(this.form!.controls.spotify.value);
@@ -172,6 +176,7 @@ export class AddEpisodeDialogComponent {
       if (this.form!.controls.internetArchive.value) {
         update.urls.internetArchive = new URL(this.form!.controls.internetArchive.value);
       }
+      
 
       var changes = this.getChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
@@ -232,6 +237,8 @@ export class AddEpisodeDialogComponent {
     if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
     if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
     if (!this.areEqual(prev.lang ?? "", now.lang ?? "")) changes.lang = now.lang ?? "";
+    if (!this.isSameA(prev.twitterHandles, now.twitterHandles)) changes.twitterHandles = now.twitterHandles;
+    if (!this.isSameA(prev.blueskyHandles, now.blueskyHandles)) changes.blueskyHandles = now.blueskyHandles;
     return changes;
   }
 
@@ -272,4 +279,16 @@ export class AddEpisodeDialogComponent {
     return 0;
   }
 
+    translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
+    if (x.value) {
+      const valueS: any = x.value;
+      if (valueS.push) {
+        return x.value;
+      } else if (valueS.split) {
+        const valueSt: string = valueS;
+        return valueSt.split(",");
+      }
+    };
+    return [];
+  }
 }

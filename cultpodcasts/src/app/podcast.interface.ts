@@ -23,4 +23,5 @@ export interface Podcast {
     ignoredAssociatedSubjects?: string[];
     ignoredSubjects?: string[];
     lang?: string | null;
+    knownTerms?: string[] | undefined;
 }

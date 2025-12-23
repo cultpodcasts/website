@@ -9,4 +9,5 @@ export interface SubjectForm {
     hashTag: FormControl<string | null | undefined>;
     redditFlairTemplateId: FormControl<string | null | undefined>;
     redditFlareText: FormControl<string | null | undefined>;
+    knownTerms: FormControl<string[]>;
 }

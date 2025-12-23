@@ -217,7 +217,8 @@ export class PodcastApiComponent {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: id },
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
@@ -241,7 +242,8 @@ export class PodcastApiComponent {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
       data: { podcastName: this.podcastName },
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {

@@ -98,6 +98,7 @@ export class EditSubjectDialogComponent {
                         hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
                         redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
                         redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
+                        knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
                       });
                       this.isLoading = false;
                     },
@@ -118,6 +119,7 @@ export class EditSubjectDialogComponent {
                 hashTag: new FormControl("", { nonNullable: false }),
                 redditFlairTemplateId: new FormControl("", { nonNullable: false }),
                 redditFlareText: new FormControl("", { nonNullable: false }),
+                knownTerms: new FormControl<string[]>([], { nonNullable: true })
               });
               this.isLoading = false;
             }
@@ -179,7 +181,8 @@ export class EditSubjectDialogComponent {
         hashTag: this.translateForEntity(this.form!.controls.hashTag),
         redditFlairTemplateId: this.translateForEntityG(this.form!.controls.redditFlairTemplateId),
         redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
-        subjectType: this.form!.controls.subjectType.value
+        subjectType: this.form!.controls.subjectType.value,
+        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms)
       };
 
       if (this.create) {
@@ -225,6 +228,7 @@ export class EditSubjectDialogComponent {
     if (!this.isSame(prev.redditFlairTemplateId, now.redditFlairTemplateId)) changes.redditFlairTemplateId = now.redditFlairTemplateId;
     if (!this.isSame(prev.redditFlareText, now.redditFlareText)) changes.redditFlareText = now.redditFlareText;
     if ((prev.subjectType ?? SubjectType[SubjectType.Unset].toString()) != now.subjectType?.toString()) changes.subjectType = now.subjectType;
+    if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
     return changes;
   }
 

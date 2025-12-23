@@ -19,34 +19,35 @@
                 </label>
                 <label>
                     <span>Description:</span>
-                    <textarea [formControl]="form!.controls.description" matInput cdkTextareaAutosize cdkAutosizeMaxRows="5"></textarea>
+                    <textarea [formControl]="form!.controls.description" matInput cdkTextareaAutosize
+                        cdkAutosizeMaxRows="5"></textarea>
                 </label>
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
                     <label>
                         <span>Posted:</span>
-                        <mat-checkbox [formControl]="form!.controls.posted"/>
+                        <mat-checkbox [formControl]="form!.controls.posted" />
                     </label>
                     <label>
                         <span>Tweeted:</span>
-                        <mat-checkbox [formControl]="form!.controls.tweeted"/>
+                        <mat-checkbox [formControl]="form!.controls.tweeted" />
                     </label>
                     <label>
                         <span>Bluesky Post:</span>
-                        <mat-checkbox [formControl]="form!.controls.blueskyPosted"/>
+                        <mat-checkbox [formControl]="form!.controls.blueskyPosted" />
                     </label>
                     <label>
                         <span>Ignored:</span>
-                        <mat-checkbox [formControl]="form!.controls.ignored"/>
+                        <mat-checkbox [formControl]="form!.controls.ignored" />
                     </label>
                     <label>
                         <span>Removed:</span>
-                        <mat-checkbox [formControl]="form!.controls.removed"/>
+                        <mat-checkbox [formControl]="form!.controls.removed" />
                     </label>
                     <label>
                         <span>Explicit:</span>
-                        <mat-checkbox [formControl]="form!.controls.explicit"/>
+                        <mat-checkbox [formControl]="form!.controls.explicit" />
                     </label>
                 </div>
             </mat-tab>
@@ -121,6 +122,16 @@
                 <label>
                     <span>Language:</span>
                     <input type="text" [formControl]="form!.controls.lang" matInput>
+                </label>
+            </mat-tab>
+            <mat-tab label="Guests">
+                <label>
+                    <span>Twitter handles:</span>
+                    <input type="text" [formControl]="form!.controls.twitterHandles" matInput>
+                </label>
+                <label>
+                    <span>Bluesky handles:</span>
+                    <input type="text" [formControl]="form!.controls.blueskyHandles" matInput>
                 </label>
             </mat-tab>
         </mat-tab-group>

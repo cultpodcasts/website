@@ -47,7 +47,7 @@
                     <span>Post Episode</span>
                 </button>
                 @if (authRoles.includes("Curator") && result.podcastName) {
-                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!)">
+                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!, result.id)">
                     <mat-icon>edit</mat-icon>
                     <span>Edit Podcast</span>
                 </button>

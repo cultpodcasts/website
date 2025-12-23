@@ -19,7 +19,8 @@
                 </label>
                 <label>
                     <span>Associated Subjects:</span>
-                    <textarea type="text" [formControl]="form!.controls.associatedSubjects" matInput cdkTextareaAutosize></textarea>
+                    <textarea type="text" [formControl]="form!.controls.associatedSubjects" matInput
+                        cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Subject Type:</span>
@@ -30,7 +31,7 @@
                     </select>
                 </label>
             </mat-tab>
-            <mat-tab label="Hash Tags">
+            <mat-tab label="Hash Tags & Terms">
                 <label>
                     <span>Hash Tags:</span>
                     <input type="text" [formControl]="form!.controls.hashTag" matInput>
@@ -38,6 +39,10 @@
                 <label>
                     <span>Enrichment Hash Tags:</span>
                     <textarea [formControl]="form!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
+                </label>
+                <label>
+                    <span>Known Terms</span>
+                    <input type="text" [formControl]="form!.controls.knownTerms" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Reddit">
