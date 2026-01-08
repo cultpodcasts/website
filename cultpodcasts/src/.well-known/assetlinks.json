@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.cultpodcasts.twa",
+        "sha256_cert_fingerprints": ["15:13:FF:81:D1:B6:28:D5:9F:E3:5A:FB:86:EA:91:99:4A:0B:C3:89:96:EF:BC:9D:12:A3:43:B8:15:EF:FA:B6"]
+      }
+    }]
