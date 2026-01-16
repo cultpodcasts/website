@@ -7,6 +7,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { environment } from './../../environments/environment';
+import { PodcastRenameResponse } from "../podcast-rename-response.interface";
+import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
 
 @Component({
   selector: 'app-rename-podcast-dialog',
@@ -29,7 +31,7 @@ export class RenamePodcastDialogComponent {
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private dialogRef: MatDialogRef<RenamePodcastDialogComponent, any>,
+    private dialogRef: MatDialogRef<RenamePodcastDialogComponent, RenamePodcastDialogResponse>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastName: string }
   ) {
     this.podcastName = data.podcastName;
@@ -55,8 +57,9 @@ export class RenamePodcastDialogComponent {
         headers = headers.set("Authorization", "Bearer " + _token);
         const url: URL = new URL(`/podcast/name/${this.podcastName}`, environment.api);
         const newPodcastName = this.newPodcastName.trim();
-        const resp = firstValueFrom<HttpResponse<any>>(
-          this.http.post(url.toString(),
+        const resp = firstValueFrom<HttpResponse<PodcastRenameResponse>>(
+          this.http.post<PodcastRenameResponse>(
+            url.toString(),
             { newPodcastName: newPodcastName },
             { headers: headers, observe: 'response' }));
         resp.then(_resp => {
@@ -66,7 +69,7 @@ export class RenamePodcastDialogComponent {
             this.dialogRef.close({
               updated: true,
               newPodcastName: newPodcastName,
-              indexUpdated: _resp.body.indexState == "Executed"
+              searchIndexerState: _resp.body?.indexState
             });
           } else {
             console.error(_resp);

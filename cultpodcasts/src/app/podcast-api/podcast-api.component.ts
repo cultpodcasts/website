@@ -36,6 +36,8 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
+import { SearchIndexerState } from '../search-indexer-state.interface';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -335,20 +337,40 @@ export class PodcastApiComponent {
   }
 
   renamePodcast() {
-    const dialogRef = this.dialog.open(RenamePodcastDialogComponent, {
+    const dialogRef = this.dialog.open<RenamePodcastDialogComponent, any, RenamePodcastDialogResponse>(RenamePodcastDialogComponent, {
       data: { podcastName: this.podcastName },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      const indexUpdated = result?.indexUpdated ? "" : " not";
-      if (result.updated) {
-        snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". Index ${indexUpdated} updated.`, "Review", { duration: 10000 });
-      } else if (result.noChange) {
+      let indexStatusMessage: string = "Index state unknown.";
+      const state = result?.searchIndexerState;
+      if (state !== undefined) {
+        if (state === SearchIndexerState.Executed) {
+          indexStatusMessage = "Index updated.";
+        } else if (state === SearchIndexerState.Failure) {
+          indexStatusMessage = "Index update failed.";
+        } else if (state === SearchIndexerState.TooManyRequests) {
+          indexStatusMessage = "Index not updated (too many requests).";
+        } else if (state === SearchIndexerState.AlreadyRunning) {
+          indexStatusMessage = "Index not updated (indexer already running).";
+        } else if (state === SearchIndexerState.EpisodeNotFound) {
+          indexStatusMessage = "Index not updated (episode not found).";
+        } else if (state === SearchIndexerState.EpisodeIdConflict) {
+          indexStatusMessage = "Index not updated (episode ID conflict).";
+        } else if (state === SearchIndexerState.NoDocuments) {
+          indexStatusMessage = "Index not updated (no documents to index).";
+        } else if (state === SearchIndexerState.Unknown) {
+          indexStatusMessage = "Index not updated (unknown indexer state).";
+        }
+      }
+      if (result?.updated) {
+        snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". ${indexStatusMessage}`, "Review", { duration: 10000 });
+      } else if (result?.noChange) {
         snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
-      if (result.updated && snackBarRef) {
+      if (result?.updated && snackBarRef) {
         snackBarRef.onAction().subscribe(() => {
           this.router.navigate(["/podcast", result.newPodcastName])
         });
@@ -363,8 +385,8 @@ export class PodcastApiComponent {
     if (this.subjects.length == 0) {
       this.subjectsFilter = "";
     } else {
-      var subjectsameList = this.subjects.join(delimiter);
-      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
+      var subjectsList = this.subjects.join(delimiter);
+      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsList}', '${delimiter}'))`;
     }
     this.searchState.page = 1;
     this.execSearch(true, false);
