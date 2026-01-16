@@ -344,9 +344,25 @@ export class PodcastApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      const indexUpdated = result?.searchIndexerState == SearchIndexerState.Executed ? "" : " not";
+      let indexStatusMessage = "Index update status unknown.";
+      const state = result?.searchIndexerState;
+      if (state !== undefined) {
+        if (state === SearchIndexerState.Executed) {
+          indexStatusMessage = "Index updated.";
+        } else if (state === SearchIndexerState.Failure) {
+          indexStatusMessage = "Index update failed.";
+        } else if (state === SearchIndexerState.TooManyRequests) {
+          indexStatusMessage = "Index not updated (too many requests).";
+        } else if (state === SearchIndexerState.AlreadyRunning) {
+          indexStatusMessage = "Index not updated (indexer already running).";
+        } else {
+          indexStatusMessage = "Index not updated.";
+        }
+      } else {
+        indexStatusMessage = "Index state unknown.";
+      }
       if (result?.updated) {
-        snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". Index ${indexUpdated} updated.`, "Review", { duration: 10000 });
+        snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". ${indexStatusMessage}`, "Review", { duration: 10000 });
       } else if (result?.noChange) {
         snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
