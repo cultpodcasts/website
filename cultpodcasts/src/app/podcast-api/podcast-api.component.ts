@@ -363,8 +363,6 @@ export class PodcastApiComponent {
           indexStatusMessage = "Index not updated (no documents to index).";
         } else if (state === SearchIndexerState.Unknown) {
           indexStatusMessage = "Index not updated (unknown indexer state).";
-        } else {
-          indexStatusMessage = "Index not updated (unrecognized indexer state).";
         }
       }
       if (result?.updated) {
