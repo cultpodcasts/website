@@ -344,7 +344,7 @@ export class PodcastApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      let indexStatusMessage: string;
+      let indexStatusMessage: string = "Index state unknown.";
       const state = result?.searchIndexerState;
       if (state !== undefined) {
         if (state === SearchIndexerState.Executed) {
@@ -366,8 +366,6 @@ export class PodcastApiComponent {
         } else {
           indexStatusMessage = "Index not updated (unrecognized indexer state).";
         }
-      } else {
-        indexStatusMessage = "Index state unknown.";
       }
       if (result?.updated) {
         snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". ${indexStatusMessage}`, "Review", { duration: 10000 });
