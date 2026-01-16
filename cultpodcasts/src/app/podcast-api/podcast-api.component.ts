@@ -344,7 +344,7 @@ export class PodcastApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      let indexStatusMessage = "Index update status unknown.";
+      let indexStatusMessage: string;
       const state = result?.searchIndexerState;
       if (state !== undefined) {
         if (state === SearchIndexerState.Executed) {
@@ -355,8 +355,16 @@ export class PodcastApiComponent {
           indexStatusMessage = "Index not updated (too many requests).";
         } else if (state === SearchIndexerState.AlreadyRunning) {
           indexStatusMessage = "Index not updated (indexer already running).";
+        } else if (state === SearchIndexerState.EpisodeNotFound) {
+          indexStatusMessage = "Index not updated (episode not found).";
+        } else if (state === SearchIndexerState.EpisodeIdConflict) {
+          indexStatusMessage = "Index not updated (episode ID conflict).";
+        } else if (state === SearchIndexerState.NoDocuments) {
+          indexStatusMessage = "Index not updated (no documents to index).";
+        } else if (state === SearchIndexerState.Unknown) {
+          indexStatusMessage = "Index not updated (unknown indexer state).";
         } else {
-          indexStatusMessage = "Index not updated.";
+          indexStatusMessage = "Index not updated (unrecognized indexer state).";
         }
       } else {
         indexStatusMessage = "Index state unknown.";
