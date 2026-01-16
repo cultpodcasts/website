@@ -36,6 +36,8 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
+import { SearchIndexerState } from '../search-indexer-state.interface';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -335,20 +337,20 @@ export class PodcastApiComponent {
   }
 
   renamePodcast() {
-    const dialogRef = this.dialog.open(RenamePodcastDialogComponent, {
+    const dialogRef = this.dialog.open<RenamePodcastDialogComponent, any, RenamePodcastDialogResponse>(RenamePodcastDialogComponent, {
       data: { podcastName: this.podcastName },
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
       let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      const indexUpdated = result?.indexUpdated ? "" : " not";
-      if (result.updated) {
+      const indexUpdated = result?.searchIndexerState == SearchIndexerState.Executed ? "" : " not";
+      if (result?.updated) {
         snackBarRef = this.snackBar.open(`Podcast name changed to "${result.newPodcastName}". Index ${indexUpdated} updated.`, "Review", { duration: 10000 });
-      } else if (result.noChange) {
+      } else if (result?.noChange) {
         snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
-      if (result.updated && snackBarRef) {
+      if (result?.updated && snackBarRef) {
         snackBarRef.onAction().subscribe(() => {
           this.router.navigate(["/podcast", result.newPodcastName])
         });
