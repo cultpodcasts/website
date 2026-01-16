@@ -385,8 +385,8 @@ export class PodcastApiComponent {
     if (this.subjects.length == 0) {
       this.subjectsFilter = "";
     } else {
-      var subjectsameList = this.subjects.join(delimiter);
-      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
+      var subjectsList = this.subjects.join(delimiter);
+      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsList}', '${delimiter}'))`;
     }
     this.searchState.page = 1;
     this.execSearch(true, false);
