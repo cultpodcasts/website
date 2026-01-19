@@ -1,10 +1,10 @@
 export enum SearchIndexerState {
-    EpisodeNotFound = 1,
-    EpisodeIdConflict,
-    NoDocuments,
-    Executed,
-    Failure,
-    TooManyRequests,
-    AlreadyRunning,
-    Unknown
+    EpisodeNotFound = "EpisodeNotFound",
+    EpisodeIdConflict= "EpisodeIdConflict",
+    NoDocuments= "NoDocuments",
+    Executed = "Executed",
+    Failure = "Failure",
+    TooManyRequests = "TooManyRequests",
+    AlreadyRunning = "AlreadyRunning",
+    Unknown = "Unknown"
 }
