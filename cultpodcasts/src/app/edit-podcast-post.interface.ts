@@ -24,4 +24,5 @@ export interface EditPodcastPost {
     ignoredSubjects?: string[];
     lang?: string;
     knownTerms?: string[];
+    minimumDuration?: string | null;
 }

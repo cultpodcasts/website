@@ -113,6 +113,7 @@ export class AddPodcastDialogComponent {
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
           lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
           knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
+          minimumDuration: new FormControl(resp.podcast.body.minimumDuration ?? "", { nonNullable: true })
         });
         let initial: string[] = [];
         if (resp.podcast.body.defaultSubject != null) {
@@ -167,7 +168,8 @@ export class AddPodcastDialogComponent {
         ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
         ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
         lang: this.form!.controls.lang.value,
-        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms)
+        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms),
+        minimumDuration: this.form!.controls.minimumDuration.value
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -212,6 +214,7 @@ export class AddPodcastDialogComponent {
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
+    if (prev.minimumDuration != now.minimumDuration) changes.minimumDuration = now.minimumDuration;
     return changes;
   }
 
