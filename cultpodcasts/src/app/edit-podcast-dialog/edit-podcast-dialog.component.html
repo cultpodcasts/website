@@ -98,6 +98,14 @@
                     <span>Bluesky Handle:</span>
                     <input type="text" [formControl]="form!.controls.blueskyHandle" matInput>
                 </label>
+                <label>
+                    <span>Hash Tags:</span>
+                    <input type="text" [formControl]="form!.controls.hashTag" matInput>
+                </label>
+                <label>
+                    <span>Enrichment Hash Tags:</span>
+                    <textarea [formControl]="form!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
+                </label>
             </mat-tab>
             <mat-tab label="Meta">
                 <label>
