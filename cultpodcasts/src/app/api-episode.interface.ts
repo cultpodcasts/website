@@ -4,8 +4,10 @@ import { EpisodeUrls } from "./episode-urls.interface";
 export interface ApiEpisode {
     id: string;
     title: string;
+    displayTitle: string;
     podcastName?: string;
     description: string;
+    displayDescription: string;
     posted: boolean;
     tweeted: boolean;
     bluesky?: boolean | null;
