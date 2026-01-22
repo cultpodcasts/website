@@ -25,4 +25,6 @@ export interface Podcast {
     lang?: string | null;
     knownTerms?: string[] | undefined;
     minimumDuration: string | null;
+    enrichmentHashTags?: string[] | null;
+    hashTag?: string | null;
 }

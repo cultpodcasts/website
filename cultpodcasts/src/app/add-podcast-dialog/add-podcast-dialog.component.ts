@@ -113,7 +113,9 @@ export class AddPodcastDialogComponent {
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
           lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
           knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
-          minimumDuration: new FormControl(resp.podcast.body.minimumDuration ?? "", { nonNullable: true })
+          minimumDuration: new FormControl(resp.podcast.body.minimumDuration ?? "", { nonNullable: true }),
+          enrichmentHashTags: new FormControl(resp.podcast.body.enrichmentHashTags, { nonNullable: false }),
+          hashTag: new FormControl(resp.podcast.body.hashTag, { nonNullable: false }),
         });
         let initial: string[] = [];
         if (resp.podcast.body.defaultSubject != null) {
@@ -169,7 +171,9 @@ export class AddPodcastDialogComponent {
         ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
         lang: this.form!.controls.lang.value,
         knownTerms: this.translateForEntityA(this.form!.controls.knownTerms),
-        minimumDuration: this.form!.controls.minimumDuration.value
+        minimumDuration: this.form!.controls.minimumDuration.value,
+        enrichmentHashTags: this.translateForEntityA(this.form!.controls.enrichmentHashTags),
+        hashTag: this.translateForEntity(this.form!.controls.hashTag),
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -180,6 +184,14 @@ export class AddPodcastDialogComponent {
       }
     }
   }
+
+  isSame(a: string | null | undefined, b: string | null | undefined): boolean {
+    if (!a && !b) {
+      return true;
+    }
+    return JSON.stringify(a) == JSON.stringify(b);
+  }
+
 
   getChanges(prev: Podcast, now: Podcast): AddPodcastPost {
     var changes: AddPodcastPost = {};
@@ -192,6 +204,8 @@ export class AddPodcastDialogComponent {
     if (prev.primaryPostService != now.primaryPostService && now.primaryPostService) changes.primaryPostService = now.primaryPostService;
     if (prev.primaryPostService != now.primaryPostService && now.primaryPostService == undefined) changes.unsetPrimaryPostService = true;
     if (prev.spotifyId != now.spotifyId) changes.spotifyId = now.spotifyId;
+    if (!this.isSameA(prev.enrichmentHashTags, now.enrichmentHashTags)) changes.enrichmentHashTags = now.enrichmentHashTags;
+    if (!this.isSame(prev.hashTag, now.hashTag)) changes.hashTag = now.hashTag;
     if (prev.removed != now.removed) changes.removed = now.removed;
     if (prev.appleId != now.appleId) {
       changes.appleId = now.appleId;
@@ -232,7 +246,6 @@ export class AddPodcastDialogComponent {
     return result;
   }
 
-
   isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
     if (!a && !b) {
       return true;
@@ -244,6 +257,11 @@ export class AddPodcastDialogComponent {
       return true;
     }
     return JSON.stringify(a) == JSON.stringify(b);
+  }
+
+  translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
+    if (x.value) return x.value;
+    return "";
   }
 
   translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {

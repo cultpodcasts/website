@@ -25,4 +25,6 @@ export interface EditPodcastPost {
     lang?: string;
     knownTerms?: string[];
     minimumDuration?: string | null;
+    enrichmentHashTags?: string[] | null;
+    hashTag?: string | null;
 }
