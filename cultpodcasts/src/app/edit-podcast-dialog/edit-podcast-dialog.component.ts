@@ -204,7 +204,6 @@ export class EditPodcastDialogComponent {
     return JSON.stringify(a) == JSON.stringify(b);
   }
 
-
   getChanges(prev: Podcast, now: Podcast): EditPodcastPost {
     var changes: EditPodcastPost = {};
     if (prev.removed != now.removed) changes.removed = now.removed;
@@ -256,7 +255,6 @@ export class EditPodcastDialogComponent {
     }
     return result;
   }
-
 
   isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
     if (!a && !b) {

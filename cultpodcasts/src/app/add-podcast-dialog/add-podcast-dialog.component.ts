@@ -192,7 +192,6 @@ export class AddPodcastDialogComponent {
     return JSON.stringify(a) == JSON.stringify(b);
   }
 
-
   getChanges(prev: Podcast, now: Podcast): AddPodcastPost {
     var changes: AddPodcastPost = {};
     if (prev.name != now.name) changes.podcastName = now.name;
