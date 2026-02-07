@@ -227,7 +227,7 @@ export class AddPodcastDialogComponent {
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
-    if ((prev.minimumDuration ?? "") != (now.minimumDuration ?? "")) changes.minimumDuration = now.minimumDuration ?? "";
+    if (!this.areEqual(prev.minimumDuration ?? "unset", now.minimumDuration ?? "unset")) changes.minimumDuration = now.minimumDuration == "unset" ? "" : now.minimumDuration ?? "";
     return changes;
   }
 
