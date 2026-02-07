@@ -204,7 +204,6 @@ export class EditPodcastDialogComponent {
     return JSON.stringify(a) == JSON.stringify(b);
   }
 
-
   getChanges(prev: Podcast, now: Podcast): EditPodcastPost {
     var changes: EditPodcastPost = {};
     if (prev.removed != now.removed) changes.removed = now.removed;
@@ -239,7 +238,7 @@ export class EditPodcastDialogComponent {
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
-    if (prev.minimumDuration != now.minimumDuration) changes.minimumDuration = now.minimumDuration;
+    if ((prev.minimumDuration ?? "") != (now.minimumDuration ?? "")) changes.minimumDuration = now.minimumDuration ?? "";
     return changes;
   }
 
@@ -256,7 +255,6 @@ export class EditPodcastDialogComponent {
     }
     return result;
   }
-
 
   isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
     if (!a && !b) {
