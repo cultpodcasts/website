@@ -52,6 +52,9 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
       - name: Copy web app to Bubblewrap
         run: |
           cd cultpodcasts
@@ -59,7 +62,9 @@ jobs:
           cp -r dist/browser/* app-web/ || true
 
       - name: Build APK with Bubblewrap
-        run: cd cultpodcasts && printf "No\n$JAVA_HOME\n" | bubblewrap build
+        run: |
+          cd cultpodcasts
+          (echo "No"; echo "$JAVA_HOME") | bubblewrap build
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
