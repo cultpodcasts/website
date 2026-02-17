@@ -12,6 +12,16 @@ echo "=== Step 2: Verify manifest ==="
 if [ -f "twa-manifest.json" ]; then
   echo "✓ Manifest exists"
   grep "appVersion" twa-manifest.json | head -1
+  if command -v sha1sum >/dev/null 2>&1; then
+    sha1sum twa-manifest.json | awk '{print $1}' > manifest-checksum.txt
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl sha1 twa-manifest.json | awk '{print $2}' > manifest-checksum.txt
+  fi
+  if [ -f manifest-checksum.txt ]; then
+    echo "✓ manifest-checksum.txt created"
+  else
+    echo "⚠ Could not create manifest-checksum.txt"
+  fi
 else
   echo "✗ No manifest file found"
   ls -la twa-manifest* 2>/dev/null || echo "No manifest files"
@@ -41,7 +51,7 @@ echo "Using version: $APP_VERSION"
 
 expect << 'EXPECT_EOF'
 set timeout 600
-set log_user 0
+set log_user 1
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
@@ -49,8 +59,8 @@ set sawRegen 0
 set gotVersion 0
 send_user ">>> Expect script starting with version: $appVersion\n"
 
-# Suppress bubblewrap output by default; our own messages use send_user.
-spawn sh -c {bubblewrap build --skipPwaValidation 2>&1}
+# Run bubblewrap build with normal output.
+spawn bubblewrap build --skipPwaValidation
 
 # Initial expect loop - handle setup prompts and optional regenerate prompt
 expect {
