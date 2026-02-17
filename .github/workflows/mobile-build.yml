@@ -59,25 +59,25 @@ jobs:
           cd cultpodcasts
           if [ ! -f bubblewrap.json ]; then
             echo "Creating default bubblewrap.json..."
-            cat > bubblewrap.json <<-EOF
-            {
-              "name": "Cult Podcasts",
-              "appId": "com.cultpodcasts.app",
-              "packageId": "com.cultpodcasts.app",
-              "launchUrl": "/",
-              "startUrl": "/",
-              "display": "standalone",
-              "orientation": "portrait-primary",
-              "themeColor": "#fafafa",
-              "backgroundColor": "#fafafa",
-              "iconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
-              "maskableIconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
-              "mvnGroupId": "com.cultpodcasts",
-              "appVersionCode": 1,
-              "appVersionName": "1.0.0",
-              "gradleTemplate": "default"
-            }
-            EOF
+            cat > bubblewrap.json << 'EOF'
+{
+  "name": "Cult Podcasts",
+  "appId": "com.cultpodcasts.app",
+  "packageId": "com.cultpodcasts.app",
+  "launchUrl": "/",
+  "startUrl": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "themeColor": "#fafafa",
+  "backgroundColor": "#fafafa",
+  "iconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+  "maskableIconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+  "mvnGroupId": "com.cultpodcasts",
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "gradleTemplate": "default"
+}
+EOF
           fi
 
       - name: Copy web app to Bubblewrap
