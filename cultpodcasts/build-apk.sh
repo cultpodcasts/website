@@ -77,11 +77,14 @@ expect {
     if {$sawRegen == 0} {
       puts "\n>>> Regenerate prompt detected"
       set sawRegen 1
+      # Reduce duplicate prompt noise after regenerate
+      set log_user 0
       send "y\r"
     }
     exp_continue
   }
   "versionName for the new App version:" {
+    set log_user 1
     puts "\n>>> Version prompt detected, sending: $appVersion"
     send "$appVersion\r"
     set gotVersion 1
