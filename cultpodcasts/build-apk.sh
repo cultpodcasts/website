@@ -45,12 +45,13 @@ set log_user 1
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
-set versionSent 0
+set sawRegen 0
+set gotVersion 0
 puts ">>> Expect script starting with version: $appVersion"
 
 spawn bubblewrap build --skipPwaValidation
 
-# Initial expect loop - handle version prompt
+# Initial expect loop - handle setup prompts and optional regenerate prompt
 expect {
   "Where is your JDK installed?" {
     puts "\n>>> JDK path prompt detected"
@@ -74,14 +75,22 @@ expect {
   }
   "would you like to regenerate" {
     puts "\n>>> Regenerate prompt detected"
+    set sawRegen 1
     send "y\r"
-    exp_continue
   }
   "versionName for the new App version:" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
-    stty -echo < $spawn_out(slave,name)
     send "$appVersion\r"
-    stty echo < $spawn_out(slave,name)
+    set gotVersion 1
+  }
+}
+
+# If we just regenerated, wait for the version prompt and send the version once
+if {$sawRegen == 1 && $gotVersion == 0} {
+  expect "versionName for the new App version:" {
+    puts "\n>>> Version prompt detected, sending: $appVersion"
+    send "$appVersion\r"
+    set gotVersion 1
   }
 }
 
