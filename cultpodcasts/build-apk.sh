@@ -50,6 +50,7 @@ set gotVersion 0
 puts ">>> Expect script starting with version: $appVersion"
 
 spawn bubblewrap build --skipPwaValidation
+set log_user 0
 
 # Initial expect loop - handle setup prompts and optional regenerate prompt
 expect {
@@ -77,14 +78,11 @@ expect {
     if {$sawRegen == 0} {
       puts "\n>>> Regenerate prompt detected"
       set sawRegen 1
-      # Reduce duplicate prompt noise after regenerate
-      set log_user 0
       send "y\r"
     }
     exp_continue
   }
   "versionName for the new App version:" {
-    set log_user 1
     puts "\n>>> Version prompt detected, sending: $appVersion"
     send "$appVersion\r"
     set gotVersion 1
@@ -110,6 +108,7 @@ if {$gotVersion == 0} {
 
 # Wait for version confirmation
 expect "Upgraded app version"
+set log_user 1
 puts "\n>>> Version accepted, continuing with build..."
 
 # Continue with remaining prompts - no longer matching version
