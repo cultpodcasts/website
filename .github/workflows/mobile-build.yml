@@ -152,15 +152,15 @@ EOF
           # Initialize a simple Cordova-like structure for iOS
           if [ ! -f "package.json" ]; then
             cat > package.json << 'EOF'
-          {
-            "name": "cultpodcasts",
-            "version": "1.0.0",
-            "description": "Cult Podcasts iOS App",
-            "scripts": {
-              "build": "xcodebuild -scheme cultpodcasts -configuration Release"
-            }
-          }
-          EOF
+{
+  "name": "cultpodcasts",
+  "version": "1.0.0",
+  "description": "Cult Podcasts iOS App",
+  "scripts": {
+    "build": "xcodebuild -scheme cultpodcasts -configuration Release"
+  }
+}
+EOF
           fi
 
       - name: Create iOS Xcode project (if needed)
@@ -197,7 +197,7 @@ EOF
           # Using xcodebuild to build the iOS app
           # Note: Requires proper provisioning profiles and signing certificates
           # For CI/CD, you'll need to import certificates from secrets
-          xcodebuild -scheme cultpodcasts -configuration Debug -derivedDataPath build 2>&1 || echo "Build may require provisioning profiles"
+          xcodebuild -scheme cultpodcasts -configuration Debug -derivedDataPath build
           cd ..
 
       - name: Build iOS app (Release)
