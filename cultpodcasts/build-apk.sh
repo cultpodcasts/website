@@ -3,19 +3,64 @@
 # This script handles all the setup and interactive prompts
 set -e
 
+echo "=== Step 0: Discover Android SDK and JDK paths ==="
+# Check environment variables first
+if [ ! -z "$ANDROID_SDK_ROOT" ]; then
+  ANDROID_SDK_PATH="$ANDROID_SDK_ROOT"
+  echo "✓ Using ANDROID_SDK_ROOT: $ANDROID_SDK_PATH"
+else
+  # Common locations
+  for path in /opt/android-sdk /android-sdk /home/bubblewrap/android-sdk /opt/android; do
+    if [ -d "$path/platforms" ] || [ -d "$path/build-tools" ]; then
+      ANDROID_SDK_PATH="$path"
+      echo "✓ Found Android SDK at: $ANDROID_SDK_PATH"
+      break
+    fi
+  done
+fi
+
+if [ -z "$ANDROID_SDK_PATH" ]; then
+  echo "✗ Could not find Android SDK"
+  ls -la /opt/ | grep -i android || echo "No android directories in /opt"
+  ANDROID_SDK_PATH="/opt/android-sdk"
+fi
+
+# Find Java
+JAVA_PATH=""
+if [ ! -z "$JAVA_HOME" ]; then
+  JAVA_PATH="$JAVA_HOME"
+  echo "✓ Using JAVA_HOME: $JAVA_PATH"
+else
+  for path in /opt/java/openjdk /usr/lib/jvm/java-17* /opt/jdk*; do
+    if [ -f "$path/bin/java" ]; then
+      JAVA_PATH="$path"
+      echo "✓ Found Java at: $JAVA_PATH"
+      break
+    fi
+  done
+fi
+
+if [ -z "$JAVA_PATH" ]; then
+  JAVA_PATH="/opt/java/openjdk"
+  echo "⚠ Using default Java path (may not exist): $JAVA_PATH"
+fi
+
+echo ""
 echo "=== Step 1: Pre-configure Bubblewrap ==="
 mkdir -p ~/.bubblewrap
-cat > ~/.bubblewrap/config.json << 'EOF'
+cat > ~/.bubblewrap/config.json << EOF
 {
-  "jdkPath": "/opt/java/openjdk",
-  "androidSdkPath": "/opt/android"
+  "jdkPath": "$JAVA_PATH",
+  "androidSdkPath": "$ANDROID_SDK_PATH"
 }
 EOF
-echo "✓ Config created"
+echo "✓ Config created with:"
+echo "  - jdkPath: $JAVA_PATH"
+echo "  - androidSdkPath: $ANDROID_SDK_PATH"
 
 echo ""
 echo "=== Step 2: Pre-accept Android SDK licenses ==="
-export ANDROID_SDK_ROOT=/opt/android
+export ANDROID_SDK_ROOT="$ANDROID_SDK_PATH"
 mkdir -p ${ANDROID_SDK_ROOT}/licenses
 echo -e "\n24333f8a63b6825ea9c5514f83c2829ac002c39f" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-license
 echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-preview-license
