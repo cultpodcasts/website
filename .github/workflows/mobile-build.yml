@@ -111,17 +111,15 @@ jobs:
         run: |
           cd cultpodcasts
           
-          # Let Bubblewrap install its own JDK (answer "yes"), then provide any additional prompts
-          ( printf "yes\n" && sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
-          
           # Decode keystore from GitHub Secrets
           if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
             echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
             echo "Keystore decoded successfully"
           fi
           
-          # Build with minimal prompts (answer "y" to confirmations, but version is already set)
-          ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
+          # Build with prompts answered automatically by stdin loop
+          # Answers: JDK install (yes), Android SDK install (yes), terms (yes), version prompts (1.0.0)
+          ( sleep 5 && printf "1.0.0\n1\n" && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
