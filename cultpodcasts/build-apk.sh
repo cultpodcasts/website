@@ -70,7 +70,8 @@ expect {
     if {$versionSent == 0} {
       puts "\n>>> Version prompt detected, sending: $appVersion"
       set versionSent 1
-      send -- "$appVersion\r"
+      send -s -- "$appVersion"
+      send "\r"
       expect {
         "Upgraded app version" {
           puts "\n>>> Version successfully set"
