@@ -122,12 +122,13 @@ jobs:
           cd cultpodcasts
           
           docker run --rm \
+            --entrypoint bash \
             -v $(pwd):/workspace \
             -w /workspace \
             -e BUBBLEWRAP_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
             -e BUBBLEWRAP_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
             ghcr.io/googlechromelabs/bubblewrap:latest \
-            bash -c '
+            -c '
               set -e
               
               echo "=== Step 1: Pre-configure Bubblewrap ==="
