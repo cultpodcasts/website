@@ -42,6 +42,7 @@ echo "Using version: $APP_VERSION"
 expect << 'EXPECT_EOF'
 set timeout 600
 set log_user 1
+set send_slow {10 .01}
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
