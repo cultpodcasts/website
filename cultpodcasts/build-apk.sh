@@ -56,6 +56,7 @@ set log_user 1
 # Get version from environment
 set appVersion $::env(APP_VERSION)
 set sawRegen 0
+set sawManifest 0
 set gotVersion 0
 send_user ">>> Expect script starting with version: $appVersion\n"
 
@@ -85,8 +86,11 @@ expect {
     exp_continue
   }
   "There are changes in twa-manifest.json. Would you like to apply them" {
-    send_user "\n>>> Manifest changes prompt detected\n"
-    send "y\r"
+    if {$sawManifest == 0} {
+      send_user "\n>>> Manifest changes prompt detected\n"
+      set sawManifest 1
+      send "y\r"
+    }
     exp_continue
   }
   "would you like to regenerate" {
@@ -133,8 +137,11 @@ expect {
     exp_continue
   }
   "There are changes in twa-manifest.json. Would you like to apply them" {
-    send_user "\n>>> Manifest changes prompt detected\n"
-    send "y\r"
+    if {$sawManifest == 0} {
+      send_user "\n>>> Manifest changes prompt detected\n"
+      set sawManifest 1
+      send "y\r"
+    }
     exp_continue
   }
   eof {
