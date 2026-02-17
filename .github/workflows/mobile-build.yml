@@ -4,9 +4,10 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'src/**'
-      - 'angular.json'
-      - 'package.json'
+      - 'cultpodcasts/src/**'
+      - 'cultpodcasts/angular.json'
+      - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build-apk.sh'
       - '.github/workflows/mobile-build.yml'
   workflow_dispatch:
     inputs:
@@ -16,7 +17,7 @@ on:
         default: 'false'
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '20' 
 
 jobs:
   build-android:
@@ -32,57 +33,32 @@ jobs:
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
       - name: Install dependencies
         run: cd cultpodcasts && npm ci
 
       - name: Build web app
         run: cd cultpodcasts && env=production ./build.sh
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK Build Tools
-        run: |
-          sdkmanager "build-tools;34.0.0" "platforms;android-34"
-          sdkmanager --list_installed
-
-      - name: Decode and set up Android Keystore
-        run: |
-          cd cultpodcasts
-          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
-            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
-            echo "Keystore decoded successfully"
-            ls -lh android.keystore
-          else
-            echo "Warning: JAVA_KEYSTORE secret not found. APK will be unsigned."
-          fi
-
-      - name: Copy web app to Bubblewrap
-        run: |
-          cd cultpodcasts
-          mkdir -p app-web
-          cp -r dist/browser/* app-web/ || true
-
       - name: Initialize Bubblewrap project
         run: |
           cd cultpodcasts
-          # Create twa-manifest.json with required fields and signing configuration
+          # Create twa-manifest.json with version info from package.json
           node -e "
             const fs = require('fs');
+            const crypto = require('crypto');
+            
+            // Read version from package.json
+            const packageJson = require('./package.json');
+            const appVersion = packageJson.version;
+            
+            // Convert semantic version (e.g., 1.8.0) to integer version code
+            // Multiply major*10000 + minor*100 + patch
+            const versionParts = appVersion.split('.');
+            const major = parseInt(versionParts[0], 10) || 0;
+            const minor = parseInt(versionParts[1], 10) || 0;
+            const patch = parseInt(versionParts[2], 10) || 0;
+            const appVersionCode = (major * 10000) + (minor * 100) + patch;
+            
             const manifest = {
               name: 'Cult Podcasts',
               packageId: 'com.cultpodcasts.twa',
@@ -97,8 +73,8 @@ jobs:
               backgroundColor: '#fafafa',
               iconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
               maskableIconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
-              appVersionCode: 1,
-              appVersionName: '1.0.0',
+              appVersion: appVersion,
+              appVersionCode: appVersionCode,
               splashScreenFadeOutDuration: 300,
               enableNotifications: true,
               enableSiteSettingsShortcut: true,
@@ -120,27 +96,41 @@ jobs:
             }
             
             fs.writeFileSync('twa-manifest.json', JSON.stringify(manifest, null, 2));
-            console.log('Created twa-manifest.json with signing configuration');
+            
+            // Generate SHA1 hash for manifest validation
+            const manifestContent = JSON.stringify(manifest);
+            const hash = crypto.createHash('sha1').update(manifestContent).digest('hex');
+            fs.writeFileSync('.twa-manifest.json.sha1', hash);
+            
+            console.log(\`Created twa-manifest.json with app version \${appVersion} (code: \${appVersionCode})\`);
           "
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      - name: Configure and Build APK with Bubblewrap
+      - name: Decode Android Keystore
         run: |
           cd cultpodcasts
-          # Unset ANDROID_SDK_ROOT to avoid conflict with ANDROID_HOME set by Bubblewrap
-          unset ANDROID_SDK_ROOT
+          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
+            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
+            echo "Keystore decoded successfully"
+            ls -lh android.keystore
+          fi
+
+      - name: Build APK with Bubblewrap (Docker - automated with expect)
+        run: |
+          cd cultpodcasts
           
-          # Pre-configure the version to avoid interactive prompt
-          bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
-          
-          # Build with minimal prompts (only for critical confirmations, not version)
-          ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
-        env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          docker run --rm \
+            --entrypoint bash \
+            -v $(pwd)/build-apk.sh:/tmp/build-apk.sh:ro \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            -e BUBBLEWRAP_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -e BUBBLEWRAP_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            ghcr.io/googlechromelabs/bubblewrap:latest \
+            /tmp/build-apk.sh
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

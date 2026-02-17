@@ -1,0 +1,186 @@
+#!/bin/bash
+# Build Android APK with Bubblewrap in Docker
+# This script uses expect to handle interactive prompts
+set -e
+
+echo "=== Step 1: Verify workspace ==="
+echo "Working directory: $(pwd)"
+ls -la | head -20
+
+echo ""
+echo "=== Step 2: Verify manifest ==="
+if [ -f "twa-manifest.json" ]; then
+  echo "✓ Manifest exists"
+  grep "appVersion" twa-manifest.json | head -1
+  if command -v sha1sum >/dev/null 2>&1; then
+    sha1sum twa-manifest.json | awk '{print $1}' > manifest-checksum.txt
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl sha1 twa-manifest.json | awk '{print $2}' > manifest-checksum.txt
+  fi
+  if [ -f manifest-checksum.txt ]; then
+    echo "✓ manifest-checksum.txt created"
+  else
+    echo "⚠ Could not create manifest-checksum.txt"
+  fi
+else
+  echo "✗ No manifest file found"
+  ls -la twa-manifest* 2>/dev/null || echo "No manifest files"
+fi
+
+echo ""
+echo "=== Step 3: Install expect ==="
+apt-get update -qq 2>/dev/null || true
+apt-get install -y -qq expect >/dev/null 2>&1 || true
+echo "✓ expect installed"
+
+echo ""
+echo "=== Step 4: Build with Bubblewrap (interactive prompts) ==="
+echo "This may take several minutes on first run (SDK download)..."
+
+# Extract version from manifest - use multiple methods to ensure we get it
+if [ -f "twa-manifest.json" ]; then
+  APP_VERSION=$(grep -oP '"appVersion":\s*"\K[^"]+' twa-manifest.json 2>/dev/null || \
+                grep '"appVersion"' twa-manifest.json | sed 's/.*"appVersion"[^"]*"\([^"]*\)".*/\1/' || \
+                echo "1.8.0")
+else
+  APP_VERSION="1.8.0"
+fi
+
+export APP_VERSION
+echo "Using version: $APP_VERSION"
+
+expect << 'EXPECT_EOF'
+set timeout 600
+set log_user 1
+
+# Get version from environment
+set appVersion $::env(APP_VERSION)
+set sawRegen 0
+set sawManifest 0
+set gotVersion 0
+send_user ">>> Expect script starting with version: $appVersion\n"
+
+# Run bubblewrap build with normal output.
+spawn bubblewrap build --skipPwaValidation
+
+# Initial expect loop - handle setup prompts and optional regenerate prompt
+expect {
+  "Where is your JDK installed?" {
+    send_user "\n>>> JDK path prompt detected\n"
+    send "/usr/lib/jvm/java-17-openjdk-amd64\r"
+    exp_continue
+  }
+  "Where is your Android SDK installed?" {
+    send_user "\n>>> Android SDK path prompt detected\n"
+    send "~/.bubblewrap/android_sdk\r"
+    exp_continue
+  }
+  "Do you want me to download it?" {
+    send_user "\n>>> SDK download prompt detected\n"
+    send "y\r"
+    exp_continue
+  }
+  "Accept? (y/N):" {
+    send_user "\n>>> License acceptance prompt detected\n"
+    send "y\r"
+    exp_continue
+  }
+  "There are changes in twa-manifest.json. Would you like to apply them" {
+    if {$sawManifest == 0} {
+      send_user "\n>>> Manifest changes prompt detected\n"
+      set sawManifest 1
+      send "y\r"
+    }
+    exp_continue
+  }
+  "would you like to regenerate" {
+    if {$sawRegen == 0} {
+      send_user "\n>>> Regenerate prompt detected\n"
+      set sawRegen 1
+      send "y\r"
+    }
+    exp_continue
+  }
+  "versionName for the new App version:" {
+    send_user "\n>>> Version prompt detected, sending: $appVersion\n"
+    send "$appVersion\r"
+    set gotVersion 1
+  }
+  eof {
+    puts "\n>>> Build process completed"
+    exit 0
+  }
+  timeout {
+    puts "\n>>> ERROR: Timeout after 600 seconds"
+    exit 1
+  }
+}
+
+# If the version prompt comes later, wait for it and send once
+if {$gotVersion == 0} {
+  expect "versionName for the new App version:" {
+    send_user "\n>>> Version prompt detected, sending: $appVersion\n"
+    send "$appVersion\r"
+    set gotVersion 1
+  }
+}
+
+# Wait for version confirmation
+expect "Upgraded app version"
+send_user "\n>>> Version accepted, continuing with build...\n"
+
+# Continue with remaining prompts - no longer matching version
+expect {
+  "project? (Y/n)" {
+    send_user "\n>>> Project confirmation prompt detected\n"
+    send "y\r"
+    exp_continue
+  }
+  "There are changes in twa-manifest.json. Would you like to apply them" {
+    if {$sawManifest == 0} {
+      send_user "\n>>> Manifest changes prompt detected\n"
+      set sawManifest 1
+      send "y\r"
+    }
+    exp_continue
+  }
+  eof {
+    send_user "\n>>> Build process completed\n"
+    exit 0
+  }
+  timeout {
+    send_user "\n>>> ERROR: Timeout after 600 seconds\n"
+    exit 1
+  }
+}
+EXPECT_EOF
+
+BUILD_EXIT=$?
+
+echo ""
+echo "=== Step 6: Verify build output ==="
+
+if [ -f "app-release-signed.apk" ]; then
+  echo "✓ Signed APK created"
+  ls -lh app-release-signed.apk
+elif [ -f "app-release.apk" ]; then
+  echo "⚠ Unsigned APK found"
+  ls -lh app-release.apk
+else
+  echo "✗ No APK found"
+  ls -la app-* 2>/dev/null || echo "(no app files)"
+fi
+
+if [ -f "app-release-bundle.aab" ]; then
+  echo "✓ Bundle created"
+  ls -lh app-release-bundle.aab
+fi
+
+echo ""
+if [ $BUILD_EXIT -eq 0 ]; then
+  echo "=== BUILD SUCCESSFUL ==="
+else
+  echo "=== BUILD FAILED (exit: $BUILD_EXIT) ==="
+fi
+
+exit $BUILD_EXIT
