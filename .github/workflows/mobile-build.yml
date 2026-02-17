@@ -2,7 +2,7 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main. feature/fix-sign-apk ]
     paths:
       - 'src/**'
       - 'angular.json'
@@ -133,10 +133,10 @@ jobs:
           # Unset ANDROID_SDK_ROOT to avoid conflict with ANDROID_HOME set by Bubblewrap
           unset ANDROID_SDK_ROOT
           
-          # Pre-configure the version to avoid interactive prompt
-          bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
+          # Pre-configure the version (answer "n" to JDK prompt to use system Java)
+          echo "n" | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
           
-          # Build with minimal prompts (only for critical confirmations, not version)
+          # Build with minimal prompts (answer "y" to confirmations, but version is already set)
           ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
