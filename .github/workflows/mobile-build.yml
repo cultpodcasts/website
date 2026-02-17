@@ -64,10 +64,8 @@ jobs:
       - name: Build APK with Bubblewrap
         run: |
           cd cultpodcasts
-          # Pre-configure Bubblewrap paths to avoid interactive prompts
-          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_SDK_ROOT"
-          # Build without any interactive prompts
-          bubblewrap build
+          # Keep stdin open with continuous "y" responses, adapted from pwa-to-apk-action
+          ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
