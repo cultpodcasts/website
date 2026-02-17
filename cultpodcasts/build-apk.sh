@@ -65,9 +65,9 @@ expect {
     send "y\r"
     exp_continue
   }
-  "versionName for the new App version:" {
+  -re "versionName for the new App version:\\s*$" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
-    send "$appVersion\r"
+    send -- "$appVersion\r"
     exp_continue
   }
   "Accept? (y/N):" {
