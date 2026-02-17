@@ -1,0 +1,21 @@
+{
+  "name": "Cult Podcasts",
+  "appId": "com.cultpodcasts.app",
+  "packageId": "com.cultpodcasts.app",
+  "launchUrl": "/",
+  "startUrl": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "themeColor": "#fafafa",
+  "backgroundColor": "#fafafa",
+  "iconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+  "maskableIconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+  "mvnGroupId": "com.cultpodcasts",
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "shortcutsFile": "shortcuts.json",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": true,
+  "enableSiteSettingsShortcut": true,
+  "fallbackType": "webview"
+}

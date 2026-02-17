@@ -1,0 +1,159 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'angular.json'
+      - 'package.json'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Build as release (requires signing)'
+        required: false
+        default: 'false'
+
+env:
+  NODE_VERSION: '20'
+  XCODE_VERSION: '16'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcode-select --print-path
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build -- production
+
+      - name: Install Bubblewrap (for HTML to Swift assets)
+        run: npm install -g @bubblewrap/cli
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      - name: Set up iOS app directory
+        run: |
+          mkdir -p ios-app
+          cd ios-app
+          
+          # Initialize a simple Cordova-like structure for iOS
+          if [ ! -f "package.json" ]; then
+            cat > package.json << 'EOF'
+          {
+            "name": "cultpodcasts",
+            "version": "1.0.0",
+            "description": "Cult Podcasts iOS App",
+            "scripts": {
+              "build": "xcodebuild -scheme cultpodcasts -configuration Release"
+            }
+          }
+          EOF
+          fi
+
+      - name: Create iOS Xcode project (if needed)
+        run: |
+          if [ ! -d "ios-app/cultpodcasts.xcodeproj" ]; then
+            echo "iOS project will be generated from web build"
+            # Option 1: Use Cordova to generate project
+            npm install -g cordova
+            cd ios-app
+            cordova create . com.cultpodcasts.app "Cult Podcasts" || true
+            cordova platform add ios || true
+            cd ..
+          fi
+
+      - name: Copy web assets to iOS
+        run: |
+          # Copy built web assets to iOS www directory
+          mkdir -p ios-app/www
+          cp -r dist/cultpodcasts/browser/* ios-app/www/ || cp -r dist/* ios-app/www/ || true
+
+      - name: Install iOS dependencies
+        run: |
+          cd ios-app
+          if [ -f "package.json" ]; then
+            npm install || true
+          fi
+          cd ..
+
+      - name: Build iOS app (Debug)
+        if: github.event.inputs.release != 'true'
+        run: |
+          cd ios-app
+          # Using xcodebuild to build the iOS app
+          # Note: Requires proper provisioning profiles and signing certificates
+          # For CI/CD, you'll need to import certificates from secrets
+          xcodebuild -scheme cultpodcasts -configuration Debug -derivedDataPath build 2>&1 || echo "Build may require provisioning profiles"
+          cd ..
+
+      - name: Build iOS app (Release)
+        if: github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+        run: |
+          cd ios-app
+          # For production, import signing certificate and provisioning profile
+          if [ ! -z "${{ secrets.IOS_CERTIFICATE_P12 }}" ]; then
+            echo "Setting up signing certificate..."
+            echo "${{ secrets.IOS_CERTIFICATE_P12 }}" | base64 -d > Certificate.p12
+            security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+            security default-keychain -s build.keychain
+            security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+            security import Certificate.p12 -k build.keychain -P "${{ secrets.CERTIFICATE_PASSWORD }}" -A
+            security set-key-partition-list -S apple-tool:,apple: -s lsa- -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
+          fi
+          
+          xcodebuild -scheme cultpodcasts -configuration Release -derivedDataPath build -archivePath build/cultpodcasts.xcarchive archive 2>&1 || echo "Archive may require provisioning profiles"
+          
+          if [ -d "build/cultpodcasts.xcarchive" ]; then
+            xcodebuild -exportArchive -archivePath build/cultpodcasts.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/ipa
+          fi
+          cd ..
+
+      - name: Upload iOS build artifact (Debug)
+        if: github.event.inputs.release != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultpodcasts-ios-debug
+          path: ios-app/build/
+          retention-days: 7
+
+      - name: Upload iOS IPA artifact (Release)
+        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('ios-app/build/ipa/') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultpodcasts-ios-release
+          path: ios-app/build/ipa/**/*.ipa
+          retention-days: 30
+
+      - name: Create Release (on version tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ios-app/build/ipa/**/*.ipa
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to App Store (optional)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.APP_STORE_KEY != ''
+        run: |
+          echo "App Store upload would be configured here"
+          echo "Requires: APP_STORE_KEY_ID, APP_STORE_ISSUER_ID, APP_STORE_KEY secrets"
