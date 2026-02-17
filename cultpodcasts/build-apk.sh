@@ -67,19 +67,13 @@ expect {
     send "y\r"
     exp_continue
   }
-  "versionName for the new App version:" {
+  -re "versionName for the new App version:\\s*\r\n" {
     if {$versionSent == 0} {
       puts "\n>>> Version prompt detected, sending: $appVersion"
       set versionSent 1
-      send -s -- "$appVersion"
-      send "\r"
-      expect {
-        "Upgraded app version" {
-          puts "\n>>> Version successfully set"
-        }
-        timeout {
-          puts "\n>>> Warning: Did not see version upgrade confirmation"
-        }
+      send "$appVersion\r"
+      expect "Upgraded app version" {
+        puts "\n>>> Version successfully set"
       }
     }
     exp_continue
