@@ -41,7 +41,7 @@ echo "Using version: $APP_VERSION"
 
 expect << 'EXPECT_EOF'
 set timeout 600
-set log_user 1
+set log_user 0
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
@@ -49,7 +49,8 @@ set sawRegen 0
 set gotVersion 0
 puts ">>> Expect script starting with version: $appVersion"
 
-spawn bubblewrap build --skipPwaValidation
+# Suppress bubblewrap output by default; our own puts still show.
+spawn sh -c {bubblewrap build --skipPwaValidation 2>&1}
 set log_user 0
 
 # Initial expect loop - handle setup prompts and optional regenerate prompt
@@ -108,7 +109,6 @@ if {$gotVersion == 0} {
 
 # Wait for version confirmation
 expect "Upgraded app version"
-set log_user 1
 puts "\n>>> Version accepted, continuing with build..."
 
 # Continue with remaining prompts - no longer matching version
