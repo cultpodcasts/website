@@ -2,11 +2,12 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main, feature/fix-sign-apk ]
+    branches: [ main, feature/sign-apk ]
     paths:
-      - 'src/**'
-      - 'angular.json'
-      - 'package.json'
+      - 'cultpodcasts/src/**'
+      - 'cultpodcasts/angular.json'
+      - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build-apk.sh'
       - '.github/workflows/mobile-build.yml'
   workflow_dispatch:
     inputs:
