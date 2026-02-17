@@ -59,7 +59,7 @@ jobs:
           cp -r dist/browser/* app-web/ || true
 
       - name: Build APK with Bubblewrap
-        run: cd cultpodcasts && echo "No" | bubblewrap build
+        run: cd cultpodcasts && printf "No\n$JAVA_HOME\n" | bubblewrap build
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
