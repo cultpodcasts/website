@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "com.cultpodcasts.twa",
-        "sha256_cert_fingerprints": ["15:13:FF:81:D1:B6:28:D5:9F:E3:5A:FB:86:EA:91:99:4A:0B:C3:89:96:EF:BC:9D:12:A3:43:B8:15:EF:FA:B6"]
+        "sha256_cert_fingerprints": ["EF:FE:85:BC:D0:26:62:42:D5:CC:E3:59:21:8B:95:AA:11:DA:A1:AC:85:1E:F0:B7:5B:DA:E2:C2:E5:A0:7B:B9"]
       }
     }]
