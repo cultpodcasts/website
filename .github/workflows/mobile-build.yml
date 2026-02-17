@@ -66,11 +66,20 @@ jobs:
           mkdir -p app-web
           cp -r dist/browser/* app-web/ || true
 
+      - name: Initialize Bubblewrap project
+        run: |
+          cd cultpodcasts
+          # Create twa-manifest.json with required fields if it doesn't exist
+          if [ ! -f twa-manifest.json ]; then
+            node -e "const fs = require('fs'); fs.writeFileSync('twa-manifest.json', JSON.stringify({name:'Cult Podcasts',packageId:'com.cultpodcasts.twa',host:'cultpodcasts.com',launchUrl:'/',startUrl:'/',display:'standalone',orientation:'portrait-primary',themeColor:'#fafafa',themeColorDark:'#000000',navigationColor:'#fafafa',backgroundColor:'#fafafa',iconUrl:'https://cultpodcasts.com/assets/icons/icon-192x192.png',maskableIconUrl:'https://cultpodcasts.com/assets/icons/icon-192x192.png',appVersionCode:1,appVersionName:'1.0.0',splashScreenFadeOutDuration:300,enableNotifications:true,enableSiteSettingsShortcut:true,fallbackType:'webview',signingKey:{path:'./android.keystore',alias:'android'}}, null, 2))"
+            echo "Created twa-manifest.json"
+          fi
+
       - name: Build APK with Bubblewrap
         run: |
           cd cultpodcasts
           # Keep stdin open with continuous "y" responses, adapted from pwa-to-apk-action
-          ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
+          ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation --skipSigning
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
