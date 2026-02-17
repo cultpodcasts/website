@@ -67,6 +67,11 @@ expect {
     send "y\r"
     exp_continue
   }
+  "Accept? (y/N):" {
+    puts "\n>>> License acceptance prompt detected"
+    send "y\r"
+    exp_continue
+  }
   "would you like to regenerate" {
     puts "\n>>> Regenerate prompt detected"
     send "y\r"
@@ -74,9 +79,7 @@ expect {
   }
   "versionName for the new App version:" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
-    set log_user 0
     send "$appVersion\r"
-    set log_user 1
   }
 }
 
@@ -86,13 +89,20 @@ puts "\n>>> Version accepted, continuing with build..."
 
 # Continue with remaining prompts - no longer matching version
 expect {
-  "Accept? (y/N):" {
-    puts "\n>>> License acceptance prompt detected"
+  "project? (Y/n)" {
+    puts "\n>>> Project confirmation prompt detected"
     send "y\r"
     exp_continue
   }
-  "project? (Y/n)" {
-    puts "\n>>> Project confirmation prompt detected"
+  eof {
+    puts "\n>>> Build process completed"
+    exit 0
+  }
+  timeout {
+    puts "\n>>> ERROR: Timeout after 600 seconds"
+    exit 1
+  }
+}
     send "y\r"
     exp_continue
   }
