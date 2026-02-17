@@ -143,9 +143,8 @@ jobs:
         with:
           name: cultpodcasts-apk
           path: |
-            cultpodcasts/app-release-aligned.apk
-            cultpodcasts/app-release-unsigned-aligned.apk
-            cultpodcasts/app/build/outputs/bundle/release/app-release.aab
+            cultpodcasts/app-release-signed.apk
+            cultpodcasts/app-release-bundle.aab
           retention-days: 30
 
       - name: Create Release (Android)
@@ -153,9 +152,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            cultpodcasts/app-release-aligned.apk
-            cultpodcasts/app-release-unsigned-aligned.apk
-            cultpodcasts/app/build/outputs/bundle/release/app-release.aab
+            cultpodcasts/app-release-signed.apk
+            cultpodcasts/app-release-bundle.aab
           draft: false
           prerelease: false
         env:
