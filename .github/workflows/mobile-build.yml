@@ -133,8 +133,8 @@ jobs:
           # Unset ANDROID_SDK_ROOT to avoid conflict with ANDROID_HOME set by Bubblewrap
           unset ANDROID_SDK_ROOT
           
-          # Pre-configure the version (answer "n" to JDK prompt to use system Java)
-          echo "n" | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
+          # Pre-configure the version (answer "no" to JDK install prompt and provide JDK path)
+          printf "no\n$JAVA_HOME\n" | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
           
           # Build with minimal prompts (answer "y" to confirmations, but version is already set)
           ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
