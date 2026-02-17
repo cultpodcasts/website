@@ -59,7 +59,7 @@ jobs:
           cd cultpodcasts
           if [ ! -f bubblewrap.json ]; then
             echo "Creating default bubblewrap.json..."
-            cat > bubblewrap.json << 'EOF'
+            cat > bubblewrap.json <<-EOF
             {
               "name": "Cult Podcasts",
               "appId": "com.cultpodcasts.app",
