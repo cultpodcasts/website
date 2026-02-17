@@ -71,12 +71,15 @@ expect {
       puts "\n>>> Version prompt detected, sending: $appVersion"
       set versionSent 1
       send -- "$appVersion\r"
-      sleep 1
+      expect {
+        "Upgraded app version" {
+          puts "\n>>> Version successfully set"
+        }
+        timeout {
+          puts "\n>>> Warning: Did not see version upgrade confirmation"
+        }
+      }
     }
-    exp_continue
-  }
-  "Upgraded app version" {
-    puts "\n>>> Version successfully set"
     exp_continue
   }
   "Accept? (y/N):" {
