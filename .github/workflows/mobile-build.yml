@@ -41,15 +41,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          ndk-version: '26.1.10909125'
-          cmake-version: '3.23.1'
+          accept-android-sdk-licenses: true
+          packages: 'platforms;android-34 ndk;26.1.10909125 cmake;3.23.1'
 
       - name: Install dependencies
         run: cd cultpodcasts && npm ci
 
       - name: Build web app
-        run: cd cultpodcasts && npm run build -- production
+        run: cd cultpodcasts && env=production ./build.sh
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
@@ -58,7 +57,7 @@ jobs:
         run: |
           cd cultpodcasts
           mkdir -p app-web
-          cp -r dist/* app-web/ || true
+          cp -r dist/browser/* app-web/ || true
 
       - name: Build APK with Bubblewrap
         run: cd cultpodcasts && echo "No" | bubblewrap build
@@ -110,7 +109,7 @@ jobs:
         run: cd cultpodcasts && npm ci
 
       - name: Build web app
-        run: cd cultpodcasts && npm run build -- production
+        run: cd cultpodcasts && env=production ./build.sh
 
       - name: Install Bubblewrap (for HTML to Swift assets)
         run: npm install -g @bubblewrap/cli
@@ -136,7 +135,7 @@ jobs:
         run: |
           cd cultpodcasts
           # Copy built web assets to iOS www directory (created by Cordova)
-          cp -r dist/cultpodcasts/browser/* ../ios-app/www/ 2>/dev/null || cp -r dist/* ../ios-app/www/ 2>/dev/null || echo "Web assets copied"
+          cp -r dist/browser/* ../ios-app/www/ || true
 
       - name: Install iOS dependencies
         run: |
