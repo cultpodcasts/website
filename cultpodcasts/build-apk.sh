@@ -45,6 +45,7 @@ set log_user 1
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
+set versionSent 0
 puts ">>> Expect script starting with version: $appVersion"
 
 spawn bubblewrap build --skipPwaValidation
@@ -65,9 +66,13 @@ expect {
     send "y\r"
     exp_continue
   }
-  -re "versionName for the new App version:\\s*$" {
-    puts "\n>>> Version prompt detected, sending: $appVersion"
-    send -- "$appVersion\r"
+  "versionName for the new App version:" {
+    if {$versionSent == 0} {
+      puts "\n>>> Version prompt detected, sending: $appVersion"
+      set versionSent 1
+      send -- "$appVersion\r"
+    }
+    exp_continue
   }
   "Accept? (y/N):" {
     puts "\n>>> License acceptance prompt detected"
