@@ -32,17 +32,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
       - name: Install dependencies
         run: cd cultpodcasts && npm ci
 
@@ -51,31 +40,6 @@ jobs:
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
-
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK Build Tools
-        run: |
-          sdkmanager "build-tools;34.0.0" "platforms;android-34"
-          sdkmanager --list_installed
-
-      - name: Decode and set up Android Keystore
-        run: |
-          cd cultpodcasts
-          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
-            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
-            echo "Keystore decoded successfully"
-            ls -lh android.keystore
-          else
-            echo "Warning: JAVA_KEYSTORE secret not found. APK will be unsigned."
-          fi
-
-      - name: Copy web app to Bubblewrap
-        run: |
-          cd cultpodcasts
-          mkdir -p app-web
-          cp -r dist/browser/* app-web/ || true
 
       - name: Initialize Bubblewrap project
         run: |
@@ -130,11 +94,15 @@ jobs:
       - name: Configure and Build APK with Bubblewrap
         run: |
           cd cultpodcasts
-          # Unset ANDROID_SDK_ROOT to avoid conflict with ANDROID_HOME set by Bubblewrap
-          unset ANDROID_SDK_ROOT
           
-          # Pre-configure the version (answer "no" to JDK install prompt and provide JDK path)
-          printf "no\n$JAVA_HOME\n" | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
+          # Let Bubblewrap install its own JDK (answer "yes"), then provide any additional prompts
+          ( printf "yes\n" && sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap updateConfig --appVersionName="1.0.0" --appVersionCode=1
+          
+          # Decode keystore from GitHub Secrets
+          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
+            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
+            echo "Keystore decoded successfully"
+          fi
           
           # Build with minimal prompts (answer "y" to confirmations, but version is already set)
           ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
