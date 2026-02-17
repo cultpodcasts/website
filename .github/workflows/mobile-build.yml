@@ -2,7 +2,7 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main, feature/bubblewrap ]
+    branches: [ main ]
     paths:
       - 'src/**'
       - 'angular.json'
