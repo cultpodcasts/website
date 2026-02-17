@@ -117,9 +117,14 @@ jobs:
             echo "Keystore decoded successfully"
           fi
           
-          # Build with prompts answered automatically by stdin loop
-          # Answers: JDK install (yes), Android SDK install (yes), terms (yes), version prompts (1.0.0)
-          ( sleep 5 && printf "1.0.0\n1\n" && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
+          # Build with prompts answered in correct order:
+          # 1. JDK install? yes
+          # 2. Android SDK install? yes
+          # 3. Terms agreement? yes
+          # 4. App version name? 1.0.0
+          # 5. App version code? 1
+          # 6. Any other y/n prompts? yes
+          ( sleep 5 && printf "yes\nyes\nyes\n1.0.0\n1\n" && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
