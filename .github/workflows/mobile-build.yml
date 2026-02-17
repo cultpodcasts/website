@@ -64,7 +64,10 @@ jobs:
       - name: Build APK with Bubblewrap
         run: |
           cd cultpodcasts
-          (echo "No"; echo "$JAVA_HOME"; yes) | bubblewrap build
+          # Pre-configure Bubblewrap paths to avoid interactive prompts
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_SDK_ROOT"
+          # Build without any interactive prompts
+          bubblewrap build
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
