@@ -2,7 +2,7 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main ]
+    branches: [ feature/sign-apk ]
     paths:
       - 'src/**'
       - 'angular.json'
