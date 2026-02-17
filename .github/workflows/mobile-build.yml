@@ -125,16 +125,7 @@ jobs:
           
           # Initialize a simple Cordova-like structure for iOS
           if [ ! -f "package.json" ]; then
-            cat > package.json << 'EOF'
-{
-  "name": "cultpodcasts",
-  "version": "1.0.0",
-  "description": "Cult Podcasts iOS App",
-  "scripts": {
-    "build": "xcodebuild -scheme cultpodcasts -configuration Release"
-  }
-}
-EOF
+            node -e "const fs = require('fs'); fs.writeFileSync('package.json', JSON.stringify({name:'cultpodcasts',version:'1.0.0',description:'Cult Podcasts iOS App',scripts:{build:'xcodebuild -scheme cultpodcasts -configuration Release'}}, null, 2))"
           fi
 
       - name: Create iOS Xcode project (if needed)
