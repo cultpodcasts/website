@@ -2,7 +2,7 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main, feature/fix-sign-apk ]
+    branches: [ main ]
     paths:
       - 'cultpodcasts/src/**'
       - 'cultpodcasts/angular.json'
