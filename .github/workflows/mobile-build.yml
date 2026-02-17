@@ -78,6 +78,8 @@ jobs:
       - name: Build APK with Bubblewrap
         run: |
           cd cultpodcasts
+          # Unset ANDROID_SDK_ROOT to avoid conflict with ANDROID_HOME set by Bubblewrap
+          unset ANDROID_SDK_ROOT
           # Keep stdin open with continuous "y" responses, adapted from pwa-to-apk-action
           ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation --skipSigning
 
