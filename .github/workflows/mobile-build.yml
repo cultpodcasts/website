@@ -38,24 +38,26 @@ jobs:
       - name: Build web app
         run: cd cultpodcasts && env=production ./build.sh
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Accept Android SDK licenses
-        run: |
-          # Accept all licenses including preview license for RC/alpha build tools
-          yes | sdkmanager --licenses || true
-          mkdir -p ${ANDROID_SDK_ROOT}/licenses
-          echo -e "\n24333f8a63b6825ea9c5514f83c2829ac002c39f" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-preview-license
-
       - name: Initialize Bubblewrap project
         run: |
           cd cultpodcasts
-          # Create twa-manifest.json with required fields and signing configuration
+          # Create twa-manifest.json with version info from package.json
           node -e "
             const fs = require('fs');
             const crypto = require('crypto');
+            
+            // Read version from package.json
+            const packageJson = require('./package.json');
+            const appVersion = packageJson.version;
+            
+            // Convert semantic version (e.g., 1.8.0) to integer version code
+            // Multiply major*10000 + minor*100 + patch
+            const versionParts = appVersion.split('.');
+            const major = parseInt(versionParts[0], 10) || 0;
+            const minor = parseInt(versionParts[1], 10) || 0;
+            const patch = parseInt(versionParts[2], 10) || 0;
+            const appVersionCode = (major * 10000) + (minor * 100) + patch;
+            
             const manifest = {
               name: 'Cult Podcasts',
               packageId: 'com.cultpodcasts.twa',
@@ -70,8 +72,8 @@ jobs:
               backgroundColor: '#fafafa',
               iconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
               maskableIconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
-              appVersionCode: 1,
-              appVersionName: '1.0.0',
+              appVersion: appVersion,
+              appVersionCode: appVersionCode,
               splashScreenFadeOutDuration: 300,
               enableNotifications: true,
               enableSiteSettingsShortcut: true,
@@ -99,35 +101,32 @@ jobs:
             const hash = crypto.createHash('sha1').update(manifestContent).digest('hex');
             fs.writeFileSync('.twa-manifest.json.sha1', hash);
             
-            console.log('Created twa-manifest.json with signing configuration');
-            console.log('Generated manifest hash for validation');
+            console.log(\`Created twa-manifest.json with app version \${appVersion} (code: \${appVersionCode})\`);
           "
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      - name: Configure and Build APK with Bubblewrap
+      - name: Decode Android Keystore
         run: |
           cd cultpodcasts
-          
-          # Decode keystore from GitHub Secrets
           if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
             echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
             echo "Keystore decoded successfully"
+            ls -lh android.keystore
           fi
-          
-          # Build with prompts answered in correct order:
-          # 1. JDK install? yes
-          # 2. Android SDK install? yes
-          # 3. Terms agreement? yes
-          # 4. App version name? 1.0.0
-          # 5. App version code? 1
-          # 6. Any other y/n prompts? yes
-          ( sleep 5 && printf "yes\nyes\nyes\n1.0.0\n1\n" && while [ 1 ]; do sleep 1; echo y; done ) | bubblewrap build --skipPwaValidation
-        env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build APK with Bubblewrap (Docker - no interactive prompts)
+        run: |
+          cd cultpodcasts
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            -e BUBBLEWRAP_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -e BUBBLEWRAP_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            ghcr.io/googlechromelabs/bubblewrap:latest \
+            build --skipPwaValidation
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
