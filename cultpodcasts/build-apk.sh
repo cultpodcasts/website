@@ -79,7 +79,9 @@ expect {
   }
   "versionName for the new App version:" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
+    stty -echo < $spawn_out(slave,name)
     send "$appVersion\r"
+    stty echo < $spawn_out(slave,name)
   }
 }
 
