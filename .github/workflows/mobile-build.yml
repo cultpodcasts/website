@@ -1,4 +1,4 @@
-name: Build iOS App
+name: Build Mobile Apps
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - 'src/**'
       - 'angular.json'
       - 'package.json'
-      - '.github/workflows/ios-build.yml'
+      - '.github/workflows/mobile-build.yml'
   workflow_dispatch:
     inputs:
       release:
@@ -17,9 +17,103 @@ on:
 
 env:
   NODE_VERSION: '20'
-  XCODE_VERSION: '16'
 
 jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: cultpodcasts/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          ndk-version: '26.1.10909125'
+          cmake-version: '3.23.1'
+
+      - name: Install dependencies
+        run: cd cultpodcasts && npm ci
+
+      - name: Build web app
+        run: cd cultpodcasts && npm run build -- production
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize Bubblewrap config (if needed)
+        run: |
+          cd cultpodcasts
+          if [ ! -f bubblewrap.json ]; then
+            echo "Creating default bubblewrap.json..."
+            cat > bubblewrap.json << 'EOF'
+            {
+              "name": "Cult Podcasts",
+              "appId": "com.cultpodcasts.app",
+              "packageId": "com.cultpodcasts.app",
+              "launchUrl": "/",
+              "startUrl": "/",
+              "display": "standalone",
+              "orientation": "portrait-primary",
+              "themeColor": "#fafafa",
+              "backgroundColor": "#fafafa",
+              "iconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+              "maskableIconUrl": "https://cultpodcasts.com/assets/icons/icon-192x192.png",
+              "mvnGroupId": "com.cultpodcasts",
+              "appVersionCode": 1,
+              "appVersionName": "1.0.0",
+              "gradleTemplate": "default"
+            }
+            EOF
+          fi
+
+      - name: Copy web app to Bubblewrap
+        run: |
+          cd cultpodcasts
+          mkdir -p app-web
+          cp -r dist/* app-web/ || true
+
+      - name: Build APK with Bubblewrap
+        run: cd cultpodcasts && bubblewrap build
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultpodcasts-apk
+          path: cultpodcasts/artifacts/*.apk
+          retention-days: 30
+
+      - name: Create Release (Android)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: cultpodcasts/artifacts/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Play Store (optional)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [ ! -z "${{ secrets.PLAY_STORE_KEY }}" ]; then
+            echo "Play Store upload would be configured here"
+            echo "Requires: PLAY_STORE_KEY secret with service account JSON"
+          fi
+
   build-ios:
     runs-on: macos-latest
     
@@ -144,7 +238,7 @@ jobs:
           path: cultpodcasts/ios-app/build/ipa/**/*.ipa
           retention-days: 30
 
-      - name: Create Release (on version tag)
+      - name: Create Release (iOS)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
@@ -155,7 +249,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to App Store (optional)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.APP_STORE_KEY != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          echo "App Store upload would be configured here"
-          echo "Requires: APP_STORE_KEY_ID, APP_STORE_ISSUER_ID, APP_STORE_KEY secrets"
+          if [ ! -z "${{ secrets.APP_STORE_KEY }}" ]; then
+            echo "App Store upload would be configured here"
+            echo "Requires: APP_STORE_KEY_ID, APP_STORE_ISSUER_ID, APP_STORE_KEY secrets"
+          fi
