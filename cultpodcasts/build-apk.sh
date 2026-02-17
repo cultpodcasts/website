@@ -1,73 +1,14 @@
 #!/bin/bash
 # Build Android APK with Bubblewrap in Docker
-# This script handles all the setup and interactive prompts
+# This script uses expect to handle interactive prompts
 set -e
 
-echo "=== Step 0: Discover Android SDK and JDK paths ==="
-# Check environment variables first
-if [ ! -z "$ANDROID_SDK_ROOT" ]; then
-  ANDROID_SDK_PATH="$ANDROID_SDK_ROOT"
-  echo "✓ Using ANDROID_SDK_ROOT: $ANDROID_SDK_PATH"
-else
-  # Common locations
-  for path in /opt/android-sdk /android-sdk /home/bubblewrap/android-sdk /opt/android; do
-    if [ -d "$path/platforms" ] || [ -d "$path/build-tools" ]; then
-      ANDROID_SDK_PATH="$path"
-      echo "✓ Found Android SDK at: $ANDROID_SDK_PATH"
-      break
-    fi
-  done
-fi
-
-if [ -z "$ANDROID_SDK_PATH" ]; then
-  echo "✗ Could not find Android SDK"
-  ls -la /opt/ | grep -i android || echo "No android directories in /opt"
-  ANDROID_SDK_PATH="/opt/android-sdk"
-fi
-
-# Find Java
-JAVA_PATH=""
-if [ ! -z "$JAVA_HOME" ]; then
-  JAVA_PATH="$JAVA_HOME"
-  echo "✓ Using JAVA_HOME: $JAVA_PATH"
-else
-  for path in /opt/java/openjdk /usr/lib/jvm/java-17* /opt/jdk*; do
-    if [ -f "$path/bin/java" ]; then
-      JAVA_PATH="$path"
-      echo "✓ Found Java at: $JAVA_PATH"
-      break
-    fi
-  done
-fi
-
-if [ -z "$JAVA_PATH" ]; then
-  JAVA_PATH="/opt/java/openjdk"
-  echo "⚠ Using default Java path (may not exist): $JAVA_PATH"
-fi
+echo "=== Step 1: Verify workspace ==="
+echo "Working directory: $(pwd)"
+ls -la | head -20
 
 echo ""
-echo "=== Step 1: Pre-configure Bubblewrap ==="
-mkdir -p ~/.bubblewrap
-cat > ~/.bubblewrap/config.json << EOF
-{
-  "jdkPath": "$JAVA_PATH",
-  "androidSdkPath": "$ANDROID_SDK_PATH"
-}
-EOF
-echo "✓ Config created with:"
-echo "  - jdkPath: $JAVA_PATH"
-echo "  - androidSdkPath: $ANDROID_SDK_PATH"
-
-echo ""
-echo "=== Step 2: Pre-accept Android SDK licenses ==="
-export ANDROID_SDK_ROOT="$ANDROID_SDK_PATH"
-mkdir -p ${ANDROID_SDK_ROOT}/licenses
-echo -e "\n24333f8a63b6825ea9c5514f83c2829ac002c39f" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-license
-echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ${ANDROID_SDK_ROOT}/licenses/android-sdk-preview-license
-echo "✓ Licenses pre-accepted"
-
-echo ""
-echo "=== Step 3: Verify manifest and checksum ==="
+echo "=== Step 2: Verify manifest and checksum ==="
 if [ -f "twa-manifest.json" ] && [ -f ".twa-manifest.json.sha1" ]; then
   echo "✓ Both files exist"
   grep "appVersion" twa-manifest.json | head -1
@@ -78,42 +19,58 @@ else
 fi
 
 echo ""
-echo "=== Step 4: Install expect ==="
+echo "=== Step 3: Install expect ==="
 apt-get update -qq 2>/dev/null || true
 apt-get install -y -qq expect >/dev/null 2>&1 || true
 echo "✓ expect installed"
 
 echo ""
-echo "=== Step 5: Build with Bubblewrap ==="
+echo "=== Step 4: Build with Bubblewrap (interactive prompts) ==="
+echo "This may take several minutes on first run (SDK download)..."
 
 expect << 'EXPECT_EOF'
-set timeout 300
+set timeout 600
 set log_user 1
 
 spawn bubblewrap build --skipPwaValidation
 
 expect {
+  "Where is your JDK installed?" {
+    puts "\n>>> JDK path prompt detected"
+    send "/usr/lib/jvm/java-17-openjdk-amd64\r"
+    exp_continue
+  }
+  "Where is your Android SDK installed?" {
+    puts "\n>>> Android SDK path prompt detected"
+    send "~/.bubblewrap/android_sdk\r"
+    exp_continue
+  }
+  "Do you want me to download it?" {
+    puts "\n>>> SDK download prompt detected"
+    send "y\r"
+    exp_continue
+  }
   "Accept? (y/N):" {
-    puts ">>> Responding to license prompt: y"
+    puts "\n>>> License acceptance prompt detected"
     send "y\r"
     exp_continue
   }
   "would you like to regenerate" {
-    puts ">>> Responding to regenerate prompt: y"
+    puts "\n>>> Regenerate prompt detected"
     send "y\r"
     exp_continue
   }
   "project? (Y/n)" {
-    puts ">>> Responding to project prompt: y"
+    puts "\n>>> Project confirmation prompt detected"
     send "y\r"
     exp_continue
   }
   eof {
-    puts ">>> Build process completed"
+    puts "\n>>> Build process completed"
     exit 0
   }
   timeout {
-    puts ">>> ERROR: Timeout"
+    puts "\n>>> ERROR: Timeout after 600 seconds"
     exit 1
   }
 }
