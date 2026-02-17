@@ -47,44 +47,43 @@ set log_user 0
 set appVersion $::env(APP_VERSION)
 set sawRegen 0
 set gotVersion 0
-puts ">>> Expect script starting with version: $appVersion"
+send_user ">>> Expect script starting with version: $appVersion\n"
 
-# Suppress bubblewrap output by default; our own puts still show.
+# Suppress bubblewrap output by default; our own messages use send_user.
 spawn sh -c {bubblewrap build --skipPwaValidation 2>&1}
-set log_user 0
 
 # Initial expect loop - handle setup prompts and optional regenerate prompt
 expect {
   "Where is your JDK installed?" {
-    puts "\n>>> JDK path prompt detected"
+    send_user "\n>>> JDK path prompt detected\n"
     send "/usr/lib/jvm/java-17-openjdk-amd64\r"
     exp_continue
   }
   "Where is your Android SDK installed?" {
-    puts "\n>>> Android SDK path prompt detected"
+    send_user "\n>>> Android SDK path prompt detected\n"
     send "~/.bubblewrap/android_sdk\r"
     exp_continue
   }
   "Do you want me to download it?" {
-    puts "\n>>> SDK download prompt detected"
+    send_user "\n>>> SDK download prompt detected\n"
     send "y\r"
     exp_continue
   }
   "Accept? (y/N):" {
-    puts "\n>>> License acceptance prompt detected"
+    send_user "\n>>> License acceptance prompt detected\n"
     send "y\r"
     exp_continue
   }
   "would you like to regenerate" {
     if {$sawRegen == 0} {
-      puts "\n>>> Regenerate prompt detected"
+      send_user "\n>>> Regenerate prompt detected\n"
       set sawRegen 1
       send "y\r"
     }
     exp_continue
   }
   "versionName for the new App version:" {
-    puts "\n>>> Version prompt detected, sending: $appVersion"
+    send_user "\n>>> Version prompt detected, sending: $appVersion\n"
     send "$appVersion\r"
     set gotVersion 1
   }
@@ -101,7 +100,7 @@ expect {
 # If the version prompt comes later, wait for it and send once
 if {$gotVersion == 0} {
   expect "versionName for the new App version:" {
-    puts "\n>>> Version prompt detected, sending: $appVersion"
+    send_user "\n>>> Version prompt detected, sending: $appVersion\n"
     send "$appVersion\r"
     set gotVersion 1
   }
@@ -109,21 +108,21 @@ if {$gotVersion == 0} {
 
 # Wait for version confirmation
 expect "Upgraded app version"
-puts "\n>>> Version accepted, continuing with build..."
+send_user "\n>>> Version accepted, continuing with build...\n"
 
 # Continue with remaining prompts - no longer matching version
 expect {
   "project? (Y/n)" {
-    puts "\n>>> Project confirmation prompt detected"
+    send_user "\n>>> Project confirmation prompt detected\n"
     send "y\r"
     exp_continue
   }
   eof {
-    puts "\n>>> Build process completed"
+    send_user "\n>>> Build process completed\n"
     exit 0
   }
   timeout {
-    puts "\n>>> ERROR: Timeout after 600 seconds"
+    send_user "\n>>> ERROR: Timeout after 600 seconds\n"
     exit 1
   }
 }
