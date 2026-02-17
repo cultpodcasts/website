@@ -118,17 +118,21 @@ jobs:
 
       - name: Create iOS Xcode project (if needed)
         run: |
-          if [ ! -d "ios-app/cultpodcasts.xcodeproj" ]; then
+          if [ ! -d "ios-app/platforms/ios" ]; then
             echo "Creating iOS Xcode project with Cordova..."
             npm install -g cordova
             # Remove the ios-app directory to start fresh
             rm -rf ios-app
             # Create with Cordova
-            cordova create ios-app com.cultpodcasts.app "Cult Podcasts"
+            cordova create ios-app com.cultpodcasts.app "CultPodcasts"
             cd ios-app
             cordova platform add ios
             cd ..
+          else
+            echo "iOS project already exists"
           fi
+          echo "iOS project structure:"
+          find ios-app/platforms/ios -name "*.xcodeproj" -type d 2>/dev/null || echo "No xcodeproj found"
 
       - name: Copy web assets to iOS
         run: |
@@ -148,17 +152,21 @@ jobs:
       - name: Build iOS app (Debug)
         if: github.event.inputs.release != 'true'
         run: |
-          cd ios-app
-          # Using xcodebuild to build the iOS app
-          # Note: Requires proper provisioning profiles and signing certificates
-          # For CI/CD, you'll need to import certificates from secrets
-          xcodebuild -scheme cultpodcasts -configuration Debug -derivedDataPath build
-          cd ..
+          cd ios-app/platforms/ios
+          # Find the actual scheme name
+          SCHEME=$(find . -name "*.xcodeproj" -type d | head -1 | xargs basename | sed 's/\.xcodeproj$//')
+          echo "Building scheme: $SCHEME"
+          xcodebuild -scheme "$SCHEME" -configuration Debug -derivedDataPath build
+          cd ../../..
 
       - name: Build iOS app (Release)
         if: github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         run: |
-          cd ios-app
+          cd ios-app/platforms/ios
+          # Find the actual scheme name
+          SCHEME=$(find . -name "*.xcodeproj" -type d | head -1 | xargs basename | sed 's/\.xcodeproj$//')
+          echo "Building scheme: $SCHEME"
+          
           # For production, import signing certificate and provisioning profile
           if [ ! -z "${{ secrets.IOS_CERTIFICATE_P12 }}" ]; then
             echo "Setting up signing certificate..."
@@ -170,27 +178,27 @@ jobs:
             security set-key-partition-list -S apple-tool:,apple: -s lsa- -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
           fi
           
-          xcodebuild -scheme cultpodcasts -configuration Release -derivedDataPath build -archivePath build/cultpodcasts.xcarchive archive 2>&1 || echo "Archive may require provisioning profiles"
+          xcodebuild -scheme "$SCHEME" -configuration Release -derivedDataPath build -archivePath build/CultPodcasts.xcarchive archive 2>&1 || echo "Archive may require provisioning profiles"
           
-          if [ -d "build/cultpodcasts.xcarchive" ]; then
-            xcodebuild -exportArchive -archivePath build/cultpodcasts.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/ipa
+          if [ -d "build/CultPodcasts.xcarchive" ]; then
+            xcodebuild -exportArchive -archivePath build/CultPodcasts.xcarchive -exportOptionsPlist ../../ExportOptions.plist -exportPath build/ipa
           fi
-          cd ..
+          cd ../../..
 
       - name: Upload iOS build artifact (Debug)
         if: github.event.inputs.release != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: cultpodcasts-ios-debug
-          path: cultpodcasts/ios-app/build/
+          path: cultpodcasts/ios-app/platforms/ios/build/
           retention-days: 7
 
       - name: Upload iOS IPA artifact (Release)
-        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('cultpodcasts/ios-app/build/ipa/') != ''
+        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('cultpodcasts/ios-app/platforms/ios/build/ipa/') != ''
         uses: actions/upload-artifact@v4
         with:
           name: cultpodcasts-ios-release
-          path: cultpodcasts/ios-app/build/ipa/**/*.ipa
+          path: cultpodcasts/ios-app/platforms/ios/build/ipa/**/*.ipa
           retention-days: 30
 
       - name: Create Release (iOS)
