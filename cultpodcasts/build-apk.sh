@@ -51,6 +51,7 @@ puts ">>> Expect script starting with version: $appVersion"
 
 spawn bubblewrap build --skipPwaValidation
 
+# Initial expect loop - handle version prompt
 expect {
   "Where is your JDK installed?" {
     puts "\n>>> JDK path prompt detected"
@@ -67,25 +68,25 @@ expect {
     send "y\r"
     exp_continue
   }
-  "versionName for the new App version:" {
-    if {$versionSent == 0} {
-      puts "\n>>> Version prompt detected, sending: $appVersion"
-      set versionSent 1
-      set timeout 5
-      send "$appVersion\r"
-      expect -timeout 5 "Upgraded app version"
-      set timeout 600
-      puts "\n>>> Version accepted"
-    }
-    exp_continue
-  }
-  "Accept? (y/N):" {
-    puts "\n>>> License acceptance prompt detected"
+  "would you like to regenerate" {
+    puts "\n>>> Regenerate prompt detected"
     send "y\r"
     exp_continue
   }
-  "would you like to regenerate" {
-    puts "\n>>> Regenerate prompt detected - must regenerate to create gradlew"
+  "versionName for the new App version:" {
+    puts "\n>>> Version prompt detected, sending: $appVersion"
+    send "$appVersion\r"
+  }
+}
+
+# Wait for version confirmation
+expect "Upgraded app version"
+puts "\n>>> Version accepted, continuing with build..."
+
+# Continue with remaining prompts - no longer matching version
+expect {
+  "Accept? (y/N):" {
+    puts "\n>>> License acceptance prompt detected"
     send "y\r"
     exp_continue
   }
