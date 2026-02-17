@@ -41,7 +41,7 @@ echo "✓ expect installed"
 echo ""
 echo "=== Step 5: Build with Bubblewrap ==="
 
-expect -c '
+expect << 'EXPECT_EOF'
 set timeout 300
 set log_user 1
 
@@ -72,7 +72,7 @@ expect {
     exit 1
   }
 }
-'
+EXPECT_EOF
 
 BUILD_EXIT=$?
 
