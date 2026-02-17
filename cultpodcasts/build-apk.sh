@@ -8,26 +8,14 @@ echo "Working directory: $(pwd)"
 ls -la | head -20
 
 echo ""
-echo "=== Step 2: Verify manifest and checksum ==="
-if [ -f "twa-manifest.json" ] && [ -f ".twa-manifest.json.sha1" ]; then
-  echo "✓ Both files exist"
+echo "=== Step 2: Verify manifest ==="
+if [ -f "twa-manifest.json" ]; then
+  echo "✓ Manifest exists"
   grep "appVersion" twa-manifest.json | head -1
-  echo "Checksum: $(cat .twa-manifest.json.sha1)"
 else
-  echo "✗ Missing manifest or checksum, generating..."
-  if [ -f "twa-manifest.json" ]; then
-    # Regenerate checksum based on current manifest
-    CHECKSUM=$(sha1sum twa-manifest.json | awk '{print $1}')
-    echo "$CHECKSUM" > .twa-manifest.json.sha1
-    echo "✓ Checksum generated: $CHECKSUM"
-  else
-    echo "✗ No manifest file found"
-  fi
+  echo "✗ No manifest file found"
+  ls -la twa-manifest* 2>/dev/null || echo "No manifest files"
 fi
-
-# Extract version from manifest for use in expect script
-APP_VERSION=$(grep '"appVersion"' twa-manifest.json | grep -o '"[^"]*"$' | tr -d '"')
-echo "App version to use: $APP_VERSION"
 
 echo ""
 echo "=== Step 3: Install expect ==="
@@ -79,8 +67,8 @@ expect {
     exp_continue
   }
   "would you like to regenerate" {
-    puts "\n>>> Regenerate prompt detected"
-    send "n\r"
+    puts "\n>>> Regenerate prompt detected - must regenerate to create gradlew"
+    send "y\r"
     exp_continue
   }
   "project? (Y/n)" {
