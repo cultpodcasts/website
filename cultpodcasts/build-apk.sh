@@ -25,7 +25,7 @@ echo ""
 echo "=== Step 3: Verify manifest and checksum ==="
 if [ -f "twa-manifest.json" ] && [ -f ".twa-manifest.json.sha1" ]; then
   echo "✓ Both files exist"
-  echo "Manifest version: $(grep -o '"'"'appVersion"'"': "[^"]*' twa-manifest.json)"
+  echo "Manifest version: $(grep 'appVersion' twa-manifest.json | head -1)"
   echo "Checksum: $(cat .twa-manifest.json.sha1)"
 else
   echo "✗ Missing manifest or checksum"
