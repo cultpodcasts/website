@@ -1,2 +1,5 @@
 https://0ccfdd8b.website-83e.pages.dev/*
   X-Robots-Tag: noindex
+
+/.well-known/assetlinks.json
+  Content-Type: application/json
