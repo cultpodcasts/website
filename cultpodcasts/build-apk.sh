@@ -74,19 +74,30 @@ expect {
     exp_continue
   }
   "would you like to regenerate" {
-    puts "\n>>> Regenerate prompt detected"
-    set sawRegen 1
-    send "y\r"
+    if {$sawRegen == 0} {
+      puts "\n>>> Regenerate prompt detected"
+      set sawRegen 1
+      send "y\r"
+    }
+    exp_continue
   }
   "versionName for the new App version:" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
     send "$appVersion\r"
     set gotVersion 1
   }
+  eof {
+    puts "\n>>> Build process completed"
+    exit 0
+  }
+  timeout {
+    puts "\n>>> ERROR: Timeout after 600 seconds"
+    exit 1
+  }
 }
 
-# If we just regenerated, wait for the version prompt and send the version once
-if {$sawRegen == 1 && $gotVersion == 0} {
+# If the version prompt comes later, wait for it and send once
+if {$gotVersion == 0} {
   expect "versionName for the new App version:" {
     puts "\n>>> Version prompt detected, sending: $appVersion"
     send "$appVersion\r"
@@ -102,18 +113,6 @@ puts "\n>>> Version accepted, continuing with build..."
 expect {
   "project? (Y/n)" {
     puts "\n>>> Project confirmation prompt detected"
-    send "y\r"
-    exp_continue
-  }
-  eof {
-    puts "\n>>> Build process completed"
-    exit 0
-  }
-  timeout {
-    puts "\n>>> ERROR: Timeout after 600 seconds"
-    exit 1
-  }
-}
     send "y\r"
     exp_continue
   }
