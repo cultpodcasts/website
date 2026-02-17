@@ -42,7 +42,6 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: true
-          packages: 'platforms;android-34 ndk;26.1.10909125 cmake;3.23.1'
 
       - name: Install dependencies
         run: cd cultpodcasts && npm ci
