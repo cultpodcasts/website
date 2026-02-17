@@ -84,6 +84,11 @@ expect {
     send "y\r"
     exp_continue
   }
+  "There are changes in twa-manifest.json. Would you like to apply them" {
+    send_user "\n>>> Manifest changes prompt detected\n"
+    send "y\r"
+    exp_continue
+  }
   "would you like to regenerate" {
     if {$sawRegen == 0} {
       send_user "\n>>> Regenerate prompt detected\n"
@@ -124,6 +129,11 @@ send_user "\n>>> Version accepted, continuing with build...\n"
 expect {
   "project? (Y/n)" {
     send_user "\n>>> Project confirmation prompt detected\n"
+    send "y\r"
+    exp_continue
+  }
+  "There are changes in twa-manifest.json. Would you like to apply them" {
+    send_user "\n>>> Manifest changes prompt detected\n"
     send "y\r"
     exp_continue
   }
