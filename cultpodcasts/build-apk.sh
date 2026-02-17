@@ -27,8 +27,16 @@ echo ""
 echo "=== Step 4: Build with Bubblewrap (interactive prompts) ==="
 echo "This may take several minutes on first run (SDK download)..."
 
-# Pass the version to expect via environment
-export APP_VERSION=$(grep '"appVersion"' twa-manifest.json | grep -o '"[^"]*"$' | tr -d '"')
+# Extract version from manifest - use multiple methods to ensure we get it
+if [ -f "twa-manifest.json" ]; then
+  APP_VERSION=$(grep -oP '"appVersion":\s*"\K[^"]+' twa-manifest.json 2>/dev/null || \
+                grep '"appVersion"' twa-manifest.json | sed 's/.*"appVersion"[^"]*"\([^"]*\)".*/\1/' || \
+                echo "1.8.0")
+else
+  APP_VERSION="1.8.0"
+fi
+
+export APP_VERSION
 echo "Using version: $APP_VERSION"
 
 expect << 'EXPECT_EOF'
@@ -37,6 +45,7 @@ set log_user 1
 
 # Get version from environment
 set appVersion $::env(APP_VERSION)
+puts ">>> Expect script starting with version: $appVersion"
 
 spawn bubblewrap build --skipPwaValidation
 
