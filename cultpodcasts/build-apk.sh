@@ -14,9 +14,20 @@ if [ -f "twa-manifest.json" ] && [ -f ".twa-manifest.json.sha1" ]; then
   grep "appVersion" twa-manifest.json | head -1
   echo "Checksum: $(cat .twa-manifest.json.sha1)"
 else
-  echo "✗ Missing manifest or checksum"
-  ls -la twa-manifest* 2>/dev/null || echo "No manifest files found"
+  echo "✗ Missing manifest or checksum, generating..."
+  if [ -f "twa-manifest.json" ]; then
+    # Regenerate checksum based on current manifest
+    CHECKSUM=$(sha1sum twa-manifest.json | awk '{print $1}')
+    echo "$CHECKSUM" > .twa-manifest.json.sha1
+    echo "✓ Checksum generated: $CHECKSUM"
+  else
+    echo "✗ No manifest file found"
+  fi
 fi
+
+# Extract version from manifest for use in expect script
+APP_VERSION=$(grep '"appVersion"' twa-manifest.json | grep -o '"[^"]*"$' | tr -d '"')
+echo "App version to use: $APP_VERSION"
 
 echo ""
 echo "=== Step 3: Install expect ==="
@@ -28,9 +39,16 @@ echo ""
 echo "=== Step 4: Build with Bubblewrap (interactive prompts) ==="
 echo "This may take several minutes on first run (SDK download)..."
 
+# Pass the version to expect via environment
+export APP_VERSION=$(grep '"appVersion"' twa-manifest.json | grep -o '"[^"]*"$' | tr -d '"')
+echo "Using version: $APP_VERSION"
+
 expect << 'EXPECT_EOF'
 set timeout 600
 set log_user 1
+
+# Get version from environment
+set appVersion $::env(APP_VERSION)
 
 spawn bubblewrap build --skipPwaValidation
 
@@ -50,6 +68,11 @@ expect {
     send "y\r"
     exp_continue
   }
+  "versionName for the new App version:" {
+    puts "\n>>> Version prompt detected, sending: $appVersion"
+    send "$appVersion\r"
+    exp_continue
+  }
   "Accept? (y/N):" {
     puts "\n>>> License acceptance prompt detected"
     send "y\r"
@@ -57,7 +80,7 @@ expect {
   }
   "would you like to regenerate" {
     puts "\n>>> Regenerate prompt detected"
-    send "y\r"
+    send "n\r"
     exp_continue
   }
   "project? (Y/n)" {
