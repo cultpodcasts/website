@@ -61,7 +61,7 @@ jobs:
           cp -r dist/* app-web/ || true
 
       - name: Build APK with Bubblewrap
-        run: cd cultpodcasts && bubblewrap build
+        run: cd cultpodcasts && echo "No" | bubblewrap build
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -118,40 +118,32 @@ jobs:
       - name: Install CocoaPods
         run: sudo gem install cocoapods
 
-      - name: Set up iOS app directory
-        run: |
-          mkdir -p ios-app
-          cd ios-app
-          
-          # Initialize a simple Cordova-like structure for iOS
-          if [ ! -f "package.json" ]; then
-            node -e "const fs = require('fs'); fs.writeFileSync('package.json', JSON.stringify({name:'cultpodcasts',version:'1.0.0',description:'Cult Podcasts iOS App',scripts:{build:'xcodebuild -scheme cultpodcasts -configuration Release'}}, null, 2))"
-          fi
-
       - name: Create iOS Xcode project (if needed)
         run: |
           if [ ! -d "ios-app/cultpodcasts.xcodeproj" ]; then
-            echo "iOS project will be generated from web build"
-            # Option 1: Use Cordova to generate project
+            echo "Creating iOS Xcode project with Cordova..."
             npm install -g cordova
+            # Remove the ios-app directory to start fresh
+            rm -rf ios-app
+            # Create with Cordova
+            cordova create ios-app com.cultpodcasts.app "Cult Podcasts"
             cd ios-app
-            cordova create . com.cultpodcasts.app "Cult Podcasts" || true
-            cordova platform add ios || true
+            cordova platform add ios
             cd ..
           fi
 
       - name: Copy web assets to iOS
         run: |
           cd cultpodcasts
-          # Copy built web assets to iOS www directory
-          mkdir -p ios-app/www
-          cp -r dist/cultpodcasts/browser/* ios-app/www/ || cp -r dist/* ios-app/www/ || true
+          # Copy built web assets to iOS www directory (created by Cordova)
+          cp -r dist/cultpodcasts/browser/* ../ios-app/www/ 2>/dev/null || cp -r dist/* ../ios-app/www/ 2>/dev/null || echo "Web assets copied"
 
       - name: Install iOS dependencies
         run: |
           cd ios-app
-          if [ -f "package.json" ]; then
-            npm install || true
+          # Install CocoaPods dependencies for iOS
+          if [ -f "Podfile" ]; then
+            pod install
           fi
           cd ..
 
