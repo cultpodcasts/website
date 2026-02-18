@@ -39,8 +39,8 @@ echo "This may take several minutes on first run (SDK download)..."
 
 # Extract version from manifest - use multiple methods to ensure we get it
 if [ -f "twa-manifest.json" ]; then
-  APP_VERSION=$(grep -oP '"appVersion":\s*"\K[^"]+' twa-manifest.json 2>/dev/null || \
-                grep '"appVersion"' twa-manifest.json | sed 's/.*"appVersion"[^"]*"\([^"]*\)".*/\1/' || \
+  APP_VERSION=$(grep -oP '"appVersionName":\s*"\K[^"]+' twa-manifest.json 2>/dev/null || \
+                grep '"appVersionName"' twa-manifest.json | sed 's/.*"appVersionName"[^"]*"\([^"]*\)".*/\1/' || \
                 echo "1.8.0")
 else
   APP_VERSION="1.8.0"

@@ -9,6 +9,7 @@ on:
       - 'cultpodcasts/package.json'
       - 'cultpodcasts/build-apk.sh'
       - '.github/workflows/mobile-build.yml'
+      - 'cultpodcasts/bubblewrap.json'
   workflow_dispatch:
     inputs:
       release:
@@ -42,12 +43,13 @@ jobs:
       - name: Initialize Bubblewrap project
         run: |
           cd cultpodcasts
-          # Create twa-manifest.json with version info from package.json
+          # Create twa-manifest.json from bubblewrap.json with dynamic version info
           node -e "
             const fs = require('fs');
             const crypto = require('crypto');
             
-            // Read version from package.json
+            // Read base config from bubblewrap.json
+            const bubblewrapConfig = require('./bubblewrap.json');
             const packageJson = require('./package.json');
             const appVersion = packageJson.version;
             
@@ -59,26 +61,11 @@ jobs:
             const patch = parseInt(versionParts[2], 10) || 0;
             const appVersionCode = (major * 10000) + (minor * 100) + patch;
             
+            // Create manifest by merging bubblewrap config with dynamic values
             const manifest = {
-              name: 'Cult Podcasts',
-              packageId: 'com.cultpodcasts.twa',
-              host: 'cultpodcasts.com',
-              launchUrl: '/',
-              startUrl: '/',
-              display: 'standalone',
-              orientation: 'portrait-primary',
-              themeColor: '#fafafa',
-              themeColorDark: '#000000',
-              navigationColor: '#fafafa',
-              backgroundColor: '#fafafa',
-              iconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
-              maskableIconUrl: 'https://cultpodcasts.com/assets/icons/icon-192x192.png',
-              appVersion: appVersion,
+              ...bubblewrapConfig,
               appVersionCode: appVersionCode,
-              splashScreenFadeOutDuration: 300,
-              enableNotifications: true,
-              enableSiteSettingsShortcut: true,
-              fallbackType: 'webview'
+              appVersionName: appVersion
             };
             
             // Add signing key configuration if secrets are available

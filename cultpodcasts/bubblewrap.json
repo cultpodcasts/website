@@ -1,7 +1,8 @@
 {
   "name": "Cult Podcasts",
-  "appId": "com.cultpodcasts.app",
-  "packageId": "com.cultpodcasts.app",
+  "appId": "com.cultpodcasts.twa",
+  "packageId": "com.cultpodcasts.twa",
+  "host": "cultpodcasts.com",
   "launchUrl": "/",
   "startUrl": "/",
   "display": "standalone",
