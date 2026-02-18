@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'cultpodcasts/src/**'
+      - 'cultpodcasts/tools/**'
       - 'cultpodcasts/angular.json'
       - 'cultpodcasts/package.json'
       - 'cultpodcasts/build-apk.sh'
@@ -41,56 +42,7 @@ jobs:
         run: cd cultpodcasts && env=production ./build.sh
 
       - name: Initialize Bubblewrap project
-        run: |
-          cd cultpodcasts
-          # Create twa-manifest.json from bubblewrap.json with dynamic version info
-          node -e "
-            const fs = require('fs');
-            const crypto = require('crypto');
-            
-            // Read base config from bubblewrap.json
-            const bubblewrapConfig = require('./bubblewrap.json');
-            const packageJson = require('./package.json');
-            const appVersion = packageJson.version;
-            
-            // Convert semantic version (e.g., 1.8.0) to integer version code
-            // Multiply major*10000 + minor*100 + patch
-            const versionParts = appVersion.split('.');
-            const major = parseInt(versionParts[0], 10) || 0;
-            const minor = parseInt(versionParts[1], 10) || 0;
-            const patch = parseInt(versionParts[2], 10) || 0;
-            const appVersionCode = (major * 10000) + (minor * 100) + patch;
-            
-            // Create manifest by merging bubblewrap config with dynamic values
-            const manifest = {
-              ...bubblewrapConfig,
-              appVersionCode: appVersionCode,
-              appVersionName: appVersion
-            };
-            
-            // Add signing key configuration if secrets are available
-            const keystorePassword = process.env.KEYSTORE_PASSWORD;
-            const keyPassword = process.env.KEY_PASSWORD;
-            const keyAlias = process.env.KEY_ALIAS || 'android';
-            
-            if (keystorePassword && keyPassword) {
-              manifest.signingKey = {
-                path: './android.keystore',
-                alias: keyAlias,
-                keyPassword: keyPassword,
-                storePassword: keystorePassword
-              };
-            }
-            
-            fs.writeFileSync('twa-manifest.json', JSON.stringify(manifest, null, 2));
-            
-            // Generate SHA1 hash for manifest validation
-            const manifestContent = JSON.stringify(manifest);
-            const hash = crypto.createHash('sha1').update(manifestContent).digest('hex');
-            fs.writeFileSync('.twa-manifest.json.sha1', hash);
-            
-            console.log(\`Created twa-manifest.json with app version \${appVersion} (code: \${appVersionCode})\`);
-          "
+        run: cd cultpodcasts && node tools/create-twa-manifest.js
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
