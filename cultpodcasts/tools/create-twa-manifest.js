@@ -4,13 +4,13 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 
-// Change to cultpodcasts directory if running from tools
-const workDir = process.cwd().endsWith('tools') ? path.join(__dirname, '..') : process.cwd();
-process.chdir(workDir);
+// Determine the cultpodcasts directory (parent of tools directory)
+const cultpodcastsDir = path.join(__dirname, '..');
+process.chdir(cultpodcastsDir);
 
 // Read base config from bubblewrap.json
-const bubblewrapConfig = require('./bubblewrap.json');
-const packageJson = require('./package.json');
+const bubblewrapConfig = require(path.join(cultpodcastsDir, 'bubblewrap.json'));
+const packageJson = require(path.join(cultpodcastsDir, 'package.json'));
 const appVersion = packageJson.version;
 
 // Convert semantic version (e.g., 1.8.0) to integer version code
