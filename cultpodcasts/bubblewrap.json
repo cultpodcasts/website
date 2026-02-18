@@ -19,7 +19,7 @@
   "enableSiteSettingsShortcut": true,
   "fallbackType": "webview",
   "shareTarget": {
-    "action": "/share",
+    "action": "https://cultpodcasts.com/share",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
