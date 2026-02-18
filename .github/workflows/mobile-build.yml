@@ -2,13 +2,14 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/share-target ]
     paths:
       - 'cultpodcasts/src/**'
       - 'cultpodcasts/angular.json'
       - 'cultpodcasts/package.json'
       - 'cultpodcasts/build-apk.sh'
       - '.github/workflows/mobile-build.yml'
+      - 'cultpodcasts/bubblewrap.json'
   workflow_dispatch:
     inputs:
       release:
