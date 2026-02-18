@@ -2,6 +2,7 @@
   "name": "Cult Podcasts",
   "appId": "com.cultpodcasts.app",
   "packageId": "com.cultpodcasts.app",
+  "host": "cultpodcasts.com",
   "launchUrl": "/",
   "startUrl": "/",
   "display": "standalone",
