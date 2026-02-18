@@ -2,9 +2,10 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main, feature/share-target-worker-fix ]
+    branches: [ main ]
     paths:
       - 'cultpodcasts/src/**'
+      - 'cultpodcasts/tools/**'
       - 'cultpodcasts/angular.json'
       - 'cultpodcasts/package.json'
       - 'cultpodcasts/build-apk.sh'
