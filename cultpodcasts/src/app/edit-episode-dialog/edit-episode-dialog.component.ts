@@ -21,6 +21,9 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodeChangeResponse } from '../episode-change-response.interface';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
+import subjectNamesConfig from '../hoisted-subject-names.json';
+import { Podcast } from '../podcast.interface';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -37,21 +40,32 @@ import { KeyValuePipe } from '@angular/common';
     TextFieldModule,
     MatInputModule,
     MatCheckboxModule,
-    KeyValuePipe
+    KeyValuePipe,
+    MatDividerModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
   styleUrl: './edit-episode-dialog.component.sass'
 })
 export class EditEpisodeDialogComponent {
+  readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
+  readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
   episodeId: string;
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
+  allSubjects: string[] = [];
+  selectedSubjects: string[] = [];
+  hoistedSubjects: string[] = [];
+  otherSubjects: string[] = [];
+  subjectsFilterTerm: string = '';
   languages: { [key: string]: string } = {};
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
   podcastName: string | undefined;
+  podcastDefaultSubject: string | null = null;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -88,6 +102,7 @@ export class EditEpisodeDialogComponent {
 
       this.originalEpisode = resp.episode;
       this.podcastName = resp.episode.podcastName;
+      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastName);
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
@@ -115,6 +130,8 @@ export class EditEpisodeDialogComponent {
         blueskyHandles: new FormControl<string[]>(resp.episode.blueskyHandles ?? [], { nonNullable: true })
       });
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
+      this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
+      this.regroupSubjects(resp.episode.subjects);
       this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
       this.isLoading = false;
     } catch (e) {
@@ -275,6 +292,92 @@ export class EditEpisodeDialogComponent {
 
   noCompareFunction() {
     return 0;
+  }
+
+  onSubjectsDropdownOpenChange(opened: boolean) {
+    if (!opened) {
+      this.subjectsFilterTerm = '';
+      this.regroupSubjects(this.form?.controls.subjects.value);
+    }
+  }
+
+  onSubjectsDropdownKeydown(event: KeyboardEvent) {
+    if (!this.enableDesktopSubjectTypingFilter) {
+      return;
+    }
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      if (this.subjectsFilterTerm.length > 0) {
+        this.subjectsFilterTerm = this.subjectsFilterTerm.substring(0, this.subjectsFilterTerm.length - 1);
+        this.regroupSubjects(this.form?.controls.subjects.value);
+      }
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.subjectsFilterTerm = '';
+      this.regroupSubjects(this.form?.controls.subjects.value);
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      this.subjectsFilterTerm += event.key;
+      this.regroupSubjects(this.form?.controls.subjects.value);
+      event.preventDefault();
+    }
+  }
+
+  onSubjectsSelectionChange() {
+    this.regroupSubjects(this.form?.controls.subjects.value);
+  }
+
+  regroupSubjects(selected: string[] | null | undefined) {
+    const selectedValues = this.unique(selected ?? []);
+    this.selectedSubjects = selectedValues;
+
+    const selectedSet = new Set(selectedValues);
+    const hoistSet = new Set(this.hoistedSubjectNames);
+    if (this.podcastDefaultSubject) {
+      hoistSet.add(this.podcastDefaultSubject);
+    }
+
+    this.hoistedSubjects = this.allSubjects.filter(subject => hoistSet.has(subject) && !selectedSet.has(subject));
+    const hoistedSet = new Set(this.hoistedSubjects);
+    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
+
+    this.selectedSubjects = this.filterSubjectsByTerm(this.selectedSubjects);
+    this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
+    this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
+  }
+
+  filterSubjectsByTerm(subjects: string[]): string[] {
+    const term = this.subjectsFilterTerm.trim().toLowerCase();
+    if (!term) {
+      return subjects;
+    }
+    return subjects.filter(subject => subject.toLowerCase().includes(term));
+  }
+
+  async getPodcastDefaultSubject(headers: HttpHeaders, podcastName: string | undefined): Promise<string | null> {
+    if (!podcastName) {
+      return null;
+    }
+    try {
+      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastName)}`, environment.api).toString();
+      const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
+      return podcast.defaultSubject ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  unique(values: string[]) {
+    return [...new Set(values)];
   }
 
   translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
