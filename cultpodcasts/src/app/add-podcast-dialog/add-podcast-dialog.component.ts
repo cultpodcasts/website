@@ -44,6 +44,9 @@ import { RegexPresetsService } from '../regex-presets.service';
   styleUrl: './add-podcast-dialog.component.sass'
 })
 export class AddPodcastDialogComponent {
+  readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
   podcastName: string;
   isLoading: boolean = true;
   isInError: boolean = false;
@@ -57,6 +60,8 @@ export class AddPodcastDialogComponent {
   originalPodcast: Podcast | undefined;
   defaultSubjects: string[] = [];
   ignoredSubjects: string[] = [];
+  defaultSubjectFilterTerm: string = '';
+  ignoredSubjectsFilterTerm: string = '';
   languages: { [key: string]: string } = {};
   titleRegexPresets: NamedRegexPreset[] = [];
   descriptionRegexPresets: NamedRegexPreset[] = [];
@@ -327,5 +332,69 @@ export class AddPodcastDialogComponent {
   }
   noCompareFunction() {
     return 0;
+  }
+
+  onDefaultSubjectDropdownOpenChange(opened: boolean) {
+    if (!opened) {
+      this.defaultSubjectFilterTerm = '';
+    }
+  }
+
+  onIgnoredSubjectsDropdownOpenChange(opened: boolean) {
+    if (!opened) {
+      this.ignoredSubjectsFilterTerm = '';
+    }
+  }
+
+  onDefaultSubjectDropdownKeydown(event: KeyboardEvent) {
+    this.applyFilterKey(event, 'defaultSubjectFilterTerm');
+  }
+
+  onIgnoredSubjectsDropdownKeydown(event: KeyboardEvent) {
+    this.applyFilterKey(event, 'ignoredSubjectsFilterTerm');
+  }
+
+  filteredDefaultSubjects() {
+    return this.filterSubjectsByTerm(this.defaultSubjects, this.defaultSubjectFilterTerm);
+  }
+
+  filteredIgnoredSubjects() {
+    return this.filterSubjectsByTerm(this.ignoredSubjects, this.ignoredSubjectsFilterTerm);
+  }
+
+  applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {
+    if (!this.enableDesktopSubjectTypingFilter) {
+      return;
+    }
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      if (this[key].length > 0) {
+        this[key] = this[key].substring(0, this[key].length - 1);
+      }
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this[key] = '';
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      this[key] += event.key;
+      event.preventDefault();
+    }
+  }
+
+  filterSubjectsByTerm(subjects: string[], term: string): string[] {
+    const trimmedTerm = term.trim().toLowerCase();
+    if (!trimmedTerm) {
+      return subjects;
+    }
+    return subjects.filter(subject => subject.toLowerCase().includes(trimmedTerm));
   }
 }
