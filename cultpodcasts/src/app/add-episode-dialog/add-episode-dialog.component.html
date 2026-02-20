@@ -110,7 +110,13 @@
                 <label>
                     <span>Subjects:</span>
                     <mat-select [formControl]="form!.controls.subjects" multiple [sortComparator]="noCompareFunction"
-                        (selectionChange)="onSubjectsSelectionChange()">
+                        (selectionChange)="onSubjectsSelectionChange()"
+                        (openedChange)="onSubjectsDropdownOpenChange($event)"
+                        (keydown)="onSubjectsDropdownKeydown($event)">
+                        @if (enableDesktopSubjectTypingFilter && subjectsFilterTerm.length > 0) {
+                        <mat-option disabled>{{subjectsFilterTerm}}</mat-option>
+                        <mat-divider></mat-divider>
+                        }
                         @if (selectedSubjects.length > 0) {
                         @for (subject of selectedSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>

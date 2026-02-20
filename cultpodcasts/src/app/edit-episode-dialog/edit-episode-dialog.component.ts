@@ -48,6 +48,8 @@ import { MatDividerModule } from '@angular/material/divider';
 })
 export class EditEpisodeDialogComponent {
   readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
+  readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   episodeId: string;
   isLoading: boolean = true;
@@ -57,6 +59,7 @@ export class EditEpisodeDialogComponent {
   selectedSubjects: string[] = [];
   hoistedSubjects: string[] = [];
   otherSubjects: string[] = [];
+  subjectsFilterTerm: string = '';
   languages: { [key: string]: string } = {};
 
   form: FormGroup<EpisodeForm> | undefined;
@@ -291,6 +294,44 @@ export class EditEpisodeDialogComponent {
     return 0;
   }
 
+  onSubjectsDropdownOpenChange(opened: boolean) {
+    if (!opened) {
+      this.subjectsFilterTerm = '';
+      this.regroupSubjects(this.form?.controls.subjects.value);
+    }
+  }
+
+  onSubjectsDropdownKeydown(event: KeyboardEvent) {
+    if (!this.enableDesktopSubjectTypingFilter) {
+      return;
+    }
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      if (this.subjectsFilterTerm.length > 0) {
+        this.subjectsFilterTerm = this.subjectsFilterTerm.substring(0, this.subjectsFilterTerm.length - 1);
+        this.regroupSubjects(this.form?.controls.subjects.value);
+      }
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.subjectsFilterTerm = '';
+      this.regroupSubjects(this.form?.controls.subjects.value);
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      this.subjectsFilterTerm += event.key;
+      this.regroupSubjects(this.form?.controls.subjects.value);
+      event.preventDefault();
+    }
+  }
+
   onSubjectsSelectionChange() {
     this.regroupSubjects(this.form?.controls.subjects.value);
   }
@@ -308,6 +349,18 @@ export class EditEpisodeDialogComponent {
     this.hoistedSubjects = this.allSubjects.filter(subject => hoistSet.has(subject) && !selectedSet.has(subject));
     const hoistedSet = new Set(this.hoistedSubjects);
     this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
+
+    this.selectedSubjects = this.filterSubjectsByTerm(this.selectedSubjects);
+    this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
+    this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
+  }
+
+  filterSubjectsByTerm(subjects: string[]): string[] {
+    const term = this.subjectsFilterTerm.trim().toLowerCase();
+    if (!term) {
+      return subjects;
+    }
+    return subjects.filter(subject => subject.toLowerCase().includes(term));
   }
 
   async getPodcastDefaultSubject(headers: HttpHeaders, podcastName: string | undefined): Promise<string | null> {
