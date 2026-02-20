@@ -24,7 +24,7 @@ export interface EditPodcastForm {
     ignoredSubjects: FormControl<string[]>;
     lang: FormControl<string | null>;
     knownTerms: FormControl<string[]>;
-    minimumDuration: FormControl<string>;
+    minimumDuration: FormControl<string | null | undefined>;
     enrichmentHashTags: FormControl<string[] | null | undefined>;
     hashTag: FormControl<string | null | undefined>;
 }
