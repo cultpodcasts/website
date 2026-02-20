@@ -1,0 +1,14 @@
+{
+    "title": [
+        {
+            "name": "Podcast Name Suffix",
+            "pattern": "^(?'title'.*?)(?'suffix' \\| {podcastName})?$"
+        }
+    ],
+    "description": [
+        {
+            "name": "Remove description",
+            "pattern": "^.*(?'body')$"
+        }
+    ]
+}

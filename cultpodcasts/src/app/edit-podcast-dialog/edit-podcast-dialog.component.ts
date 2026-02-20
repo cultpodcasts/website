@@ -20,6 +20,10 @@ import { MatInputModule } from '@angular/material/input';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { NamedRegexPreset } from '../regex-presets.interface';
+import { RegexPresetsService } from '../regex-presets.service';
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
@@ -34,7 +38,9 @@ import { KeyValuePipe } from '@angular/common';
     MatInputModule,
     TextFieldModule,
     MatCheckboxModule,
-    KeyValuePipe
+    KeyValuePipe,
+    MatMenuModule,
+    MatIconModule
   ],
   templateUrl: './edit-podcast-dialog.component.html',
   styleUrl: './edit-podcast-dialog.component.sass'
@@ -55,12 +61,15 @@ export class EditPodcastDialogComponent {
   defaultSubjects: string[] = [];
   ignoredSubjects: string[] = [];
   languages: { [key: string]: string } = {};
+  titleRegexPresets: NamedRegexPreset[] = [];
+  descriptionRegexPresets: NamedRegexPreset[] = [];
   podcastId: string | undefined;
   episodeId: string | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
+    private regexPresetsService: RegexPresetsService,
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string | undefined },
     private dialog: MatDialog,
@@ -70,6 +79,7 @@ export class EditPodcastDialogComponent {
   }
 
   async ngOnInit(): Promise<any> {
+    await this.loadRegexPresets();
     var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -123,7 +133,7 @@ export class EditPodcastDialogComponent {
           ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
           lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
           knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
-          minimumDuration: new FormControl(resp.podcast.body.minimumDuration ?? "", { nonNullable: true }),
+          minimumDuration: new FormControl(resp.podcast.body.minimumDuration, { nonNullable: true }),
           enrichmentHashTags: new FormControl(resp.podcast.body.enrichmentHashTags, { nonNullable: false }),
           hashTag: new FormControl(resp.podcast.body.hashTag, { nonNullable: false }),
         });
@@ -157,6 +167,32 @@ export class EditPodcastDialogComponent {
     this.dialogRef.close({ closed: true });
   }
 
+  async loadRegexPresets(): Promise<void> {
+    const presets = this.regexPresetsService.loadRegexPresets();
+    this.titleRegexPresets = presets.title;
+    this.descriptionRegexPresets = presets.description;
+  }
+
+  resolveRegexPlaceholders(regexValue: string): string {
+    return this.regexPresetsService.resolveRegexPlaceholders(regexValue, this.podcastName);
+  }
+
+  applyTitleRegexPreset(pattern: string): void {
+    if (!this.form) {
+      return;
+    }
+
+    this.regexPresetsService.applyTitleRegexPreset(pattern, this.form.controls.titleRegex, this.podcastName);
+  }
+
+  applyDescriptionRegexPreset(pattern: string): void {
+    if (!this.form) {
+      return;
+    }
+
+    this.regexPresetsService.applyDescriptionRegexPreset(pattern, this.form.controls.descriptionRegex, this.podcastName);
+  }
+
   onSubmit() {
     if (this.form?.valid) {
       const update: Podcast = {
@@ -183,7 +219,7 @@ export class EditPodcastDialogComponent {
         ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
         lang: this.form!.controls.lang.value,
         knownTerms: this.translateForEntityA(this.form!.controls.knownTerms),
-        minimumDuration: this.form!.controls.minimumDuration.value,
+        minimumDuration: this.translateForEntity(this.form!.controls.minimumDuration),
         enrichmentHashTags: this.translateForEntityA(this.form!.controls.enrichmentHashTags),
         hashTag: this.translateForEntity(this.form!.controls.hashTag),
       };
@@ -238,7 +274,7 @@ export class EditPodcastDialogComponent {
     if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
     if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
     if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
-    if (!this.areEqual(prev.minimumDuration ?? "unset", now.minimumDuration ?? "unset")) changes.minimumDuration = now.minimumDuration == "unset" ? "" : now.minimumDuration ?? "";
+    if (!this.isSame(prev.minimumDuration, now.minimumDuration)) changes.minimumDuration = now.minimumDuration;
     return changes;
   }
 

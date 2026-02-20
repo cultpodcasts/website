@@ -140,12 +140,42 @@
             <mat-tab label="Regexs">
                 <label>
                     <span>Title Regex:</span>
-                    <input type="text" [formControl]="form!.controls.titleRegex" matInput>
+                    <div class="regex-input-with-menu">
+                        <input type="text" [formControl]="form!.controls.titleRegex" matInput>
+                        <button type="button" mat-icon-button [matMenuTriggerFor]="titleRegexPresetMenu"
+                            aria-label="Title regex presets">
+                            <mat-icon>arrow_drop_down</mat-icon>
+                        </button>
+                    </div>
                 </label>
+                <mat-menu #titleRegexPresetMenu="matMenu">
+                    @if (titleRegexPresets.length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of titleRegexPresets; track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
                 <label>
                     <span>Description Regex:</span>
-                    <input type="text" [formControl]="form!.controls.descriptionRegex" matInput>
+                    <div class="regex-input-with-menu">
+                        <input type="text" [formControl]="form!.controls.descriptionRegex" matInput>
+                        <button type="button" mat-icon-button [matMenuTriggerFor]="descriptionRegexPresetMenu"
+                            aria-label="Description regex presets">
+                            <mat-icon>arrow_drop_down</mat-icon>
+                        </button>
+                    </div>
                 </label>
+                <mat-menu #descriptionRegexPresetMenu="matMenu">
+                    @if (descriptionRegexPresets.length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of descriptionRegexPresets; track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyDescriptionRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
                 <label>
                     <span>Episode Match Regex:</span>
                     <input type="text" [formControl]="form!.controls.episodeMatchRegex" matInput>
