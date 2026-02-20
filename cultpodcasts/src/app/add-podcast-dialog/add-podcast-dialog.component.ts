@@ -72,7 +72,11 @@ export class AddPodcastDialogComponent {
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
     private dialogRef: MatDialogRef<AddPodcastDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string },
+    @Inject(MAT_DIALOG_DATA) public data: {
+      podcastName: string,
+      defaultSubjectFromEpisode?: string,
+      forceBypassShortEpisodeChecking?: boolean
+    },
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;
@@ -132,11 +136,20 @@ export class AddPodcastDialogComponent {
           enrichmentHashTags: new FormControl(resp.podcast.body.enrichmentHashTags, { nonNullable: false }),
           hashTag: new FormControl(resp.podcast.body.hashTag, { nonNullable: false }),
         });
-        let initial: string[] = [];
-        if (resp.podcast.body.defaultSubject != null) {
-          initial.push(resp.podcast.body.defaultSubject);
+        if (this.data.forceBypassShortEpisodeChecking) {
+          this.form.controls.bypassShortEpisodeChecking.setValue(true);
         }
-        this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
+
+        const desiredDefaultSubject = this.data.defaultSubjectFromEpisode ?? resp.podcast.body.defaultSubject;
+        if (desiredDefaultSubject != null) {
+          this.form.controls.defaultSubject.setValue(desiredDefaultSubject);
+        }
+
+        let initial: string[] = [];
+        if (desiredDefaultSubject != null) {
+          initial.push(desiredDefaultSubject);
+        }
+        this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => desiredDefaultSubject == null || desiredDefaultSubject != x.name).map(x => x.name));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
         this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
