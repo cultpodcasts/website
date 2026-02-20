@@ -63,7 +63,11 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.isNewPodcast) {
         const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
-          data: { podcastName: result.podcastName },
+          data: {
+            podcastName: result.podcastName,
+            defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
+            forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking
+          },
           disableClose: true,
           autoFocus: true,
           width: '90%'

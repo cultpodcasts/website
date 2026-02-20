@@ -144,7 +144,12 @@ export class AddEpisodeDialogComponent {
   }
 
   close() {
-    this.dialogRef.close({ closed: true, isNewPodcast: this.isNewPodcast, podcastName: this.podcastName });
+    this.dialogRef.close({
+      closed: true,
+      isNewPodcast: this.isNewPodcast,
+      podcastName: this.podcastName,
+      ...this.getNewPodcastDialogDefaults()
+    });
   }
 
   onSubmit() {
@@ -191,10 +196,14 @@ export class AddEpisodeDialogComponent {
         update.urls.internetArchive = new URL(this.form!.controls.internetArchive.value);
       }
 
-
       var changes = this.getChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
-        this.dialogRef.close({ noChange: true, isNewPodcast: this.isNewPodcast, podcastName: this.podcastName });
+        this.dialogRef.close({
+          noChange: true,
+          isNewPodcast: this.isNewPodcast,
+          podcastName: this.podcastName,
+          ...this.getNewPodcastDialogDefaults()
+        });
       } else {
         this.send(this.episodeId, changes);
       }
@@ -206,9 +215,30 @@ export class AddEpisodeDialogComponent {
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        this.dialogRef.close({ updated: true, isNewPodcast: this.isNewPodcast, podcastName: this.podcastName });
+        this.dialogRef.close({
+          updated: true,
+          isNewPodcast: this.isNewPodcast,
+          podcastName: this.podcastName,
+          ...this.getNewPodcastDialogDefaults()
+        });
       }
     });
+  }
+
+  getNewPodcastDialogDefaults() {
+    if (!this.isNewPodcast) {
+      return {};
+    }
+
+    const selectedSubjects = this.form?.controls.subjects.value ?? [];
+    const defaultSubjectFromEpisode = selectedSubjects.length > 0 ? selectedSubjects[0] : undefined;
+    const forceBypassShortEpisodeChecking = this.originalEpisode?.ignored === true
+      && this.form?.controls.ignored.value === false;
+
+    return {
+      defaultSubjectFromEpisode,
+      forceBypassShortEpisodeChecking
+    };
   }
 
   getChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePost {
