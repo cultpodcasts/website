@@ -20,6 +20,9 @@ import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
+import subjectNamesConfig from '../hoisted-subject-names.json';
+import { Podcast } from '../podcast.interface';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -36,22 +39,30 @@ import { KeyValuePipe } from '@angular/common';
     TextFieldModule,
     MatInputModule,
     MatCheckboxModule,
-    KeyValuePipe
+    KeyValuePipe,
+    MatDividerModule
   ],
   templateUrl: './add-episode-dialog.component.html',
   styleUrl: './add-episode-dialog.component.sass'
 })
 export class AddEpisodeDialogComponent {
+  readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
+
   episodeId: string;
   isNewPodcast: boolean;
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
+  allSubjects: string[] = [];
+  selectedSubjects: string[] = [];
+  hoistedSubjects: string[] = [];
+  otherSubjects: string[] = [];
   languages: { [key: string]: string } = {};
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
   podcastName: string | undefined;
+  podcastDefaultSubject: string | null = null;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -90,6 +101,7 @@ export class AddEpisodeDialogComponent {
 
       this.originalEpisode = resp.episode;
       this.podcastName = resp.episode.podcastName;
+      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastName);
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
@@ -117,6 +129,8 @@ export class AddEpisodeDialogComponent {
         blueskyHandles: new FormControl<string[]>(resp.episode.blueskyHandles ?? [], { nonNullable: true })
       });
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
+      this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
+      this.regroupSubjects(resp.episode.subjects);
       this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
       this.isLoading = false;
     } catch (e) {
@@ -274,6 +288,42 @@ export class AddEpisodeDialogComponent {
 
   noCompareFunction() {
     return 0;
+  }
+
+  onSubjectsSelectionChange() {
+    this.regroupSubjects(this.form?.controls.subjects.value);
+  }
+
+  regroupSubjects(selected: string[] | null | undefined) {
+    const selectedValues = this.unique(selected ?? []);
+    this.selectedSubjects = selectedValues;
+
+    const selectedSet = new Set(selectedValues);
+    const hoistSet = new Set(this.hoistedSubjectNames);
+    if (this.podcastDefaultSubject) {
+      hoistSet.add(this.podcastDefaultSubject);
+    }
+
+    this.hoistedSubjects = this.allSubjects.filter(subject => hoistSet.has(subject) && !selectedSet.has(subject));
+    const hoistedSet = new Set(this.hoistedSubjects);
+    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
+  }
+
+  async getPodcastDefaultSubject(headers: HttpHeaders, podcastName: string | undefined): Promise<string | null> {
+    if (!podcastName) {
+      return null;
+    }
+    try {
+      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastName)}`, environment.api).toString();
+      const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
+      return podcast.defaultSubject ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  unique(values: string[]) {
+    return [...new Set(values)];
   }
 
   translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
