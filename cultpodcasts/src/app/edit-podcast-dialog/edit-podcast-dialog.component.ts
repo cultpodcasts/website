@@ -333,7 +333,7 @@ export class EditPodcastDialogComponent {
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        this.dialogRef.close({ updated: true });
+        this.dialogRef.close({ updated: true, response: result.response });
       }
     });
   }
