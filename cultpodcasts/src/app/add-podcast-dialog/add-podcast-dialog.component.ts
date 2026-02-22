@@ -66,6 +66,7 @@ export class AddPodcastDialogComponent {
   titleRegexPresets: NamedRegexPreset[] = [];
   descriptionRegexPresets: NamedRegexPreset[] = [];
   podcastId: string | undefined;
+  highlightSubjectsTab: boolean = false;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -144,6 +145,9 @@ export class AddPodcastDialogComponent {
         if (desiredDefaultSubject != null) {
           this.form.controls.defaultSubject.setValue(desiredDefaultSubject);
         }
+        this.highlightSubjectsTab = this.data.defaultSubjectFromEpisode != null
+          && desiredDefaultSubject != null
+          && desiredDefaultSubject !== '';
 
         let initial: string[] = [];
         if (desiredDefaultSubject != null) {
@@ -365,6 +369,12 @@ export class AddPodcastDialogComponent {
 
   onIgnoredSubjectsDropdownKeydown(event: KeyboardEvent) {
     this.applyFilterKey(event, 'ignoredSubjectsFilterTerm');
+  }
+
+  onTabChange(selectedIndex: number) {
+    if (selectedIndex === 2) {
+      this.highlightSubjectsTab = false;
+    }
   }
 
   filteredDefaultSubjects() {
