@@ -23,6 +23,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
+import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -66,6 +67,7 @@ export class AddPodcastDialogComponent {
   titleRegexPresets: NamedRegexPreset[] = [];
   descriptionRegexPresets: NamedRegexPreset[] = [];
   podcastId: string | undefined;
+  highlightSubjectsTab: boolean = false;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -144,6 +146,9 @@ export class AddPodcastDialogComponent {
         if (desiredDefaultSubject != null) {
           this.form.controls.defaultSubject.setValue(desiredDefaultSubject);
         }
+        this.highlightSubjectsTab = this.data.defaultSubjectFromEpisode != null
+          && desiredDefaultSubject != null
+          && desiredDefaultSubject !== '';
 
         let initial: string[] = [];
         if (desiredDefaultSubject != null) {
@@ -339,7 +344,7 @@ export class AddPodcastDialogComponent {
     dialogRef.componentInstance.submit(id, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        this.dialogRef.close({ updated: true });
+        this.dialogRef.close({ updated: true, response: result.response });
       }
     });
   }
@@ -367,12 +372,20 @@ export class AddPodcastDialogComponent {
     this.applyFilterKey(event, 'ignoredSubjectsFilterTerm');
   }
 
+  onTabChange(selectedIndex: number) {
+    if (selectedIndex === 2) {
+      this.highlightSubjectsTab = false;
+    }
+  }
+
   filteredDefaultSubjects() {
     return this.filterSubjectsByTerm(this.defaultSubjects, this.defaultSubjectFilterTerm);
   }
 
   filteredIgnoredSubjects() {
-    return this.filterSubjectsByTerm(this.ignoredSubjects, this.ignoredSubjectsFilterTerm);
+    const selected = this.form?.controls.ignoredSubjects.value ?? [];
+    const selectedSet = new Set(selected);
+    return filterKeepingSelectedInOrder(this.ignoredSubjects, this.ignoredSubjectsFilterTerm, selectedSet);
   }
 
   applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {
@@ -410,4 +423,5 @@ export class AddPodcastDialogComponent {
     }
     return subjects.filter(subject => subject.toLowerCase().includes(trimmedTerm));
   }
+
 }

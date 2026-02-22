@@ -11,7 +11,7 @@
     }
     } @else {
     <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
-        <mat-tab-group>
+        <mat-tab-group (selectedIndexChange)="onTabChange($event)">
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
@@ -62,7 +62,7 @@
                     </label>
                 </div>
             </mat-tab>
-            <mat-tab label="Subjects">
+            <mat-tab label="Subjects" [labelClass]="highlightSubjectsTab ? 'subjects-tab-highlight' : ''">
                 <label>
                     <span>Default Subject:</span>
                     <mat-select [formControl]="form!.controls.defaultSubject"
