@@ -374,10 +374,14 @@ export class AddPodcastDialogComponent {
   filteredIgnoredSubjects() {
     const selected = this.form?.controls.ignoredSubjects.value ?? [];
     const selectedSet = new Set(selected);
-    const filteredUnselected = this.filterSubjectsByTerm(this.ignoredSubjects, this.ignoredSubjectsFilterTerm)
-      .filter(subject => !selectedSet.has(subject));
+    const trimmedTerm = this.ignoredSubjectsFilterTerm.trim().toLowerCase();
+    if (!trimmedTerm) {
+      return this.ignoredSubjects;
+    }
 
-    return this.unique([...selected, ...filteredUnselected]);
+    return this.ignoredSubjects.filter(subject =>
+      selectedSet.has(subject) || subject.toLowerCase().includes(trimmedTerm)
+    );
   }
 
   applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {
@@ -416,7 +420,4 @@ export class AddPodcastDialogComponent {
     return subjects.filter(subject => subject.toLowerCase().includes(trimmedTerm));
   }
 
-  unique(values: string[]): string[] {
-    return [...new Set(values)];
-  }
 }

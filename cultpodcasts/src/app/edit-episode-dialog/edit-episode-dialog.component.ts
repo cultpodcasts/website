@@ -337,18 +337,15 @@ export class EditEpisodeDialogComponent {
   }
 
   regroupSubjects(selected: string[] | null | undefined) {
-    const selectedValues = this.unique(selected ?? []);
-    this.selectedSubjects = selectedValues;
+    const orderedHoistedNames = this.unique([
+      ...(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []),
+      ...this.hoistedSubjectNames
+    ]);
+    const allSubjectsSet = new Set(this.allSubjects);
 
-    const selectedSet = new Set(selectedValues);
-    const hoistSet = new Set(this.hoistedSubjectNames);
-    if (this.podcastDefaultSubject) {
-      hoistSet.add(this.podcastDefaultSubject);
-    }
-
-    this.hoistedSubjects = this.allSubjects.filter(subject => hoistSet.has(subject) && !selectedSet.has(subject));
+    this.hoistedSubjects = orderedHoistedNames.filter(subject => allSubjectsSet.has(subject));
     const hoistedSet = new Set(this.hoistedSubjects);
-    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
+    this.otherSubjects = this.allSubjects.filter(subject => !hoistedSet.has(subject));
 
     this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
     this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
