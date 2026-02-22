@@ -23,6 +23,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
+import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -384,14 +385,7 @@ export class AddPodcastDialogComponent {
   filteredIgnoredSubjects() {
     const selected = this.form?.controls.ignoredSubjects.value ?? [];
     const selectedSet = new Set(selected);
-    const trimmedTerm = this.ignoredSubjectsFilterTerm.trim().toLowerCase();
-    if (!trimmedTerm) {
-      return this.ignoredSubjects;
-    }
-
-    return this.ignoredSubjects.filter(subject =>
-      selectedSet.has(subject) || subject.toLowerCase().includes(trimmedTerm)
-    );
+    return filterKeepingSelectedInOrder(this.ignoredSubjects, this.ignoredSubjectsFilterTerm, selectedSet);
   }
 
   applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {

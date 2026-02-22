@@ -366,15 +366,27 @@ export class AddEpisodeDialogComponent {
   }
 
   regroupSubjects(selected: string[] | null | undefined) {
+    const selectedSet = new Set(this.unique(selected ?? []));
+    this.selectedSubjects = this.allSubjects.filter(subject => selectedSet.has(subject));
+
+    this.hoistedSubjects = [];
+    if (this.podcastDefaultSubject && !selectedSet.has(this.podcastDefaultSubject)) {
+      this.hoistedSubjects.push(this.podcastDefaultSubject);
+    }
+
     const orderedHoistedNames = this.unique([
-      ...(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []),
       ...this.hoistedSubjectNames
     ]);
-    const allSubjectsSet = new Set(this.allSubjects);
 
-    this.hoistedSubjects = orderedHoistedNames.filter(subject => allSubjectsSet.has(subject));
+    const remainingHoistedSubjects = orderedHoistedNames.filter(subject =>
+      this.allSubjects.includes(subject)
+      && !selectedSet.has(subject)
+      && subject !== this.podcastDefaultSubject
+    );
+    this.hoistedSubjects = this.hoistedSubjects.concat(remainingHoistedSubjects);
+
     const hoistedSet = new Set(this.hoistedSubjects);
-    this.otherSubjects = this.allSubjects.filter(subject => !hoistedSet.has(subject));
+    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
 
     this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
     this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
