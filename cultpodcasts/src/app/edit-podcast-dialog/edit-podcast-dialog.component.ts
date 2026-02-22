@@ -367,7 +367,12 @@ export class EditPodcastDialogComponent {
   }
 
   filteredIgnoredSubjects() {
-    return this.filterSubjectsByTerm(this.ignoredSubjects, this.ignoredSubjectsFilterTerm);
+    const selected = this.form?.controls.ignoredSubjects.value ?? [];
+    const selectedSet = new Set(selected);
+    const filteredUnselected = this.filterSubjectsByTerm(this.ignoredSubjects, this.ignoredSubjectsFilterTerm)
+      .filter(subject => !selectedSet.has(subject));
+
+    return this.unique([...selected, ...filteredUnselected]);
   }
 
   applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {
@@ -404,5 +409,9 @@ export class EditPodcastDialogComponent {
       return subjects;
     }
     return subjects.filter(subject => subject.toLowerCase().includes(trimmedTerm));
+  }
+
+  unique(values: string[]): string[] {
+    return [...new Set(values)];
   }
 }

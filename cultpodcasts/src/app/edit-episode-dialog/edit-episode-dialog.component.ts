@@ -350,7 +350,6 @@ export class EditEpisodeDialogComponent {
     const hoistedSet = new Set(this.hoistedSubjects);
     this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
 
-    this.selectedSubjects = this.filterSubjectsByTerm(this.selectedSubjects);
     this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
     this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
   }
