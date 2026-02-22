@@ -24,6 +24,7 @@ import { KeyValuePipe } from '@angular/common';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
+import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -338,10 +339,10 @@ export class EditEpisodeDialogComponent {
 
   regroupSubjects(selected: string[] | null | undefined) {
     const selectedSet = new Set(this.unique(selected ?? []));
-    this.selectedSubjects = this.allSubjects.filter(subject => selectedSet.has(subject));
+    this.selectedSubjects = [];
 
     this.hoistedSubjects = [];
-    if (this.podcastDefaultSubject && !selectedSet.has(this.podcastDefaultSubject)) {
+    if (this.podcastDefaultSubject) {
       this.hoistedSubjects.push(this.podcastDefaultSubject);
     }
 
@@ -351,24 +352,19 @@ export class EditEpisodeDialogComponent {
 
     const remainingHoistedSubjects = orderedHoistedNames.filter(subject =>
       this.allSubjects.includes(subject)
-      && !selectedSet.has(subject)
       && subject !== this.podcastDefaultSubject
     );
     this.hoistedSubjects = this.hoistedSubjects.concat(remainingHoistedSubjects);
 
     const hoistedSet = new Set(this.hoistedSubjects);
-    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
+    this.otherSubjects = this.allSubjects.filter(subject => !hoistedSet.has(subject));
 
-    this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects);
-    this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects);
+    this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects, selectedSet);
+    this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects, selectedSet);
   }
 
-  filterSubjectsByTerm(subjects: string[]): string[] {
-    const term = this.subjectsFilterTerm.trim().toLowerCase();
-    if (!term) {
-      return subjects;
-    }
-    return subjects.filter(subject => subject.toLowerCase().includes(term));
+  filterSubjectsByTerm(subjects: string[], selectedSet: Set<string>): string[] {
+    return filterKeepingSelectedInOrder(subjects, this.subjectsFilterTerm, selectedSet);
   }
 
   async getPodcastDefaultSubject(headers: HttpHeaders, podcastName: string | undefined): Promise<string | null> {

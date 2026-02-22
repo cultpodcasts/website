@@ -117,21 +117,13 @@
                         <mat-option disabled>{{subjectsFilterTerm}}</mat-option>
                         <mat-divider></mat-divider>
                         }
-                        @if (selectedSubjects.length > 0) {
-                        @for (subject of selectedSubjects; track subject) {
-                        <mat-option [value]="subject">{{subject}}</mat-option>
-                        }
-                        }
                         @if (hoistedSubjects.length > 0) {
-                        @if (selectedSubjects.length > 0) {
-                        <mat-divider></mat-divider>
-                        }
                         @for (subject of hoistedSubjects; track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                         }
                         @if (otherSubjects.length > 0) {
-                        @if (selectedSubjects.length > 0 || hoistedSubjects.length > 0) {
+                        @if (hoistedSubjects.length > 0) {
                         <mat-divider></mat-divider>
                         }
                         @for (subject of otherSubjects; track subject) {
