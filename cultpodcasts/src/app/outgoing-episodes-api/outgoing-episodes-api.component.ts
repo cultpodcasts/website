@@ -235,7 +235,14 @@ export class OutgoingEpisodesApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        let snackBarRef = this.snackBar.open("Podcast updated", "Ok", { duration: 10000 });
+        var message= "Podcast updated";
+        if (result.response?.failureIndexingEpisodes) {
+          message += ". Some episodes failed to index";
+        }
+        if (result.response?.failureDeletingFromIndex) {
+          message += ". Some episodes failed to delete from index";
+        }
+        let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
       } else if (result.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }

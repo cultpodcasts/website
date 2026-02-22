@@ -86,6 +86,12 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             } else {
               message = "Episode unchanged. Podcast updated";
             }
+            if (podcastResult.response?.failureIndexingEpisodes) {
+              message += ". Some episodes failed to index";
+            }
+            if (podcastResult.response?.failureDeletingFromIndex) {
+              message += ". Some episodes failed to delete from index";
+            }
           }
           let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: medium });
           podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));

@@ -7,6 +7,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { EditPodcastPost } from "../edit-podcast-post.interface";
 import { firstValueFrom } from 'rxjs';
+import { PodcastPostResponse } from '../podcast-post-response.interface';
 
 @Component({
   selector: 'app-edit-podcast-send',
@@ -34,12 +35,12 @@ export class EditPodcastSendComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/podcast/${podcastId}`, environment.api).toString();
-      this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
+      const podcastEndpoint = new URL(`/podcast/${podcastId}`, environment.api).toString();
+      this.http.post<PodcastPostResponse>(podcastEndpoint, changes, { headers: headers, observe: "response" })
         .subscribe(
           {
             next: resp => {
-              this.dialogRef.close({ updated: true });
+              this.dialogRef.close({ updated: true, response: resp.body });
             },
             error: e => {
               this.isSending = false;
