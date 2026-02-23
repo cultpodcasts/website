@@ -5,7 +5,7 @@ export const environment: IEnvironment = {
       clientId: "o1YtyIzzhBEQ7c7IEZzovb1TGov1AGSs",
       domain: "auth-staging.cultpodcasts.com"
    },
-   api: 'https://api.cultpodcasts.com',
+   api: 'https://api-preview.jonbreen.workers.dev',
    assetHost: 'https://feature-podcast-hashtags.website-83e.pages.dev',
    bundleAssetHost: 'https://feature-podcast-hashtags.website-83e.pages.dev',
    shortner: 'https://s.cultpodcasts.com',
