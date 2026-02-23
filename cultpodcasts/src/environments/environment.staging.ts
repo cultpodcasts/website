@@ -6,8 +6,8 @@ export const environment: IEnvironment = {
       domain: "auth-staging.cultpodcasts.com"
    },
    api: 'https://api-preview.jonbreen.workers.dev',
-   assetHost: 'https://feature-podcast-hashtags.website-83e.pages.dev',
-   bundleAssetHost: 'https://feature-podcast-hashtags.website-83e.pages.dev',
+   assetHost: 'https://feature-staging-env.website-83e.pages.dev',
+   bundleAssetHost: 'https://feature-staging-env.website-83e.pages.dev',
    shortner: 'https://s.cultpodcasts.com',
    name: "stg",
    vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is"
