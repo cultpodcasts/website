@@ -55,6 +55,10 @@ export class DiscoveryItemComponent {
     return { known: false, text: "Unknown" };
   }
 
+  matchingPodcastNames(): string {
+    return this.result.matchingPodcasts?.map((podcast) => `${podcast.name} (Visible=${podcast.visible}, Episodes=${podcast.visibleEpisodes})`).join(", ") ?? "";
+  }
+
   ngOnInit() {
     if (this.selectedEvent) {
       this.eventsSubscription = this.selectedEvent.subscribe((x) => this.submitted = x);

@@ -15,6 +15,12 @@ export interface DiscoveryResult {
     imageUrl: URL | undefined;
     enrichedTimeFromApple: boolean;
     enrichedUrlFromSpotify: boolean;
-    matchingPodcasts: string[];
+    matchingPodcasts: DiscoveryPodcast[] | null;
     isFocused: boolean | undefined;
+}
+
+export interface DiscoveryPodcast {
+    name: string;
+    visible: boolean;
+    visibleEpisodes: number;
 }
