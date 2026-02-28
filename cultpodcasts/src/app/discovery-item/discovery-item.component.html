@@ -13,7 +13,7 @@
             {{result.showName}}
             } @else if (result.matchingPodcasts != null && result.matchingPodcasts.length==1) {
             <a [routerLink]="['/podcast', result.matchingPodcasts[0].name]" (click)="allowLink($event)">
-                {{result.matchingPodcasts[0]}}
+                {{result.matchingPodcasts[0].name}}
             </a> (Visible={{result.matchingPodcasts[0].visible}},
             Episodes={{result.matchingPodcasts[0].visibleEpisodes}})
             } @else {
