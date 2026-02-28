@@ -178,7 +178,7 @@ export class DiscoveryApiComponent {
   }
 
   private enrichFocused(result: DiscoveryResult): DiscoveryResult {
-    result.isFocused = result.matchingPodcasts.length > 0 ||
+    result.isFocused = (result.matchingPodcasts !== null && result.matchingPodcasts.length > 0) ||
       result.subjects.length > 0 ||
       (result.youTubeViews != undefined && result.youTubeViews > 100) ||
       (result.youTubeChannelMembers != undefined && result.youTubeChannelMembers > 1000);
