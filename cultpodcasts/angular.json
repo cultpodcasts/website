@@ -108,7 +108,9 @@
         "serve": {
           "options": {
             "host": "local.cultpodcasts.com",
-            "ssl": true
+            "ssl": true,
+            "sslCert": ".cert/dev-cert.pem",
+            "sslKey": ".cert/dev-key.pem"
           },
           "builder": "@angular/build:dev-server",
           "configurations": {

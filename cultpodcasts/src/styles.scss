@@ -21,6 +21,10 @@ body {
     background-color: #1a1a1a !important;
 }
 
+html.discovery-snap-enabled {
+    scroll-snap-type: y mandatory;
+}
+
 @media (prefers-color-scheme: light) {
     body {
         background-color: #fafafa !important;

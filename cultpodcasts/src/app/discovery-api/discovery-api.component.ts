@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
@@ -38,7 +38,7 @@ import { SiteService } from '../site.service';
   templateUrl: './discovery-api.component.html',
   styleUrl: './discovery-api.component.sass'
 })
-export class DiscoveryApiComponent {
+export class DiscoveryApiComponent implements OnDestroy {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
   results: DiscoveryResult[] | undefined;
@@ -67,6 +67,8 @@ export class DiscoveryApiComponent {
   ) { }
 
   ngOnInit() {
+    this.toggleDiscoverySnapClass(true);
+
     this.siteService.setQuery(null);
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
@@ -105,6 +107,21 @@ export class DiscoveryApiComponent {
       this.isLoading = false;
       this.isInError = true;
     });
+  }
+
+  ngOnDestroy() {
+    this.toggleDiscoverySnapClass(false);
+  }
+
+  private toggleDiscoverySnapClass(enabled: boolean) {
+    // This class gates scroll snap so it only applies while /discovery is mounted.
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const method: 'add' | 'remove' = enabled ? 'add' : 'remove';
+    document.documentElement.classList[method]('discovery-snap-enabled');
+    document.body.classList[method]('discovery-snap-enabled');
   }
 
   async close() {
