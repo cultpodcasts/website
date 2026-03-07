@@ -83,10 +83,41 @@ jobs:
             cultpodcasts/app-release-bundle.aab
           retention-days: 30
 
-      - name: Create Release (Android)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Read app version from package.json
+        id: app_version
+        run: |
+          VERSION=$(node -p "require('./cultpodcasts/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure semver tag exists
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="${{ steps.app_version.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Created and pushed tag $TAG"
+          fi
+
+      - name: Publish Versioned Android Release
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
+          name: Android ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
+          body: |
+            Android build for `${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}`
+
+            Package version source: `cultpodcasts/package.json` (`${{ steps.app_version.outputs.version }}`).
+
+            Includes:
+            - `app-release-signed.apk`
+            - `app-release-bundle.aab`
           files: |
             cultpodcasts/app-release-signed.apk
             cultpodcasts/app-release-bundle.aab
@@ -100,9 +131,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: android-latest
-          name: Android Latest Build
+          name: Android Latest Build (v${{ steps.app_version.outputs.version }})
           body: |
             Automated Android build from `main`.
+
+            Package version: `${{ steps.app_version.outputs.version }}`
 
             Includes:
             - `app-release-signed.apk`

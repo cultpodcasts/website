@@ -24,7 +24,7 @@
     <a [routerLink]="[]" fragment="top" id="goTop" (click)="goTop($event)">Go to top<mat-icon>arrow_upward</mat-icon></a>
   </footer>
 
-  <mat-menu #socialLinksMenu="matMenu" [overlapTrigger]="false" xPosition="after" yPosition="above" class="social-links-menu-panel">
+  <mat-menu #socialLinksMenu="matMenu" [overlapTrigger]="true" xPosition="after" yPosition="above" class="social-links-menu-panel">
     @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit)) {
     <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
       <mat-icon svgIcon="reddit"></mat-icon>
