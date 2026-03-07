@@ -1,5 +1,53 @@
+<div id="top"></div>
 <section id="body">
   <app-toolbar></app-toolbar>
   <app-search-bar></app-search-bar>
   <router-outlet></router-outlet>
+
+  <footer>
+    <a [routerLink]="['/content/privacy-policy']" id="privacy">Privacy Policy</a>
+
+    @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit) || featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
+    <button id="socialLinksButton" [matMenuTriggerFor]="socialLinksMenu" type="button" aria-label="Open social links">
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit)) {
+      <img src="/assets/reddit.svg" alt="Reddit" class="socialPreviewIcon">
+      }
+      @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
+      <mat-icon svgIcon="android" class="socialPreviewSvgIcon" aria-hidden="true"></mat-icon>
+      <img src="/assets/github.svg" alt="GitHub" class="socialPreviewIcon githubPreviewIcon">
+      <img src="/assets/twitter.svg" alt="Twitter" class="socialPreviewIcon">
+      <img src="/assets/bluesky.svg" alt="Bluesky" class="socialPreviewIcon">
+      }
+    </button>
+    }
+
+    <a [routerLink]="[]" fragment="top" id="goTop" (click)="goTop($event)">Go to top<mat-icon>arrow_upward</mat-icon></a>
+  </footer>
+
+  <mat-menu #socialLinksMenu="matMenu" [overlapTrigger]="false" xPosition="after" yPosition="above" class="social-links-menu-panel">
+    @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit)) {
+    <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
+      <mat-icon svgIcon="reddit"></mat-icon>
+      <span>Reddit</span>
+    </a>
+    }
+    @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
+    <a href="https://github.com/cultpodcasts" mat-menu-item>
+      <mat-icon svgIcon="github"></mat-icon>
+      <span>GitHub</span>
+    </a>
+    <a href="https://github.com/cultpodcasts/website/releases" mat-menu-item>
+      <mat-icon svgIcon="android"></mat-icon>
+      <span>Android</span>
+    </a>
+    <a href="https://twitter.com/cultpodcasts" mat-menu-item>
+      <mat-icon svgIcon="twitter"></mat-icon>
+      <span>Twitter</span>
+    </a>
+    <a href="https://bsky.app/profile/cultpodcasts.bsky.social" mat-menu-item>
+      <mat-icon svgIcon="bluesky"></mat-icon>
+      <span>Bluesky</span>
+    </a>
+    }
+  </mat-menu>
 </section>

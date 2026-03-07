@@ -1,5 +1,5 @@
 import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { ShareMode } from "./share-mode.enum";
 import { isPlatformBrowser } from '@angular/common';
 import { ToolbarComponent } from './toolbar/toolbar.component';
@@ -12,16 +12,20 @@ import { WebPushService } from './web-push.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EnablePushNotificationsDialogComponent } from './enable-push-notifications-dialog/enable-push-notifications-dialog.component';
 import { ProfileService } from './profile.service';
+import { MatMenuModule } from '@angular/material/menu';
+import { FeatureSwitch } from './feature-switch.enum';
+import { FeatureSwtichService } from './feature-switch-service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, MatIconModule, ToolbarComponent, SearchBarComponent]
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent]
 })
 
 export class AppComponent {
   isBrowser: boolean;
+  protected FeatureSwitch = FeatureSwitch;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -33,7 +37,8 @@ export class AppComponent {
     seoService: SeoService,
     private webPushService: WebPushService,
     private dialog: MatDialog,
-    private profileService: ProfileService
+    private profileService: ProfileService,
+    protected featureSwtichService: FeatureSwtichService
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
@@ -74,6 +79,18 @@ export class AppComponent {
     }
   }
 
+  goTop(event: Event): void {
+    event.preventDefault();
+
+    if (!this.isBrowser) {
+      return;
+    }
+
+    // Keep #top in the URL while avoiding a full document navigation.
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#top`);
+    window.scrollTo(0, 0);
+  }
+
   private registerSvg() {
     this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/cultpodcasts.svg"));
     this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/add-podcast.svg"));
@@ -87,6 +104,7 @@ export class AppComponent {
     this.iconRegistry.addSvgIcon(`internet-archive`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/Internet_Archive_logo_and_wordmark.svg"));
     this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/profile.svg"));
     this.iconRegistry.addSvgIcon(`bluesky`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bluesky.svg"));
+    this.iconRegistry.addSvgIcon(`android`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/android.svg"));
     this.iconRegistry.addSvgIcon(`visible`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/visible.svg"));
     this.iconRegistry.addSvgIcon(`removed`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/removed.svg"));
   }
