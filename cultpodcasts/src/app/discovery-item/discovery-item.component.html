@@ -8,8 +8,7 @@
         <mat-card-subtitle
             [class.multipleMatchingPodcasts]="result.matchingPodcasts!= null && result.matchingPodcasts.length > 1"
             [class.matchedPodcast]="result.matchingPodcasts!= null && result.matchingPodcasts.length==1">
-            @if (result.matchingPodcasts== null ||
-            result.matchingPodcasts.length==0) {
+            @if (result.matchingPodcasts== null || result.matchingPodcasts.length==0) {
             {{result.showName}}
             } @else if (result.matchingPodcasts != null && result.matchingPodcasts.length==1) {
             <a [routerLink]="['/podcast', result.matchingPodcasts[0].name]" (click)="allowLink($event)">
