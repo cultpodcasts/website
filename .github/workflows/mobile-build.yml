@@ -74,21 +74,28 @@ jobs:
             ghcr.io/googlechromelabs/bubblewrap:latest \
             /tmp/build-apk.sh
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cultpodcasts-apk
-          path: |
-            cultpodcasts/app-release-signed.apk
-            cultpodcasts/app-release-bundle.aab
-          retention-days: 30
-
       - name: Read app version from package.json
         id: app_version
         run: |
           VERSION=$(node -p "require('./cultpodcasts/package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "apk_name=cultpodcasts-android-v$VERSION.apk" >> "$GITHUB_OUTPUT"
+          echo "aab_name=cultpodcasts-android-v$VERSION.aab" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare versioned Android artifacts
+        run: |
+          cp "cultpodcasts/app-release-signed.apk" "cultpodcasts/${{ steps.app_version.outputs.apk_name }}"
+          cp "cultpodcasts/app-release-bundle.aab" "cultpodcasts/${{ steps.app_version.outputs.aab_name }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cultpodcasts-apk-v${{ steps.app_version.outputs.version }}
+          path: |
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
+          retention-days: 30
 
       - name: Ensure semver tag exists
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
@@ -116,11 +123,11 @@ jobs:
             Package version source: `cultpodcasts/package.json` (`${{ steps.app_version.outputs.version }}`).
 
             Includes:
-            - `app-release-signed.apk`
-            - `app-release-bundle.aab`
+            - `${{ steps.app_version.outputs.apk_name }}`
+            - `${{ steps.app_version.outputs.aab_name }}`
           files: |
-            cultpodcasts/app-release-signed.apk
-            cultpodcasts/app-release-bundle.aab
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
           draft: false
           prerelease: false
         env:
@@ -138,11 +145,11 @@ jobs:
             Package version: `${{ steps.app_version.outputs.version }}`
 
             Includes:
-            - `app-release-signed.apk`
-            - `app-release-bundle.aab`
+            - `${{ steps.app_version.outputs.apk_name }}`
+            - `${{ steps.app_version.outputs.aab_name }}`
           files: |
-            cultpodcasts/app-release-signed.apk
-            cultpodcasts/app-release-bundle.aab
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
           draft: false
           prerelease: true
         env:
