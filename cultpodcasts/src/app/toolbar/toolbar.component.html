@@ -4,12 +4,6 @@
         alt="image"><span>Cult Podcasts</span></a>
     <div id="socialbuttons">
       <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit)) {
-      <a href="https://reddit.com/r/cultpodcasts"><img src="/assets/reddit.svg" alt="Reddit" class="socialbutton"></a>
-      }
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
-      <a href="https://twitter.com/cultpodcasts"><img src="/assets/twitter.svg" alt="Twitter" class="socialbutton"></a>
-      }
       @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
       @if (auth.authService.user$ | async; as user) {
       <div class="socialbutton button" [matBadge]="disoveryInfo?.documentCount"
@@ -111,18 +105,6 @@
       <a (click)="addTerm()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">list_alt_add</mat-icon>
         <span>Add Term</span>
-      </a>
-      }
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.reddit)) {
-      <a href="https://reddit.com/r/cultpodcasts" mat-menu-item>
-        <mat-icon svgIcon="reddit"></mat-icon>
-        <span>Reddit</span>
-      </a>
-      }
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.socials)) {
-      <a href="https://twitter.com/cultpodcasts" mat-menu-item>
-        <mat-icon svgIcon="twitter"></mat-icon>
-        <span>Twitter</span>
       </a>
       }
       @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
