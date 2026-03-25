@@ -35,7 +35,7 @@ export class PostEpisodeDialogComponent {
   isInError: boolean = false;
   isSending: boolean = true;
   form: FormGroup<PostForm> | undefined;
-  podcastId: string;
+  podcastName: string;
   episodeId: string;
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
@@ -44,8 +44,8 @@ export class PostEpisodeDialogComponent {
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string }) {
-    this.podcastId = data.podcastId;
+    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string }) {
+    this.podcastName = data.podcastName;
     this.episodeId = data.episodeId;
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
@@ -64,7 +64,7 @@ export class PostEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastName}/${this.episodeId}`, environment.api).toString();
       this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
