@@ -53,6 +53,7 @@ export class EditEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   episodeId: string;
+  podcastId: string;
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
@@ -72,10 +73,11 @@ export class EditEpisodeDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string },
     private dialog: MatDialog,
   ) {
     this.episodeId = data.episodeId;
+    this.podcastId = data.podcastId;
   }
 
   async ngOnInit(): Promise<any> {
@@ -88,7 +90,7 @@ export class EditEpisodeDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
 
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
@@ -151,6 +153,7 @@ export class EditEpisodeDialogComponent {
 
       const update: ApiEpisode = {
         id: this.episodeId,
+        podcastId: this.podcastId,
         title: this.form!.controls.title.value,
         description: this.form!.controls.description.value,
         posted: this.form!.controls.posted.value,
@@ -194,14 +197,14 @@ export class EditEpisodeDialogComponent {
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true });
       } else {
-        this.send(this.episodeId, changes);
+        this.send(this.podcastId, this.episodeId, changes);
       }
     }
   }
 
-  send(id: string, changes: EpisodePost) {
+  send(podcastId: string, episodeId: string, changes: EpisodePost) {
     const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.submit(id, changes);
+    dialogRef.componentInstance.submit(podcastId, episodeId, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {
         if (result.response && (result.response.blueskyPostDeleted == false || !result.response.tweetDeleted == false)) {

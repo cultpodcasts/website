@@ -20,13 +20,15 @@ import { environment } from './../../environments/environment';
 export class DeleteEpisodeDialogComponent {
   isInError: boolean = false;
   isSending: boolean = false;
-  episodeId: string | undefined;
+  podcastId: string;
+  episodeId: string;
   error: any | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<DeleteEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
+    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string }) {
+    this.podcastId = data.podcastId;
     this.episodeId = data.episodeId;
   }
 
@@ -45,7 +47,7 @@ export class DeleteEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
       this.http.delete<any>(episodeEndpoint, { headers: headers })
         .subscribe(
           {
