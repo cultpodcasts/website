@@ -52,7 +52,8 @@ export class AddEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   episodeId: string;
-  podcastId: string;
+  podcastName: string;
+  podcastId: string | undefined;
   isNewPodcast: boolean;
   isLoading: boolean = true;
   isInError: boolean = false;
@@ -66,18 +67,17 @@ export class AddEpisodeDialogComponent {
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
-  podcastName: string | undefined;
   podcastDefaultSubject: string | null = null;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<AddEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string, isNewPodcast: boolean },
+    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string, isNewPodcast: boolean },
     private fb: FormBuilder,
     private dialog: MatDialog,
   ) {
-    this.podcastId = data.podcastId;
+    this.podcastName = data.podcastName;
     this.episodeId = data.episodeId;
     this.isNewPodcast = data.isNewPodcast;
   }
@@ -92,7 +92,7 @@ export class AddEpisodeDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastName}/${this.episodeId}`, environment.api).toString();
 
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
@@ -106,7 +106,7 @@ export class AddEpisodeDialogComponent {
       ));
 
       this.originalEpisode = resp.episode;
-      this.podcastName = resp.episode.podcastName;
+      this.podcastId = resp.episode.podcastId;
       this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastName);
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
@@ -210,7 +210,7 @@ export class AddEpisodeDialogComponent {
           ...this.getNewPodcastDialogDefaults()
         });
       } else {
-        this.send(this.podcastId, this.episodeId, changes);
+        this.send(this.podcastName, this.episodeId, changes);
       }
     }
   }

@@ -53,7 +53,7 @@ export class EditEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   episodeId: string;
-  podcastId: string;
+  podcastName: string;
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
@@ -66,18 +66,17 @@ export class EditEpisodeDialogComponent {
 
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
-  podcastName: string | undefined;
   podcastDefaultSubject: string | null = null;
 
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string },
     private dialog: MatDialog,
   ) {
     this.episodeId = data.episodeId;
-    this.podcastId = data.podcastId;
+    this.podcastName = data.podcastName;
   }
 
   async ngOnInit(): Promise<any> {
@@ -90,7 +89,7 @@ export class EditEpisodeDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastName}/${this.episodeId}`, environment.api).toString();
 
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
@@ -104,7 +103,7 @@ export class EditEpisodeDialogComponent {
       ));
 
       this.originalEpisode = resp.episode;
-      this.podcastName = resp.episode.podcastName;
+      this.podcastName = resp.episode.podcastName!;
       this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastName);
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
@@ -153,7 +152,6 @@ export class EditEpisodeDialogComponent {
 
       const update: ApiEpisode = {
         id: this.episodeId,
-        podcastId: this.podcastId,
         title: this.form!.controls.title.value,
         description: this.form!.controls.description.value,
         posted: this.form!.controls.posted.value,
@@ -197,7 +195,7 @@ export class EditEpisodeDialogComponent {
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true });
       } else {
-        this.send(this.podcastId, this.episodeId, changes);
+        this.send(this.podcastName, this.episodeId, changes);
       }
     }
   }
