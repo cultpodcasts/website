@@ -3,4 +3,5 @@ import { PostEpisodeDialogResponse } from "./post-episode-dialog-response.interf
 export interface PostEpisodeDialogResponseWrapper {
     postEpisodeDialogResponse: PostEpisodeDialogResponse;
     episodeId: string;
+    podcastId: string;
 }

@@ -123,16 +123,16 @@ export class PodcastEpisodeComponent {
     this.router.navigate([url]);
   }
 
-  post(id: string) {
+  post(episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId: id },
+        data: { podcastName: this.podcastName, episodeId: episodeId },
         disableClose: true,
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, episodeId: id } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastName: this.podcastName, episodeId: episodeId } });
     });
   }
 }

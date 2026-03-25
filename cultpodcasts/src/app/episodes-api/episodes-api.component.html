@@ -38,16 +38,16 @@
                 <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
-                <button mat-menu-item (click)="edit(result.id)">
+                <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
                     <mat-icon>edit</mat-icon>
                     <span>Edit Episode</span>
                 </button>
-                <button mat-menu-item (click)="post(result.id)">
+                <button mat-menu-item (click)="post(result.podcastId!, result.id)">
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
                 @if (authRoles.includes("Curator") && result.podcastName) {
-                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!, result.id)">
+                <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName, result.id)">
                     <mat-icon>edit</mat-icon>
                     <span>Edit Podcast</span>
                 </button>
@@ -57,7 +57,7 @@
                 </button>
                 }
                 @if (authRoles.includes("Admin")) {
-                <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.id)">
+                <button [disabled]="result.tweeted||result.posted" mat-menu-item (click)="delete(result.podcastId!, result.id)">
                     <mat-icon>delete</mat-icon>
                     <span>Delete Episode</span>
                 </button>

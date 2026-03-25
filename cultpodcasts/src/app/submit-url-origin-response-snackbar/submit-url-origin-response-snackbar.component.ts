@@ -38,23 +38,23 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       this.actionText = "Edit";
       this.showReviewButton = true;
       snackBarRef.onAction().subscribe(() => {
-        this.editSubmittedEpisode(data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
+        this.editSubmittedEpisode(data.response.podcastId!,data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
       });
     }
   }
 
-  editSubmittedEpisode(id: string, isNewEpisode: boolean, isNewPodcast: boolean) {
+  editSubmittedEpisode(podcastId: string, episodeId: string, isNewEpisode: boolean, isNewPodcast: boolean) {
     let dialogRef: MatDialogRef<AddEpisodeDialogComponent | EditEpisodeDialogComponent, any>;
     if (isNewEpisode) {
       dialogRef = this.dialog.open(AddEpisodeDialogComponent, {
-        data: { episodeId: id, isNewPodcast: isNewPodcast },
+        data: { podcastId: podcastId, episodeId: episodeId, isNewPodcast: isNewPodcast },
         disableClose: true,
         autoFocus: true,
         width: '90%'
       });
     } else {
       dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-        data: { episodeId: id },
+        data: { podcastId: podcastId, episodeId: episodeId },
         disableClose: true,
         autoFocus: true,
         width: '90%'
@@ -65,6 +65,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
         const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
           data: {
             podcastName: result.podcastName,
+            podcastId: result.podcastId!,
             defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
             forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking
           },
@@ -94,7 +95,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             }
           }
           let podcastSnackBarRef = this.snackBar.open(message, "Review", { duration: medium });
-          podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
+          podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(podcastId, episodeId));
         });
       } else {
         let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
@@ -104,7 +105,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
           snackBarRef = this.snackBar.open("No change", "Review", { duration: medium });
         }
         if (snackBarRef) {
-          snackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(id));
+          snackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(podcastId, episodeId));
         }
       }
     });
@@ -116,11 +117,11 @@ export class SubmitUrlOriginResponseSnackbarComponent {
 
   async review() {
     this.snackBarRef.dismiss();
-    await this.navigateToEpisodeReview(this.data.response.episodeId!);
+    await this.navigateToEpisodeReview(this.data.response.podcastId!, this.data.response.episodeId!);
   }
 
-  private async navigateToEpisodeReview(episodeId: string) {
-    const id = JSON.stringify([episodeId]);
+  private async navigateToEpisodeReview(podcastId: string, episodeId: string) {
+    const id = JSON.stringify([`${podcastId}/${episodeId}`]);
     await this.router.navigate(["/episodes", id])
   }
 }
