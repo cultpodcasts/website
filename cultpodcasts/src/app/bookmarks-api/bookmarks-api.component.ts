@@ -188,7 +188,7 @@ export class BookmarksApiComponent {
 
   edit(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { podcastId: podcastId, episodeId: episodeId },
+      data: { podcastIdentifier: podcastId, episodeId: episodeId },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -207,7 +207,7 @@ export class BookmarksApiComponent {
   post(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastId: podcastId, episodeId: episodeId },
+        data: { podcastIdentifier: podcastId, episodeId: episodeId },
         disableClose: true,
         autoFocus: true
       });

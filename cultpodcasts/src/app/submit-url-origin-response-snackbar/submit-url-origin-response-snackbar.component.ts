@@ -54,7 +54,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       });
     } else {
       dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-        data: { podcastId: podcastId, episodeId: episodeId },
+        data: { podcastId: podcastId, podcastIdentifier: episodeId },
         disableClose: true,
         autoFocus: true,
         width: '90%'

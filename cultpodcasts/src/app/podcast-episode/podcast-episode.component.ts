@@ -95,7 +95,7 @@ export class PodcastEpisodeComponent {
 
   edit(podcastName: string, episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { episodeId: episodeId, podcastName: podcastName },
+      data: { episodeId: episodeId, podcastIdentifier: podcastName },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -126,7 +126,7 @@ export class PodcastEpisodeComponent {
   post(podcastName: string, episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastName: podcastName, episodeId: episodeId },
+        data: { podcastIdentifier: podcastName, episodeId: episodeId },
         disableClose: true,
         autoFocus: true
       });

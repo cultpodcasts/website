@@ -95,13 +95,13 @@ export class AddPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
       var resp = await firstValueFrom(forkJoin(
         {
-          podcast: this.http.get<Podcast>(episodeEndpoint, { headers: headers, observe: "response" }),
+          podcast: this.http.get<Podcast>(podcastEndpoint, { headers: headers, observe: "response" }),
           subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }),
           languages: this.http.get<{ [key: string]: string }>(languagesEndpoint, { headers: headers })
         }

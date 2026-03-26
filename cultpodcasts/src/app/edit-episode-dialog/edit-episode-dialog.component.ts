@@ -53,7 +53,8 @@ export class EditEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   episodeId: string;
-  podcastName: string;
+  podcastIdentifier: string;
+  podcastName: string = "";
   isLoading: boolean = true;
   isInError: boolean = false;
   subjects: string[] = [];
@@ -72,11 +73,11 @@ export class EditEpisodeDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string },
     private dialog: MatDialog,
   ) {
     this.episodeId = data.episodeId;
-    this.podcastName = data.podcastName;
+    this.podcastIdentifier = data.podcastIdentifier;
   }
 
   async ngOnInit(): Promise<any> {
@@ -89,7 +90,7 @@ export class EditEpisodeDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastName}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastIdentifier}/${this.episodeId}`, environment.api).toString();
 
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
@@ -104,7 +105,7 @@ export class EditEpisodeDialogComponent {
 
       this.originalEpisode = resp.episode;
       this.podcastName = resp.episode.podcastName!;
-      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastName);
+      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastIdentifier);
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
@@ -195,7 +196,7 @@ export class EditEpisodeDialogComponent {
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true });
       } else {
-        this.send(this.podcastName, this.episodeId, changes);
+        this.send(this.originalEpisode?.podcastId!, this.episodeId, changes);
       }
     }
   }
@@ -370,12 +371,12 @@ export class EditEpisodeDialogComponent {
     return filterKeepingSelectedInOrder(subjects, this.subjectsFilterTerm, selectedSet);
   }
 
-  async getPodcastDefaultSubject(headers: HttpHeaders, podcastName: string | undefined): Promise<string | null> {
-    if (!podcastName) {
+  async getPodcastDefaultSubject(headers: HttpHeaders, podcastIdentifier: string | undefined): Promise<string | null> {
+    if (!podcastIdentifier) {
       return null;
     }
     try {
-      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastName)}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastIdentifier)}`, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
       return podcast.defaultSubject ?? null;
     } catch {
