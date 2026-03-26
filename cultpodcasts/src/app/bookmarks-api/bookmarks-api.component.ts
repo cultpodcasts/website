@@ -186,9 +186,9 @@ export class BookmarksApiComponent {
     };
   }
 
-  edit(id: string) {
+  edit(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { episodeId: id },
+      data: { podcastIdentifier: podcastId, episodeId: episodeId },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -204,16 +204,16 @@ export class BookmarksApiComponent {
     });
   }
 
-  post(id: string) {
+  post(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId: id },
+        data: { podcastIdentifier: podcastId, episodeId: episodeId },
         disableClose: true,
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, episodeId: id } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: podcastId, episodeId: episodeId } });
     });
   }
 

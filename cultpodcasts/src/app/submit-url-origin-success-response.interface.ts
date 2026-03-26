@@ -4,5 +4,6 @@ export interface SubmitUrlOriginSuccessResponse {
     episode: string;
     episodeId?: string | undefined;
     podcast: string;
+    podcastId?: string | undefined;
     episodeDetails?: SubmitEpisodeDetails;
 }

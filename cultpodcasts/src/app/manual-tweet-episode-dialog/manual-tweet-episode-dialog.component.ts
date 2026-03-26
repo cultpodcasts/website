@@ -15,7 +15,7 @@ export class ManualTweetEpisodeDialogComponent {
   isInError: boolean = false;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { tweet: string, episodeId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { tweet: string, podcastId: string, episodeId: string },
     private dialogRef: MatDialogRef<ManualTweetEpisodeDialogComponent, any>,
     private dialog: MatDialog
   ) {
@@ -34,7 +34,7 @@ export class ManualTweetEpisodeDialogComponent {
 
   markAsTweeted() {
     const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.submit(this.data.episodeId, { tweeted: true });
+    dialogRef.componentInstance.submit(this.data.podcastId, this.data.episodeId, { tweeted: true });
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });

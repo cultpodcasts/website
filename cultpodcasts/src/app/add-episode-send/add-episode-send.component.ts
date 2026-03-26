@@ -24,7 +24,7 @@ export class AddEpisodeSendComponent {
     private auth: AuthServiceWrapper) {
   }
 
-  public submit(episodeId: string, changes: EpisodePost) {
+  public submit(podcastId: string, episodeId: string, changes: EpisodePost) {
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -34,7 +34,7 @@ export class AddEpisodeSendComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
       this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
         .subscribe(
           {

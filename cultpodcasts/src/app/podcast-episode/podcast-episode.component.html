@@ -8,11 +8,11 @@
         <mat-icon>more_vert</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
-        <button mat-menu-item (click)="edit(episode.id)">
+        <button mat-menu-item (click)="edit(episode.podcastName, episode.id)">
           <mat-icon>edit</mat-icon>
           <span>Edit Episode</span>
         </button>
-        <button mat-menu-item (click)="post(episode.id)">
+        <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
           <mat-icon>send</mat-icon>
           <span>Post Episode</span>
         </button>

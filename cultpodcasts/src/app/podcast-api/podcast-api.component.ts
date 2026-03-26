@@ -217,7 +217,7 @@ export class PodcastApiComponent {
 
   edit(id: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { episodeId: id },
+      data: {podcastIdentifier: this.podcastName, episodeId: id },
       disableClose: true,
       autoFocus: true,
       width: '90%'

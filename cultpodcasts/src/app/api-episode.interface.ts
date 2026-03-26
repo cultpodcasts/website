@@ -5,6 +5,7 @@ export interface ApiEpisode {
     id: string;
     title: string;
     displayTitle?: string;
+    podcastId?: string;
     podcastName?: string;
     description: string;
     displayDescription?: string;

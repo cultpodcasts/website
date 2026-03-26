@@ -35,7 +35,8 @@ export class PostEpisodeDialogComponent {
   isInError: boolean = false;
   isSending: boolean = true;
   form: FormGroup<PostForm> | undefined;
-  episodeId: string | undefined;
+  podcastIdentifier: string;
+  episodeId: string;
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
   hasBlueskyPosted: boolean = false;
@@ -43,7 +44,8 @@ export class PostEpisodeDialogComponent {
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
+    @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string }) {
+    this.podcastIdentifier = data.podcastIdentifier;
     this.episodeId = data.episodeId;
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
@@ -62,7 +64,7 @@ export class PostEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${this.podcastIdentifier}/${this.episodeId}`, environment.api).toString();
       this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
@@ -144,7 +146,7 @@ export class PostEpisodeDialogComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeEndpoint = new URL(`/episode/publish/${this.episodeId}`, environment.api).toString();
+        const episodeEndpoint = new URL(`/episode/publish/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
         this.http.post<EpisodePublishResponse>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {
