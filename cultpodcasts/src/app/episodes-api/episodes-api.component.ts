@@ -196,7 +196,7 @@ export class EpisodesApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        var message= "Podcast updated";
+        var message = "Podcast updated";
         if (result.response?.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }
