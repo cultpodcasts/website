@@ -224,6 +224,7 @@ export class AddEpisodeDialogComponent {
           updated: true,
           isNewPodcast: this.isNewPodcast,
           podcastName: this.podcastName,
+          podcastId: this.podcastId,
           ...this.getNewPodcastDialogDefaults()
         });
       }

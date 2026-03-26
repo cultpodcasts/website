@@ -66,7 +66,7 @@ export class AddPodcastDialogComponent {
   languages: { [key: string]: string } = {};
   titleRegexPresets: NamedRegexPreset[] = [];
   descriptionRegexPresets: NamedRegexPreset[] = [];
-  podcastId: string | undefined;
+  podcastId: string;
   highlightSubjectsTab: boolean = false;
 
   constructor(
@@ -77,11 +77,13 @@ export class AddPodcastDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: {
       podcastName: string,
       defaultSubjectFromEpisode?: string,
-      forceBypassShortEpisodeChecking?: boolean
+      forceBypassShortEpisodeChecking?: boolean,
+      podcastId: string
     },
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;
+    this.podcastId = data.podcastId;
   }
 
   async ngOnInit(): Promise<any> {
@@ -95,7 +97,7 @@ export class AddPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${this.podcastId}`, environment.api).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
@@ -107,7 +109,6 @@ export class AddPodcastDialogComponent {
         }
       ));
       if (resp.podcast.status == 200 && resp.podcast.body) {
-        this.podcastId = resp.podcast.body.id;
         this.originalPodcast = resp.podcast.body;
         this.form = new FormGroup<AddPodcastForm>({
           podcastName: new FormControl(this.podcastName, { nonNullable: true }),
@@ -339,9 +340,9 @@ export class AddPodcastDialogComponent {
     return [];
   }
 
-  send(id: string, changes: AddPodcastPost) {
+  send(podcastId: string, changes: AddPodcastPost) {
     const dialogRef = this.dialog.open(AddPodcastSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.submit(id, changes);
+    dialogRef.componentInstance.submit(podcastId, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });
