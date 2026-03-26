@@ -38,7 +38,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       this.actionText = "Edit";
       this.showReviewButton = true;
       snackBarRef.onAction().subscribe(() => {
-        this.editSubmittedEpisode(data.response.podcastId!,data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
+        this.editSubmittedEpisode(data.response.podcastId!, data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
       });
     }
   }
@@ -54,7 +54,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       });
     } else {
       dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-        data: { podcastId: podcastId, podcastIdentifier: episodeId },
+        data: { podcastIdentifier: podcastId, episodeId: episodeId },
         disableClose: true,
         autoFocus: true,
         width: '90%'

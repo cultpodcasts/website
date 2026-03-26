@@ -164,9 +164,9 @@ export class OutgoingEpisodesApiComponent {
     });
   }
 
-  delete(id: string) {
+  delete(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog.open(DeleteEpisodeDialogComponent, {
-      data: { episodeId: id },
+      data: { podcastId: podcastId, episodeId: episodeId },
       disableClose: true,
       autoFocus: true
     });
@@ -235,7 +235,7 @@ export class OutgoingEpisodesApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        var message= "Podcast updated";
+        var message = "Podcast updated";
         if (result.response?.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }
