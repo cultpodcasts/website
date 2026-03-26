@@ -210,7 +210,7 @@ export class AddEpisodeDialogComponent {
           ...this.getNewPodcastDialogDefaults()
         });
       } else {
-        this.send(this.podcastName!, this.episodeId, changes);
+        this.send(this.podcastId!, this.episodeId, changes);
       }
     }
   }
@@ -224,6 +224,7 @@ export class AddEpisodeDialogComponent {
           updated: true,
           isNewPodcast: this.isNewPodcast,
           podcastName: this.podcastName,
+          podcastId: this.podcastId,
           ...this.getNewPodcastDialogDefaults()
         });
       }
