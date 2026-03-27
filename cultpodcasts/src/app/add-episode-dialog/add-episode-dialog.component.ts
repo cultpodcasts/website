@@ -115,8 +115,6 @@ export class AddEpisodeDialogComponent {
       this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
       this.podcastName = podcast?.name;
 
-      console.log("[PODCAST]", podcast?.name ?? "no-name", this.podcastName ?? "no-this-name", this.podcastId ?? "no-id", podcast)
-
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
