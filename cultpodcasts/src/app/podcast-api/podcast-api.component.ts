@@ -215,9 +215,9 @@ export class PodcastApiComponent {
       });
   }
 
-  edit(id: string) {
+  edit(episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: {podcastIdentifier: this.podcastName, episodeId: id },
+      data: { podcastIdentifier: this.podcastName, episodeId: episodeId },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -232,8 +232,8 @@ export class PodcastApiComponent {
         }
         if (snackBarRef) {
           snackBarRef.onAction().subscribe(() => {
-            const episodeId = JSON.stringify([id]);
-            this.router.navigate(["/episodes", episodeId])
+            const episode = JSON.stringify([`${result.podcastId}/${episodeId}`]);
+            this.router.navigate(["/episodes", episode])
           });
         }
       }
@@ -249,7 +249,7 @@ export class PodcastApiComponent {
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        var message= "Podcast updated";
+        var message = "Podcast updated";
         if (result.response?.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }

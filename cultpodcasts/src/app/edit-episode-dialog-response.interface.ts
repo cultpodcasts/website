@@ -5,4 +5,5 @@ export interface EditEpisodeDialogResponse {
     noChange?: boolean;
     updated?: boolean;
     response?: EpisodeChangeResponse;
+    podcastId?: string;
 }
