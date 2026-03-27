@@ -93,7 +93,6 @@ export class AddEpisodeDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
-
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
@@ -107,7 +106,17 @@ export class AddEpisodeDialogComponent {
 
       this.originalEpisode = resp.episode;
       this.podcastId = resp.episode.podcastId!;
-      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastId);
+
+      const podcast = await this.getPodcast(headers, this.podcastId);
+      if (!podcast) {
+        this.isInError = true;
+        return;
+      }
+      this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
+      this.podcastName = podcast?.name;
+
+      console.log("[PODCAST]", podcast?.name ?? "no-name", this.podcastName ?? "no-this-name", this.podcastId ?? "no-id", podcast)
+
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
@@ -403,14 +412,14 @@ export class AddEpisodeDialogComponent {
     return filterKeepingSelectedInOrder(subjects, this.subjectsFilterTerm, selectedSet);
   }
 
-  async getPodcastDefaultSubject(headers: HttpHeaders, podcastId: string): Promise<string | null> {
+  async getPodcast(headers: HttpHeaders, podcastId: string): Promise<Podcast | null> {
     if (!podcastId) {
       return null;
     }
     try {
-      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${podcastId}`, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
-      return podcast.defaultSubject ?? null;
+      return podcast;
     } catch {
       return null;
     }

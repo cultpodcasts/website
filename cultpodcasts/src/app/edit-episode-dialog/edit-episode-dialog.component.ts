@@ -91,7 +91,6 @@ export class EditEpisodeDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/episode/${this.podcastIdentifier}/${this.episodeId}`, environment.api).toString();
-
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
@@ -104,8 +103,15 @@ export class EditEpisodeDialogComponent {
       ));
 
       this.originalEpisode = resp.episode;
-      this.podcastName = resp.episode.podcastName!;
-      this.podcastDefaultSubject = await this.getPodcastDefaultSubject(headers, this.podcastIdentifier);
+
+      const podcast = await this.getPodcast(headers, this.podcastIdentifier);
+      if (!podcast) {
+        this.isInError = true;
+        return;
+      }
+      this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
+      this.podcastName = podcast?.name ?? "";
+
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
         description: new FormControl(resp.episode.description, { nonNullable: true }),
@@ -371,14 +377,14 @@ export class EditEpisodeDialogComponent {
     return filterKeepingSelectedInOrder(subjects, this.subjectsFilterTerm, selectedSet);
   }
 
-  async getPodcastDefaultSubject(headers: HttpHeaders, podcastIdentifier: string | undefined): Promise<string | null> {
+  async getPodcast(headers: HttpHeaders, podcastIdentifier: string): Promise<Podcast | null> {
     if (!podcastIdentifier) {
       return null;
     }
     try {
-      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastIdentifier)}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${podcastIdentifier}`, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
-      return podcast.defaultSubject ?? null;
+      return podcast;
     } catch {
       return null;
     }
