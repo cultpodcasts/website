@@ -39,7 +39,7 @@ export class PodcastIndexComponent {
         .subscribe({
           next: resp => {
             console.log(resp.body);
-            this.dialogRef.close({ updated: true, episodeIds: resp.body?.indexedEpisodes?.map(x => x.episodeId) });
+            this.dialogRef.close({ updated: true, episodeIds: resp.body?.indexedEpisodes?.map(x => `${x.podcastId}/${x.episodeId}`) });
           },
           error: e => {
             if (e.status == 400) {
