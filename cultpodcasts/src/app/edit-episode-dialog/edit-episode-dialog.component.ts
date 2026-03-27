@@ -68,6 +68,7 @@ export class EditEpisodeDialogComponent {
   form: FormGroup<EpisodeForm> | undefined;
   originalEpisode: ApiEpisode | undefined;
   podcastDefaultSubject: string | null = null;
+  podcastId: string = "";
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -110,7 +111,8 @@ export class EditEpisodeDialogComponent {
         return;
       }
       this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
-      this.podcastName = podcast?.name ?? "";
+      this.podcastName = podcast.name!;
+      this.podcastId = podcast.id!;
 
       this.form = new FormGroup<EpisodeForm>({
         title: new FormControl(resp.episode.title, { nonNullable: true }),
@@ -200,7 +202,7 @@ export class EditEpisodeDialogComponent {
       }
       var changes = this.getChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
-        this.dialogRef.close({ noChange: true });
+        this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
       } else {
         this.send(this.originalEpisode?.podcastId!, this.episodeId, changes);
       }
@@ -215,7 +217,7 @@ export class EditEpisodeDialogComponent {
         if (result.response && (result.response.blueskyPostDeleted == false || !result.response.tweetDeleted == false)) {
           console.error("Failure to remove tweet/bluesky-post", result.response);
         }
-        this.dialogRef.close({ updated: true, response: result.response });
+        this.dialogRef.close({ updated: true, response: result.response, podcastId: podcastId });
       }
     });
   }

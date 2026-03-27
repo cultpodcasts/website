@@ -110,7 +110,7 @@ export class PodcastEpisodeComponent {
         }
         if (snackBarRef) {
           snackBarRef.onAction().subscribe(() => {
-            const episode = JSON.stringify([`${episodeId}`]);
+            const episode = JSON.stringify([`${result.podcastId}/${episodeId}`]);
             this.router.navigate(["/episodes", episode])
           });
         }
