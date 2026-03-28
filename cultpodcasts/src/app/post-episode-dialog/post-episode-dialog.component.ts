@@ -40,6 +40,7 @@ export class PostEpisodeDialogComponent {
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
   hasBlueskyPosted: boolean = false;
+  podcastId: string | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -72,6 +73,7 @@ export class PostEpisodeDialogComponent {
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
+            this.podcastId = resp.podcastId!;
             if (this.hasPosted) {
               this.form?.controls.post.disable();
             } else {
@@ -146,7 +148,7 @@ export class PostEpisodeDialogComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeEndpoint = new URL(`/episode/publish/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
+        const episodeEndpoint = new URL(`/episode/publish/${this.podcastId!}/${this.episodeId}`, environment.api).toString();
         this.http.post<EpisodePublishResponse>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {
