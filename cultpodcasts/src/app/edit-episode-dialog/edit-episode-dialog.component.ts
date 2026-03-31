@@ -91,7 +91,7 @@ export class EditEpisodeDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastIdentifier}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 

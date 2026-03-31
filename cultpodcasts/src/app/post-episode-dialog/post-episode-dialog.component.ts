@@ -65,7 +65,7 @@ export class PostEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastIdentifier}/${this.episodeId}`, environment.api).toString();
+      const episodeEndpoint = new URL(`/episode/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
       this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
