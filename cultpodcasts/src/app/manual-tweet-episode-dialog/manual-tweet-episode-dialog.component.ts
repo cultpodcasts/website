@@ -13,12 +13,16 @@ import { EpisodeChangeResponse } from '../episode-change-response.interface';
 })
 export class ManualTweetEpisodeDialogComponent {
   isInError: boolean = false;
+  podcastId: string;
+  episodeId: string;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { tweet: string, podcastId: string, episodeId: string },
     private dialogRef: MatDialogRef<ManualTweetEpisodeDialogComponent, any>,
     private dialog: MatDialog
   ) {
+    this.podcastId = data.podcastId;
+    this.episodeId = data.episodeId;
   }
 
   async ngOnInit(): Promise<any> {
@@ -33,8 +37,9 @@ export class ManualTweetEpisodeDialogComponent {
   }
 
   markAsTweeted() {
+    console.log(this.podcastId, this.episodeId);
     const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.submit(this.data.podcastId, this.data.episodeId, { tweeted: true });
+    dialogRef.componentInstance.submit(this.podcastId, this.episodeId, { tweeted: true });
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });
