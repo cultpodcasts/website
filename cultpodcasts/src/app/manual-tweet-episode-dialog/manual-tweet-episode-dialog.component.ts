@@ -37,7 +37,6 @@ export class ManualTweetEpisodeDialogComponent {
   }
 
   markAsTweeted() {
-    console.log(this.podcastId, this.episodeId);
     const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(this.podcastId, this.episodeId, { tweeted: true });
     dialogRef.afterClosed().subscribe(async result => {
