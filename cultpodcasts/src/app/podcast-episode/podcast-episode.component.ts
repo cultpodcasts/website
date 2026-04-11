@@ -132,7 +132,7 @@ export class PodcastEpisodeComponent {
       });
     dialogRef.afterClosed().subscribe(async result => {
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastName: podcastName, episodeId: episodeId } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId: episodeId } });
     });
   }
 }

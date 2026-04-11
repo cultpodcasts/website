@@ -3,4 +3,5 @@ export interface EpisodePublishResponse {
     tweeted?: boolean;
     blueskyPosted?: boolean;
     failedTweetContent?: string;
+    podcastId: string;
 }
