@@ -52,7 +52,8 @@ export class EpisodePublishResponseSnackbarComponent {
           tweet: this.data.postEpisodeDialogResponse.response!.failedTweetContent!,
           episodeId: this.data.episodeId,
           podcastId: this.data.podcastId
-        }
+        },
+        disableClose: true, autoFocus: true
       });
     this.action();
   }
