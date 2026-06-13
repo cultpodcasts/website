@@ -8,11 +8,18 @@ import { DiscoveryResult } from "./discovery-result.interface";
 })
 
 export class DiscoveryItemFilter implements PipeTransform {
-  transform(items: DiscoveryResult[], filter: { isFocused: boolean }): any {
+  transform(items: DiscoveryResult[], filter: { isFocused?: boolean; autoHidden?: boolean }): DiscoveryResult[] {
     if (!items || !filter) {
       return items;
     }
-    if (filter.isFocused) { }
-    return items.filter(item => item.isFocused == filter.isFocused);
+    return items.filter(item => {
+      if (filter.autoHidden !== undefined && item.autoHidden !== filter.autoHidden) {
+        return false;
+      }
+      if (filter.isFocused !== undefined && item.isFocused !== filter.isFocused) {
+        return false;
+      }
+      return true;
+    });
   }
 }

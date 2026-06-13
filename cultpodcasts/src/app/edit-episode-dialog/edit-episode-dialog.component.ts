@@ -25,6 +25,7 @@ import subjectNamesConfig from '../hoisted-subject-names.json';
 import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
+import { buildEpisodeLanguageOptions } from '../language-options.util';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -143,7 +144,7 @@ export class EditEpisodeDialogComponent {
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
       this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
       this.regroupSubjects(resp.episode.subjects);
-      this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
+      this.languages = buildEpisodeLanguageOptions(resp.languages);
       this.isLoading = false;
     } catch (e) {
       console.error(e);

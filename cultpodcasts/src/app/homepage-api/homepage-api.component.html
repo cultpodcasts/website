@@ -1,6 +1,7 @@
 <section id="notices">
-  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <span
-      title="{{totalDuration}}">{{ homepage?.episodeCount ?? 70000 | number}}</span> podcasts on the subject of Cults.
+  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <app-slot-machine-counter
+      preset="classic" [baseline]="episodeCountBaseline" [value]="homepage?.episodeCount"
+      [title]="totalDuration"></app-slot-machine-counter> podcasts on the subject of Cults.
   </p>
 </section>
 <div id="progresswrapper">
@@ -36,9 +37,11 @@
           <span class="duration"> [{{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}]</span>
         </mat-card-subtitle>
       </mat-card-header>
-      <mat-card-content class="resultdescription">
+      <mat-card-content>
         <app-episode-image [searchResult]="item" [linksOverlay]="true"></app-episode-image>
-        <p>{{item.episodeDescription}}</p>
+        <app-clampable-text [maxLines]="10">
+          <p>{{item.episodeDescription}}</p>
+        </app-clampable-text>
       </mat-card-content>
       <mat-card-actions>
         <app-episode-links [episode]="item"></app-episode-links>

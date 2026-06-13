@@ -34,7 +34,7 @@
       "name": "homepage",
       "urls": [
         "https://api.cultpodcasts.com/homepage",
-        "https://127.0.0.1:8787/homepage"
+        "https://local.cultpodcasts.com:8787/homepage"
       ],
       "cacheConfig": {
         "maxSize": 100,
@@ -48,7 +48,7 @@
       "name": "api",
       "urls": [
         "https://api.cultpodcasts.com/**",
-        "https://127.0.0.1:8787/**"
+        "https://local.cultpodcasts.com:8787/**"
       ],
       "cacheConfig": {
         "maxSize": 100,

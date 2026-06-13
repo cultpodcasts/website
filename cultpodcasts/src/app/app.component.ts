@@ -1,5 +1,5 @@
 import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ShareMode } from "./share-mode.enum";
 import { isPlatformBrowser } from '@angular/common';
 import { ToolbarComponent } from './toolbar/toolbar.component';
@@ -15,6 +15,11 @@ import { ProfileService } from './profile.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { FeatureSwitch } from './feature-switch.enum';
 import { FeatureSwtichService } from './feature-switch-service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import {
+  extractUrlFromDataTransfer,
+  parseSubmittablePodcastUrl
+} from './podcast-url-matcher';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +31,8 @@ import { FeatureSwtichService } from './feature-switch-service';
 export class AppComponent {
   isBrowser: boolean;
   protected FeatureSwitch = FeatureSwitch;
+  isDragOver: boolean = false;
+  private dragDepth: number = 0;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -38,7 +45,9 @@ export class AppComponent {
     private webPushService: WebPushService,
     private dialog: MatDialog,
     private profileService: ProfileService,
-    protected featureSwtichService: FeatureSwtichService
+    protected featureSwtichService: FeatureSwtichService,
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
@@ -77,6 +86,79 @@ export class AppComponent {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
       await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share });
     }
+  }
+
+  onDragOver(event: DragEvent) {
+    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  onDragEnter(event: DragEvent) {
+    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.dragDepth++;
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.dragDepth = Math.max(0, this.dragDepth - 1);
+    if (this.dragDepth === 0) {
+      this.isDragOver = false;
+    }
+  }
+
+  async onDrop(event: DragEvent) {
+    if (!this.isBrowser) {
+      return;
+    }
+    event.preventDefault();
+    this.dragDepth = 0;
+    this.isDragOver = false;
+
+    const dataTransfer = event.dataTransfer;
+    if (!dataTransfer) {
+      return;
+    }
+
+    const rawUrl = extractUrlFromDataTransfer(dataTransfer);
+    if (!rawUrl) {
+      this.snackBar.open('No link found in drop', 'Ok', { duration: 3000 });
+      return;
+    }
+
+    const url = parseSubmittablePodcastUrl(rawUrl);
+    if (!url) {
+      this.snackBar.open('Unsupported episode link', 'Ok', { duration: 4000 });
+      return;
+    }
+
+    await this.toolbar.sendPodcast({
+      url,
+      podcastId: undefined,
+      podcastName: this.resolvePodcastNameFromRoute(),
+      shareMode: ShareMode.Text
+    });
+  }
+
+  private hasDroppableUrl(event: DragEvent): boolean {
+    const types = event.dataTransfer?.types ?? [];
+    return types.includes('text/uri-list') || types.includes('text/plain') || types.includes('URL');
+  }
+
+  private resolvePodcastNameFromRoute(): string | undefined {
+    const match = this.router.url.match(/^\/podcast\/([^/?#]+)/);
+    return match ? decodeURIComponent(match[1]) : undefined;
   }
 
   goTop(event: Event): void {

@@ -1,0 +1,15 @@
+<span class="slot-machine-counter" [attr.title]="title" aria-live="polite">
+  @for (column of columns; track $index) {
+    @if (column.type === 'comma') {
+    <span class="slot-comma">{{ column.display }}</span>
+    } @else {
+    <span class="slot-reel" [class.is-spinning]="column.spinning">
+      <span class="slot-reel__strip" [style.transform]="reelTransform(column)">
+        @for (digit of reelDigits; track $index) {
+        <span class="slot-reel__digit">{{ digit }}</span>
+        }
+      </span>
+    </span>
+    }
+  }
+</span>

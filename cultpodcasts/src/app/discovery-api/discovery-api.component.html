@@ -7,39 +7,57 @@
   </div>
   <section id="resultsheading">
     <h2>Discovery results@if (minDate){ since {{minDate| date:'d MMM yyyy H:mm'}}}</h2>
-    @if (!isLoading && !isInError && results && results.length>0) {
-    <h3>{{results.length}} results</h3>
+    @if (!isLoading && !isInError && resultsFilter !== 'hidden' && visibleResults().length > 0) {
+    <h3>{{visibleResults().length}} results@if (hiddenCount > 0) { ({{hiddenCount}} auto-hidden)}</h3>
+    }
+    @if (!isLoading && !isInError && resultsFilter === 'selected') {
+    <h3>{{displayedResults().length}} selected</h3>
+    }
+    @if (!isLoading && !isInError && resultsFilter === 'hidden' && includeHidden) {
+    <h3>{{hiddenResults().length}} auto-hidden results</h3>
     }
   </section>
-  @if (!isLoading && !isInError && results?.length == 0) {
+  @if (!isLoading && !isInError && visibleResults().length === 0 && hiddenCount > 0 && resultsFilter !== 'hidden') {
+  <h3>All pending items are auto-hidden</h3>
+  <p class="hidden-cta">Review {{hiddenCount}} low-confidence result(s) before closing the queue.</p>
+  <div id="cta-button">
+    <button mat-flat-button color="primary" (click)="showHiddenReview()">Review hidden</button>
+  </div>
+  }
+  @if (!isLoading && !isInError && visibleResults().length === 0 && hiddenCount === 0 && resultsFilter !== 'hidden') {
   <h3>There are no discovery results</h3>
+  }
+  @if (!isLoading && !isInError && resultsFilter === 'selected' && displayedResults().length === 0) {
+  <h3>No items selected</h3>
+  }
+  @if (!isLoading && !isInError && resultsFilter === 'hidden' && includeHidden && hiddenResults().length === 0) {
+  <h3>No auto-hidden results</h3>
   }
   @if (isInError) {
   <h3>Error requesting discovery</h3>
   <div id="cta-button">
-    <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
+    <button mat-flat-button color="primary" (click)="loadResults(includeHidden)">Try Again!</button>
   </div>
   }
-  @if (!isLoading && results) {
-  @for ( result of results | discoveryItemFilter: {isFocused: true}; track $index){
+  @if (!isLoading && results && (resultsFilter !== 'hidden' || includeHidden)) {
+  @for (result of displayedResults(); track result.id) {
   <discovery-item (changeState)="handleEvent($event)" [result]="result"
     [selectedEvent]="submittedSubject.asObservable()" [resultFilterEvent]="resultsFilterSubject.asObservable()"
-    [erroredEvent]="erroredSubject.asObservable()"></discovery-item>
-  }
-  <mat-divider [appHide]="resultsFilter==='focused' || submitted || !hasUnfocused"></mat-divider>
-  @for (result of results | discoveryItemFilter: {isFocused: false}; track $index) {
-  <discovery-item (changeState)="handleEvent($event)" [result]="result"
-    [selectedEvent]="submittedSubject.asObservable()" [resultFilterEvent]="resultsFilterSubject.asObservable()"
-    [erroredEvent]="erroredSubject.asObservable()" [appHide]="resultsFilter==='focused'"></discovery-item>
+    [erroredEvent]="erroredSubject.asObservable()" [selectedIds]="selectedIds"></discovery-item>
   }
   }
-  @if (results && results.length>0) {
+  @if (hasQueueItems()) {
   <div id="actions">
     <mat-button-toggle-group [value]="resultsFilter" (change)="resultsFilterChange($event)">
       <mat-button-toggle value="all">All</mat-button-toggle>
-      <mat-button-toggle value="focused">Focused</mat-button-toggle>
       <mat-button-toggle value="selected">Selected</mat-button-toggle>
+      <mat-button-toggle value="hidden">
+        Hidden@if (hiddenCount > 0) {<span class="hidden-count">{{hiddenCount}}</span>}
+      </mat-button-toggle>
     </mat-button-toggle-group>
+    @if (displaySave && resultsFilter !== 'hidden') {
+    <button matButton="tonal" (click)="selectLikelyMatches()">Select likely</button>
+    }
     @if (displaySave) {
     <button matButton="tonal" (click)="close()" disabled="{{closeDisabled}}">Close</button>
     <button matButton="tonal" (click)="save()" disabled="{{saveDisabled}}" [matBadge]="selectedIds.length"

@@ -1,0 +1,19 @@
+<div class="clampable-text">
+  <div class="clampable-text__body" [class.is-clamped]="!expanded && showToggle">
+    @if (html) {
+    <div #content class="clampable-text__content" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines"
+      [innerHTML]="html"></div>
+    } @else {
+    <div #content class="clampable-text__content" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines">
+      <ng-content></ng-content>
+    </div>
+    }
+    @if (showToggle) {
+    <button type="button" mat-icon-button class="clampable-text__toggle" (click)="toggle($event)"
+      [attr.aria-label]="expanded ? 'Show less' : 'Show more'"
+      [attr.aria-expanded]="expanded">
+      <mat-icon>{{ expanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+    }
+  </div>
+</div>

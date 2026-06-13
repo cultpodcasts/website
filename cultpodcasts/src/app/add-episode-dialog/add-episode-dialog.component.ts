@@ -24,6 +24,7 @@ import subjectNamesConfig from '../hoisted-subject-names.json';
 import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
+import { buildEpisodeLanguageOptions } from '../language-options.util';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -137,14 +138,14 @@ export class AddEpisodeDialogComponent {
         internetArchive: new FormControl(resp.episode.urls.internetArchive || null),
         subjects: new FormControl(resp.episode.subjects, { nonNullable: true }),
         searchTerms: new FormControl(resp.episode.searchTerms || null),
-        lang: new FormControl(resp.episode.lang || null),
+        lang: new FormControl(resp.episode.lang || "unset"),
         twitterHandles: new FormControl<string[]>(resp.episode.twitterHandles ?? [], { nonNullable: true }),
         blueskyHandles: new FormControl<string[]>(resp.episode.blueskyHandles ?? [], { nonNullable: true })
       });
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
       this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
       this.regroupSubjects(resp.episode.subjects);
-      this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
+      this.languages = buildEpisodeLanguageOptions(resp.languages);
       this.isLoading = false;
     } catch (e) {
       console.error(e);
@@ -154,13 +155,14 @@ export class AddEpisodeDialogComponent {
   }
 
   close() {
-    this.dialogRef.close({
-      closed: true,
-      isNewPodcast: this.isNewPodcast,
-      podcastName: this.podcastName,
-      podcastId: this.podcastId,
-      ...this.getNewPodcastDialogDefaults()
-    });
+        this.dialogRef.close({
+          closed: true,
+          isNewPodcast: this.isNewPodcast,
+          podcastName: this.podcastName,
+          podcastId: this.podcastId,
+          episodeLangUnset: this.isEpisodeLanguageUnset(),
+          ...this.getNewPodcastDialogDefaults()
+        });
   }
 
   onSubmit() {
@@ -214,6 +216,7 @@ export class AddEpisodeDialogComponent {
           isNewPodcast: this.isNewPodcast,
           podcastName: this.podcastName,
           podcastId: this.podcastId,
+          episodeLangUnset: this.isEpisodeLanguageUnset(),
           ...this.getNewPodcastDialogDefaults()
         });
       } else {
@@ -232,6 +235,7 @@ export class AddEpisodeDialogComponent {
           isNewPodcast: this.isNewPodcast,
           podcastName: this.podcastName,
           podcastId: this.podcastId,
+          episodeLangUnset: this.isEpisodeLanguageUnset(),
           ...this.getNewPodcastDialogDefaults()
         });
       }
@@ -425,6 +429,11 @@ export class AddEpisodeDialogComponent {
 
   unique(values: string[]) {
     return [...new Set(values)];
+  }
+
+  isEpisodeLanguageUnset(): boolean {
+    const lang = this.form?.controls.lang.value;
+    return lang == null || lang === '' || lang === 'unset';
   }
 
   translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {

@@ -1,10 +1,22 @@
 @let dur = duration();
 <mat-card class="result" [class.selected]="selected && ! errored" [class.error]="errored"
+    [class.auto-hidden]="result.autoHidden"
     (click)="handleResult($event, result)" attr.data-id="{{result.id}}"
-    [appHide]="(resultsFilter==='selected' && !selected) || (resultsFilter=='errored' && !selected)"
+    [appHide]="resultsFilter==='errored' && !errored"
     [class.unknownDuration]="!dur.known">
     <mat-card-header>
         <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
+        <mat-card-subtitle class="score-row">
+            <span class="score-badge" [class.score-likely]="scoreDisplay.tier === 'likely'"
+                [class.score-review]="scoreDisplay.tier === 'review'"
+                [class.score-unlikely]="scoreDisplay.tier === 'unlikely'"
+                [class.score-unscored]="scoreDisplay.tier === 'unscored'">
+                @if (scoreDisplay.percent) {
+                {{scoreDisplay.percent}} ·
+                }
+                {{scoreDisplay.label}}
+            </span>
+        </mat-card-subtitle>
         <mat-card-subtitle
             [class.multipleMatchingPodcasts]="result.matchingPodcasts!= null && result.matchingPodcasts.length > 1"
             [class.matchedPodcast]="result.matchingPodcasts!= null && result.matchingPodcasts.length==1">
@@ -21,6 +33,9 @@
                 @if (result.matchingPodcasts[0].visibleEpisodes != 0) {
                 ({{result.matchingPodcasts[0].visibleEpisodes}})
                 }
+                <button mat-icon-button type="button" title="Edit podcast" (click)="editPodcast($event)">
+                    <mat-icon>settings</mat-icon>
+                </button>
             } @else {
             {{matchingPodcastNames()}}
             }
@@ -34,10 +49,10 @@
     </mat-card-header>
     <mat-card-content>
         @if (result.showDescription && (result.matchingPodcasts === null || result.matchingPodcasts.length==0)) {
-        <p class="showDescription" [innerHTML]="result.showDescription"></p>
+        <app-clampable-text class="showDescription" [maxLines]="4" [html]="result.showDescription"></app-clampable-text>
         }
         <app-episode-image [discoveryResult]="result"></app-episode-image>
-        <p class="resultdescription" [innerHTML]="result.episodeDescription"></p>
+        <app-clampable-text class="resultdescription" [maxLines]="6" [html]="result.episodeDescription"></app-clampable-text>
     </mat-card-content>
     <mat-card-actions>
         @if (result.urls.youtube!=null) {

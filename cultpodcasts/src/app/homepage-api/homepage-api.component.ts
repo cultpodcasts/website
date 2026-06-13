@@ -1,7 +1,7 @@
 import { Component, HostListener, inject } from '@angular/core';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { KeyValue, DecimalPipe, KeyValuePipe } from '@angular/common';
+import { KeyValue, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,6 +15,8 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
+import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
+import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 
 @Component({
   selector: 'app-homepage-api',
@@ -24,12 +26,13 @@ import { SubjectsComponent } from "../subjects/subjects.component";
     RouterLink,
     MatButtonModule,
     MatIconModule,
-    DecimalPipe,
     KeyValuePipe,
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    ClampableTextComponent,
+    SlotMachineCounterComponent
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass'
@@ -47,6 +50,7 @@ export class HomepageApiComponent {
 
   homepage: Homepage | undefined;
   totalDuration: string = "";
+  readonly episodeCountBaseline = 70000;
   isSignedIn: boolean = false;
   readonly renderConfig = {
     initialBlockSize: 10,
