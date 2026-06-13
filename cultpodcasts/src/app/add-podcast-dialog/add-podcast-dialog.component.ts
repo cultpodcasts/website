@@ -24,6 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
+import { buildPodcastLanguageOptions } from '../language-options.util';
 
 @Component({
   selector: 'app-add-podcast-dialog-component',
@@ -78,7 +79,9 @@ export class AddPodcastDialogComponent {
       podcastName: string,
       defaultSubjectFromEpisode?: string,
       forceBypassShortEpisodeChecking?: boolean,
-      podcastId: string
+      podcastId: string,
+      episodeId?: string,
+      episodeLangUnset?: boolean
     },
     private dialog: MatDialog,
   ) {
@@ -158,7 +161,7 @@ export class AddPodcastDialogComponent {
         this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => desiredDefaultSubject == null || desiredDefaultSubject != x.name).map(x => x.name));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
-        this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
+        this.languages = buildPodcastLanguageOptions(resp.languages);
         this.isLoading = false;
       } else {
         this.isLoading = false;
@@ -345,9 +348,36 @@ export class AddPodcastDialogComponent {
     dialogRef.componentInstance.submit(podcastId, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
+        await this.applyEpisodeLanguageFromPodcast(podcastId, changes);
         this.dialogRef.close({ updated: true, response: result.response });
       }
     });
+  }
+
+  private async applyEpisodeLanguageFromPodcast(podcastId: string, changes: AddPodcastPost) {
+    if (!this.data.episodeLangUnset || !this.data.episodeId) {
+      return;
+    }
+
+    const podcastLang = changes.lang;
+    if (!podcastLang || podcastLang === 'unset') {
+      return;
+    }
+
+    try {
+      const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      let headers: HttpHeaders = new HttpHeaders();
+      headers = headers.set('Authorization', 'Bearer ' + token);
+      const episodeEndpoint = new URL(`/episode/${podcastId}/${this.data.episodeId}`, environment.api).toString();
+      await firstValueFrom(this.http.post(episodeEndpoint, { lang: podcastLang }, { headers }));
+    } catch (error) {
+      console.error('Failed to apply podcast default language to episode.', error);
+    }
   }
   noCompareFunction() {
     return 0;

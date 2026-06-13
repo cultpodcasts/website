@@ -5,6 +5,28 @@ mat-card
     h3
         font-weight: bold
         margin-bottom: 2px
+    .score-row
+        margin-top: 4px
+    .score-badge
+        display: inline-block
+        font-size: 0.85em
+        font-weight: 600
+        padding: 2px 8px
+        border-radius: 12px
+        background-color: #e0e0e0
+        color: #333
+    .score-likely
+        background-color: #c8e6c9
+        color: #1b5e20
+    .score-review
+        background-color: #fff3e0
+        color: #e65100
+    .score-unlikely
+        background-color: #ffcdd2
+        color: #b71c1c
+    .score-unscored
+        background-color: #eeeeee
+        color: #616161
     .multipleMatchingPodcasts
         color: red
         font-weight: bold
@@ -25,17 +47,11 @@ mat-card
         overflow: hidden
         img
             width: 100%
-        .showDescription
-            display: -webkit-box
-            -webkit-box-orient: vertical
-            -webkit-line-clamp: 4
-            overflow: hidden
+        .showDescription,
+        .resultdescription
+            display: block
         .resultdescription
             padding-top: 5px
-            display: -webkit-box
-            -webkit-box-orient: vertical
-            -webkit-line-clamp: 6
-            overflow: hidden
 
     mat-card-actions
         .youtubemeta
@@ -52,6 +68,9 @@ mat-card.error
         border-width: 3px
 mat-card.unknownDuration
     border-color: #f00
+mat-card.auto-hidden
+    opacity: 0.75
+    border-style: dashed
 
 @media (prefers-color-scheme: dark)
     mat-card.selected

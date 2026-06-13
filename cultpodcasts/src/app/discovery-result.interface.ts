@@ -16,6 +16,8 @@ export interface DiscoveryResult {
     enrichedTimeFromApple: boolean;
     enrichedUrlFromSpotify: boolean;
     matchingPodcasts: DiscoveryPodcast[] | null;
+    acceptProbability: number | null;
+    autoHidden: boolean;
     isFocused: boolean | undefined;
 }
 

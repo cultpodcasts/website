@@ -1,0 +1,30 @@
+.clampable-text__body
+    position: relative
+
+    &.is-clamped .clampable-text__content
+        padding-right: 2rem
+        padding-bottom: 0.25rem
+
+.clampable-text__content
+    &.is-clamped
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: var(--clamp-lines)
+        overflow: hidden
+
+.clampable-text__toggle
+    position: absolute
+    right: 0
+    bottom: 0
+    z-index: 1
+    width: 32px
+    height: 32px
+    padding: 0
+    line-height: 32px
+    background-color: color-mix(in srgb, var(--mat-sys-surface, #303030) 88%, transparent)
+    backdrop-filter: blur(2px)
+
+    .mat-icon
+        font-size: 20px
+        width: 20px
+        height: 20px

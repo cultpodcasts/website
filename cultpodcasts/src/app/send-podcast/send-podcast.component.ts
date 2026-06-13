@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubmitDialogResponse } from '../submit-dialog-response.interface';
 import { SubmitUrlOriginResponse } from "../submit-url-origin-response.interface";
+import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
 
 @Component({
   selector: 'app-send-podcast',
@@ -26,11 +27,6 @@ export class SendPodcastComponent {
   unknownError: boolean = false;
   submitError: boolean = false;
   shareUrl: URL | undefined;
-  spotify: RegExp = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
-  youtube: RegExp = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
-  apple: RegExp = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
-  bbc: RegExp = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za-z\d\-_]+)|(sounds\/play\/[\w]+))/;
-  internetArchve: RegExp = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
   isAuthenticated: boolean = false;
   originResponse: SubmitUrlOriginResponse | undefined;
 
@@ -46,103 +42,56 @@ export class SendPodcastComponent {
   }
 
   public async submit(data: Share) {
-    let matchedUrl: string | undefined;
-    let url: URL | undefined;
+    const url = parseSubmittablePodcastUrl(data.url.toString());
 
-    if (
-      this.spotify.test(data.url.toString()) ||
-      this.youtube.test(data.url.toString()) ||
-      this.apple.test(data.url.toString()) ||
-      this.bbc.test(data.url.toString()) ||
-      this.internetArchve.test(data.url.toString())
-    ) {
+    if (url) {
       this.isSending = true;
-
-      if (this.spotify.test(data.url.toString())) {
-        let match = data.url.toString().match(this.spotify);
-        if (match != null) {
-          matchedUrl = match[0];
-        }
-      } else if (this.youtube.test(data.url.toString())) {
-        let match = data.url.toString().match(this.youtube);
-        if (match != null) {
-          matchedUrl = match[0];
-        }
-      } else if (this.apple.test(data.url.toString())) {
-        let match = data.url.toString().match(this.apple);
-        if (match != null) {
-          matchedUrl = match[0];
-        }
-      } else if (this.bbc.test(data.url.toString())) {
-        let match = data.url.toString().match(this.bbc);
-        if (match != null) {
-          matchedUrl = match[0];
-        }
-      } else if (this.internetArchve.test(data.url.toString())) {
-        matchedUrl = data.url.toString();
-      }
-
-      if (matchedUrl) {
+      const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
+      let headers: HttpHeaders = new HttpHeaders();
+      if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
+        let token: string | undefined;
         try {
-          url = new URL(matchedUrl);
-        } catch {
-          if (!/^\w+\:\/\//.test(matchedUrl)) {
-            try {
-              url = new URL("https://" + matchedUrl);
-            } catch { }
-          }
+          token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+            authorizationParams: {
+              audience: `https://api.cultpodcasts.com/`,
+              scope: 'submit'
+            }
+          }));
+        } catch (e) {
+          console.error(e);
         }
-
-        if (url) {
-          const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
-          let headers: HttpHeaders = new HttpHeaders();
-          if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
-            let token: string | undefined;
-            try {
-              token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
-                authorizationParams: {
-                  audience: `https://api.cultpodcasts.com/`,
-                  scope: 'submit'
-                }
-              }));
-            } catch (e) {
-              console.error(e);
-            }
-            if (token) {
-              headers = headers.set("Authorization", "Bearer " + token);
-            }
-          }
-
-          try {
-            const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers, observe: 'response' }));
-            if (resp.status == 200) {
-              this.submitted = true;
-              if (resp.headers.get('X-Origin')) {
-                this.originResponse = resp.body;
-              }
-            } else {
-              this.submitError = true;
-              this.isSending = false;
-            }
-            this.close();
-          } catch (error) {
-            this.isSending = false;
-            this.submitError = true;
-          }
-
+        if (token) {
+          headers = headers.set("Authorization", "Bearer " + token);
         }
       }
+
+      try {
+        const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers, observe: 'response' }));
+        if (resp.status == 200) {
+          this.submitted = true;
+          if (resp.headers.get('X-Origin')) {
+            this.originResponse = resp.body;
+          }
+        } else {
+          this.submitError = true;
+          this.isSending = false;
+        }
+        this.close();
+      } catch (error) {
+        this.isSending = false;
+        this.submitError = true;
+      }
+      return;
     }
-    if (!matchedUrl || !url) {
-      if (data.shareMode == ShareMode.Share) {
-        this.urlShareError = true;
-        this.shareUrl = data.url;
-      } else if (data.shareMode == ShareMode.Text) {
-        this.urlTextError = true;
-        this.shareUrl = data.url;
-      } else {
-        this.unknownError = true;
-      }
+
+    if (data.shareMode == ShareMode.Share) {
+      this.urlShareError = true;
+      this.shareUrl = data.url;
+    } else if (data.shareMode == ShareMode.Text) {
+      this.urlTextError = true;
+      this.shareUrl = data.url;
+    } else {
+      this.unknownError = true;
     }
   }
 }

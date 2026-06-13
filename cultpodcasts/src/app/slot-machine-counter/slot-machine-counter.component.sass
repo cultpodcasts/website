@@ -1,0 +1,42 @@
+.slot-machine-counter
+    display: inline-flex
+    align-items: baseline
+    font-variant-numeric: tabular-nums
+    white-space: nowrap
+
+.slot-comma
+    display: inline-block
+
+.slot-reel
+    display: inline-block
+    width: 0.62em
+    height: 1em
+    overflow: hidden
+    line-height: 1
+    vertical-align: baseline
+
+.slot-reel__strip
+    display: flex
+    flex-direction: column
+    transition: transform var(--slot-settle-duration, 800ms) cubic-bezier(0.22, 1, 0.36, 1)
+    will-change: transform
+
+.slot-reel__digit
+    display: block
+    height: 1em
+    line-height: 1
+    text-align: center
+
+.slot-reel.is-spinning .slot-reel__strip
+    animation: slot-reel-spin var(--slot-spin-duration, 220ms) linear infinite
+    transition: none
+
+@keyframes slot-reel-spin
+    from
+        transform: translateY(0)
+    to
+        transform: translateY(-10em)
+
+@media (prefers-reduced-motion: reduce)
+    .slot-reel.is-spinning .slot-reel__strip
+        animation: none

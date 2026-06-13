@@ -13,6 +13,28 @@
     scroll-snap-align: start
     scroll-snap-stop: always
 
+#body.drop-target-active
+    outline: 2px dashed var(--mat-sys-primary, #8ab4f8)
+    outline-offset: -2px
+
+.drop-overlay
+    position: fixed
+    inset: 0
+    z-index: 1000
+    display: flex
+    align-items: center
+    justify-content: center
+    pointer-events: none
+    background-color: rgba(0, 0, 0, 0.45)
+    p
+        margin: 0
+        padding: 16px 24px
+        border: 2px dashed var(--mat-sys-primary, #8ab4f8)
+        border-radius: 12px
+        background-color: rgba(0, 0, 0, 0.7)
+        font-size: 1.1em
+        font-weight: 600
+
 #results, #homepage
     margin-top: 5px
     

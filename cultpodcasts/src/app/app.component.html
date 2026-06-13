@@ -1,5 +1,15 @@
 <div id="top"></div>
-<section id="body">
+@if (isDragOver) {
+<div class="drop-overlay" aria-hidden="true">
+  <p>Drop episode link to submit</p>
+</div>
+}
+<section id="body"
+  [class.drop-target-active]="isDragOver"
+  (dragenter)="onDragEnter($event)"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)">
   <app-toolbar></app-toolbar>
   <app-search-bar></app-search-bar>
   <router-outlet></router-outlet>

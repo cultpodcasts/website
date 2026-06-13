@@ -25,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
+import { buildPodcastLanguageOptions } from '../language-options.util';
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
@@ -150,7 +151,7 @@ export class EditPodcastDialogComponent {
         this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
         this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
-        this.languages = { ...{ "unset": "No Language" }, ...resp.languages };
+        this.languages = buildPodcastLanguageOptions(resp.languages);
 
         this.isLoading = false;
       } else {

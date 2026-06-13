@@ -67,7 +67,9 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             podcastName: result.podcastName,
             podcastId: result.podcastId!,
             defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
-            forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking
+            forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking,
+            episodeId: episodeId,
+            episodeLangUnset: result.episodeLangUnset
           },
           disableClose: true,
           autoFocus: true,

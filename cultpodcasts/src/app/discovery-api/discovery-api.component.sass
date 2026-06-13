@@ -15,11 +15,38 @@
     display: flex
     justify-content: center
     align-items: center
+    flex-wrap: wrap
+    gap: 10px
     margin: 20px 0
     button
-        margin: 0 10px
+        margin: 0
+
+:host ::ng-deep #actions
+    .mat-button-toggle-group
+        overflow: hidden
+    .mat-button-toggle-checked:first-of-type
+        border-top-left-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large, 20px))
+        border-bottom-left-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large, 20px))
+    .mat-button-toggle-checked:last-of-type
+        border-top-right-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large, 20px))
+        border-bottom-right-radius: var(--mat-button-toggle-shape, var(--mat-sys-corner-extra-large, 20px))
+    .hidden-count
+        display: inline-block
+        margin-left: 6px
+        padding: 1px 6px
+        border-radius: 10px
+        font-size: 0.8em
+        font-weight: 600
+        line-height: 1.2
+        background-color: #f44336
+        color: #fff
+        vertical-align: middle
 
 mat-divider
     margin: 30px 0
 
+.hidden-cta
+    margin: 0 8px 10px 8px
 
+#cta-button
+    margin: 10px 8px
