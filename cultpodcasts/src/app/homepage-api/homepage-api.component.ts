@@ -50,7 +50,7 @@ export class HomepageApiComponent {
 
   homepage: Homepage | undefined;
   totalDuration: string = "";
-  readonly episodeCountBaseline = 70000;
+  readonly episodeCountBaseline = 80000;
   isSignedIn: boolean = false;
   readonly renderConfig = {
     initialBlockSize: 10,
