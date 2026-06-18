@@ -13,10 +13,6 @@
     scroll-snap-align: start
     scroll-snap-stop: always
 
-#body.drop-target-active
-    outline: 2px dashed var(--mat-sys-primary, #8ab4f8)
-    outline-offset: -2px
-
 .drop-overlay
     position: fixed
     inset: 0
@@ -24,16 +20,50 @@
     display: flex
     align-items: center
     justify-content: center
-    pointer-events: none
+    padding: 16px
     background-color: rgba(0, 0, 0, 0.45)
-    p
+
+.drop-overlay-message
+    margin: 0
+    padding: 16px 24px
+    border-radius: 12px
+    background-color: rgba(0, 0, 0, 0.7)
+    font-size: 1.1em
+    font-weight: 600
+
+.drop-targets
+    display: flex
+    flex-direction: column
+    gap: 16px
+    width: 100%
+    max-width: 480px
+
+.drop-target
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: 8px
+    padding: 24px 20px
+    border-radius: 12px
+    background-color: rgba(0, 0, 0, 0.7)
+    border: 2px solid rgba(255, 255, 255, 0.2)
+    text-align: center
+    cursor: copy
+    mat-icon
+        font-size: 32px
+        width: 32px
+        height: 32px
+    .drop-target-title
         margin: 0
-        padding: 16px 24px
-        border: 2px dashed var(--mat-sys-primary, #8ab4f8)
-        border-radius: 12px
-        background-color: rgba(0, 0, 0, 0.7)
         font-size: 1.1em
         font-weight: 600
+    .drop-target-desc
+        margin: 0
+        font-size: 0.9em
+        opacity: 0.85
+    &.drop-target-active
+        border-color: var(--mat-sys-primary, #8ab4f8)
+        background-color: rgba(0, 0, 0, 0.85)
 
 #results, #homepage
     margin-top: 5px
