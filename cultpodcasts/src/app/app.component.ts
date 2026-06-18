@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ShareMode } from "./share-mode.enum";
 import { isPlatformBrowser } from '@angular/common';
@@ -28,11 +28,11 @@ import {
   imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent]
 })
 
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   isBrowser: boolean;
   protected FeatureSwitch = FeatureSwitch;
   isDragOver: boolean = false;
-  private dragDepth: number = 0;
+  activeDropTarget: 'general' | 'podcast' | null = null;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -61,7 +61,14 @@ export class AppComponent {
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.isBrowser) {
+      this.removeDragListeners();
+    }
+  }
+
   initialiseBrowser() {
+    this.addDragListeners();
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles.subscribe(async roles => {
       if (roles.includes("Admin")) {
@@ -88,6 +95,14 @@ export class AppComponent {
     }
   }
 
+  get isOnPodcastPage(): boolean {
+    return this.podcastPageName !== undefined;
+  }
+
+  get podcastPageName(): string | undefined {
+    return this.resolvePodcastNameFromRoute();
+  }
+
   onDragOver(event: DragEvent) {
     if (!this.isBrowser || !this.hasDroppableUrl(event)) {
       return;
@@ -98,33 +113,95 @@ export class AppComponent {
     }
   }
 
-  onDragEnter(event: DragEvent) {
+  onTargetDragEnter(target: 'general' | 'podcast', event: DragEvent) {
     if (!this.isBrowser || !this.hasDroppableUrl(event)) {
       return;
     }
     event.preventDefault();
-    this.dragDepth++;
-    this.isDragOver = true;
+    event.stopPropagation();
+    this.activeDropTarget = target;
   }
 
-  onDragLeave(event: DragEvent) {
-    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
-      return;
+  onTargetDragLeave(event: DragEvent) {
+    const related = event.relatedTarget as Node | null;
+    const currentTarget = event.currentTarget as Node | null;
+    if (!related || !currentTarget?.contains(related)) {
+      this.activeDropTarget = null;
     }
-    event.preventDefault();
-    this.dragDepth = Math.max(0, this.dragDepth - 1);
-    if (this.dragDepth === 0) {
-      this.isDragOver = false;
-    }
+  }
+
+  async onDropGeneral(event: DragEvent) {
+    event.stopPropagation();
+    await this.handleDrop(event, false);
+  }
+
+  async onDropForPodcast(event: DragEvent) {
+    event.stopPropagation();
+    await this.handleDrop(event, true);
   }
 
   async onDrop(event: DragEvent) {
+    if (this.isOnPodcastPage) {
+      event.preventDefault();
+      this.resetDragState();
+      return;
+    }
+    await this.handleDrop(event, false);
+  }
+
+  private addDragListeners(): void {
+    document.addEventListener('dragenter', this.onDocumentDragEnter);
+    document.addEventListener('dragover', this.onDocumentDragOver);
+    document.addEventListener('dragend', this.onDocumentDragEnd);
+    window.addEventListener('blur', this.onWindowBlur);
+  }
+
+  private removeDragListeners(): void {
+    document.removeEventListener('dragenter', this.onDocumentDragEnter);
+    document.removeEventListener('dragover', this.onDocumentDragOver);
+    document.removeEventListener('dragend', this.onDocumentDragEnd);
+    window.removeEventListener('blur', this.onWindowBlur);
+  }
+
+  private readonly onDocumentDragEnter = (event: DragEvent) => {
+    if (!this.hasDroppableUrl(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.isDragOver = true;
+  };
+
+  private readonly onDocumentDragOver = (event: DragEvent) => {
+    if (!this.hasDroppableUrl(event)) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  };
+
+  private readonly onDocumentDragEnd = () => {
+    this.resetDragState();
+  };
+
+  private readonly onWindowBlur = () => {
+    if (this.isDragOver) {
+      this.resetDragState();
+    }
+  };
+
+  private resetDragState(): void {
+    this.isDragOver = false;
+    this.activeDropTarget = null;
+  }
+
+  private async handleDrop(event: DragEvent, forPodcast: boolean) {
     if (!this.isBrowser) {
       return;
     }
     event.preventDefault();
-    this.dragDepth = 0;
-    this.isDragOver = false;
+    this.resetDragState();
 
     const dataTransfer = event.dataTransfer;
     if (!dataTransfer) {
@@ -146,7 +223,7 @@ export class AppComponent {
     await this.toolbar.sendPodcast({
       url,
       podcastId: undefined,
-      podcastName: this.resolvePodcastNameFromRoute(),
+      podcastName: forPodcast ? this.podcastPageName : undefined,
       shareMode: ShareMode.Text
     });
   }

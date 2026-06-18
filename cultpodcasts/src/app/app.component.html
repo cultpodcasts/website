@@ -1,14 +1,36 @@
 <div id="top"></div>
 @if (isDragOver) {
 <div class="drop-overlay" aria-hidden="true">
-  <p>Drop episode link to submit</p>
+  @if (isOnPodcastPage) {
+  <div class="drop-targets">
+    <div class="drop-target"
+      [class.drop-target-active]="activeDropTarget === 'general'"
+      (dragenter)="onTargetDragEnter('general', $event)"
+      (dragleave)="onTargetDragLeave($event)"
+      (dragover)="onDragOver($event)"
+      (drop)="onDropGeneral($event)">
+      <mat-icon>link</mat-icon>
+      <p class="drop-target-title">Submit episode link</p>
+      <p class="drop-target-desc">Add as a general submission — Cult Podcasts will match the podcast automatically.</p>
+    </div>
+    <div class="drop-target"
+      [class.drop-target-active]="activeDropTarget === 'podcast'"
+      (dragenter)="onTargetDragEnter('podcast', $event)"
+      (dragleave)="onTargetDragLeave($event)"
+      (dragover)="onDragOver($event)"
+      (drop)="onDropForPodcast($event)">
+      <mat-icon>podcasts</mat-icon>
+      <p class="drop-target-title">Submit to {{ podcastPageName }}</p>
+      <p class="drop-target-desc">Link this episode to the podcast shown on this page.</p>
+    </div>
+  </div>
+  } @else {
+  <p class="drop-overlay-message">Drop episode link to submit</p>
+  }
 </div>
 }
 <section id="body"
-  [class.drop-target-active]="isDragOver"
-  (dragenter)="onDragEnter($event)"
   (dragover)="onDragOver($event)"
-  (dragleave)="onDragLeave($event)"
   (drop)="onDrop($event)">
   <app-toolbar></app-toolbar>
   <app-search-bar></app-search-bar>
