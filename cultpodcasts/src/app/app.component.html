@@ -3,7 +3,7 @@
 <div class="drop-overlay" aria-hidden="true"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
-  @if (isOnPodcastPage) {
+  @if (isOnPodcastPage && canSubmitUrlForPodcast) {
   <div class="drop-targets">
     <div class="drop-target"
       [class.drop-target-active]="activeDropTarget === 'general'"
@@ -15,7 +15,6 @@
       <p class="drop-target-title">Submit episode link</p>
       <p class="drop-target-desc">Add as a general submission — Cult Podcasts will match the podcast automatically.</p>
     </div>
-    @if (canSubmitUrlForPodcast) {
     <div class="drop-target"
       [class.drop-target-active]="activeDropTarget === 'podcast'"
       (dragenter)="onTargetDragEnter('podcast', $event)"
@@ -26,7 +25,6 @@
       <p class="drop-target-title">Submit to {{ podcastPageName }}</p>
       <p class="drop-target-desc">Link this episode to the podcast shown on this page.</p>
     </div>
-    }
   </div>
   } @else {
   <p class="drop-overlay-message">Drop episode link to submit</p>

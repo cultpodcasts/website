@@ -148,7 +148,7 @@ export class AppComponent implements OnDestroy {
   }
 
   async onDrop(event: DragEvent) {
-    if (this.isOnPodcastPage) {
+    if (this.isOnPodcastPage && this.canSubmitUrlForPodcast) {
       event.preventDefault();
       this.resetDragState();
       return;
