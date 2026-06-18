@@ -33,6 +33,7 @@ export class AppComponent implements OnDestroy {
   protected FeatureSwitch = FeatureSwitch;
   isDragOver: boolean = false;
   activeDropTarget: 'general' | 'podcast' | null = null;
+  authRoles: string[] = [];
   private ignoreDragUntilEnd = false;
 
   @ViewChild(ToolbarComponent)
@@ -72,6 +73,7 @@ export class AppComponent implements OnDestroy {
     this.addDragListeners();
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles.subscribe(async roles => {
+      this.authRoles = roles;
       if (roles.includes("Admin")) {
         var handled = await this.webPushService.subscribeToNotifications();
         if (!handled) {
@@ -104,6 +106,10 @@ export class AppComponent implements OnDestroy {
     return this.resolvePodcastNameFromRoute();
   }
 
+  get canSubmitUrlForPodcast(): boolean {
+    return this.authRoles.includes('Curator');
+  }
+
   onDragOver(event: DragEvent) {
     if (!this.isBrowser || !this.hasDroppableUrl(event)) {
       return;
@@ -115,7 +121,7 @@ export class AppComponent implements OnDestroy {
   }
 
   onTargetDragEnter(target: 'general' | 'podcast', event: DragEvent) {
-    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
+    if (!this.isBrowser || !this.hasDroppableUrl(event) || !this.isDropTargetEnabled(target)) {
       return;
     }
     event.preventDefault();
@@ -253,6 +259,9 @@ export class AppComponent implements OnDestroy {
     if (!this.isBrowser) {
       return;
     }
+    if (forPodcast && !this.canSubmitUrlForPodcast) {
+      return;
+    }
     event.preventDefault();
     this.resetDragState();
 
@@ -279,6 +288,13 @@ export class AppComponent implements OnDestroy {
       podcastName: forPodcast ? this.podcastPageName : undefined,
       shareMode: ShareMode.Text
     });
+  }
+
+  private isDropTargetEnabled(target: 'general' | 'podcast'): boolean {
+    if (target === 'podcast') {
+      return this.canSubmitUrlForPodcast;
+    }
+    return true;
   }
 
   private hasDroppableUrl(event: DragEvent): boolean {
