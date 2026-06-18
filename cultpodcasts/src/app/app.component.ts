@@ -33,6 +33,8 @@ export class AppComponent implements OnDestroy {
   protected FeatureSwitch = FeatureSwitch;
   isDragOver: boolean = false;
   activeDropTarget: 'general' | 'podcast' | null = null;
+  authRoles: string[] = [];
+  private ignoreDragUntilEnd = false;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -71,6 +73,7 @@ export class AppComponent implements OnDestroy {
     this.addDragListeners();
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles.subscribe(async roles => {
+      this.authRoles = roles;
       if (roles.includes("Admin")) {
         var handled = await this.webPushService.subscribeToNotifications();
         if (!handled) {
@@ -103,6 +106,10 @@ export class AppComponent implements OnDestroy {
     return this.resolvePodcastNameFromRoute();
   }
 
+  get canSubmitUrlForPodcast(): boolean {
+    return this.authRoles.includes('Curator');
+  }
+
   onDragOver(event: DragEvent) {
     if (!this.isBrowser || !this.hasDroppableUrl(event)) {
       return;
@@ -114,7 +121,7 @@ export class AppComponent implements OnDestroy {
   }
 
   onTargetDragEnter(target: 'general' | 'podcast', event: DragEvent) {
-    if (!this.isBrowser || !this.hasDroppableUrl(event)) {
+    if (!this.isBrowser || !this.hasDroppableUrl(event) || !this.isDropTargetEnabled(target)) {
       return;
     }
     event.preventDefault();
@@ -141,7 +148,7 @@ export class AppComponent implements OnDestroy {
   }
 
   async onDrop(event: DragEvent) {
-    if (this.isOnPodcastPage) {
+    if (this.isOnPodcastPage && this.canSubmitUrlForPodcast) {
       event.preventDefault();
       this.resetDragState();
       return;
@@ -152,19 +159,31 @@ export class AppComponent implements OnDestroy {
   private addDragListeners(): void {
     document.addEventListener('dragenter', this.onDocumentDragEnter);
     document.addEventListener('dragover', this.onDocumentDragOver);
+    document.addEventListener('dragleave', this.onDocumentDragLeave);
     document.addEventListener('dragend', this.onDocumentDragEnd);
+    document.addEventListener('drop', this.onDocumentDrop);
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
     window.addEventListener('blur', this.onWindowBlur);
+    window.addEventListener('mouseup', this.onPointerUp);
+    window.addEventListener('pointerup', this.onPointerUp);
   }
 
   private removeDragListeners(): void {
     document.removeEventListener('dragenter', this.onDocumentDragEnter);
     document.removeEventListener('dragover', this.onDocumentDragOver);
+    document.removeEventListener('dragleave', this.onDocumentDragLeave);
     document.removeEventListener('dragend', this.onDocumentDragEnd);
+    document.removeEventListener('drop', this.onDocumentDrop);
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     window.removeEventListener('blur', this.onWindowBlur);
+    window.removeEventListener('mouseup', this.onPointerUp);
+    window.removeEventListener('pointerup', this.onPointerUp);
   }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {
-    if (!this.hasDroppableUrl(event)) {
+    if (this.ignoreDragUntilEnd || !this.hasDroppableUrl(event)) {
       return;
     }
     event.preventDefault();
@@ -181,23 +200,66 @@ export class AppComponent implements OnDestroy {
     }
   };
 
+  private readonly onDocumentDragLeave = (event: DragEvent) => {
+    if (!this.isDragOver) {
+      return;
+    }
+    const related = event.relatedTarget as Node | null;
+    if (related && document.documentElement.contains(related)) {
+      return;
+    }
+    this.resetDragState(true);
+  };
+
   private readonly onDocumentDragEnd = () => {
+    this.ignoreDragUntilEnd = false;
     this.resetDragState();
+  };
+
+  private readonly onDocumentDrop = () => {
+    this.resetDragState();
+  };
+
+  private readonly onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && this.isDragOver) {
+      this.resetDragState(true);
+    }
+  };
+
+  private readonly onVisibilityChange = () => {
+    if (document.hidden && this.isDragOver) {
+      this.resetDragState(true);
+    }
   };
 
   private readonly onWindowBlur = () => {
     if (this.isDragOver) {
-      this.resetDragState();
+      this.resetDragState(true);
     }
   };
 
-  private resetDragState(): void {
+  private readonly onPointerUp = () => {
+    if (!this.isDragOver) {
+      return;
+    }
+    window.setTimeout(() => {
+      if (this.isDragOver) {
+        this.resetDragState(true);
+      }
+    }, 0);
+  };
+
+  private resetDragState(fromCancel = false): void {
     this.isDragOver = false;
     this.activeDropTarget = null;
+    this.ignoreDragUntilEnd = fromCancel;
   }
 
   private async handleDrop(event: DragEvent, forPodcast: boolean) {
     if (!this.isBrowser) {
+      return;
+    }
+    if (forPodcast && !this.canSubmitUrlForPodcast) {
       return;
     }
     event.preventDefault();
@@ -226,6 +288,13 @@ export class AppComponent implements OnDestroy {
       podcastName: forPodcast ? this.podcastPageName : undefined,
       shareMode: ShareMode.Text
     });
+  }
+
+  private isDropTargetEnabled(target: 'general' | 'podcast'): boolean {
+    if (target === 'podcast') {
+      return this.canSubmitUrlForPodcast;
+    }
+    return true;
   }
 
   private hasDroppableUrl(event: DragEvent): boolean {

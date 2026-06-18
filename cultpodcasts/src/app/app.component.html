@@ -1,7 +1,9 @@
 <div id="top"></div>
 @if (isDragOver) {
-<div class="drop-overlay" aria-hidden="true">
-  @if (isOnPodcastPage) {
+<div class="drop-overlay" aria-hidden="true"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)">
+  @if (isOnPodcastPage && canSubmitUrlForPodcast) {
   <div class="drop-targets">
     <div class="drop-target"
       [class.drop-target-active]="activeDropTarget === 'general'"
