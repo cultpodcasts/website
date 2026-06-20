@@ -1,11 +1,15 @@
 <div class="clampable-text">
-  <div class="clampable-text__body" [class.is-clamped]="!expanded && showToggle">
+  <div class="clampable-text__body">
     @if (html) {
-    <div #content class="clampable-text__content" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines"
-      [innerHTML]="html"></div>
+    <div class="clampable-text__content">
+      <div #content class="clampable-text__clamp" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines"
+        [innerHTML]="html"></div>
+    </div>
     } @else {
-    <div #content class="clampable-text__content" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines">
-      <ng-content></ng-content>
+    <div class="clampable-text__content">
+      <div #content class="clampable-text__clamp" [class.is-clamped]="!expanded" [style.--clamp-lines]="maxLines">
+        <ng-content></ng-content>
+      </div>
     </div>
     }
     @if (showToggle) {

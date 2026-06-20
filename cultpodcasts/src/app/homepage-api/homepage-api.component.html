@@ -39,9 +39,7 @@
       </mat-card-header>
       <mat-card-content>
         <app-episode-image [searchResult]="item" [linksOverlay]="true"></app-episode-image>
-        <app-clampable-text [maxLines]="10">
-          <p>{{item.episodeDescription}}</p>
-        </app-clampable-text>
+        <app-clampable-text [maxLines]="10">{{item.episodeDescription}}</app-clampable-text>
       </mat-card-content>
       <mat-card-actions>
         <app-episode-links [episode]="item"></app-episode-links>
