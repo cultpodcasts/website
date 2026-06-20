@@ -1,16 +1,20 @@
 .clampable-text__body
     position: relative
 
-    &.is-clamped .clampable-text__content
-        padding-right: 2rem
-        padding-bottom: 0.25rem
-
 .clampable-text__content
+    width: 100%
+
+.clampable-text__clamp
     &.is-clamped
         display: -webkit-box
         -webkit-box-orient: vertical
         -webkit-line-clamp: var(--clamp-lines)
         overflow: hidden
+        width: 100%
+
+        > p
+            display: contents
+            margin: 0
 
 .clampable-text__toggle
     position: absolute
