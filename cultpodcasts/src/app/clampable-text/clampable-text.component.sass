@@ -5,16 +5,16 @@
     width: 100%
 
 .clampable-text__clamp
-    &.is-clamped
-        display: -webkit-box
-        -webkit-box-orient: vertical
-        -webkit-line-clamp: var(--clamp-lines)
-        overflow: hidden
-        width: 100%
+    display: block
+    width: 100%
+    margin: 0
 
-        > p
-            display: contents
-            margin: 0
+    p
+        margin: 0
+
+    &.is-clamped
+        overflow: hidden
+        max-height: calc(var(--clamp-lines) * 1.3em)
 
 .clampable-text__toggle
     position: absolute
