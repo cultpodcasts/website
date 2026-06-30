@@ -15,6 +15,8 @@ import { EpisodePublishResponse } from '../episode-publish-response.interface';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { FeatureSwitch } from '../feature-switch.enum';
+import { FeatureSwtichService } from '../feature-switch-service';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -32,6 +34,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   styleUrl: './post-episode-dialog.component.sass'
 })
 export class PostEpisodeDialogComponent {
+  protected FeatureSwitch = FeatureSwitch;
   isInError: boolean = false;
   isSending: boolean = true;
   form: FormGroup<PostForm> | undefined;
@@ -44,6 +47,7 @@ export class PostEpisodeDialogComponent {
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
+    protected featureSwtichService: FeatureSwtichService,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string }) {
     this.podcastIdentifier = data.podcastIdentifier;
@@ -74,15 +78,17 @@ export class PostEpisodeDialogComponent {
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
             this.podcastId = resp.podcastId!;
-            if (this.hasPosted) {
-              this.form?.controls.post.disable();
-            } else {
-              if (!resp.ignored && !resp.removed &&
-                ((!resp.youTubePodcast || resp.urls.youtube) &&
-                  (!resp.applePodcast || resp.urls.apple) &&
-                  (!resp.spotifyPodcast || resp.urls.spotify)
-                )) {
-                this.form?.controls.post.setValue(true);
+            if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
+              if (this.hasPosted) {
+                this.form?.controls.post.disable();
+              } else {
+                if (!resp.ignored && !resp.removed &&
+                  ((!resp.youTubePodcast || resp.urls.youtube) &&
+                    (!resp.applePodcast || resp.urls.apple) &&
+                    (!resp.spotifyPodcast || resp.urls.spotify)
+                  )) {
+                  this.form?.controls.post.setValue(true);
+                }
               }
             }
             const readyForSocial: boolean = !resp.ignored && !resp.removed &&
@@ -103,7 +109,8 @@ export class PostEpisodeDialogComponent {
                 this.form?.controls.blueskyPost.setValue(true);
               }
             }
-            if (this.hasTweeted && this.hasPosted && this.hasBlueskyPosted) {
+            const redditPostComplete = !this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) || this.hasPosted;
+            if (this.hasTweeted && redditPostComplete && this.hasBlueskyPosted) {
               this.dialogRef.close({ noChange: true });
             }
           },
@@ -129,7 +136,8 @@ export class PostEpisodeDialogComponent {
       change = true;
       model.tweet = true;
     }
-    if (!this.hasPosted && this.form?.controls.post.value) {
+    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) &&
+      !this.hasPosted && this.form?.controls.post.value) {
       change = true;
       model.post = true;
     }
