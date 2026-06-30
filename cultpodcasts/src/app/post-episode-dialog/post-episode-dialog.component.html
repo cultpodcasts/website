@@ -8,10 +8,12 @@
     } @else {
     <form id="post" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <div class="flags">
+            @if (featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
             <label>
                 <span>Post:</span>
                 <mat-checkbox [formControl]="form!.controls.post"/>
             </label>
+            }
             <label>
                 <span>Tweet:</span>
                 <mat-checkbox [formControl]="form!.controls.tweet"/>
