@@ -23,6 +23,5 @@ export interface EpisodeForm {
     subjects: FormControl<string[]>,
     searchTerms: FormControl<string | null>,
     lang: FormControl<string | null>
-    twitterHandles: FormControl<string[]>,
-    blueskyHandles: FormControl<string[]>
+    guests: FormControl<string[]>,
 }
