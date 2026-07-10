@@ -15,10 +15,12 @@ import { EditPersonSendComponent } from '../edit-person-send/edit-person-send.co
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import {
+  deriveSortKeyFromName,
   getEffectiveSortKey,
   guessSortName,
   looksLikeOrganization,
-  sortNameForPersist
+  sortNameForPersist,
+  stripLeadingThe
 } from '../person-sort';
 
 @Component({
@@ -103,7 +105,11 @@ export class EditPersonDialogComponent {
             const name = resp.name ?? '';
             const storedSort = resp.sortName?.trim() ?? '';
             const guess = guessSortName(name);
-            const isOrgFullName = !!storedSort && storedSort === name.trim();
+            const orgKey = stripLeadingThe(name.trim());
+            const isOrgFullName =
+              looksLikeOrganization(name) &&
+              !!storedSort &&
+              (storedSort === orgKey || storedSort === name.trim());
             const displaySort = storedSort || guess;
             this.sortNameManuallyEdited =
               !!storedSort && !isOrgFullName && storedSort !== guess;
@@ -135,12 +141,11 @@ export class EditPersonDialogComponent {
         return;
       }
       this.syncingSort = true;
+      this.sortNameManuallyEdited = false;
       if (checked) {
-        this.sortNameManuallyEdited = false;
-        this.form.controls.sortName.setValue(this.form.controls.name.value);
-      } else {
-        this.sortNameManuallyEdited = false;
         this.form.controls.sortName.setValue(guessSortName(this.form.controls.name.value));
+      } else {
+        this.form.controls.sortName.setValue(deriveSortKeyFromName(this.form.controls.name.value));
       }
       this.syncingSort = false;
     });
@@ -151,7 +156,7 @@ export class EditPersonDialogComponent {
       }
       if (this.useFullNameForSorting.value) {
         this.syncingSort = true;
-        this.form.controls.sortName.setValue(name);
+        this.form.controls.sortName.setValue(guessSortName(name));
         this.syncingSort = false;
         return;
       }
@@ -159,8 +164,7 @@ export class EditPersonDialogComponent {
         this.syncingSort = true;
         const guess = guessSortName(name);
         this.form.controls.sortName.setValue(guess);
-        // Auto-check org when the guess is the full org/show name.
-        const orgGuess = !!guess && looksLikeOrganization(name) && guess === name.trim();
+        const orgGuess = looksLikeOrganization(name);
         if (this.useFullNameForSorting.value !== orgGuess) {
           this.useFullNameForSorting.setValue(orgGuess, { emitEvent: false });
         }
@@ -174,7 +178,9 @@ export class EditPersonDialogComponent {
       }
       this.sortNameManuallyEdited = true;
       const name = this.form.controls.name.value?.trim() ?? '';
-      const isOrg = !!(sortName?.trim()) && sortName.trim() === name;
+      const trimmedSort = sortName?.trim() ?? '';
+      const orgKey = stripLeadingThe(name);
+      const isOrg = !!trimmedSort && (trimmedSort === orgKey || trimmedSort === name);
       if (this.useFullNameForSorting.value !== isOrg) {
         this.syncingSort = true;
         this.useFullNameForSorting.setValue(isOrg);

@@ -79,6 +79,15 @@ export function deriveSortKeyFromName(name: string | null | undefined): string {
   return parts[parts.length - 1] ?? '';
 }
 
+/** Strip leading "The " for corp/entity sort keys (display Name unchanged). */
+export function stripLeadingThe(value: string | null | undefined): string {
+  const trimmed = value?.trim() ?? '';
+  if (trimmed.length >= 4 && /^the\s+/i.test(trimmed)) {
+    return trimmed.replace(/^the\s+/i, '').trimStart();
+  }
+  return trimmed;
+}
+
 /** True when the name looks like an org, show, or media brand. */
 export function looksLikeOrganization(name: string | null | undefined): boolean {
   const trimmed = name?.trim();
@@ -105,7 +114,7 @@ export function looksLikeOrganization(name: string | null | undefined): boolean 
 
 /**
  * Suggested sort name for the UI while typing.
- * Orgs/shows → full name; otherwise last whitespace token (single token = that token).
+ * Orgs/shows → StripLeadingThe(full name); otherwise last whitespace token.
  */
 export function guessSortName(name: string | null | undefined): string {
   const trimmed = name?.trim() ?? '';
@@ -113,7 +122,7 @@ export function guessSortName(name: string | null | undefined): string {
     return '';
   }
   if (looksLikeOrganization(trimmed)) {
-    return trimmed;
+    return stripLeadingThe(trimmed);
   }
   return deriveSortKeyFromName(trimmed);
 }
@@ -135,19 +144,35 @@ export function comparePeopleBySortKey(a: Person, b: Person): number {
 }
 
 /**
- * Value to persist: omit redundant last-token guesses (server derives them);
- * keep org full-name and manual overrides.
+ * Persist null ONLY when effective key equals last-token surname default.
+ * Org path: StripLeadingThe(Name). Keep other overrides.
  */
 export function sortNameForPersist(name: string, sortName: string | null | undefined, useFullName: boolean): string | null {
-  const trimmed = sortName?.trim() ?? '';
-  if (!trimmed) {
+  const trimmedName = name?.trim() ?? '';
+  const lastToken = deriveSortKeyFromName(trimmedName);
+  const isOrg = useFullName || looksLikeOrganization(trimmedName);
+  const orgKey = isOrg ? stripLeadingThe(trimmedName) : '';
+
+  let effective = sortName?.trim() ?? '';
+  if (effective) {
+    if (isOrg && orgKey) {
+      const stripped = stripLeadingThe(effective);
+      if (
+        effective.toLowerCase() === trimmedName.toLowerCase() ||
+        stripped.toLowerCase() === orgKey.toLowerCase() ||
+        /^the\s+/i.test(effective)
+      ) {
+        effective = orgKey;
+      }
+    }
+  } else if (isOrg && orgKey) {
+    effective = orgKey;
+  } else {
+    effective = lastToken;
+  }
+
+  if (!effective || effective === lastToken) {
     return null;
   }
-  if (useFullName) {
-    return trimmed;
-  }
-  if (trimmed === deriveSortKeyFromName(name)) {
-    return null;
-  }
-  return trimmed;
+  return effective;
 }
