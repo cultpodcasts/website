@@ -16,6 +16,5 @@ export interface EpisodePost {
     subjects?: string[];
     searchTerms?: string | null;
     lang?: string;
-    twitterHandles?: string[];
-    blueskyHandles?: string[];
+    guests?: string[];
 }

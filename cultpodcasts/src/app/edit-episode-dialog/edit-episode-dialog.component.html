@@ -155,13 +155,55 @@
             </mat-tab>
             <mat-tab label="Guests">
                 <label>
-                    <span>Twitter handles:</span>
-                    <input type="text" [formControl]="form!.controls.twitterHandles" matInput>
+                    <span>Guests:</span>
+                    <mat-select [formControl]="form!.controls.guests" multiple [sortComparator]="noCompareFunction"
+                        (selectionChange)="onGuestsSelectionChange()"
+                        (openedChange)="onGuestsDropdownOpenChange($event)"
+                        (keydown)="onGuestsDropdownKeydown($event)">
+                        @if (enableDesktopSubjectTypingFilter && guestsFilterTerm.length > 0) {
+                        <mat-option disabled>{{guestsFilterTerm}}</mat-option>
+                        <mat-divider></mat-divider>
+                        }
+                        @if (selectedGuests.length > 0) {
+                        @for (person of selectedGuests; track person.id) {
+                        <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
+                        }
+                        }
+                        @if (otherPeople.length > 0) {
+                        @if (selectedGuests.length > 0) {
+                        <mat-divider></mat-divider>
+                        }
+                        @for (person of otherPeople; track person.id) {
+                        <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
+                        }
+                        }
+                    </mat-select>
                 </label>
-                <label>
-                    <span>Bluesky handles:</span>
-                    <input type="text" [formControl]="form!.controls.blueskyHandles" matInput>
-                </label>
+                <div class="guest-actions">
+                    <button type="button" mat-button (click)="openAddPerson()">Add person</button>
+                </div>
+                @if (selectedGuests.length > 0) {
+                <div class="guest-suggestions">
+                    <span>Selected:</span>
+                    @for (person of selectedGuests; track person.id) {
+                    <div class="guest-row">
+                        <span>{{personLabel(person)}}</span>
+                        <button type="button" mat-button (click)="openEditPerson(person)">Edit</button>
+                    </div>
+                    }
+                </div>
+                }
+                @if (guestSuggestions.length > 0) {
+                <div class="guest-suggestions">
+                    <span>Suggested from title/description:</span>
+                    @for (suggestion of guestSuggestions; track suggestion.person.id) {
+                    <div class="guest-row">
+                        <span>{{personLabel(suggestion.person)}} ({{suggestion.matchResults[0]?.term}})</span>
+                        <button type="button" mat-button (click)="addSuggestedGuest(suggestion.person.name)">Add</button>
+                    </div>
+                    }
+                </div>
+                }
             </mat-tab>
         </mat-tab-group>
     </form>

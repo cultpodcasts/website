@@ -1,5 +1,7 @@
 import { EpisodeImageUrls } from "./episode-image-urls.interface";
 import { EpisodeUrls } from "./episode-urls.interface";
+import { Person } from "./person.interface";
+import { PersonMatch } from "./person-match.interface";
 
 export interface ApiEpisode {
     id: string;
@@ -29,6 +31,7 @@ export interface ApiEpisode {
     image?: URL;
     lang?: string | null;
     knownTerms?: string[] | undefined;
-    twitterHandles?: string[] | undefined;
-    blueskyHandles?: string[] | undefined;
+    guests?: string[] | undefined;
+    guestPeople?: Person[] | undefined;
+    guestSuggestions?: PersonMatch[] | undefined;
 }

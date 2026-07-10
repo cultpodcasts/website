@@ -4,10 +4,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin, catchError, of, throwError } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
 import { Subject } from '../subject.interface';
+import { Person } from '../person.interface';
+import { PersonMatch } from '../person-match.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -26,6 +28,7 @@ import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
+import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -64,6 +67,11 @@ export class EditEpisodeDialogComponent {
   hoistedSubjects: string[] = [];
   otherSubjects: string[] = [];
   subjectsFilterTerm: string = '';
+  allPeople: Person[] = [];
+  selectedGuests: Person[] = [];
+  otherPeople: Person[] = [];
+  guestsFilterTerm: string = '';
+  guestSuggestions: PersonMatch[] = [];
   languages: { [key: string]: string } = {};
 
   form: FormGroup<EpisodeForm> | undefined;
@@ -94,12 +102,16 @@ export class EditEpisodeDialogComponent {
       headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/episode/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
+      const peopleEndpoint = new URL("/people", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
       var resp = await firstValueFrom(forkJoin(
         {
           episode: this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }),
           subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }),
+          people: this.http.get<Person[]>(peopleEndpoint, { headers: headers }).pipe(
+            catchError(err => err?.status === 404 ? of([] as Person[]) : throwError(() => err))
+          ),
           languages: this.http.get<{ [key: string]: string }>(languagesEndpoint, { headers: headers })
         }
       ));
@@ -138,9 +150,11 @@ export class EditEpisodeDialogComponent {
         subjects: new FormControl(resp.episode.subjects, { nonNullable: true }),
         searchTerms: new FormControl(resp.episode.searchTerms || null),
         lang: new FormControl(resp.episode.lang || "unset"),
-        twitterHandles: new FormControl<string[]>(resp.episode.twitterHandles ?? [], { nonNullable: true }),
-        blueskyHandles: new FormControl<string[]>(resp.episode.blueskyHandles ?? [], { nonNullable: true })
+        guests: new FormControl<string[]>(resp.episode.guests ?? [], { nonNullable: true })
       });
+      this.allPeople = resp.people.sort((a, b) => a.name.localeCompare(b.name));
+      this.guestSuggestions = resp.episode.guestSuggestions ?? [];
+      this.regroupGuests(resp.episode.guests ?? []);
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
       this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
       this.regroupSubjects(resp.episode.subjects);
@@ -183,8 +197,7 @@ export class EditEpisodeDialogComponent {
         subjects: this.form!.controls.subjects.value,
         searchTerms: this.form!.controls.searchTerms.value,
         lang: this.form!.controls.lang.value,
-        twitterHandles: this.translateForEntityA(this.form!.controls.twitterHandles),
-        blueskyHandles: this.translateForEntityA(this.form!.controls.blueskyHandles),
+        guests: this.form!.controls.guests.value,
       };
       if (this.form!.controls.spotify.value) {
         update.urls.spotify = new URL(this.form!.controls.spotify.value);
@@ -264,9 +277,148 @@ export class EditEpisodeDialogComponent {
     if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
     if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
     if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
-    if (!this.isSameA(prev.twitterHandles, now.twitterHandles)) changes.twitterHandles = now.twitterHandles;
-    if (!this.isSameA(prev.blueskyHandles, now.blueskyHandles)) changes.blueskyHandles = now.blueskyHandles;
+    if (!this.isSameA(prev.guests, now.guests)) changes.guests = now.guests;
     return changes;
+  }
+
+  personLabel(person: Person): string {
+    const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
+    return handles ? `${person.name} (${handles})` : person.name;
+  }
+
+  onGuestsSelectionChange() {
+    this.regroupGuests(this.form?.controls.guests.value);
+  }
+
+  onGuestsDropdownOpenChange(opened: boolean) {
+    if (!opened) {
+      this.guestsFilterTerm = '';
+      this.regroupGuests(this.form?.controls.guests.value);
+    }
+  }
+
+  onGuestsDropdownKeydown(event: KeyboardEvent) {
+    if (!this.enableDesktopSubjectTypingFilter) {
+      return;
+    }
+    if (event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+
+    if (event.key === 'Backspace') {
+      if (this.guestsFilterTerm.length > 0) {
+        this.guestsFilterTerm = this.guestsFilterTerm.substring(0, this.guestsFilterTerm.length - 1);
+        this.regroupGuests(this.form?.controls.guests.value);
+      }
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.guestsFilterTerm = '';
+      this.regroupGuests(this.form?.controls.guests.value);
+      event.preventDefault();
+      return;
+    }
+
+    if (event.key.length === 1) {
+      this.guestsFilterTerm += event.key;
+      this.regroupGuests(this.form?.controls.guests.value);
+      event.preventDefault();
+    }
+  }
+
+  regroupGuests(selected: string[] | null | undefined) {
+    const selectedNames = [...new Set(selected ?? [])];
+    const selectedSet = new Set(selectedNames);
+    const episodeGuests = this.originalEpisode?.guestPeople ?? [];
+    const peopleByName = new Map(this.allPeople.map(x => [x.name, x]));
+    for (const guest of episodeGuests) {
+      peopleByName.set(guest.name, guest);
+    }
+    this.selectedGuests = selectedNames
+      .map(name => peopleByName.get(name))
+      .filter((x): x is Person => !!x);
+
+    const otherNames = this.allPeople
+      .map(person => person.name)
+      .filter(name => !selectedSet.has(name));
+    const filteredOtherNames = filterKeepingSelectedInOrder(otherNames, this.guestsFilterTerm, selectedSet);
+    this.otherPeople = filteredOtherNames
+      .map(name => peopleByName.get(name))
+      .filter((x): x is Person => !!x);
+  }
+
+  addSuggestedGuest(personName: string) {
+    const current = this.form?.controls.guests.value ?? [];
+    if (current.includes(personName)) {
+      return;
+    }
+    this.form?.controls.guests.setValue([...current, personName]);
+    this.guestSuggestions = this.guestSuggestions.filter(x => x.person.name !== personName);
+    this.regroupGuests(this.form?.controls.guests.value);
+  }
+
+  openAddPerson() {
+    const dialogRef = this.dialog.open(EditPersonDialogComponent, {
+      data: { create: true, personName: this.guestsFilterTerm || undefined },
+      disableClose: true,
+      autoFocus: true,
+      width: '90%'
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result?.updated && result.personName) {
+        await this.refreshPeopleAndSelect(result.personName, result.person);
+      }
+    });
+  }
+
+  openEditPerson(person: Person) {
+    const dialogRef = this.dialog.open(EditPersonDialogComponent, {
+      data: { create: false, personName: person.name },
+      disableClose: true,
+      autoFocus: true,
+      width: '90%'
+    });
+    dialogRef.afterClosed().subscribe(async result => {
+      if (result?.updated) {
+        await this.refreshPeopleAndSelect(person.name);
+      }
+    });
+  }
+
+  private async refreshPeopleAndSelect(personName: string, created?: Person) {
+    try {
+      const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      let headers: HttpHeaders = new HttpHeaders();
+      headers = headers.set("Authorization", "Bearer " + token);
+      const peopleEndpoint = new URL("/people", environment.api).toString();
+      const people = await firstValueFrom(
+        this.http.get<Person[]>(peopleEndpoint, { headers: headers }).pipe(
+          catchError(err => err?.status === 404 ? of([] as Person[]) : throwError(() => err))
+        )
+      );
+      this.allPeople = people.sort((a, b) => a.name.localeCompare(b.name));
+      if (created && !this.allPeople.some(x => x.name === created.name)) {
+        this.allPeople = [...this.allPeople, created].sort((a, b) => a.name.localeCompare(b.name));
+      }
+    } catch {
+      if (created) {
+        this.allPeople = [...this.allPeople.filter(x => x.name !== created.name), created]
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+
+    const current = this.form?.controls.guests.value ?? [];
+    if (!current.includes(personName)) {
+      this.form?.controls.guests.setValue([...current, personName]);
+    }
+    this.regroupGuests(this.form?.controls.guests.value);
   }
 
   areEqual(url1: URL | null | undefined | string, url2: URL | null | undefined | string): boolean {
@@ -395,18 +547,5 @@ export class EditEpisodeDialogComponent {
 
   unique(values: string[]) {
     return [...new Set(values)];
-  }
-
-  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
-    if (x.value) {
-      const valueS: any = x.value;
-      if (valueS.push) {
-        return x.value;
-      } else if (valueS.split) {
-        const valueSt: string = valueS;
-        return valueSt.split(",");
-      }
-    };
-    return [];
   }
 }
