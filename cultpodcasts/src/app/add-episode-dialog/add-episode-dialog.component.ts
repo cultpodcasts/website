@@ -28,6 +28,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
+import { comparePeopleBySortKey } from '../person-sort';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -153,7 +154,7 @@ export class AddEpisodeDialogComponent {
         lang: new FormControl(resp.episode.lang || "unset"),
         guests: new FormControl<string[]>(resp.episode.guests ?? [], { nonNullable: true })
       });
-      this.allPeople = resp.people.sort((a, b) => a.name.localeCompare(b.name));
+      this.allPeople = resp.people.sort(comparePeopleBySortKey);
       this.guestSuggestions = resp.episode.guestSuggestions ?? [];
       this.regroupGuests(resp.episode.guests ?? []);
       this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
@@ -437,14 +438,14 @@ export class AddEpisodeDialogComponent {
           catchError(err => err?.status === 404 ? of([] as Person[]) : throwError(() => err))
         )
       );
-      this.allPeople = people.sort((a, b) => a.name.localeCompare(b.name));
+      this.allPeople = people.sort(comparePeopleBySortKey);
       if (created && !this.allPeople.some(x => x.name === created.name)) {
-        this.allPeople = [...this.allPeople, created].sort((a, b) => a.name.localeCompare(b.name));
+        this.allPeople = [...this.allPeople, created].sort(comparePeopleBySortKey);
       }
     } catch {
       if (created) {
         this.allPeople = [...this.allPeople.filter(x => x.name !== created.name), created]
-          .sort((a, b) => a.name.localeCompare(b.name));
+          .sort(comparePeopleBySortKey);
       }
     }
 

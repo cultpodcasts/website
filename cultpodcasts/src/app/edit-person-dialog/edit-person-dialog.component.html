@@ -16,6 +16,15 @@
             <button type="button" mat-button (click)="searchBluesky()" [disabled]="!searchTerm()">Search Bluesky</button>
         </div>
         <label>
+            <span>Sort name:</span>
+            <input type="text" [formControl]="form!.controls.sortName" matInput
+                placeholder="Suggested from name — edit to override">
+        </label>
+        <p class="sorts-as-hint">Sorts as: {{ sortsAsHint }}</p>
+        <mat-checkbox [formControl]="useFullNameForSorting">
+            Organization / use full name for sorting
+        </mat-checkbox>
+        <label>
             <span>Aliases:</span>
             <textarea [formControl]="form!.controls.aliases" matInput cdkTextareaAutosize
                 placeholder="Comma-separated aliases"></textarea>
