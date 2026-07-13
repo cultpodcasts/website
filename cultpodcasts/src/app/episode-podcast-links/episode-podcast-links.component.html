@@ -1,37 +1,35 @@
-@if (_episode) {
-
-@if (_episode.urls.youtube) {
+@if (_episode?.urls?.youtube) {
 <a href="{{_episode.urls.youtube}}" mat-icon-button>
     <mat-icon svgIcon="youtube"></mat-icon>
 </a>
-} @else if (_episode.youTubePodcast) {
+} @else if (_episode?.youTubePodcast) {
 <button mat-icon-button disabled="true">
     <mat-icon svgIcon="youtube" class="not"></mat-icon>
 </button>
 }
 
-@if (_episode.urls.spotify) {
+@if (_episode?.urls?.spotify) {
 <a href="{{_episode.urls.spotify}}" mat-icon-button>
     <mat-icon svgIcon="spotify"></mat-icon>
 </a>
-} @else if (_episode.spotifyPodcast) {
+} @else if (_episode?.spotifyPodcast) {
 <button mat-icon-button disabled="true">
     <mat-icon svgIcon="spotify" class="not"></mat-icon>
 </button>
 }
 
-@if (_episode.urls.apple) {
+@if (_episode?.urls?.apple) {
 <a href="{{_episode.urls.apple}}" mat-icon-button>
     <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
 </a>
-} @else if (_episode.applePodcast) {
+} @else if (_episode?.applePodcast) {
 <button mat-icon-button disabled="true">
     <mat-icon><app-apple-podcasts-svg class="not"></app-apple-podcasts-svg></mat-icon>
 </button>
 }
 
 @if (this.isSounds() || this.isIplayer()) {
-<a href="{{_episode.urls.bbc}}" mat-icon-button>
+<a href="{{_episode!.urls.bbc}}" mat-icon-button>
 
     @if (this.isIplayer()) {
     <mat-icon svgIcon="bbc-iplayer"></mat-icon>
@@ -41,9 +39,8 @@
 </a>
 }
 
-@if (_episode.urls.internetArchive) {
+@if (_episode?.urls?.internetArchive) {
 <a href="{{_episode.urls.internetArchive}}" mat-icon-button>
     <mat-icon svgIcon="internet-archive"></mat-icon>
 </a>
-}
 }
