@@ -46,7 +46,8 @@ export class ProfileService {
         headers = headers.set("Authorization", "Bearer " + token);
         const episodeEndpoint = new URL(`/bookmarks`, environment.api).toString();
         var resp = await firstValueFrom(this.http.get<string[]>(episodeEndpoint, { headers: headers }));
-        return { isUser: true, success: true, episodeIds: resp };
+        const episodeIds = Array.isArray(resp) ? resp : [];
+        return { isUser: true, success: true, episodeIds };
       } catch (error) {
         console.error(error);
         return { isUser: true, success: false, episodeIds: [] };

@@ -26,7 +26,7 @@ export class EpisodePodcastLinksComponent {
   protected _episode: ApiEpisode | undefined;
 
   private isBBC(): boolean {
-    return this._episode?.urls.bbc != null &&
+    return this._episode?.urls?.bbc != null &&
       BBCServiceResolver.isBBC(this._episode.urls.bbc);
   }
 

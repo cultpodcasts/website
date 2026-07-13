@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
-import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
@@ -32,7 +32,7 @@ export enum sortMode {
   addDatedDesc
 }
 
-const take: number = 10;
+const pageSize = 10;
 
 @Component({
   selector: 'app-bookmarks-api',
@@ -89,18 +89,26 @@ export class BookmarksApiComponent {
   }
 
   async populatePage() {
-    this.profileService.bookmarks$.subscribe(async bookmarks => {
+    this.error = false;
+    this.isLoading = true;
+    this.episodes.set([]);
+    this.page = 0;
+
+    if (this.bookmarks) {
+      await this.batch(true);
+      return;
+    }
+
+    this.profileService.bookmarks$.pipe(take(1)).subscribe(async bookmarks => {
       console.log("bookmarks", bookmarks);
-      if (!this.bookmarks) {
-        this.bookmarks = bookmarks;
-        this.batch(true);
-      }
+      this.bookmarks = bookmarks;
+      await this.batch(true);
     });
   }
 
   async batch(first: boolean = false) {
-    const start = this.page * take;
-    const end = start + take;
+    const start = this.page * pageSize;
+    const end = start + pageSize;
     if (start >= this.bookmarks!.size) {
       if (this.bookmarks!.size == 0) {
         this.zeroBookmarks();
@@ -112,13 +120,13 @@ export class BookmarksApiComponent {
     }
     if (this.bookmarks!.size > 0) {
       this.noBookmarks = false;
-      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+      // Bookmarks are available to any signed-in user; do not require curator scope.
+      firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
+          scope: ''
         }
-      }));
-      token.then(_token => {
+      })).then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
         const episodeResponses: Observable<ApiEpisode | null>[] = [];
@@ -129,15 +137,20 @@ export class BookmarksApiComponent {
         const items = orderedBookmarks.slice(start, end);
         items.forEach(episodeId => {
           const episodeEndpoint = new URL(`/public/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
+          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest())
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes.update(v => v.concat(episodes.filter(x => x != null)));
+            const loaded = episodes.filter((x): x is ApiEpisode => x != null);
+            this.episodes.update(v => v.concat(loaded));
+            // Only treat as a page error when this batch produced nothing.
+            if (loaded.length === 0 && items.length > 0) {
+              this.error = true;
+            }
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
-            if (first && this.bookmarks!.size > take) {
+            if (first && this.bookmarks!.size > pageSize) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
                 if (
                   this.bookmarks &&
@@ -158,6 +171,11 @@ export class BookmarksApiComponent {
             console.error(e);
           }
         })
+      }).catch(e => {
+        this.error = true;
+        this.isLoading = false;
+        this.isSubsequentLoading.set(false);
+        console.error(e);
       });
     } else {
       this.zeroBookmarks();
@@ -171,15 +189,12 @@ export class BookmarksApiComponent {
     this.noBookmarks = true;
   }
 
-  handleRequest(that: any) {
-    return function (observable: Observable<any>) {
+  handleRequest() {
+    return (observable: Observable<ApiEpisode>) => {
       return observable.pipe(
-        map((result) => {
-          return result;
-        }),
+        map((result) => result),
         catchError((err) => {
           console.error(err);
-          that.error = true;
           return of(null);
         })
       );
@@ -218,6 +233,7 @@ export class BookmarksApiComponent {
   }
 
   async reset() {
+    this.error = false;
     this.isLoading = true;
     this.episodes.set([]);
     this.page = 0;

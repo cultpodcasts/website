@@ -66,7 +66,9 @@
                 </a>
             </mat-card-subtitle>
             <mat-card-subtitle>{{result.release | date:'d MMM yyyy H:mm'}}
+                @if (result.duration) {
                 [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]
+                }
             </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="resultdescription">
@@ -76,7 +78,7 @@
         <mat-card-actions>
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
             <mat-card-footer class="subjects">
-                <app-subjects [subjects]="result.subjects!"></app-subjects>
+                <app-subjects [subjects]="result.subjects"></app-subjects>
             </mat-card-footer>
         </mat-card-actions>
     </mat-card>
