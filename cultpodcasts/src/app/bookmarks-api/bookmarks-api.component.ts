@@ -32,7 +32,7 @@ export enum sortMode {
   addDatedDesc
 }
 
-const take: number = 10;
+const pageSize = 10;
 
 @Component({
   selector: 'app-bookmarks-api',
@@ -107,8 +107,8 @@ export class BookmarksApiComponent {
   }
 
   async batch(first: boolean = false) {
-    const start = this.page * take;
-    const end = start + take;
+    const start = this.page * pageSize;
+    const end = start + pageSize;
     if (start >= this.bookmarks!.size) {
       if (this.bookmarks!.size == 0) {
         this.zeroBookmarks();
@@ -150,7 +150,7 @@ export class BookmarksApiComponent {
             }
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
-            if (first && this.bookmarks!.size > take) {
+            if (first && this.bookmarks!.size > pageSize) {
               this.scrollDisplatcher.scrolled().subscribe(async () => {
                 if (
                   this.bookmarks &&
