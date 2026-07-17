@@ -81,6 +81,7 @@ describe("subject-language-filter", () => {
       expect(languageLabel("es")).toBe("Spanish (Español)");
       expect(languageLabel("de")).toBe("German (Deutsch)");
       expect(languageLabel("fr")).toBe("French (Français)");
+      expect(languageLabel("ro")).toBe("Romanian (Română)");
     });
 
     it("shows the name once when English and local names match", () => {

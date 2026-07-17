@@ -1,8 +1,7 @@
 // Static language-name table baked in at build time (no runtime Intl.DisplayNames).
-// Codes mirror the backend curator allow-list (LanguagesPublisher.LanguageNames in
-// RedditPodcastPoster, 51 languages), which covers every non-English code observed
-// in live search facets. Names were generated once from Intl.DisplayNames at
-// development time and checked in as static data.
+// Codes mirror the published R2 curator languages object (GET /languages), which
+// is produced by LanguagesPublisher in RedditPodcastPoster. Names were generated
+// once from Intl.DisplayNames at development time and checked in as static data.
 
 export interface LanguageNames {
   english: string;
@@ -22,6 +21,7 @@ export const LANGUAGES: Readonly<Record<string, LanguageNames>> = {
   "zh": { english: "Chinese", local: "中文" },
   "ko": { english: "Korean", local: "한국어" },
   "hi": { english: "Hindi", local: "हिन्दी" },
+  "ro": { english: "Romanian", local: "Română" },
   "ru": { english: "Russian", local: "Русский" },
   "he": { english: "Hebrew", local: "עברית" },
   "ar": { english: "Arabic", local: "العربية" },
