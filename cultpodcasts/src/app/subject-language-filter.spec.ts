@@ -3,6 +3,7 @@ import {
   ENGLISH_LANGUAGE_VALUE,
   buildSubjectLangFilter,
   englishFacetCount,
+  languageLabel,
   selectionFromChipValues
 } from "./subject-language-filter";
 
@@ -28,5 +29,29 @@ describe("subject-language-filter", () => {
 
   it("synthesizes English count from omitted null facet buckets", () => {
     expect(englishFacetCount(100, [{ value: "es", count: 30 }, { value: "fr", count: 20 }])).toBe(50);
+  });
+
+  describe("languageLabel", () => {
+    it("shows English name with capitalized endonym when they differ", () => {
+      expect(languageLabel("es")).toBe("Spanish (Español)");
+      expect(languageLabel("de")).toBe("German (Deutsch)");
+      expect(languageLabel("fr")).toBe("French (Français)");
+    });
+
+    it("shows the name once when English name and endonym match", () => {
+      expect(languageLabel("en")).toBe("English");
+    });
+
+    it("handles region subtags", () => {
+      const label = languageLabel("pt-BR");
+      expect(label).toContain("Portuguese");
+      expect(label).toContain("Português");
+    });
+
+    it("falls back to the raw code for unknown or malformed codes", () => {
+      expect(languageLabel("zz")).toBe("zz");
+      expect(languageLabel("not a lang code!")).toBe("not a lang code!");
+      expect(languageLabel("")).toBe("");
+    });
   });
 });

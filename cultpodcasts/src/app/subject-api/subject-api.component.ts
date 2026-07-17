@@ -345,7 +345,7 @@ export class SubjectApiComponent {
   }
 
   languageDisplayName(code: string): string {
-    return languageLabel(code, undefined);
+    return languageLabel(code);
   }
 
   isScrolledToBottom(): boolean {

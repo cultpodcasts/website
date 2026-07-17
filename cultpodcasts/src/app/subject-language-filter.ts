@@ -67,11 +67,48 @@ export function englishFacetCount(
   return Math.max(0, subjectTotal - nonNull);
 }
 
-export function languageLabel(
-  code: string,
-  languages: Record<string, string> | undefined
-): string {
-  return languages?.[code] || code;
+export function languageLabel(code: string): string {
+  const trimmed = (code ?? "").trim();
+  if (!trimmed) {
+    return code;
+  }
+
+  const english = intlLanguageName(trimmed, "en");
+  const endonym = intlLanguageName(trimmed, trimmed);
+
+  if (english && endonym && english.toLowerCase() !== endonym.toLowerCase()) {
+    return `${english} (${endonym})`;
+  }
+  return english ?? endonym ?? trimmed;
+}
+
+function intlLanguageName(code: string, locale: string): string | undefined {
+  try {
+    const name = new Intl.DisplayNames([locale], { type: "language" }).of(code);
+    if (!name || name.toLowerCase() === code.toLowerCase()) {
+      return undefined;
+    }
+    return capitalizeFirst(name, locale);
+  } catch {
+    return undefined;
+  }
+}
+
+// Some endonyms come back lowercase (e.g. "español"); uppercase the first
+// character only when the locale produces a single cased letter, so caseless
+// scripts pass through untouched.
+function capitalizeFirst(name: string, locale: string): string {
+  const first = name.charAt(0);
+  let upper: string;
+  try {
+    upper = first.toLocaleUpperCase(locale);
+  } catch {
+    upper = first.toUpperCase();
+  }
+  if (upper === first || upper.length !== 1) {
+    return name;
+  }
+  return upper + name.slice(1);
 }
 
 function uniqueCodes(codes: string[]): string[] {
