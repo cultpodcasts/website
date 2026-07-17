@@ -32,23 +32,22 @@ describe("subject-language-filter", () => {
   });
 
   describe("languageLabel", () => {
-    it("shows English name with capitalized endonym when they differ", () => {
+    it("shows English name with local name when they differ", () => {
       expect(languageLabel("es")).toBe("Spanish (Español)");
       expect(languageLabel("de")).toBe("German (Deutsch)");
       expect(languageLabel("fr")).toBe("French (Français)");
     });
 
-    it("shows the name once when English name and endonym match", () => {
+    it("shows the name once when English and local names match", () => {
       expect(languageLabel("en")).toBe("English");
+      expect(languageLabel("af")).toBe("Afrikaans");
     });
 
-    it("handles region subtags", () => {
-      const label = languageLabel("pt-BR");
-      expect(label).toContain("Portuguese");
-      expect(label).toContain("Português");
+    it("resolves region subtags to the base language entry", () => {
+      expect(languageLabel("pt-BR")).toBe("Portuguese (Português)");
     });
 
-    it("falls back to the raw code for unknown or malformed codes", () => {
+    it("falls back to the raw code for unknown codes", () => {
       expect(languageLabel("zz")).toBe("zz");
       expect(languageLabel("not a lang code!")).toBe("not a lang code!");
       expect(languageLabel("")).toBe("");

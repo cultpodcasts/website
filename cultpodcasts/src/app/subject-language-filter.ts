@@ -1,3 +1,4 @@
+import { LANGUAGES } from "./languages";
 import { SearchResultFacet } from "./search-result-facet.interface";
 
 export const ENGLISH_LANGUAGE_VALUE = "__english__";
@@ -68,47 +69,16 @@ export function englishFacetCount(
 }
 
 export function languageLabel(code: string): string {
-  const trimmed = (code ?? "").trim();
-  if (!trimmed) {
+  const normalized = (code ?? "").trim().toLowerCase();
+  // Region subtags (e.g. pt-BR) fall back to the base language entry.
+  const names = LANGUAGES[normalized] ?? LANGUAGES[normalized.split("-")[0]];
+  if (!names) {
     return code;
   }
-
-  const english = intlLanguageName(trimmed, "en");
-  const endonym = intlLanguageName(trimmed, trimmed);
-
-  if (english && endonym && english.toLowerCase() !== endonym.toLowerCase()) {
-    return `${english} (${endonym})`;
+  if (names.english.toLowerCase() === names.local.toLowerCase()) {
+    return names.english;
   }
-  return english ?? endonym ?? trimmed;
-}
-
-function intlLanguageName(code: string, locale: string): string | undefined {
-  try {
-    const name = new Intl.DisplayNames([locale], { type: "language" }).of(code);
-    if (!name || name.toLowerCase() === code.toLowerCase()) {
-      return undefined;
-    }
-    return capitalizeFirst(name, locale);
-  } catch {
-    return undefined;
-  }
-}
-
-// Some endonyms come back lowercase (e.g. "español"); uppercase the first
-// character only when the locale produces a single cased letter, so caseless
-// scripts pass through untouched.
-function capitalizeFirst(name: string, locale: string): string {
-  const first = name.charAt(0);
-  let upper: string;
-  try {
-    upper = first.toLocaleUpperCase(locale);
-  } catch {
-    upper = first.toUpperCase();
-  }
-  if (upper === first || upper.length !== 1) {
-    return name;
-  }
-  return upper + name.slice(1);
+  return `${names.english} (${names.local})`;
 }
 
 function uniqueCodes(codes: string[]): string[] {
