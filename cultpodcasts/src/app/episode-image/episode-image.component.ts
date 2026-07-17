@@ -7,6 +7,7 @@ import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-
 import { SearchResult } from '../search-result.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { BBCServiceResolver } from '../service-resolver';
+import { appleUrl, episodeImageUrl, spotifyUrl, toUrl, youtubeUrl } from '../search-result-links';
 
 @Component({
   selector: 'app-episode-image',
@@ -36,7 +37,7 @@ export class EpisodeImageComponent {
   get imageUrl(): URL | undefined {
     let imageUrl: URL | undefined;
     if (this.searchResult) {
-      imageUrl = this.searchResult.image;
+      imageUrl = episodeImageUrl(this.searchResult);
     } else if (this.apiEpisode) {
       imageUrl = this.apiEpisode.image;
     } else if (this.discoveryResult) {
@@ -64,7 +65,7 @@ export class EpisodeImageComponent {
 
   get spotify(): URL | undefined {
     if (this.searchResult) {
-      return this.searchResult.spotify;
+      return spotifyUrl(this.searchResult);
     } else if (this.apiEpisode) {
       if (this.apiEpisode.urls.spotify) {
         if (typeof this.apiEpisode.urls.spotify !== 'string') {
@@ -81,7 +82,7 @@ export class EpisodeImageComponent {
 
   get applePodcasts(): URL | undefined {
     if (this.searchResult) {
-      return this.searchResult.apple;
+      return appleUrl(this.searchResult);
     } else if (this.apiEpisode) {
       if (this.apiEpisode.urls.apple) {
         if (typeof this.apiEpisode.urls.apple !== 'string') {
@@ -98,7 +99,7 @@ export class EpisodeImageComponent {
 
   get youtube(): URL | undefined {
     if (this.searchResult) {
-      return this.searchResult.youtube;
+      return youtubeUrl(this.searchResult);
     } else if (this.apiEpisode) {
       if (this.apiEpisode.urls.youtube) {
         if (typeof this.apiEpisode.urls.youtube !== 'string') {
@@ -115,7 +116,7 @@ export class EpisodeImageComponent {
 
   private get bbc(): URL | undefined {
     if (this.searchResult) {
-      return this.searchResult.bbc;
+      return toUrl(this.searchResult.bbc);
     } else if (this.apiEpisode) {
       if (this.apiEpisode.urls.bbc) {
         if (typeof this.apiEpisode.urls.bbc !== 'string') {
@@ -144,7 +145,7 @@ export class EpisodeImageComponent {
 
   get internetArchive(): URL | undefined {
     if (this.searchResult) {
-      return this.searchResult.internetArchive;
+      return toUrl(this.searchResult.internetArchive);
     } else if (this.apiEpisode) {
       if (this.apiEpisode.urls.internetArchive) {
         if (typeof this.apiEpisode.urls.internetArchive !== 'string') {

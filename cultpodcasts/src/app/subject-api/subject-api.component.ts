@@ -26,6 +26,16 @@ import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
+import {
+  ALL_LANGUAGES_VALUE,
+  ENGLISH_LANGUAGE_VALUE,
+  SubjectLanguageSelection,
+  buildSubjectLangFilter,
+  englishFacetCount,
+  languageLabel,
+  selectionFromChipValues
+} from '../subject-language-filter';
+import { SearchResultFacet } from '../search-result-facet.interface';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -73,7 +83,13 @@ export class SubjectApiComponent {
   authRoles: string[] = [];
   podcasts: string[] = [];
   podcastFilter: string = "";
-  langFilter = ` and lang eq null`;
+  languageSelection: SubjectLanguageSelection = { mode: "english" };
+  langFilter = buildSubjectLangFilter(this.languageSelection);
+  selectedLanguageValues: string[] = [ENGLISH_LANGUAGE_VALUE];
+  languageOptions: SearchResultFacet[] = [];
+  englishLanguageCount: number = 0;
+  readonly englishLanguageValue = ENGLISH_LANGUAGE_VALUE;
+  readonly allLanguagesValue = ALL_LANGUAGES_VALUE;
   isSignedIn: boolean = false;
   private route = inject(ActivatedRoute);
   facets: SearchResultsFacets = {};
@@ -155,53 +171,96 @@ export class SubjectApiComponent {
     } else if (this.searchState.sort == "date-desc") {
       sort = "release desc";
     }
-    this.oDataService.getEntitiesWithFacets<SearchResult>(
-      new URL("/search", environment.api).toString(),
-      {
-        search: this.searchState.query,
-        filter: this.searchState.filter + this.podcastFilter + this.langFilter,
-        searchMode: 'any',
-        queryType: 'simple',
-        count: true,
-        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
-        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
-        facets: ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
-        orderby: sort
-      }).subscribe(
+
+    const baseFilter = this.searchState.filter + this.podcastFilter;
+    const resultFilter = baseFilter + this.langFilter;
+    // Facets must omit the language filter so Azure returns non-null lang buckets.
+    const facetFilter = subsequent ? baseFilter : resultFilter;
+    const runResults = (facetsFromResponse?: SearchResultsFacets, facetCount?: number) => {
+      this.oDataService.getEntitiesWithFacets<SearchResult>(
+        new URL("/search", environment.api).toString(),
         {
-          next: data => {
-            if (data.entities.length && !this.results().length) {
-              this.scrollDisplatcher.scrolled().subscribe(async () => {
-                if (this.results().length < count &&
-                  this.isScrolledToBottom() && !this.isSubsequentLoading()) {
-                  this.isSubsequentLoading.set(true);
-                  this.searchState.page++;
-                  this.execSearch(false, false);
-                }
-              });
+          search: this.searchState.query,
+          filter: resultFilter,
+          searchMode: 'any',
+          queryType: 'simple',
+          count: true,
+          skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
+          top: this.infiniteScrollStrategy.getTake(this.searchState.page),
+          facets: subsequent
+            ? []
+            : ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
+          orderby: sort
+        }).subscribe(
+          {
+            next: data => {
+              if (data.entities.length && !this.results().length) {
+                this.scrollDisplatcher.scrolled().subscribe(async () => {
+                  if (this.results().length < count &&
+                    this.isScrolledToBottom() && !this.isSubsequentLoading()) {
+                    this.isSubsequentLoading.set(true);
+                    this.searchState.page++;
+                    this.execSearch(false, false);
+                  }
+                });
+              }
+              if (initial) {
+                this.results.set(data.entities);
+              } else {
+                this.results.update(v => v.concat(data.entities));
+              }
+              this.isSubsequentLoading.set(false);
+              if (subsequent && facetsFromResponse) {
+                this.facets = {
+                  podcastName: facetsFromResponse.podcastName,
+                  subjects: facetsFromResponse.subjects?.filter(x => !x.value.startsWith("_")),
+                  lang: facetsFromResponse.lang
+                };
+                this.languageOptions = this.facets.lang ?? [];
+                const subjectScopedTotal = facetCount ?? data.metadata.get("count");
+                this.englishLanguageCount = englishFacetCount(subjectScopedTotal, this.languageOptions);
+              }
+              const count = data.metadata.get("count");
+              this.count = count;
+              this.isLoading = false;
+            },
+            error: (e) => {
+              console.error(e);
+              this.resultsHeading = "Something went wrong. Please try again.";
+              this.isLoading = false;
             }
-            if (initial) {
-              this.results.set(data.entities);
-            } else {
-              this.results.update(v => v.concat(data.entities));
-            }
-            this.isSubsequentLoading.set(false);
-            if (subsequent) {
-              this.facets = {
-                podcastName: data.facets.podcastName,
-                subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
-              };
-            }
-            const count = data.metadata.get("count");
-            this.count = count;
-            this.isLoading = false;
-          },
+          });
+    };
+
+    if (subsequent) {
+      this.oDataService.getEntitiesWithFacets<SearchResult>(
+        new URL("/search", environment.api).toString(),
+        {
+          search: this.searchState.query,
+          filter: facetFilter,
+          searchMode: 'any',
+          queryType: 'simple',
+          count: true,
+          skip: 0,
+          top: 0,
+          facets: [
+            "podcastName,count:1000,sort:count",
+            "subjects,count:10,sort:count",
+            "lang,count:50,sort:count"
+          ],
+          orderby: sort
+        }).subscribe({
+          next: facetData => runResults(facetData.facets, facetData.metadata.get("count")),
           error: (e) => {
             console.error(e);
             this.resultsHeading = "Something went wrong. Please try again.";
             this.isLoading = false;
           }
         });
+      return;
+    }
+
+    runResults();
   }
 
   setSort(sort: string) {
@@ -269,6 +328,24 @@ export class SubjectApiComponent {
     }
     this.searchState.page = 1;
     this.execSearch(true, false);
+  }
+
+  languagesChange($event: MatChipListboxChange) {
+    const values: string[] = ($event.value as Array<string | { value: string }>)
+      .map(item => typeof item === "string" ? item : item.value);
+    if (values.includes(ALL_LANGUAGES_VALUE) && values.length > 1) {
+      this.selectedLanguageValues = [ALL_LANGUAGES_VALUE];
+    } else {
+      this.selectedLanguageValues = values;
+    }
+    this.languageSelection = selectionFromChipValues(this.selectedLanguageValues);
+    this.langFilter = buildSubjectLangFilter(this.languageSelection);
+    this.searchState.page = 1;
+    this.execSearch(true, false);
+  }
+
+  languageDisplayName(code: string): string {
+    return languageLabel(code, undefined);
   }
 
   isScrolledToBottom(): boolean {
