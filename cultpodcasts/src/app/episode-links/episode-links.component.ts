@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { BBCServiceResolver } from "../service-resolver";
+import { SearchResult } from "../search-result.interface";
+import { appleUrl, spotifyUrl, toUrl, youtubeUrl } from "../search-result-links";
 
 @Component({
   selector: 'app-episode-links',
@@ -20,41 +22,43 @@ import { BBCServiceResolver } from "../service-resolver";
 })
 export class EpisodeLinksComponent {
   @Input()
-  episode: HomepageEpisode | undefined;
+  episode: HomepageEpisode | SearchResult | undefined;
 
   get spotify(): URL | undefined {
-    return this.episode?.spotify;
+    return this.episode ? spotifyUrl(this.episode) : undefined;
   }
 
   get applePodcasts(): URL | undefined {
-    return this.episode?.apple;
+    return this.episode ? appleUrl(this.episode) : undefined;
   }
 
   get youtube(): URL | undefined {
-    return this.episode?.youtube;
+    return this.episode ? youtubeUrl(this.episode) : undefined;
   }
 
   get bbciPlayer(): URL | undefined {
-    if (this.episode?.bbc && BBCServiceResolver.isIplayer(this.episode.bbc)) {
-      return this.episode?.bbc;
+    const bbc = toUrl(this.episode?.bbc);
+    if (bbc && BBCServiceResolver.isIplayer(bbc)) {
+      return bbc;
     }
     return undefined;
   }
 
   get bbcSounds(): URL | undefined {
-    if (this.episode?.bbc && BBCServiceResolver.isSounds(this.episode.bbc)) {
-      return this.episode?.bbc;
+    const bbc = toUrl(this.episode?.bbc);
+    if (bbc && BBCServiceResolver.isSounds(bbc)) {
+      return bbc;
     }
     return undefined;
   }
 
   get internetArchive(): URL | undefined {
-    return this.episode?.internetArchive;
+    return toUrl(this.episode?.internetArchive);
   }
 
   constructor(private guidService: GuidService) { }
 
-  share(item: HomepageEpisode) {
+  share(item: HomepageEpisode | SearchResult) {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
 

@@ -1,0 +1,20 @@
+---
+description: Keep the baked-in website language lookup synchronized with the backend language allow-list
+globs: "cultpodcasts/src/app/languages.ts,cultpodcasts/src/app/subject-language-filter.ts,cultpodcasts/src/app/subject-language-filter.spec.ts,cultpodcasts/package.json,cultpodcasts/package-lock.json"
+alwaysApply: false
+---
+
+# Backend and website language-list sync
+
+The backend list in `RedditPodcastPoster/Class-Libraries/RedditPodcastPoster.ContentPublisher/LanguagesPublisher.cs` (`LanguageNames`) is authoritative. It is published by `Console-Apps/R2Publisher` to the R2 object `languages` and exposed to curators by `GET /languages`.
+
+The public website does **not** read that endpoint at runtime. `cultpodcasts/src/app/languages.ts` is compiled into the webapp and used by `cultpodcasts/src/app/subject-language-filter.ts`.
+
+Whenever `LanguageNames` adds, removes, or renames a language, all of the following are required:
+
+- [ ] Update `cultpodcasts/src/app/languages.ts` to match every backend language code, English name, and local/endonym name.
+- [ ] Keep `cultpodcasts/src/app/subject-language-filter.spec.ts` green.
+- [ ] Bump the webapp version in `cultpodcasts/package.json` and `cultpodcasts/package-lock.json`.
+- [ ] Merge the website change to the production branch and verify the resulting Cloudflare Pages Git-integration build deploys successfully.
+
+Do not treat publishing the R2 `languages` object as a website release. Until the table is updated and a new webapp build is deployed, new languages appear as raw ISO-code fallbacks on public subject pages.

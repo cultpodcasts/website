@@ -61,6 +61,39 @@
   </mat-expansion-panel>
   }
 
+  @if (showLanguageSelector) {
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Languages</mat-panel-title>
+      <mat-panel-description>
+        @if (languageSelection.mode === 'all') {
+        All languages
+        } @else if (languageSelection.mode === 'english') {
+        English
+        } @else {
+        {{selectedLanguageValues.length}} Selected
+        }
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <mat-chip-listbox multiple (change)="languagesChange($event)">
+      <mat-chip-option [value]="englishLanguageValue"
+        [selected]="selectedLanguageValues.indexOf(englishLanguageValue)>=0">
+        English ({{englishLanguageCount}})
+      </mat-chip-option>
+      @for (language of visibleLanguageOptions; track language.value) {
+      <mat-chip-option [value]="language.value"
+        [selected]="selectedLanguageValues.indexOf(language.value)>=0">
+        {{languageDisplayName(language.value)}} ({{language.count}})
+      </mat-chip-option>
+      }
+      <mat-chip-option [value]="allLanguagesValue"
+        [selected]="selectedLanguageValues.indexOf(allLanguagesValue)>=0">
+        All languages
+      </mat-chip-option>
+    </mat-chip-listbox>
+  </mat-expansion-panel>
+  }
+
   @for (result of results(); track result.id) {
   <mat-card class="result">
     <mat-card-header>
