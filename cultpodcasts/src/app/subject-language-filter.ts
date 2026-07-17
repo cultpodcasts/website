@@ -68,6 +68,36 @@ export function englishFacetCount(
   return Math.max(0, subjectTotal - nonNull);
 }
 
+export function hasNonEnglishFacets(langFacets: SearchResultFacet[] | undefined): boolean {
+  return (langFacets ?? []).some(facet => !!facet.value && (facet.count ?? 0) > 0);
+}
+
+// The Languages panel is pointless when a subject only has English/default
+// results — hide it unless other languages exist, or a non-default selection
+// is active (so the user can always switch back).
+export function shouldShowLanguageSelector(
+  langFacets: SearchResultFacet[] | undefined,
+  selection: SubjectLanguageSelection
+): boolean {
+  return hasNonEnglishFacets(langFacets) || selection.mode !== "english";
+}
+
+// Facet buckets plus any actively selected codes missing from the current
+// facets (count 0), so an active selection never disappears from the chips.
+export function displayedLanguageOptions(
+  langFacets: SearchResultFacet[] | undefined,
+  selection: SubjectLanguageSelection
+): SearchResultFacet[] {
+  const facets = (langFacets ?? []).filter(facet => !!facet.value && (facet.count ?? 0) > 0);
+  const selectedCodes = selection.mode === "codes" || selection.mode === "englishAndCodes"
+    ? selection.codes
+    : [];
+  const missing = uniqueCodes(selectedCodes)
+    .filter(code => !facets.some(facet => facet.value === code))
+    .map(value => ({ value, count: 0 }));
+  return [...facets, ...missing];
+}
+
 export function languageLabel(code: string): string {
   const normalized = (code ?? "").trim().toLowerCase();
   // Region subtags (e.g. pt-BR) fall back to the base language entry.

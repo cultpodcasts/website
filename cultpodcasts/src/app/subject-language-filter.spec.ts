@@ -2,9 +2,11 @@ import {
   ALL_LANGUAGES_VALUE,
   ENGLISH_LANGUAGE_VALUE,
   buildSubjectLangFilter,
+  displayedLanguageOptions,
   englishFacetCount,
   languageLabel,
-  selectionFromChipValues
+  selectionFromChipValues,
+  shouldShowLanguageSelector
 } from "./subject-language-filter";
 
 describe("subject-language-filter", () => {
@@ -29,6 +31,49 @@ describe("subject-language-filter", () => {
 
   it("synthesizes English count from omitted null facet buckets", () => {
     expect(englishFacetCount(100, [{ value: "es", count: 30 }, { value: "fr", count: 20 }])).toBe(50);
+  });
+
+  describe("shouldShowLanguageSelector", () => {
+    it("hides the selector when facets contain only English/default results", () => {
+      expect(shouldShowLanguageSelector(undefined, { mode: "english" })).toBe(false);
+      expect(shouldShowLanguageSelector([], { mode: "english" })).toBe(false);
+      expect(shouldShowLanguageSelector([{ value: "es", count: 0 }], { mode: "english" })).toBe(false);
+    });
+
+    it("shows the selector when non-English buckets have counts", () => {
+      expect(shouldShowLanguageSelector([{ value: "es", count: 3 }], { mode: "english" })).toBe(true);
+      expect(shouldShowLanguageSelector(
+        [{ value: "es", count: 3 }, { value: "fr", count: 1 }],
+        { mode: "english" })).toBe(true);
+    });
+
+    it("keeps the selector visible while a non-default selection is active", () => {
+      expect(shouldShowLanguageSelector([], { mode: "codes", codes: ["es"] })).toBe(true);
+      expect(shouldShowLanguageSelector(undefined, { mode: "englishAndCodes", codes: ["es"] })).toBe(true);
+      expect(shouldShowLanguageSelector([], { mode: "all" })).toBe(true);
+    });
+  });
+
+  describe("displayedLanguageOptions", () => {
+    it("passes through facet buckets with counts", () => {
+      expect(displayedLanguageOptions([{ value: "es", count: 3 }], { mode: "english" }))
+        .toEqual([{ value: "es", count: 3 }]);
+    });
+
+    it("drops zero-count buckets", () => {
+      expect(displayedLanguageOptions(
+        [{ value: "es", count: 3 }, { value: "fr", count: 0 }],
+        { mode: "english" })).toEqual([{ value: "es", count: 3 }]);
+    });
+
+    it("keeps actively selected codes visible when missing from facets", () => {
+      expect(displayedLanguageOptions([], { mode: "codes", codes: ["es"] }))
+        .toEqual([{ value: "es", count: 0 }]);
+      expect(displayedLanguageOptions(
+        [{ value: "fr", count: 2 }],
+        { mode: "englishAndCodes", codes: ["es"] }))
+        .toEqual([{ value: "fr", count: 2 }, { value: "es", count: 0 }]);
+    });
   });
 
   describe("languageLabel", () => {

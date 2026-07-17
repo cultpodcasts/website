@@ -31,9 +31,11 @@ import {
   ENGLISH_LANGUAGE_VALUE,
   SubjectLanguageSelection,
   buildSubjectLangFilter,
+  displayedLanguageOptions,
   englishFacetCount,
   languageLabel,
-  selectionFromChipValues
+  selectionFromChipValues,
+  shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
 
@@ -346,6 +348,14 @@ export class SubjectApiComponent {
 
   languageDisplayName(code: string): string {
     return languageLabel(code);
+  }
+
+  get showLanguageSelector(): boolean {
+    return shouldShowLanguageSelector(this.languageOptions, this.languageSelection);
+  }
+
+  get visibleLanguageOptions(): SearchResultFacet[] {
+    return displayedLanguageOptions(this.languageOptions, this.languageSelection);
   }
 
   isScrolledToBottom(): boolean {
