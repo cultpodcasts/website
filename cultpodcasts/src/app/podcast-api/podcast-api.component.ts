@@ -38,6 +38,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
 import { SearchIndexerState } from '../search-indexer-state.interface';
+import { SearchDescriptionPipe } from '../search-description.pipe';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -61,7 +62,8 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    SearchDescriptionPipe
   ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass'

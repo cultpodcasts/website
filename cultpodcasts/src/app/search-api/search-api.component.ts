@@ -23,6 +23,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
+import { SearchDescriptionPipe } from '../search-description.pipe';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -48,7 +49,8 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    SearchDescriptionPipe
   ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass'
