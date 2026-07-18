@@ -3,25 +3,17 @@
 
     <div matSnackBarActions>
         @if (showManualTweet){
-        <button class="action" mat-button matsnackbaraction
+        <button matButton matSnackBarAction
             class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
-            mat-ripple-loader-class-name="mat-mdc-button-ripple" (click)="manualTweet()">
-            <span class="mat-mdc-button-persistent-ripple mdc-button__ripple"></span>
-            <span class="mdc-button__label"> Manual Tweet </span>
-            <span class="mat-mdc-focus-indicator"></span>
-            <span class="mat-mdc-button-touch-target"></span>
-            <span class="mat-ripple mat-mdc-button-ripple"></span>
+            (click)="manualTweet()">
+            Manual Tweet
         </button>
         }
 
-        <button class="action" mat-button matsnackbaraction
+        <button matButton matSnackBarAction
             class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
-            mat-ripple-loader-class-name="mat-mdc-button-ripple" (click)="action()">
-            <span class="mat-mdc-button-persistent-ripple mdc-button__ripple"></span>
-            <span class="mdc-button__label"> Ok </span>
-            <span class="mat-mdc-focus-indicator"></span>
-            <span class="mat-mdc-button-touch-target"></span>
-            <span class="mat-ripple mat-mdc-button-ripple"></span>
+            (click)="action()">
+            Ok
         </button>
     </div>
 </div>
