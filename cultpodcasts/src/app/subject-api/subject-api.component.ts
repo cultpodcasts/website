@@ -38,6 +38,7 @@ import {
   shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
+import { SearchDescriptionPipe } from '../search-description.pipe';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -61,7 +62,8 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    SearchDescriptionPipe
   ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass'

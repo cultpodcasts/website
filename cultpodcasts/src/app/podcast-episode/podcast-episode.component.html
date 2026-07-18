@@ -31,7 +31,7 @@
     </mat-card-header>
     <mat-card-content class="resultdescription">
       <app-episode-image [searchResult]="episode" [linksOverlay]="true"></app-episode-image>
-      <p>{{episode.episodeDescription}}</p>
+      <p>{{episode.episodeDescription | searchDescription}}</p>
     </mat-card-content>
     <mat-card-actions>
       <app-episode-links [episode]="episode"></app-episode-links>

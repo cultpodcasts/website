@@ -20,6 +20,7 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
+import { SearchDescriptionPipe } from '../search-description.pipe';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -33,7 +34,8 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    SearchDescriptionPipe
   ],
   templateUrl: './podcast-episode.component.html',
   styleUrl: './podcast-episode.component.sass'
