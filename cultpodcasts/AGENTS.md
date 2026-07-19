@@ -35,8 +35,4 @@ Auth0 requires hostname **`local.cultpodcasts.com`** (hosts → `127.0.0.1`). De
 | `npm run start` | `https://local.cultpodcasts.com:8788` (builds with `local` env) |
 | `npm run dev` | `https://local.cultpodcasts.com:4200` |
 
-Build: `ng build` (defaults to **production** via `fileReplacements` → `environment.production.ts`). Local Pages: `npm run start` (configuration `local`).
-
-**Production Pages deploy:** `npm run deploy` → `ng build --configuration production` + `process` + `wrangler pages deploy`. From a feature branch you must pass `--branch main` or the upload goes to Preview only. Do **not** deploy a `local`/`npm start` dist — `environment.ts` points at `127.0.0.1`. Mobile uses `env=production ./build.sh` (copies `environment.production.ts`).
-
-Mobile/TWA notes: `MOBILE_BUILDS.md`.
+Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
