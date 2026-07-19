@@ -1,4 +1,12 @@
 #status
+    .social,
+    .flags
+        display: flex
+        flex-wrap: wrap
+        align-items: center
+        margin: 0
+    .flags
+        margin-top: 8px
     mat-icon
         height: 30px
         width: 30px
@@ -6,6 +14,7 @@
     mat-icon.not
         filter: opacity(0.5)
     .flag-toggle
+        position: relative
         width: 30px
         height: 30px
         line-height: 30px
@@ -13,3 +22,12 @@
         padding: 0
         mat-icon
             margin-right: 0
+        mat-spinner
+            position: absolute
+            top: 5px
+            left: 5px
+            margin: 0
+    .flag-toggle.loading
+        opacity: 1
+        mat-icon
+            opacity: 0.55

@@ -98,7 +98,9 @@
         <mat-card-content class="resultdescription">
             <app-episode-image [apiEpisode]="result"></app-episode-image>
             <p>{{result.displayDescription}}</p>
-            <app-episode-status [episode]="result" [editable]="true" [disabled]="isUpdating(result.id)"
+            <app-episode-status [episode]="result" [editable]="true"
+                [disabled]="isUpdating(result.id) && !isLoadingIgnored(result.id) && !isLoadingRemoved(result.id)"
+                [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
                 (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"></app-episode-status>
         </mat-card-content>
         <mat-card-actions>

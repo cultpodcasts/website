@@ -55,12 +55,12 @@ export class EpisodeUpdateService {
     return this.applyAndRefresh(episode, { guests: [...guests, guestName] });
   }
 
-  async toggleIgnored(episode: ApiEpisode): Promise<ApiEpisode> {
-    return this.applyAndRefresh(episode, { ignored: !episode.ignored });
+  async toggleIgnored(episode: ApiEpisode, ignored?: boolean): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { ignored: ignored ?? !episode.ignored });
   }
 
-  async toggleRemoved(episode: ApiEpisode): Promise<ApiEpisode> {
-    return this.applyAndRefresh(episode, { removed: !episode.removed });
+  async toggleRemoved(episode: ApiEpisode, removed?: boolean): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { removed: removed ?? !episode.removed });
   }
 
   getGuestNames(episode: ApiEpisode): string[] {

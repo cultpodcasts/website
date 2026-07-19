@@ -2,12 +2,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ApiEpisode } from '../api-episode.interface';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-episode-status',
   imports: [
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './episode-status.component.html',
   styleUrl: './episode-status.component.sass'
@@ -20,6 +22,12 @@ export class EpisodeStatusComponent {
 
   @Input()
   disabled: boolean = false;
+
+  @Input()
+  loadingIgnored: boolean = false;
+
+  @Input()
+  loadingRemoved: boolean = false;
 
   @Output()
   toggleIgnored = new EventEmitter<void>();

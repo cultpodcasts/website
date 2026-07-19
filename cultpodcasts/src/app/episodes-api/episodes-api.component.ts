@@ -61,6 +61,7 @@ export class EpisodesApiComponent {
   sortDirection: string = sortParamDateDesc;
   authRoles: string[] = [];
   updatingEpisodeId: string | null = null;
+  updatingFlag: 'ignored' | 'removed' | null = null;
 
   constructor(
     private router: Router,
@@ -171,6 +172,14 @@ export class EpisodesApiComponent {
     return this.updatingEpisodeId === episodeId;
   }
 
+  isLoadingIgnored(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'ignored';
+  }
+
+  isLoadingRemoved(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
@@ -180,19 +189,26 @@ export class EpisodesApiComponent {
     }
   }
 
-  private async runEpisodeUpdate(episode: ApiEpisode, action: () => Promise<ApiEpisode>) {
+  private async runEpisodeUpdate(
+    episode: ApiEpisode,
+    action: () => Promise<ApiEpisode>,
+    flag: 'ignored' | 'removed' | null = null
+  ) {
     if (this.isUpdating(episode.id)) {
       return;
     }
     this.updatingEpisodeId = episode.id;
+    this.updatingFlag = flag;
     try {
       const updated = await action();
       this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
     } catch (e) {
       console.error(e);
       this.snackBar.open("Failed to update episode", "Ok", { duration: 5000 });
+      throw e;
     } finally {
       this.updatingEpisodeId = null;
+      this.updatingFlag = null;
     }
   }
 
@@ -209,11 +225,35 @@ export class EpisodesApiComponent {
   }
 
   toggleIgnored(episode: ApiEpisode) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleIgnored(episode));
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.ignored;
+    const next = !previous;
+    episode.ignored = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => this.episodeUpdate.toggleIgnored(episode, next),
+      'ignored'
+    ).catch(() => {
+      episode.ignored = previous;
+    });
   }
 
   toggleRemoved(episode: ApiEpisode) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleRemoved(episode));
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.removed;
+    const next = !previous;
+    episode.removed = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => this.episodeUpdate.toggleRemoved(episode, next),
+      'removed'
+    ).catch(() => {
+      episode.removed = previous;
+    });
   }
 
   post(podcastId: string, episodeId: string) {
