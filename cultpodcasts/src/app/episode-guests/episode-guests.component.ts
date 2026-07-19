@@ -33,15 +33,11 @@ export class EpisodeGuestsComponent {
   addSuggestedGuest = new EventEmitter<string>();
 
   personLabel(person: Person): string {
-    const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
-    return handles ? `${person.name} (${handles})` : person.name;
+    return person.name;
   }
 
   suggestionLabel(suggestion: PersonMatch): string {
-    const term = suggestion.matchResults[0]?.term;
-    return term
-      ? `${this.personLabel(suggestion.person)} (${term})`
-      : this.personLabel(suggestion.person);
+    return suggestion.person.name;
   }
 
   onRemoveGuest(guestName: string, $event: Event) {
