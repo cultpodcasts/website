@@ -39,13 +39,13 @@
             }
         </span>
         @if (data.response.episodeDetails.subjects.length > 0) {
-        <span title="Subjects: {{data.response.episodeDetails.subjects.join(', ')}}">
-            {{data.response.episodeDetails.subjects.length}}
-            @if(data.response.episodeDetails.subjects.length>1){
-            subjects
-            } @else {
-            subject
-            }
+        <span class="enrichment-count" title="Subjects: {{data.response.episodeDetails.subjects.join(', ')}}">
+            <mat-icon aria-hidden="true">category</mat-icon>{{data.response.episodeDetails.subjects.length}}
+        </span>
+        }
+        @if ((data.response.episodeDetails.people?.length ?? 0) > 0) {
+        <span class="enrichment-count" title="People: {{data.response.episodeDetails.people!.join(', ')}}">
+            <mat-icon aria-hidden="true">people</mat-icon>{{data.response.episodeDetails.people!.length}}
         </span>
         }
     </span>
