@@ -250,8 +250,8 @@ mat-card:not(.selected) {
 }
 
 mat-card-actions {
-    a[mat-icon-button]:not(.remove-btn),
-    button[mat-icon-button]:not(.remove-btn) {
+    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
         margin-right: 25px;
         transform: scale(1.2);
     }
@@ -260,8 +260,8 @@ mat-card-actions {
 @media screen and (max-width: 600px) {
     mat-card-actions {
 
-        a[mat-icon-button]:not(.remove-btn),
-        button[mat-icon-button]:not(.remove-btn) {
+        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
             margin-right: 18px;
         }
     }
@@ -276,8 +276,8 @@ mat-card-actions {
 @media screen and (max-width: 400px) {
     mat-card-actions {
 
-        a[mat-icon-button]:not(.remove-btn),
-        button[mat-icon-button]:not(.remove-btn) {
+        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
             margin-right: 12px;
         }
     }

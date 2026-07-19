@@ -20,15 +20,19 @@
 <div class="guest-group guest-group-suggested">
     <mat-icon aria-hidden="true" class="group-icon">person_search</mat-icon>
     @for (suggestion of guestSuggestions; track suggestion.person.id) {
-    <div class="guest guest-suggested">
+    <div class="guest guest-suggested" [class.loading]="isGuestLoading(suggestion.person.name)">
         <span>{{suggestionLabel(suggestion)}}</span>
         @if (editable) {
-        <button mat-button type="button" class="add-btn"
+        <button mat-icon-button type="button" class="add-btn"
             [disabled]="disabled || isGuestLoading(suggestion.person.name)"
             [attr.aria-busy]="isGuestLoading(suggestion.person.name)"
+            [attr.aria-label]="'Add guest ' + suggestion.person.name"
             (click)="onAddSuggestedGuest(suggestion.person.name, $event)">
-            Add
+            <mat-icon>add</mat-icon>
         </button>
+        }
+        @if (isGuestLoading(suggestion.person.name)) {
+        <mat-spinner diameter="16"></mat-spinner>
         }
     </div>
     }
