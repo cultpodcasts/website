@@ -52,18 +52,24 @@ mat-card-actions.review-actions {
 }
 
 // Public result cards (every non-editable mat-card-actions: homepage, search,
-// podcast, subject, episode, bookmarks, discovery). Subjects get their own
-// full-width row ordered ABOVE the podcast-service buttons — i.e. directly under
-// the description — with subject chips stacked one-per-line (app-subjects :host
-// is a right-aligned flex column, matching editable review minus the remove X).
+// podcast, subject, episode, bookmarks, discovery). Service buttons sit on the
+// LEFT and the stacked subjects list on the RIGHT of the same row, top-aligned
+// so the first subject shares the buttons' top Y. Subjects stay one-per-line
+// (app-subjects :host is a right-aligned flex column, matching editable review
+// minus the remove X).
 mat-card-actions:not(.review-actions) {
-    flex-wrap: wrap;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+
+    app-episode-links {
+        flex: 0 0 auto;
+    }
 
     mat-card-footer.subjects {
-        order: -1;
-        flex-basis: 100%;
-        width: 100%;
-        margin-bottom: 6px;
+        flex: 1 1 auto;
+        width: auto;
+        margin: 0;
     }
 }
 
