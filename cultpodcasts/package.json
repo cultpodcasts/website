@@ -4,14 +4,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng build --configuration local && npm run process && wrangler pages dev dist/cloudflare --compatibility-date=2024-09-02 --local-protocol https --https-cert-path .cert/dev-cert.pem --https-key-path .cert/dev-key.pem --port 8788 --kv kv --r2 content",
-    "build": "ng build --configuration",
+    "build": "ng build --configuration production",
     "build:staging": "ng build --configuration staging",
     "build:local": "ng build --configuration local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
-    "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",
+    "deploy": "node -e \"require('fs').copyFileSync('src/environments/environment.production.ts','src/environments/environment.ts')\" && npm run build && npm run process && wrangler pages deploy dist/cloudflare",
     "dev": "ng serve --configuration development"
   },
   "private": true,
