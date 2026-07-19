@@ -3,11 +3,24 @@
     <mat-icon svgIcon="reddit" [class.not]="!_episode.posted"></mat-icon>
     <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted"></mat-icon>
     <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky"></mat-icon>
+    @if (editable) {
+    <button mat-icon-button type="button" class="flag-toggle" [disabled]="disabled"
+        (click)="onToggleIgnored($event)" [attr.aria-pressed]="_episode.ignored"
+        [attr.aria-label]="_episode.ignored ? 'Clear ignored' : 'Mark ignored'">
+        <mat-icon svgIcon="visible" [class.not]="!_episode.ignored" title="ignored"></mat-icon>
+    </button>
+    <button mat-icon-button type="button" class="flag-toggle" [disabled]="disabled"
+        (click)="onToggleRemoved($event)" [attr.aria-pressed]="_episode.removed"
+        [attr.aria-label]="_episode.removed ? 'Clear removed' : 'Mark removed'">
+        <mat-icon svgIcon="removed" [class.not]="!_episode.removed" title="removed"></mat-icon>
+    </button>
+    } @else {
     @if (_episode.ignored) {
     <mat-icon svgIcon="visible" title="ignored"></mat-icon>
     }
     @if (_episode.removed) {
     <mat-icon svgIcon="removed" title="removed"></mat-icon>
+    }
     }
 </p>
 }
