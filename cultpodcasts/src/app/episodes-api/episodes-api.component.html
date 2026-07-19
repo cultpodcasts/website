@@ -85,6 +85,12 @@
             <mat-card-footer class="subjects">
                 <app-subjects [subjects]="result.subjects!" [showHidden]="true"></app-subjects>
             </mat-card-footer>
+            @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+            <mat-card-footer class="guests">
+                <app-episode-guests [guestPeople]="result.guestPeople"
+                    [guestSuggestions]="result.guestSuggestions"></app-episode-guests>
+            </mat-card-footer>
+            }
         </mat-card-actions>
     </mat-card>
     }

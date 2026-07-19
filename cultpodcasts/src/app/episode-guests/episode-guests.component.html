@@ -1,0 +1,20 @@
+@if ((guestPeople?.length ?? 0) > 0) {
+<div class="guest-group">
+    <mat-icon aria-hidden="true" class="group-icon">people</mat-icon>
+    @for (person of guestPeople; track person.id) {
+    <div class="guest">
+        <span>{{personLabel(person)}}</span>
+    </div>
+    }
+</div>
+}
+@if ((guestSuggestions?.length ?? 0) > 0) {
+<div class="guest-group guest-group-suggested">
+    <mat-icon aria-hidden="true" class="group-icon">person_search</mat-icon>
+    @for (suggestion of guestSuggestions; track suggestion.person.id) {
+    <div class="guest guest-suggested">
+        <span>{{suggestionLabel(suggestion)}}</span>
+    </div>
+    }
+</div>
+}
