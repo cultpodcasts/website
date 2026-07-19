@@ -38,26 +38,14 @@ p {
 
 mat-card-footer.subjects,
 mat-card-footer.guests {
-    flex: 1 1 100%;
     width: 100%;
-    max-width: 100%;
-    margin-left: 0;
     text-align: right;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    box-sizing: border-box;
-}
-
-mat-card-actions {
-    flex-wrap: wrap;
-    align-items: flex-start;
 }
 
 // Review (/episodes) + outgoing cards only. margin-top separates the podcast-
 // service icons (YouTube etc.) from the Twitter/Bluesky row in the status
-// cluster above. The subjects/people footer-column layout (footer wraps to the
-// RIGHT of the icon column) lives in the two components' scoped sass.
+// cluster above. The two-column actions layout (icons left, subjects/people
+// right) and its flex-wrap live in the two components' scoped sass.
 mat-card-actions.review-actions {
     align-items: flex-start;
     margin-top: 14px;
