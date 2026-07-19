@@ -1,0 +1,32 @@
+@if ((guestPeople?.length ?? 0) > 0) {
+<div class="guest-group">
+    <mat-icon aria-hidden="true" class="group-icon">people</mat-icon>
+    @for (person of guestPeople; track person.id) {
+    <div class="guest">
+        <span>{{personLabel(person)}}</span>
+        @if (editable) {
+        <button mat-icon-button type="button" class="remove-btn" [disabled]="disabled"
+            (click)="onRemoveGuest(person.name, $event)" [attr.aria-label]="'Remove guest ' + person.name">
+            <mat-icon>close</mat-icon>
+        </button>
+        }
+    </div>
+    }
+</div>
+}
+@if ((guestSuggestions?.length ?? 0) > 0) {
+<div class="guest-group guest-group-suggested">
+    <mat-icon aria-hidden="true" class="group-icon">person_search</mat-icon>
+    @for (suggestion of guestSuggestions; track suggestion.person.id) {
+    <div class="guest guest-suggested">
+        <span>{{suggestionLabel(suggestion)}}</span>
+        @if (editable) {
+        <button mat-button type="button" class="add-btn" [disabled]="disabled"
+            (click)="onAddSuggestedGuest(suggestion.person.name, $event)">
+            Add
+        </button>
+        }
+    </div>
+    }
+</div>
+}

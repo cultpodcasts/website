@@ -11,6 +11,13 @@
         </p>
     </ng-container>
     }
+    @if (!isLoading && removedEpisodesNotice) {
+    <ng-container>
+        <p id="removed-episodes-notice">
+            {{ removedEpisodesMessage }}
+        </p>
+    </ng-container>
+    }
     <section id="resultsheading">
         <h2>Bookmarks</h2>
         @if (!isLoading && !error) {

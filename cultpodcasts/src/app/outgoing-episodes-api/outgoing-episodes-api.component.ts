@@ -28,6 +28,8 @@ import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
+import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
+import { EpisodeUpdateService } from '../episode-update.service';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -49,7 +51,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodeStatusComponent,
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
-    SubjectsComponent
+    SubjectsComponent,
+    EpisodeGuestsComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass'
@@ -69,6 +72,7 @@ export class OutgoingEpisodesApiComponent {
   blueskyPosted: boolean | undefined = true;
   token: string = "";
   authRoles: string[] = [];
+  updatingEpisodeId: string | null = null;
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -76,7 +80,8 @@ export class OutgoingEpisodesApiComponent {
     private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private siteService: SiteService
+    private siteService: SiteService,
+    private episodeUpdate: EpisodeUpdateService
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
@@ -143,12 +148,62 @@ export class OutgoingEpisodesApiComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result) {
         if (result.updated) {
-          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+          await this.refreshEpisode(episodeId);
         } else if (result.noChange) {
-          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+          this.snackBar.open("No change", "Ok", { duration: 3000 });
         }
       }
     });
+  }
+
+  isUpdating(episodeId: string): boolean {
+    return this.updatingEpisodeId === episodeId;
+  }
+
+  async refreshEpisode(episodeId: string) {
+    try {
+      const updated = await this.episodeUpdate.fetchEpisode(episodeId);
+      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private async runEpisodeUpdate(episode: ApiEpisode, action: () => Promise<ApiEpisode>) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    this.updatingEpisodeId = episode.id;
+    try {
+      const updated = await action();
+      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+    } catch (e) {
+      console.error(e);
+      this.snackBar.open("Failed to update episode", "Ok", { duration: 5000 });
+    } finally {
+      this.updatingEpisodeId = null;
+    }
+  }
+
+  removeSubject(episode: ApiEpisode, subject: string) {
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.removeSubject(episode, subject));
+  }
+
+  removeGuest(episode: ApiEpisode, guestName: string) {
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.removeGuest(episode, guestName));
+  }
+
+  addSuggestedGuest(episode: ApiEpisode, guestName: string) {
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.addGuest(episode, guestName));
+  }
+
+  toggleIgnored(episode: ApiEpisode) {
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleIgnored(episode));
+  }
+
+  toggleRemoved(episode: ApiEpisode) {
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleRemoved(episode));
   }
 
   post(podcastId: string, episodeId: string) {

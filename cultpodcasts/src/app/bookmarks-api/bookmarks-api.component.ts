@@ -3,7 +3,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
 import { DatePipe } from '@angular/common';
@@ -34,6 +34,15 @@ export enum sortMode {
 
 const pageSize = 10;
 
+const removedEpisodesMessage =
+  'Cultpodcasts.com has removed episodes it finds unsuitable.';
+
+interface BookmarkEpisodeLoadResult {
+  episode: ApiEpisode | null;
+  notFound: boolean;
+  failed: boolean;
+}
+
 @Component({
   selector: 'app-bookmarks-api',
   imports: [
@@ -58,6 +67,8 @@ export class BookmarksApiComponent {
   protected isLoading: boolean = true;
   protected isSubsequentLoading = signal<boolean>(false);
   protected error: boolean = false;
+  protected removedEpisodesNotice: boolean = false;
+  protected readonly removedEpisodesMessage = removedEpisodesMessage;
   protected sortMode = sortMode;
   protected authRoles: string[] = [];
   protected isSignedIn: boolean = false;
@@ -90,6 +101,7 @@ export class BookmarksApiComponent {
 
   async populatePage() {
     this.error = false;
+    this.removedEpisodesNotice = false;
     this.isLoading = true;
     this.episodes.set([]);
     this.page = 0;
@@ -129,7 +141,7 @@ export class BookmarksApiComponent {
       })).then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeResponses: Observable<ApiEpisode | null>[] = [];
+        const episodeResponses: Observable<BookmarkEpisodeLoadResult>[] = [];
         let orderedBookmarks = Array.from(this.bookmarks!);
         if (this.sortDirection == sortMode.addDatedDesc) {
           orderedBookmarks = orderedBookmarks.reverse();
@@ -142,10 +154,19 @@ export class BookmarksApiComponent {
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            const loaded = episodes.filter((x): x is ApiEpisode => x != null);
+            const loaded = episodes
+              .filter((x): x is BookmarkEpisodeLoadResult & { episode: ApiEpisode } => x.episode != null)
+              .map(x => x.episode);
+            const hasRemoved = episodes.some(x => x.notFound);
+            const hasFailure = episodes.some(x => x.failed);
+
+            if (hasRemoved) {
+              this.removedEpisodesNotice = true;
+            }
             this.episodes.update(v => v.concat(loaded));
-            // Only treat as a page error when this batch produced nothing.
-            if (loaded.length === 0 && items.length > 0) {
+            if (hasFailure) {
+              this.error = true;
+            } else if (loaded.length === 0 && items.length > 0 && !hasRemoved) {
               this.error = true;
             }
             this.isLoading = false;
@@ -192,10 +213,17 @@ export class BookmarksApiComponent {
   handleRequest() {
     return (observable: Observable<ApiEpisode>) => {
       return observable.pipe(
-        map((result) => result),
-        catchError((err) => {
+        map((result): BookmarkEpisodeLoadResult => ({
+          episode: result,
+          notFound: false,
+          failed: false
+        })),
+        catchError((err: HttpErrorResponse): Observable<BookmarkEpisodeLoadResult> => {
+          if (err.status === 404) {
+            return of({ episode: null, notFound: true, failed: false });
+          }
           console.error(err);
-          return of(null);
+          return of({ episode: null, notFound: false, failed: true });
         })
       );
     };
@@ -234,6 +262,7 @@ export class BookmarksApiComponent {
 
   async reset() {
     this.error = false;
+    this.removedEpisodesNotice = false;
     this.isLoading = true;
     this.episodes.set([]);
     this.page = 0;
