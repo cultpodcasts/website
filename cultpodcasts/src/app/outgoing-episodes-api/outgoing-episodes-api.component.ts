@@ -30,6 +30,8 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
 import { EpisodeUpdateService } from '../episode-update.service';
+import { FeatureSwitch } from '../feature-switch.enum';
+import { FeatureSwtichService } from '../feature-switch-service';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -60,6 +62,7 @@ const daysKey: string = "pref.outgoing-episodes.days";
 export class OutgoingEpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
+  protected FeatureSwitch = FeatureSwitch;
 
   episodes: ApiEpisode[] | undefined;
   error: boolean = false;
@@ -73,7 +76,7 @@ export class OutgoingEpisodesApiComponent {
   token: string = "";
   authRoles: string[] = [];
   updatingEpisodeId: string | null = null;
-  updatingFlag: 'ignored' | 'removed' | null = null;
+  updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -82,7 +85,8 @@ export class OutgoingEpisodesApiComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService,
-    private episodeUpdate: EpisodeUpdateService
+    private episodeUpdate: EpisodeUpdateService,
+    protected featureSwtichService: FeatureSwtichService
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
@@ -170,6 +174,21 @@ export class OutgoingEpisodesApiComponent {
     return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
   }
 
+  isLoadingTweeted(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'tweeted';
+  }
+
+  isLoadingBluesky(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'bluesky';
+  }
+
+  isStatusActionLoading(episodeId: string): boolean {
+    return this.isLoadingIgnored(episodeId)
+      || this.isLoadingRemoved(episodeId)
+      || this.isLoadingTweeted(episodeId)
+      || this.isLoadingBluesky(episodeId);
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
@@ -182,7 +201,7 @@ export class OutgoingEpisodesApiComponent {
   private async runEpisodeUpdate(
     episode: ApiEpisode,
     action: () => Promise<ApiEpisode>,
-    flag: 'ignored' | 'removed' | null = null
+    flag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null
   ) {
     if (this.isUpdating(episode.id)) {
       return;
@@ -256,6 +275,38 @@ export class OutgoingEpisodesApiComponent {
     });
   }
 
+  toggleTweeted(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.tweeted;
+    const next = !previous;
+    episode.tweeted = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => next ? this.episodeUpdate.markTweeted(episode) : this.episodeUpdate.untweet(episode),
+      'tweeted'
+    ).catch(() => {
+      episode.tweeted = previous;
+    });
+  }
+
+  toggleBluesky(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.bluesky == true;
+    const next = !previous;
+    episode.bluesky = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => next ? this.episodeUpdate.postBluesky(episode) : this.episodeUpdate.unpostBluesky(episode),
+      'bluesky'
+    ).catch(() => {
+      episode.bluesky = previous;
+    });
+  }
+
   post(podcastId: string, episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
@@ -292,7 +343,7 @@ export class OutgoingEpisodesApiComponent {
       url.searchParams.append("days", this.days.toString());
     if (this.tweeted)
       url.searchParams.append("tweeted", this.tweeted.toString());
-    if (this.posted)
+    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) && this.posted)
       url.searchParams.append("posted", this.posted.toString());
     if (this.blueskyPosted)
       url.searchParams.append("blueskyPosted", this.blueskyPosted.toString())

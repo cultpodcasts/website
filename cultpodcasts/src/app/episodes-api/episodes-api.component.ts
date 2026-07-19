@@ -61,7 +61,7 @@ export class EpisodesApiComponent {
   sortDirection: string = sortParamDateDesc;
   authRoles: string[] = [];
   updatingEpisodeId: string | null = null;
-  updatingFlag: 'ignored' | 'removed' | null = null;
+  updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
 
   constructor(
     private router: Router,
@@ -180,6 +180,21 @@ export class EpisodesApiComponent {
     return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
   }
 
+  isLoadingTweeted(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'tweeted';
+  }
+
+  isLoadingBluesky(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'bluesky';
+  }
+
+  isStatusActionLoading(episodeId: string): boolean {
+    return this.isLoadingIgnored(episodeId)
+      || this.isLoadingRemoved(episodeId)
+      || this.isLoadingTweeted(episodeId)
+      || this.isLoadingBluesky(episodeId);
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
@@ -192,7 +207,7 @@ export class EpisodesApiComponent {
   private async runEpisodeUpdate(
     episode: ApiEpisode,
     action: () => Promise<ApiEpisode>,
-    flag: 'ignored' | 'removed' | null = null
+    flag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null
   ) {
     if (this.isUpdating(episode.id)) {
       return;
@@ -263,6 +278,38 @@ export class EpisodesApiComponent {
     ).catch(() => {
       episode.ignored = previousIgnored;
       episode.removed = previousRemoved;
+    });
+  }
+
+  toggleTweeted(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.tweeted;
+    const next = !previous;
+    episode.tweeted = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => next ? this.episodeUpdate.markTweeted(episode) : this.episodeUpdate.untweet(episode),
+      'tweeted'
+    ).catch(() => {
+      episode.tweeted = previous;
+    });
+  }
+
+  toggleBluesky(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.bluesky == true;
+    const next = !previous;
+    episode.bluesky = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => next ? this.episodeUpdate.postBluesky(episode) : this.episodeUpdate.unpostBluesky(episode),
+      'bluesky'
+    ).catch(() => {
+      episode.bluesky = previous;
     });
   }
 

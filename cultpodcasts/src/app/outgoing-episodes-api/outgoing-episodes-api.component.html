@@ -22,9 +22,11 @@
         </button>
         }
         <mat-menu #options="matMenu">
+            @if (featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
             <div mat-menu-item>
                 <mat-checkbox [(ngModel)]="posted" (change)="getEpisodes()">Posted</mat-checkbox>
             </div>
+            }
             <div mat-menu-item>
                 <mat-checkbox [(ngModel)]="tweeted" (change)="getEpisodes()">Tweeted</mat-checkbox>
             </div>
@@ -99,9 +101,11 @@
             <app-episode-image [apiEpisode]="result"></app-episode-image>
             <p>{{result.displayDescription}}</p>
             <app-episode-status [episode]="result" [editable]="true"
-                [disabled]="isUpdating(result.id) && !isLoadingIgnored(result.id) && !isLoadingRemoved(result.id)"
+                [disabled]="isUpdating(result.id) && !isStatusActionLoading(result.id)"
                 [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
-                (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"></app-episode-status>
+                [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
+                (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
+                (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
         </mat-card-content>
         <mat-card-actions>
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>

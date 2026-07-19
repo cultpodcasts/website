@@ -5,6 +5,8 @@ import { environment } from '../environments/environment';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { ApiEpisode } from './api-episode.interface';
 import { EpisodePost } from './episode-post.interface';
+import { EpisodePublishResponse } from './episode-publish-response.interface';
+import { PostEpisodeModel } from './post-episode-model.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -71,6 +73,43 @@ export class EpisodeUpdateService {
       changes.ignored = false;
     }
     return this.applyAndRefresh(episode, changes);
+  }
+
+  async markTweeted(episode: ApiEpisode): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { tweeted: true });
+  }
+
+  async untweet(episode: ApiEpisode): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { tweeted: false });
+  }
+
+  async toggleTweeted(episode: ApiEpisode): Promise<ApiEpisode> {
+    return episode.tweeted ? this.untweet(episode) : this.markTweeted(episode);
+  }
+
+  async postBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
+    const podcastId = episode.podcastId;
+    if (!podcastId) {
+      throw new Error('Episode podcastId is required for updates.');
+    }
+    const headers = await this.getAuthHeaders();
+    const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
+    const body: PostEpisodeModel = { blueskyPost: true };
+    const response = await firstValueFrom(
+      this.http.post<EpisodePublishResponse>(endpoint, body, { headers })
+    );
+    if (!response.blueskyPosted) {
+      throw new Error('Bluesky post failed.');
+    }
+    return this.fetchEpisode(episode.id);
+  }
+
+  async unpostBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { bluesky: false });
+  }
+
+  async toggleBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
+    return episode.bluesky ? this.unpostBluesky(episode) : this.postBluesky(episode);
   }
 
   getGuestNames(episode: ApiEpisode): string[] {
