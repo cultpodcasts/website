@@ -1,6 +1,5 @@
 @if ((guestPeople?.length ?? 0) > 0) {
 <div class="guest-group">
-    <mat-icon aria-hidden="true" class="group-icon">people</mat-icon>
     @for (person of guestPeople; track person.id) {
     <div class="guest">
         <span>{{personLabel(person)}}</span>

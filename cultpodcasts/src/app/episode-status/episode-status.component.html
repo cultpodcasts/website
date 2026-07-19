@@ -1,36 +1,42 @@
 @if (_episode) {
-<p id="status">
+<div id="status">
     @if (editable) {
-    <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
-        [disabled]="disabled || loadingIgnored || loadingRemoved" (click)="onToggleIgnored($event)"
-        [attr.aria-pressed]="_episode.ignored"
-        [attr.aria-label]="_episode.ignored ? 'Clear ignored' : 'Mark ignored'"
-        [attr.aria-busy]="loadingIgnored">
-        <mat-icon svgIcon="visible" [class.not]="!_episode.ignored" title="ignored"></mat-icon>
-        @if (loadingIgnored) {
-        <mat-spinner diameter="20"></mat-spinner>
+    <p class="flags">
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
+            [disabled]="disabled || loadingIgnored || loadingRemoved" (click)="onToggleIgnored($event)"
+            [attr.aria-pressed]="_episode.ignored"
+            [attr.aria-label]="_episode.ignored ? 'Clear ignored' : 'Mark ignored'"
+            [attr.aria-busy]="loadingIgnored">
+            <mat-icon svgIcon="visible" [class.not]="!_episode.ignored" title="ignored"></mat-icon>
+            @if (loadingIgnored) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingRemoved"
+            [disabled]="disabled || loadingIgnored || loadingRemoved" (click)="onToggleRemoved($event)"
+            [attr.aria-pressed]="_episode.removed"
+            [attr.aria-label]="_episode.removed ? 'Clear removed' : 'Mark removed'"
+            [attr.aria-busy]="loadingRemoved">
+            <mat-icon svgIcon="removed" [class.not]="!_episode.removed" title="removed"></mat-icon>
+            @if (loadingRemoved) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+    </p>
+    } @else if (_episode.ignored || _episode.removed) {
+    <p class="flags">
+        @if (_episode.ignored) {
+        <mat-icon svgIcon="visible" title="ignored"></mat-icon>
         }
-    </button>
-    <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingRemoved"
-        [disabled]="disabled || loadingIgnored || loadingRemoved" (click)="onToggleRemoved($event)"
-        [attr.aria-pressed]="_episode.removed"
-        [attr.aria-label]="_episode.removed ? 'Clear removed' : 'Mark removed'"
-        [attr.aria-busy]="loadingRemoved">
-        <mat-icon svgIcon="removed" [class.not]="!_episode.removed" title="removed"></mat-icon>
-        @if (loadingRemoved) {
-        <mat-spinner diameter="20"></mat-spinner>
+        @if (_episode.removed) {
+        <mat-icon svgIcon="removed" title="removed"></mat-icon>
         }
-    </button>
-    } @else {
-    @if (_episode.ignored) {
-    <mat-icon svgIcon="visible" title="ignored"></mat-icon>
+    </p>
     }
-    @if (_episode.removed) {
-    <mat-icon svgIcon="removed" title="removed"></mat-icon>
-    }
-    }
-    <mat-icon svgIcon="reddit" [class.not]="!_episode.posted"></mat-icon>
-    <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted"></mat-icon>
-    <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky"></mat-icon>
-</p>
+    <p class="social">
+        <mat-icon svgIcon="reddit" [class.not]="!_episode.posted"></mat-icon>
+        <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted"></mat-icon>
+        <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky"></mat-icon>
+    </p>
+</div>
 }
