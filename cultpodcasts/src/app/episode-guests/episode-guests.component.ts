@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
 
@@ -8,7 +9,8 @@ import { PersonMatch } from '../person-match.interface';
   selector: 'app-episode-guests',
   imports: [
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './episode-guests.component.html',
   styleUrl: './episode-guests.component.sass'
@@ -26,6 +28,10 @@ export class EpisodeGuestsComponent {
   @Input()
   disabled: boolean = false;
 
+  /** Guest name currently being added (optimistic / in-flight). */
+  @Input()
+  loadingGuestName: string | null = null;
+
   @Output()
   removeGuest = new EventEmitter<string>();
 
@@ -33,15 +39,15 @@ export class EpisodeGuestsComponent {
   addSuggestedGuest = new EventEmitter<string>();
 
   personLabel(person: Person): string {
-    const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
-    return handles ? `${person.name} (${handles})` : person.name;
+    return person.name;
   }
 
   suggestionLabel(suggestion: PersonMatch): string {
-    const term = suggestion.matchResults[0]?.term;
-    return term
-      ? `${this.personLabel(suggestion.person)} (${term})`
-      : this.personLabel(suggestion.person);
+    return suggestion.person.name;
+  }
+
+  isGuestLoading(guestName: string): boolean {
+    return !!this.loadingGuestName && this.loadingGuestName === guestName;
   }
 
   onRemoveGuest(guestName: string, $event: Event) {

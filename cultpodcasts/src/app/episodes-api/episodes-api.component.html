@@ -78,22 +78,31 @@
         <mat-card-content class="resultdescription">
             <app-episode-image [apiEpisode]="result"></app-episode-image>
             <p>{{result.displayDescription}}</p>
-            <app-episode-status [episode]="result" [editable]="true" [disabled]="isUpdating(result.id)"
-                (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"></app-episode-status>
         </mat-card-content>
-        <mat-card-actions>
-            <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
-            <mat-card-footer class="subjects">
-                <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                    [disabled]="isUpdating(result.id)" (removeSubject)="removeSubject(result, $event)"></app-subjects>
-            </mat-card-footer>
-            @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-            <mat-card-footer class="guests">
-                <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                    [editable]="true" [disabled]="isUpdating(result.id)" (removeGuest)="removeGuest(result, $event)"
-                    (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
-            </mat-card-footer>
-            }
+        <mat-card-actions class="review-actions">
+            <div class="icon-column">
+                <app-episode-status [episode]="result" [editable]="true"
+                    [disabled]="isUpdating(result.id) && !isStatusActionLoading(result.id)"
+                    [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
+                    [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
+                    (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
+                    (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
+                <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+            </div>
+            <div class="footer-column">
+                <mat-card-footer class="subjects">
+                    <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
+                        [disabled]="isUpdating(result.id)" (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                </mat-card-footer>
+                @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+                <mat-card-footer class="guests">
+                    <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
+                        [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
+                        (removeGuest)="removeGuest(result, $event)"
+                        (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
+                </mat-card-footer>
+                }
+            </div>
         </mat-card-actions>
     </mat-card>
     }

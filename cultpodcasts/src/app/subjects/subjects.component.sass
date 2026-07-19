@@ -1,25 +1,52 @@
-:host 
+// Subjects always stack one-per-line, on both public and editable (review/
+// outgoing) cards. The remove X only renders when editable (template @if
+// editable), so public pages get the same stacked names without the button.
+:host
     text-align: right
     padding-right: 2px
     margin-left: auto
-    display: inline-block
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    width: 100%
+    box-sizing: border-box
     .subject
+        display: flex
+        flex-direction: row
+        justify-content: flex-end
+        align-items: baseline
+        align-self: stretch
+        width: 100%
+        box-sizing: border-box
         padding-left: 8px
         padding-bottom: 6px
-        display: inline-flex
-        align-items: center
         gap: 0
         a
             color: var(--mat-theme-text-secondary)
             text-decoration: dashed underline 1px
             text-underline-offset: 5px
-        a:hover 
+            line-height: 1.25
+        a:hover
             text-decoration: none
         .remove-btn
-            width: 28px
-            height: 28px
-            line-height: 28px
+            --mdc-icon-button-state-layer-size: 20px
+            --mdc-icon-button-icon-size: 14px
+            width: 20px
+            height: 20px
+            min-width: 20px
+            min-height: 20px
+            padding: 0
+            margin: 0 0 0 2px
+            line-height: 1
+            vertical-align: baseline
+            flex: 0 0 auto
+            align-self: baseline
+            display: inline-flex
+            align-items: center
+            justify-content: center
+            transform: none !important
             mat-icon
-                font-size: 16px
-                width: 16px
-                height: 16px
+                font-size: 14px
+                width: 14px
+                height: 14px
+                line-height: 14px

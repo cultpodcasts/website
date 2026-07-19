@@ -36,9 +36,43 @@ p {
     line-height: 1.3em;
 }
 
-mat-card-footer.subjects {
+mat-card-footer.subjects,
+mat-card-footer.guests {
     width: 100%;
     text-align: right;
+}
+
+// Review (/episodes) + outgoing cards only. margin-top separates the podcast-
+// service icons (YouTube etc.) from the Twitter/Bluesky row in the status
+// cluster above. The two-column actions layout (icons left, subjects/people
+// right) and its flex-wrap live in the two components' scoped sass.
+mat-card-actions.review-actions {
+    align-items: flex-start;
+    margin-top: 14px;
+}
+
+// Public result cards (every non-editable mat-card-actions: homepage, search,
+// podcast, subject, episode, bookmarks, discovery). Service buttons sit on the
+// LEFT and the stacked subjects list on the RIGHT of the same row, top-aligned
+// so the first subject shares the buttons' top Y. Subjects stay one-per-line
+// (app-subjects :host is a right-aligned flex column, matching editable review
+// minus the remove X). Selector qualified with `mat-card .mdc-card__actions` so
+// its specificity beats the shared `mat-card .mdc-card__actions { align-items:
+// end }` rule below (which would otherwise bottom-align the buttons).
+mat-card .mdc-card__actions:not(.review-actions) {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+
+    app-episode-links {
+        flex: 0 0 auto;
+    }
+
+    mat-card-footer.subjects {
+        flex: 1 1 auto;
+        width: auto;
+        margin: 0;
+    }
 }
 
 #cta-button {
@@ -237,8 +271,8 @@ mat-card:not(.selected) {
 }
 
 mat-card-actions {
-    a[mat-icon-button],
-    button[mat-icon-button] {
+    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
         margin-right: 25px;
         transform: scale(1.2);
     }
@@ -247,8 +281,8 @@ mat-card-actions {
 @media screen and (max-width: 600px) {
     mat-card-actions {
 
-        a[mat-icon-button],
-        button[mat-icon-button] {
+        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
             margin-right: 18px;
         }
     }
@@ -263,8 +297,8 @@ mat-card-actions {
 @media screen and (max-width: 400px) {
     mat-card-actions {
 
-        a[mat-icon-button],
-        button[mat-icon-button] {
+        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
             margin-right: 12px;
         }
     }

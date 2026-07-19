@@ -36,7 +36,38 @@ mat-card-header
 #error
     margin-left: 12px
 app-episode-podcast-links
-    display: inherit
+    display: flex
+    flex-wrap: wrap
+    flex: 0 0 auto
+// Two-column actions row: left = icon column (status + podcast-service icons),
+// right = footer column (subjects then people). They sit SIDE BY SIDE so the
+// subjects/people footer wraps to the right of the whole icon stack rather than
+// dropping beneath it.
+mat-card-actions
+    display: flex
+    flex-wrap: wrap
+    align-items: flex-start
+.icon-column
+    flex: 0 0 auto
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    app-episode-podcast-links
+        margin-top: 8px
+.footer-column
+    flex: 1 1 auto
+    min-width: 55%
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    box-sizing: border-box
+mat-card-footer.subjects,
+mat-card-footer.guests
+    flex: 0 0 auto
+    width: 100%
+    max-width: 100%
+    margin-left: 0
+    box-sizing: border-box
 mat-card-content img,mat-card-content span.img
     max-height: 300px
     max-width: 100%

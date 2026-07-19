@@ -25,10 +25,12 @@
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
+                    @if (featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
                     <label>
                         <span>Posted:</span>
                         <mat-checkbox [formControl]="form!.controls.posted" />
                     </label>
+                    }
                     <label>
                         <span>Tweeted:</span>
                         <mat-checkbox [formControl]="form!.controls.tweeted" />

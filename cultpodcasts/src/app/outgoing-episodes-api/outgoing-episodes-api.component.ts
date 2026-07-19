@@ -30,6 +30,9 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
 import { EpisodeUpdateService } from '../episode-update.service';
+import { FeatureSwitch } from '../feature-switch.enum';
+import { FeatureSwtichService } from '../feature-switch-service';
+import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -60,6 +63,7 @@ const daysKey: string = "pref.outgoing-episodes.days";
 export class OutgoingEpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
+  protected FeatureSwitch = FeatureSwitch;
 
   episodes: ApiEpisode[] | undefined;
   error: boolean = false;
@@ -73,6 +77,8 @@ export class OutgoingEpisodesApiComponent {
   token: string = "";
   authRoles: string[] = [];
   updatingEpisodeId: string | null = null;
+  updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
+  addingGuest: { [episodeId: string]: string } = {};
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -81,7 +87,8 @@ export class OutgoingEpisodesApiComponent {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService,
-    private episodeUpdate: EpisodeUpdateService
+    private episodeUpdate: EpisodeUpdateService,
+    protected featureSwtichService: FeatureSwtichService
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
@@ -161,6 +168,29 @@ export class OutgoingEpisodesApiComponent {
     return this.updatingEpisodeId === episodeId;
   }
 
+  isLoadingIgnored(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'ignored';
+  }
+
+  isLoadingRemoved(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
+  }
+
+  isLoadingTweeted(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'tweeted';
+  }
+
+  isLoadingBluesky(episodeId: string): boolean {
+    return this.isUpdating(episodeId) && this.updatingFlag === 'bluesky';
+  }
+
+  isStatusActionLoading(episodeId: string): boolean {
+    return this.isLoadingIgnored(episodeId)
+      || this.isLoadingRemoved(episodeId)
+      || this.isLoadingTweeted(episodeId)
+      || this.isLoadingBluesky(episodeId);
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
@@ -170,19 +200,26 @@ export class OutgoingEpisodesApiComponent {
     }
   }
 
-  private async runEpisodeUpdate(episode: ApiEpisode, action: () => Promise<ApiEpisode>) {
+  private async runEpisodeUpdate(
+    episode: ApiEpisode,
+    action: () => Promise<ApiEpisode>,
+    flag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null
+  ) {
     if (this.isUpdating(episode.id)) {
       return;
     }
     this.updatingEpisodeId = episode.id;
+    this.updatingFlag = flag;
     try {
       const updated = await action();
       this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
     } catch (e) {
       console.error(e);
       this.snackBar.open("Failed to update episode", "Ok", { duration: 5000 });
+      throw e;
     } finally {
       this.updatingEpisodeId = null;
+      this.updatingFlag = null;
     }
   }
 
@@ -195,15 +232,166 @@ export class OutgoingEpisodesApiComponent {
   }
 
   addSuggestedGuest(episode: ApiEpisode, guestName: string) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.addGuest(episode, guestName));
+    if (this.isUpdating(episode.id) || this.addingGuest[episode.id]) {
+      return;
+    }
+    const suggestion = episode.guestSuggestions?.find(x => x.person.name === guestName);
+    if (!suggestion) {
+      return;
+    }
+    const previousGuests = episode.guestPeople ? [...episode.guestPeople] : [];
+    const previousSuggestions = episode.guestSuggestions ? [...episode.guestSuggestions] : [];
+    const previousGuestNames = this.episodeUpdate.getGuestNames(episode);
+
+    episode.guestPeople = [...previousGuests, suggestion.person];
+    episode.guestSuggestions = previousSuggestions.filter(x => x.person.name !== guestName);
+    this.addingGuest[episode.id] = guestName;
+
+    const nextGuestNames = previousGuestNames.includes(guestName)
+      ? previousGuestNames
+      : [...previousGuestNames, guestName];
+
+    this.episodeUpdate.setGuests(episode, nextGuestNames)
+      .then(updated => {
+        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      })
+      .catch(e => {
+        console.error(e);
+        episode.guestPeople = previousGuests;
+        episode.guestSuggestions = previousSuggestions;
+        this.snackBar.open("Failed to add guest", "Ok", { duration: 5000 });
+      })
+      .finally(() => {
+        delete this.addingGuest[episode.id];
+      });
+  }
+
+  loadingGuestName(episodeId: string): string | null {
+    return this.addingGuest[episodeId] ?? null;
   }
 
   toggleIgnored(episode: ApiEpisode) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleIgnored(episode));
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previousIgnored = episode.ignored;
+    const previousRemoved = episode.removed;
+    const next = !previousIgnored;
+    episode.ignored = next;
+    if (next) {
+      episode.removed = false;
+    }
+    this.runEpisodeUpdate(
+      episode,
+      () => this.episodeUpdate.toggleIgnored(episode, next),
+      'ignored'
+    ).catch(() => {
+      episode.ignored = previousIgnored;
+      episode.removed = previousRemoved;
+    });
   }
 
   toggleRemoved(episode: ApiEpisode) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.toggleRemoved(episode));
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previousIgnored = episode.ignored;
+    const previousRemoved = episode.removed;
+    const next = !previousRemoved;
+    episode.removed = next;
+    if (next) {
+      episode.ignored = false;
+    }
+    this.runEpisodeUpdate(
+      episode,
+      () => this.episodeUpdate.toggleRemoved(episode, next),
+      'removed'
+    ).catch(() => {
+      episode.ignored = previousIgnored;
+      episode.removed = previousRemoved;
+    });
+  }
+
+  toggleTweeted(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    if (episode.tweeted) {
+      const previous = episode.tweeted;
+      episode.tweeted = false;
+      this.runEpisodeUpdate(
+        episode,
+        () => this.episodeUpdate.untweet(episode),
+        'tweeted'
+      ).catch(() => {
+        episode.tweeted = previous;
+      });
+      return;
+    }
+    this.runManualTweet(episode);
+  }
+
+  private async runManualTweet(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    if (!episode.podcastId) {
+      this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
+      return;
+    }
+    this.updatingEpisodeId = episode.id;
+    this.updatingFlag = 'tweeted';
+    try {
+      const result = await this.episodeUpdate.publishTweet(episode);
+      if (result.tweeted) {
+        const updated = await this.episodeUpdate.fetchEpisode(episode.id);
+        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        return;
+      }
+      if (result.failedTweetContent) {
+        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+          ManualTweetEpisodeDialogComponent,
+          {
+            data: {
+              tweet: result.failedTweetContent,
+              episodeId: episode.id,
+              podcastId: episode.podcastId
+            },
+            disableClose: true,
+            autoFocus: true
+          }
+        );
+        const dialogResult = await firstValueFrom(dialogRef.afterClosed());
+        if (dialogResult?.updated) {
+          const updated = await this.episodeUpdate.fetchEpisode(episode.id);
+          this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        }
+        return;
+      }
+      this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
+    } catch (e) {
+      console.error(e);
+      this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
+    } finally {
+      this.updatingEpisodeId = null;
+      this.updatingFlag = null;
+    }
+  }
+
+  toggleBluesky(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    const previous = episode.bluesky == true;
+    const next = !previous;
+    episode.bluesky = next;
+    this.runEpisodeUpdate(
+      episode,
+      () => next ? this.episodeUpdate.postBluesky(episode) : this.episodeUpdate.unpostBluesky(episode),
+      'bluesky'
+    ).catch(() => {
+      episode.bluesky = previous;
+    });
   }
 
   post(podcastId: string, episodeId: string) {
@@ -242,7 +430,7 @@ export class OutgoingEpisodesApiComponent {
       url.searchParams.append("days", this.days.toString());
     if (this.tweeted)
       url.searchParams.append("tweeted", this.tweeted.toString());
-    if (this.posted)
+    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) && this.posted)
       url.searchParams.append("posted", this.posted.toString());
     if (this.blueskyPosted)
       url.searchParams.append("blueskyPosted", this.blueskyPosted.toString())

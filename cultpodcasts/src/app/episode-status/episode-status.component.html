@@ -1,26 +1,67 @@
 @if (_episode) {
-<p id="status">
-    <mat-icon svgIcon="reddit" [class.not]="!_episode.posted"></mat-icon>
-    <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted"></mat-icon>
-    <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky"></mat-icon>
+<div id="status">
     @if (editable) {
-    <button mat-icon-button type="button" class="flag-toggle" [disabled]="disabled"
-        (click)="onToggleIgnored($event)" [attr.aria-pressed]="_episode.ignored"
-        [attr.aria-label]="_episode.ignored ? 'Clear ignored' : 'Mark ignored'">
-        <mat-icon svgIcon="visible" [class.not]="!_episode.ignored" title="ignored"></mat-icon>
-    </button>
-    <button mat-icon-button type="button" class="flag-toggle" [disabled]="disabled"
-        (click)="onToggleRemoved($event)" [attr.aria-pressed]="_episode.removed"
-        [attr.aria-label]="_episode.removed ? 'Clear removed' : 'Mark removed'">
-        <mat-icon svgIcon="removed" [class.not]="!_episode.removed" title="removed"></mat-icon>
-    </button>
-    } @else {
-    @if (_episode.ignored) {
-    <mat-icon svgIcon="visible" title="ignored"></mat-icon>
+    <div class="flags">
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
+            [disabled]="anyActionBusy" (click)="onToggleIgnored($event)"
+            [attr.aria-pressed]="_episode.ignored"
+            [attr.aria-label]="_episode.ignored ? 'Clear ignored' : 'Mark ignored'"
+            [attr.aria-busy]="loadingIgnored">
+            <mat-icon svgIcon="visible" [class.not]="!_episode.ignored" title="ignored"></mat-icon>
+            @if (loadingIgnored) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingRemoved"
+            [disabled]="anyActionBusy" (click)="onToggleRemoved($event)"
+            [attr.aria-pressed]="_episode.removed"
+            [attr.aria-label]="_episode.removed ? 'Clear removed' : 'Mark removed'"
+            [attr.aria-busy]="loadingRemoved">
+            <mat-icon svgIcon="removed" [class.not]="!_episode.removed" title="removed"></mat-icon>
+            @if (loadingRemoved) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+    </div>
+    } @else if (_episode.ignored || _episode.removed) {
+    <div class="flags">
+        @if (_episode.ignored) {
+        <mat-icon svgIcon="visible" title="ignored"></mat-icon>
+        }
+        @if (_episode.removed) {
+        <mat-icon svgIcon="removed" title="removed"></mat-icon>
+        }
+    </div>
     }
-    @if (_episode.removed) {
-    <mat-icon svgIcon="removed" title="removed"></mat-icon>
-    }
-    }
-</p>
+    <div class="social">
+        @if (showReddit) {
+        <mat-icon svgIcon="reddit" [class.not]="!_episode.posted" title="reddit"></mat-icon>
+        }
+        @if (editable) {
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingTweeted"
+            [disabled]="anyActionBusy" (click)="onToggleTweeted($event)"
+            [attr.aria-pressed]="_episode.tweeted"
+            [attr.aria-label]="_episode.tweeted ? 'Clear tweeted' : 'Mark tweeted'"
+            [attr.aria-busy]="loadingTweeted">
+            <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted" title="twitter"></mat-icon>
+            @if (loadingTweeted) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingBluesky"
+            [disabled]="anyActionBusy" (click)="onToggleBluesky($event)"
+            [attr.aria-pressed]="_episode.bluesky == true"
+            [attr.aria-label]="_episode.bluesky ? 'Unpost Bluesky' : 'Post Bluesky'"
+            [attr.aria-busy]="loadingBluesky">
+            <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky" title="bluesky"></mat-icon>
+            @if (loadingBluesky) {
+            <mat-spinner diameter="20"></mat-spinner>
+            }
+        </button>
+        } @else {
+        <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted" title="twitter"></mat-icon>
+        <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky" title="bluesky"></mat-icon>
+        }
+    </div>
+</div>
 }
