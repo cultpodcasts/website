@@ -1,7 +1,7 @@
 @if (_episode) {
 <div id="status">
     @if (editable) {
-    <p class="flags">
+    <div class="flags">
         <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
             [disabled]="anyActionBusy" (click)="onToggleIgnored($event)"
             [attr.aria-pressed]="_episode.ignored"
@@ -22,18 +22,18 @@
             <mat-spinner diameter="20"></mat-spinner>
             }
         </button>
-    </p>
+    </div>
     } @else if (_episode.ignored || _episode.removed) {
-    <p class="flags">
+    <div class="flags">
         @if (_episode.ignored) {
         <mat-icon svgIcon="visible" title="ignored"></mat-icon>
         }
         @if (_episode.removed) {
         <mat-icon svgIcon="removed" title="removed"></mat-icon>
         }
-    </p>
+    </div>
     }
-    <p class="social">
+    <div class="social">
         @if (showReddit) {
         <mat-icon svgIcon="reddit" [class.not]="!_episode.posted" title="reddit"></mat-icon>
         }
@@ -62,6 +62,6 @@
         <mat-icon svgIcon="twitter" [class.not]="!_episode.tweeted" title="twitter"></mat-icon>
         <mat-icon svgIcon="bluesky" [class.not]="!_episode.bluesky" title="bluesky"></mat-icon>
         }
-    </p>
+    </div>
 </div>
 }

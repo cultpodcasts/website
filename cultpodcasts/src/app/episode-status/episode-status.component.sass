@@ -1,27 +1,54 @@
 #status
+    // Layout: flags row above socials. Icon cell metrics from dd9dd09
+    // (People/subjects UI #415 / main pre-today episode-status.component.sass).
     .social,
     .flags
         display: flex
         flex-wrap: wrap
         align-items: center
         margin: 0
+        padding: 0
+        font-size: 0
+        line-height: 0
     .social
         margin-top: 8px
     mat-icon
         height: 30px
         width: 30px
         margin-right: 20px
+        font-size: 30px
+        line-height: 30px
+        svg
+            width: 30px
+            height: 30px
     mat-icon.not
         filter: opacity(0.5)
     .flag-toggle
+        // Exact dd9dd09 sizes + MDC overrides so button icons match bare brand icons
         position: relative
+        --mdc-icon-button-state-layer-size: 30px
+        --mdc-icon-button-icon-size: 30px
         width: 30px
         height: 30px
+        min-width: 30px
+        min-height: 30px
         line-height: 30px
         margin-right: 20px
         padding: 0
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        vertical-align: top
+        transform: none !important
         mat-icon
+            width: 30px
+            height: 30px
+            font-size: 30px
+            line-height: 30px
             margin-right: 0
+            svg
+                width: 30px
+                height: 30px
         mat-spinner
             position: absolute
             top: 5px
