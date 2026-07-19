@@ -109,18 +109,20 @@
         </mat-card-content>
         <mat-card-actions class="review-actions">
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
-            <mat-card-footer class="subjects">
-                <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                    [disabled]="isUpdating(result.id)" (removeSubject)="removeSubject(result, $event)"></app-subjects>
-            </mat-card-footer>
-            @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-            <mat-card-footer class="guests">
-                <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                    [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
-                    (removeGuest)="removeGuest(result, $event)"
-                    (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
-            </mat-card-footer>
-            }
+            <div class="footer-column">
+                <mat-card-footer class="subjects">
+                    <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
+                        [disabled]="isUpdating(result.id)" (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                </mat-card-footer>
+                @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+                <mat-card-footer class="guests">
+                    <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
+                        [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
+                        (removeGuest)="removeGuest(result, $event)"
+                        (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
+                </mat-card-footer>
+                }
+            </div>
         </mat-card-actions>
     </mat-card>
     }
