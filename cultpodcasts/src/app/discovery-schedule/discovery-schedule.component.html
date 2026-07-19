@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Discovery Schedule (UK)</h2>
+
+<mat-dialog-content>
+  @if (isLoading || isSaving) {
+  <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+  } @else {
+  @if (isInError) {
+  <p id="error">{{ errorMessage || "An error occurred" }}</p>
+  }
+
+  <p class="hint">
+    Timer checks every 30 minutes. Discovery runs when UK local time matches a selected slot
+    (±15 minutes). Defaults are 08:00 and 22:00 UK.
+  </p>
+
+  @if (isDefault) {
+  <p class="default-note">Showing code defaults — no Cosmos schedule document yet. Save to persist.</p>
+  }
+
+  <div class="enabled-row">
+    <mat-slide-toggle [(ngModel)]="enabled">Enabled</mat-slide-toggle>
+  </div>
+
+  <div class="slots" role="group" aria-label="UK run times">
+    @for (slot of slotChoices; track slot) {
+    <button type="button" class="slot"
+      [class.selected]="isSelected(slot)"
+      (click)="toggleSlot(slot)">{{ slot }}</button>
+    }
+  </div>
+
+  @if (nextRuns.length > 0) {
+  <div class="preview">
+    <h3>Next runs</h3>
+    <ul>
+      @for (run of nextRuns; track run.slotId) {
+      <li>{{ formatNextRun(run) }}</li>
+      }
+    </ul>
+  </div>
+  }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()" [disabled]="isSaving">Close</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave" (click)="onSave()">Save</button>
+</mat-dialog-actions>

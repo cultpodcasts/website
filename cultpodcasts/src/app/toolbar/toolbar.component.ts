@@ -19,6 +19,7 @@ import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-not
 import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
 import { AddTermComponent } from '../add-term/add-term.component';
+import { DiscoveryScheduleComponent } from '../discovery-schedule/discovery-schedule.component';
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -221,6 +222,20 @@ export class ToolbarComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         let snackBarRef = this.snackBar.open(`Term '${result.term}' added`, "Ok", { duration: 10000 });
+      }
+    });
+  }
+
+  openDiscoverySchedule() {
+    const dialogRef = this.dialog.open(DiscoveryScheduleComponent, {
+      disableClose: true,
+      autoFocus: true,
+      width: '40em',
+      maxWidth: '95vw'
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.saved) {
+        this.snackBar.open('Discovery schedule saved', 'Ok', { duration: 5000 });
       }
     });
   }
