@@ -11,10 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule
   ],
   templateUrl: './subjects.component.html',
-  styleUrl: './subjects.component.sass',
-  host: {
-    '[class.editable]': 'editable'
-  }
+  styleUrl: './subjects.component.sass'
 })
 export class SubjectsComponent {
   @Input({ required: true })
