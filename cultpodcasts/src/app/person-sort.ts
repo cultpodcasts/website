@@ -145,12 +145,23 @@ export function comparePeopleBySortKey(a: Person, b: Person): number {
 
 /**
  * Persist null ONLY when effective key equals last-token surname default.
- * Org path: StripLeadingThe(Name). Keep other overrides.
+ * Explicit useFullName (organization checkbox): always StripLeadingThe(Name).
+ * Heuristic org path: same full-name key. Keep other overrides.
  */
 export function sortNameForPersist(name: string, sortName: string | null | undefined, useFullName: boolean): string | null {
   const trimmedName = name?.trim() ?? '';
   const lastToken = deriveSortKeyFromName(trimmedName);
-  const isOrg = useFullName || looksLikeOrganization(trimmedName);
+
+  // Curator organization flag: force full-name key even when Sort name still shows a surname.
+  if (useFullName) {
+    const orgKey = stripLeadingThe(trimmedName);
+    if (!orgKey || orgKey === lastToken) {
+      return null;
+    }
+    return orgKey;
+  }
+
+  const isOrg = looksLikeOrganization(trimmedName);
   const orgKey = isOrg ? stripLeadingThe(trimmedName) : '';
 
   let effective = sortName?.trim() ?? '';
@@ -175,4 +186,9 @@ export function sortNameForPersist(name: string, sortName: string | null | undef
     return null;
   }
   return effective;
+}
+
+/** Sort-name value to show when Organization is checked (full name, strip leading The). */
+export function organizationSortName(name: string | null | undefined): string {
+  return stripLeadingThe(name?.trim() ?? '');
 }
