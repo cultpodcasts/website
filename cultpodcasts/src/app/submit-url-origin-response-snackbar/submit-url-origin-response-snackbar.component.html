@@ -44,7 +44,7 @@
         </span>
         }
         @if ((data.response.episodeDetails.people?.length ?? 0) > 0) {
-        <span class="enrichment-count" title="People: {{data.response.episodeDetails.people!.join(', ')}}">
+        <span class="enrichment-count" title="People: {{data.response.episodeDetails.people!.map(p => p.person.name).join(', ')}}">
             <mat-icon aria-hidden="true">people</mat-icon>{{data.response.episodeDetails.people!.length}}
         </span>
         }

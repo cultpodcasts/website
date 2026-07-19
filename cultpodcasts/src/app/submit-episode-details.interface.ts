@@ -5,6 +5,6 @@ export interface SubmitEpisodeDetails {
     apple: boolean;
     youtube: boolean;
     subjects: string[];
-    people?: string[];
+    people?: PersonMatch[];
     guestSuggestions?: PersonMatch[];
 }
