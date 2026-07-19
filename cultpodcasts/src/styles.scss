@@ -51,6 +51,21 @@ mat-card-actions.review-actions {
     margin-top: 14px;
 }
 
+// Public result cards (every non-editable mat-card-actions: homepage, search,
+// podcast, subject, episode, bookmarks, discovery). Subjects get their own
+// full-width row ordered ABOVE the podcast-service buttons — i.e. directly under
+// the description — while chips flow inline (app-subjects :host is inline-block).
+mat-card-actions:not(.review-actions) {
+    flex-wrap: wrap;
+
+    mat-card-footer.subjects {
+        order: -1;
+        flex-basis: 100%;
+        width: 100%;
+        margin-bottom: 6px;
+    }
+}
+
 #cta-button {
     text-align: center;
     margin-bottom: 1rem;
