@@ -28,6 +28,7 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EpisodeUpdateService } from '../episode-update.service';
+import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -285,16 +286,66 @@ export class EpisodesApiComponent {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    const previous = episode.tweeted;
-    const next = !previous;
-    episode.tweeted = next;
-    this.runEpisodeUpdate(
-      episode,
-      () => next ? this.episodeUpdate.markTweeted(episode) : this.episodeUpdate.untweet(episode),
-      'tweeted'
-    ).catch(() => {
-      episode.tweeted = previous;
-    });
+    if (episode.tweeted) {
+      const previous = episode.tweeted;
+      episode.tweeted = false;
+      this.runEpisodeUpdate(
+        episode,
+        () => this.episodeUpdate.untweet(episode),
+        'tweeted'
+      ).catch(() => {
+        episode.tweeted = previous;
+      });
+      return;
+    }
+    this.runManualTweet(episode);
+  }
+
+  private async runManualTweet(episode: ApiEpisode) {
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    if (!episode.podcastId) {
+      this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
+      return;
+    }
+    this.updatingEpisodeId = episode.id;
+    this.updatingFlag = 'tweeted';
+    try {
+      const result = await this.episodeUpdate.publishTweet(episode);
+      if (result.tweeted) {
+        const updated = await this.episodeUpdate.fetchEpisode(episode.id);
+        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        return;
+      }
+      if (result.failedTweetContent) {
+        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+          ManualTweetEpisodeDialogComponent,
+          {
+            data: {
+              tweet: result.failedTweetContent,
+              episodeId: episode.id,
+              podcastId: episode.podcastId
+            },
+            disableClose: true,
+            autoFocus: true
+          }
+        );
+        const dialogResult = await firstValueFrom(dialogRef.afterClosed());
+        if (dialogResult?.updated) {
+          const updated = await this.episodeUpdate.fetchEpisode(episode.id);
+          this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        }
+        return;
+      }
+      this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
+    } catch (e) {
+      console.error(e);
+      this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
+    } finally {
+      this.updatingEpisodeId = null;
+      this.updatingFlag = null;
+    }
   }
 
   toggleBluesky(episode: ApiEpisode) {

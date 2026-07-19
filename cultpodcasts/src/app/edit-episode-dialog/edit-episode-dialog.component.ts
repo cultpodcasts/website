@@ -30,6 +30,8 @@ import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 import { comparePeopleBySortKey } from '../person-sort';
+import { FeatureSwitch } from '../feature-switch.enum';
+import { FeatureSwtichService } from '../feature-switch-service';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -53,6 +55,7 @@ import { comparePeopleBySortKey } from '../person-sort';
   styleUrl: './edit-episode-dialog.component.sass'
 })
 export class EditEpisodeDialogComponent {
+  protected FeatureSwitch = FeatureSwitch;
   readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
   readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -86,6 +89,7 @@ export class EditEpisodeDialogComponent {
     private dialogRef: MatDialogRef<EditEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string },
     private dialog: MatDialog,
+    protected featureSwtichService: FeatureSwtichService,
   ) {
     this.episodeId = data.episodeId;
     this.podcastIdentifier = data.podcastIdentifier;

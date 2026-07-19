@@ -83,8 +83,26 @@ export class EpisodeUpdateService {
     return this.applyAndRefresh(episode, { tweeted: false });
   }
 
-  async toggleTweeted(episode: ApiEpisode): Promise<ApiEpisode> {
-    return episode.tweeted ? this.untweet(episode) : this.markTweeted(episode);
+  /** Attempt auto-tweet via publish; 400 bodies with failedTweetContent enable the manual-tweet dialog. */
+  async publishTweet(episode: ApiEpisode): Promise<EpisodePublishResponse> {
+    const podcastId = episode.podcastId;
+    if (!podcastId) {
+      throw new Error('Episode podcastId is required for updates.');
+    }
+    const headers = await this.getAuthHeaders();
+    const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
+    const body: PostEpisodeModel = { tweet: true };
+    try {
+      return await firstValueFrom(
+        this.http.post<EpisodePublishResponse>(endpoint, body, { headers })
+      );
+    } catch (e: unknown) {
+      const err = e as { status?: number; error?: EpisodePublishResponse };
+      if (err.status === 400 && err.error) {
+        return err.error;
+      }
+      throw e;
+    }
   }
 
   async postBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
