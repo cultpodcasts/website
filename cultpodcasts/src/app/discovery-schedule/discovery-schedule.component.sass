@@ -1,0 +1,42 @@
+#error
+  font-size: 1em
+  color: #b00020
+
+.hint, .default-note
+  font-size: 0.9em
+  margin: 0 0 0.75em
+
+.default-note
+  color: #6a4c00
+
+.enabled-row
+  margin-bottom: 0.75em
+
+.slots
+  display: grid
+  grid-template-columns: repeat(6, minmax(0, 1fr))
+  gap: 0.35em
+  max-width: 36em
+
+.slot
+  border: 1px solid #888
+  background: transparent
+  padding: 0.35em 0.2em
+  font: inherit
+  cursor: pointer
+
+  &.selected
+    background: #333
+    color: #fff
+    border-color: #333
+
+.preview
+  margin-top: 1em
+
+  h3
+    margin: 0 0 0.35em
+    font-size: 1em
+
+  ul
+    margin: 0
+    padding-left: 1.2em
