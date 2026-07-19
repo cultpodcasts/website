@@ -18,7 +18,6 @@
 }
 @if ((guestSuggestions?.length ?? 0) > 0) {
 <div class="guest-group guest-group-suggested">
-    <mat-icon aria-hidden="true" class="group-icon">person_search</mat-icon>
     @for (suggestion of guestSuggestions; track suggestion.person.id) {
     <div class="guest guest-suggested" [class.loading]="isGuestLoading(suggestion.person.name)">
         <span>{{suggestionLabel(suggestion)}}</span>

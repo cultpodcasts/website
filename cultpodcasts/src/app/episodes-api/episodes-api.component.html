@@ -78,15 +78,17 @@
         <mat-card-content class="resultdescription">
             <app-episode-image [apiEpisode]="result"></app-episode-image>
             <p>{{result.displayDescription}}</p>
-            <app-episode-status [episode]="result" [editable]="true"
-                [disabled]="isUpdating(result.id) && !isStatusActionLoading(result.id)"
-                [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
-                [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
-                (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
-                (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
         </mat-card-content>
         <mat-card-actions class="review-actions">
-            <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+            <div class="icon-column">
+                <app-episode-status [episode]="result" [editable]="true"
+                    [disabled]="isUpdating(result.id) && !isStatusActionLoading(result.id)"
+                    [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
+                    [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
+                    (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
+                    (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
+                <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+            </div>
             <div class="footer-column">
                 <mat-card-footer class="subjects">
                     <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
