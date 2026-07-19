@@ -44,13 +44,13 @@
         </span>
         }
         @if ((data.response.episodeDetails.people?.length ?? 0) > 0) {
-        <span class="enrichment-count" title="People: {{data.response.episodeDetails.people!.map(p => p.person.name).join(', ')}}">
+        <span class="enrichment-count" title="People: {{data.response.episodeDetails.people!.join(', ')}}">
             <mat-icon aria-hidden="true">people</mat-icon>{{data.response.episodeDetails.people!.length}}
         </span>
         }
         @if ((data.response.episodeDetails.guestSuggestions?.length ?? 0) > 0) {
         <span class="enrichment-count enrichment-count-suggested"
-            title="Suggested people: {{data.response.episodeDetails.guestSuggestions!.map(s => s.person.name).join(', ')}}">
+            title="Suggested people: {{data.response.episodeDetails.guestSuggestions!.map(s => s.name).join(', ')}}">
             <mat-icon aria-hidden="true">person_search</mat-icon>{{data.response.episodeDetails.guestSuggestions!.length}}
         </span>
         }
