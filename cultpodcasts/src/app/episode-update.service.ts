@@ -57,6 +57,10 @@ export class EpisodeUpdateService {
     return this.applyAndRefresh(episode, { guests: [...guests, guestName] });
   }
 
+  async setGuests(episode: ApiEpisode, guests: string[]): Promise<ApiEpisode> {
+    return this.applyAndRefresh(episode, { guests });
+  }
+
   async toggleIgnored(episode: ApiEpisode, ignored?: boolean): Promise<ApiEpisode> {
     const next = ignored ?? !episode.ignored;
     const changes: EpisodePost = { ignored: next };

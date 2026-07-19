@@ -94,7 +94,8 @@
             @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
             <mat-card-footer class="guests">
                 <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                    [editable]="true" [disabled]="isUpdating(result.id)" (removeGuest)="removeGuest(result, $event)"
+                    [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
+                    (removeGuest)="removeGuest(result, $event)"
                     (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
             </mat-card-footer>
             }

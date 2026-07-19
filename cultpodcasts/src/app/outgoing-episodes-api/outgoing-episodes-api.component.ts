@@ -78,6 +78,7 @@ export class OutgoingEpisodesApiComponent {
   authRoles: string[] = [];
   updatingEpisodeId: string | null = null;
   updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
+  addingGuest: { [episodeId: string]: string } = {};
 
   constructor(
     protected auth: AuthServiceWrapper,
@@ -231,7 +232,42 @@ export class OutgoingEpisodesApiComponent {
   }
 
   addSuggestedGuest(episode: ApiEpisode, guestName: string) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.addGuest(episode, guestName));
+    if (this.isUpdating(episode.id) || this.addingGuest[episode.id]) {
+      return;
+    }
+    const suggestion = episode.guestSuggestions?.find(x => x.person.name === guestName);
+    if (!suggestion) {
+      return;
+    }
+    const previousGuests = episode.guestPeople ? [...episode.guestPeople] : [];
+    const previousSuggestions = episode.guestSuggestions ? [...episode.guestSuggestions] : [];
+    const previousGuestNames = this.episodeUpdate.getGuestNames(episode);
+
+    episode.guestPeople = [...previousGuests, suggestion.person];
+    episode.guestSuggestions = previousSuggestions.filter(x => x.person.name !== guestName);
+    this.addingGuest[episode.id] = guestName;
+
+    const nextGuestNames = previousGuestNames.includes(guestName)
+      ? previousGuestNames
+      : [...previousGuestNames, guestName];
+
+    this.episodeUpdate.setGuests(episode, nextGuestNames)
+      .then(updated => {
+        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      })
+      .catch(e => {
+        console.error(e);
+        episode.guestPeople = previousGuests;
+        episode.guestSuggestions = previousSuggestions;
+        this.snackBar.open("Failed to add guest", "Ok", { duration: 5000 });
+      })
+      .finally(() => {
+        delete this.addingGuest[episode.id];
+      });
+  }
+
+  loadingGuestName(episodeId: string): string | null {
+    return this.addingGuest[episodeId] ?? null;
   }
 
   toggleIgnored(episode: ApiEpisode) {
