@@ -85,7 +85,7 @@
                 (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
                 (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
         </mat-card-content>
-        <mat-card-actions>
+        <mat-card-actions class="review-actions">
             <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
             <mat-card-footer class="subjects">
                 <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"

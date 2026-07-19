@@ -54,6 +54,31 @@ mat-card-actions {
     align-items: flex-start;
 }
 
+// Review (/episodes) + outgoing cards only. Root cause of the "subjects pushed
+// down" band: mat-card-footer.subjects is flex 1 1 100%, so inside the wrapping
+// actions row it wraps BELOW the full-height podcast-links (YouTube) icon row.
+// Here we top-align the row and let subjects grow ALONGSIDE the YouTube icons so
+// it rises to the top of the actions block; guests still wraps to its own row.
+// margin-top separates the YouTube/podcast-service icons from the Twitter/Bluesky
+// row that sits directly above (in the status cluster).
+mat-card-actions.review-actions {
+    align-items: flex-start;
+    margin-top: 14px;
+
+    app-episode-podcast-links {
+        flex: 0 0 auto;
+    }
+
+    mat-card-footer.subjects {
+        flex: 1 1 auto;
+        min-width: 55%;
+    }
+
+    mat-card-footer.guests {
+        flex: 1 1 100%;
+    }
+}
+
 #cta-button {
     text-align: center;
     margin-bottom: 1rem;
