@@ -20,7 +20,7 @@ node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
 
 echo "Build"
-npx ng build --configuration "${env}"
+npx npm run build --configuration "${env}"
 
 echo "Process"
 npx npm run process
