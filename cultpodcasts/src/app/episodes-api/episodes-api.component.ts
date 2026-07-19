@@ -228,15 +228,20 @@ export class EpisodesApiComponent {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    const previous = episode.ignored;
-    const next = !previous;
+    const previousIgnored = episode.ignored;
+    const previousRemoved = episode.removed;
+    const next = !previousIgnored;
     episode.ignored = next;
+    if (next) {
+      episode.removed = false;
+    }
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleIgnored(episode, next),
       'ignored'
     ).catch(() => {
-      episode.ignored = previous;
+      episode.ignored = previousIgnored;
+      episode.removed = previousRemoved;
     });
   }
 
@@ -244,15 +249,20 @@ export class EpisodesApiComponent {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    const previous = episode.removed;
-    const next = !previous;
+    const previousIgnored = episode.ignored;
+    const previousRemoved = episode.removed;
+    const next = !previousRemoved;
     episode.removed = next;
+    if (next) {
+      episode.ignored = false;
+    }
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleRemoved(episode, next),
       'removed'
     ).catch(() => {
-      episode.removed = previous;
+      episode.ignored = previousIgnored;
+      episode.removed = previousRemoved;
     });
   }
 

@@ -36,12 +36,22 @@ p {
     line-height: 1.3em;
 }
 
-mat-card-footer.subjects {
+mat-card-footer.subjects,
+mat-card-footer.guests {
+    flex: 1 1 100%;
     width: 100%;
+    max-width: 100%;
+    margin-left: 0;
     text-align: right;
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    box-sizing: border-box;
+}
+
+mat-card-actions {
+    flex-wrap: wrap;
+    align-items: flex-start;
 }
 
 #cta-button {

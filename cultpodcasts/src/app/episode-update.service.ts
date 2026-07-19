@@ -56,11 +56,21 @@ export class EpisodeUpdateService {
   }
 
   async toggleIgnored(episode: ApiEpisode, ignored?: boolean): Promise<ApiEpisode> {
-    return this.applyAndRefresh(episode, { ignored: ignored ?? !episode.ignored });
+    const next = ignored ?? !episode.ignored;
+    const changes: EpisodePost = { ignored: next };
+    if (next) {
+      changes.removed = false;
+    }
+    return this.applyAndRefresh(episode, changes);
   }
 
   async toggleRemoved(episode: ApiEpisode, removed?: boolean): Promise<ApiEpisode> {
-    return this.applyAndRefresh(episode, { removed: removed ?? !episode.removed });
+    const next = removed ?? !episode.removed;
+    const changes: EpisodePost = { removed: next };
+    if (next) {
+      changes.ignored = false;
+    }
+    return this.applyAndRefresh(episode, changes);
   }
 
   getGuestNames(episode: ApiEpisode): string[] {
