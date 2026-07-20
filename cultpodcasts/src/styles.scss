@@ -51,25 +51,36 @@ mat-card-actions.review-actions {
     margin-top: 14px;
 }
 
-// Public result cards (every non-editable mat-card-actions: homepage, search,
-// podcast, subject, episode, bookmarks, discovery). Service buttons sit on the
-// LEFT and the stacked subjects list on the RIGHT of the same row, bottom-aligned
-// so the service buttons sit at the bottom of the card, level with the last
-// subject. Subjects stay one-per-line (app-subjects :host is a right-aligned flex
-// column, matching editable review minus the remove X). Selector qualified with
-// `mat-card .mdc-card__actions` so it matches the shared `mat-card
-// .mdc-card__actions { align-items: end }` intent below.
+// Public result cards (non-editable mat-card-actions): homepage, search,
+// podcast list, podcast episode, subject, bookmarks, discovery. Service
+// controls sit LEFT (app-episode-links, app-episode-podcast-links, or discovery's
+// inline icon buttons) and subjects RIGHT, bottom-aligned (#421). Subjects stay
+// one-per-line (app-subjects). flex-basis 0 + min-width 0 lets the subjects
+// footer claim remaining row width beside the icon cluster. Editable review /
+// outgoing cards (.review-actions) keep their own icon-column + footer-column
+// layout in component sass and are excluded here.
 mat-card .mdc-card__actions:not(.review-actions) {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-end;
+    justify-content: flex-start;
 
-    app-episode-links {
+    app-episode-links,
+    app-episode-podcast-links {
+        flex: 0 0 auto;
+    }
+
+    // Discovery inlines service icons (and optional YouTube meta) as direct
+    // children rather than wrapping them in app-episode-links.
+    > a[mat-icon-button],
+    > button[mat-icon-button],
+    > .youtubemeta {
         flex: 0 0 auto;
     }
 
     mat-card-footer.subjects {
-        flex: 1 1 auto;
+        flex: 1 1 0;
+        min-width: 0;
         width: auto;
         margin: 0;
     }
