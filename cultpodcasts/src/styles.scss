@@ -51,31 +51,20 @@ mat-card-actions.review-actions {
     margin-top: 14px;
 }
 
-// Public result cards (homepage, search, podcast, episode, subject, bookmarks,
-// discovery). Subjects use the FULL actions width on their own row so long
-// labels can sit on one line; podcast-service controls stay on a following row
-// at the bottom-left with their normal 25px margins (do not tighten icon
-// spacing). Review/outgoing (.review-actions) keep their own two-column layout.
+// Public result cards (homepage, search, podcast list, podcast episode, subject,
+// bookmarks, discovery). One shared row: service icons LEFT (original 25px
+// margins — do not tighten), subjects RIGHT growing into remaining width,
+// bottom-aligned so the last subject shares a baseline with the icons (#421).
+// Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: flex-end;
     justify-content: flex-start;
 
-    // Subjects first row, full width — “above” the service-icon island.
-    mat-card-footer.subjects {
-        flex: 1 1 100%;
-        order: 0;
-        width: 100%;
-        min-width: 100%;
-        margin: 0;
-    }
-
-    // Service controls second row, bottom-left; preserve global icon margins.
     app-episode-links,
     app-episode-podcast-links {
         flex: 0 0 auto;
-        order: 1;
     }
 
     // Discovery inlines service icons (and optional YouTube meta) as direct
@@ -84,7 +73,13 @@ mat-card .mdc-card__actions:not(.review-actions) {
     > button[mat-icon-button],
     > .youtubemeta {
         flex: 0 0 auto;
-        order: 1;
+    }
+
+    mat-card-footer.subjects {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        margin: 0;
     }
 }
 
