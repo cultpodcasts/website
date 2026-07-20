@@ -40,16 +40,41 @@ describe("search-result-links", () => {
       .toBe("https://i.ytimg.com/vi/abcDEF12345/maxresdefault.jpg");
   });
 
-  it("falls back to image when no YouTube variant is present", () => {
+  it("reconstructs the Spotify cover from spotifyImageId when no YouTube variant is present", () => {
+    const spotifyOnly: SearchResult = {
+      ...searchResult,
+      youtubeId: undefined,
+      youtubeImageVariant: undefined,
+      spotifyImageId: "ab6765630000ba8aharbourvale"
+    };
+
+    expect(episodeImageUrl(spotifyOnly)?.toString())
+      .toBe("https://i.scdn.co/image/ab6765630000ba8aharbourvale");
+  });
+
+  it("prefers the YouTube thumbnail over a Spotify id when both are present", () => {
+    const both: SearchResult = {
+      ...searchResult,
+      youtubeId: "ytPreferred",
+      youtubeImageVariant: "sd",
+      spotifyImageId: "shouldBeIgnored"
+    };
+
+    expect(episodeImageUrl(both)?.toString())
+      .toBe("https://i.ytimg.com/vi/ytPreferred/sddefault.jpg");
+  });
+
+  it("falls back to image when neither a YouTube variant nor a Spotify id is present", () => {
     const audioOnly: SearchResult = {
       ...searchResult,
       youtubeId: undefined,
       youtubeImageVariant: undefined,
-      image: "https://i.scdn.co/image/audioOnlyCover"
+      spotifyImageId: undefined,
+      image: "https://is1-ssl.mzstatic.com/image/thumb/apple/600x600bb.jpg"
     };
 
     expect(episodeImageUrl(audioOnly)?.toString())
-      .toBe("https://i.scdn.co/image/audioOnlyCover");
+      .toBe("https://is1-ssl.mzstatic.com/image/thumb/apple/600x600bb.jpg");
   });
 
   it("keeps opaque homepage URLs unchanged", () => {

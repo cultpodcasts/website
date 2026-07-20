@@ -31,14 +31,18 @@ export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
 }
 
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
-  // A YouTube image-variant is only ever set when the episode's YouTube image is a
-  // standard i.ytimg.com thumbnail, which the index encodes compactly (nulling `image`).
-  // Prefer that reconstructed thumbnail: it matches the backend's YouTube-first image
-  // priority and is robust to a stale `image` value that the incremental search indexer
-  // cannot clear once a YouTube image is merged onto an existing episode.
+  // The index compacts the two platforms whose cover URL is a fixed prefix + a single opaque
+  // token, emptying `image` and storing only the token: a standard i.ytimg.com thumbnail becomes
+  // `youtubeImageVariant`, and a standard i.scdn.co cover becomes `spotifyImageId`. Rebuild them
+  // here in the backend's YouTube-first priority. This also stays robust to a stale `image` value
+  // that the incremental search indexer cannot clear once such an image is merged onto an episode.
   const youtubeThumbnail = youtubeThumbnailUrl(episode);
   if (youtubeThumbnail) {
     return youtubeThumbnail;
+  }
+  const spotifyImage = spotifyImageUrl(episode);
+  if (spotifyImage) {
+    return spotifyImage;
   }
   return toUrl(episode.image);
 }
@@ -54,6 +58,13 @@ function youtubeThumbnailUrl(episode: SearchDisplayEpisode): URL | undefined {
     hq: "hqdefault"
   }[episode.youtubeImageVariant];
   return toUrl(`https://i.ytimg.com/vi/${encodeURIComponent(episode.youtubeId)}/${variant}.jpg`);
+}
+
+function spotifyImageUrl(episode: SearchDisplayEpisode): URL | undefined {
+  if (isHomepageEpisode(episode) || !episode.spotifyImageId) {
+    return undefined;
+  }
+  return toUrl(`https://i.scdn.co/image/${encodeURIComponent(episode.spotifyImageId)}`);
 }
 
 export function toUrl(value: URL | string | undefined): URL | undefined {

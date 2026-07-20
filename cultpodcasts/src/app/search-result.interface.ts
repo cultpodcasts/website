@@ -14,4 +14,5 @@ export interface SearchResult {
   subjects?: string[];
   image?: URL | string;
   youtubeImageVariant?: "maxres" | "sd" | "hq";
+  spotifyImageId?: string;
 }
