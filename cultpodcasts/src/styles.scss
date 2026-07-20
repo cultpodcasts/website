@@ -52,10 +52,11 @@ mat-card-actions.review-actions {
 }
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
-// bookmarks, discovery). Subjects wrap around a bottom-left service-icon island
-// via a zero-width spacer float + island float (CSS bottom-corner pattern):
-// subjects use full width above the icons, then share the bottom row beside them.
-// Icons keep global 25px margins and sit absolute bottom-left.
+// bookmarks, discovery). Subjects use the FULL footer width; the last subject
+// (when not alone) reserves a bottom-left island for service icons so short
+// trailing labels sit beside them on the same baseline. Leading subjects —
+// including long labels — are not trapped in a narrow right column.
+// Icons keep global 25px margins and are absolutely pinned bottom-left.
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     display: block !important;
@@ -73,60 +74,50 @@ mat-card .mdc-card__actions:not(.review-actions) {
     }
 
     mat-card-footer.subjects {
-        // Grid so % height on the spacer float resolves against content height.
-        display: grid;
+        display: block;
         width: 100% !important;
         max-width: 100%;
         margin: 0;
         box-sizing: border-box;
 
-        // Zero-width spacer: pushes the island float down so subjects above it
-        // sit beside a 0-width float (= full content width).
-        &::before {
-            content: "";
-            grid-area: 1 / 1;
-            float: left;
-            width: 0;
-            height: calc(100% - var(--public-card-icon-row));
-        }
-
         app-subjects {
-            grid-area: 1 / 1;
-            display: block !important;
+            display: flex !important;
+            flex-direction: column;
+            align-items: stretch;
             width: 100%;
             margin-left: 0;
             box-sizing: border-box;
-
-            // Bottom-left island matching the absolute icon cluster footprint.
-            &::before {
-                content: "";
-                float: left;
-                clear: left;
-                width: var(--public-card-icon-island);
-                height: var(--public-card-icon-row);
-                pointer-events: none;
-            }
         }
 
         .subject {
             display: block;
-            // auto width fills space beside the current float (full width above
-            // the island; shortened beside it).
-            width: auto;
+            width: 100%;
             box-sizing: border-box;
             text-align: right;
             padding-left: 0;
             padding-bottom: 6px;
-
-            &:last-child {
-                padding-bottom: 0;
-            }
 
             a {
                 color: var(--mat-theme-text-secondary);
                 text-decoration: dashed underline 1px;
                 text-underline-offset: 5px;
                 line-height: 1.25;
+            }
+
+            // Alone: full-width label above the icon row.
+            &:only-child {
+                padding-bottom: var(--public-card-icon-row);
+            }
+
+            // With siblings: only the last line reserves the icon island;
+            // earlier subjects (incl. long names) keep full width.
+            &:last-child:not(:only-child) {
+                padding-bottom: 0;
+                padding-left: var(--public-card-icon-island);
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
             }
         }
     }
