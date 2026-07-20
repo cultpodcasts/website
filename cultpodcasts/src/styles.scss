@@ -103,21 +103,22 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 text-underline-offset: 5px;
                 line-height: 1.25;
             }
-        }
 
-        // Prefer last *visible* subject (empty .subject shells exist for hidden
-        // `_…` names). Alone → pad below icons; with siblings → island padding.
-        app-subjects:not(:has(.subject:has(a) ~ .subject:has(a))) .subject:has(a) {
-            padding-bottom: var(--public-card-icon-row);
-        }
+            // Alone: full-width label above the icon row.
+            &:only-child {
+                padding-bottom: var(--public-card-icon-row);
+            }
 
-        app-subjects:has(.subject:has(a) ~ .subject:has(a)) .subject:has(a):not(:has(~ .subject:has(a))) {
-            padding-bottom: 0;
-            padding-left: var(--public-card-icon-island);
-            min-height: var(--public-card-icon-row);
-            display: flex;
-            justify-content: flex-end;
-            align-items: flex-end;
+            // With siblings: only the last line reserves the icon island;
+            // earlier subjects (incl. long names) keep full width.
+            &:last-child:not(:only-child) {
+                padding-bottom: 0;
+                padding-left: var(--public-card-icon-island);
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+            }
         }
     }
 }
