@@ -18,10 +18,22 @@
         align-self: stretch
         width: 100%
         box-sizing: border-box
-        padding-left: 8px
+        // No left padding: horizontal separation from service icons is the
+        // icons' own margins; padding here only shrinks room for long labels.
+        padding-left: 0
         padding-bottom: 6px
+        // Keep last subject on the same bottom edge as service icons
+        // (public cards use align-items: flex-end on the actions row).
+        &:last-child
+            padding-bottom: 0
         gap: 0
         a
+            // Fill the grown subjects column (public cards) / footer column
+            // (review); text stays right-aligned.
+            flex: 1 1 auto
+            min-width: 0
+            max-width: 100%
+            text-align: right
             color: var(--mat-theme-text-secondary)
             text-decoration: dashed underline 1px
             text-underline-offset: 5px
