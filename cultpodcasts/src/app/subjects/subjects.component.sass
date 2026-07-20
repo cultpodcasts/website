@@ -18,20 +18,10 @@
         align-self: stretch
         width: 100%
         box-sizing: border-box
-        // Horizontal separation from service icons comes from the actions row
-        // gap (styles.scss), not padding here — 8px padding was enough to force
-        // long labels (~340px) onto two lines in a ~346px subjects column.
-        padding-left: 0
+        padding-left: 8px
         padding-bottom: 6px
         gap: 0
         a
-            // Fill the subjects column so wrapping only happens when the grown
-            // footer is genuinely narrower than the label (not because the
-            // link shrink-wrapped mid-column while empty space sat to its left).
-            flex: 1 1 auto
-            min-width: 0
-            max-width: 100%
-            text-align: right
             color: var(--mat-theme-text-secondary)
             text-decoration: dashed underline 1px
             text-underline-offset: 5px

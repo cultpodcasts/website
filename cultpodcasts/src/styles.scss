@@ -51,42 +51,31 @@ mat-card-actions.review-actions {
     margin-top: 14px;
 }
 
-// Public result cards (non-editable mat-card-actions): homepage, search,
-// podcast list, podcast episode, subject, bookmarks, discovery. Service
-// controls sit LEFT (app-episode-links, app-episode-podcast-links, or discovery's
-// inline icon buttons) and subjects RIGHT, bottom-aligned (#421). Subjects stay
-// one-per-line (app-subjects). flex-basis 0 + min-width 0 lets the subjects
-// footer claim remaining row width beside the icon cluster.
-//
-// Icon buttons still use the global 1.2 scale, but drop the 25px margin-right
-// in favour of a tighter gap so long subject labels (e.g. "The Church Of Jesus
-// Christ Of Latter-Day Saints", ~340px) can stay on one line when the card has
-// room. Editable review / outgoing (.review-actions) keep their own layout.
+// Public result cards (homepage, search, podcast, episode, subject, bookmarks,
+// discovery). Subjects use the FULL actions width on their own row so long
+// labels can sit on one line; podcast-service controls stay on a following row
+// at the bottom-left with their normal 25px margins (do not tighten icon
+// spacing). Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: flex-start;
-    gap: 8px;
 
+    // Subjects first row, full width — “above” the service-icon island.
+    mat-card-footer.subjects {
+        flex: 1 1 100%;
+        order: 0;
+        width: 100%;
+        min-width: 100%;
+        margin: 0;
+    }
+
+    // Service controls second row, bottom-left; preserve global icon margins.
     app-episode-links,
     app-episode-podcast-links {
         flex: 0 0 auto;
-    }
-
-    // Prefer gap over per-button margin so the last icon does not reserve a
-    // trailing 25px that subjects could use.
-    app-episode-links #episodelinks,
-    app-episode-podcast-links {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: 8px;
-    }
-
-    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
-        margin-right: 0;
+        order: 1;
     }
 
     // Discovery inlines service icons (and optional YouTube meta) as direct
@@ -95,13 +84,7 @@ mat-card .mdc-card__actions:not(.review-actions) {
     > button[mat-icon-button],
     > .youtubemeta {
         flex: 0 0 auto;
-    }
-
-    mat-card-footer.subjects {
-        flex: 1 1 0;
-        min-width: 0;
-        width: auto;
-        margin: 0;
+        order: 1;
     }
 }
 
