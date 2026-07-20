@@ -28,6 +28,30 @@ describe("search-result-links", () => {
       .toBe("https://i.ytimg.com/vi/yt123456789/hqdefault.jpg");
   });
 
+  it("prefers the YouTube thumbnail over a stale image when a variant is present", () => {
+    const withStaleImage: SearchResult = {
+      ...searchResult,
+      youtubeId: "abcDEF12345",
+      youtubeImageVariant: "maxres",
+      image: "https://i.scdn.co/image/staleCoverArt"
+    };
+
+    expect(episodeImageUrl(withStaleImage)?.toString())
+      .toBe("https://i.ytimg.com/vi/abcDEF12345/maxresdefault.jpg");
+  });
+
+  it("falls back to image when no YouTube variant is present", () => {
+    const audioOnly: SearchResult = {
+      ...searchResult,
+      youtubeId: undefined,
+      youtubeImageVariant: undefined,
+      image: "https://i.scdn.co/image/audioOnlyCover"
+    };
+
+    expect(episodeImageUrl(audioOnly)?.toString())
+      .toBe("https://i.scdn.co/image/audioOnlyCover");
+  });
+
   it("keeps opaque homepage URLs unchanged", () => {
     const homepage: HomepageEpisode = {
       id: "id",

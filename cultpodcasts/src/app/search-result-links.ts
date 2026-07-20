@@ -31,10 +31,19 @@ export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
 }
 
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
-  const image = toUrl(episode.image);
-  if (image) {
-    return image;
+  // A YouTube image-variant is only ever set when the episode's YouTube image is a
+  // standard i.ytimg.com thumbnail, which the index encodes compactly (nulling `image`).
+  // Prefer that reconstructed thumbnail: it matches the backend's YouTube-first image
+  // priority and is robust to a stale `image` value that the incremental search indexer
+  // cannot clear once a YouTube image is merged onto an existing episode.
+  const youtubeThumbnail = youtubeThumbnailUrl(episode);
+  if (youtubeThumbnail) {
+    return youtubeThumbnail;
   }
+  return toUrl(episode.image);
+}
+
+function youtubeThumbnailUrl(episode: SearchDisplayEpisode): URL | undefined {
   if (isHomepageEpisode(episode) || !episode.youtubeId || !episode.youtubeImageVariant) {
     return undefined;
   }
