@@ -56,18 +56,37 @@ mat-card-actions.review-actions {
 // controls sit LEFT (app-episode-links, app-episode-podcast-links, or discovery's
 // inline icon buttons) and subjects RIGHT, bottom-aligned (#421). Subjects stay
 // one-per-line (app-subjects). flex-basis 0 + min-width 0 lets the subjects
-// footer claim remaining row width beside the icon cluster. Editable review /
-// outgoing cards (.review-actions) keep their own icon-column + footer-column
-// layout in component sass and are excluded here.
+// footer claim remaining row width beside the icon cluster.
+//
+// Icon buttons still use the global 1.2 scale, but drop the 25px margin-right
+// in favour of a tighter gap so long subject labels (e.g. "The Church Of Jesus
+// Christ Of Latter-Day Saints", ~340px) can stay on one line when the card has
+// room. Editable review / outgoing (.review-actions) keep their own layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-end;
     justify-content: flex-start;
+    gap: 8px;
 
     app-episode-links,
     app-episode-podcast-links {
         flex: 0 0 auto;
+    }
+
+    // Prefer gap over per-button margin so the last icon does not reserve a
+    // trailing 25px that subjects could use.
+    app-episode-links #episodelinks,
+    app-episode-podcast-links {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+        margin-right: 0;
     }
 
     // Discovery inlines service icons (and optional YouTube meta) as direct

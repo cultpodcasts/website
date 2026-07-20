@@ -22,6 +22,13 @@
         padding-bottom: 6px
         gap: 0
         a
+            // Fill the subjects column so wrapping only happens when the grown
+            // footer is genuinely narrower than the label (not because the
+            // link shrink-wrapped mid-column while empty space sat to its left).
+            flex: 1 1 auto
+            min-width: 0
+            max-width: 100%
+            text-align: right
             color: var(--mat-theme-text-secondary)
             text-decoration: dashed underline 1px
             text-underline-offset: 5px
