@@ -1,4 +1,4 @@
-import { appleUrl, episodeImageUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
+import { appleUrl, episodeImageUrl, expandImage, spotifyUrl, youtubeUrl } from "./search-result-links";
 import { SearchResult } from "./search-result.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 
@@ -23,9 +23,16 @@ describe("search-result-links", () => {
     expect(appleUrl(searchResult)?.toString()).toBe("https://podcasts.apple.com/podcast/id1234567890?i=987654321");
   });
 
-  it("derives YouTube thumbnail when image is omitted", () => {
+  it("derives YouTube thumbnail from legacy youtubeImageVariant when image is omitted", () => {
     expect(episodeImageUrl(searchResult)?.toString())
       .toBe("https://i.ytimg.com/vi/yt123456789/hqdefault.jpg");
+  });
+
+  it("expands a compacted image token, preferring it over the legacy variant", () => {
+    // "Marbury Vale Broadcasting" — the sddefault thumbnail was probed and compacted to "ys".
+    const withToken: SearchResult = { ...searchResult, image: "ys", youtubeImageVariant: "hq" };
+    expect(episodeImageUrl(withToken)?.toString())
+      .toBe("https://i.ytimg.com/vi/yt123456789/sddefault.jpg");
   });
 
   it("keeps opaque homepage URLs unchanged", () => {
@@ -62,5 +69,35 @@ describe("search-result-links", () => {
     expect(appleUrl(incomplete)).toBeUndefined();
     expect(youtubeUrl(incomplete)).toBeUndefined();
     expect(episodeImageUrl(incomplete)).toBeUndefined();
+  });
+
+  describe("expandImage (loss-less compaction inverse)", () => {
+    it("expands every YouTube quality code back to its exact filename", () => {
+      const cases: Record<string, string> = {
+        yx: "maxresdefault",
+        ys: "sddefault",
+        yh: "hqdefault",
+        ym: "mqdefault",
+        yd: "default"
+      };
+      for (const [token, quality] of Object.entries(cases)) {
+        expect(expandImage(token, "griffinsong42")?.toString())
+          .toBe(`https://i.ytimg.com/vi/griffinsong42/${quality}.jpg`);
+      }
+    });
+
+    it("expands Spotify and Apple tokens verbatim", () => {
+      expect(expandImage("sab6765ferngully00cover", undefined)?.toString())
+        .toBe("https://i.scdn.co/image/ab6765ferngully00cover");
+      expect(expandImage("a3Music/draymoor/600x600bb.jpg", undefined)?.toString())
+        .toBe("https://is3-ssl.mzstatic.com/image/thumb/Music/draymoor/600x600bb.jpg");
+    });
+
+    it("returns full URLs unchanged and ignores unusable input", () => {
+      expect(expandImage("https://feeds.saltandcinder.example/art.jpg", undefined)?.toString())
+        .toBe("https://feeds.saltandcinder.example/art.jpg");
+      expect(expandImage("yx", undefined)).toBeUndefined(); // youtube token needs youtubeId
+      expect(expandImage(undefined, "griffinsong42")).toBeUndefined();
+    });
   });
 });
