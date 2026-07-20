@@ -52,34 +52,158 @@ mat-card-actions.review-actions {
 }
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
-// bookmarks, discovery). One shared row: service icons LEFT (original 25px
-// margins — do not tighten), subjects RIGHT growing into remaining width,
-// bottom-aligned so the last subject shares a baseline with the icons (#421).
+// bookmarks, discovery). Subjects wrap around a bottom-left service-icon island:
+// full footer width above the icons, narrowed only beside the icon row — so long
+// labels can use the middle space. Icons keep their global 25px margins (not
+// tightened) and sit absolute bottom-left, level with the last subject.
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: flex-end;
-    justify-content: flex-start;
+    display: block !important;
+    position: relative;
+    --public-card-icon-row: 3.25rem;
+    // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
+    --public-card-icon-island: 16.5rem;
 
     app-episode-links,
     app-episode-podcast-links {
-        flex: 0 0 auto;
-    }
-
-    // Discovery inlines service icons (and optional YouTube meta) as direct
-    // children rather than wrapping them in app-episode-links.
-    > a[mat-icon-button],
-    > button[mat-icon-button],
-    > .youtubemeta {
-        flex: 0 0 auto;
+        position: absolute;
+        // Match .mdc-card__actions padding-left.
+        left: 20px;
+        bottom: 0;
+        z-index: 1;
     }
 
     mat-card-footer.subjects {
-        flex: 1 1 0;
-        min-width: 0;
-        width: auto;
+        display: grid;
+        width: 100% !important;
+        max-width: 100%;
         margin: 0;
+        box-sizing: border-box;
+        min-height: var(--public-card-icon-row);
+
+        app-subjects {
+            display: block !important;
+            width: 100%;
+            margin-left: 0;
+            box-sizing: border-box;
+
+            // L-shaped exclusion: float is full height, but shape-outside only
+            // claims the bottom-left island — line boxes use full width above.
+            &::before {
+                content: "";
+                float: left;
+                width: var(--public-card-icon-island);
+                height: 100%;
+                shape-outside: inset(calc(100% - var(--public-card-icon-row)) 0 0 0);
+                pointer-events: none;
+            }
+        }
+
+        // Block layout so line boxes wrap around the shape-outside float
+        // (flex on .subject would create a BFC and defeat wrap-around).
+        .subject {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: right;
+            padding-left: 0;
+            padding-bottom: 6px;
+
+            &:last-child {
+                padding-bottom: 0;
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                justify-content: flex-end;
+                align-items: flex-end;
+            }
+
+            a {
+                display: inline;
+                flex: none;
+                min-width: 0;
+                max-width: none;
+                text-align: right;
+            }
+        }
+    }
+}
+
+// Discovery cards inline service icons as direct children of actions.
+mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > button[mat-icon-button]) {
+    > a[mat-icon-button],
+    > button[mat-icon-button] {
+        position: absolute;
+        bottom: 0;
+        z-index: 1;
+    }
+
+    > a[mat-icon-button]:nth-of-type(1),
+    > button[mat-icon-button]:nth-of-type(1) {
+        left: 20px;
+    }
+
+    > a[mat-icon-button]:nth-of-type(2),
+    > button[mat-icon-button]:nth-of-type(2) {
+        left: 85px;
+    }
+
+    > a[mat-icon-button]:nth-of-type(3),
+    > button[mat-icon-button]:nth-of-type(3) {
+        left: 150px;
+    }
+
+    > a[mat-icon-button]:nth-of-type(4),
+    > button[mat-icon-button]:nth-of-type(4) {
+        left: 215px;
+    }
+
+    > .youtubemeta {
+        position: absolute;
+        bottom: 0;
+        left: 85px;
+        z-index: 1;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    mat-card .mdc-card__actions:not(.review-actions) {
+        app-episode-links,
+        app-episode-podcast-links {
+            left: 10px;
+        }
+    }
+
+    mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > button[mat-icon-button]) {
+        > a[mat-icon-button]:nth-of-type(1),
+        > button[mat-icon-button]:nth-of-type(1) {
+            left: 10px;
+        }
+
+        > a[mat-icon-button]:nth-of-type(2),
+        > button[mat-icon-button]:nth-of-type(2) {
+            left: 68px;
+        }
+
+        > a[mat-icon-button]:nth-of-type(3),
+        > button[mat-icon-button]:nth-of-type(3) {
+            left: 126px;
+        }
+
+        > a[mat-icon-button]:nth-of-type(4),
+        > button[mat-icon-button]:nth-of-type(4) {
+            left: 184px;
+        }
+    }
+}
+
+@media screen and (max-width: 400px) {
+    mat-card .mdc-card__actions:not(.review-actions) {
+        --public-card-icon-island: 12rem;
+
+        app-episode-links,
+        app-episode-podcast-links {
+            left: 2px;
+        }
     }
 }
 
