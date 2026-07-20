@@ -13,5 +13,4 @@ export interface SearchResult {
   internetArchive?: URL | string;
   subjects?: string[];
   image?: URL | string;
-  youtubeImageVariant?: "maxres" | "sd" | "hq";
 }

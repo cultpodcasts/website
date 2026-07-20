@@ -13,8 +13,7 @@ describe("search-result-links", () => {
     spotifyId: "spotify123",
     youtubeId: "yt123456789",
     appleId: "987654321",
-    podcastAppleId: "1234567890",
-    youtubeImageVariant: "hq"
+    podcastAppleId: "1234567890"
   };
 
   it("reconstructs platform URLs from compact ids", () => {
@@ -23,14 +22,9 @@ describe("search-result-links", () => {
     expect(appleUrl(searchResult)?.toString()).toBe("https://podcasts.apple.com/podcast/id1234567890?i=987654321");
   });
 
-  it("derives YouTube thumbnail from legacy youtubeImageVariant when image is omitted", () => {
-    expect(episodeImageUrl(searchResult)?.toString())
-      .toBe("https://i.ytimg.com/vi/yt123456789/hqdefault.jpg");
-  });
-
-  it("expands a compacted image token, preferring it over the legacy variant", () => {
+  it("expands a compacted image token to its exact thumbnail URL", () => {
     // "Marbury Vale Broadcasting" — the sddefault thumbnail was probed and compacted to "ys".
-    const withToken: SearchResult = { ...searchResult, image: "ys", youtubeImageVariant: "hq" };
+    const withToken: SearchResult = { ...searchResult, image: "ys" };
     expect(episodeImageUrl(withToken)?.toString())
       .toBe("https://i.ytimg.com/vi/yt123456789/sddefault.jpg");
   });
@@ -61,8 +55,7 @@ describe("search-result-links", () => {
       ...searchResult,
       spotifyId: undefined,
       appleId: undefined,
-      youtubeId: undefined,
-      youtubeImageVariant: undefined
+      youtubeId: undefined
     };
 
     expect(spotifyUrl(incomplete)).toBeUndefined();

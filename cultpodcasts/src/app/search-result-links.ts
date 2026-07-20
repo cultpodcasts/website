@@ -36,22 +36,7 @@ export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined 
     return toUrl(episode.image);
   }
 
-  const expanded = expandImage(episode.image, episode.youtubeId);
-  if (expanded) {
-    return expanded;
-  }
-
-  // Legacy fallback: documents indexed before the loss-less compaction scheme carry the coarse
-  // youtubeImageVariant (maxres/sd/hq) with an empty image. Expand it until they re-merge.
-  if (!episode.youtubeId || !episode.youtubeImageVariant) {
-    return undefined;
-  }
-  const variant = {
-    maxres: "maxresdefault",
-    sd: "sddefault",
-    hq: "hqdefault"
-  }[episode.youtubeImageVariant];
-  return toUrl(`https://i.ytimg.com/vi/${encodeURIComponent(episode.youtubeId)}/${variant}.jpg`);
+  return expandImage(episode.image, episode.youtubeId);
 }
 
 const youtubeQualityByCode: Record<string, string> = {
