@@ -22,6 +22,10 @@
         // icons' own margins; padding here only shrinks room for long labels.
         padding-left: 0
         padding-bottom: 6px
+        // Keep last subject on the same bottom edge as service icons
+        // (public cards use align-items: flex-end on the actions row).
+        &:last-child
+            padding-bottom: 0
         gap: 0
         a
             // Fill the grown subjects column (public cards) / footer column
