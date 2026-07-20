@@ -18,7 +18,10 @@
         align-self: stretch
         width: 100%
         box-sizing: border-box
-        padding-left: 8px
+        // Horizontal separation from service icons comes from the actions row
+        // gap (styles.scss), not padding here — 8px padding was enough to force
+        // long labels (~340px) onto two lines in a ~346px subjects column.
+        padding-left: 0
         padding-bottom: 6px
         gap: 0
         a
