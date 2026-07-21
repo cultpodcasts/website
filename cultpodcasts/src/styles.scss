@@ -72,20 +72,23 @@ mat-card:has(> .mdc-card__actions:not(.review-actions)) {
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
-    // Grid so leading subjects span full width above, while the last/only
-    // subject shares the bottom row with the icon island when there is room.
-    // Subject column never shrinks below --public-card-subject-min; the island
-    // column is capped so labels are not crushed. Icons never sit between subjects.
-    display: grid !important;
-    grid-template-columns:
-        fit-content(calc(100% - var(--public-card-subject-min)))
-        minmax(var(--public-card-subject-min), 1fr);
-    align-items: center;
-    justify-content: stretch;
+    // Flex wrap + row-reverse so last/only subject can sit beside the icon
+    // island when there is room (island left, subject right), but when island
+    // intrinsic width + --public-card-subject-min exceed the row, the subject
+    // stays on its line and the island wraps below — never crushed, never
+    // overlapping, never between subject lines. Leading subjects are always
+    // full-width above (order 1).
+    display: flex !important;
+    flex-wrap: wrap;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+    justify-content: flex-start;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     --public-card-desc-gap: 8px;
     --public-card-subject-min: 100px;
+    // Subject line-height (matches .subject a) for last-line mid ↔ icon mid.
+    --public-card-subject-line: 1.25em;
     box-sizing: border-box;
     min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
     padding-top: var(--public-card-desc-gap);
@@ -94,19 +97,21 @@ mat-card .mdc-card__actions:not(.review-actions) {
     row-gap: 0;
 
     // Content-sized island (YT/Spotify/Apple/BBC/IA/Share/youtube-stats/…).
-    // Same grid row as last/only subject (order 2); capped by the first track.
+    // order 3 + row-reverse: packs left of last subject when coexisting; wraps
+    // below when the row cannot keep subject ≥ --public-card-subject-min.
+    // margin-right: auto keeps a lone (wrapped) island flush left.
     app-episode-links,
     app-episode-podcast-links,
     .discovery-service-links {
-        grid-column: 1;
-        order: 2;
-        justify-self: start;
-        align-self: center;
+        order: 3;
+        flex: 0 0 auto;
+        align-self: flex-end;
         display: flex !important;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
         margin-left: 0;
+        margin-right: auto;
         position: static;
         z-index: 1;
         height: var(--public-card-icon-row);
@@ -171,23 +176,28 @@ mat-card .mdc-card__actions:not(.review-actions) {
 
         // Leading subjects: full-width rows above the bottom icon/subject row.
         &:not(:last-child) {
-            grid-column: 1 / -1;
+            flex: 0 0 100%;
+            width: 100%;
             order: 1;
             align-self: stretch;
         }
 
-        // Last / only: bottom row beside the island. Track minmax keeps ≥
-        // --public-card-subject-min so labels are not crushed.
+        // Last / only: shares the bottom row with the island when
+        // island + min-width fit; otherwise full line above a wrapped island.
+        // align-self/end + margin-bottom optically match icon mid to the
+        // middle of the last line of the subject (not the whole wrapped block).
         &:last-child {
-            grid-column: 2;
             order: 2;
+            flex: 1 1 var(--public-card-subject-min);
+            width: auto;
+            max-width: 100%;
+            min-width: min(100%, var(--public-card-subject-min));
             padding-bottom: 0;
-            align-self: center;
-            justify-self: stretch;
-            min-width: 0;
+            align-self: flex-end;
+            margin-bottom: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
             display: flex !important;
             flex-direction: row;
-            align-items: center !important;
+            align-items: flex-end !important;
             justify-content: flex-end;
         }
     }

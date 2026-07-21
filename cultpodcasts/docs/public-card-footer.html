@@ -6,7 +6,7 @@
   <title>Public card footer — layout guide</title>
   <style>
     /*
-      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.971+).
+      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.973+).
       Open this file in a browser — no Angular build required.
       Cross-check failures against docs/public-card-footer.md checklist.
       Subject length bands: tiny / short / medium / long / very long (see design doc).
@@ -16,6 +16,7 @@
       --public-card-icon-row: 40px;
       --public-card-desc-gap: 8px;
       --public-card-subject-min: 100px;
+      --public-card-subject-line: 1.25em;
       --icon-margin-right: 25px;
       --actions-padding-left: 20px;
       --mat-theme-text-secondary: #5f6368;
@@ -75,11 +76,11 @@
 
     /* --- Public footer contract (simplified Material stand-in) --- */
     .actions {
-      display: grid;
-      grid-template-columns:
-        fit-content(calc(100% - var(--public-card-subject-min)))
-        minmax(var(--public-card-subject-min), 1fr);
-      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: row-reverse;
+      align-items: flex-end;
+      justify-content: flex-start;
       position: relative;
       min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
       padding-top: var(--public-card-desc-gap);
@@ -91,15 +92,16 @@
     }
 
     .icon-host {
-      grid-column: 1;
-      order: 2;
-      justify-self: start;
-      align-self: center;
+      order: 3;
+      flex: 0 0 auto;
+      align-self: flex-end;
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
       margin-left: 0;
+      margin-right: auto;
+      position: relative;
       height: var(--public-card-icon-row);
       min-height: var(--public-card-icon-row);
       max-width: 100%;
@@ -164,34 +166,38 @@
       line-height: 1.25;
     }
     .subject:not(:last-child) {
-      grid-column: 1 / -1;
+      flex: 0 0 100%;
+      width: 100%;
       order: 1;
       align-self: stretch;
     }
     .subject:last-child {
-      grid-column: 2;
       order: 2;
+      flex: 1 1 var(--public-card-subject-min);
+      width: auto;
+      max-width: 100%;
+      min-width: min(100%, var(--public-card-subject-min));
       padding-bottom: 0;
-      align-self: center;
-      justify-self: stretch;
-      min-width: 0;
+      align-self: flex-end;
+      margin-bottom: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: flex-end;
       justify-content: flex-end;
     }
 
-    /* Mid-line guide (toggle with checkbox) */
-    body.show-guides .actions {
-      background-image: linear-gradient(
-        to bottom,
-        transparent calc(var(--public-card-desc-gap) + var(--public-card-icon-row) / 2 - 0.5px),
-        rgba(220, 20, 60, 0.55) calc(var(--public-card-desc-gap) + var(--public-card-icon-row) / 2 - 0.5px),
-        rgba(220, 20, 60, 0.55) calc(var(--public-card-desc-gap) + var(--public-card-icon-row) / 2 + 0.5px),
-        transparent calc(var(--public-card-desc-gap) + var(--public-card-icon-row) / 2 + 0.5px)
-      );
-      background-repeat: no-repeat;
-      background-size: 100% 100%;
+    /* Red guide = icon-host vertical mid (tracks wrap / tall subjects). */
+    body.show-guides .icon-host::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      margin-top: -0.5px;
+      background: rgba(220, 20, 60, 0.55);
+      pointer-events: none;
+      z-index: 2;
     }
     body.show-guides .card-desc {
       box-shadow: inset 2px 0 0 rgba(30, 120, 200, 0.7);
@@ -227,7 +233,8 @@
   <h1>Public card footer</h1>
   <p class="lead">
     Static layout guide for the public episode-card footer contract in
-    <code>docs/public-card-footer.md</code>. Red guide = icon/subject mid-line;
+    <code>docs/public-card-footer.md</code>. Red guide = icon-host vertical mid
+    (should meet the middle of the last subject’s last line when they coexist);
     blue edge = description / icon flush-left.
   </p>
 
@@ -237,8 +244,9 @@
 
   <div class="pass-rules">
     Every card must: flush-left icons · one icon mid-line · island never between subjects ·
-    leading subjects full-width above · last/only subject beside island (≥ min-width) ·
-    8px under description · ~10px card bottom · no crush / no subject-icon collision · 6px subject gaps.
+    leading subjects full-width above · last/only subject beside island when room (≥ min-width),
+    else all subjects above island · no crush / no subject-icon overlap · 8px under description ·
+    ~10px card bottom · 6px subject gaps · when coexisting, last-line mid ↔ icon mid.
   </div>
 
   <h2>A — 0 subjects, YT + Share</h2>
@@ -267,7 +275,7 @@
         </div>
         <div class="subject">Cult Psychology</div>
       </div>
-      <p class="note">Short band — bottom row coexist.</p>
+      <p class="note">Short band — bottom row coexist; last-line mid ↔ icon mid.</p>
     </article>
   </div>
 
@@ -285,7 +293,7 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Long band — may wrap in subject column; column ≥ min-width.</p>
+      <p class="note">Long band — may wrap; when beside island, red guide = last-line mid ↔ icon mid (not top of first line).</p>
     </article>
   </div>
 
@@ -319,7 +327,7 @@
         </div>
         <div class="subject">Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY</div>
       </div>
-      <p class="note">Very long band — wraps in column; never crushed to one word per line.</p>
+      <p class="note">Very long band — wraps in column when coexisting; stacks above island if room runs out.</p>
     </article>
   </div>
 
@@ -393,7 +401,7 @@
         <div class="subject">Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY</div>
         <div class="subject">Independent Fundamentalist</div>
       </div>
-      <p class="note">Very long leading above; short/medium last beside icons on the bottom row.</p>
+      <p class="note">Very long leading above; short/medium last beside icons on the bottom row when room allows.</p>
     </article>
   </div>
 
@@ -410,7 +418,7 @@
         <div class="subject">NXIVM</div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Tiny leading above; long last beside icons (≥ min-width).</p>
+      <p class="note">Tiny leading above; long last beside icons (≥ min-width) when room allows.</p>
     </article>
   </div>
 
@@ -429,7 +437,7 @@
         <div class="subject">Troubled Teen Industry</div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Mixed lengths — only the last subject shares the bottom row with icons.</p>
+      <p class="note">Mixed lengths — only the last subject shares the bottom row with icons when room allows.</p>
     </article>
   </div>
 
@@ -465,7 +473,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Wide island is capped so last subject keeps ≥ min-width on the bottom row — island never between subjects.</p>
+      <p class="note">Wide island — when island + min-width cannot coexist, <strong>all subjects stack above</strong> the island (no overlap, island never between).</p>
     </article>
   </div>
 
@@ -502,7 +510,7 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Subject column ≥ <code>--public-card-subject-min</code> (100px) beside the stats island — not a one-word-per-line crush.</p>
+      <p class="note">Stats island — coexist only if subject keeps ≥ min-width; otherwise subject stacks full-width above, island alone below (no one-word crush / overlap).</p>
     </article>
   </div>
 
@@ -522,7 +530,7 @@
         </div>
         <div class="subject">Qanon</div>
       </div>
-      <p class="note">Tiny label — column still ≥ min-width beside meta island.</p>
+      <p class="note">Tiny label — column still ≥ min-width beside meta island when room allows; else stack above.</p>
     </article>
   </div>
 
@@ -549,6 +557,7 @@
   <p class="note">
     Resize the window for cases J/K (≤600px / ≤400px padding + icon gaps).
     Fixture geometry only — still verify H/I on a live Discovery run with Members data.
+    Vert alignment: when last/only subject shares the bottom row, icon mid meets the middle of that subject’s last line.
   </p>
 
   <script>
