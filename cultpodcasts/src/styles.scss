@@ -53,13 +53,12 @@ mat-card-actions.review-actions {
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
 // bookmarks, discovery) — ONE shared rule for all of these surfaces.
-// Subjects use the FULL footer width; the last subject (including when alone)
-// reserves a bottom-left island for service icons so labels sit beside them on
-// the same baseline. Leading subjects keep full width.
-// Icons stay absolutely pinned bottom-left. The actions row is a column flex
-// with justify-end + icon-sized min-height so a lone short subject is pulled
-// down onto the icon baseline (no padding-bottom dead band under the label).
-// Review/outgoing (.review-actions) keep their own two-column layout.
+// Subjects use the FULL footer width; only the last subject when siblings exist
+// reserves a bottom-left island for service icons. A lone subject stays full
+// width (like a leading multi-subject line) so long labels use the middle;
+// actions flex-end + min-height keep it on the icon baseline with no dead band.
+// Icons stay absolutely pinned bottom-left. Review/outgoing (.review-actions)
+// keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     display: flex !important;
     flex-direction: column;
@@ -109,15 +108,21 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // Last line (alone or with siblings) reserves the icon island.
-            // Earlier siblings keep full width. Do NOT set min-height on the
-            // subject row — that stretched multi-subject last lines and left a
-            // blank band above the final label. Do NOT use padding-bottom to
-            // reserve the icon row — that left a dead band under a lone subject
-            // on homepage / search / discovery.
-            &:last-child {
+            // With siblings: only the last line reserves the icon island.
+            // Earlier siblings (and a lone subject) keep FULL footer width so
+            // long labels can use the middle — same as #423 flow-around.
+            // Do NOT set min-height on the subject row (blank band above label).
+            // Do NOT use padding-bottom to reserve the icon row (vertical dead
+            // band). Actions flex-end + min-height keep only-child on the icon
+            // baseline without a narrow right column.
+            &:last-child:not(:only-child) {
                 padding-bottom: 0;
                 padding-left: var(--public-card-icon-island);
+            }
+
+            &:only-child {
+                padding-bottom: 0;
+                padding-left: 0;
             }
         }
     }
