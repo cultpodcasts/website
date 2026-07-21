@@ -149,13 +149,14 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 padding-left: var(--public-card-icon-island);
             }
 
-            // Match icon-row height so text mid-aligns with buttons; fills min-height
-            // without a dead band under the description.
+            // Icon-tall row under the shared desc gap so buttons don't invade
+            // description; text at the TOP of that row so it matches multi's
+            // first-subject line (centering put labels ~10px lower than 2+).
             &:only-child {
                 padding-left: 0;
                 min-height: var(--public-card-icon-row);
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 justify-content: flex-end;
             }
         }
