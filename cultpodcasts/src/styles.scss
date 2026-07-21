@@ -73,6 +73,11 @@ mat-card .mdc-card__actions:not(.review-actions) {
     align-items: stretch;
     position: relative;
     min-height: var(--mdc-icon-button-state-layer-size, 40px);
+    // Material defaults ~8px padding-bottom; abspos bottom:0 sits on the
+    // padding edge while in-flow subjects end above it — that splits the
+    // baseline. Zero it so icons + subjects share the content bottom; card
+    // padding-bottom (above) provides clearance from the card border.
+    padding-bottom: 0;
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
 
