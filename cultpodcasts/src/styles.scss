@@ -55,15 +55,15 @@ mat-card-actions.review-actions {
 // bookmarks, discovery) — ONE shared rule for all of these surfaces.
 // Subjects use the FULL footer width; only the last subject when siblings exist
 // reserves a bottom-left island for service icons. A lone subject stays full
-// width (like a leading multi-subject line) so long labels use the middle;
-// actions flex-end + min-height keep it on the icon baseline with no dead band.
-// Icons stay absolutely pinned bottom-left of the actions row (same baseline as
-// subjects). Bottom clearance from the card edge is padding on the card itself
-// — never lift icons with a separate absolute `bottom` inset.
+// width (like a leading multi-subject line) so long labels use the middle.
+// Last subject (and Discovery youtube-stats) are vertically centered on the
+// icon-button mid-line — not parked on the icon bottom edge.
+// Icons stay absolutely pinned bottom-left. Bottom clearance is padding on the
+// card itself — never lift icons with a separate absolute `bottom` inset.
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
-    // Keeps icons+subjects (shared baseline) clear of the card bottom border.
-    padding-bottom: 12px;
+    // Keeps the shared icon+subject band clear of the card bottom border.
+    padding-bottom: 16px;
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
@@ -72,11 +72,12 @@ mat-card .mdc-card__actions:not(.review-actions) {
     justify-content: flex-end;
     align-items: stretch;
     position: relative;
-    min-height: var(--mdc-icon-button-state-layer-size, 40px);
+    --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
+    min-height: var(--public-card-icon-row);
     // Material defaults ~8px padding-bottom; abspos bottom:0 sits on the
-    // padding edge while in-flow subjects end above it — that splits the
-    // baseline. Zero it so icons + subjects share the content bottom; card
-    // padding-bottom (above) provides clearance from the card border.
+    // padding edge while in-flow subjects end above it. Zero it so the last
+    // subject row and icons share the same bottom band; card padding-bottom
+    // provides clearance from the card border.
     padding-bottom: 0;
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
@@ -120,20 +121,24 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // With siblings: only the last line reserves the icon island.
-            // Earlier siblings (and a lone subject) keep FULL footer width so
-            // long labels can use the middle — same as #423 flow-around.
-            // Do NOT set min-height on the subject row (blank band above label).
-            // Do NOT use padding-bottom to reserve the icon row (vertical dead
-            // band). Actions flex-end + min-height keep only-child on the icon
-            // baseline without a narrow right column.
-            &:last-child:not(:only-child) {
+            // Last line matches icon-button height and centers the label on the
+            // icon mid-line. Use center (not flex-end) — flex-end parked text
+            // under the icons; min-height alone with flex-end also left a blank
+            // band above multi-subject last labels.
+            &:last-child {
                 padding-bottom: 0;
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            // With siblings: reserve the icon island. Alone: full width.
+            &:last-child:not(:only-child) {
                 padding-left: var(--public-card-icon-island);
             }
 
             &:only-child {
-                padding-bottom: 0;
                 padding-left: 0;
             }
         }
@@ -169,14 +174,15 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         left: 215px;
     }
 
-    // Match icon-button height and center meta so Members/Views sit on the
-    // icon mid-line with subjects (a short bottom:0 box sat too low).
+    // Same mid-line as last subject / service icons.
     > .youtubemeta {
         position: absolute;
         bottom: 0;
         left: 85px;
         z-index: 1;
-        height: var(--mdc-icon-button-state-layer-size, 40px);
+        height: var(--public-card-icon-row);
+        display: flex;
+        flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
     }
