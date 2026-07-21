@@ -57,8 +57,15 @@ mat-card-actions.review-actions {
 // reserves a bottom-left island for service icons. A lone subject stays full
 // width (like a leading multi-subject line) so long labels use the middle;
 // actions flex-end + min-height keep it on the icon baseline with no dead band.
-// Icons stay absolutely pinned above a shared bottom inset (not flush to the
-// card edge). Review/outgoing (.review-actions) keep their own two-column layout.
+// Icons stay absolutely pinned bottom-left of the actions row (same baseline as
+// subjects). Bottom clearance from the card edge is padding on the card itself
+// — never lift icons with a separate absolute `bottom` inset.
+// Review/outgoing (.review-actions) keep their own two-column layout.
+mat-card:has(> .mdc-card__actions:not(.review-actions)) {
+    // Keeps icons+subjects (shared baseline) clear of the card bottom border.
+    padding-bottom: 12px;
+}
+
 mat-card .mdc-card__actions:not(.review-actions) {
     display: flex !important;
     flex-direction: column;
@@ -66,12 +73,6 @@ mat-card .mdc-card__actions:not(.review-actions) {
     align-items: stretch;
     position: relative;
     min-height: var(--mdc-icon-button-state-layer-size, 40px);
-    // Space under icons + subject baseline so they clear the card border.
-    // Absolute icons use the same value for `bottom` (abspos ignores padding).
-    // 16px (not 10): icon buttons use transform:scale(1.2), which extends the
-    // visual past the layout box toward the card edge.
-    --public-card-actions-inset: 16px;
-    padding-bottom: var(--public-card-actions-inset);
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
 
@@ -79,7 +80,7 @@ mat-card .mdc-card__actions:not(.review-actions) {
     app-episode-podcast-links {
         position: absolute;
         left: 20px;
-        bottom: var(--public-card-actions-inset);
+        bottom: 0;
         z-index: 1;
     }
 
@@ -139,7 +140,7 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
     > a[mat-icon-button],
     > button[mat-icon-button] {
         position: absolute;
-        bottom: var(--public-card-actions-inset);
+        bottom: 0;
         z-index: 1;
     }
 
@@ -167,7 +168,7 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
     // icon mid-line with subjects (a short bottom:0 box sat too low).
     > .youtubemeta {
         position: absolute;
-        bottom: var(--public-card-actions-inset);
+        bottom: 0;
         left: 85px;
         z-index: 1;
         height: var(--mdc-icon-button-state-layer-size, 40px);
