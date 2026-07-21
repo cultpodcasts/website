@@ -60,36 +60,34 @@ mat-card-actions.review-actions {
 // so their mid-line matches the last subject — do NOT min-height the last
 // subject (that left a hole above it).
 // Review/outgoing (.review-actions) keep their own two-column layout.
+// Public / Discovery card footer contract:
+// - Card padding-bottom = icon→card-bottom clearance (~10px) for 0 / 1 / 2+ subjects.
+// - Icons are absolute bottom:0 (never nudged); subjects mid-align to them.
+// - padding-top = desc→footer gap (8px).
+// - only-child: full-width icon-tall row, label centered with icons.
+// - 2+: leading subjects full width; last subject has icon-island inset; uniform 6px gaps.
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
-    padding-bottom: 10px;
+    --public-card-footer-clearance: 10px;
+    padding-bottom: var(--public-card-footer-clearance);
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
     display: flex !important;
     flex-direction: column;
-    // flex-start keeps padding-top as the desc→footer gap (flex-end + min-height
-    // used to park a lone subject at the bottom and open a hole under the description).
     justify-content: flex-start;
     align-items: stretch;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
-    // Natural last-subject line box (matches .subject a line-height ≈ 1.25).
     --public-card-subject-line: 20px;
-    // Visible icon→card-bottom gap comes from mat-card padding-bottom (10px).
-    --public-card-footer-clearance: 10px;
-    // Used when lifting in-flow last subject into the icon mid-line (multi only).
+    // Half (icon-row − subject-line): multi pad-bottom so last-line mid == icon mid.
     --public-card-icon-mid-nudge: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
-    // Space beneath description — same for 0 / 1 / 2+ subjects (multi is the reference).
     --public-card-desc-gap: 8px;
+    --public-card-icon-island: 16.5rem;
     box-sizing: border-box;
-    // Icon row sits below the desc gap; card padding supplies bottom clearance.
     min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
     padding-top: var(--public-card-desc-gap);
     padding-bottom: 0;
-    --public-card-icon-island: 16.5rem;
 
-    // Icons always flush to the actions bottom so icon→card-bottom is identical
-    // for 0 / 1 / 2+ (card padding-bottom = 10px clearance). Do not nudge icons.
     app-episode-links,
     app-episode-podcast-links {
         position: absolute;
@@ -98,11 +96,10 @@ mat-card .mdc-card__actions:not(.review-actions) {
         z-index: 1;
     }
 
-    // Multi-subject: lift in-flow subjects so last-line mid matches icon mid
-    // (icons stay at bottom: 0).
+    // Multi: lift the subject stack so the last line shares the icon mid-line.
     &:has(.subject:not(:only-child)) {
-        padding-bottom: var(--public-card-footer-clearance);
-        min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row) + var(--public-card-footer-clearance));
+        padding-bottom: var(--public-card-icon-mid-nudge);
+        min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row) + var(--public-card-icon-mid-nudge));
     }
 
     mat-card-footer.subjects {
@@ -127,7 +124,6 @@ mat-card .mdc-card__actions:not(.review-actions) {
             box-sizing: border-box;
             text-align: right;
             padding-left: 0;
-            // Uniform gap between subject lines (including before the last).
             padding-bottom: 6px;
 
             a {
@@ -137,19 +133,17 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // Natural height only — no min-height (avoids a hole above last label).
             &:last-child {
                 padding-bottom: 0;
             }
 
+            // Flow-around: reserve horizontal space beside abspos icons.
             &:last-child:not(:only-child) {
                 padding-left: var(--public-card-icon-island);
             }
 
-            // Icon-tall row under the shared 8px desc gap; center the label so it
-            // shares a mid-line with icons fixed at bottom: 0.
+            // Lone subject: full width + share mid-line with icon row.
             &:only-child {
-                padding-left: 0;
                 min-height: var(--public-card-icon-row);
                 display: flex;
                 align-items: center;
@@ -164,7 +158,6 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
     > a[mat-icon-button],
     > button[mat-icon-button] {
         position: absolute;
-        // Same fixed bottom as homepage links — card padding is the clearance.
         bottom: 0;
         z-index: 1;
     }
