@@ -55,31 +55,33 @@
         <app-clampable-text class="resultdescription" [maxLines]="6" [html]="result.episodeDescription"></app-clampable-text>
     </mat-card-content>
     <mat-card-actions>
-        @if (result.urls.youtube!=null) {
-        <a href="{{result.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-            <mat-icon svgIcon="youtube"></mat-icon>
-        </a>
-        @if (result.youTubeViews || result.youTubeChannelMembers) {
-        <div class="youtubemeta">
-            @if (result.youTubeViews) {
-            <span>Views: {{result.youTubeViews}}</span>
+        <div class="discovery-service-links">
+            @if (result.urls.youtube!=null) {
+            <a href="{{result.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                <mat-icon svgIcon="youtube"></mat-icon>
+            </a>
+            @if (result.youTubeViews || result.youTubeChannelMembers) {
+            <div class="youtubemeta">
+                @if (result.youTubeViews) {
+                <span>Views: {{result.youTubeViews}}</span>
+                }
+                @if (result.youTubeChannelMembers) {
+                <span>Members: {{result.youTubeChannelMembers}}</span>
+                }
+            </div>
             }
-            @if (result.youTubeChannelMembers) {
-            <span>Members: {{result.youTubeChannelMembers}}</span>
+            }
+            @if (result.urls.spotify!=null) {
+            <a href="{{result.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                <mat-icon svgIcon="spotify"></mat-icon>
+            </a>
+            }
+            @if (result.urls.apple) {
+            <a href="{{result.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+            </a>
             }
         </div>
-        }
-        }
-        @if (result.urls.spotify!=null) {
-        <a href="{{result.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-            <mat-icon svgIcon="spotify"></mat-icon>
-        </a>
-        }
-        @if (result.urls.apple) {
-        <a href="{{result.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-            <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
-        </a>
-        }
         <mat-card-footer class="subjects">
             <app-subjects [subjects]="result.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
         </mat-card-footer>
