@@ -60,9 +60,10 @@ mat-card-actions.review-actions {
 // - Leading subjects: flex-basis 100% (full width rows).
 // - Icon cluster + last/only subject share the final row (order: 2); island width
 //   is the real host width — never a magic padding-left for N icons.
-// - align-items: center mid-aligns last/only subject with the icon row.
+// - Icon host is a fixed-height row; all service buttons mid-align inside it.
+// - Last/only subject is the same height and flex-centers its label → shared mid-line.
 // - Card padding-bottom ≈ 10px clearance; actions padding-top = 8px desc→footer.
-// - Uniform 6px gaps between subjects; do NOT min-height the last subject.
+// - Uniform 6px gaps between subjects; do NOT min-height *leading* subjects.
 // - Icons flush left with description (actions padding only — no extra host margin).
 // - Keep mat-card-actions icon margin-right (25px / 18px / 12px) — do not squeeze.
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
@@ -75,7 +76,9 @@ mat-card .mdc-card__actions:not(.review-actions) {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: flex-start;
-    align-items: center;
+    // Override mat-card .mdc-card__actions { align-items: end } so the icon
+    // host and last subject share one mid-line (both are icon-row tall).
+    align-items: center !important;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     --public-card-desc-gap: 8px;
@@ -87,7 +90,7 @@ mat-card .mdc-card__actions:not(.review-actions) {
     row-gap: 0;
 
     // One flex item whose width grows with however many service buttons exist.
-    // No margin-left: actions padding-left already matches description inset.
+    // Fixed height + centered children → YT/Share/BBC/IA share one mid-line.
     app-episode-links,
     app-episode-podcast-links,
     .discovery-service-links {
@@ -97,9 +100,49 @@ mat-card .mdc-card__actions:not(.review-actions) {
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
+        align-self: center;
         margin-left: 0;
         position: static;
         z-index: 1;
+        height: var(--public-card-icon-row);
+        min-height: var(--public-card-icon-row);
+        box-sizing: border-box;
+
+        // Unwrap nested #episodelinks so buttons are flex children of the host.
+        #episodelinks {
+            display: contents;
+        }
+
+        a[mat-icon-button],
+        button[mat-icon-button] {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            align-self: center;
+            margin-top: 0;
+            margin-bottom: 0;
+            vertical-align: middle;
+            box-sizing: border-box;
+        }
+
+        // SVG (youtube/spotify/…) and font (share) icons share the same box.
+        mat-icon {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            margin: 0 !important;
+            line-height: 1 !important;
+            width: var(--mdc-icon-button-icon-size, 24px);
+            height: var(--mdc-icon-button-icon-size, 24px);
+            font-size: var(--mdc-icon-button-icon-size, 24px);
+            overflow: visible;
+        }
+
+        mat-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
     }
 
     mat-card-footer.subjects,
@@ -125,19 +168,21 @@ mat-card .mdc-card__actions:not(.review-actions) {
         &:not(:last-child) {
             order: 1;
             flex: 1 0 100%;
+            align-self: stretch;
         }
 
-        // Last of many / only-child: share the icon row; take remaining width.
+        // Last of many / only-child: same row as icon host; min-height matches
+        // icon-row so single-line labels mid-align. Do not set fixed height —
+        // long labels may wrap within the remaining width.
         &:last-child {
             order: 2;
             flex: 1 1 0;
             padding-bottom: 0;
-        }
-
-        &:only-child {
+            align-self: center;
             min-height: var(--public-card-icon-row);
-            display: flex;
-            align-items: center;
+            display: flex !important;
+            flex-direction: row;
+            align-items: center !important; // override subjects.component baseline
             justify-content: flex-end;
         }
     }
@@ -148,8 +193,10 @@ mat-card .mdc-card__actions:not(.review-actions) {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-self: center;
             box-sizing: border-box;
             flex: 0 0 auto;
+            line-height: 1.2;
         }
     }
 }
