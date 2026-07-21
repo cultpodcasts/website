@@ -61,7 +61,7 @@ mat-card-actions.review-actions {
 // subject (that left a hole above it).
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
-    padding-bottom: 16px;
+    padding-bottom: 10px;
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
@@ -73,16 +73,18 @@ mat-card .mdc-card__actions:not(.review-actions) {
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     // Natural last-subject line box (matches .subject a line-height ≈ 1.25).
     --public-card-subject-line: 20px;
-    // Keep icons clear of the card/actions bottom edge (also absorbs scale(1.2)).
-    --public-card-footer-clearance: 14px;
+    // Keep icons clear of the card/actions bottom edge (~10px visible gap).
+    --public-card-footer-clearance: 10px;
     // Shift icons relative to that clearance so icon mid == last-subject mid.
     --public-card-icon-mid-nudge: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
     min-height: var(--public-card-icon-row);
     // Lifts in-flow subjects with the icons; abspos bottom uses the same token.
     padding-bottom: var(--public-card-footer-clearance);
+    // Space beneath description before the icon/subject footer row.
+    padding-top: 8px;
     --public-card-icon-island: 16.5rem;
 
-    // No subjects: breathe between description and the icon row.
+    // No subjects: extra breathe between description and the icon row.
     &:not(:has(.subject)) {
         padding-top: 22px;
         min-height: calc(var(--public-card-icon-row) + 22px + var(--public-card-footer-clearance));
