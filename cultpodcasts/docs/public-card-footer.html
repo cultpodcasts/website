@@ -6,7 +6,7 @@
   <title>Public card footer — layout guide</title>
   <style>
     /*
-      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.973+).
+      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.974+).
       Open this file in a browser — no Angular build required.
       Cross-check failures against docs/public-card-footer.md checklist.
       Subject length bands: tiny / short / medium / long / very long (see design doc).
@@ -15,8 +15,8 @@
       --public-card-footer-clearance: 10px;
       --public-card-icon-row: 40px;
       --public-card-desc-gap: 8px;
-      --public-card-subject-min: 100px;
       --public-card-subject-line: 1.25em;
+      --public-card-subject-mid-offset: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
       --icon-margin-right: 25px;
       --actions-padding-left: 20px;
       --mat-theme-text-secondary: #5f6368;
@@ -173,17 +173,27 @@
     }
     .subject:last-child {
       order: 2;
-      flex: 1 1 var(--public-card-subject-min);
+      flex: 1 1 min-content;
       width: auto;
       max-width: 100%;
-      min-width: min(100%, var(--public-card-subject-min));
+      min-width: min-content;
       padding-bottom: 0;
       align-self: flex-end;
-      margin-bottom: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
+      margin-bottom: var(--public-card-subject-mid-offset);
       display: flex;
       flex-direction: row;
       align-items: flex-end;
       justify-content: flex-end;
+    }
+    /* Uniform leading→last gap: cancel icon-row empty space above last subject.
+       padding-top cancels the pull when the last subject stacks above the island. */
+    .actions:has(.subject:not(:last-child)) .subject:last-child {
+      margin-top: calc(-1 * var(--public-card-subject-mid-offset));
+      padding-top: var(--public-card-subject-mid-offset);
+      box-sizing: border-box;
+    }
+    .actions:has(.subject:not(:last-child)) .icon-host {
+      margin-top: calc(-1 * var(--public-card-subject-mid-offset));
     }
 
     /* Red guide = icon-host vertical mid (tracks wrap / tall subjects). */
@@ -244,9 +254,10 @@
 
   <div class="pass-rules">
     Every card must: flush-left icons · one icon mid-line · island never between subjects ·
-    leading subjects full-width above · last/only subject beside island when room (≥ min-width),
-    else all subjects above island · no crush / no subject-icon overlap · 8px under description ·
-    ~10px card bottom · 6px subject gaps · when coexisting, last-line mid ↔ icon mid.
+    leading subjects full-width above · last/only subject beside island when island + subject
+    min-content fit, else all subjects above island · no crush / no subject-icon overlap ·
+    8px under description · ~10px card bottom · uniform 6px subject gaps · when coexisting,
+    last-line mid ↔ icon mid.
   </div>
 
   <h2>A — 0 subjects, YT + Share</h2>
@@ -309,7 +320,7 @@
         </div>
         <div class="subject">Qanon</div>
       </div>
-      <p class="note">Tiny band — column still ≥ <code>--public-card-subject-min</code> (not shrink-wrapped to text).</p>
+      <p class="note">Tiny band — sits beside island at content width (min-content), not a fixed 100px column.</p>
     </article>
   </div>
 
@@ -344,7 +355,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Leading subjects above; last subject shares the bottom row with icons when ≥ min-width remains.</p>
+      <p class="note">Leading subjects above; last subject shares the bottom row with icons when content width fits; uniform 6px gaps.</p>
     </article>
   </div>
 
@@ -362,7 +373,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Subjects 1–2 full width above; last subject shares the bottom row with icons.</p>
+      <p class="note">Subjects 1–2 full width above; last beside icons; gaps 1→2 and 2→3 equal (~6px).</p>
     </article>
   </div>
 
@@ -401,7 +412,7 @@
         <div class="subject">Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY</div>
         <div class="subject">Independent Fundamentalist</div>
       </div>
-      <p class="note">Very long leading above; short/medium last beside icons on the bottom row when room allows.</p>
+      <p class="note">Very long leading above; short/medium last beside icons when its min-content fits.</p>
     </article>
   </div>
 
@@ -418,7 +429,7 @@
         <div class="subject">NXIVM</div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Tiny leading above; long last beside icons (≥ min-width) when room allows.</p>
+      <p class="note">Tiny leading above; long last beside icons when min-content fits (may wrap).</p>
     </article>
   </div>
 
@@ -437,7 +448,7 @@
         <div class="subject">Troubled Teen Industry</div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Mixed lengths — only the last subject shares the bottom row with icons when room allows.</p>
+      <p class="note">Mixed lengths — only the last subject shares the bottom row with icons when its content width fits.</p>
     </article>
   </div>
 
@@ -473,7 +484,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Wide island — when island + min-width cannot coexist, <strong>all subjects stack above</strong> the island (no overlap, island never between).</p>
+      <p class="note">Wide island — when island + subject min-content cannot coexist, <strong>all subjects stack above</strong> the island (no overlap, island never between).</p>
     </article>
   </div>
 
@@ -510,7 +521,7 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Stats island — coexist only if subject keeps ≥ min-width; otherwise subject stacks full-width above, island alone below (no one-word crush / overlap).</p>
+      <p class="note">Stats island — coexist when subject min-content fits beside island; otherwise stack above (no one-word crush / overlap).</p>
     </article>
   </div>
 
@@ -530,7 +541,7 @@
         </div>
         <div class="subject">Qanon</div>
       </div>
-      <p class="note">Tiny label — column still ≥ min-width beside meta island when room allows; else stack above.</p>
+      <p class="note">Tiny label — must sit <strong>beside</strong> meta island (content width, not a 100px floor); stack only if min-content cannot fit.</p>
     </article>
   </div>
 

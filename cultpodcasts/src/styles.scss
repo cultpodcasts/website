@@ -60,10 +60,13 @@ mat-card-actions.review-actions {
 // - Leading subjects: flex-basis 100% (full width rows).
 // - Icon cluster + last/only subject share the final row (order: 2); island width
 //   is the real host width — never a magic padding-left for N icons.
+// - Coexist vs stack: island + subject min-content (+ gap) must fit — not a fixed
+//   100px subject column (tiny labels like "Qanon" sit beside when they fit).
 // - Icon host is a fixed-height row; all service buttons mid-align inside it.
-// - Last/only subject is the same height and flex-centers its label → shared mid-line.
+// - Last/only subject: last-line mid ↔ icon mid via flex-end + optical margin.
 // - Card padding-bottom ≈ 10px clearance; actions padding-top = 8px desc→footer.
-// - Uniform 6px gaps between subjects; do NOT min-height *leading* subjects.
+// - Uniform 6px gaps between all consecutive subjects (leading↔leading and
+//   leading↔last); do NOT min-height *leading* subjects.
 // - Icons flush left with description (actions padding only — no extra host margin).
 // - Keep mat-card-actions icon margin-right (25px / 18px / 12px) — do not squeeze.
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
@@ -74,10 +77,10 @@ mat-card:has(> .mdc-card__actions:not(.review-actions)) {
 mat-card .mdc-card__actions:not(.review-actions) {
     // Flex wrap + row-reverse so last/only subject can sit beside the icon
     // island when there is room (island left, subject right), but when island
-    // intrinsic width + --public-card-subject-min exceed the row, the subject
-    // stays on its line and the island wraps below — never crushed, never
-    // overlapping, never between subject lines. Leading subjects are always
-    // full-width above (order 1).
+    // intrinsic width + subject min-content exceed the row, the subject stays
+    // on its line and the island wraps below — never crushed, never overlapping,
+    // never between subject lines. Leading subjects are always full-width above
+    // (order 1).
     display: flex !important;
     flex-wrap: wrap;
     flex-direction: row-reverse;
@@ -86,9 +89,10 @@ mat-card .mdc-card__actions:not(.review-actions) {
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     --public-card-desc-gap: 8px;
-    --public-card-subject-min: 100px;
     // Subject line-height (matches .subject a) for last-line mid ↔ icon mid.
     --public-card-subject-line: 1.25em;
+    // Optical offset so icon mid meets the middle of the subject's last line.
+    --public-card-subject-mid-offset: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
     box-sizing: border-box;
     min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
     padding-top: var(--public-card-desc-gap);
@@ -98,7 +102,7 @@ mat-card .mdc-card__actions:not(.review-actions) {
 
     // Content-sized island (YT/Spotify/Apple/BBC/IA/Share/youtube-stats/…).
     // order 3 + row-reverse: packs left of last subject when coexisting; wraps
-    // below when the row cannot keep subject ≥ --public-card-subject-min.
+    // below when the row cannot keep the subject's min-content width.
     // margin-right: auto keeps a lone (wrapped) island flush left.
     app-episode-links,
     app-episode-podcast-links,
@@ -182,23 +186,46 @@ mat-card .mdc-card__actions:not(.review-actions) {
             align-self: stretch;
         }
 
-        // Last / only: shares the bottom row with the island when
-        // island + min-width fit; otherwise full line above a wrapped island.
-        // align-self/end + margin-bottom optically match icon mid to the
-        // middle of the last line of the subject (not the whole wrapped block).
+        // Last / only: shares the bottom row with the island when island +
+        // subject min-content fit; otherwise full line above a wrapped island.
+        // min-width/flex-basis = min-content (label needs), not a fixed 100px
+        // column — tiny labels coexist whenever they fit.
+        // align-self/end + mid-offset optically match icon mid to the middle of
+        // the last line of the subject (not the whole wrapped block).
         &:last-child {
             order: 2;
-            flex: 1 1 var(--public-card-subject-min);
+            flex: 1 1 min-content;
             width: auto;
             max-width: 100%;
-            min-width: min(100%, var(--public-card-subject-min));
+            min-width: min-content;
             padding-bottom: 0;
             align-self: flex-end;
-            margin-bottom: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
+            margin-bottom: var(--public-card-subject-mid-offset);
             display: flex !important;
             flex-direction: row;
             align-items: flex-end !important;
             justify-content: flex-end;
+        }
+    }
+
+    // When leading subjects sit above the icon row, flex-end mid-align leaves
+    // empty space above the last subject inside the taller icon line — that
+    // inflates leading→last gap vs leading→leading (6px). Pull the whole
+    // bottom row up by the same mid-offset so text gaps stay uniform while
+    // icon mid ↔ last-line mid is preserved. padding-top on the last subject
+    // cancels that pull for the label itself when it stacks full-width above
+    // the island (Cases F/H) so subjects do not overlap.
+    &:has(.subject:not(:last-child)) {
+        .subject:last-child {
+            margin-top: calc(-1 * var(--public-card-subject-mid-offset));
+            padding-top: var(--public-card-subject-mid-offset);
+            box-sizing: border-box;
+        }
+
+        app-episode-links,
+        app-episode-podcast-links,
+        .discovery-service-links {
+            margin-top: calc(-1 * var(--public-card-subject-mid-offset));
         }
     }
 
