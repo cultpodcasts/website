@@ -52,18 +52,41 @@ mat-card-actions.review-actions {
 }
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
-// bookmarks, discovery). Subjects use the FULL footer width; the last subject
-// (when not alone) reserves a bottom-left island for service icons so short
-// trailing labels sit beside them on the same baseline. Leading subjects —
-// including long labels — are not trapped in a narrow right column.
-// Icons keep global 25px margins and are absolutely pinned bottom-left.
+// bookmarks, discovery) — ONE shared rule for all of these surfaces.
+// Subjects use the FULL footer width; only the last subject when siblings exist
+// reserves a bottom-left island for service icons. A lone subject stays full
+// width. Last subject keeps NATURAL line height (uniform gaps with siblings);
+// service icons / youtube-stats share a footer clearance band and a mid-nudge
+// so their mid-line matches the last subject — do NOT min-height the last
+// subject (that left a hole above it).
 // Review/outgoing (.review-actions) keep their own two-column layout.
+// Public / Discovery card footer contract:
+// - Card padding-bottom = icon→card-bottom clearance (~10px) for 0 / 1 / 2+ subjects.
+// - Icons are absolute bottom:0 (never nudged); subjects mid-align to them.
+// - padding-top = desc→footer gap (8px).
+// - only-child: full-width icon-tall row, label centered with icons.
+// - 2+: leading subjects full width; last subject has icon-island inset; uniform 6px gaps.
+mat-card:has(> .mdc-card__actions:not(.review-actions)) {
+    --public-card-footer-clearance: 10px;
+    padding-bottom: var(--public-card-footer-clearance);
+}
+
 mat-card .mdc-card__actions:not(.review-actions) {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
     position: relative;
-    --public-card-icon-row: 3.25rem;
-    // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
+    --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
+    --public-card-subject-line: 20px;
+    // Half (icon-row − subject-line): multi pad-bottom so last-line mid == icon mid.
+    --public-card-icon-mid-nudge: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
+    --public-card-desc-gap: 8px;
     --public-card-icon-island: 16.5rem;
+    box-sizing: border-box;
+    min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
+    padding-top: var(--public-card-desc-gap);
+    padding-bottom: 0;
 
     app-episode-links,
     app-episode-podcast-links {
@@ -71,6 +94,12 @@ mat-card .mdc-card__actions:not(.review-actions) {
         left: 20px;
         bottom: 0;
         z-index: 1;
+    }
+
+    // Multi: lift the subject stack so the last line shares the icon mid-line.
+    &:has(.subject:not(:only-child)) {
+        padding-bottom: var(--public-card-icon-mid-nudge);
+        min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row) + var(--public-card-icon-mid-nudge));
     }
 
     mat-card-footer.subjects {
@@ -104,19 +133,21 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // Alone: full-width label above the icon row.
-            &:only-child {
-                padding-bottom: var(--public-card-icon-row);
+            &:last-child {
+                padding-bottom: 0;
             }
 
-            // With siblings: only the last line reserves the icon island;
-            // earlier subjects (incl. long names) keep full width.
-            // Do NOT set min-height here — that stretched the last row and left
-            // a blank gap above the final label (e.g. before "Purity Culture").
-            // Icons are absolute bottom:0, so they share the natural baseline.
+            // Flow-around: reserve horizontal space beside abspos icons.
             &:last-child:not(:only-child) {
-                padding-bottom: 0;
                 padding-left: var(--public-card-icon-island);
+            }
+
+            // Lone subject: full width + share mid-line with icon row.
+            &:only-child {
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
         }
     }
@@ -156,6 +187,11 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         bottom: 0;
         left: 85px;
         z-index: 1;
+        height: var(--public-card-icon-row);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
     }
 }
 
@@ -186,6 +222,10 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         > a[mat-icon-button]:nth-of-type(4),
         > button[mat-icon-button]:nth-of-type(4) {
             left: 184px;
+        }
+
+        > .youtubemeta {
+            left: 68px;
         }
     }
 }
