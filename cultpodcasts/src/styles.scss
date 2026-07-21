@@ -68,7 +68,9 @@ mat-card .mdc-card__actions:not(.review-actions) {
     min-height: var(--mdc-icon-button-state-layer-size, 40px);
     // Space under icons + subject baseline so they clear the card border.
     // Absolute icons use the same value for `bottom` (abspos ignores padding).
-    --public-card-actions-inset: 10px;
+    // 16px (not 10): icon buttons use transform:scale(1.2), which extends the
+    // visual past the layout box toward the card edge.
+    --public-card-actions-inset: 16px;
     padding-bottom: var(--public-card-actions-inset);
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
