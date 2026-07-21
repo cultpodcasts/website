@@ -4,7 +4,7 @@ Shared layout for subjects, podcast-service icon buttons, and Discovery youtube-
 
 **Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.971+**.
 
-**Local eyeball aid:** open [`public-card-footer-permutations.html`](./public-card-footer-permutations.html) in a browser (static fixture — no Angular build).
+**Local eyeball aid:** open [`public-card-footer.html`](./public-card-footer.html) in a browser (static fixture — no Angular build).
 
 Review/outgoing cards (`.review-actions`) are **out of scope**.
 
@@ -96,7 +96,7 @@ Length applies to **leading** rows (full card width) and to the **last/only** ce
 
 ## Permutation matrix / verification checklist
 
-Use the [static fixture](./public-card-footer-permutations.html) first, then preview.
+Use the [static fixture](./public-card-footer.html) first, then preview.
 
 ### Must be true
 
@@ -152,4 +152,4 @@ Use the [static fixture](./public-card-footer-permutations.html) first, then pre
 |---------|------|
 | Public footer contract | `src/styles.scss` |
 | Subject stack (editable X) | `src/app/subjects/subjects.component.sass` |
-| This checklist + fixture | `docs/public-card-footer.md`, `docs/public-card-footer-permutations.html` |
+| This checklist + fixture | `docs/public-card-footer.md`, `docs/public-card-footer.html` |
