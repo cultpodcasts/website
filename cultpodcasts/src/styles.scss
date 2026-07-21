@@ -67,7 +67,9 @@ mat-card:has(> .mdc-card__actions:not(.review-actions)) {
 mat-card .mdc-card__actions:not(.review-actions) {
     display: flex !important;
     flex-direction: column;
-    justify-content: flex-end;
+    // flex-start keeps padding-top as the desc→footer gap (flex-end + min-height
+    // used to park a lone subject at the bottom and open a hole under the description).
+    justify-content: flex-start;
     align-items: stretch;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
@@ -92,16 +94,16 @@ mat-card .mdc-card__actions:not(.review-actions) {
     app-episode-podcast-links {
         position: absolute;
         left: 20px;
-        // Default (no subjects): sit on the clearance inset.
+        // Default (no subjects / only-child icon-tall row): sit on the clearance inset.
         bottom: var(--public-card-footer-clearance);
         z-index: 1;
     }
 
-    &:has(.subject) {
+    // Multi-subject: last line is ~20px; nudge icons so mid matches that line.
+    &:has(.subject:not(:only-child)) {
 
         app-episode-links,
         app-episode-podcast-links {
-            // clearance lifts the band; subtract mid-nudge so icon mid matches text.
             bottom: calc(var(--public-card-footer-clearance) - var(--public-card-icon-mid-nudge));
         }
     }
@@ -147,8 +149,14 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 padding-left: var(--public-card-icon-island);
             }
 
+            // Match icon-row height so text mid-aligns with buttons; fills min-height
+            // without a dead band under the description.
             &:only-child {
                 padding-left: 0;
+                min-height: var(--public-card-icon-row);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
         }
     }
@@ -163,7 +171,8 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         z-index: 1;
     }
 
-    &:has(.subject) {
+    // Multi-subject only — only-child row is icon-tall so no mid-nudge.
+    &:has(.subject:not(:only-child)) {
 
         > a[mat-icon-button],
         > button[mat-icon-button] {
