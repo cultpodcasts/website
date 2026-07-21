@@ -77,7 +77,9 @@ mat-card .mdc-card__actions:not(.review-actions) {
     flex-wrap: wrap;
     justify-content: flex-start;
     // Override mat-card .mdc-card__actions { align-items: end } so the icon
-    // host and last subject share one mid-line (both are icon-row tall).
+    // host and last/only subject share one mid-line (icon host is icon-row
+    // tall; last subject stays natural height — do NOT min-height it or a
+    // short last line leaves a hole above the label).
     align-items: center !important;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
@@ -171,15 +173,16 @@ mat-card .mdc-card__actions:not(.review-actions) {
             align-self: stretch;
         }
 
-        // Last of many / only-child: same row as icon host; min-height matches
-        // icon-row so single-line labels mid-align. Do not set fixed height —
-        // long labels may wrap within the remaining width.
+        // Last of many / only-child: same row as icon host. Natural height only
+        // — parent align-items:center mid-aligns with the icon host. A
+        // min-height here reopens the uneven gap above short last labels.
         &:last-child {
             order: 2;
             flex: 1 1 0;
             padding-bottom: 0;
             align-self: center;
-            min-height: var(--public-card-icon-row);
+            min-height: 0;
+            height: auto;
             display: flex !important;
             flex-direction: row;
             align-items: center !important; // override subjects.component baseline

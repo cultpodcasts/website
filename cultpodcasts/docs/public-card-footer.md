@@ -2,7 +2,7 @@
 
 Shared layout for subjects, podcast-service icon buttons, and Discovery youtube-stats on public result cards.
 
-**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.966+**.
+**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.967+**.
 
 **Local eyeball aid:** open [`public-card-footer-permutations.html`](./public-card-footer-permutations.html) in a browser (static fixture — no Angular build).
 
@@ -20,7 +20,7 @@ Flex **row-wrap** on the actions row. `mat-card-footer.subjects` and `app-subjec
 |------|-----------|
 | Icon host | `app-episode-links`, `app-episode-podcast-links`, or `.discovery-service-links` — one content-sized flex item (`order: 2`). **Flush left** with description (actions `padding-left` only — **no** host `margin-left`). Fixed **`height: icon-row`**; all buttons mid-align inside it. |
 | Leading subjects | `order: 1`, `flex: 1 0 100%` — full-width rows above the icon island. |
-| Last / only subject | `order: 2`, `flex: 1 1 0`, **same `height` as icon-row**, flex-centers the label → shared mid-line with icons. |
+| Last / only subject | `order: 2`, `flex: 1 1 0`, **natural height** — parent `align-items: center` mid-aligns it with the icon host. **Never** `min-height`/`height: icon-row` on the subject (short last lines leave a hole above the label). |
 | Zero subjects | Actions still reserve `desc-gap + icon-row` min-height. |
 
 Island width = **actual icon host width** (variable button count). Never a fixed `padding-left` / rem guess.
@@ -39,9 +39,10 @@ Island width = **actual icon host width** (variable button count). Never a fixed
 ## Vertical alignment (non-negotiable)
 
 1. **All service buttons** (YT, Spotify, Apple, BBC, IA, Share, …) share **one mid-line** inside the icon host.
-2. **Last/only subject** mid-aligns with that icon mid-line (same row height + `align-items: center`).
+2. **Last/only subject** mid-aligns with that icon mid-line via the actions row’s `align-items: center` (subject stays **natural height**).
 3. **`.youtubemeta`** (Discovery) mid-aligns with the same icon mid-line.
 4. Clearance under the icon row comes from card `padding-bottom` (~10px), not from nudging individual icons.
+5. Gaps between subject lines stay **uniform** (~6px from leading `padding-bottom`) — short vs wrapped last subjects must not change that.
 
 ## What NOT to do
 
@@ -49,6 +50,7 @@ Island width = **actual icon host width** (variable button count). Never a fixed
 - Extra left margin on the icon host (double-indents vs description).
 - Absolute-positioning each button with guessed `left` values.
 - Squeezing the 25px icon `margin-right`.
+- `min-height` / `height: icon-row` on **last/only** subjects (uneven gap above short last labels; wrapped last labels hide the bug).
 - `min-height` on **leading** subjects to fake align (opens uneven gaps).
 - Relying on `align-items: end` from `mat-card .mdc-card__actions` for public footers.
 - Page-specific forks / touching `.review-actions` for this contract.
@@ -69,8 +71,9 @@ Check **every** cell before shipping footer CSS changes. Use the [static fixture
 | ~8px gap description → footer | ☐ |
 | ~10px clearance icons → card bottom | ☐ |
 | No subject text overlapping icons | ☐ |
-| Uniform ~6px gaps between subject lines (2+ subjects) | ☐ |
+| Uniform ~6px gaps between subject lines (2+ subjects) — same whether last is short or wraps | ☐ |
 | Leading subjects (if any) use full card width | ☐ |
+| Short last subject does **not** sit in a taller box than siblings (no hole above it) | ☐ |
 
 ### Subjects × services
 
@@ -79,7 +82,10 @@ Check **every** cell before shipping footer CSS changes. Use the [static fixture
 | A | **0** | YT + Share | Icon row only; flush left; mid-line shared; 8px top / 10px bottom |
 | B | **1** short | YT + Share | Subject right of icons, mid-aligned; no collision |
 | C | **1** long (“The Church Of Jesus Christ Of Latter-Day Saints”) | YT + Spotify + Apple + Share | Subject clears full icon cluster; may wrap within remaining width; no overlap |
-| D | **2+** (“Human Trafficking” + “Hustler's University”) | YT + Share | First subject full width; last mid-aligned with icons; 6px gap |
+| D | **2+** (“Human Trafficking” + “Hustler's University”) | YT + Share | First subject full width; last mid-aligned with icons; **uniform 6px gap** (no hole above short last) |
+| D2 | **2+** short last + duplicate mid lines | YT + Share | Gaps between all subject lines equal; last not stretched |
+| D3 | **2+** with **long wrapped last** subject | YT + Spotify + Apple + Share | Last may wrap beside icons; gaps above last still match sibling gaps |
+| D4 | **2+** long **leading** + short last (one line) | many buttons | Leading full width; short last mid-aligned; **no extra gap** under leading before last row |
 | E | **2+** | YT only | Same as D; island narrows to one button + margins |
 | F | **2+** | YT + Spotify + Apple + BBC + IA + Share | Island grows; last subject still clears all icons; icons stay one mid-line |
 | G | **1** | YT + Spotify + Apple | Mid-align + flush left |
