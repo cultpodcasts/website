@@ -72,18 +72,19 @@ mat-card:has(> .mdc-card__actions:not(.review-actions)) {
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
-    display: flex !important;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    // Mid-align only-child with the icon host. Multi-subject stacks all
-    // labels above the island (icons must never sit between subjects).
-    align-items: center !important;
+    // Grid so leading subjects span full width above, while the last/only
+    // subject shares the bottom row with the icon island when there is room.
+    // Subject column never shrinks below --public-card-subject-min; the island
+    // column is capped so labels are not crushed. Icons never sit between subjects.
+    display: grid !important;
+    grid-template-columns:
+        fit-content(calc(100% - var(--public-card-subject-min)))
+        minmax(var(--public-card-subject-min), 1fr);
+    align-items: center;
+    justify-content: stretch;
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     --public-card-desc-gap: 8px;
-    // Minimum width for a subject sharing the icon row. If the island leaves
-    // less than this, only-child wraps above the island (see wrap-reverse).
     --public-card-subject-min: 100px;
     box-sizing: border-box;
     min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
@@ -92,33 +93,28 @@ mat-card .mdc-card__actions:not(.review-actions) {
     column-gap: 0;
     row-gap: 0;
 
-    // Only-child beside a wide island (e.g. Discovery youtube-stats): when the
-    // subject cannot keep --public-card-subject-min, wrap-reverse puts the
-    // subject line above the icons instead of crushing it into a skinny column.
-    &:has(.subject:only-child) {
-        flex-wrap: wrap-reverse;
-    }
-
-    // Content-sized island; width grows with YT/Spotify/Apple/BBC/IA/Share/….
-    // order: 2 — after every multi-subject row (order 1); beside only-child.
+    // Content-sized island (YT/Spotify/Apple/BBC/IA/Share/youtube-stats/…).
+    // Same grid row as last/only subject (order 2); capped by the first track.
     app-episode-links,
     app-episode-podcast-links,
     .discovery-service-links {
+        grid-column: 1;
         order: 2;
-        flex: 0 0 auto;
+        justify-self: start;
+        align-self: center;
         display: flex !important;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
-        align-self: center;
         margin-left: 0;
         position: static;
         z-index: 1;
         height: var(--public-card-icon-row);
         min-height: var(--public-card-icon-row);
+        max-width: 100%;
+        min-width: 0;
         box-sizing: border-box;
 
-        // Unwrap nested #episodelinks so buttons are flex children of the host.
         #episodelinks {
             display: contents;
         }
@@ -135,7 +131,6 @@ mat-card .mdc-card__actions:not(.review-actions) {
             box-sizing: border-box;
         }
 
-        // SVG (youtube/spotify/…) and font (share) icons share the same box.
         mat-icon {
             display: inline-flex !important;
             align-items: center;
@@ -174,33 +169,26 @@ mat-card .mdc-card__actions:not(.review-actions) {
             line-height: 1.25;
         }
 
-        // 2+ subjects: every label is a full-width row above the icon island.
-        // Never place the island between subjects (flex wrap used to do that
-        // when the island was wide — last subject wrapped below the icons).
-        &:not(:only-child) {
+        // Leading subjects: full-width rows above the bottom icon/subject row.
+        &:not(:last-child) {
+            grid-column: 1 / -1;
             order: 1;
-            flex: 1 0 100%;
             align-self: stretch;
         }
 
-        // Only-child: prefer same row as icon host. min-width is configurable;
-        // if the island leaves less room, wrap-reverse stacks the subject above.
-        &:only-child {
+        // Last / only: bottom row beside the island. Track minmax keeps ≥
+        // --public-card-subject-min so labels are not crushed.
+        &:last-child {
+            grid-column: 2;
             order: 2;
-            flex: 1 1 var(--public-card-subject-min);
-            min-width: var(--public-card-subject-min);
             padding-bottom: 0;
             align-self: center;
-            height: auto;
+            justify-self: stretch;
+            min-width: 0;
             display: flex !important;
             flex-direction: row;
             align-items: center !important;
             justify-content: flex-end;
-        }
-
-        // Last of many: still full-width above icons; keep sibling gap before island.
-        &:last-child:not(:only-child) {
-            padding-bottom: 6px;
         }
     }
 

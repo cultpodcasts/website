@@ -6,7 +6,7 @@
   <title>Public card footer — layout permutations</title>
   <style>
     /*
-      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.969+).
+      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.970+).
       Open this file in a browser — no Angular build required.
       Cross-check failures against docs/public-card-footer.md checklist.
     */
@@ -74,10 +74,10 @@
 
     /* --- Public footer contract (simplified Material stand-in) --- */
     .actions {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: flex-start;
+      display: grid;
+      grid-template-columns:
+        fit-content(calc(100% - var(--public-card-subject-min)))
+        minmax(var(--public-card-subject-min), 1fr);
       align-items: center;
       position: relative;
       min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
@@ -88,21 +88,21 @@
       column-gap: 0;
       row-gap: 0;
     }
-    .actions:has(.subject:only-child) {
-      flex-wrap: wrap-reverse;
-    }
 
     .icon-host {
+      grid-column: 1;
       order: 2;
-      flex: 0 0 auto;
+      justify-self: start;
+      align-self: center;
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
-      align-self: center;
       margin-left: 0;
       height: var(--public-card-icon-row);
       min-height: var(--public-card-icon-row);
+      max-width: 100%;
+      min-width: 0;
     }
 
     .icon-btn {
@@ -162,25 +162,22 @@
       font-size: 0.9rem;
       line-height: 1.25;
     }
-    .subject:not(:only-child) {
+    .subject:not(:last-child) {
+      grid-column: 1 / -1;
       order: 1;
-      flex: 1 0 100%;
       align-self: stretch;
     }
-    .subject:only-child {
+    .subject:last-child {
+      grid-column: 2;
       order: 2;
-      flex: 1 1 var(--public-card-subject-min);
-      min-width: var(--public-card-subject-min);
       padding-bottom: 0;
       align-self: center;
-      height: auto;
+      justify-self: stretch;
+      min-width: 0;
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: flex-end;
-    }
-    .subject:last-child:not(:only-child) {
-      padding-bottom: 6px;
     }
 
     /* Mid-line guide (toggle with checkbox) */
@@ -239,8 +236,8 @@
 
   <div class="pass-rules">
     Every card must: flush-left icons · one icon mid-line · island never between subjects ·
-    2+ subjects stacked above icons · only-child mid-aligned with icons ·
-    8px under description · ~10px card bottom · no subject/icon collision · 6px subject gaps.
+    leading subjects full-width above · last/only subject beside island (≥ min-width) ·
+    8px under description · ~10px card bottom · no crush / no subject-icon collision · 6px subject gaps.
   </div>
 
   <h2>A — 0 subjects, YT + Share</h2>
@@ -302,7 +299,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Both subjects full width above; icon island underneath — never between subjects.</p>
+      <p class="note">Leading subjects above; last subject shares the bottom row with icons when ≥ min-width remains.</p>
     </article>
   </div>
 
@@ -320,6 +317,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
+      <p class="note">Subjects 1–2 full width above; last subject shares the bottom row with icons.</p>
     </article>
   </div>
 
@@ -394,7 +392,7 @@
         <div class="subject">Human Trafficking</div>
         <div class="subject">Hustler's University</div>
       </div>
-      <p class="note">Wide island stays <strong>under</strong> both subjects — never between them.</p>
+      <p class="note">Wide island is capped so last subject keeps ≥ min-width on the bottom row — island never between subjects.</p>
     </article>
   </div>
 
@@ -431,7 +429,7 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
-      <p class="note">Subject keeps at least <code>--public-card-subject-min</code> (100px). If the stats island is too wide, subject stacks <strong>above</strong> the island — never a one-word-per-line column.</p>
+      <p class="note">Subject column ≥ <code>--public-card-subject-min</code> (100px) beside the stats island — not a one-word-per-line crush.</p>
     </article>
   </div>
 
