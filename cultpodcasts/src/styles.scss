@@ -81,8 +81,8 @@ mat-card .mdc-card__actions:not(.review-actions) {
 
     // No subjects: breathe between description and the icon row.
     &:not(:has(.subject)) {
-        padding-top: 14px;
-        min-height: calc(var(--public-card-icon-row) + 14px);
+        padding-top: 22px;
+        min-height: calc(var(--public-card-icon-row) + 22px);
     }
 
     app-episode-links,
