@@ -77,18 +77,16 @@ mat-card .mdc-card__actions:not(.review-actions) {
     --public-card-footer-clearance: 10px;
     // Shift icons relative to that clearance so icon mid == last-subject mid.
     --public-card-icon-mid-nudge: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
-    min-height: var(--public-card-icon-row);
+    // Space beneath description — same for 0 / 1 / 2+ subjects (multi is the reference).
+    --public-card-desc-gap: 8px;
+    box-sizing: border-box;
+    // Tall enough that abspos icons sit entirely below the desc gap (only-child
+    // used to let 40px icons poke up into the description).
+    min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row) + var(--public-card-footer-clearance));
     // Lifts in-flow subjects with the icons; abspos bottom uses the same token.
     padding-bottom: var(--public-card-footer-clearance);
-    // Space beneath description before the icon/subject footer row.
-    padding-top: 8px;
+    padding-top: var(--public-card-desc-gap);
     --public-card-icon-island: 16.5rem;
-
-    // No subjects: extra breathe between description and the icon row.
-    &:not(:has(.subject)) {
-        padding-top: 22px;
-        min-height: calc(var(--public-card-icon-row) + 22px + var(--public-card-footer-clearance));
-    }
 
     app-episode-links,
     app-episode-podcast-links {
