@@ -52,15 +52,21 @@ mat-card-actions.review-actions {
 }
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
-// bookmarks, discovery). Subjects use the FULL footer width; the last subject
-// (including when alone) reserves a bottom-left island for service icons so
-// short trailing labels sit beside them on the same baseline. Leading subjects
-// — including long labels — are not trapped in a narrow right column.
-// Icons keep global 25px margins and are absolutely pinned bottom-left.
+// bookmarks, discovery) — ONE shared rule for all of these surfaces.
+// Subjects use the FULL footer width; the last subject (including when alone)
+// reserves a bottom-left island for service icons so labels sit beside them on
+// the same baseline. Leading subjects keep full width.
+// Icons stay absolutely pinned bottom-left. The actions row is a column flex
+// with justify-end + icon-sized min-height so a lone short subject is pulled
+// down onto the icon baseline (no padding-bottom dead band under the label).
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
     position: relative;
+    min-height: var(--mdc-icon-button-state-layer-size, 40px);
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
 
@@ -103,24 +109,15 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // Last line (alone or with siblings) reserves the icon island and
-            // shares the natural baseline with absolute bottom:0 icons.
+            // Last line (alone or with siblings) reserves the icon island.
             // Earlier siblings keep full width. Do NOT set min-height on the
-            // multi-subject last line — that stretched the row and left a blank
-            // band above the final label (e.g. before "Purity Culture").
+            // subject row — that stretched multi-subject last lines and left a
+            // blank band above the final label. Do NOT use padding-bottom to
+            // reserve the icon row — that left a dead band under a lone subject
+            // on homepage / search / discovery.
             &:last-child {
                 padding-bottom: 0;
                 padding-left: var(--public-card-icon-island);
-            }
-
-            // Lone subject: row must be tall enough for absolute icons, with the
-            // label centered on the icon mid-line (same band as youtube-stats).
-            // Avoid padding-bottom reserves — those left a dead band under the label.
-            &:only-child {
-                min-height: var(--mdc-icon-button-state-layer-size, 40px);
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
             }
         }
     }
