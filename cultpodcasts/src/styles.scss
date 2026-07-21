@@ -82,12 +82,22 @@ mat-card .mdc-card__actions:not(.review-actions) {
     position: relative;
     --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
     --public-card-desc-gap: 8px;
+    // Minimum width for a subject sharing the icon row. If the island leaves
+    // less than this, only-child wraps above the island (see wrap-reverse).
+    --public-card-subject-min: 100px;
     box-sizing: border-box;
     min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
     padding-top: var(--public-card-desc-gap);
     padding-bottom: 0;
     column-gap: 0;
     row-gap: 0;
+
+    // Only-child beside a wide island (e.g. Discovery youtube-stats): when the
+    // subject cannot keep --public-card-subject-min, wrap-reverse puts the
+    // subject line above the icons instead of crushing it into a skinny column.
+    &:has(.subject:only-child) {
+        flex-wrap: wrap-reverse;
+    }
 
     // Content-sized island; width grows with YT/Spotify/Apple/BBC/IA/Share/….
     // order: 2 — after every multi-subject row (order 1); beside only-child.
@@ -173,13 +183,14 @@ mat-card .mdc-card__actions:not(.review-actions) {
             align-self: stretch;
         }
 
-        // Only-child: same row as icon host (natural height, mid-aligned).
+        // Only-child: prefer same row as icon host. min-width is configurable;
+        // if the island leaves less room, wrap-reverse stacks the subject above.
         &:only-child {
             order: 2;
-            flex: 1 1 0;
+            flex: 1 1 var(--public-card-subject-min);
+            min-width: var(--public-card-subject-min);
             padding-bottom: 0;
             align-self: center;
-            min-height: 0;
             height: auto;
             display: flex !important;
             flex-direction: row;

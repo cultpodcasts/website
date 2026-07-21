@@ -6,7 +6,7 @@
   <title>Public card footer — layout permutations</title>
   <style>
     /*
-      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.968+).
+      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.969+).
       Open this file in a browser — no Angular build required.
       Cross-check failures against docs/public-card-footer.md checklist.
     */
@@ -14,6 +14,7 @@
       --public-card-footer-clearance: 10px;
       --public-card-icon-row: 40px;
       --public-card-desc-gap: 8px;
+      --public-card-subject-min: 100px;
       --icon-margin-right: 25px;
       --actions-padding-left: 20px;
       --mat-theme-text-secondary: #5f6368;
@@ -86,6 +87,9 @@
       padding-right: 8px;
       column-gap: 0;
       row-gap: 0;
+    }
+    .actions:has(.subject:only-child) {
+      flex-wrap: wrap-reverse;
     }
 
     .icon-host {
@@ -165,10 +169,10 @@
     }
     .subject:only-child {
       order: 2;
-      flex: 1 1 0;
+      flex: 1 1 var(--public-card-subject-min);
+      min-width: var(--public-card-subject-min);
       padding-bottom: 0;
       align-self: center;
-      min-height: 0;
       height: auto;
       display: flex;
       flex-direction: row;
@@ -427,6 +431,7 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
+      <p class="note">Subject keeps at least <code>--public-card-subject-min</code> (100px). If the stats island is too wide, subject stacks <strong>above</strong> the island — never a one-word-per-line column.</p>
     </article>
   </div>
 

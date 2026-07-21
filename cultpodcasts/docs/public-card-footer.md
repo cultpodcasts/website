@@ -2,7 +2,7 @@
 
 Shared layout for subjects, podcast-service icon buttons, and Discovery youtube-stats on public result cards.
 
-**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.968+**.
+**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.969+**.
 
 **Local eyeball aid:** open [`public-card-footer-permutations.html`](./public-card-footer-permutations.html) in a browser (static fixture — no Angular build).
 
@@ -18,12 +18,20 @@ Flex **row-wrap** on the actions row. `mat-card-footer.subjects` and `app-subjec
 
 | Role | Behaviour |
 |------|-----------|
-| Icon host | `app-episode-links`, `app-episode-podcast-links`, or `.discovery-service-links` — content-sized (`order: 2`). **Flush left** with description. Fixed **`height: icon-row`**; all buttons mid-align inside it. |
-| **2+ subjects** | **Every** subject (including last) is `order: 1`, `flex: 1 0 100%` — full-width rows **above** the icon island. Island is **always underneath the whole subject list**. |
-| **Only-child** | `order: 2`, `flex: 1 1 0` — shares the icon row; natural height; mid-aligned with icons. |
+| Icon host | Content-sized (`order: 2`). **Flush left**. Fixed **`height: icon-row`**. |
+| **2+ subjects** | Every subject `order: 1`, `flex: 1 0 100%` — full-width rows **above** the icon island. |
+| **Only-child** | `order: 2`, `flex: 1 1 var(--public-card-subject-min)`, **`min-width: var(--public-card-subject-min)`** (default **100px**, configurable). Shares the icon row when there is room; if the island leaves less than min-width, **`flex-wrap: wrap-reverse`** stacks the subject **above** the island (never a crushed skinny column). |
 | Zero subjects | Actions still reserve `desc-gap + icon-row` min-height. |
 
-Island width = **actual icon host width** (variable button count: YT, Spotify, Apple, BBC, Internet Archive, Share, …). Never a fixed `padding-left` / rem guess.
+Island width = **actual icon host width** (variable button count). Never a fixed rem guess.
+
+### Configurable subject min-width
+
+```css
+--public-card-subject-min: 100px; /* override on actions / theme if needed */
+```
+
+Only-child must not shrink below this beside the island. Override the custom property to tune.
 
 ### Hard rule: never split subjects
 
@@ -38,7 +46,7 @@ The icon island must **never** appear between subject lines (e.g. subject₁ →
 | `--public-card-icon-row` | `40px` (MDC state layer) | Icon host + only-child / `.youtubemeta` height |
 | Actions `padding-left` | `20px` / `10px` / `2px` | Shared left inset for description **and** icons |
 | Icon `margin-right` | `25px` / `18px` / `12px` | Gap between service buttons — **do not squeeze** |
-| Subject gaps | `6px` | Uniform between subjects |
+| `--public-card-subject-min` | `100px` | Min width for only-child beside the island; else stack above |
 
 ## Vertical alignment (non-negotiable)
 
@@ -51,6 +59,7 @@ The icon island must **never** appear between subject lines (e.g. subject₁ →
 
 ## What NOT to do
 
+- Crushing only-child into a sub-`--public-card-subject-min` column beside a wide island (youtube-stats, many buttons).
 - Let the icon island wrap **between** subject lines.
 - Fixed island widths (`16.5rem`, `nth-of-type` left offsets).
 - Extra left margin on the icon host (double-indents vs description).
@@ -78,7 +87,8 @@ Check **every** cell before shipping footer CSS changes. Use the [static fixture
 | No subject text overlapping icons | ☐ |
 | Uniform ~6px gaps between subject lines (2+) | ☐ |
 | Leading / multi subjects use full card width | ☐ |
-| Only-child mid-aligned with icons on the same row | ☐ |
+| Only-child mid-aligned with icons when room; else full-width above island (≥ min-width) | ☐ |
+| Only-child never crushed to one-word-per-line beside a wide island | ☐ |
 
 ### Subjects × services
 
@@ -99,7 +109,7 @@ Check **every** cell before shipping footer CSS changes. Use the [static fixture
 
 | # | Subjects | Buttons + meta | Expect |
 |---|----------|----------------|--------|
-| H | 0 or 1 | YT + **`.youtubemeta`** + … | Meta mid-aligned in host; only-child / none rules as above |
+| H | 0 or 1 | YT + **`.youtubemeta`** + … | Meta mid-aligned in host; only-child keeps ≥`--public-card-subject-min` or stacks **above** island |
 | I | 2+ | YT + meta + Share | Subjects stacked; host (with meta) underneath |
 
 **Live check owed:** H/I against Discovery with real Members/Views.
