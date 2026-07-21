@@ -53,15 +53,14 @@ mat-card-actions.review-actions {
 
 // Public result cards (homepage, search, podcast list, podcast episode, subject,
 // bookmarks, discovery). Subjects use the FULL footer width; the last subject
-// (when not alone) reserves a bottom-left island for service icons so short
-// trailing labels sit beside them on the same baseline. Leading subjects —
-// including long labels — are not trapped in a narrow right column.
+// (including when alone) reserves a bottom-left island for service icons so
+// short trailing labels sit beside them on the same baseline. Leading subjects
+// — including long labels — are not trapped in a narrow right column.
 // Icons keep global 25px margins and are absolutely pinned bottom-left.
 // Review/outgoing (.review-actions) keep their own two-column layout.
 mat-card .mdc-card__actions:not(.review-actions) {
     display: block !important;
     position: relative;
-    --public-card-icon-row: 3.25rem;
     // Max footprint of 4 service buttons with 25px margins (do not shrink icons).
     --public-card-icon-island: 16.5rem;
 
@@ -104,19 +103,24 @@ mat-card .mdc-card__actions:not(.review-actions) {
                 line-height: 1.25;
             }
 
-            // Alone: full-width label above the icon row.
-            &:only-child {
-                padding-bottom: var(--public-card-icon-row);
-            }
-
-            // With siblings: only the last line reserves the icon island;
-            // earlier subjects (incl. long names) keep full width.
-            // Do NOT set min-height here — that stretched the last row and left
-            // a blank gap above the final label (e.g. before "Purity Culture").
-            // Icons are absolute bottom:0, so they share the natural baseline.
-            &:last-child:not(:only-child) {
+            // Last line (alone or with siblings) reserves the icon island and
+            // shares the natural baseline with absolute bottom:0 icons.
+            // Earlier siblings keep full width. Do NOT set min-height on the
+            // multi-subject last line — that stretched the row and left a blank
+            // band above the final label (e.g. before "Purity Culture").
+            &:last-child {
                 padding-bottom: 0;
                 padding-left: var(--public-card-icon-island);
+            }
+
+            // Lone subject: row must be tall enough for absolute icons, with the
+            // label centered on the icon mid-line (same band as youtube-stats).
+            // Avoid padding-bottom reserves — those left a dead band under the label.
+            &:only-child {
+                min-height: var(--mdc-icon-button-state-layer-size, 40px);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
             }
         }
     }
@@ -151,11 +155,16 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         left: 215px;
     }
 
+    // Match icon-button height and center meta so Members/Views sit on the
+    // icon mid-line with subjects (a short bottom:0 box sat too low).
     > .youtubemeta {
         position: absolute;
         bottom: 0;
         left: 85px;
         z-index: 1;
+        height: var(--mdc-icon-button-state-layer-size, 40px);
+        justify-content: center;
+        box-sizing: border-box;
     }
 }
 
@@ -186,6 +195,10 @@ mat-card .mdc-card__actions:not(.review-actions):has(> a[mat-icon-button], > but
         > a[mat-icon-button]:nth-of-type(4),
         > button[mat-icon-button]:nth-of-type(4) {
             left: 184px;
+        }
+
+        > .youtubemeta {
+            left: 68px;
         }
     }
 }
