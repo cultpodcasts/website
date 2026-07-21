@@ -2,7 +2,7 @@
 
 Shared layout for subjects, podcast-service icon buttons, and Discovery youtube-stats on public result cards.
 
-**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.970+**.
+**Source of truth:** `src/styles.scss` (`mat-card .mdc-card__actions:not(.review-actions)`), from **v1.9.971+**.
 
 **Local eyeball aid:** open [`public-card-footer-permutations.html`](./public-card-footer-permutations.html) in a browser (static fixture — no Angular build).
 
@@ -37,9 +37,32 @@ grid-template-columns:
 
 ### Configurable subject min-width
 
+| Token | Default | Where set |
+|-------|---------|-----------|
+| `--public-card-subject-min` | **`100px`** | `mat-card .mdc-card__actions:not(.review-actions)` in `styles.scss` |
+
 ```css
---public-card-subject-min: 100px; /* override on card/actions/theme if needed */
+--public-card-subject-min: 100px; /* override on card / actions / theme if needed */
 ```
+
+**Contract:**
+
+- The **subject column** (last/only subject beside the island) must never be narrower than this value.
+- The **island column** is `fit-content(calc(100% - var(--public-card-subject-min)))` so the island cannot steal that floor.
+- Override the custom property to tune (e.g. `120px` on a denser layout) — do not hard-code a different px in one-off rules.
+- Measure in DevTools: last/only `.subject` content box width ≥ computed `--public-card-subject-min`.
+
+### Subject length bands (use these in checks)
+
+| Band | Approx. | Example label |
+|------|---------|---------------|
+| **Tiny** | ≤ 8 chars | `Qanon`, `NXIVM` |
+| **Short** | one short phrase | `Cult Psychology`, `Purity Culture` |
+| **Medium** | typical multi-word | `Human Trafficking`, `Troubled Teen Industry`, `Hustler's University` |
+| **Long** | real long proper name | `The Church Of Jesus Christ Of Latter-Day Saints` |
+| **Very long** | stress / wrap | `Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY` |
+
+Length applies to **leading** rows (full card width) and to the **last/only** cell (beside island, ≥ min-width). Wrapping inside the last cell is OK; crushing below min-width is not.
 
 ## Spacing tokens
 
@@ -84,7 +107,9 @@ Use the [static fixture](./public-card-footer-permutations.html) first, then pre
 | Island **never** between subject lines | ☐ |
 | Leading subjects full width above bottom row | ☐ |
 | Last/only subject **beside** island on bottom row | ☐ |
-| Subject column ≥ `--public-card-subject-min` | ☐ |
+| Subject column ≥ `--public-card-subject-min` (**100px** default) for last/only | ☐ |
+| Tiny last/only subject does **not** shrink the column below min-width | ☐ |
+| Long / very long last/only may wrap inside the column — never crushed to ~1 word/line | ☐ |
 | ~8px under description · ~10px card bottom | ☐ |
 | Uniform ~6px gaps between leading subjects | ☐ |
 
@@ -93,19 +118,24 @@ Use the [static fixture](./public-card-footer-permutations.html) first, then pre
 | # | Subjects | Buttons | Expect |
 |---|----------|---------|--------|
 | A | 0 | YT + Share | Island only |
-| B | 1 short | YT + Share | Bottom row coexist |
-| C | 1 long | YT + Spotify + Apple + Share | Bottom row; ≥ min-width; may wrap within column |
-| D | 2+ short | YT + Share | Leading above; **last beside icons** |
-| D2 | 3 short | YT + Share | First two above; **last beside icons** |
-| D3 | 2+ long | many | Leading above; last beside (wraps in column) |
-| D4 | long leading + short last | many | Leading above; short last beside |
-| E | 2+ | YT only | Same coexist |
-| F | 2+ | YT…BBC…IA…Share | Same — wide island **capped**; last still beside, not between |
-| G | 1 | YT + Spotify + Apple | Bottom row coexist |
-| H | 1 + youtube-stats | YT + meta + … | Bottom row; subject ≥ min-width (not one-word column) |
-| I | 2+ + youtube-stats | YT + meta + Share | Leading above; last beside host |
+| B | 1 **short** | YT + Share | Bottom row coexist; column ≥ min-width |
+| C | 1 **long** | YT + Spotify + Apple + Share | Bottom row; ≥ min-width; may wrap in column |
+| C2 | 1 **tiny** | YT + Share | Bottom row; column still ≥ min-width (not shrink-wrapped to glyph width) |
+| C3 | 1 **very long** | YT + Spotify + Apple + Share | Bottom row; wraps in column; never one-word-per-line crush |
+| D | 2× **medium** | YT + Share | Leading above; **last beside icons** |
+| D2 | 3× **medium** (dup mid) | YT + Share | First two above; **last beside icons**; uniform gaps |
+| D3 | 2× **very long** | many | Leading above (full width wrap OK); last beside (wraps in column) |
+| D4 | **very long** leading + **short** last | many | Leading above; short last beside |
+| D5 | **tiny** leading + **long** last | YT + Share | Leading above; long last beside ≥ min-width |
+| D6 | **short** + **medium** + **long** | YT + Spotify + Share | Mixed lengths; only last on bottom row with icons |
+| E | 2× **medium** | YT only | Same coexist; narrow island |
+| F | 2× **medium** | YT…BBC…IA…Share | Wide island **capped**; last beside, not between |
+| G | 1 **medium** | YT + Spotify + Apple | Bottom row coexist |
+| H | 1 **long** + youtube-stats | YT + meta + … | Bottom row; subject ≥ min-width (not one-word column) |
+| H2 | 1 **tiny** + youtube-stats | YT + meta | Bottom row; column still ≥ min-width |
+| I | 2× **medium** + youtube-stats | YT + meta + Share | Leading above; last beside host |
 
-**Live check owed:** H/I with real Discovery Members/Views.
+**Live check owed:** H/H2/I with real Discovery Members/Views.
 
 ---
 

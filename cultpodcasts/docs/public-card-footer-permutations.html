@@ -6,9 +6,10 @@
   <title>Public card footer — layout permutations</title>
   <style>
     /*
-      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.970+).
+      Mirrors cultpodcasts/src/styles.scss public footer contract (v1.9.971+).
       Open this file in a browser — no Angular build required.
       Cross-check failures against docs/public-card-footer.md checklist.
+      Subject length bands: tiny / short / medium / long / very long (see design doc).
     */
     :root {
       --public-card-footer-clearance: 10px;
@@ -264,8 +265,9 @@
           <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
           <button type="button" class="icon-btn" title="Share"><span class="glyph">⤴</span></button>
         </div>
-        <div class="subject">Cults</div>
+        <div class="subject">Cult Psychology</div>
       </div>
+      <p class="note">Short band — bottom row coexist.</p>
     </article>
   </div>
 
@@ -283,10 +285,45 @@
         </div>
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
+      <p class="note">Long band — may wrap in subject column; column ≥ min-width.</p>
     </article>
   </div>
 
-  <h2>D — 2+ subjects, YT + Share (all subjects above icons)</h2>
+  <h2>C2 — 1 tiny subject, YT + Share</h2>
+  <div class="grid">
+    <article class="card" data-case="C2">
+      <div class="card-title">Episode title</div>
+      <p class="card-desc">Description text left edge — icons must match this inset.</p>
+      <div class="actions">
+        <div class="icon-host">
+          <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
+          <button type="button" class="icon-btn" title="Share"><span class="glyph">⤴</span></button>
+        </div>
+        <div class="subject">Qanon</div>
+      </div>
+      <p class="note">Tiny band — column still ≥ <code>--public-card-subject-min</code> (not shrink-wrapped to text).</p>
+    </article>
+  </div>
+
+  <h2>C3 — 1 very long subject, YT + Spotify + Apple + Share</h2>
+  <div class="grid">
+    <article class="card" data-case="C3">
+      <div class="card-title">Episode title</div>
+      <p class="card-desc">Description text left edge — icons must match this inset.</p>
+      <div class="actions">
+        <div class="icon-host">
+          <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
+          <a class="icon-btn" href="#" title="Spotify"><span class="glyph">♫</span></a>
+          <a class="icon-btn" href="#" title="Apple"><span class="glyph"></span></a>
+          <button type="button" class="icon-btn" title="Share"><span class="glyph">⤴</span></button>
+        </div>
+        <div class="subject">Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY</div>
+      </div>
+      <p class="note">Very long band — wraps in column; never crushed to one word per line.</p>
+    </article>
+  </div>
+
+  <h2>D — 2× medium subjects, YT + Share (last beside icons)</h2>
   <div class="grid">
     <article class="card" data-case="D">
       <div class="card-title">Episode title</div>
@@ -356,7 +393,43 @@
         <div class="subject">Independent Fundamentalist Baptist ABCDEF GHI JKLMN OPQRSTUVWXZY</div>
         <div class="subject">Independent Fundamentalist</div>
       </div>
-      <p class="note">Both subjects above; icons underneath the stack.</p>
+      <p class="note">Very long leading above; short/medium last beside icons on the bottom row.</p>
+    </article>
+  </div>
+
+  <h2>D5 — tiny leading + long last, YT + Share</h2>
+  <div class="grid">
+    <article class="card" data-case="D5">
+      <div class="card-title">Episode title</div>
+      <p class="card-desc">Description text left edge — icons must match this inset.</p>
+      <div class="actions">
+        <div class="icon-host">
+          <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
+          <button type="button" class="icon-btn" title="Share"><span class="glyph">⤴</span></button>
+        </div>
+        <div class="subject">NXIVM</div>
+        <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
+      </div>
+      <p class="note">Tiny leading above; long last beside icons (≥ min-width).</p>
+    </article>
+  </div>
+
+  <h2>D6 — short + medium + long, YT + Spotify + Share</h2>
+  <div class="grid">
+    <article class="card" data-case="D6">
+      <div class="card-title">Episode title</div>
+      <p class="card-desc">Description text left edge — icons must match this inset.</p>
+      <div class="actions">
+        <div class="icon-host">
+          <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
+          <a class="icon-btn" href="#" title="Spotify"><span class="glyph">♫</span></a>
+          <button type="button" class="icon-btn" title="Share"><span class="glyph">⤴</span></button>
+        </div>
+        <div class="subject">Cult Psychology</div>
+        <div class="subject">Troubled Teen Industry</div>
+        <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
+      </div>
+      <p class="note">Mixed lengths — only the last subject shares the bottom row with icons.</p>
     </article>
   </div>
 
@@ -430,6 +503,26 @@
         <div class="subject">The Church Of Jesus Christ Of Latter-Day Saints</div>
       </div>
       <p class="note">Subject column ≥ <code>--public-card-subject-min</code> (100px) beside the stats island — not a one-word-per-line crush.</p>
+    </article>
+  </div>
+
+  <h2>H2 — Discovery youtube-stats + tiny subject</h2>
+  <div class="grid">
+    <article class="card" data-case="H2">
+      <div class="card-title">Discovery item</div>
+      <p class="card-desc">Description text left edge — icons must match this inset.</p>
+      <div class="actions">
+        <div class="icon-host">
+          <a class="icon-btn" href="#" title="YouTube"><span class="glyph">▶</span></a>
+          <div class="youtubemeta">
+            <span>Views: 12.4k</span>
+            <span>Members: 890</span>
+          </div>
+          <a class="icon-btn" href="#" title="Spotify"><span class="glyph">♫</span></a>
+        </div>
+        <div class="subject">Qanon</div>
+      </div>
+      <p class="note">Tiny label — column still ≥ min-width beside meta island.</p>
     </article>
   </div>
 
