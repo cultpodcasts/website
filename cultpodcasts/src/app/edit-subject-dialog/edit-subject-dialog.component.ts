@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -58,7 +58,6 @@ export class EditSubjectDialogComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined },
-    private fb: FormBuilder,
     private dialog: MatDialog,
   ) {
     this.subjectName = data.subjectName;
@@ -236,7 +235,6 @@ export class EditSubjectDialogComponent {
     const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true, data: { create: this.create } });
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
-      console.log(result)
       if (result.updated) {
         this.dialogRef.close({ updated: true, subjectName: changes.name });
       } else if (result.conflict) {

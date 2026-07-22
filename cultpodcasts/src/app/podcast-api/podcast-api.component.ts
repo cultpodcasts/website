@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -93,6 +94,8 @@ export class PodcastApiComponent {
   subjectsFilter: string = "";
   isSignedIn: boolean = false;
   protected isSubsequentLoading = signal<boolean>(false);
+  private scrollSubscribed = false;
+  private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
 
   constructor(
@@ -102,7 +105,7 @@ export class PodcastApiComponent {
     protected auth: AuthServiceWrapper,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
@@ -182,8 +185,13 @@ export class PodcastApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
-          if (data.entities.length && !this.results().length) {
-            this.scrollDisplatcher.scrolled().subscribe(async () => {
+          const count = data.metadata.get("count");
+          this.count = count;
+          if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
+            this.scrollSubscribed = true;
+            this.scrollDispatcher.scrolled().pipe(
+              takeUntilDestroyed(this.destroyRef)
+            ).subscribe(async () => {
               if (this.results().length < count &&
                 this.isScrolledToBottom() &&
                 !this.isSubsequentLoading()) {
@@ -205,8 +213,6 @@ export class PodcastApiComponent {
               subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_"))
             };
           }
-          const count = data.metadata.get("count");
-          this.count = count;
           this.isLoading = false;
         },
         error: (e) => {

@@ -1,12 +1,10 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { firstValueFrom } from 'rxjs';
-import { environment } from './../../environments/environment';
 import { EpisodePost } from '../episode-post.interface';
+import { CurationSubmitService } from '../curation-submit.service';
 
 @Component({
   selector: 'app-add-episode-send',
@@ -19,39 +17,20 @@ export class AddEpisodeSendComponent {
   sendError: boolean = false;
 
   constructor(
-    private http: HttpClient,
     private dialogRef: MatDialogRef<AddEpisodeSendComponent>,
-    private auth: AuthServiceWrapper) {
+    private curationSubmit: CurationSubmitService) {
   }
 
   public submit(podcastId: string, episodeId: string, changes: EpisodePost) {
-    var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
+    this.curationSubmit.postEpisode(podcastId, episodeId, changes).subscribe({
+      next: () => {
+        this.dialogRef.close({ updated: true });
+      },
+      error: e => {
+        this.isSending = false;
+        this.sendError = true;
+        console.error(e);
       }
-    }));
-    token.then(_token => {
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-      this.http.post(episodeEndpoint, changes, { headers: headers, observe: "response" })
-        .subscribe(
-          {
-            next: resp => {
-              this.dialogRef.close({ updated: true });
-            },
-            error: e => {
-              this.isSending = false;
-              this.sendError = true;
-              console.error(e);
-            }
-          }
-        )
-    }).catch(x => {
-      this.isSending = false;
-      this.sendError = true;
-      console.error(x);
     });
   }
 

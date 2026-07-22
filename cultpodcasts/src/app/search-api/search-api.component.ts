@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -80,18 +81,20 @@ export class SearchApiComponent {
   isSignedIn: boolean = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
+  private scrollSubscribed = false;
+  private destroyRef = inject(DestroyRef);
+  private route = inject(ActivatedRoute);
 
   constructor(
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
     protected auth: AuthServiceWrapper,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
-  private route = inject(ActivatedRoute);
 
   ngOnInit() {
     this.populatePage();
@@ -187,8 +190,11 @@ export class SearchApiComponent {
       }).subscribe({
         next: data => {
           const count: number = data.metadata.get("count");
-          if (data.entities.length && !this.results().length) {
-            this.scrollDisplatcher.scrolled().subscribe(async () => {
+          if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
+            this.scrollSubscribed = true;
+            this.scrollDispatcher.scrolled().pipe(
+              takeUntilDestroyed(this.destroyRef)
+            ).subscribe(async () => {
               if (this.results().length < count &&
                 this.isScrolledToBottom() &&
                 !this.isSubsequentLoading()) {

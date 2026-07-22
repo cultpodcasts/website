@@ -55,7 +55,6 @@ export class ToolbarComponent {
     protected discoveryInfoService: DiscoveryInfoService
   ) {
     discoveryInfoService.discoveryInfo.subscribe(info => {
-      console.log("discovery-info", info);
       this.disoveryInfo = info;
     });
   }

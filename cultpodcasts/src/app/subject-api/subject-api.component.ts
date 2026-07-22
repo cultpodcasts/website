@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -95,12 +96,14 @@ export class SubjectApiComponent {
   readonly englishLanguageValue = ENGLISH_LANGUAGE_VALUE;
   readonly allLanguagesValue = ALL_LANGUAGES_VALUE;
   isSignedIn: boolean = false;
+  private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
   facets: SearchResultsFacets = {};
   resultsHeading: string = "";
   isLoading: boolean = true;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
+  private scrollSubscribed = false;
 
   constructor(
     private router: Router,
@@ -109,7 +112,7 @@ export class SubjectApiComponent {
     protected auth: AuthServiceWrapper,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
     this.auth.roles.subscribe(roles => this.authRoles = roles);
@@ -198,8 +201,13 @@ export class SubjectApiComponent {
         }).subscribe(
           {
             next: data => {
-              if (data.entities.length && !this.results().length) {
-                this.scrollDisplatcher.scrolled().subscribe(async () => {
+              const count = data.metadata.get("count");
+              this.count = count;
+              if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
+                this.scrollSubscribed = true;
+                this.scrollDispatcher.scrolled().pipe(
+                  takeUntilDestroyed(this.destroyRef)
+                ).subscribe(async () => {
                   if (this.results().length < count &&
                     this.isScrolledToBottom() && !this.isSubsequentLoading()) {
                     this.isSubsequentLoading.set(true);
@@ -221,11 +229,9 @@ export class SubjectApiComponent {
                   lang: facetsFromResponse.lang
                 };
                 this.languageOptions = this.facets.lang ?? [];
-                const subjectScopedTotal = facetCount ?? data.metadata.get("count");
+                const subjectScopedTotal = facetCount ?? count;
                 this.englishLanguageCount = englishFacetCount(subjectScopedTotal, this.languageOptions);
               }
-              const count = data.metadata.get("count");
-              this.count = count;
               this.isLoading = false;
             },
             error: (e) => {

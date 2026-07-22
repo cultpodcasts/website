@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 'rxjs';
@@ -77,6 +78,8 @@ export class BookmarksApiComponent {
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
+  private scrollSubscribed = false;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private profileService: ProfileService,
@@ -84,7 +87,7 @@ export class BookmarksApiComponent {
     private http: HttpClient,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy,
     private siteService: SiteService
   ) {
@@ -112,7 +115,6 @@ export class BookmarksApiComponent {
     }
 
     this.profileService.bookmarks$.pipe(take(1)).subscribe(async bookmarks => {
-      console.log("bookmarks", bookmarks);
       this.bookmarks = bookmarks;
       await this.batch(true);
     });
@@ -171,8 +173,11 @@ export class BookmarksApiComponent {
             }
             this.isLoading = false;
             this.isSubsequentLoading.set(false);
-            if (first && this.bookmarks!.size > pageSize) {
-              this.scrollDisplatcher.scrolled().subscribe(async () => {
+            if (!this.scrollSubscribed && first && this.bookmarks!.size > pageSize) {
+              this.scrollSubscribed = true;
+              this.scrollDispatcher.scrolled().pipe(
+                takeUntilDestroyed(this.destroyRef)
+              ).subscribe(async () => {
                 if (
                   this.bookmarks &&
                   this.episodes().length < this.bookmarks.size &&

@@ -10,7 +10,7 @@ import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form.interface';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
@@ -87,7 +87,6 @@ export class AddEpisodeDialogComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<AddEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string, isNewPodcast: boolean },
-    private fb: FormBuilder,
     private dialog: MatDialog,
     protected featureSwtichService: FeatureSwtichService,
   ) {

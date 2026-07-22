@@ -41,57 +41,45 @@ export class RenamePodcastDialogComponent {
     this.dialogRef.close({ closed: true });
   }
 
-  onSubmit() {
-    let headers: HttpHeaders = new HttpHeaders();
-    var tokenCtr = 0;
+  async onSubmit() {
     this.isSending = true;
+    this.conflict = false;
+    this.isInError = false;
     try {
-      const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+      const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
           scope: 'admin'
         }
       }));
-      token.then(_token => {
-        if (tokenCtr++ > 1) return;
-        headers = headers.set("Authorization", "Bearer " + _token);
-        const url: URL = new URL(`/podcast/name/${encodeURIComponent(this.podcastName)}`, environment.api);
-        const newPodcastName = this.newPodcastName.trim();
-        const resp = firstValueFrom<HttpResponse<PodcastRenameResponse>>(
-          this.http.post<PodcastRenameResponse>(
-            url.toString(),
-            { newPodcastName: newPodcastName },
-            { headers: headers, observe: 'response' }));
-        resp.then(_resp => {
-          if (_resp.status == 200) {
-            this.isSending = false;
-            this.conflict = false;
-            this.dialogRef.close({
-              updated: true,
-              newPodcastName: newPodcastName,
-              searchIndexerState: _resp.body?.indexState
-            });
-          } else {
-            console.error(_resp);
-            this.isInError = true;
-            this.isSending = false;
-            this.conflict = false;
-          }
-        }).catch(_respError => {
-          console.error(_respError);
-          if (_respError.status == 409) {
-            this.conflict = true;
-          } else {
-            this.conflict = false;
-          }
-          this.isSending = false;
-          this.isInError = true;
-        })
-      }).catch(_error => {
-        console.error(_error);
-      });
-    } catch (e) {
+      const headers = new HttpHeaders().set('Authorization', 'Bearer ' + token);
+      const url = new URL(`/podcast/name/${encodeURIComponent(this.podcastName)}`, environment.api);
+      const newPodcastName = this.newPodcastName.trim();
+      const resp = await firstValueFrom<HttpResponse<PodcastRenameResponse>>(
+        this.http.post<PodcastRenameResponse>(
+          url.toString(),
+          { newPodcastName },
+          { headers, observe: 'response' }
+        )
+      );
+      if (resp.status === 200) {
+        this.isSending = false;
+        this.dialogRef.close({
+          updated: true,
+          newPodcastName,
+          searchIndexerState: resp.body?.indexState
+        });
+        return;
+      }
+      console.error(resp);
+      this.isInError = true;
+      this.isSending = false;
+    } catch (e: unknown) {
       console.error(e);
+      const err = e as { status?: number };
+      this.conflict = err.status === 409;
+      this.isSending = false;
+      this.isInError = true;
     }
   }
 

@@ -131,7 +131,7 @@ export class EpisodesApiComponent {
           return result;
         }),
         catchError((err) => {
-          console.log(err);
+          console.error(err);
           that.error = true;
           return of(null);
         })

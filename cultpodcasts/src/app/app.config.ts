@@ -7,13 +7,14 @@ import { AppRoutingModule } from './app-routing.module';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
 import { JsonUrlInterceptor } from './json-url.interceptor';
 import { JsonDateInterceptor } from './json-date.interceptor';
-import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient, withFetch } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './site.service';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
+import { authInterceptor } from './auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,7 +34,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     },
-    provideHttpClient(withFetch(), withInterceptorsFromDi()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor]), withInterceptorsFromDi()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(),
