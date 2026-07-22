@@ -1,5 +1,5 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -54,7 +54,8 @@ const sortParamDateDesc: string = "date-desc";
     SearchDescriptionPipe
   ],
   templateUrl: './search-api.component.html',
-  styleUrl: './search-api.component.sass'
+  styleUrl: './search-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class SearchApiComponent {
@@ -71,29 +72,28 @@ export class SearchApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  resultsHeading: string = "";
-  isLoading: boolean = true;
-  facets: SearchResultsFacets = {};
-  subjects: string[] = [];
-  podcasts: string[] = [];
-  subjectsFilter: string = "";
-  podcastsFilter: string = "";
-  isSignedIn: boolean = false;
+  protected resultsHeading = signal<string>("");
+  protected isLoading = signal<boolean>(true);
+  protected facets = signal<SearchResultsFacets>({});
+  protected subjects = signal<string[]>([]);
+  protected podcasts = signal<string[]>([]);
+  private podcastsFilter: string = "";
+  private subjectsFilter: string = "";
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  protected auth = inject(AuthServiceWrapper);
+  protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
 
   constructor(
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    protected auth: AuthServiceWrapper,
     private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   ngOnInit() {
@@ -107,6 +107,8 @@ export class SearchApiComponent {
         params,
         queryParams,
       })
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const navigation = this.router.currentNavigation();
       let initial = true;
@@ -114,12 +116,12 @@ export class SearchApiComponent {
         const facetState = navigation.extras.state as FacetState;
         if (facetState) {
           initial = false;
-          this.facets = facetState.searchResultsFacets;
+          this.facets.set(facetState.searchResultsFacets);
           if (!facetState.resetPodcasts) {
-            this.podcasts = facetState.podcasts!;
+            this.podcasts.set(facetState.podcasts!);
           }
           if (!facetState.resetSubjects) {
-            this.subjects = facetState.subjects!;
+            this.subjects.set(facetState.subjects!);
           }
         }
       }
@@ -127,15 +129,14 @@ export class SearchApiComponent {
       if (initial) {
         this.podcastsFilter = "";
         this.subjectsFilter = "";
-        this.podcasts = [];
-        this.subjects = [];
-        this.facets.subjects = [];
-        this.facets.podcastName = [];
+        this.podcasts.set([]);
+        this.subjects.set([]);
+        this.facets.update(f => ({ ...f, subjects: [], podcastName: [] }));
       }
 
       const { params, queryParams } = res;
       this.searchState.query = params[queryParam];
-      this.isLoading = true;
+      this.isLoading.set(true);
       this.siteService.setQuery(params[queryParam]);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
@@ -212,17 +213,17 @@ export class SearchApiComponent {
           this.isSubsequentLoading.set(false);
           if (subsequent) {
             if (subsequent.podcasts) {
-              this.facets.podcastName = data.facets.podcastName;
+              this.facets.update(f => ({ ...f, podcastName: data.facets.podcastName }));
             }
             if (subsequent.subjects) {
-              this.facets.subjects = data.facets.subjects?.filter(x => !x.value.startsWith("_"));
+              this.facets.update(f => ({ ...f, subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_")) }));
             }
           } else {
             if (reset?.podcasts) {
-              this.facets.podcastName = data.facets.podcastName;
+              this.facets.update(f => ({ ...f, podcastName: data.facets.podcastName }));
             }
             if (reset?.subjects) {
-              this.facets.subjects = data.facets.subjects;
+              this.facets.update(f => ({ ...f, subjects: data.facets.subjects }));
             }
           }
           let resultsSummary: String = `${count} results`;
@@ -238,13 +239,13 @@ export class SearchApiComponent {
             presentableQuery = presentableQuery.substring(1, presentableQuery.length - 1);
           }
 
-          this.resultsHeading = `Found ${resultsSummary} for "${presentableQuery}"`;
-          this.isLoading = false;
+          this.resultsHeading.set(`Found ${resultsSummary} for "${presentableQuery}"`);
+          this.isLoading.set(false);
         },
         error: (e) => {
           console.error(e);
-          this.resultsHeading = "Something went wrong. Please try again.";
-          this.isLoading = false;
+          this.resultsHeading.set("Something went wrong. Please try again.");
+          this.isLoading.set(false);
         }
       });
   }
@@ -261,11 +262,12 @@ export class SearchApiComponent {
   podcastsChange($event: MatChipListboxChange) {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
-    this.podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    if (this.podcasts.length == 0) {
+    const podcasts = items.map(x => x.value.replaceAll("'", "''"));
+    this.podcasts.set(podcasts);
+    if (podcasts.length == 0) {
       this.podcastsFilter = "";
     } else {
-      var podcastsNameList = this.podcasts.join(delimiter);
+      var podcastsNameList = podcasts.join(delimiter);
       this.podcastsFilter = `search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     const reset = { subjects: true };
@@ -276,11 +278,12 @@ export class SearchApiComponent {
   subjectsChange($event: MatChipListboxChange) {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
-    this.subjects = items.map(x => x.value.replaceAll("'", "''"));
-    if (this.subjects.length == 0) {
+    const subjects = items.map(x => x.value.replaceAll("'", "''"));
+    this.subjects.set(subjects);
+    if (subjects.length == 0) {
       this.subjectsFilter = "";
     } else {
-      var subjectsameList = this.subjects.join(delimiter);
+      var subjectsameList = subjects.join(delimiter);
       this.subjectsFilter = `subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
     const reset = { podcasts: true };
@@ -314,4 +317,3 @@ export class SearchApiComponent {
     return filter;
   }
 }
-

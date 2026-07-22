@@ -1,12 +1,12 @@
-@if (count > 0) {
+@if (count() > 0) {
 <section id="results">
   <div id="progresswrapper">
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
   </div>
   <section id="resultsheading">
-    <h2>{{subjectName}} has {{count}} episode@if (count>1 || count==0){s}
+    <h2>{{subjectName}} has {{count()}} episode@if (count()>1 || count()==0){s}
       @if (searchState.query && searchState.query!='') {
       matching "{{searchState.query}}"
       }</h2>
@@ -14,7 +14,7 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      @if (authRoles.includes('Curator')) {
+      @if (authRoles().includes('Curator')) {
       <button mat-menu-item id="edit" (click)="editSubject()">
         <mat-icon>edit</mat-icon>
         <span>Edit Subject</span>
@@ -40,21 +40,21 @@
     </mat-menu>
   </section>
 
-  @if (facets.podcastName && facets.podcastName.length > 0) {
+  @if (facets().podcastName && facets().podcastName!.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Podcasts ({{facets.podcastName!.length}})</mat-panel-title>
+      <mat-panel-title>Podcasts ({{facets().podcastName!.length}})</mat-panel-title>
       <mat-panel-description>
-        @if (podcasts.length==0) {
+        @if (podcasts().length==0) {
         All Selected
         } @else {
-        {{podcasts.length}} Selected
+        {{podcasts().length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="podcastsChange($event)">
-      @for (podcastName of facets.podcastName; track podcastName.value) {
-      <mat-chip-option [value]="podcastName" [selected]="podcasts.indexOf(podcastName.value)>=0">{{podcastName.value}}
+      @for (podcastName of facets().podcastName; track podcastName.value) {
+      <mat-chip-option [value]="podcastName" [selected]="podcasts().indexOf(podcastName.value)>=0">{{podcastName.value}}
         ({{podcastName.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
@@ -71,23 +71,23 @@
         } @else if (languageSelection.mode === 'english') {
         English
         } @else {
-        {{selectedLanguageValues.length}} Selected
+        {{selectedLanguageValues().length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="languagesChange($event)">
       <mat-chip-option [value]="englishLanguageValue"
-        [selected]="selectedLanguageValues.indexOf(englishLanguageValue)>=0">
-        English ({{englishLanguageCount}})
+        [selected]="selectedLanguageValues().indexOf(englishLanguageValue)>=0">
+        English ({{englishLanguageCount()}})
       </mat-chip-option>
       @for (language of visibleLanguageOptions; track language.value) {
       <mat-chip-option [value]="language.value"
-        [selected]="selectedLanguageValues.indexOf(language.value)>=0">
+        [selected]="selectedLanguageValues().indexOf(language.value)>=0">
         {{languageDisplayName(language.value)}} ({{language.count}})
       </mat-chip-option>
       }
       <mat-chip-option [value]="allLanguagesValue"
-        [selected]="selectedLanguageValues.indexOf(allLanguagesValue)>=0">
+        [selected]="selectedLanguageValues().indexOf(allLanguagesValue)>=0">
         All languages
       </mat-chip-option>
     </mat-chip-listbox>
@@ -98,7 +98,7 @@
   <mat-card class="result">
     <mat-card-header>
       <app-bookmark [episodeId]="result.id" />
-      <mat-card-title [class.hasBookmark]="isSignedIn">
+      <mat-card-title [class.hasBookmark]="isSignedIn()">
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
       <mat-card-subtitle>
@@ -130,7 +130,7 @@
 </div>
 }
 
-@if (count === 0 && !isLoading) {
+@if (count() === 0 && !isLoading()) {
 <section>
   <h2>There were no results for "{{subjectName}}"@if (searchState.query){ and "{{searchState.query}}"}</h2>
   <div id="cta-button">
