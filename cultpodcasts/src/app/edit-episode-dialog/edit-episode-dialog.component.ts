@@ -12,7 +12,7 @@ import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form.interface';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
@@ -26,12 +26,20 @@ import { KeyValuePipe } from '@angular/common';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
-import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 import { comparePeopleBySortKey } from '../person-sort';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwtichService } from '../feature-switch-service';
+import {
+  buildEpisodeForm,
+  getEpisodeChanges,
+  mergeEpisodeSubjects,
+  noCompareFunction,
+  personLabel,
+  regroupGuests as regroupGuestsPure,
+  regroupSubjects as regroupSubjectsPure
+} from '../episode-form.util';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -59,6 +67,8 @@ export class EditEpisodeDialogComponent {
   readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
   readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  protected readonly personLabel = personLabel;
+  protected readonly noCompareFunction = noCompareFunction;
 
   episodeId: string;
   podcastIdentifier: string;
@@ -132,36 +142,13 @@ export class EditEpisodeDialogComponent {
       this.podcastName = podcast.name!;
       this.podcastId = podcast.id!;
 
-      this.form = new FormGroup<EpisodeForm>({
-        title: new FormControl(resp.episode.title, { nonNullable: true }),
-        description: new FormControl(resp.episode.description, { nonNullable: true }),
-        posted: new FormControl(resp.episode.posted, { nonNullable: true }),
-        tweeted: new FormControl(resp.episode.tweeted, { nonNullable: true }),
-        blueskyPosted: new FormControl(resp.episode.bluesky ?? false, { nonNullable: true }),
-        ignored: new FormControl(resp.episode.ignored, { nonNullable: true }),
-        explicit: new FormControl(resp.episode.explicit, { nonNullable: true }),
-        removed: new FormControl(resp.episode.removed, { nonNullable: true }),
-        release: new FormControl(this.dateToLocalISO(resp.episode.release), { nonNullable: true }),
-        duration: new FormControl(resp.episode.duration, { nonNullable: true }),
-        spotify: new FormControl(resp.episode.urls.spotify || null),
-        spotifyImage: new FormControl(resp.episode.images?.spotify || null),
-        apple: new FormControl(resp.episode.urls.apple || null),
-        appleImage: new FormControl(resp.episode.images?.apple || null),
-        youtube: new FormControl(resp.episode.urls.youtube || null),
-        youtubeImage: new FormControl(resp.episode.images?.youtube || null),
-        otherImage: new FormControl(resp.episode.images?.other || null),
-        bbc: new FormControl(resp.episode.urls.bbc || null),
-        internetArchive: new FormControl(resp.episode.urls.internetArchive || null),
-        subjects: new FormControl(resp.episode.subjects, { nonNullable: true }),
-        searchTerms: new FormControl(resp.episode.searchTerms || null),
-        lang: new FormControl(resp.episode.lang || "unset"),
-        guests: new FormControl<string[]>(resp.episode.guests ?? [], { nonNullable: true })
-      });
+      this.form = buildEpisodeForm(resp.episode);
       this.allPeople = resp.people.sort(comparePeopleBySortKey);
       this.guestSuggestions = resp.episode.guestSuggestions ?? [];
       this.regroupGuests(resp.episode.guests ?? []);
-      this.subjects = resp.episode.subjects.concat(resp.subjects.filter(x => !resp.episode.subjects.includes(x.name)).map(x => x.name));
-      this.allSubjects = this.unique(this.subjects.concat(this.podcastDefaultSubject ? [this.podcastDefaultSubject] : []));
+      const { subjects, allSubjects } = mergeEpisodeSubjects(resp.episode.subjects, resp.subjects, this.podcastDefaultSubject);
+      this.subjects = subjects;
+      this.allSubjects = allSubjects;
       this.regroupSubjects(resp.episode.subjects);
       this.languages = buildEpisodeLanguageOptions(resp.languages);
       this.isLoading = false;
@@ -219,7 +206,7 @@ export class EditEpisodeDialogComponent {
       if (this.form!.controls.internetArchive.value) {
         update.urls.internetArchive = new URL(this.form!.controls.internetArchive.value);
       }
-      var changes = this.getChanges(this.originalEpisode!, update);
+      var changes = getEpisodeChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
       } else {
@@ -239,56 +226,6 @@ export class EditEpisodeDialogComponent {
         this.dialogRef.close({ updated: true, response: result.response, podcastId: podcastId });
       }
     });
-  }
-
-  getChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePost {
-    const nowReleaseDate = new Date(now.release).toISOString();
-    var changes: EpisodePost = {};
-
-    if (prev.description != now.description) changes.description = now.description;
-    if (prev.duration != now.duration) changes.duration = now.duration;
-    if (prev.explicit != now.explicit) changes.explicit = now.explicit;
-    if (prev.ignored != now.ignored) changes.ignored = now.ignored;
-    if (prev.posted != now.posted) changes.posted = now.posted;
-    if (prev.tweeted != now.tweeted) changes.tweeted = now.tweeted;
-    if ((prev.bluesky ?? false) != (now.bluesky ?? false)) changes.bluesky = now.bluesky ?? false;
-    if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
-    if (prev.removed != now.removed) changes.removed = now.removed;
-    if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
-    if (!this.isSameA(prev.subjects, now.subjects)) changes.subjects = now.subjects;
-    if (prev.title != now.title) changes.title = now.title;
-
-    if ((!this.areEqual(prev.urls?.apple, now.urls?.apple)) ||
-      (!this.areEqual(prev.urls?.spotify, now.urls?.spotify)) ||
-      (!this.areEqual(prev.urls?.youtube, now.urls?.youtube)) ||
-      (!this.areEqual(prev.urls?.bbc, now.urls?.bbc)) ||
-      (!this.areEqual(prev.urls?.internetArchive, now.urls?.internetArchive))) {
-      changes.urls = {};
-    }
-    if (!this.areEqual(prev.urls?.apple, now.urls?.apple)) changes.urls!.apple = now.urls?.apple ?? "";
-    if (!this.areEqual(prev.urls?.spotify, now.urls?.spotify)) changes.urls!.spotify = now.urls?.spotify ?? "";
-    if (!this.areEqual(prev.urls?.youtube, now.urls?.youtube)) changes.urls!.youtube = now.urls?.youtube ?? "";
-    if (!this.areEqual(prev.urls?.bbc, now.urls?.bbc)) changes.urls!.bbc = now.urls?.bbc ?? "";
-    if (!this.areEqual(prev.urls?.internetArchive, now.urls?.internetArchive)) changes.urls!.internetArchive = now.urls?.internetArchive ?? "";
-
-    if ((!this.areEqual(prev.images?.apple, now.images?.apple)) ||
-      (!this.areEqual(prev.images?.spotify, now.images?.spotify)) ||
-      (!this.areEqual(prev.images?.youtube, now.images?.youtube)) ||
-      (!this.areEqual(prev.images?.other, now.images?.other))) {
-      changes.images = {};
-    }
-    if (!this.areEqual(prev.images?.apple, now.images?.apple)) changes.images!.apple = now.images?.apple ?? "";
-    if (!this.areEqual(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? "";
-    if (!this.areEqual(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? "";
-    if (!this.areEqual(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? "";
-    if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
-    if (!this.isSameA(prev.guests, now.guests)) changes.guests = now.guests;
-    return changes;
-  }
-
-  personLabel(person: Person): string {
-    const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
-    return handles ? `${person.name} (${handles})` : person.name;
   }
 
   onGuestsSelectionChange() {
@@ -334,24 +271,11 @@ export class EditEpisodeDialogComponent {
   }
 
   regroupGuests(selected: string[] | null | undefined) {
-    const selectedNames = [...new Set(selected ?? [])];
-    const selectedSet = new Set(selectedNames);
-    const episodeGuests = this.originalEpisode?.guestPeople ?? [];
-    const peopleByName = new Map(this.allPeople.map(x => [x.name, x]));
-    for (const guest of episodeGuests) {
-      peopleByName.set(guest.name, guest);
-    }
-    this.selectedGuests = selectedNames
-      .map(name => peopleByName.get(name))
-      .filter((x): x is Person => !!x);
-
-    const otherNames = this.allPeople
-      .map(person => person.name)
-      .filter(name => !selectedSet.has(name));
-    const filteredOtherNames = filterKeepingSelectedInOrder(otherNames, this.guestsFilterTerm, selectedSet);
-    this.otherPeople = filteredOtherNames
-      .map(name => peopleByName.get(name))
-      .filter((x): x is Person => !!x);
+    const { selectedGuests, otherPeople } = regroupGuestsPure(
+      this.allPeople, this.originalEpisode?.guestPeople, selected, this.guestsFilterTerm
+    );
+    this.selectedGuests = selectedGuests;
+    this.otherPeople = otherPeople;
   }
 
   addSuggestedGuest(personName: string) {
@@ -426,43 +350,6 @@ export class EditEpisodeDialogComponent {
     this.regroupGuests(this.form?.controls.guests.value);
   }
 
-  areEqual(url1: URL | null | undefined | string, url2: URL | null | undefined | string): boolean {
-    let result: boolean;
-    if ((url1 == undefined || url1 == null) && (url2 == undefined || url2 == null)) {
-      result = true;
-    } else if ((url1 == undefined || url1 == null) && (url2 != undefined && url2 != null)) {
-      result = false;
-    } else if ((url2 == undefined || url2 == null) && (url1 != undefined && url1 != null)) {
-      result = false;
-    } else {
-      result = url1!.toString() === url2!.toString()
-    }
-    return result;
-  }
-
-  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
-    if (!a && !b) {
-      return true;
-    }
-    if (!a && b?.length == 0) {
-      return true;
-    }
-    if (a?.length == 0 && !b) {
-      return true;
-    }
-    return JSON.stringify(a) == JSON.stringify(b);
-  }
-
-  dateToLocalISO(date: Date) {
-    const off = date.getTimezoneOffset()
-    const absoff = Math.abs(off)
-    return (new Date(date.getTime() - off * 60 * 1000).toISOString().substring(0, 23))
-  }
-
-  noCompareFunction() {
-    return 0;
-  }
-
   onSubjectsDropdownOpenChange(opened: boolean) {
     if (!opened) {
       this.subjectsFilterTerm = '';
@@ -506,35 +393,12 @@ export class EditEpisodeDialogComponent {
   }
 
   regroupSubjects(selected: string[] | null | undefined) {
-    const selectedValues = this.unique(selected ?? []);
-    const selectedSet = new Set(selectedValues);
-    this.selectedSubjects = selectedValues.filter(subject => this.allSubjects.includes(subject));
-
-    this.hoistedSubjects = [];
-    if (this.podcastDefaultSubject) {
-      this.hoistedSubjects.push(this.podcastDefaultSubject);
-    }
-
-    const orderedHoistedNames = this.unique([
-      ...this.hoistedSubjectNames
-    ]);
-
-    const remainingHoistedSubjects = orderedHoistedNames.filter(subject =>
-      this.allSubjects.includes(subject)
-      && !selectedSet.has(subject)
-      && subject !== this.podcastDefaultSubject
+    const { selectedSubjects, hoistedSubjects, otherSubjects } = regroupSubjectsPure(
+      selected, this.allSubjects, this.podcastDefaultSubject, this.hoistedSubjectNames, this.subjectsFilterTerm
     );
-    this.hoistedSubjects = this.hoistedSubjects.concat(remainingHoistedSubjects);
-
-    const hoistedSet = new Set(this.hoistedSubjects);
-    this.otherSubjects = this.allSubjects.filter(subject => !selectedSet.has(subject) && !hoistedSet.has(subject));
-
-    this.hoistedSubjects = this.filterSubjectsByTerm(this.hoistedSubjects, selectedSet);
-    this.otherSubjects = this.filterSubjectsByTerm(this.otherSubjects, selectedSet);
-  }
-
-  filterSubjectsByTerm(subjects: string[], selectedSet: Set<string>): string[] {
-    return filterKeepingSelectedInOrder(subjects, this.subjectsFilterTerm, selectedSet);
+    this.selectedSubjects = selectedSubjects;
+    this.hoistedSubjects = hoistedSubjects;
+    this.otherSubjects = otherSubjects;
   }
 
   async getPodcast(headers: HttpHeaders, podcastIdentifier: string): Promise<Podcast | null> {
@@ -548,9 +412,5 @@ export class EditEpisodeDialogComponent {
     } catch {
       return null;
     }
-  }
-
-  unique(values: string[]) {
-    return [...new Set(values)];
   }
 }
