@@ -1,11 +1,3 @@
-@if (isAuthenticated()) {
-<button mat-icon-button (click)="bookmark()">
-    @if (waitingCallback() && !bookmarkTimeout()) {
-    <mat-spinner></mat-spinner>
-    } @else {
-    <mat-icon [class.material-symbols-outlined]="!isBookmarked()">
-        bookmark
-    </mat-icon>
-    }
-</button>
+@defer {
+<app-bookmark-api [episodeId]="episodeId()" [hasMenu]="hasMenu()" />
 }
