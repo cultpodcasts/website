@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, KeyValue } from '@angular/common';
+import { DecimalPipe, isPlatformBrowser, KeyValue } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
@@ -35,6 +35,7 @@ export interface EpisodeRail {
 @Component({
   selector: 'app-homepage-api',
   imports: [
+    DecimalPipe,
     MatProgressBarModule,
     RouterLink,
     MatButtonModule,
@@ -56,7 +57,7 @@ export class HomepageApiComponent {
   private allEpisodes = signal<HomepageEpisode[]>([]);
   private visibleCount: number = 0;
   private hasStartedScrolling: boolean = false;
-  protected podcastCount = signal<number | undefined>(undefined);
+  protected weekEpisodeCount = signal<number | undefined>(undefined);
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
   readonly Weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -303,7 +304,7 @@ export class HomepageApiComponent {
     if (homepageContent) {
       this.homepage.set(homepageContent);
       this.totalDuration.set(homepageContent.totalDuration.split('.')[0] + ' days');
-      this.podcastCount.set(homepageContent.recentEpisodes.length);
+      this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
       this.hasStartedScrolling = false;
       this.visibleCount = 0;
       this.allEpisodes.set(

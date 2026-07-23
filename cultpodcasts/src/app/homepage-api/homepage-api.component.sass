@@ -70,6 +70,8 @@
     z-index: 2
     width: min(640px, 100%)
     padding-top: 96px
+
+.billboard__feature
     transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)
     &.is-animating
         animation: content-swap 0.7s cubic-bezier(0.22, 1, 0.36, 1)
@@ -172,26 +174,66 @@
 
 .billboard__search
     max-width: 520px
-    margin-bottom: 14px
+    margin-bottom: 16px
     #searchcontainer
         margin: 0
     ::ng-deep #searchcta
         background: var(--nflx-accent) !important
         color: #111 !important
 
-.billboard__catalog
+.billboard__stats
+    display: flex
+    flex-wrap: wrap
+    align-items: baseline
+    gap: 10px 18px
+    margin: 0
+    max-width: 560px
+
+.billboard__stat
     margin: 0
     font-size: 0.9rem
     color: var(--nflx-muted)
     font-variant-numeric: tabular-nums
+    line-height: 1.35
+
+.billboard__stat--week
+    display: inline-flex
+    align-items: baseline
+    gap: 7px
+    padding: 4px 10px 4px 8px
+    border-radius: 999px
+    background: rgba(232, 162, 58, 0.14)
+    border: 1px solid rgba(232, 162, 58, 0.35)
+    color: #f0d2a0
+    font-size: 0.82rem
+    font-weight: 600
+    letter-spacing: 0.02em
+
+.billboard__stat-value
+    color: var(--nflx-accent)
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-size: 1.15rem
+    font-weight: 400
+    letter-spacing: 0
+
+.billboard__stat--catalog
     a
         color: var(--nflx-muted)
         text-decoration: underline dashed 1px
         text-underline-offset: 3px
+        &:hover
+            color: #fff
     app-slot-machine-counter
+        display: inline-flex
+        vertical-align: baseline
         color: var(--nflx-accent)
         font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
-        font-size: 1.15em
+        font-size: 1.2em
+        font-weight: 400
+        line-height: 1
+
+.billboard__stat-duration
+    color: #8a8a8a
 
 .billboard__controls
     position: absolute
@@ -432,6 +474,8 @@
         animation: none
         transform: scale(1.05)
     .billboard__content.is-animating
+        animation: none
+    .billboard__feature.is-animating
         animation: none
     .billboard__dot-fill.is-running
         animation: none

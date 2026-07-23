@@ -24,49 +24,61 @@
     <div class="billboard__scrim" aria-hidden="true"></div>
     <div class="billboard__vignette" aria-hidden="true"></div>
 
-    <div class="billboard__content" [class.is-animating]="heroAnimating()">
-      <p class="billboard__eyebrow">
-        <span class="billboard__live" aria-hidden="true"></span>
-        Now featuring
-      </p>
-      <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
-      <p class="billboard__meta">
-        <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
-        <span> · {{ durationLabel(feature.duration) }}</span>
-        @if (podcastCount()) {
-        <span> · {{ podcastCount() }} new this week</span>
+    <div class="billboard__content">
+      <div class="billboard__feature" [class.is-animating]="heroAnimating()">
+        <p class="billboard__eyebrow">
+          <span class="billboard__live" aria-hidden="true"></span>
+          Now featuring
+        </p>
+        <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+        <p class="billboard__meta">
+          <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
+          <span> · {{ durationLabel(feature.duration) }}</span>
+        </p>
+        <p class="billboard__desc">{{ featuredDesc() }}</p>
+        @if (featuredSubjects().length > 0) {
+        <div class="billboard__subjects" aria-label="Subjects">
+          @for (subject of featuredSubjects(); track subject) {
+          <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ subject }}</a>
+          }
+        </div>
         }
-      </p>
-      <p class="billboard__desc">{{ featuredDesc() }}</p>
-      @if (featuredSubjects().length > 0) {
-      <div class="billboard__subjects" aria-label="Subjects">
-        @for (subject of featuredSubjects(); track subject) {
-        <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ subject }}</a>
-        }
+        <div class="billboard__actions">
+          <a mat-flat-button class="billboard__play"
+            [routerLink]="['/podcast', feature.podcastName, feature.id]">
+            <mat-icon>play_arrow</mat-icon>
+            Listen
+          </a>
+          <a mat-stroked-button class="billboard__more"
+            [routerLink]="['/podcast', feature.podcastName]">
+            More info
+          </a>
+        </div>
       </div>
-      }
-      <div class="billboard__actions">
-        <a mat-flat-button class="billboard__play"
-          [routerLink]="['/podcast', feature.podcastName, feature.id]">
-          <mat-icon>play_arrow</mat-icon>
-          Listen
-        </a>
-        <a mat-stroked-button class="billboard__more"
-          [routerLink]="['/podcast', feature.podcastName]">
-          More info
-        </a>
-      </div>
+
       <div class="billboard__search">
         <app-search-bar></app-search-bar>
       </div>
-      <p class="billboard__catalog">
-        <a href="https://github.com/cultpodcasts/PublicDatabase">Index</a>
-        of
-        <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
-          [value]="$safeNavigationMigration(homepage()?.episodeCount)"
-          [title]="totalDuration()"></app-slot-machine-counter>
-        episodes
-      </p>
+
+      <div class="billboard__stats" aria-label="Catalogue">
+        @if (weekEpisodeCount(); as weekCount) {
+        <p class="billboard__stat billboard__stat--week">
+          <span class="billboard__stat-value">{{ weekCount | number }}</span>
+          new this week
+        </p>
+        }
+        <p class="billboard__stat billboard__stat--catalog">
+          <a href="https://github.com/cultpodcasts/PublicDatabase">Index</a>
+          of
+          <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+            [value]="homepage()?.episodeCount"
+            [title]="totalDuration()"></app-slot-machine-counter>
+          episodes
+          @if (totalDuration()) {
+          <span class="billboard__stat-duration">· {{ totalDuration() }}</span>
+          }
+        </p>
+      </div>
     </div>
 
     @if (heroSlides().length > 1) {
