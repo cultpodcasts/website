@@ -68,6 +68,11 @@ export class HomepageApiComponent {
   private destroyRef = inject(DestroyRef);
 
   ngOnInit() {
+    this.siteService.homepageRefresh$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.loadHomepage();
+      });
     this.populatePage();
   }
 
@@ -101,39 +106,48 @@ export class HomepageApiComponent {
       })
     ).pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
+    ).subscribe(async () => {
       this.siteService.setQuery(null);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
-
-      let homepageContent: Homepage | undefined;
-      try {
-        if (!homepageContent) {
-          homepageContent = await this.homepageService.getHomepageFromApi()
-        }
-      } catch (error) {
-        console.error(error);
-        this.isLoading.set(false);
-        this.isInError.set(true);
-      }
-      if (homepageContent) {
-        this.homepage.set(homepageContent);
-        this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
-        this.podcastCount.set(homepageContent.recentEpisodes.length);
-        this.hasStartedScrolling = false;
-        this.visibleCount = 0;
-        this.allEpisodes = homepageContent.recentEpisodes.map(item => ({
-          ...item,
-          release: new Date(item.release)
-        }));
-        this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-        this.isLoading.set(false);
-        this.isInError.set(false);
-      } else {
-        this.isLoading.set(false);
-        this.isInError.set(true);
-      }
+      await this.loadHomepage();
     });
+  }
+
+  private async loadHomepage(): Promise<void> {
+    this.isLoading.set(true);
+    this.isInError.set(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0 });
+    }
+
+    let homepageContent: Homepage | undefined;
+    try {
+      homepageContent = await this.homepageService.getHomepageFromApi();
+    } catch (error) {
+      console.error(error);
+      this.isLoading.set(false);
+      this.isInError.set(true);
+      return;
+    }
+
+    if (homepageContent) {
+      this.homepage.set(homepageContent);
+      this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
+      this.podcastCount.set(homepageContent.recentEpisodes.length);
+      this.hasStartedScrolling = false;
+      this.visibleCount = 0;
+      this.allEpisodes = homepageContent.recentEpisodes.map(item => ({
+        ...item,
+        release: new Date(item.release)
+      }));
+      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+      this.isLoading.set(false);
+      this.isInError.set(false);
+    } else {
+      this.isLoading.set(false);
+      this.isInError.set(true);
+    }
   }
 
   private loadMoreEpisodes(count: number): void {

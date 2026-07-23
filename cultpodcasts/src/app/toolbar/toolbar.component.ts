@@ -71,6 +71,14 @@ export class ToolbarComponent {
     }
   }
 
+  onSiteClick() {
+    this.siteService.setQuery('');
+    const path = this.router.url.split('?')[0];
+    if (path === '/' || path === '') {
+      this.siteService.requestHomepageRefresh();
+    }
+  }
+
   logout() {
     this.auth.authService.logout();
   }

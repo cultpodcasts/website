@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SiteData } from './site-data.interface';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SiteService {
@@ -17,6 +17,14 @@ export class SiteService {
 
     private messageSource = new BehaviorSubject(this._siteData);
     currentSiteData = this.messageSource.asObservable();
+
+    private readonly homepageRefresh = new Subject<void>();
+    /** Emitted when the site logo is clicked while already on the homepage. */
+    readonly homepageRefresh$ = this.homepageRefresh.asObservable();
+
+    requestHomepageRefresh() {
+        this.homepageRefresh.next();
+    }
 
     setQuery(query: string | null) {
         this._siteData.query = query;
