@@ -65,10 +65,14 @@ export class BookmarkComponent {
   async bookmark(): Promise<void> {
     const bookmarked = this.profileService.bookmarks.has(this.episodeId());
     this.waitingCallback.set(true);
-    if (bookmarked) {
-      await this.profileService.removeBookmark(this.episodeId());
-    } else {
-      await this.profileService.addBookmark(this.episodeId());
+    try {
+      if (bookmarked) {
+        await this.profileService.removeBookmark(this.episodeId());
+      } else {
+        await this.profileService.addBookmark(this.episodeId());
+      }
+    } finally {
+      this.waitingCallback.set(false);
     }
   }
 }

@@ -1,11 +1,11 @@
 @if (isAuthenticated()) {
 <button mat-icon-button (click)="bookmark()">
-    @if (!waitingCallback()) {
+    @if (waitingCallback() && !bookmarkTimeout()) {
+    <mat-spinner></mat-spinner>
+    } @else {
     <mat-icon [class.material-symbols-outlined]="!isBookmarked()">
         bookmark
     </mat-icon>
-    } @else if (!bookmarkTimeout()) {
-    <mat-spinner></mat-spinner>
     }
 </button>
 }
