@@ -23,6 +23,7 @@ import {
   sortNameForPersist,
   stripLeadingThe
 } from '../person-sort';
+import { asEmptyString, asStringArray } from '../form-value.util';
 
 @Component({
   selector: 'app-edit-person-dialog',
@@ -250,30 +251,12 @@ export class EditPersonDialogComponent {
     window.open(`https://bsky.app/search?q=${encodeURIComponent(q)}`, '_blank', 'noopener');
   }
 
-  translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
-    if (x.value) return x.value;
-    return "";
-  }
-
-  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
-    if (x.value) {
-      const valueS: any = x.value;
-      if (valueS.push) {
-        return x.value;
-      } else if (valueS.split) {
-        const valueSt: string = valueS;
-        return valueSt.split(",").map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-      }
-    };
-    return [];
-  }
-
   onSubmit() {
     if (!this.form?.valid) {
       return;
     }
 
-    const name = this.translateForEntity(this.form!.controls.name)!;
+    const name = asEmptyString(this.form!.controls.name.value);
     const isOrganization = this.useFullNameForSorting.value;
     const persistedSort = sortNameForPersist(
       name,
@@ -285,9 +268,9 @@ export class EditPersonDialogComponent {
       name,
       sortName: persistedSort ?? '',
       isOrganization,
-      aliases: this.translateForEntityA(this.form!.controls.aliases),
-      twitterHandle: this.translateForEntity(this.form!.controls.twitterHandle),
-      blueskyHandle: this.translateForEntity(this.form!.controls.blueskyHandle)
+      aliases: asStringArray(this.form!.controls.aliases.value),
+      twitterHandle: asEmptyString(this.form!.controls.twitterHandle.value),
+      blueskyHandle: asEmptyString(this.form!.controls.blueskyHandle.value)
     };
 
     const changes = this.getChanges(this.originalPerson!, update);

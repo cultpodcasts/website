@@ -18,6 +18,7 @@ import { KeyValuePipe } from '@angular/common';
 import { SubjectType } from "../subject-type.enum";
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
+import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.util';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -143,49 +144,21 @@ export class EditSubjectDialogComponent {
     }
   }
 
-  translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
-    if (x.value) return x.value;
-    return "";
-  }
-
-  translateForEntityG(x: FormControl<string | undefined | null>): string | undefined {
-    if (x.value) return x.value;
-    return "00000000-0000-0000-0000-000000000000";
-  }
-
-  translateForEntityE(x: FormControl<string | undefined | null>): string | undefined {
-    if (x.value) return x.value;
-    return "Unset";
-  }
-
-  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
-    if (x.value) {
-      const valueS: any = x.value;
-      if (valueS.push) {
-        return x.value;
-      } else if (valueS.split) {
-        const valueSt: string = valueS;
-        return valueSt.split(",");
-      }
-    };
-    return [];
-  }
-
   onSubmit() {
     if (this.form?.valid) {
       const update: SubjectEntity = {
-        aliases: this.translateForEntityA(this.form!.controls.aliases),
-        associatedSubjects: this.translateForEntityA(this.form!.controls.associatedSubjects),
-        enrichmentHashTags: this.translateForEntityA(this.form!.controls.enrichmentHashTags),
-        hashTag: this.translateForEntity(this.form!.controls.hashTag),
-        redditFlairTemplateId: this.translateForEntityG(this.form!.controls.redditFlairTemplateId),
-        redditFlareText: this.translateForEntity(this.form!.controls.redditFlareText),
+        aliases: asStringArray(this.form!.controls.aliases.value),
+        associatedSubjects: asStringArray(this.form!.controls.associatedSubjects.value),
+        enrichmentHashTags: asStringArray(this.form!.controls.enrichmentHashTags.value),
+        hashTag: asEmptyString(this.form!.controls.hashTag.value),
+        redditFlairTemplateId: emptyGuidIfBlank(this.form!.controls.redditFlairTemplateId.value),
+        redditFlareText: asEmptyString(this.form!.controls.redditFlareText.value),
         subjectType: this.form!.controls.subjectType.value,
-        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms)
+        knownTerms: asStringArray(this.form!.controls.knownTerms.value)
       };
 
       if (this.create) {
-        update.name = this.translateForEntity(this.form!.controls.name);
+        update.name = asEmptyString(this.form!.controls.name.value);
       }
 
       var changes = this.getChanges(this.originalSubject!, update);

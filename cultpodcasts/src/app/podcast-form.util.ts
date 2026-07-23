@@ -4,6 +4,8 @@ import { EditPodcastPost } from './edit-podcast-post.interface';
 import { Podcast } from './podcast.interface';
 import { PodcastServiceType } from './podcast-service-type.enum';
 
+export { asEmptyString, asStringArray } from './form-value.util';
+
 /**
  * Pure helpers shared by add-podcast-dialog and edit-podcast-dialog.
  * Kept free of HttpClient/Auth0/dialog concerns so they stay easily testable;
@@ -44,24 +46,6 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     enrichmentHashTags: new FormControl(podcast.enrichmentHashTags, { nonNullable: false }),
     hashTag: new FormControl(podcast.hashTag, { nonNullable: false }),
   };
-}
-
-export function translateForEntity(value: string | undefined | null): string | undefined {
-  if (value) return value;
-  return '';
-}
-
-export function translateForEntityA(value: string[] | string | undefined | null): string[] | undefined {
-  if (value) {
-    const valueAny: any = value;
-    if (valueAny.push) {
-      return value as string[];
-    } else if (valueAny.split) {
-      const valueString: string = valueAny;
-      return valueString.split(',');
-    }
-  }
-  return [];
 }
 
 export function filterSubjectsByTerm(subjects: string[], term: string): string[] {

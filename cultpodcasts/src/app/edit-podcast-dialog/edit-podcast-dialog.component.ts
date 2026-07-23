@@ -31,8 +31,8 @@ import {
   filterSubjectsByTerm,
   getPodcastChanges,
   noCompareFunction,
-  translateForEntity,
-  translateForEntityA
+  asEmptyString,
+  asStringArray
 } from '../podcast-form.util';
 
 @Component({
@@ -204,13 +204,13 @@ export class EditPodcastDialogComponent {
         ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
-        ignoredAssociatedSubjects: translateForEntityA(this.form!.controls.ignoredAssociatedSubjects.value),
-        ignoredSubjects: translateForEntityA(this.form!.controls.ignoredSubjects.value),
+        ignoredAssociatedSubjects: asStringArray(this.form!.controls.ignoredAssociatedSubjects.value),
+        ignoredSubjects: asStringArray(this.form!.controls.ignoredSubjects.value),
         lang: this.form!.controls.lang.value,
-        knownTerms: translateForEntityA(this.form!.controls.knownTerms.value),
-        minimumDuration: translateForEntity(this.form!.controls.minimumDuration.value),
-        enrichmentHashTags: translateForEntityA(this.form!.controls.enrichmentHashTags.value),
-        hashTag: translateForEntity(this.form!.controls.hashTag.value),
+        knownTerms: asStringArray(this.form!.controls.knownTerms.value),
+        minimumDuration: asEmptyString(this.form!.controls.minimumDuration.value),
+        enrichmentHashTags: asStringArray(this.form!.controls.enrichmentHashTags.value),
+        hashTag: asEmptyString(this.form!.controls.hashTag.value),
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
