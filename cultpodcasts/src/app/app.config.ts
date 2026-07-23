@@ -1,9 +1,8 @@
 import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { routes } from './app-routing.module';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { AppRoutingModule } from './app-routing.module';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
 import { JsonUrlInterceptor } from './json-url.interceptor';
 import { JsonDateInterceptor } from './json-date.interceptor';
@@ -19,8 +18,7 @@ import { authInterceptor } from './auth.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(
-      BrowserModule,
-      AppRoutingModule
+      BrowserModule
     ),
     SiteService,
     provideAuth0({
@@ -36,7 +34,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideHttpClient(withFetch(), withInterceptors([authInterceptor]), withInterceptorsFromDi()),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
     provideClientHydration(),
     provideServiceWorker('service-worker.js', {
       //      enabled: !isDevMode(),
