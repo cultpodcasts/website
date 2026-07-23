@@ -32,7 +32,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
 import { EpisodeUpdateService } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
@@ -70,12 +70,12 @@ export class OutgoingEpisodesApiComponent {
   protected episodes = signal<ApiEpisode[] | undefined>(undefined);
   protected error = signal<boolean>(false);
   protected isLoading = signal<boolean>(true);
-  sortDirection: string = sortParamDateDesc;
+  protected sortDirection = signal<string>(sortParamDateDesc);
 
-  days: number | undefined;
-  posted: boolean | undefined;
-  tweeted: boolean | undefined;
-  blueskyPosted: boolean | undefined = true;
+  days = signal<number | undefined>(undefined);
+  posted = signal<boolean | undefined>(undefined);
+  tweeted = signal<boolean | undefined>(undefined);
+  blueskyPosted = signal<boolean | undefined>(true);
   token: string = "";
   protected updatingEpisodeId = signal<string | null>(null);
   protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | null>(null);
@@ -92,7 +92,7 @@ export class OutgoingEpisodesApiComponent {
     private snackBar: MatSnackBar,
     private siteService: SiteService,
     private episodeUpdate: EpisodeUpdateService,
-    protected featureSwtichService: FeatureSwtichService
+    protected featureSwitchService: FeatureSwitchService
   ) {
   }
 
@@ -103,7 +103,7 @@ export class OutgoingEpisodesApiComponent {
 
     const daysValue: string | null = localStorage.getItem(daysKey);
     if (daysValue && parseInt(daysValue)) {
-      this.days = parseInt(daysValue);
+      this.days.set(parseInt(daysValue));
     }
 
     this.isLoading.set(true);
@@ -131,14 +131,15 @@ export class OutgoingEpisodesApiComponent {
   }
 
   reset() {
-    this.posted = undefined;
-    this.tweeted = undefined;
-    this.blueskyPosted = true;
-    this.days = undefined;
+    this.posted.set(undefined);
+    this.tweeted.set(undefined);
+    this.blueskyPosted.set(true);
+    this.days.set(undefined);
     this.ngOnInit()
   }
 
   setSort(sort: string) {
+    this.sortDirection.set(sort);
     const current = this.episodes();
     if (!current) {
       return;
@@ -456,14 +457,14 @@ export class OutgoingEpisodesApiComponent {
     headers = headers.set("Authorization", "Bearer " + this.token);
 
     const url = new URL(`/episodes/outgoing`, environment.api);
-    if (this.days)
-      url.searchParams.append("days", this.days.toString());
-    if (this.tweeted)
-      url.searchParams.append("tweeted", this.tweeted.toString());
-    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) && this.posted)
-      url.searchParams.append("posted", this.posted.toString());
-    if (this.blueskyPosted)
-      url.searchParams.append("blueskyPosted", this.blueskyPosted.toString())
+    if (this.days())
+      url.searchParams.append("days", this.days()!.toString());
+    if (this.tweeted())
+      url.searchParams.append("tweeted", this.tweeted()!.toString());
+    if (this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost) && this.posted())
+      url.searchParams.append("posted", this.posted()!.toString());
+    if (this.blueskyPosted())
+      url.searchParams.append("blueskyPosted", this.blueskyPosted()!.toString())
     const episodeEndpoint = url.toString();
     this.http.get<ApiEpisode[]>(episodeEndpoint, { headers: headers, observe: "response" })
       .subscribe(
@@ -483,7 +484,7 @@ export class OutgoingEpisodesApiComponent {
   }
 
   openSetDays() {
-    var _days = this.days || 7;
+    var _days = this.days() || 7;
     this.dialog
       .open(SetNumberOfDaysComponent, { disableClose: true, autoFocus: true, data: { days: _days } })
       .afterClosed()
@@ -492,7 +493,7 @@ export class OutgoingEpisodesApiComponent {
           var days = parseInt(result.days);
           if (days != _days) {
             localStorage.setItem(daysKey, days.toString());
-            this.days = days;
+            this.days.set(days);
             this.getEpisodes();
           }
         }

@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 
 @Component({
   selector: 'app-episode-status',
@@ -51,7 +51,7 @@ export class EpisodeStatusComponent {
   @Output()
   toggleBluesky = new EventEmitter<void>();
 
-  constructor(featureSwitchService: FeatureSwtichService) {
+  constructor(featureSwitchService: FeatureSwitchService) {
     this.showReddit = featureSwitchService.IsEnabled(FeatureSwitch.redditPost);
   }
 

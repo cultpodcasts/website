@@ -4,20 +4,28 @@ import { join } from "node:path";
 import { worker } from "./paths.mjs";
 
 /**
- * Split by lines and comment the banner
- * ```
- * import { createRequire } from 'node:module';
- * globalThis['require'] ??= createRequire(import.meta.url);
- * ```
+ * Comment out Angular SSR Node createRequire banner — Workers have no node:module.
+ *
+ * Angular ≤21:
+ *   import { createRequire } from 'node:module';
+ *   globalThis['require'] ??= createRequire(import.meta.url);
+ *
+ * Angular 22+:
+ *   import { createRequire as __ngCreateRequire } from 'node:module';
+ *   globalThis['require'] ??= __ngCreateRequire(import.meta.url);
  */
 const serverPolyfillsFile = join(worker, "polyfills.server.mjs");
 const serverPolyfillsData = fs
 	.readFileSync(serverPolyfillsFile, "utf8")
 	.split(/\r?\n/);
 
-for (let index = 0; index < 2; index++) {
-	if (serverPolyfillsData[index].includes("createRequire")) {
-		serverPolyfillsData[index] = "// " + serverPolyfillsData[index];
+for (let index = 0; index < Math.min(4, serverPolyfillsData.length); index++) {
+	const line = serverPolyfillsData[index];
+	if (
+		!line.startsWith("//") &&
+		(line.includes("createRequire") || line.includes("__ngCreateRequire"))
+	) {
+		serverPolyfillsData[index] = "// " + line;
 	}
 }
 

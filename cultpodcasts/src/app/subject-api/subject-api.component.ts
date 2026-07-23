@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
-import { SearchState } from '../search-state.interface';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
@@ -72,17 +71,13 @@ const sortParamDateDesc: string = "date-desc";
 })
 
 export class SubjectApiComponent {
-  searchState: SearchState = {
-    query: "",
-    page: 1,
-    sort: sortParamDateDesc,
-    filter: null
-  }
+  protected query = signal<string>("");
+  protected sortOrder = signal<string>(sortParamDateDesc);
+  private page: number = 1;
+  private filter: string | null = null;
 
-  subjectName: string = "";
+  protected subjectName = signal<string>("");
   protected count = signal<number>(0);
-  prevPage: number = 0;
-  nextPage: number = 0;
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -91,8 +86,8 @@ export class SubjectApiComponent {
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
   private podcastFilter: string = "";
-  languageSelection: SubjectLanguageSelection = { mode: "english" };
-  langFilter = buildSubjectLangFilter(this.languageSelection);
+  protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
+  protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
   protected selectedLanguageValues = signal<string[]>([ENGLISH_LANGUAGE_VALUE]);
   protected languageOptions = signal<SearchResultFacet[]>([]);
   protected englishLanguageCount = signal<number>(0);
@@ -101,7 +96,7 @@ export class SubjectApiComponent {
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
   protected facets = signal<SearchResultsFacets>({});
-  resultsHeading: string = "";
+  protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
@@ -143,58 +138,55 @@ export class SubjectApiComponent {
         }
       }
       const { params, queryParams } = res;
-      this.subjectName = params["subjectName"];
+      this.subjectName.set(params["subjectName"]);
       this.isLoading.set(true);
-      this.searchState.query = this.searchState.query = params["query"] ?? "";
-      this.siteService.setQuery(this.searchState.query);
+      this.query.set(params["query"] ?? "");
+      this.siteService.setQuery(this.query());
       this.siteService.setPodcast(null);
-      this.siteService.setSubject(this.subjectName);
+      this.siteService.setSubject(this.subjectName());
       if (queryParams[pageParam]) {
-        this.searchState.page = parseInt(queryParams[pageParam]);
-        this.prevPage = this.searchState.page - 1;
-        this.nextPage = this.searchState.page + 1;
+        this.page = parseInt(queryParams[pageParam]);
       } else {
-        this.nextPage = 2;
-        this.searchState.page = 1;
+        this.page = 1;
       }
       if (queryParams[sortParam]) {
-        this.searchState.sort = queryParams[sortParam];
+        this.sortOrder.set(queryParams[sortParam]);
       } else {
-        if (this.searchState.query) {
-          this.searchState.sort = sortParamRank;
+        if (this.query()) {
+          this.sortOrder.set(sortParamRank);
         } else {
-          this.searchState.sort = sortParamDateDesc;
+          this.sortOrder.set(sortParamDateDesc);
         }
       }
-      this.searchState.filter = `subjects/any(s: s eq '${this.subjectName.replaceAll("'", "''")}')`;
-      this.siteService.setFilter(this.searchState.filter);
+      this.filter = `subjects/any(s: s eq '${this.subjectName().replaceAll("'", "''")}')`;
+      this.siteService.setFilter(this.filter);
       this.execSearch(initial, initial);
     });
   }
 
   execSearch(initial: boolean, subsequent: boolean) {
     var sort: string = "";
-    if (this.searchState.sort == "date-asc") {
+    if (this.sortOrder() == "date-asc") {
       sort = "release asc";
-    } else if (this.searchState.sort == "date-desc") {
+    } else if (this.sortOrder() == "date-desc") {
       sort = "release desc";
     }
 
-    const baseFilter = this.searchState.filter + this.podcastFilter;
-    const resultFilter = baseFilter + this.langFilter;
+    const baseFilter = this.filter + this.podcastFilter;
+    const resultFilter = baseFilter + this.langFilter();
     // Facets must omit the language filter so Azure returns non-null lang buckets.
     const facetFilter = subsequent ? baseFilter : resultFilter;
     const runResults = (facetsFromResponse?: SearchResultsFacets, facetCount?: number) => {
       this.oDataService.getEntitiesWithFacets<SearchResult>(
         new URL("/search", environment.api).toString(),
         {
-          search: this.searchState.query,
+          search: this.query(),
           filter: resultFilter,
           searchMode: 'any',
           queryType: 'simple',
           count: true,
-          skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
-          top: this.infiniteScrollStrategy.getTake(this.searchState.page),
+          skip: this.infiniteScrollStrategy.getSkip(this.page),
+          top: this.infiniteScrollStrategy.getTake(this.page),
           facets: subsequent
             ? []
             : ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
@@ -212,7 +204,7 @@ export class SubjectApiComponent {
                   if (this.results().length < count &&
                     this.isScrolledToBottom() && !this.isSubsequentLoading()) {
                     this.isSubsequentLoading.set(true);
-                    this.searchState.page++;
+                    this.page++;
                     this.execSearch(false, false);
                   }
                 });
@@ -238,7 +230,7 @@ export class SubjectApiComponent {
             },
             error: (e) => {
               console.error(e);
-              this.resultsHeading = "Something went wrong. Please try again.";
+              this.errorMessage.set("Something went wrong. Please try again.");
               this.isLoading.set(false);
             }
           });
@@ -248,7 +240,7 @@ export class SubjectApiComponent {
       this.oDataService.getEntitiesWithFacets<SearchResult>(
         new URL("/search", environment.api).toString(),
         {
-          search: this.searchState.query,
+          search: this.query(),
           filter: facetFilter,
           searchMode: 'any',
           queryType: 'simple',
@@ -265,7 +257,7 @@ export class SubjectApiComponent {
           next: facetData => runResults(facetData.facets, facetData.metadata.get("count")),
           error: (e) => {
             console.error(e);
-            this.resultsHeading = "Something went wrong. Please try again.";
+            this.errorMessage.set("Something went wrong. Please try again.");
             this.isLoading.set(false);
           }
         });
@@ -276,13 +268,13 @@ export class SubjectApiComponent {
   }
 
   setSort(sort: string) {
-    var url = `/subject/${this.subjectName}`;
+    var url = `/subject/${this.subjectName()}`;
     var query = this.siteService.getSiteData().query;
     if (query && query != "") {
       url = `${url}/${query}`;
     }
     var params: Params = {};
-    if (this.searchState.query) {
+    if (this.query()) {
       if (sort != sortParamRank) {
         params[sortParam] = sort;
       }
@@ -295,16 +287,16 @@ export class SubjectApiComponent {
   }
 
   search() {
-    let url = `search/${this.subjectName}`;
-    if (this.searchState.query) {
-      url += ` ${this.searchState.query}`;
+    let url = `search/${this.subjectName()}`;
+    if (this.query()) {
+      url += ` ${this.query()}`;
     }
     this.router.navigate([url]);
   }
 
   editSubject() {
     const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
-      data: { subjectName: this.subjectName },
+      data: { subjectName: this.subjectName() },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -339,7 +331,7 @@ export class SubjectApiComponent {
       var podcastsNameList = podcasts.join(delimiter);
       this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
-    this.searchState.page = 1;
+    this.page = 1;
     this.execSearch(true, false);
   }
 
@@ -353,9 +345,8 @@ export class SubjectApiComponent {
       selected = values;
     }
     this.selectedLanguageValues.set(selected);
-    this.languageSelection = selectionFromChipValues(selected);
-    this.langFilter = buildSubjectLangFilter(this.languageSelection);
-    this.searchState.page = 1;
+    this.languageSelection.set(selectionFromChipValues(selected));
+    this.page = 1;
     this.execSearch(true, false);
   }
 
@@ -363,17 +354,15 @@ export class SubjectApiComponent {
     return languageLabel(code);
   }
 
-  get showLanguageSelector(): boolean {
-    return shouldShowLanguageSelector(this.languageOptions(), this.languageSelection);
-  }
+  protected showLanguageSelector = computed(() =>
+    shouldShowLanguageSelector(this.languageOptions(), this.languageSelection()));
 
-  get visibleLanguageOptions(): SearchResultFacet[] {
-    return displayedLanguageOptions(this.languageOptions(), this.languageSelection);
-  }
+  protected visibleLanguageOptions = computed(() =>
+    displayedLanguageOptions(this.languageOptions(), this.languageSelection()));
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
   }
 }

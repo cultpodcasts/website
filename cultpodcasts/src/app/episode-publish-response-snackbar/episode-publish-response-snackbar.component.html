@@ -1,8 +1,8 @@
 <div id="episodepublishsnackbarwrapper">
-    <div matSnackBarLabel class="label">{{message}}</div>
+    <div matSnackBarLabel class="label">{{message()}}</div>
 
     <div matSnackBarActions>
-        @if (showManualTweet){
+        @if (showManualTweet()){
         <button matButton matSnackBarAction
             class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
             (click)="manualTweet()">

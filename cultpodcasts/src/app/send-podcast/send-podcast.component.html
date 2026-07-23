@@ -1,35 +1,35 @@
 <h2 mat-dialog-title>Sending Podcast</h2>
 
 <mat-dialog-content>
-    @if (isSending) {
+    @if (isSending()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     }
-    @if (urlShareError) {
+    @if (urlShareError()) {
     <div>
         <p>Please share from Spotify, Apple Podcasts or YouTube</p>
     </div>
     }
-    @if (urlTextError) {
+    @if (urlTextError()) {
     <div>
         <p>Unrecognised url. Please check Url is valid Spotify, Apple Podcasts or YouTube address</p>
     </div>
     }
-    @if (unknownError) {
+    @if (unknownError()) {
     <div>
         <p>Unable to send the Podcast</p>
     </div>
     }
-    @if (submitError) {
+    @if (submitError()) {
     <div>
         <p>Error sending Url to CultPodcasts.com</p>
     </div>
     }
-    @if (urlShareError || urlTextError) {
-    <p>URL: {{shareUrl}}</p>
+    @if (urlShareError() || urlTextError()) {
+    <p>URL: {{shareUrl()}}</p>
     }
 </mat-dialog-content>
 
-@if (urlShareError || urlTextError || unknownError || submitError) {
+@if (urlShareError() || urlTextError() || unknownError() || submitError()) {
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>

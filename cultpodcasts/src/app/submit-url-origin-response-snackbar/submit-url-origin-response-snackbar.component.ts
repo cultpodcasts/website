@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -20,13 +20,14 @@ const long = 30 * 1000;
     ApplePodcastsSvgComponent
   ],
   templateUrl: './submit-url-origin-response-snackbar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './submit-url-origin-response-snackbar.component.sass'
 })
 
 export class SubmitUrlOriginResponseSnackbarComponent {
-  actionText: string = "Ok";
-  showReviewButton: boolean = false;
-  existingPodcast: boolean;
+  readonly actionText = signal("Ok");
+  readonly showReviewButton = signal(false);
+  readonly existingPodcast: boolean;
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -35,8 +36,8 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse }) {
     this.existingPodcast = data.existingPodcast;
     if (data.response.episode === "Created" || data.response.episode === "Enriched" || data.response.episode === "EpisodeAlreadyExists") {
-      this.actionText = "Edit";
-      this.showReviewButton = true;
+      this.actionText.set("Edit");
+      this.showReviewButton.set(true);
       snackBarRef.onAction().subscribe(() => {
         this.editSubmittedEpisode(data.response.podcastId!, data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
       });

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,11 +9,12 @@ import { CurationSubmitService } from '../curation-submit.service';
   selector: 'app-edit-episode-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-episode-send.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-episode-send.component.sass'
 })
 export class EditEpisodeSendComponent {
-  isSending: boolean = true;
-  sendError: boolean = false;
+  readonly isSending = signal(true);
+  readonly sendError = signal(false);
 
   constructor(
     private dialogRef: MatDialogRef<EditEpisodeSendComponent>,
@@ -26,8 +27,8 @@ export class EditEpisodeSendComponent {
         this.dialogRef.close({ updated: true, response: resp });
       },
       error: e => {
-        this.isSending = false;
-        this.sendError = true;
+        this.isSending.set(false);
+        this.sendError.set(true);
         console.error(e);
       }
     });

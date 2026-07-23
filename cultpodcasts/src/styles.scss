@@ -18,17 +18,11 @@ body {
     margin: 0;
     padding: 0 0 calc(3.2em + env(safe-area-inset-bottom)) 0;
     font-family: Roboto, "Helvetica Neue", sans-serif;
-    background-color: #1a1a1a !important;
+    background-color: var(--mat-sys-surface);
 }
 
 html.discovery-snap-enabled {
     scroll-snap-type: y mandatory;
-}
-
-@media (prefers-color-scheme: light) {
-    body {
-        background-color: #fafafa !important;
-    }
 }
 
 p {
@@ -428,14 +422,7 @@ mat-card {
 }
 
 mat-card:not(.selected) {
-    background-color: #424242 !important;
-}
-
-
-@media (prefers-color-scheme: light) {
-    mat-card:not(.selected) {
-        background-color: #ffffff !important;
-    }
+    background-color: var(--mat-sys-surface-container);
 }
 
 mat-card-actions {

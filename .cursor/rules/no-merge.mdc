@@ -1,0 +1,12 @@
+---
+description: Never merge GitHub PRs — user merges only
+alwaysApply: true
+---
+
+# No merge (HARD GUARDRAIL)
+
+**Never merge pull requests.** Do not run `gh pr merge`, merge via the GitHub UI, or merge branches into `main`/`master` locally as a substitute for merging a PR.
+
+- Open, update, and push PRs as requested.
+- Leave merge to the user.
+- If a plan says "merge the PR", skip that step unless the user explicitly says to merge in the current conversation.

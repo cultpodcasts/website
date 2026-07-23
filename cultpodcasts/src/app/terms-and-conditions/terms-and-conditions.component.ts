@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { SeoService } from '../seo.service';
 
 @Component({
     selector: 'terms-and-conditions',
     templateUrl: './terms-and-conditions.component.html',
     styleUrls: ['./terms-and-conditions.component.sass'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true
 })
 export class TermsAndConditionsComponent {

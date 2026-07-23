@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,10 +9,11 @@ import { EpisodeChangeResponse } from '../episode-change-response.interface';
   selector: 'app-manual-tweet-episode-dialog',
   imports: [MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './manual-tweet-episode-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './manual-tweet-episode-dialog.component.sass'
 })
 export class ManualTweetEpisodeDialogComponent {
-  isInError: boolean = false;
+  readonly isInError = signal(false);
   podcastId: string;
   episodeId: string;
 
@@ -43,7 +44,7 @@ export class ManualTweetEpisodeDialogComponent {
       if (result && result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });
       } else {
-        this.isInError = true;
+        this.isInError.set(true);
       }
     });
   }

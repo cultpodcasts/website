@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal, WritableSignal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -51,6 +51,7 @@ import {
     MatIconModule
   ],
   templateUrl: './add-podcast-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './add-podcast-dialog.component.sass'
 })
 export class AddPodcastDialogComponent {
@@ -59,25 +60,25 @@ export class AddPodcastDialogComponent {
   protected readonly noCompareFunction = noCompareFunction;
 
   podcastName: string;
-  isLoading: boolean = true;
-  isInError: boolean = false;
-  notFound: boolean = false;
+  readonly isLoading = signal<boolean>(true);
+  readonly isInError = signal<boolean>(false);
+  readonly notFound = signal<boolean>(false);
   podcastServices = Object
     .values(PodcastServiceType)
     .filter(value => typeof value !== 'number')
     .map(x => x as keyof typeof PodcastServiceType)
 
-  form: FormGroup<AddPodcastForm> | undefined;
+  readonly form = signal<FormGroup<AddPodcastForm> | undefined>(undefined);
   originalPodcast: Podcast | undefined;
-  defaultSubjects: string[] = [];
-  ignoredSubjects: string[] = [];
-  defaultSubjectFilterTerm: string = '';
-  ignoredSubjectsFilterTerm: string = '';
-  languages: { [key: string]: string } = {};
-  titleRegexPresets: NamedRegexPreset[] = [];
-  descriptionRegexPresets: NamedRegexPreset[] = [];
+  readonly defaultSubjects = signal<string[]>([]);
+  readonly ignoredSubjects = signal<string[]>([]);
+  readonly defaultSubjectFilterTerm = signal<string>('');
+  readonly ignoredSubjectsFilterTerm = signal<string>('');
+  readonly languages = signal<{ [key: string]: string }>({});
+  readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
+  readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string;
-  highlightSubjectsTab: boolean = false;
+  readonly highlightSubjectsTab = signal<boolean>(false);
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -122,42 +123,43 @@ export class AddPodcastDialogComponent {
       ));
       if (resp.podcast.status == 200 && resp.podcast.body) {
         this.originalPodcast = resp.podcast.body;
-        this.form = new FormGroup<AddPodcastForm>({
+        const form = new FormGroup<AddPodcastForm>({
           podcastName: new FormControl(this.podcastName, { nonNullable: true }),
           ...buildPodcastFormControls(resp.podcast.body)
         });
+        this.form.set(form);
         if (this.data.forceBypassShortEpisodeChecking) {
-          this.form.controls.bypassShortEpisodeChecking.setValue(true);
+          form.controls.bypassShortEpisodeChecking.setValue(true);
         }
 
         const desiredDefaultSubject = this.data.defaultSubjectFromEpisode ?? resp.podcast.body.defaultSubject;
         if (desiredDefaultSubject != null) {
-          this.form.controls.defaultSubject.setValue(desiredDefaultSubject);
+          form.controls.defaultSubject.setValue(desiredDefaultSubject);
         }
-        this.highlightSubjectsTab = this.data.defaultSubjectFromEpisode != null
+        this.highlightSubjectsTab.set(this.data.defaultSubjectFromEpisode != null
           && desiredDefaultSubject != null
-          && desiredDefaultSubject !== '';
+          && desiredDefaultSubject !== '');
 
         let initial: string[] = [];
         if (desiredDefaultSubject != null) {
           initial.push(desiredDefaultSubject);
         }
-        this.defaultSubjects = [...initial].concat(resp.subjects.filter(x => desiredDefaultSubject == null || desiredDefaultSubject != x.name).map(x => x.name));
+        this.defaultSubjects.set([...initial].concat(resp.subjects.filter(x => desiredDefaultSubject == null || desiredDefaultSubject != x.name).map(x => x.name)));
         const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
-        this.ignoredSubjects = ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name));
-        this.languages = buildPodcastLanguageOptions(resp.languages);
-        this.isLoading = false;
+        this.ignoredSubjects.set(ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name)));
+        this.languages.set(buildPodcastLanguageOptions(resp.languages));
+        this.isLoading.set(false);
       } else {
-        this.isLoading = false;
-        this.isInError = true;
+        this.isLoading.set(false);
+        this.isInError.set(true);
         if (resp.podcast.status == 404) {
-          this.notFound = true;
+          this.notFound.set(true);
         }
       }
     } catch (e) {
       console.error(e);
-      this.isLoading = false;
-      this.isInError = true;
+      this.isLoading.set(false);
+      this.isInError.set(true);
     }
   }
 
@@ -167,64 +169,67 @@ export class AddPodcastDialogComponent {
 
   async loadRegexPresets(): Promise<void> {
     const presets = this.regexPresetsService.loadRegexPresets();
-    this.titleRegexPresets = presets.title;
-    this.descriptionRegexPresets = presets.description;
+    this.titleRegexPresets.set(presets.title);
+    this.descriptionRegexPresets.set(presets.description);
   }
 
   applyTitleRegexPreset(pattern: string): void {
-    if (!this.form) {
+    const form = this.form();
+    if (!form) {
       return;
     }
 
     this.regexPresetsService.applyTitleRegexPreset(
       pattern,
-      this.form.controls.titleRegex,
-      this.form.controls.podcastName.value ?? this.podcastName,
+      form.controls.titleRegex,
+      form.controls.podcastName.value ?? this.podcastName,
     );
   }
 
   applyDescriptionRegexPreset(pattern: string): void {
-    if (!this.form) {
+    const form = this.form();
+    if (!form) {
       return;
     }
 
     this.regexPresetsService.applyDescriptionRegexPreset(
       pattern,
-      this.form.controls.descriptionRegex,
-      this.form.controls.podcastName.value ?? this.podcastName,
+      form.controls.descriptionRegex,
+      form.controls.podcastName.value ?? this.podcastName,
     );
   }
 
   onSubmit() {
-    if (this.form?.valid) {
+    const form = this.form();
+    if (form?.valid) {
       const update: Podcast = {
-        name: this.form!.controls.podcastName.value,
-        removed: this.form!.controls.removed.value,
-        indexAllEpisodes: this.form!.controls.indexAllEpisodes.value,
-        bypassShortEpisodeChecking: this.form!.controls.bypassShortEpisodeChecking.value,
-        releaseAuthority: this.form!.controls.releaseAuthority.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : this.form!.controls.releaseAuthority.value,
-        primaryPostService: this.form!.controls.primaryPostService.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : this.form!.controls.primaryPostService.value,
-        spotifyId: this.form!.controls.spotifyId.value,
-        appleId: this.form!.controls.appleId.value,
-        youTubePublicationDelay: this.form!.controls.youTubePublicationDelay.value,
-        skipEnrichingFromYouTube: this.form!.controls.skipEnrichingFromYouTube.value,
-        twitterHandle: this.form!.controls.twitterHandle.value,
-        blueskyHandle: this.form!.controls.blueskyHandle.value,
-        titleRegex: this.form!.controls.titleRegex.value,
-        descriptionRegex: this.form!.controls.descriptionRegex.value,
-        episodeMatchRegex: this.form!.controls.episodeMatchRegex.value,
-        episodeIncludeTitleRegex: this.form!.controls.episodeIncludeTitleRegex.value,
-        defaultSubject: this.form!.controls.defaultSubject.value,
-        ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
-        youTubeChannelId: this.form!.controls.youTubeChannelId.value,
-        youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
-        ignoredAssociatedSubjects: asStringArray(this.form!.controls.ignoredAssociatedSubjects.value),
-        ignoredSubjects: asStringArray(this.form!.controls.ignoredSubjects.value),
-        lang: this.form!.controls.lang.value,
-        knownTerms: asStringArray(this.form!.controls.knownTerms.value),
-        minimumDuration: asEmptyString(this.form!.controls.minimumDuration.value),
-        enrichmentHashTags: asStringArray(this.form!.controls.enrichmentHashTags.value),
-        hashTag: asEmptyString(this.form!.controls.hashTag.value),
+        name: form.controls.podcastName.value,
+        removed: form.controls.removed.value,
+        indexAllEpisodes: form.controls.indexAllEpisodes.value,
+        bypassShortEpisodeChecking: form.controls.bypassShortEpisodeChecking.value,
+        releaseAuthority: form.controls.releaseAuthority.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : form.controls.releaseAuthority.value,
+        primaryPostService: form.controls.primaryPostService.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : form.controls.primaryPostService.value,
+        spotifyId: form.controls.spotifyId.value,
+        appleId: form.controls.appleId.value,
+        youTubePublicationDelay: form.controls.youTubePublicationDelay.value,
+        skipEnrichingFromYouTube: form.controls.skipEnrichingFromYouTube.value,
+        twitterHandle: form.controls.twitterHandle.value,
+        blueskyHandle: form.controls.blueskyHandle.value,
+        titleRegex: form.controls.titleRegex.value,
+        descriptionRegex: form.controls.descriptionRegex.value,
+        episodeMatchRegex: form.controls.episodeMatchRegex.value,
+        episodeIncludeTitleRegex: form.controls.episodeIncludeTitleRegex.value,
+        defaultSubject: form.controls.defaultSubject.value,
+        ignoreAllEpisodes: form.controls.ignoreAllEpisodes.value,
+        youTubeChannelId: form.controls.youTubeChannelId.value,
+        youTubePlaylistId: form.controls.youTubePlaylistId.value,
+        ignoredAssociatedSubjects: asStringArray(form.controls.ignoredAssociatedSubjects.value),
+        ignoredSubjects: asStringArray(form.controls.ignoredSubjects.value),
+        lang: form.controls.lang.value,
+        knownTerms: asStringArray(form.controls.knownTerms.value),
+        minimumDuration: asEmptyString(form.controls.minimumDuration.value),
+        enrichmentHashTags: asStringArray(form.controls.enrichmentHashTags.value),
+        hashTag: asEmptyString(form.controls.hashTag.value),
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -280,41 +285,41 @@ export class AddPodcastDialogComponent {
   }
   onDefaultSubjectDropdownOpenChange(opened: boolean) {
     if (!opened) {
-      this.defaultSubjectFilterTerm = '';
+      this.defaultSubjectFilterTerm.set('');
     }
   }
 
   onIgnoredSubjectsDropdownOpenChange(opened: boolean) {
     if (!opened) {
-      this.ignoredSubjectsFilterTerm = '';
+      this.ignoredSubjectsFilterTerm.set('');
     }
   }
 
   onDefaultSubjectDropdownKeydown(event: KeyboardEvent) {
-    this.applyFilterKey(event, 'defaultSubjectFilterTerm');
+    this.applyFilterKey(event, this.defaultSubjectFilterTerm);
   }
 
   onIgnoredSubjectsDropdownKeydown(event: KeyboardEvent) {
-    this.applyFilterKey(event, 'ignoredSubjectsFilterTerm');
+    this.applyFilterKey(event, this.ignoredSubjectsFilterTerm);
   }
 
   onTabChange(selectedIndex: number) {
     if (selectedIndex === 2) {
-      this.highlightSubjectsTab = false;
+      this.highlightSubjectsTab.set(false);
     }
   }
 
   filteredDefaultSubjects() {
-    return filterSubjectsByTerm(this.defaultSubjects, this.defaultSubjectFilterTerm);
+    return filterSubjectsByTerm(this.defaultSubjects(), this.defaultSubjectFilterTerm());
   }
 
   filteredIgnoredSubjects() {
-    const selected = this.form?.controls.ignoredSubjects.value ?? [];
+    const selected = this.form()?.controls.ignoredSubjects.value ?? [];
     const selectedSet = new Set(selected);
-    return filterKeepingSelectedInOrder(this.ignoredSubjects, this.ignoredSubjectsFilterTerm, selectedSet);
+    return filterKeepingSelectedInOrder(this.ignoredSubjects(), this.ignoredSubjectsFilterTerm(), selectedSet);
   }
 
-  applyFilterKey(event: KeyboardEvent, key: 'defaultSubjectFilterTerm' | 'ignoredSubjectsFilterTerm') {
+  applyFilterKey(event: KeyboardEvent, filterTerm: WritableSignal<string>) {
     if (!this.enableDesktopSubjectTypingFilter) {
       return;
     }
@@ -323,21 +328,22 @@ export class AddPodcastDialogComponent {
     }
 
     if (event.key === 'Backspace') {
-      if (this[key].length > 0) {
-        this[key] = this[key].substring(0, this[key].length - 1);
+      const value = filterTerm();
+      if (value.length > 0) {
+        filterTerm.set(value.substring(0, value.length - 1));
       }
       event.preventDefault();
       return;
     }
 
     if (event.key === 'Escape') {
-      this[key] = '';
+      filterTerm.set('');
       event.preventDefault();
       return;
     }
 
     if (event.key.length === 1) {
-      this[key] += event.key;
+      filterTerm.set(filterTerm() + event.key);
       event.preventDefault();
     }
   }

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -36,23 +36,24 @@ import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.ut
     MatInputModule
   ],
   templateUrl: './edit-subject-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-subject-dialog.component.sass'
 })
 export class EditSubjectDialogComponent {
   subjectName: string | undefined;
-  isLoading: boolean = true;
-  isInError: boolean = false;
+  isLoading = signal(true);
+  isInError = signal(false);
   subjectTypes = Object
     .values(SubjectType)
     .filter(value => typeof value !== 'number')
     .map(x => x as keyof typeof SubjectType)
 
-  form: FormGroup<SubjectForm> | undefined;
+  form = signal<FormGroup<SubjectForm> | undefined>(undefined);
   originalSubject: SubjectEntity | undefined;
   subjectId: string | undefined;
   create: boolean;
   conflict: string | undefined;
-  flairs: Map<string, Flair> = new Map<string, Flair>();
+  flairs = signal<Map<string, Flair>>(new Map<string, Flair>());
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -66,7 +67,7 @@ export class EditSubjectDialogComponent {
   }
 
   ngOnInit() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -80,7 +81,7 @@ export class EditSubjectDialogComponent {
       this.http.get<Map<string, Flair>>(flairsEndpoint, { headers: headers })
         .subscribe({
           next: flairs => {
-            this.flairs = flairs;
+            this.flairs.set(flairs);
             if (!this.create) {
               const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
               this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
@@ -89,7 +90,7 @@ export class EditSubjectDialogComponent {
                     next: resp => {
                       this.subjectId = resp.id;
                       this.originalSubject = resp;
-                      this.form = new FormGroup<SubjectForm>({
+                      this.form.set(new FormGroup<SubjectForm>({
                         name: new FormControl(resp.name!, { nonNullable: true }),
                         aliases: new FormControl(resp.aliases, { nonNullable: false }),
                         associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
@@ -99,18 +100,18 @@ export class EditSubjectDialogComponent {
                         redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
                         redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
                         knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
-                      });
-                      this.isLoading = false;
+                      }));
+                      this.isLoading.set(false);
                     },
                     error: e => {
-                      this.isLoading = false;
-                      this.isInError = true;
+                      this.isLoading.set(false);
+                      this.isInError.set(true);
                     }
                   }
                 )
             } else {
               this.originalSubject = {};
-              this.form = new FormGroup<SubjectForm>({
+              this.form.set(new FormGroup<SubjectForm>({
                 name: new FormControl(""!, { nonNullable: true }),
                 aliases: new FormControl([], { nonNullable: false }),
                 associatedSubjects: new FormControl([], { nonNullable: false }),
@@ -120,18 +121,18 @@ export class EditSubjectDialogComponent {
                 redditFlairTemplateId: new FormControl("", { nonNullable: false }),
                 redditFlareText: new FormControl("", { nonNullable: false }),
                 knownTerms: new FormControl<string[]>([], { nonNullable: true })
-              });
-              this.isLoading = false;
+              }));
+              this.isLoading.set(false);
             }
           },
           error: error => {
-            this.isLoading = false;
-            this.isInError = true;
+            this.isLoading.set(false);
+            this.isInError.set(true);
           }
         })
     }).catch(x => {
-      this.isLoading = false;
-      this.isInError = true;
+      this.isLoading.set(false);
+      this.isInError.set(true);
     });
   }
 
@@ -145,20 +146,21 @@ export class EditSubjectDialogComponent {
   }
 
   onSubmit() {
-    if (this.form?.valid) {
+    const form = this.form();
+    if (form?.valid) {
       const update: SubjectEntity = {
-        aliases: asStringArray(this.form!.controls.aliases.value),
-        associatedSubjects: asStringArray(this.form!.controls.associatedSubjects.value),
-        enrichmentHashTags: asStringArray(this.form!.controls.enrichmentHashTags.value),
-        hashTag: asEmptyString(this.form!.controls.hashTag.value),
-        redditFlairTemplateId: emptyGuidIfBlank(this.form!.controls.redditFlairTemplateId.value),
-        redditFlareText: asEmptyString(this.form!.controls.redditFlareText.value),
-        subjectType: this.form!.controls.subjectType.value,
-        knownTerms: asStringArray(this.form!.controls.knownTerms.value)
+        aliases: asStringArray(form.controls.aliases.value),
+        associatedSubjects: asStringArray(form.controls.associatedSubjects.value),
+        enrichmentHashTags: asStringArray(form.controls.enrichmentHashTags.value),
+        hashTag: asEmptyString(form.controls.hashTag.value),
+        redditFlairTemplateId: emptyGuidIfBlank(form.controls.redditFlairTemplateId.value),
+        redditFlareText: asEmptyString(form.controls.redditFlareText.value),
+        subjectType: form.controls.subjectType.value,
+        knownTerms: asStringArray(form.controls.knownTerms.value)
       };
 
       if (this.create) {
-        update.name = asEmptyString(this.form!.controls.name.value);
+        update.name = asEmptyString(form.controls.name.value);
       }
 
       var changes = this.getChanges(this.originalSubject!, update);
@@ -221,9 +223,9 @@ export class EditSubjectDialogComponent {
   }
 
   styleSelect(): string {
-    const currentFlairId = this.form!.controls.redditFlairTemplateId.value;
+    const currentFlairId = this.form()!.controls.redditFlairTemplateId.value;
     if (currentFlairId) {
-      const anyFlair: any = this.flairs;
+      const anyFlair: any = this.flairs();
       const flair = anyFlair[currentFlairId];
       if (flair) {
         return `background-color: ${flair.backgroundColour}; color:${flair.textColour == 'dark' ? 'black' : 'white'}`;

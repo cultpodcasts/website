@@ -6,9 +6,9 @@
     }
   </div>
   <section id="resultsheading">
-    <h2>{{subjectName}} has {{count()}} episode@if (count()>1 || count()==0){s}
-      @if (searchState.query && searchState.query!='') {
-      matching "{{searchState.query}}"
+    <h2>{{subjectName()}} has {{count()}} episode@if (count()>1 || count()==0){s}
+      @if (query() && query()!='') {
+      matching "{{query()}}"
       }</h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
       <mat-icon>more_vert</mat-icon>
@@ -21,18 +21,18 @@
       </button>
       }
       <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-        [class.selected]="searchState.sort==sortParamDateAsc">
+        [class.selected]="sortOrder()==sortParamDateAsc">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
       </button>
       <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-        [class.selected]="searchState.sort==sortParamDateDesc">
+        [class.selected]="sortOrder()==sortParamDateDesc">
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      @if (searchState.query) {
+      @if (query()) {
       <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
-        [class.selected]="searchState.sort==sortParamRank">
+        [class.selected]="sortOrder()==sortParamRank">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>
@@ -61,14 +61,14 @@
   </mat-expansion-panel>
   }
 
-  @if (showLanguageSelector) {
+  @if (showLanguageSelector()) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
       <mat-panel-title>Languages</mat-panel-title>
       <mat-panel-description>
-        @if (languageSelection.mode === 'all') {
+        @if (languageSelection().mode === 'all') {
         All languages
-        } @else if (languageSelection.mode === 'english') {
+        } @else if (languageSelection().mode === 'english') {
         English
         } @else {
         {{selectedLanguageValues().length}} Selected
@@ -80,7 +80,7 @@
         [selected]="selectedLanguageValues().indexOf(englishLanguageValue)>=0">
         English ({{englishLanguageCount()}})
       </mat-chip-option>
-      @for (language of visibleLanguageOptions; track language.value) {
+      @for (language of visibleLanguageOptions(); track language.value) {
       <mat-chip-option [value]="language.value"
         [selected]="selectedLanguageValues().indexOf(language.value)>=0">
         {{languageDisplayName(language.value)}} ({{language.count}})
@@ -130,9 +130,13 @@
 </div>
 }
 
-@if (count() === 0 && !isLoading()) {
+@if (errorMessage() && !isLoading()) {
+<section id="resultsheading">
+  <h2>{{errorMessage()}}</h2>
+</section>
+} @else if (count() === 0 && !isLoading()) {
 <section>
-  <h2>There were no results for "{{subjectName}}"@if (searchState.query){ and "{{searchState.query}}"}</h2>
+  <h2>There were no results for "{{subjectName()}}"@if (query()){ and "{{query()}}"}</h2>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>

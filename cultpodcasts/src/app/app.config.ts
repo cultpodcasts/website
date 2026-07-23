@@ -1,9 +1,8 @@
-import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideZonelessChangeDetection, importProvidersFrom } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
+import { BrowserModule, provideClientHydration, withNoIncrementalHydration } from '@angular/platform-browser';
 import { JsonUrlInterceptor } from './json-url.interceptor';
 import { JsonDateInterceptor } from './json-date.interceptor';
 import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
@@ -14,6 +13,9 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
 import { authInterceptor } from './auth.interceptor';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
+import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
+import { authRedirectUri } from './auth-redirect-uri';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,24 +26,33 @@ export const appConfig: ApplicationConfig = {
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,
+      // Firefox (and Safari) block Auth0 silent auth iframes when the app host
+      // (e.g. *.pages.dev) is cross-site to the Auth0 custom domain. Refresh
+      // tokens + localStorage avoid that path for getAccessTokenSilently.
+      useRefreshTokens: true,
+      useRefreshTokensFallback: false,
+      cacheLocation: 'localstorage',
       authorizationParams: {
-        redirect_uri: environment.assetHost
+        redirect_uri: authRedirectUri(environment.assetHost),
+        audience: 'https://api.cultpodcasts.com/',
+        scope: 'openid profile email offline_access curate admin submit'
       }
     }),
     { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
     {
       provide: HTTP_INTERCEPTORS, useClass: JsonUrlInterceptor, multi: true
     },
+    { provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline', subscriptSizing: 'dynamic' } },
+    { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { autoFocus: 'first-tabbable' } },
     provideHttpClient(withFetch(), withInterceptors([authInterceptor]), withInterceptorsFromDi()),
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideZonelessChangeDetection(),
     provideRouter(routes, withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })),
-    provideClientHydration(),
+    provideClientHydration(withNoIncrementalHydration()),
     provideServiceWorker('service-worker.js', {
       //      enabled: !isDevMode(),
       enabled: true,
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
     }),
-    provideAnimations(),
     provideAnimationsAsync(),
     InfiniteScrollStrategy,
     EpisodePublishResponseAdaptor

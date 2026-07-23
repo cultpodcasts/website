@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -19,14 +19,15 @@ import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.i
     FormsModule,
   ],
   templateUrl: './rename-podcast-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './rename-podcast-dialog.component.sass'
 })
 export class RenamePodcastDialogComponent {
-  isSending: boolean = false;
+  readonly isSending = signal(false);
   podcastName: string;
   newPodcastName: string = "";
-  conflict: boolean = false;
-  isInError: boolean = false;
+  readonly conflict = signal(false);
+  readonly isInError = signal(false);
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -42,9 +43,9 @@ export class RenamePodcastDialogComponent {
   }
 
   async onSubmit() {
-    this.isSending = true;
-    this.conflict = false;
-    this.isInError = false;
+    this.isSending.set(true);
+    this.conflict.set(false);
+    this.isInError.set(false);
     try {
       const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -63,7 +64,7 @@ export class RenamePodcastDialogComponent {
         )
       );
       if (resp.status === 200) {
-        this.isSending = false;
+        this.isSending.set(false);
         this.dialogRef.close({
           updated: true,
           newPodcastName,
@@ -72,14 +73,14 @@ export class RenamePodcastDialogComponent {
         return;
       }
       console.error(resp);
-      this.isInError = true;
-      this.isSending = false;
+      this.isInError.set(true);
+      this.isSending.set(false);
     } catch (e: unknown) {
       console.error(e);
       const err = e as { status?: number };
-      this.conflict = err.status === 409;
-      this.isSending = false;
-      this.isInError = true;
+      this.conflict.set(err.status === 409);
+      this.isSending.set(false);
+      this.isInError.set(true);
     }
   }
 

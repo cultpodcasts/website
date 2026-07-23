@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -39,13 +39,14 @@ import { asEmptyString, asStringArray } from '../form-value.util';
     MatCheckboxModule
   ],
   templateUrl: './edit-person-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-person-dialog.component.sass'
 })
 export class EditPersonDialogComponent {
   personName: string | undefined;
-  isLoading: boolean = true;
-  isInError: boolean = false;
-  form: FormGroup<PersonForm> | undefined;
+  isLoading = signal(true);
+  isInError = signal(false);
+  form = signal<FormGroup<PersonForm> | undefined>(undefined);
   originalPerson: Person | undefined;
   personId: string | undefined;
   create: boolean;
@@ -67,7 +68,7 @@ export class EditPersonDialogComponent {
   }
 
   ngOnInit() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     if (this.create) {
       this.originalPerson = { id: '', name: '' };
       const initialName = this.personName ?? '';
@@ -75,18 +76,18 @@ export class EditPersonDialogComponent {
       const initialGuess = initialOrg
         ? organizationSortName(initialName)
         : guessSortName(initialName);
-      this.form = new FormGroup<PersonForm>({
+      this.form.set(new FormGroup<PersonForm>({
         name: new FormControl(initialName, { nonNullable: true, validators: [Validators.required] }),
         sortName: new FormControl(initialGuess, { nonNullable: false }),
         aliases: new FormControl([], { nonNullable: false }),
         twitterHandle: new FormControl('', { nonNullable: false }),
         blueskyHandle: new FormControl('', { nonNullable: false })
-      });
+      }));
       this.useFullNameForSorting.setValue(initialOrg, { emitEvent: false });
       this.sortNameManuallyEdited = false;
       this.wireSortControls();
       this.applySortNameEnabledState(initialOrg);
-      this.isLoading = false;
+      this.isLoading.set(false);
       return;
     }
 
@@ -120,88 +121,92 @@ export class EditPersonDialogComponent {
               : (storedSort || guess);
             this.sortNameManuallyEdited =
               !isOrg && !!storedSort && storedSort !== guess;
-            this.form = new FormGroup<PersonForm>({
+            this.form.set(new FormGroup<PersonForm>({
               name: new FormControl(name, { nonNullable: true, validators: [Validators.required] }),
               sortName: new FormControl(displaySort, { nonNullable: false }),
               aliases: new FormControl(resp.aliases, { nonNullable: false }),
               twitterHandle: new FormControl(resp.twitterHandle ?? '', { nonNullable: false }),
               blueskyHandle: new FormControl(resp.blueskyHandle ?? '', { nonNullable: false })
-            });
+            }));
             this.useFullNameForSorting.setValue(isOrg, { emitEvent: false });
             this.wireSortControls();
             this.applySortNameEnabledState(isOrg);
-            this.isLoading = false;
+            this.isLoading.set(false);
           },
           error: e => {
-            this.isLoading = false;
-            this.isInError = true;
+            this.isLoading.set(false);
+            this.isInError.set(true);
           }
         });
     }).catch(x => {
-      this.isLoading = false;
-      this.isInError = true;
+      this.isLoading.set(false);
+      this.isInError.set(true);
     });
   }
 
   private applySortNameEnabledState(organization: boolean) {
-    if (!this.form) {
+    const form = this.form();
+    if (!form) {
       return;
     }
     if (organization) {
-      this.form.controls.sortName.disable({ emitEvent: false });
+      form.controls.sortName.disable({ emitEvent: false });
     } else {
-      this.form.controls.sortName.enable({ emitEvent: false });
+      form.controls.sortName.enable({ emitEvent: false });
     }
   }
 
   private wireSortControls() {
     this.useFullNameForSorting.valueChanges.subscribe(checked => {
-      if (!this.form || this.syncingSort) {
+      const form = this.form();
+      if (!form || this.syncingSort) {
         return;
       }
       this.syncingSort = true;
       this.sortNameManuallyEdited = false;
       if (checked) {
-        this.form.controls.sortName.setValue(organizationSortName(this.form.controls.name.value));
+        form.controls.sortName.setValue(organizationSortName(form.controls.name.value));
       } else {
-        this.form.controls.sortName.setValue(deriveSortKeyFromName(this.form.controls.name.value));
+        form.controls.sortName.setValue(deriveSortKeyFromName(form.controls.name.value));
       }
       this.applySortNameEnabledState(!!checked);
       this.syncingSort = false;
     });
 
-    this.form?.controls.name.valueChanges.subscribe(name => {
-      if (!this.form || this.syncingSort) {
+    this.form()?.controls.name.valueChanges.subscribe(name => {
+      const form = this.form();
+      if (!form || this.syncingSort) {
         return;
       }
       if (this.useFullNameForSorting.value) {
         this.syncingSort = true;
-        this.form.controls.sortName.setValue(organizationSortName(name));
+        form.controls.sortName.setValue(organizationSortName(name));
         this.syncingSort = false;
         return;
       }
       if (!this.sortNameManuallyEdited) {
         this.syncingSort = true;
         const guess = guessSortName(name);
-        this.form.controls.sortName.setValue(guess);
+        form.controls.sortName.setValue(guess);
         const orgGuess = looksLikeOrganization(name);
         if (this.useFullNameForSorting.value !== orgGuess) {
           this.useFullNameForSorting.setValue(orgGuess, { emitEvent: false });
           this.applySortNameEnabledState(orgGuess);
           if (orgGuess) {
-            this.form.controls.sortName.setValue(organizationSortName(name));
+            form.controls.sortName.setValue(organizationSortName(name));
           }
         }
         this.syncingSort = false;
       }
     });
 
-    this.form?.controls.sortName.valueChanges.subscribe(sortName => {
-      if (!this.form || this.syncingSort || this.useFullNameForSorting.value) {
+    this.form()?.controls.sortName.valueChanges.subscribe(sortName => {
+      const form = this.form();
+      if (!form || this.syncingSort || this.useFullNameForSorting.value) {
         return;
       }
       this.sortNameManuallyEdited = true;
-      const name = this.form.controls.name.value?.trim() ?? '';
+      const name = form.controls.name.value?.trim() ?? '';
       const trimmedSort = sortName?.trim() ?? '';
       const orgKey = stripLeadingThe(name);
       const isOrg = !!trimmedSort && (trimmedSort === orgKey || trimmedSort === name);
@@ -215,11 +220,12 @@ export class EditPersonDialogComponent {
   }
 
   get sortsAsHint(): string {
-    if (!this.form) {
+    const form = this.form();
+    if (!form) {
       return '';
     }
-    const name = this.form.controls.name.value;
-    const sortName = this.form.controls.sortName.value;
+    const name = form.controls.name.value;
+    const sortName = form.controls.sortName.value;
     return getEffectiveSortKey({ name, sortName }) || guessSortName(name) || '—';
   }
 
@@ -232,7 +238,7 @@ export class EditPersonDialogComponent {
   }
 
   searchTerm(): string {
-    return (this.form?.controls.name.value ?? this.personName ?? '').trim();
+    return (this.form()?.controls.name.value ?? this.personName ?? '').trim();
   }
 
   searchX() {
@@ -252,15 +258,16 @@ export class EditPersonDialogComponent {
   }
 
   onSubmit() {
-    if (!this.form?.valid) {
+    const form = this.form();
+    if (!form?.valid) {
       return;
     }
 
-    const name = asEmptyString(this.form!.controls.name.value);
+    const name = asEmptyString(form.controls.name.value);
     const isOrganization = this.useFullNameForSorting.value;
     const persistedSort = sortNameForPersist(
       name,
-      this.form!.controls.sortName.value,
+      form.controls.sortName.value,
       isOrganization
     );
     const update: Person = {
@@ -268,9 +275,9 @@ export class EditPersonDialogComponent {
       name,
       sortName: persistedSort ?? '',
       isOrganization,
-      aliases: asStringArray(this.form!.controls.aliases.value),
-      twitterHandle: asEmptyString(this.form!.controls.twitterHandle.value),
-      blueskyHandle: asEmptyString(this.form!.controls.blueskyHandle.value)
+      aliases: asStringArray(form.controls.aliases.value),
+      twitterHandle: asEmptyString(form.controls.twitterHandle.value),
+      blueskyHandle: asEmptyString(form.controls.blueskyHandle.value)
     };
 
     const changes = this.getChanges(this.originalPerson!, update);

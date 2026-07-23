@@ -26,7 +26,7 @@ import { EnablePushNotificationsDialogComponent } from './enable-push-notificati
 import { ProfileService } from './profile.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { FeatureSwitch } from './feature-switch.enum';
-import { FeatureSwtichService } from './feature-switch-service';
+import { FeatureSwitchService } from './feature-switch-service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   extractUrlFromDataTransfer,
@@ -79,7 +79,7 @@ export class AppComponent implements OnDestroy {
     domSanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) platformId: object,
     seoService: SeoService,
-    protected featureSwtichService: FeatureSwtichService,
+    protected featureSwitchService: FeatureSwitchService,
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);

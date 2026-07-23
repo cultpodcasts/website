@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
-import { PLATFORM_ID } from '@angular/core';
-import { of } from 'rxjs';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { of, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { AUTH_SCOPE, authInterceptor } from './auth.interceptor';
@@ -18,7 +18,8 @@ describe('authInterceptor', () => {
     getAccessTokenSilently = jasmine.createSpy('getAccessTokenSilently').and.returnValue(of('test-token'));
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([authInterceptor])),
+        provideZonelessChangeDetection(),
+        provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: PLATFORM_ID, useValue: platformId },
         {
@@ -91,6 +92,42 @@ describe('authInterceptor', () => {
     const req = httpMock.expectOne(`${api}/episode/1`);
     expect(req.request.headers.has('Authorization')).toBeFalse();
     expect(getAccessTokenSilently).not.toHaveBeenCalled();
+    req.flush({});
+  });
+
+  it('propagates API error responses without retrying unauthenticated', () => {
+    setup();
+    const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+    let status: number | undefined;
+    let errorBody: unknown;
+    http.post(`${api}/episode/publish/p/e`, { tweet: true }, { context }).subscribe({
+      error: (err) => {
+        status = err.status;
+        errorBody = err.error;
+      }
+    });
+
+    const req = httpMock.expectOne(`${api}/episode/publish/p/e`);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer test-token');
+    req.flush(
+      { tweeted: false, failedTweetContent: 'hello tweet' },
+      { status: 400, statusText: 'Bad Request' }
+    );
+
+    httpMock.expectNone(`${api}/episode/publish/p/e`);
+    expect(status).toBe(400);
+    expect(errorBody).toEqual({ tweeted: false, failedTweetContent: 'hello tweet' });
+  });
+
+  it('continues without token when silent auth fails', () => {
+    setup();
+    getAccessTokenSilently.and.returnValue(throwError(() => new Error('login_required')));
+
+    const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+    http.get(`${api}/episode/1`, { context }).subscribe();
+
+    const req = httpMock.expectOne(`${api}/episode/1`);
+    expect(req.request.headers.has('Authorization')).toBeFalse();
     req.flush({});
   });
 });

@@ -59,7 +59,7 @@
 </span>
 
 <span matSnackBarActions>
-    @if (showReviewButton) {
+    @if (showReviewButton()) {
     <button id="action" matButton matSnackBarAction
         class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
         (click)="review()">
@@ -69,6 +69,6 @@
     <button id="action" matButton matSnackBarAction
         class="mat-mdc-snack-bar-action mdc-snackbar__action mdc-button mat-mdc-button mat-unthemed mat-mdc-button-base"
         (click)="action()">
-        {{actionText}}
+        {{actionText()}}
     </button>
 </span>

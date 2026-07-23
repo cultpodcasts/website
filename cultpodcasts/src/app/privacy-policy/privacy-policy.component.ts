@@ -1,4 +1,4 @@
-import { Component, isDevMode } from '@angular/core';
+import { Component, isDevMode, ChangeDetectionStrategy } from '@angular/core';
 import { version, buildDate, commitHash } from "src/environments/version";
 import { SeoService } from '../seo.service';
 import { Title } from '@angular/platform-browser';
@@ -8,6 +8,7 @@ import { environment } from './../../environments/environment';
   selector: 'privacy-policy',
   templateUrl: './privacy-policy.component.html',
   styleUrls: ['./privacy-policy.component.sass'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true
 })
 export class PrivacyPolicyComponent {

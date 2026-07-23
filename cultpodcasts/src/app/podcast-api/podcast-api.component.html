@@ -6,9 +6,9 @@
     }
   </div>
   <section id="resultsheading">
-    <h2>{{podcastName}} has {{count()}} episode@if(count()>1 || count()==0){s}
-      @if (searchState.query && searchState.query!='') {
-      matching "{{searchState.query}}"
+    <h2>{{podcastName()}} has {{count()}} episode@if(count()>1 || count()==0){s}
+      @if (query() && query()!='') {
+      matching "{{query()}}"
       }
       found by CultPodcasts.com</h2>
     <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
@@ -36,18 +36,18 @@
       </button>
       }
       <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-        [class.selected]="searchState.sort==sortParamDateAsc">
+        [class.selected]="sortOrder()==sortParamDateAsc">
         <mat-icon>arrow_upward</mat-icon>
         <span>Date ascending</span>
       </button>
       <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-        [class.selected]="searchState.sort==sortParamDateDesc">
+        [class.selected]="sortOrder()==sortParamDateDesc">
         <mat-icon>arrow_downward</mat-icon>
         <span>Date descending</span>
       </button>
-      @if (searchState.query) {
+      @if (query()) {
       <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
-        [class.selected]="searchState.sort==sortParamRank">
+        [class.selected]="sortOrder()==sortParamRank">
         <mat-icon></mat-icon>
         <span>Rank</span>
       </button>
@@ -83,7 +83,7 @@
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
       <mat-card-subtitle>
-        <a [routerLink]="['/podcast', podcastName]">
+        <a [routerLink]="['/podcast', podcastName()]">
           {{result.podcastName}}
         </a>
       </mat-card-subtitle>
@@ -111,9 +111,13 @@
 </div>
 }
 
-@if (count() === 0 && !isLoading()) {
+@if (errorMessage() && !isLoading()) {
 <section id="resultsheading">
-  <h2>There were no results for "{{podcastName}}"@if (searchState.query) { and "{{searchState.query}}"}</h2>
+  <h2>{{errorMessage()}}</h2>
+</section>
+} @else if (count() === 0 && !isLoading()) {
+<section id="resultsheading">
+  <h2>There were no results for "{{podcastName()}}"@if (query()) { and "{{query()}}"}</h2>
 </section>
 <section>
   <div id="cta-button">

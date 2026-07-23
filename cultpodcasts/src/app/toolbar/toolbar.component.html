@@ -1,12 +1,12 @@
 <section id="header">
-  <mat-toolbar color="secondary">
+  <mat-toolbar class="app-toolbar">
     <a routerLink="/" id="site" (click)="onSiteClick()"><img src="/assets/cultpodcasts.svg"
         alt="image"><span>Cult Podcasts</span></a>
     <div id="socialbuttons">
       <img src="/assets/add-podcast.svg" alt="Add Podcast" class="socialbutton button" (click)="openSubmitPodcast()">
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
+      @if (featureSwitchService.IsEnabled(FeatureSwitch.auth0)) {
       @if (auth.authService.user$ | async; as user) {
-      <div class="socialbutton button" [matBadge]="disoveryInfo()?.documentCount"
+      <div class="socialbutton button" [matBadge]="$safeNavigationMigration(disoveryInfo()?.documentCount)"
         [matBadgeHidden]="disoveryInfo()==undefined || disoveryInfo()!.documentCount==0">
         <img src="{{user.picture}}" id="avatar" [matMenuTriggerFor]="profile">
       </div>
@@ -67,7 +67,7 @@
       }
     </div>
     <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon [matBadge]="disoveryInfo()?.documentCount"
+      <mat-icon [matBadge]="$safeNavigationMigration(disoveryInfo()?.documentCount)"
         [matBadgeHidden]="disoveryInfo()==undefined || disoveryInfo()!.documentCount==0">more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
@@ -115,7 +115,7 @@
         <span>Discovery Schedule</span>
       </a>
       }
-      @if (featureSwtichService.IsEnabled(FeatureSwitch.auth0)) {
+      @if (featureSwitchService.IsEnabled(FeatureSwitch.auth0)) {
 
       @if (auth.authService.user$ | async; as user) {
       <a (click)="logout()" mat-menu-item>

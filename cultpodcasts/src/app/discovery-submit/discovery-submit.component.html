@@ -2,16 +2,16 @@
 
 <mat-dialog-content>
 
-    @if (isSending) {
+    @if (isSending()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     }
-    @if (submitState.endpointError) {
+    @if (submitState().endpointError) {
     <div>
         <p>Error submitting discovery</p>
     </div>
 
     }
-    @if (submitState.hasErrors) {
+    @if (submitState().hasErrors) {
     <div>
         <p>Error occurred submitting discovery-item</p>
     </div>
@@ -19,7 +19,7 @@
 
 </mat-dialog-content>
 
-@if (submitState.endpointError || submitState.hasErrors) {
+@if (submitState().endpointError || submitState().hasErrors) {
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>

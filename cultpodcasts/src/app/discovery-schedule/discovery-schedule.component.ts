@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -20,20 +20,25 @@ import { DiscoverySchedule, DiscoveryScheduleNextRun, DiscoveryScheduleUpdate } 
     FormsModule
   ],
   templateUrl: './discovery-schedule.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './discovery-schedule.component.sass'
 })
 export class DiscoveryScheduleComponent {
   readonly slotChoices: string[] = DiscoveryScheduleComponent.buildSlotChoices();
 
-  isLoading = true;
-  isSaving = false;
-  isInError = false;
-  errorMessage = '';
+  isLoading = signal(true);
+  isSaving = signal(false);
+  isInError = signal(false);
+  errorMessage = signal('');
   enabled = true;
-  isDefault = false;
+  isDefault = signal(false);
   timeZoneId = 'GMT Standard Time';
-  selected = new Set<string>(['08:00', '22:00']);
-  nextRuns: DiscoveryScheduleNextRun[] = [];
+  selected = signal(new Set<string>(['08:00', '22:00']));
+  nextRuns = signal<DiscoveryScheduleNextRun[]>([]);
+
+  readonly canSave = computed(() =>
+    !this.isLoading() && !this.isSaving() && this.selected().size > 0
+  );
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -50,33 +55,30 @@ export class DiscoveryScheduleComponent {
   }
 
   isSelected(slot: string): boolean {
-    return this.selected.has(slot);
+    return this.selected().has(slot);
   }
 
   toggleSlot(slot: string) {
-    if (this.selected.has(slot)) {
-      this.selected.delete(slot);
+    const next = new Set(this.selected());
+    if (next.has(slot)) {
+      next.delete(slot);
     } else {
-      this.selected.add(slot);
+      next.add(slot);
     }
-    this.selected = new Set(this.selected);
-  }
-
-  get canSave(): boolean {
-    return !this.isLoading && !this.isSaving && this.selected.size > 0;
+    this.selected.set(next);
   }
 
   async onSave() {
-    if (!this.canSave) {
+    if (!this.canSave()) {
       return;
     }
 
-    this.isSaving = true;
-    this.isInError = false;
-    this.errorMessage = '';
+    this.isSaving.set(true);
+    this.isInError.set(false);
+    this.errorMessage.set('');
 
     const body: DiscoveryScheduleUpdate = {
-      runTimes: [...this.selected].sort(),
+      runTimes: [...this.selected()].sort(),
       enabled: this.enabled,
       timeZoneId: this.timeZoneId
     };
@@ -84,9 +86,9 @@ export class DiscoveryScheduleComponent {
     try {
       const headers = await this.authHeaders();
       if (!headers) {
-        this.isInError = true;
-        this.errorMessage = 'Could not get admin token.';
-        this.isSaving = false;
+        this.isInError.set(true);
+        this.errorMessage.set('Could not get admin token.');
+        this.isSaving.set(false);
         return;
       }
 
@@ -100,33 +102,33 @@ export class DiscoveryScheduleComponent {
 
       if (resp.status === 200 && resp.body) {
         this.apply(resp.body);
-        this.isSaving = false;
+        this.isSaving.set(false);
         this.dialogRef.close({ saved: true });
         return;
       }
 
-      this.isInError = true;
-      this.errorMessage = 'Save failed.';
-      this.isSaving = false;
+      this.isInError.set(true);
+      this.errorMessage.set('Save failed.');
+      this.isSaving.set(false);
     } catch (error: any) {
       console.error(error);
-      this.isInError = true;
-      this.errorMessage = error?.error?.error ?? 'Save failed.';
-      this.isSaving = false;
+      this.isInError.set(true);
+      this.errorMessage.set(error?.error?.error ?? 'Save failed.');
+      this.isSaving.set(false);
     }
   }
 
   private async load() {
-    this.isLoading = true;
-    this.isInError = false;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.isInError.set(false);
+    this.errorMessage.set('');
 
     try {
       const headers = await this.authHeaders();
       if (!headers) {
-        this.isInError = true;
-        this.errorMessage = 'Could not get admin token.';
-        this.isLoading = false;
+        this.isInError.set(true);
+        this.errorMessage.set('Could not get admin token.');
+        this.isLoading.set(false);
         return;
       }
 
@@ -140,24 +142,24 @@ export class DiscoveryScheduleComponent {
       if (resp.status === 200 && resp.body) {
         this.apply(resp.body);
       } else {
-        this.isInError = true;
-        this.errorMessage = 'Failed to load schedule.';
+        this.isInError.set(true);
+        this.errorMessage.set('Failed to load schedule.');
       }
     } catch (error) {
       console.error(error);
-      this.isInError = true;
-      this.errorMessage = 'Failed to load schedule.';
+      this.isInError.set(true);
+      this.errorMessage.set('Failed to load schedule.');
     } finally {
-      this.isLoading = false;
+      this.isLoading.set(false);
     }
   }
 
   private apply(schedule: DiscoverySchedule) {
     this.enabled = schedule.enabled;
-    this.isDefault = schedule.isDefault;
+    this.isDefault.set(schedule.isDefault);
     this.timeZoneId = schedule.timeZoneId;
-    this.selected = new Set(schedule.runTimes ?? []);
-    this.nextRuns = schedule.nextRuns ?? [];
+    this.selected.set(new Set(schedule.runTimes ?? []));
+    this.nextRuns.set(schedule.nextRuns ?? []);
   }
 
   private async authHeaders(): Promise<HttpHeaders | undefined> {

@@ -1,6 +1,6 @@
 # Cult Podcasts (Angular client)
 
-Angular **21** PWA for [cultpodcasts.com](https://cultpodcasts.com). Consumes the Cult Podcasts API via the Cloudflare Worker gateway.
+Angular **22** PWA for [cultpodcasts.com](https://cultpodcasts.com). Consumes the Cult Podcasts API via the Cloudflare Worker gateway.
 
 ## Local ports
 
@@ -42,4 +42,5 @@ Runs Karma/Jasmine (util specs only today).
 
 ## Further help
 
-See `AGENTS.md` for curator/discovery notes and `MOBILE_BUILDS.md` for TWA/Bubblewrap.
+- Framework upgrades (Angular / Material / TypeScript): [`docs/dependency-updates.md`](docs/dependency-updates.md) — run `npm run deps:check`
+- See `AGENTS.md` for curator/discovery notes and `MOBILE_BUILDS.md` for TWA/Bubblewrap.

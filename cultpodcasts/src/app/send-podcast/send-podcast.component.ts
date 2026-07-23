@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { Share } from '../share.interface';
 import { ShareMode } from "../share-mode.enum";
@@ -16,25 +17,26 @@ import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
   selector: 'app-send-podcast',
   templateUrl: './send-podcast.component.html',
   styleUrls: ['./send-podcast.component.sass'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class SendPodcastComponent {
-  submitted: boolean = false;
-  isSending: boolean = false;
-  urlShareError: boolean = false;
-  urlTextError: boolean = false;
-  unknownError: boolean = false;
-  submitError: boolean = false;
-  shareUrl: URL | undefined;
-  isAuthenticated: boolean = false;
+  submitted = false;
+  readonly isSending = signal(false);
+  readonly urlShareError = signal(false);
+  readonly urlTextError = signal(false);
+  readonly unknownError = signal(false);
+  readonly submitError = signal(false);
+  readonly shareUrl = signal<URL | undefined>(undefined);
   originResponse: SubmitUrlOriginResponse | undefined;
+
+  private auth = inject(AuthServiceWrapper);
+  private readonly isAuthenticated = toSignal(this.auth.authService.isAuthenticated$, { initialValue: false });
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>,
-    private auth: AuthServiceWrapper) {
-    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+    private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>) {
   }
 
   close() {
@@ -45,10 +47,10 @@ export class SendPodcastComponent {
     const url = parseSubmittablePodcastUrl(data.url.toString());
 
     if (url) {
-      this.isSending = true;
+      this.isSending.set(true);
       const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
       let headers: HttpHeaders = new HttpHeaders();
-      if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
+      if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {
         let token: string | undefined;
         try {
           token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
@@ -73,25 +75,25 @@ export class SendPodcastComponent {
             this.originResponse = resp.body;
           }
         } else {
-          this.submitError = true;
-          this.isSending = false;
+          this.submitError.set(true);
+          this.isSending.set(false);
         }
         this.close();
       } catch (error) {
-        this.isSending = false;
-        this.submitError = true;
+        this.isSending.set(false);
+        this.submitError.set(true);
       }
       return;
     }
 
     if (data.shareMode == ShareMode.Share) {
-      this.urlShareError = true;
-      this.shareUrl = data.url;
+      this.urlShareError.set(true);
+      this.shareUrl.set(data.url);
     } else if (data.shareMode == ShareMode.Text) {
-      this.urlTextError = true;
-      this.shareUrl = data.url;
+      this.urlTextError.set(true);
+      this.shareUrl.set(data.url);
     } else {
-      this.unknownError = true;
+      this.unknownError.set(true);
     }
   }
 }

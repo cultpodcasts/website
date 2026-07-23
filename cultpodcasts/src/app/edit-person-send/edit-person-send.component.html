@@ -2,21 +2,21 @@
 
 <mat-dialog-content>
 
-    @if (isSending) {
+    @if (isSending()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     }
-    @if (sendError) {
+    @if (sendError()) {
     <div>
         <p>An error occured updating person</p>
-        @if (conflict) {
-        <p id="error">A conflict occured with '{{conflict}}'.</p>
+        @if (conflict(); as conflictValue) {
+        <p id="error">A conflict occured with '{{conflictValue}}'.</p>
         }
     </div>
     }
 
 </mat-dialog-content>
 
-@if (sendError) {
+@if (sendError()) {
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>

@@ -1,15 +1,15 @@
 <h2 mat-dialog-title>{{create?"Add":"Edit"}} Person</h2>
 
 <mat-dialog-content>
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (isInError) {
+    } @else if (isInError()) {
     <p id="error">An error occurred</p>
     } @else {
-    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+    <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <label>
             <span>Name:</span>
-            <input type="text" [formControl]="form!.controls.name" [readonly]="!create" matInput>
+            <input type="text" [formControl]="form()!.controls.name" [readonly]="!create" matInput>
         </label>
         <div class="search-actions">
             <button type="button" mat-button (click)="searchX()" [disabled]="!searchTerm()">Search X</button>
@@ -17,7 +17,7 @@
         </div>
         <label>
             <span>Sort name:</span>
-            <input type="text" [formControl]="form!.controls.sortName" matInput
+            <input type="text" [formControl]="form()!.controls.sortName" matInput
                 placeholder="Suggested from name — edit to override">
         </label>
         <p class="sorts-as-hint">Sorts as: {{ sortsAsHint }}</p>
@@ -26,16 +26,16 @@
         </mat-checkbox>
         <label>
             <span>Aliases:</span>
-            <textarea [formControl]="form!.controls.aliases" matInput cdkTextareaAutosize
+            <textarea [formControl]="form()!.controls.aliases" matInput cdkTextareaAutosize
                 placeholder="Comma-separated aliases"></textarea>
         </label>
         <label>
             <span>Twitter / X handle:</span>
-            <input type="text" [formControl]="form!.controls.twitterHandle" matInput placeholder="@handle">
+            <input type="text" [formControl]="form()!.controls.twitterHandle" matInput placeholder="@handle">
         </label>
         <label>
             <span>Bluesky handle:</span>
-            <input type="text" [formControl]="form!.controls.blueskyHandle" matInput placeholder="handle.bsky.social">
+            <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput placeholder="handle.bsky.social">
         </label>
     </form>
     }
@@ -43,5 +43,5 @@
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+    <button mat-raised-button [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

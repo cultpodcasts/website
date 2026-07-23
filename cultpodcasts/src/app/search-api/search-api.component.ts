@@ -4,7 +4,6 @@ import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
-import { SearchState } from '../search-state.interface';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
@@ -59,15 +58,11 @@ const sortParamDateDesc: string = "date-desc";
 })
 
 export class SearchApiComponent {
-  searchState: SearchState = {
-    query: "",
-    page: 1,
-    sort: sortParamRank,
-    filter: null
-  }
+  protected query = signal<string>("");
+  protected sortOrder = signal<string>(sortParamRank);
+  private page: number = 1;
+  private filter: string | null = null;
 
-  prevPage: number = 0;
-  nextPage: number = 0;
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -135,31 +130,28 @@ export class SearchApiComponent {
       }
 
       const { params, queryParams } = res;
-      this.searchState.query = params[queryParam];
+      this.query.set(params[queryParam]);
       this.isLoading.set(true);
       this.siteService.setQuery(params[queryParam]);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
       if (queryParams[pageParam]) {
-        this.searchState.page = parseInt(queryParams[pageParam]);
-        this.prevPage = this.searchState.page - 1;
-        this.nextPage = this.searchState.page + 1;
+        this.page = parseInt(queryParams[pageParam]);
       } else {
-        this.nextPage = 2;
-        this.searchState.page = 1;
+        this.page = 1;
       }
 
       if (queryParams[sortParam]) {
-        this.searchState.sort = queryParams[sortParam];
+        this.sortOrder.set(queryParams[sortParam]);
       } else {
-        this.searchState.sort = sortParamRank;
+        this.sortOrder.set(sortParamRank);
       }
 
       if (queryParams[filterParam]) {
-        this.searchState.filter = queryParams[filterParam];
+        this.filter = queryParams[filterParam];
       } else {
-        this.searchState.filter = "";
+        this.filter = "";
       }
       this.execSearch(initial, undefined, { podcasts: initial, subjects: initial });
     });
@@ -168,24 +160,24 @@ export class SearchApiComponent {
   execSearch(initial: boolean, reset?: { podcasts?: boolean, subjects?: boolean }, subsequent?: { podcasts?: boolean, subjects?: boolean }) {
     var sort: string = "";
 
-    if (this.searchState.sort == "date-asc") {
+    if (this.sortOrder() == "date-asc") {
       sort = "release asc";
-    } else if (this.searchState.sort == "date-desc") {
+    } else if (this.sortOrder() == "date-desc") {
       sort = "release desc";
     }
     this.oDataService.getEntitiesWithFacets<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
-        search: this.searchState.query,
+        search: this.query(),
         filter: this.buildFilter(
-          this.searchState.filter,
+          this.filter,
           this.podcastsFilter,
           this.subjectsFilter),
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
-        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
+        skip: this.infiniteScrollStrategy.getSkip(this.page),
+        top: this.infiniteScrollStrategy.getTake(this.page),
         facets: ["podcastName,count:1000,sort:count", "subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
@@ -200,7 +192,7 @@ export class SearchApiComponent {
                 this.isScrolledToBottom() &&
                 !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
-                this.searchState.page++;
+                this.page++;
                 this.execSearch(false, undefined, { podcasts: false, subjects: false });
               }
             });
@@ -233,7 +225,7 @@ export class SearchApiComponent {
             resultsSummary = `1 result`;
           }
 
-          let presentableQuery: string = this.searchState.query;
+          let presentableQuery: string = this.query();
           if ((presentableQuery.startsWith("'") && presentableQuery.endsWith("'")) ||
             (presentableQuery.startsWith("\"") && presentableQuery.endsWith("\""))) {
             presentableQuery = presentableQuery.substring(1, presentableQuery.length - 1);
@@ -251,7 +243,7 @@ export class SearchApiComponent {
   }
 
   setSort(sort: string) {
-    var url = `/search/${this.searchState.query}`;
+    var url = `/search/${this.query()}`;
     var params: Params = {};
     if (sort != sortParamRank) {
       params[sortParam] = sort;
@@ -271,7 +263,7 @@ export class SearchApiComponent {
       this.podcastsFilter = `search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     const reset = { subjects: true };
-    this.searchState.page = 1;
+    this.page = 1;
     this.execSearch(true, reset);
   }
 
@@ -287,13 +279,13 @@ export class SearchApiComponent {
       this.subjectsFilter = `subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
     }
     const reset = { podcasts: true };
-    this.searchState.page = 1;
+    this.page = 1;
     this.execSearch(true, reset);
   }
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
   }
 

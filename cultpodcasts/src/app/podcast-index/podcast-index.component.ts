@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
@@ -12,11 +12,12 @@ import { IndexPodcastResponse } from '../index-podcast-response.interface';
   selector: 'app-podcast-index',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './podcast-index.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './podcast-index.component.sass'
 })
 export class PodcastIndexComponent {
-  isSending: boolean = true;
-  sendError: boolean = false;
+  readonly isSending = signal(true);
+  readonly sendError = signal(false);
 
   constructor(
     private http: HttpClient,
@@ -46,15 +47,15 @@ export class PodcastIndexComponent {
             } else if (e.status == 404) {
               this.dialogRef.close({ podcastNotFound: true });
             } else {
-              this.isSending = false;
-              this.sendError = true;
+              this.isSending.set(false);
+              this.sendError.set(true);
               console.error(e);
             }
           }
         })
     }).catch(x => {
-      this.isSending = false;
-      this.sendError = true;
+      this.isSending.set(false);
+      this.sendError.set(true);
       console.error(x);
     });
   }

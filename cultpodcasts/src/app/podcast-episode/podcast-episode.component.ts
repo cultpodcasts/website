@@ -1,4 +1,5 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,45 +39,40 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
     SearchDescriptionPipe
   ],
   templateUrl: './podcast-episode.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './podcast-episode.component.sass'
 })
 export class PodcastEpisodeComponent {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  protected readonly auth = inject(AuthServiceWrapper);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
+  private readonly siteService = inject(SiteService);
 
   @Input()
   get episode(): SearchResult | undefined {
-    return this._episode;
+    return this._episode();
   }
   set episode(val: SearchResult | undefined) {
-    this._episode = val;
-    this.isLoading = false;
+    this._episode.set(val);
+    this.isLoading.set(false);
   }
 
   @Input()
   set parentLoaded(val: boolean) {
     this._parentLoaded = val;
-    this.isLoading = !this._parentLoaded;
+    this.isLoading.set(!this._parentLoaded);
   }
 
-  private _episode: SearchResult | undefined;
+  private _episode = signal<SearchResult | undefined>(undefined);
   private _parentLoaded: boolean = false;
 
-  podcastName: string = "";
-  resultsHeading: string = "";
-  authRoles: string[] = [];
-  isSignedIn: boolean = false;
-  isLoading: boolean = true;
-
-  constructor(
-    private router: Router,
-    protected auth: AuthServiceWrapper,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private siteService: SiteService,
-  ) {
-    this.auth.roles.subscribe(roles => this.authRoles = roles);
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
-  }
-  private route = inject(ActivatedRoute);
+  podcastName = signal("");
+  protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
+  isLoading = signal(true);
 
   async ngOnInit(): Promise<any> {
     this.populatePage();
@@ -86,11 +82,13 @@ export class PodcastEpisodeComponent {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
-      this.podcastName = params["podcastName"];
+      const { params } = res;
+      this.podcastName.set(params["podcastName"]);
       this.siteService.setQuery(null);
-      this.siteService.setPodcast(this.podcastName);
+      this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);
     });
   }
@@ -121,7 +119,7 @@ export class PodcastEpisodeComponent {
   }
 
   podcastPage() {
-    let url = `podcast/${this.podcastName}`;
+    let url = `podcast/${this.podcastName()}`;
     this.router.navigate([url]);
   }
 

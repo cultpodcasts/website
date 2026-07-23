@@ -6,8 +6,11 @@ export const environment: IEnvironment = {
       domain: "auth-staging.cultpodcasts.com"
    },
    api: 'https://api-preview.jonbreen.workers.dev',
-   assetHost: 'https://feature-podcast-id-on-episod.website-83e.pages.dev',
-   bundleAssetHost: 'https://feature-podcast-id-on-episod.website-83e.pages.dev',
+   // Auth redirect uses window.location.origin at runtime (see auth-redirect-uri.ts).
+   // Keep a stable fallback for SSR only — not a specific preview hostname.
+   assetHost: 'https://website-83e.pages.dev',
+   // Empty = same-origin relative /assets/... so icons work on any preview URL.
+   bundleAssetHost: '',
    shortner: 'https://s.cultpodcasts.com',
    name: "stg",
    vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is"

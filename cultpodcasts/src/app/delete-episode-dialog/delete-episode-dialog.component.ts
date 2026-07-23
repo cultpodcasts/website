@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -15,14 +15,15 @@ import { environment } from './../../environments/environment';
     MatButtonModule,
   ],
   templateUrl: './delete-episode-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './delete-episode-dialog.component.sass'
 })
 export class DeleteEpisodeDialogComponent {
-  isInError: boolean = false;
-  isSending: boolean = false;
+  readonly isInError = signal(false);
+  readonly isSending = signal(false);
+  readonly error = signal<any | undefined>(undefined);
   podcastId: string;
   episodeId: string;
-  error: any | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -37,7 +38,7 @@ export class DeleteEpisodeDialogComponent {
   }
 
   onSubmit() {
-    this.isSending = true;
+    this.isSending.set(true);
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
@@ -52,25 +53,25 @@ export class DeleteEpisodeDialogComponent {
         .subscribe(
           {
             next: resp => {
-              this.isSending = false;
+              this.isSending.set(false);
               this.dialogRef.close({ response: resp, deleted: true })
             },
             error: e => {
               console.error(e);
-              this.isSending = false;
-              this.isInError = true;
+              this.isSending.set(false);
+              this.isInError.set(true);
               if (e.status == 403) {
-                this.error = { message: "You do not have permission" };
+                this.error.set({ message: "You do not have permission" });
               } else {
-                this.error = e.error;
+                this.error.set(e.error);
               }
             }
           }
         )
     }).catch(x => {
       console.error(x);
-      this.isSending = false;
-      this.isInError = true;
+      this.isSending.set(false);
+      this.isInError.set(true);
     });
   }
 
