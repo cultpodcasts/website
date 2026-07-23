@@ -30,7 +30,7 @@ Exit codes:
 
 ## Manual update (Angular major/minor)
 
-Requires Node per `package.json` `engines` (Angular 22 → Node `>=22.22.3`).
+Requires Node per `package.json` `engines` (Angular 22 → Node `>=22.22.3`). Cloudflare Pages reads [`cultpodcasts/.nvmrc`](../.nvmrc) (default image is still 22.16.0).
 
 From `website/cultpodcasts`:
 

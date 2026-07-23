@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 echo ENV:
 echo "$(env)"
 
@@ -15,6 +17,8 @@ then
 else
    echo "Leaving environment config"
 fi
+
+echo "Node $(node -v) (need >=22.22.3 for Angular 22)"
 
 node update-version.js
 cp src/environments/version.prod.ts src/environments/version.ts
