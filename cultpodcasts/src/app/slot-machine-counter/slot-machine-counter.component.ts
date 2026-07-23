@@ -1,11 +1,13 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   HostBinding,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
-  SimpleChanges
+  SimpleChanges,
+  signal
 } from '@angular/core';
 import {
   DEFAULT_SLOT_MACHINE_PRESET,
@@ -24,7 +26,8 @@ export interface SlotColumn {
 @Component({
   selector: 'app-slot-machine-counter',
   templateUrl: './slot-machine-counter.component.html',
-  styleUrl: './slot-machine-counter.component.sass'
+  styleUrl: './slot-machine-counter.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy {
   @Input() baseline: number = 0;
@@ -32,7 +35,7 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
   @Input() title: string | undefined;
   @Input() preset: SlotMachinePreset = DEFAULT_SLOT_MACHINE_PRESET;
 
-  columns: SlotColumn[] = [];
+  protected readonly columns = signal<SlotColumn[]>([]);
   reelDigits = Array.from({ length: 30 }, (_, index) => index % 10);
   private settleTimers: ReturnType<typeof setTimeout>[] = [];
   private displayedValue: number | undefined;
@@ -102,29 +105,29 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
 
     this.setColumns(target, true);
 
-    const digitColumnIndexes = this.columns
+    const digitColumnIndexes = this.columns()
       .map((column, index) => ({ column, index }))
       .filter(entry => entry.column.type === 'digit')
       .map(entry => entry.index);
 
     const [firstDigitIndex, ...spinningDigitIndexes] = digitColumnIndexes;
     if (firstDigitIndex !== undefined) {
-      this.columns = this.columns.map((column, index) =>
+      this.columns.update(cols => cols.map((column, index) =>
         index === firstDigitIndex && column.type === 'digit'
           ? { ...column, spinning: false }
           : column
-      );
+      ));
     }
 
     const { baseDelayMs, staggerMs } = this.animationPreset;
 
     spinningDigitIndexes.forEach((columnIndex, order) => {
       const timer = setTimeout(() => {
-        this.columns = this.columns.map((column, index) =>
+        this.columns.update(cols => cols.map((column, index) =>
           index === columnIndex && column.type === 'digit'
             ? { ...column, spinning: false }
             : column
-        );
+        ));
       }, baseDelayMs + order * staggerMs);
       this.settleTimers.push(timer);
     });
@@ -135,7 +138,7 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
   }
 
   private setColumns(value: number, spinning: boolean) {
-    this.columns = this.formatValue(value).split('').map(char => {
+    this.columns.set(this.formatValue(value).split('').map(char => {
       if (char === ',') {
         return { type: 'comma', display: ',', spinning: false, settleDigit: 0 };
       }
@@ -146,7 +149,7 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
         spinning,
         settleDigit: digit
       };
-    });
+    }));
   }
 
   private formatValue(value: number): string {

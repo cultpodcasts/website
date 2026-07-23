@@ -1,12 +1,12 @@
 <div id="top"></div>
-@if (isDragOver) {
+@if (isDragOver()) {
 <div class="drop-overlay" aria-hidden="true"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
-  @if (isOnPodcastPage && canSubmitUrlForPodcast) {
+  @if (isOnPodcastPage() && canSubmitUrlForPodcast()) {
   <div class="drop-targets">
     <div class="drop-target"
-      [class.drop-target-active]="activeDropTarget === 'general'"
+      [class.drop-target-active]="activeDropTarget() === 'general'"
       (dragenter)="onTargetDragEnter('general', $event)"
       (dragleave)="onTargetDragLeave($event)"
       (dragover)="onDragOver($event)"
@@ -16,13 +16,13 @@
       <p class="drop-target-desc">Add as a general submission — Cult Podcasts will match the podcast automatically.</p>
     </div>
     <div class="drop-target"
-      [class.drop-target-active]="activeDropTarget === 'podcast'"
+      [class.drop-target-active]="activeDropTarget() === 'podcast'"
       (dragenter)="onTargetDragEnter('podcast', $event)"
       (dragleave)="onTargetDragLeave($event)"
       (dragover)="onDragOver($event)"
       (drop)="onDropForPodcast($event)">
       <mat-icon>podcasts</mat-icon>
-      <p class="drop-target-title">Submit to {{ podcastPageName }}</p>
+      <p class="drop-target-title">Submit to {{ podcastPageName() }}</p>
       <p class="drop-target-desc">Link this episode to the podcast shown on this page.</p>
     </div>
   </div>

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from './../../environments/environment';
 import { formatDate } from '@angular/common';
@@ -18,7 +18,8 @@ import { appleUrl, spotifyUrl, toUrl, youtubeUrl } from "../search-result-links"
     ApplePodcastsSvgComponent
   ],
   templateUrl: './episode-links.component.html',
-  styleUrl: './episode-links.component.sass'
+  styleUrl: './episode-links.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodeLinksComponent {
   @Input()

@@ -1,5 +1,17 @@
-import { Component, Inject, OnDestroy, PLATFORM_ID, ViewChild } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Inject,
+  OnDestroy,
+  PLATFORM_ID,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ShareMode } from "./share-mode.enum";
 import { isPlatformBrowser } from '@angular/common';
 import { ToolbarComponent } from './toolbar/toolbar.component';
@@ -20,43 +32,61 @@ import {
   extractUrlFromDataTransfer,
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
+import { filter, map, startWith } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent]
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class AppComponent implements OnDestroy {
-  isBrowser: boolean;
+  protected readonly isBrowser: boolean;
   protected FeatureSwitch = FeatureSwitch;
-  isDragOver: boolean = false;
-  activeDropTarget: 'general' | 'podcast' | null = null;
-  authRoles: string[] = [];
+  protected readonly isDragOver = signal(false);
+  protected readonly activeDropTarget = signal<'general' | 'podcast' | null>(null);
+  private readonly profileService = inject(ProfileService);
+  private readonly authRoles = toSignal(this.profileService.roles, { initialValue: [] as string[] });
+  protected readonly canSubmitUrlForPodcast = computed(() => this.authRoles().includes('Curator'));
+  private readonly router = inject(Router);
+  protected readonly routeUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map(() => this.router.url),
+      startWith(this.router.url)
+    ),
+    { initialValue: this.router.url }
+  );
+  protected readonly podcastPageName = computed(() => {
+    const match = this.routeUrl().match(/^\/podcast\/([^/?#]+)/);
+    return match ? decodeURIComponent(match[1]) : undefined;
+  });
+  protected readonly isOnPodcastPage = computed(() => this.podcastPageName() !== undefined);
   private ignoreDragUntilEnd = false;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
 
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly webPushService = inject(WebPushService);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+
   constructor(
-    private iconRegistry: MatIconRegistry,
-    private domSanitizer: DomSanitizer,
-    @Inject(PLATFORM_ID) platformId: any,
+    iconRegistry: MatIconRegistry,
+    domSanitizer: DomSanitizer,
+    @Inject(PLATFORM_ID) platformId: object,
     seoService: SeoService,
-    private webPushService: WebPushService,
-    private dialog: MatDialog,
-    private profileService: ProfileService,
     protected featureSwtichService: FeatureSwtichService,
-    private snackBar: MatSnackBar,
-    private router: Router
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
-    this.registerSvg();
+    this.registerSvg(iconRegistry, domSanitizer);
   }
 
-  async ngOnInit(): Promise<any> {
+  async ngOnInit(): Promise<void> {
     if (this.isBrowser) {
       this.initialiseBrowser();
       await this.profileService.init();
@@ -72,42 +102,32 @@ export class AppComponent implements OnDestroy {
   initialiseBrowser() {
     this.addDragListeners();
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
-    this.profileService.roles.subscribe(async roles => {
-      this.authRoles = roles;
-      if (roles.includes("Admin")) {
-        var handled = await this.webPushService.subscribeToNotifications();
-        if (!handled) {
-          if (localStorage.getItem("neverAskForNotifications") != "true") {
-            this.dialog
-              .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
-              .afterClosed()
-              .subscribe(async result => {
-                if (result) {
-                  await this.webPushService.subscribeToNotifications();
-                }
-              });
+    this.profileService.roles
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async roles => {
+        if (roles.includes("Admin")) {
+          var handled = await this.webPushService.subscribeToNotifications();
+          if (!handled) {
+            if (localStorage.getItem("neverAskForNotifications") != "true") {
+              this.dialog
+                .open(EnablePushNotificationsDialogComponent, { disableClose: true, autoFocus: true })
+                .afterClosed()
+                .pipe(takeUntilDestroyed(this.destroyRef))
+                .subscribe(async result => {
+                  if (result) {
+                    await this.webPushService.subscribeToNotifications();
+                  }
+                });
+            }
           }
         }
-      }
-    });
+      });
   }
 
-  async onSwMessage(message: any) {
+  async onSwMessage(message: MessageEvent) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
       await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share });
     }
-  }
-
-  get isOnPodcastPage(): boolean {
-    return this.podcastPageName !== undefined;
-  }
-
-  get podcastPageName(): string | undefined {
-    return this.resolvePodcastNameFromRoute();
-  }
-
-  get canSubmitUrlForPodcast(): boolean {
-    return this.authRoles.includes('Curator');
   }
 
   onDragOver(event: DragEvent) {
@@ -126,14 +146,14 @@ export class AppComponent implements OnDestroy {
     }
     event.preventDefault();
     event.stopPropagation();
-    this.activeDropTarget = target;
+    this.activeDropTarget.set(target);
   }
 
   onTargetDragLeave(event: DragEvent) {
     const related = event.relatedTarget as Node | null;
     const currentTarget = event.currentTarget as Node | null;
     if (!related || !currentTarget?.contains(related)) {
-      this.activeDropTarget = null;
+      this.activeDropTarget.set(null);
     }
   }
 
@@ -148,7 +168,7 @@ export class AppComponent implements OnDestroy {
   }
 
   async onDrop(event: DragEvent) {
-    if (this.isOnPodcastPage && this.canSubmitUrlForPodcast) {
+    if (this.isOnPodcastPage() && this.canSubmitUrlForPodcast()) {
       event.preventDefault();
       this.resetDragState();
       return;
@@ -187,7 +207,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
     event.preventDefault();
-    this.isDragOver = true;
+    this.isDragOver.set(true);
   };
 
   private readonly onDocumentDragOver = (event: DragEvent) => {
@@ -201,7 +221,7 @@ export class AppComponent implements OnDestroy {
   };
 
   private readonly onDocumentDragLeave = (event: DragEvent) => {
-    if (!this.isDragOver) {
+    if (!this.isDragOver()) {
       return;
     }
     const related = event.relatedTarget as Node | null;
@@ -221,37 +241,37 @@ export class AppComponent implements OnDestroy {
   };
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && this.isDragOver) {
+    if (event.key === 'Escape' && this.isDragOver()) {
       this.resetDragState(true);
     }
   };
 
   private readonly onVisibilityChange = () => {
-    if (document.hidden && this.isDragOver) {
+    if (document.hidden && this.isDragOver()) {
       this.resetDragState(true);
     }
   };
 
   private readonly onWindowBlur = () => {
-    if (this.isDragOver) {
+    if (this.isDragOver()) {
       this.resetDragState(true);
     }
   };
 
   private readonly onPointerUp = () => {
-    if (!this.isDragOver) {
+    if (!this.isDragOver()) {
       return;
     }
     window.setTimeout(() => {
-      if (this.isDragOver) {
+      if (this.isDragOver()) {
         this.resetDragState(true);
       }
     }, 0);
   };
 
   private resetDragState(fromCancel = false): void {
-    this.isDragOver = false;
-    this.activeDropTarget = null;
+    this.isDragOver.set(false);
+    this.activeDropTarget.set(null);
     this.ignoreDragUntilEnd = fromCancel;
   }
 
@@ -259,7 +279,7 @@ export class AppComponent implements OnDestroy {
     if (!this.isBrowser) {
       return;
     }
-    if (forPodcast && !this.canSubmitUrlForPodcast) {
+    if (forPodcast && !this.canSubmitUrlForPodcast()) {
       return;
     }
     event.preventDefault();
@@ -285,14 +305,14 @@ export class AppComponent implements OnDestroy {
     await this.toolbar.sendPodcast({
       url,
       podcastId: undefined,
-      podcastName: forPodcast ? this.podcastPageName : undefined,
+      podcastName: forPodcast ? this.podcastPageName() : undefined,
       shareMode: ShareMode.Text
     });
   }
 
   private isDropTargetEnabled(target: 'general' | 'podcast'): boolean {
     if (target === 'podcast') {
-      return this.canSubmitUrlForPodcast;
+      return this.canSubmitUrlForPodcast();
     }
     return true;
   }
@@ -300,11 +320,6 @@ export class AppComponent implements OnDestroy {
   private hasDroppableUrl(event: DragEvent): boolean {
     const types = event.dataTransfer?.types ?? [];
     return types.includes('text/uri-list') || types.includes('text/plain') || types.includes('URL');
-  }
-
-  private resolvePodcastNameFromRoute(): string | undefined {
-    const match = this.router.url.match(/^\/podcast\/([^/?#]+)/);
-    return match ? decodeURIComponent(match[1]) : undefined;
   }
 
   goTop(event: Event): void {
@@ -319,21 +334,21 @@ export class AppComponent implements OnDestroy {
     window.scrollTo(0, 0);
   }
 
-  private registerSvg() {
-    this.iconRegistry.addSvgIcon(`cultpodcasts`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/cultpodcasts.svg"));
-    this.iconRegistry.addSvgIcon(`add-podcast`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/add-podcast.svg"));
-    this.iconRegistry.addSvgIcon(`reddit`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/reddit.svg"));
-    this.iconRegistry.addSvgIcon(`twitter`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/twitter.svg"));
-    this.iconRegistry.addSvgIcon(`github`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/github.svg"));
-    this.iconRegistry.addSvgIcon(`spotify`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/spotify.svg"));
-    this.iconRegistry.addSvgIcon(`youtube`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/youtube.svg"));
-    this.iconRegistry.addSvgIcon(`bbc-iplayer`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/BBC_iPlayer_2021_(symbol).svg"));
-    this.iconRegistry.addSvgIcon(`bbc-sounds`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bbc_sounds.svg"));
-    this.iconRegistry.addSvgIcon(`internet-archive`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/Internet_Archive_logo_and_wordmark.svg"));
-    this.iconRegistry.addSvgIcon(`profile`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/profile.svg"));
-    this.iconRegistry.addSvgIcon(`bluesky`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bluesky.svg"));
-    this.iconRegistry.addSvgIcon(`android`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/android.svg"));
-    this.iconRegistry.addSvgIcon(`visible`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/visible.svg"));
-    this.iconRegistry.addSvgIcon(`removed`, this.domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/removed.svg"));
+  private registerSvg(iconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
+    iconRegistry.addSvgIcon(`cultpodcasts`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/cultpodcasts.svg"));
+    iconRegistry.addSvgIcon(`add-podcast`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/add-podcast.svg"));
+    iconRegistry.addSvgIcon(`reddit`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/reddit.svg"));
+    iconRegistry.addSvgIcon(`twitter`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/twitter.svg"));
+    iconRegistry.addSvgIcon(`github`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/github.svg"));
+    iconRegistry.addSvgIcon(`spotify`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/spotify.svg"));
+    iconRegistry.addSvgIcon(`youtube`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/youtube.svg"));
+    iconRegistry.addSvgIcon(`bbc-iplayer`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/BBC_iPlayer_2021_(symbol).svg"));
+    iconRegistry.addSvgIcon(`bbc-sounds`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bbc_sounds.svg"));
+    iconRegistry.addSvgIcon(`internet-archive`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/Internet_Archive_logo_and_wordmark.svg"));
+    iconRegistry.addSvgIcon(`profile`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/profile.svg"));
+    iconRegistry.addSvgIcon(`bluesky`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bluesky.svg"));
+    iconRegistry.addSvgIcon(`android`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/android.svg"));
+    iconRegistry.addSvgIcon(`visible`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/visible.svg"));
+    iconRegistry.addSvgIcon(`removed`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/removed.svg"));
   }
 }

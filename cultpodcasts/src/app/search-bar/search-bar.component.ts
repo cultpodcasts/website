@@ -1,4 +1,11 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  ViewChild,
+  signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SearchBoxMode } from '../search-box-mode.enum';
 import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
@@ -22,12 +29,13 @@ import { TextFieldModule } from '@angular/cdk/text-field';
     TextFieldModule
   ],
   templateUrl: './search-bar.component.html',
-  styleUrl: './search-bar.component.sass'
+  styleUrl: './search-bar.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class SearchBarComponent {
-  searchChip: string | null = null;
-  searchBoxMode: SearchBoxMode = SearchBoxMode.Default;
+  protected readonly searchChip = signal<string | null>(null);
+  protected readonly searchBoxMode = signal(SearchBoxMode.Default);
 
   @ViewChild('searchBox', { static: true })
   searchBox: ElementRef | undefined;
@@ -35,33 +43,33 @@ export class SearchBarComponent {
   constructor(
     private router: Router,
     private siteService: SiteService) {
-  }
-
-  ngOnInit() {
-    this.siteService.currentSiteData.subscribe(siteData => {
-      if (this.searchBox) {
-        this.searchBox.nativeElement.value = siteData.query ?? "";
-        if (siteData.podcast != null) {
-          this.searchChip = siteData.podcast;
-          this.searchBoxMode = SearchBoxMode.Podcast;
-        } else if (siteData.subject != null) {
-          this.searchChip = siteData.subject;
-          this.searchBoxMode = SearchBoxMode.Subject;
-        } else {
-          this.searchChip = null;
-          this.searchBoxMode = SearchBoxMode.Default;
+    this.siteService.currentSiteData
+      .pipe(takeUntilDestroyed())
+      .subscribe(siteData => {
+        if (this.searchBox) {
+          this.searchBox.nativeElement.value = siteData.query ?? "";
+          if (siteData.podcast != null) {
+            this.searchChip.set(siteData.podcast);
+            this.searchBoxMode.set(SearchBoxMode.Podcast);
+          } else if (siteData.subject != null) {
+            this.searchChip.set(siteData.subject);
+            this.searchBoxMode.set(SearchBoxMode.Subject);
+          } else {
+            this.searchChip.set(null);
+            this.searchBoxMode.set(SearchBoxMode.Default);
+          }
         }
-      };
-    });
+      });
   }
 
   search = (input: HTMLInputElement) => {
     input.blur();
-    if (this.searchChip) {
-      if (this.searchBoxMode == SearchBoxMode.Podcast) {
-        this.router.navigate(['/podcast/' + this.searchChip + "/" + input.value]);
-      } else if (this.searchBoxMode == SearchBoxMode.Subject) {
-        this.router.navigate(['/subject/' + this.searchChip + "/" + input.value]);
+    const chip = this.searchChip();
+    if (chip) {
+      if (this.searchBoxMode() == SearchBoxMode.Podcast) {
+        this.router.navigate(['/podcast/' + chip + "/" + input.value]);
+      } else if (this.searchBoxMode() == SearchBoxMode.Subject) {
+        this.router.navigate(['/subject/' + chip + "/" + input.value]);
       }
     } else {
       this.router.navigate(['/search/' + input.value]);
@@ -69,7 +77,7 @@ export class SearchBarComponent {
   };
 
   removeSearchChip() {
-    this.searchChip = null;
+    this.searchChip.set(null);
     var query = this.siteService.getSiteData().query;
     if (query && query != "") {
       const url = `/search/` + query;

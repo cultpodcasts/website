@@ -1,5 +1,5 @@
 <span class="slot-machine-counter" [attr.title]="title" aria-live="polite">
-  @for (column of columns; track $index) {
+  @for (column of columns(); track $index) {
     @if (column.type === 'comma') {
     <span class="slot-comma">{{ column.display }}</span>
     } @else {

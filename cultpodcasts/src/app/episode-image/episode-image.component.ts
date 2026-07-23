@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
 import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApiEpisode } from '../api-episode.interface';
 import { DiscoveryResult } from '../discovery-result.interface';
@@ -17,7 +17,8 @@ import { appleUrl, episodeImageUrl, spotifyUrl, toUrl, youtubeUrl } from '../sea
     ApplePodcastsSvgComponent
   ],
   templateUrl: './episode-image.component.html',
-  styleUrl: './episode-image.component.sass'
+  styleUrl: './episode-image.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodeImageComponent {
   @Input()
@@ -32,7 +33,7 @@ export class EpisodeImageComponent {
   @Input()
   linksOverlay: boolean = false;
 
-  overlayVisible: boolean = false;
+  protected readonly overlayVisible = signal(false);
 
   get imageUrl(): URL | undefined {
     let imageUrl: URL | undefined;
@@ -58,7 +59,7 @@ export class EpisodeImageComponent {
 
   overlay($event: Event, show: boolean) {
     if (this.linksOverlay) {
-      this.overlayVisible = show;
+      this.overlayVisible.set(show);
       $event.stopPropagation();
     }
   }

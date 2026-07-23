@@ -1,7 +1,7 @@
 @if (this.imageUrl) {
-<div class="container" (click)="overlay($event, true)" [class.hasOverlay]="linksOverlay && !overlayVisible"
-    [class.overlayVisible]="overlayVisible">
-    <div class="overlay" [class.show]="overlayVisible">
+<div class="container" (click)="overlay($event, true)" [class.hasOverlay]="linksOverlay && !overlayVisible()"
+    [class.overlayVisible]="overlayVisible()">
+    <div class="overlay" [class.show]="overlayVisible()">
         <button class="close" mat-icon-button (click)="overlay($event, false)">
             <mat-icon>close</mat-icon>
         </button>

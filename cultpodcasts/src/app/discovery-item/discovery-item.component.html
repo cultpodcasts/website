@@ -1,37 +1,39 @@
 @let dur = duration();
-<mat-card class="result" [class.selected]="selected && ! errored" [class.error]="errored"
-    [class.auto-hidden]="result.autoHidden"
-    (click)="handleResult($event, result)" attr.data-id="{{result.id}}"
-    [appHide]="resultsFilter==='errored' && !errored"
+@let score = scoreDisplay();
+@let item = result();
+<mat-card class="result" [class.selected]="selected() && !errored()" [class.error]="errored()"
+    [class.auto-hidden]="item.autoHidden"
+    (click)="handleResult($event, item)" attr.data-id="{{item.id}}"
+    [appHide]="resultsFilter()==='errored' && !errored()"
     [class.unknownDuration]="!dur.known">
     <mat-card-header>
-        <mat-card-title [innerHTML]="result.episodeName"></mat-card-title>
+        <mat-card-title [innerHTML]="item.episodeName"></mat-card-title>
         <mat-card-subtitle class="score-row">
-            <span class="score-badge" [class.score-likely]="scoreDisplay.tier === 'likely'"
-                [class.score-review]="scoreDisplay.tier === 'review'"
-                [class.score-unlikely]="scoreDisplay.tier === 'unlikely'"
-                [class.score-unscored]="scoreDisplay.tier === 'unscored'">
-                @if (scoreDisplay.percent) {
-                {{scoreDisplay.percent}} ·
+            <span class="score-badge" [class.score-likely]="score.tier === 'likely'"
+                [class.score-review]="score.tier === 'review'"
+                [class.score-unlikely]="score.tier === 'unlikely'"
+                [class.score-unscored]="score.tier === 'unscored'">
+                @if (score.percent) {
+                {{score.percent}} ·
                 }
-                {{scoreDisplay.label}}
+                {{score.label}}
             </span>
         </mat-card-subtitle>
         <mat-card-subtitle
-            [class.multipleMatchingPodcasts]="result.matchingPodcasts!= null && result.matchingPodcasts.length > 1"
-            [class.matchedPodcast]="result.matchingPodcasts!= null && result.matchingPodcasts.length==1">
-            @if (result.matchingPodcasts== null || result.matchingPodcasts.length==0) {
-            {{result.showName}}
-            } @else if (result.matchingPodcasts != null && result.matchingPodcasts.length==1) {
-                <a [routerLink]="['/podcast', result.matchingPodcasts[0].name]" (click)="allowLink($event)"
-                    [target]="result.matchingPodcasts[0].name">
-                    {{result.matchingPodcasts[0].name}}
+            [class.multipleMatchingPodcasts]="item.matchingPodcasts!= null && item.matchingPodcasts.length > 1"
+            [class.matchedPodcast]="item.matchingPodcasts!= null && item.matchingPodcasts.length==1">
+            @if (item.matchingPodcasts== null || item.matchingPodcasts.length==0) {
+            {{item.showName}}
+            } @else if (item.matchingPodcasts != null && item.matchingPodcasts.length==1) {
+                <a [routerLink]="['/podcast', item.matchingPodcasts[0].name]" (click)="allowLink($event)"
+                    [target]="item.matchingPodcasts[0].name">
+                    {{item.matchingPodcasts[0].name}}
                 </a>
-                @if (!result.matchingPodcasts[0].visible) {
+                @if (!item.matchingPodcasts[0].visible) {
                 <mat-icon svgIcon="removed" title="removed"></mat-icon>
                 }
-                @if (result.matchingPodcasts[0].visibleEpisodes != 0) {
-                ({{result.matchingPodcasts[0].visibleEpisodes}})
+                @if (item.matchingPodcasts[0].visibleEpisodes != 0) {
+                ({{item.matchingPodcasts[0].visibleEpisodes}})
                 }
                 <button mat-icon-button type="button" title="Edit podcast" (click)="editPodcast($event)">
                     <mat-icon>settings</mat-icon>
@@ -41,49 +43,49 @@
             }
         </mat-card-subtitle>
         <mat-card-subtitle>
-            {{result.released | date:'d MMM yyyy H:mm'}}
+            {{item.released | date:'d MMM yyyy H:mm'}}
             <span [class.unknown]="!dur.known">
                 {{dur.text}}
             </span>
         </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-        @if (result.showDescription && (result.matchingPodcasts === null || result.matchingPodcasts.length==0)) {
-        <app-clampable-text class="showDescription" [maxLines]="4" [html]="result.showDescription"></app-clampable-text>
+        @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
+        <app-clampable-text class="showDescription" [maxLines]="4" [html]="item.showDescription"></app-clampable-text>
         }
-        <app-episode-image [discoveryResult]="result"></app-episode-image>
-        <app-clampable-text class="resultdescription" [maxLines]="6" [html]="result.episodeDescription"></app-clampable-text>
+        <app-episode-image [discoveryResult]="item"></app-episode-image>
+        <app-clampable-text class="resultdescription" [maxLines]="6" [html]="item.episodeDescription"></app-clampable-text>
     </mat-card-content>
     <mat-card-actions>
         <div class="discovery-service-links">
-            @if (result.urls.youtube!=null) {
-            <a href="{{result.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+            @if (item.urls.youtube!=null) {
+            <a href="{{item.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
                 <mat-icon svgIcon="youtube"></mat-icon>
             </a>
-            @if (result.youTubeViews || result.youTubeChannelMembers) {
+            @if (item.youTubeViews || item.youTubeChannelMembers) {
             <div class="youtubemeta">
-                @if (result.youTubeViews) {
-                <span>Views: {{result.youTubeViews}}</span>
+                @if (item.youTubeViews) {
+                <span>Views: {{item.youTubeViews}}</span>
                 }
-                @if (result.youTubeChannelMembers) {
-                <span>Members: {{result.youTubeChannelMembers}}</span>
+                @if (item.youTubeChannelMembers) {
+                <span>Members: {{item.youTubeChannelMembers}}</span>
                 }
             </div>
             }
             }
-            @if (result.urls.spotify!=null) {
-            <a href="{{result.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+            @if (item.urls.spotify!=null) {
+            <a href="{{item.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
                 <mat-icon svgIcon="spotify"></mat-icon>
             </a>
             }
-            @if (result.urls.apple) {
-            <a href="{{result.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+            @if (item.urls.apple) {
+            <a href="{{item.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
                 <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
             </a>
             }
         </div>
         <mat-card-footer class="subjects">
-            <app-subjects [subjects]="result.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
+            <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
         </mat-card-footer>
     </mat-card-actions>
 </mat-card>

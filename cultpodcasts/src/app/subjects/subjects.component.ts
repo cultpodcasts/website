@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule
   ],
   templateUrl: './subjects.component.html',
-  styleUrl: './subjects.component.sass'
+  styleUrl: './subjects.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SubjectsComponent {
   @Input({ required: true })
