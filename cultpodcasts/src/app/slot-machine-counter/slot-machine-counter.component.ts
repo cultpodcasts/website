@@ -2,13 +2,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostBinding,
+  Inject,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   SimpleChanges,
   signal
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   DEFAULT_SLOT_MACHINE_PRESET,
   SLOT_MACHINE_PRESETS,
@@ -52,7 +55,12 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
     return `${this.animationPreset.settleMs}ms`;
   }
 
-  constructor() {
+  constructor(@Inject(PLATFORM_ID) platformId: object) {
+    // Skip spin timers on SSR — Zone waits on setTimeout and deadlocks Workers.
+    if (!isPlatformBrowser(platformId)) {
+      this.prefersReducedMotion = true;
+      return;
+    }
     if (typeof window !== 'undefined' && window.matchMedia) {
       this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }

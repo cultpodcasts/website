@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostBinding,
+  PLATFORM_ID,
   Signal,
   computed,
   inject,
@@ -9,6 +10,7 @@ import {
   signal
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser } from '@angular/common';
 import { ProfileService } from '../profile.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +31,7 @@ export class BookmarkComponent {
   episodeId = input.required<string>();
   hasMenu = input<boolean>(false);
   protected readonly waitingCallback = signal(true);
+  /** Browser-only: Zone-tracked timers deadlock SSR on Cloudflare Workers. */
   protected readonly bookmarkTimeout: Signal<boolean> = timerSignal(5000);
   protected readonly isAuthenticated = toSignal(
     inject(ProfileService).isAuthenticated$,
@@ -72,6 +75,10 @@ export class BookmarkComponent {
 
 function timerSignal(ms: number): Signal<boolean> {
   const done = signal(false);
-  setTimeout(() => done.set(true), ms);
+  if (isPlatformBrowser(inject(PLATFORM_ID))) {
+    setTimeout(() => done.set(true), ms);
+  } else {
+    done.set(true);
+  }
   return done.asReadonly();
 }
