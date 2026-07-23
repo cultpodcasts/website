@@ -30,6 +30,27 @@ export function personLabel(person: Person): string {
   return handles ? `${person.name} (${handles})` : person.name;
 }
 
+/** Match guest dropdown typing against name, sort name, aliases, or social handles. */
+export function personMatchesFilter(person: Person, filterTerm: string): boolean {
+  const trimmedTerm = filterTerm.trim().toLowerCase();
+  if (!trimmedTerm) {
+    return true;
+  }
+  const termWithoutAt = trimmedTerm.replace(/^@+/, '');
+  const candidates = [
+    person.name,
+    person.sortName,
+    ...(person.aliases ?? []),
+    person.twitterHandle,
+    person.blueskyHandle
+  ].filter((x): x is string => !!x);
+
+  return candidates.some(candidate => {
+    const lower = candidate.toLowerCase();
+    return lower.includes(trimmedTerm) || lower.replace(/^@+/, '').includes(termWithoutAt);
+  });
+}
+
 export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
   return new FormGroup<EpisodeForm>({
     title: new FormControl(episode.title, { nonNullable: true }),
@@ -131,13 +152,9 @@ export function regroupGuests(
     .map(name => peopleByName.get(name))
     .filter((x): x is Person => !!x);
 
-  const otherNames = allPeople
-    .map(person => person.name)
-    .filter(name => !selectedSet.has(name));
-  const filteredOtherNames = filterKeepingSelectedInOrder(otherNames, filterTerm, selectedSet);
-  const otherPeople = filteredOtherNames
-    .map(name => peopleByName.get(name))
-    .filter((x): x is Person => !!x);
+  const otherPeople = allPeople
+    .filter(person => !selectedSet.has(person.name))
+    .filter(person => personMatchesFilter(person, filterTerm));
 
   return { selectedGuests, otherPeople };
 }
