@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -17,14 +17,14 @@ import { environment } from './../../environments/environment';
     FormsModule
   ],
   templateUrl: './add-term.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './add-term.component.sass'
 })
 export class AddTermComponent {
-  isSending: boolean = false;
-  isInError: boolean = false;
+  readonly isSending = signal(false);
+  readonly isInError = signal(false);
   term: any;
-  conflict: boolean = false;
+  readonly conflict = signal(false);
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
@@ -42,7 +42,7 @@ export class AddTermComponent {
     let headers: HttpHeaders = new HttpHeaders();
 
     let token: string | undefined;
-    this.isSending = true;
+    this.isSending.set(true);
     try {
       token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -59,23 +59,23 @@ export class AddTermComponent {
 
         const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/terms", environment.api).toString(), { term: this.term }, { headers: headers, observe: 'response' }));
         if (resp.status == 200) {
-          this.isSending = false;
-          this.conflict = false;
+          this.isSending.set(false);
+          this.conflict.set(false);
           this.dialogRef.close({ updated: true, term: this.term });
         } else {
           console.error(resp);
-          this.isInError = true;
-          this.isSending = false;
-          this.conflict = false;
+          this.isInError.set(true);
+          this.isSending.set(false);
+          this.conflict.set(false);
         }
       }
     } catch (error: any) {
       console.error(error);
       if (error.status == 409) {
-        this.conflict = true;
+        this.conflict.set(true);
       }
-      this.isSending = false;
-      this.isInError = true;
+      this.isSending.set(false);
+      this.isInError.set(true);
     }
   }
 }

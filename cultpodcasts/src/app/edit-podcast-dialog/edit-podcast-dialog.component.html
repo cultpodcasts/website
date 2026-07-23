@@ -1,74 +1,74 @@
 <h2 mat-dialog-title>Edit Podcast</h2>
 
 <mat-dialog-content>
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (isInError) {
-    @if (notFound) {
+    } @else if (isInError()) {
+    @if (notFound()) {
     <p id="error">Podcast not found.</p>
-    } @else if (conflict) {
+    } @else if (conflict()) {
     <p id="error">Multiple podcasts found</p>
     } @else {
     <p id="error">An error occurred</p>
     }
     } @else {
     <p>{{this.podcastName}}</p>
-    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+    <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify Id</mat-label>
-                    <input type="text" [formControl]="form!.controls.spotifyId" matInput>
+                    <input type="text" [formControl]="form()!.controls.spotifyId" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Apple Id</mat-label>
-                    <input type="number" [formControl]="form!.controls.appleId" matInput>
+                    <input type="number" [formControl]="form()!.controls.appleId" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Id</mat-label>
-                    <input type="text" [formControl]="form!.controls.youTubeChannelId" readonly matInput>
+                    <input type="text" [formControl]="form()!.controls.youTubeChannelId" readonly matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Playlist Id</mat-label>
-                    <input type="text" [formControl]="form!.controls.youTubePlaylistId" matInput>
+                    <input type="text" [formControl]="form()!.controls.youTubePlaylistId" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Publication Delay</mat-label>
-                    <input type="text" [formControl]="form!.controls.youTubePublicationDelay" matInput>
+                    <input type="text" [formControl]="form()!.controls.youTubePublicationDelay" matInput>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
                     <label>
                         <span>Removed:</span>
-                        <mat-checkbox [formControl]="form!.controls.removed" />
+                        <mat-checkbox [formControl]="form()!.controls.removed" />
                     </label>
                     <label>
                         <span>Index All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.indexAllEpisodes" />
+                        <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes" />
                     </label>
                     <label>
                         <span>Bypass Short Episode Checking:</span>
-                        <mat-checkbox [formControl]="form!.controls.bypassShortEpisodeChecking" />
+                        <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking" />
                     </label>
                     <label>
                         <span>Skip Enriching From YouTube:</span>
-                        <mat-checkbox [formControl]="form!.controls.skipEnrichingFromYouTube" />
+                        <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube" />
                     </label>
                     <label>
                         <span>Ignore All Episodes:</span>
-                        <mat-checkbox [formControl]="form!.controls.ignoreAllEpisodes" />
+                        <mat-checkbox [formControl]="form()!.controls.ignoreAllEpisodes" />
                     </label>
                 </div>
             </mat-tab>
             <mat-tab label="Subjects">
                 <mat-form-field class="full-width">
                     <mat-label>Default Subject</mat-label>
-                    <mat-select [formControl]="form!.controls.defaultSubject"
+                    <mat-select [formControl]="form()!.controls.defaultSubject"
                         (openedChange)="onDefaultSubjectDropdownOpenChange($event)"
                         (keydown)="onDefaultSubjectDropdownKeydown($event)">
-                        @if (enableDesktopSubjectTypingFilter && defaultSubjectFilterTerm.length > 0) {
-                        <mat-option disabled>{{defaultSubjectFilterTerm}}</mat-option>
+                        @if (enableDesktopSubjectTypingFilter && defaultSubjectFilterTerm().length > 0) {
+                        <mat-option disabled>{{defaultSubjectFilterTerm()}}</mat-option>
                         }
                         <mat-option [value]="">No Subject</mat-option>
                         @for (subject of filteredDefaultSubjects(); track subject) {
@@ -78,11 +78,11 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Ignored Subjects</mat-label>
-                    <mat-select [formControl]="form!.controls.ignoredSubjects" multiple
+                    <mat-select [formControl]="form()!.controls.ignoredSubjects" multiple
                         [sortComparator]="noCompareFunction" (openedChange)="onIgnoredSubjectsDropdownOpenChange($event)"
                         (keydown)="onIgnoredSubjectsDropdownKeydown($event)">
-                        @if (enableDesktopSubjectTypingFilter && ignoredSubjectsFilterTerm.length > 0) {
-                        <mat-option disabled>{{ignoredSubjectsFilterTerm}}</mat-option>
+                        @if (enableDesktopSubjectTypingFilter && ignoredSubjectsFilterTerm().length > 0) {
+                        <mat-option disabled>{{ignoredSubjectsFilterTerm()}}</mat-option>
                         }
                         @for (subject of filteredIgnoredSubjects(); track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
@@ -91,35 +91,35 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Ignored Associated Subjects</mat-label>
-                    <textarea matInput [formControl]="form!.controls.ignoredAssociatedSubjects"></textarea>
+                    <textarea matInput [formControl]="form()!.controls.ignoredAssociatedSubjects"></textarea>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Known Terms</mat-label>
-                    <input type="text" [formControl]="form!.controls.knownTerms" matInput>
+                    <input type="text" [formControl]="form()!.controls.knownTerms" matInput>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Social">
                 <mat-form-field class="full-width">
                     <mat-label>Twitter Handle</mat-label>
-                    <input type="text" [formControl]="form!.controls.twitterHandle" matInput>
+                    <input type="text" [formControl]="form()!.controls.twitterHandle" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Bluesky Handle</mat-label>
-                    <input type="text" [formControl]="form!.controls.blueskyHandle" matInput>
+                    <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Hash Tags</mat-label>
-                    <input type="text" [formControl]="form!.controls.hashTag" matInput>
+                    <input type="text" [formControl]="form()!.controls.hashTag" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Enrichment Hash Tags</mat-label>
-                    <textarea [formControl]="form!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
+                    <textarea [formControl]="form()!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Meta">
                 <mat-form-field class="full-width">
                     <mat-label>Release Authority</mat-label>
-                    <select matNativeControl [formControl]="form!.controls.releaseAuthority">
+                    <select matNativeControl [formControl]="form()!.controls.releaseAuthority">
                         @for (podcastService of podcastServices; track $index) {
                         <option [value]="podcastService">{{podcastService}}</option>
                         }
@@ -127,7 +127,7 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Primary Post Service</mat-label>
-                    <select matNativeControl [formControl]="form!.controls.primaryPostService">
+                    <select matNativeControl [formControl]="form()!.controls.primaryPostService">
                         @for (podcastService of podcastServices; track $index) {
                         <option [value]="podcastService">{{podcastService}}</option>
                         }
@@ -135,59 +135,59 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Language</mat-label>
-                    <select matNativeControl [formControl]="form!.controls.lang">
-                        @for (language of languages | keyvalue:null; track language) {
+                    <select matNativeControl [formControl]="form()!.controls.lang">
+                        @for (language of languages() | keyvalue:null; track language) {
                         <option [value]="language.key">{{language.value}}</option>
                         }
                     </select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Minimum Duration</mat-label>
-                    <input type="text" [formControl]="form!.controls.minimumDuration" matInput>
+                    <input type="text" [formControl]="form()!.controls.minimumDuration" matInput>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Regexs">
                 <mat-form-field class="full-width">
                     <mat-label>Title Regex</mat-label>
-                    <input type="text" [formControl]="form!.controls.titleRegex" matInput>
+                    <input type="text" [formControl]="form()!.controls.titleRegex" matInput>
                     <button type="button" matIconButton matSuffix [matMenuTriggerFor]="titleRegexPresetMenu"
                         aria-label="Title regex presets">
                         <mat-icon>arrow_drop_down</mat-icon>
                     </button>
                 </mat-form-field>
                 <mat-menu #titleRegexPresetMenu="matMenu">
-                    @if (titleRegexPresets.length == 0) {
+                    @if (titleRegexPresets().length == 0) {
                     <button mat-menu-item type="button" disabled>No presets configured</button>
                     }
-                    @for (preset of titleRegexPresets; track preset.name) {
+                    @for (preset of titleRegexPresets(); track preset.name) {
                     <button mat-menu-item type="button"
                         (click)="applyTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
                     }
                 </mat-menu>
                 <mat-form-field class="full-width">
                     <mat-label>Description Regex</mat-label>
-                    <input type="text" [formControl]="form!.controls.descriptionRegex" matInput>
+                    <input type="text" [formControl]="form()!.controls.descriptionRegex" matInput>
                     <button type="button" matIconButton matSuffix [matMenuTriggerFor]="descriptionRegexPresetMenu"
                         aria-label="Description regex presets">
                         <mat-icon>arrow_drop_down</mat-icon>
                     </button>
                 </mat-form-field>
                 <mat-menu #descriptionRegexPresetMenu="matMenu">
-                    @if (descriptionRegexPresets.length == 0) {
+                    @if (descriptionRegexPresets().length == 0) {
                     <button mat-menu-item type="button" disabled>No presets configured</button>
                     }
-                    @for (preset of descriptionRegexPresets; track preset.name) {
+                    @for (preset of descriptionRegexPresets(); track preset.name) {
                     <button mat-menu-item type="button"
                         (click)="applyDescriptionRegexPreset(preset.pattern)">{{preset.name}}</button>
                     }
                 </mat-menu>
                 <mat-form-field class="full-width">
                     <mat-label>Episode Match Regex</mat-label>
-                    <input type="text" [formControl]="form!.controls.episodeMatchRegex" matInput>
+                    <input type="text" [formControl]="form()!.controls.episodeMatchRegex" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Episode Include Title Regex</mat-label>
-                    <input type="text" [formControl]="form!.controls.episodeIncludeTitleRegex" matInput>
+                    <input type="text" [formControl]="form()!.controls.episodeIncludeTitleRegex" matInput>
                 </mat-form-field>
             </mat-tab>
         </mat-tab-group>
@@ -197,5 +197,5 @@
 
 <mat-dialog-actions>
     <button matButton="text" (click)="close()">Close</button>
-    <button matButton="filled" [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+    <button matButton="filled" [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

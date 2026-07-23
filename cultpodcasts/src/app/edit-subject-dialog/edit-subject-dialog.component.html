@@ -1,30 +1,30 @@
 <h2 mat-dialog-title>{{create?"Add":"Edit"}} Subject</h2>
 
 <mat-dialog-content>
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (isInError) {
+    } @else if (isInError()) {
     <p id="error">An error occurred</p>
     } @else {
-    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+    <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
                 <label>
                     <span>Name:</span>
-                    <input type="text" [formControl]="form!.controls.name" [readonly]="!create" matInput>
+                    <input type="text" [formControl]="form()!.controls.name" [readonly]="!create" matInput>
                 </label>
                 <label>
                     <span>Aliases:</span>
-                    <textarea [formControl]="form!.controls.aliases" matInput cdkTextareaAutosize></textarea>
+                    <textarea [formControl]="form()!.controls.aliases" matInput cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Associated Subjects:</span>
-                    <textarea type="text" [formControl]="form!.controls.associatedSubjects" matInput
+                    <textarea type="text" [formControl]="form()!.controls.associatedSubjects" matInput
                         cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Subject Type:</span>
-                    <select matNativeControl [formControl]="form!.controls.subjectType">
+                    <select matNativeControl [formControl]="form()!.controls.subjectType">
                         @for (subjectType of subjectTypes; track $index) {
                         <option [value]="subjectType">{{subjectType}}</option>
                         }
@@ -34,24 +34,24 @@
             <mat-tab label="Hash Tags & Terms">
                 <label>
                     <span>Hash Tags:</span>
-                    <input type="text" [formControl]="form!.controls.hashTag" matInput>
+                    <input type="text" [formControl]="form()!.controls.hashTag" matInput>
                 </label>
                 <label>
                     <span>Enrichment Hash Tags:</span>
-                    <textarea [formControl]="form!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
+                    <textarea [formControl]="form()!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
                 </label>
                 <label>
                     <span>Known Terms</span>
-                    <input type="text" [formControl]="form!.controls.knownTerms" matInput>
+                    <input type="text" [formControl]="form()!.controls.knownTerms" matInput>
                 </label>
             </mat-tab>
             <mat-tab label="Reddit">
                 <label>
                     <span>Flair Id:</span>
-                    <mat-select [formControl]="form!.controls.redditFlairTemplateId" id="flair" [style]="styleSelect()"
+                    <mat-select [formControl]="form()!.controls.redditFlairTemplateId" id="flair" [style]="styleSelect()"
                         panelClass="flairs">
                         <mat-option [value]="">No Subject</mat-option>
-                        @for (flair of flairs | keyvalue; track flair.key) {
+                        @for (flair of flairs() | keyvalue; track flair.key) {
                         <mat-option [value]="flair.key"
                             [style]="styleOption(flair.value)">{{flair.key.substring(0,8)}}</mat-option>
                         }
@@ -59,7 +59,7 @@
                 </label>
                 <label>
                     <span>Flair Text:</span>
-                    <input type="text" [formControl]="form!.controls.redditFlareText" matInput>
+                    <input type="text" [formControl]="form()!.controls.redditFlareText" matInput>
                 </label>
             </mat-tab>
         </mat-tab-group>
@@ -69,5 +69,5 @@
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+    <button mat-raised-button [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

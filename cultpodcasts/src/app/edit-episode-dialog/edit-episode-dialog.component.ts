@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -60,7 +60,7 @@ import {
     MatDividerModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-episode-dialog.component.sass'
 })
 export class EditEpisodeDialogComponent {
@@ -74,22 +74,22 @@ export class EditEpisodeDialogComponent {
   episodeId: string;
   podcastIdentifier: string;
   podcastName: string = "";
-  isLoading: boolean = true;
-  isInError: boolean = false;
+  readonly isLoading = signal<boolean>(true);
+  readonly isInError = signal<boolean>(false);
   subjects: string[] = [];
   allSubjects: string[] = [];
-  selectedSubjects: string[] = [];
-  hoistedSubjects: string[] = [];
-  otherSubjects: string[] = [];
-  subjectsFilterTerm: string = '';
+  readonly selectedSubjects = signal<string[]>([]);
+  readonly hoistedSubjects = signal<string[]>([]);
+  readonly otherSubjects = signal<string[]>([]);
+  readonly subjectsFilterTerm = signal<string>('');
   allPeople: Person[] = [];
-  selectedGuests: Person[] = [];
-  otherPeople: Person[] = [];
-  guestsFilterTerm: string = '';
-  guestSuggestions: PersonMatch[] = [];
-  languages: { [key: string]: string } = {};
+  readonly selectedGuests = signal<Person[]>([]);
+  readonly otherPeople = signal<Person[]>([]);
+  readonly guestsFilterTerm = signal<string>('');
+  readonly guestSuggestions = signal<PersonMatch[]>([]);
+  readonly languages = signal<{ [key: string]: string }>({});
 
-  form: FormGroup<EpisodeForm> | undefined;
+  readonly form = signal<FormGroup<EpisodeForm> | undefined>(undefined);
   originalEpisode: ApiEpisode | undefined;
   podcastDefaultSubject: string | null = null;
   podcastId: string = "";
@@ -136,27 +136,27 @@ export class EditEpisodeDialogComponent {
 
       const podcast = await this.getPodcast(headers, this.podcastIdentifier);
       if (!podcast) {
-        this.isInError = true;
+        this.isInError.set(true);
         return;
       }
       this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
       this.podcastName = podcast.name!;
       this.podcastId = podcast.id!;
 
-      this.form = buildEpisodeForm(resp.episode);
+      this.form.set(buildEpisodeForm(resp.episode));
       this.allPeople = resp.people.sort(comparePeopleBySortKey);
-      this.guestSuggestions = resp.episode.guestSuggestions ?? [];
+      this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
       const { subjects, allSubjects } = mergeEpisodeSubjects(resp.episode.subjects, resp.subjects, this.podcastDefaultSubject);
       this.subjects = subjects;
       this.allSubjects = allSubjects;
       this.regroupSubjects(resp.episode.subjects);
-      this.languages = buildEpisodeLanguageOptions(resp.languages);
-      this.isLoading = false;
+      this.languages.set(buildEpisodeLanguageOptions(resp.languages));
+      this.isLoading.set(false);
     } catch (e) {
       console.error(e);
-      this.isLoading = false;
-      this.isInError = true;
+      this.isLoading.set(false);
+      this.isInError.set(true);
     }
   }
 
@@ -165,47 +165,48 @@ export class EditEpisodeDialogComponent {
   }
 
   onSubmit() {
-    if (this.form?.valid) {
+    const form = this.form();
+    if (form?.valid) {
 
       const update: ApiEpisode = {
         id: this.episodeId,
-        title: this.form!.controls.title.value,
-        description: this.form!.controls.description.value,
-        posted: this.form!.controls.posted.value,
-        tweeted: this.form!.controls.tweeted.value,
-        bluesky: this.form!.controls.blueskyPosted.value,
-        ignored: this.form!.controls.ignored.value,
-        removed: this.form!.controls.removed.value,
-        explicit: this.form!.controls.explicit.value,
-        release: new Date(this.form!.controls.release.value),
-        duration: this.form!.controls.duration.value,
+        title: form.controls.title.value,
+        description: form.controls.description.value,
+        posted: form.controls.posted.value,
+        tweeted: form.controls.tweeted.value,
+        bluesky: form.controls.blueskyPosted.value,
+        ignored: form.controls.ignored.value,
+        removed: form.controls.removed.value,
+        explicit: form.controls.explicit.value,
+        release: new Date(form.controls.release.value),
+        duration: form.controls.duration.value,
         urls: {
         },
         images: {
-          spotify: this.form!.controls.spotifyImage.value,
-          apple: this.form!.controls.appleImage.value,
-          youtube: this.form!.controls.youtubeImage.value,
-          other: this.form!.controls.otherImage.value
+          spotify: form.controls.spotifyImage.value,
+          apple: form.controls.appleImage.value,
+          youtube: form.controls.youtubeImage.value,
+          other: form.controls.otherImage.value
         },
-        subjects: this.form!.controls.subjects.value,
-        searchTerms: this.form!.controls.searchTerms.value,
-        lang: this.form!.controls.lang.value,
-        guests: this.form!.controls.guests.value,
+        subjects: form.controls.subjects.value,
+        searchTerms: form.controls.searchTerms.value,
+        lang: form.controls.lang.value,
+        guests: form.controls.guests.value,
       };
-      if (this.form!.controls.spotify.value) {
-        update.urls.spotify = new URL(this.form!.controls.spotify.value);
+      if (form.controls.spotify.value) {
+        update.urls.spotify = new URL(form.controls.spotify.value);
       }
-      if (this.form!.controls.apple.value) {
-        update.urls.apple = new URL(this.form!.controls.apple.value);
+      if (form.controls.apple.value) {
+        update.urls.apple = new URL(form.controls.apple.value);
       }
-      if (this.form!.controls.youtube.value) {
-        update.urls.youtube = new URL(this.form!.controls.youtube.value);
+      if (form.controls.youtube.value) {
+        update.urls.youtube = new URL(form.controls.youtube.value);
       }
-      if (this.form!.controls.bbc.value) {
-        update.urls.bbc = new URL(this.form!.controls.bbc.value);
+      if (form.controls.bbc.value) {
+        update.urls.bbc = new URL(form.controls.bbc.value);
       }
-      if (this.form!.controls.internetArchive.value) {
-        update.urls.internetArchive = new URL(this.form!.controls.internetArchive.value);
+      if (form.controls.internetArchive.value) {
+        update.urls.internetArchive = new URL(form.controls.internetArchive.value);
       }
       var changes = getEpisodeChanges(this.originalEpisode!, update);
       if (Object.keys(changes).length == 0) {
@@ -230,13 +231,13 @@ export class EditEpisodeDialogComponent {
   }
 
   onGuestsSelectionChange() {
-    this.regroupGuests(this.form?.controls.guests.value);
+    this.regroupGuests(this.form()?.controls.guests.value);
   }
 
   onGuestsDropdownOpenChange(opened: boolean) {
     if (!opened) {
-      this.guestsFilterTerm = '';
-      this.regroupGuests(this.form?.controls.guests.value);
+      this.guestsFilterTerm.set('');
+      this.regroupGuests(this.form()?.controls.guests.value);
     }
   }
 
@@ -249,49 +250,50 @@ export class EditEpisodeDialogComponent {
     }
 
     if (event.key === 'Backspace') {
-      if (this.guestsFilterTerm.length > 0) {
-        this.guestsFilterTerm = this.guestsFilterTerm.substring(0, this.guestsFilterTerm.length - 1);
-        this.regroupGuests(this.form?.controls.guests.value);
+      const guestsFilterTerm = this.guestsFilterTerm();
+      if (guestsFilterTerm.length > 0) {
+        this.guestsFilterTerm.set(guestsFilterTerm.substring(0, guestsFilterTerm.length - 1));
+        this.regroupGuests(this.form()?.controls.guests.value);
       }
       event.preventDefault();
       return;
     }
 
     if (event.key === 'Escape') {
-      this.guestsFilterTerm = '';
-      this.regroupGuests(this.form?.controls.guests.value);
+      this.guestsFilterTerm.set('');
+      this.regroupGuests(this.form()?.controls.guests.value);
       event.preventDefault();
       return;
     }
 
     if (event.key.length === 1) {
-      this.guestsFilterTerm += event.key;
-      this.regroupGuests(this.form?.controls.guests.value);
+      this.guestsFilterTerm.set(this.guestsFilterTerm() + event.key);
+      this.regroupGuests(this.form()?.controls.guests.value);
       event.preventDefault();
     }
   }
 
   regroupGuests(selected: string[] | null | undefined) {
     const { selectedGuests, otherPeople } = regroupGuestsPure(
-      this.allPeople, this.originalEpisode?.guestPeople, selected, this.guestsFilterTerm
+      this.allPeople, this.originalEpisode?.guestPeople, selected, this.guestsFilterTerm()
     );
-    this.selectedGuests = selectedGuests;
-    this.otherPeople = otherPeople;
+    this.selectedGuests.set(selectedGuests);
+    this.otherPeople.set(otherPeople);
   }
 
   addSuggestedGuest(personName: string) {
-    const current = this.form?.controls.guests.value ?? [];
+    const current = this.form()?.controls.guests.value ?? [];
     if (current.includes(personName)) {
       return;
     }
-    this.form?.controls.guests.setValue([...current, personName]);
-    this.guestSuggestions = this.guestSuggestions.filter(x => x.person.name !== personName);
-    this.regroupGuests(this.form?.controls.guests.value);
+    this.form()?.controls.guests.setValue([...current, personName]);
+    this.guestSuggestions.set(this.guestSuggestions().filter(x => x.person.name !== personName));
+    this.regroupGuests(this.form()?.controls.guests.value);
   }
 
   openAddPerson() {
     const dialogRef = this.dialog.open(EditPersonDialogComponent, {
-      data: { create: true, personName: this.guestsFilterTerm || undefined },
+      data: { create: true, personName: this.guestsFilterTerm() || undefined },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -344,17 +346,17 @@ export class EditEpisodeDialogComponent {
       }
     }
 
-    const current = this.form?.controls.guests.value ?? [];
+    const current = this.form()?.controls.guests.value ?? [];
     if (!current.includes(personName)) {
-      this.form?.controls.guests.setValue([...current, personName]);
+      this.form()?.controls.guests.setValue([...current, personName]);
     }
-    this.regroupGuests(this.form?.controls.guests.value);
+    this.regroupGuests(this.form()?.controls.guests.value);
   }
 
   onSubjectsDropdownOpenChange(opened: boolean) {
     if (!opened) {
-      this.subjectsFilterTerm = '';
-      this.regroupSubjects(this.form?.controls.subjects.value);
+      this.subjectsFilterTerm.set('');
+      this.regroupSubjects(this.form()?.controls.subjects.value);
     }
   }
 
@@ -367,39 +369,40 @@ export class EditEpisodeDialogComponent {
     }
 
     if (event.key === 'Backspace') {
-      if (this.subjectsFilterTerm.length > 0) {
-        this.subjectsFilterTerm = this.subjectsFilterTerm.substring(0, this.subjectsFilterTerm.length - 1);
-        this.regroupSubjects(this.form?.controls.subjects.value);
+      const subjectsFilterTerm = this.subjectsFilterTerm();
+      if (subjectsFilterTerm.length > 0) {
+        this.subjectsFilterTerm.set(subjectsFilterTerm.substring(0, subjectsFilterTerm.length - 1));
+        this.regroupSubjects(this.form()?.controls.subjects.value);
       }
       event.preventDefault();
       return;
     }
 
     if (event.key === 'Escape') {
-      this.subjectsFilterTerm = '';
-      this.regroupSubjects(this.form?.controls.subjects.value);
+      this.subjectsFilterTerm.set('');
+      this.regroupSubjects(this.form()?.controls.subjects.value);
       event.preventDefault();
       return;
     }
 
     if (event.key.length === 1) {
-      this.subjectsFilterTerm += event.key;
-      this.regroupSubjects(this.form?.controls.subjects.value);
+      this.subjectsFilterTerm.set(this.subjectsFilterTerm() + event.key);
+      this.regroupSubjects(this.form()?.controls.subjects.value);
       event.preventDefault();
     }
   }
 
   onSubjectsSelectionChange() {
-    this.regroupSubjects(this.form?.controls.subjects.value);
+    this.regroupSubjects(this.form()?.controls.subjects.value);
   }
 
   regroupSubjects(selected: string[] | null | undefined) {
     const { selectedSubjects, hoistedSubjects, otherSubjects } = regroupSubjectsPure(
-      selected, this.allSubjects, this.podcastDefaultSubject, this.hoistedSubjectNames, this.subjectsFilterTerm
+      selected, this.allSubjects, this.podcastDefaultSubject, this.hoistedSubjectNames, this.subjectsFilterTerm()
     );
-    this.selectedSubjects = selectedSubjects;
-    this.hoistedSubjects = hoistedSubjects;
-    this.otherSubjects = otherSubjects;
+    this.selectedSubjects.set(selectedSubjects);
+    this.hoistedSubjects.set(hoistedSubjects);
+    this.otherSubjects.set(otherSubjects);
   }
 
   async getPodcast(headers: HttpHeaders, podcastIdentifier: string): Promise<Podcast | null> {

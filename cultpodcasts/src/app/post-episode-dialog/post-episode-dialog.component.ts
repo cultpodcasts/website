@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -31,13 +31,13 @@ import { FeatureSwtichService } from '../feature-switch-service';
     MatCheckboxModule
   ],
   templateUrl: './post-episode-dialog.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './post-episode-dialog.component.sass'
 })
 export class PostEpisodeDialogComponent {
   protected FeatureSwitch = FeatureSwitch;
-  isInError: boolean = false;
-  isSending: boolean = true;
+  readonly isInError = signal<boolean>(false);
+  readonly isSending = signal<boolean>(true);
   form: FormGroup<PostForm> | undefined;
   podcastIdentifier: string;
   episodeId: string;
@@ -74,7 +74,7 @@ export class PostEpisodeDialogComponent {
       this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
-            this.isSending = false;
+            this.isSending.set(false);
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
@@ -116,13 +116,13 @@ export class PostEpisodeDialogComponent {
             }
           },
           error: e => {
-            this.isSending = false;
-            this.isInError = true;
+            this.isSending.set(false);
+            this.isInError.set(true);
           }
         })
     }).catch(x => {
-      this.isSending = false;
-      this.isInError = true;
+      this.isSending.set(false);
+      this.isInError.set(true);
     });
   }
 
@@ -147,7 +147,7 @@ export class PostEpisodeDialogComponent {
       model.blueskyPost = true;
     }
     if (change) {
-      this.isSending = true;
+      this.isSending.set(true);
       var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
@@ -162,25 +162,25 @@ export class PostEpisodeDialogComponent {
           .subscribe(
             {
               next: resp => {
-                this.isSending = false;
+                this.isSending.set(false);
                 this.dialogRef.close({ response: resp, expectation: model })
               },
               error: e => {
                 console.error(e);
-                this.isSending = false;
+                this.isSending.set(false);
                 if (e.status == 400) {
                   const _resp = e.error as EpisodePublishResponse;
                   console.error(_resp);
                   this.dialogRef.close({ response: _resp, expectation: model })
                 } else {
-                  this.isInError = true;
+                  this.isInError.set(true);
                 }
               }
             }
           )
       }).catch(x => {
-        this.isSending = false;
-        this.isInError = true;
+        this.isSending.set(false);
+        this.isInError.set(true);
       });
     } else {
       this.dialogRef.close({ noChange: true });

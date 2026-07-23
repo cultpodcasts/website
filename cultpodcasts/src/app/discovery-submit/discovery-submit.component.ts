@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmit } from '../discovery-submit.interface';
@@ -15,20 +15,20 @@ import { DiscoveryInfoService } from '../discovery-info.service';
   selector: 'app-discovery-submit',
   templateUrl: './discovery-submit.component.html',
   styleUrls: ['./discovery-submit.component.sass'],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 
 export class DiscoverySubmitComponent {
   isAuthenticated: boolean = false;
-  isSending: boolean = false;
+  isSending = signal(false);
 
-  submitState: SubmitDiscoveryState = {
+  submitState = signal<SubmitDiscoveryState>({
     hasErrors: false,
     erroredItems: [],
     allErrored: false,
     endpointError: false
-  }
+  });
 
   constructor(
     private http: HttpClient,
@@ -52,7 +52,7 @@ export class DiscoverySubmitComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
-      this.isSending = true;
+      this.isSending.set(true);
       var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse>>(
         this.http.post<SubmitDiscoveryResponse>(
           endpoint,
@@ -60,33 +60,39 @@ export class DiscoverySubmitComponent {
           { headers: headers, observe: "response" }
         ));
       if (resp.status === 200) {
-        this.isSending = false;
+        this.isSending.set(false);
         const podcastEpisodeIds = (resp.body?.results ?? [])
           .filter(x => x.podcastId != null && x.episodeId != null)
           .map(x => `${x.podcastId!}/${x.episodeId!}`);
         const uniquePodcastEpisodeIds = [...new Set(podcastEpisodeIds)];
-        this.submitState.episodeIds = uniquePodcastEpisodeIds;
         if (resp.body?.errorsOccurred) {
-          this.submitState.hasErrors = true;
-          this.submitState.erroredItems = resp.body?.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
+          const erroredItems = resp.body?.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
           const containsAll = (arr1: string[], arr2: string[]) => arr2.every(arr2Item => arr1.includes(arr2Item))
           const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
-          this.submitState.allErrored = sameMembers(this.submitState.erroredItems, data.resultIds);
+          const allErrored = sameMembers(erroredItems, data.resultIds);
+          this.submitState.update(s => ({
+            ...s,
+            episodeIds: uniquePodcastEpisodeIds,
+            hasErrors: true,
+            erroredItems,
+            allErrored
+          }));
         } else {
+          this.submitState.update(s => ({ ...s, episodeIds: uniquePodcastEpisodeIds }));
           this.discoveryInfoSvc.getDiscoveryInfo();
           this.close();
         }
       } else {
-        this.isSending = false;
-        this.submitState.endpointError = true;
+        this.isSending.set(false);
+        this.submitState.update(s => ({ ...s, endpointError: true }));
       }
     } catch (error) {
-      this.isSending = false;
-      this.submitState.endpointError = true;
+      this.isSending.set(false);
+      this.submitState.update(s => ({ ...s, endpointError: true }));
     }
   }
 
   close() {
-    this.dialogRef.close(this.submitState);
+    this.dialogRef.close(this.submitState());
   }
 }

@@ -1,12 +1,12 @@
 <h2 mat-dialog-title>Edit Episode</h2>
 
 <mat-dialog-content>
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
-    } @else if (isInError) {
+    } @else if (isInError()) {
     <p id="error">An error occurred</p>
     } @else {
-    <form id="edit" [formGroup]="form!" (ngSubmit)="onSubmit()">
+    <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
                 <label>
@@ -15,11 +15,11 @@
                 </label>
                 <mat-form-field class="full-width">
                     <mat-label>Title</mat-label>
-                    <input type="text" [formControl]="form!.controls.title" matInput>
+                    <input type="text" [formControl]="form()!.controls.title" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Description</mat-label>
-                    <textarea [formControl]="form!.controls.description" matInput cdkTextareaAutosize
+                    <textarea [formControl]="form()!.controls.description" matInput cdkTextareaAutosize
                         cdkAutosizeMaxRows="5" matInput></textarea>
                 </mat-form-field>
             </mat-tab>
@@ -28,43 +28,43 @@
                     @if (featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
                     <label>
                         <span>Posted:</span>
-                        <mat-checkbox [formControl]="form!.controls.posted" />
+                        <mat-checkbox [formControl]="form()!.controls.posted" />
                     </label>
                     }
                     <label>
                         <span>Tweeted:</span>
-                        <mat-checkbox [formControl]="form!.controls.tweeted" />
+                        <mat-checkbox [formControl]="form()!.controls.tweeted" />
                     </label>
                     <label>
                         <span>Bluesky Post:</span>
-                        <mat-checkbox [formControl]="form!.controls.blueskyPosted" />
+                        <mat-checkbox [formControl]="form()!.controls.blueskyPosted" />
                     </label>
                     <label>
                         <span>Ignored:</span>
-                        <mat-checkbox [formControl]="form!.controls.ignored" />
+                        <mat-checkbox [formControl]="form()!.controls.ignored" />
                     </label>
                     <label>
                         <span>Removed:</span>
-                        <mat-checkbox [formControl]="form!.controls.removed" />
+                        <mat-checkbox [formControl]="form()!.controls.removed" />
                     </label>
                     <label>
                         <span>Explicit:</span>
-                        <mat-checkbox [formControl]="form!.controls.explicit" />
+                        <mat-checkbox [formControl]="form()!.controls.explicit" />
                     </label>
                 </div>
             </mat-tab>
             <mat-tab label="Urls">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify</mat-label>
-                    <input type="text" [formControl]="form!.controls.spotify" matInput>
+                    <input type="text" [formControl]="form()!.controls.spotify" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Apple</mat-label>
-                    <input type="text" [formControl]="form!.controls.apple" matInput>
+                    <input type="text" [formControl]="form()!.controls.apple" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube</mat-label>
-                    <input type="text" [formControl]="form!.controls.youtube" matInput>
+                    <input type="text" [formControl]="form()!.controls.youtube" matInput>
                 </mat-form-field>
                 <mat-accordion>
                     <mat-expansion-panel>
@@ -73,11 +73,11 @@
                         </mat-expansion-panel-header>
                         <mat-form-field class="full-width">
                     <mat-label>BBC</mat-label>
-                    <input type="text" [formControl]="form!.controls.bbc" matInput>
+                    <input type="text" [formControl]="form()!.controls.bbc" matInput>
                 </mat-form-field>
                         <mat-form-field class="full-width">
                     <mat-label>Internet Archive</mat-label>
-                    <input type="text" [formControl]="form!.controls.internetArchive" matInput>
+                    <input type="text" [formControl]="form()!.controls.internetArchive" matInput>
                 </mat-form-field>
                     </mat-expansion-panel>
                 </mat-accordion>
@@ -85,40 +85,40 @@
             <mat-tab label="Meta">
                 <mat-form-field class="full-width">
                     <mat-label>Release</mat-label>
-                    <input type="datetime-local" [formControl]="form!.controls.release" matInput>
+                    <input type="datetime-local" [formControl]="form()!.controls.release" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Duration</mat-label>
-                    <input type="text" [formControl]="form!.controls.duration" matInput>
+                    <input type="text" [formControl]="form()!.controls.duration" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Subjects</mat-label>
-                    <mat-select [formControl]="form!.controls.subjects" multiple [sortComparator]="noCompareFunction"
+                    <mat-select [formControl]="form()!.controls.subjects" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onSubjectsSelectionChange()"
                         (openedChange)="onSubjectsDropdownOpenChange($event)"
                         (keydown)="onSubjectsDropdownKeydown($event)">
-                        @if (enableDesktopSubjectTypingFilter && subjectsFilterTerm.length > 0) {
-                        <mat-option disabled>{{subjectsFilterTerm}}</mat-option>
+                        @if (enableDesktopSubjectTypingFilter && subjectsFilterTerm().length > 0) {
+                        <mat-option disabled>{{subjectsFilterTerm()}}</mat-option>
                         <mat-divider></mat-divider>
                         }
-                        @if (selectedSubjects.length > 0) {
-                        @for (subject of selectedSubjects; track subject) {
+                        @if (selectedSubjects().length > 0) {
+                        @for (subject of selectedSubjects(); track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                         }
-                        @if (hoistedSubjects.length > 0) {
-                        @if (selectedSubjects.length > 0) {
+                        @if (hoistedSubjects().length > 0) {
+                        @if (selectedSubjects().length > 0) {
                         <mat-divider></mat-divider>
                         }
-                        @for (subject of hoistedSubjects; track subject) {
+                        @for (subject of hoistedSubjects(); track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                         }
-                        @if (otherSubjects.length > 0) {
-                        @if (selectedSubjects.length > 0 || hoistedSubjects.length > 0) {
+                        @if (otherSubjects().length > 0) {
+                        @if (selectedSubjects().length > 0 || hoistedSubjects().length > 0) {
                         <mat-divider></mat-divider>
                         }
-                        @for (subject of otherSubjects; track subject) {
+                        @for (subject of otherSubjects(); track subject) {
                         <mat-option [value]="subject">{{subject}}</mat-option>
                         }
                         }
@@ -126,12 +126,12 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Search Terms</mat-label>
-                    <input type="text" [formControl]="form!.controls.searchTerms" matInput>
+                    <input type="text" [formControl]="form()!.controls.searchTerms" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Language</mat-label>
-                    <select matNativeControl [formControl]="form!.controls.lang">
-                        @for (language of languages | keyvalue:null; track language) {
+                    <select matNativeControl [formControl]="form()!.controls.lang">
+                        @for (language of languages() | keyvalue:null; track language) {
                         <option [value]="language.key">{{language.value}}</option>
                         }
                     </select>
@@ -140,42 +140,42 @@
             <mat-tab label="Images">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify</mat-label>
-                    <input type="text" [formControl]="form!.controls.spotifyImage" matInput>
+                    <input type="text" [formControl]="form()!.controls.spotifyImage" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Apple</mat-label>
-                    <input type="text" [formControl]="form!.controls.appleImage" matInput>
+                    <input type="text" [formControl]="form()!.controls.appleImage" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube</mat-label>
-                    <input type="text" [formControl]="form!.controls.youtubeImage" matInput>
+                    <input type="text" [formControl]="form()!.controls.youtubeImage" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Other</mat-label>
-                    <input type="text" [formControl]="form!.controls.otherImage" matInput>
+                    <input type="text" [formControl]="form()!.controls.otherImage" matInput>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Guests">
                 <mat-form-field class="full-width">
                     <mat-label>Guests</mat-label>
-                    <mat-select [formControl]="form!.controls.guests" multiple [sortComparator]="noCompareFunction"
+                    <mat-select [formControl]="form()!.controls.guests" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onGuestsSelectionChange()"
                         (openedChange)="onGuestsDropdownOpenChange($event)"
                         (keydown)="onGuestsDropdownKeydown($event)">
-                        @if (enableDesktopSubjectTypingFilter && guestsFilterTerm.length > 0) {
-                        <mat-option disabled>{{guestsFilterTerm}}</mat-option>
+                        @if (enableDesktopSubjectTypingFilter && guestsFilterTerm().length > 0) {
+                        <mat-option disabled>{{guestsFilterTerm()}}</mat-option>
                         <mat-divider></mat-divider>
                         }
-                        @if (selectedGuests.length > 0) {
-                        @for (person of selectedGuests; track person.id) {
+                        @if (selectedGuests().length > 0) {
+                        @for (person of selectedGuests(); track person.id) {
                         <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
                         }
                         }
-                        @if (otherPeople.length > 0) {
-                        @if (selectedGuests.length > 0) {
+                        @if (otherPeople().length > 0) {
+                        @if (selectedGuests().length > 0) {
                         <mat-divider></mat-divider>
                         }
-                        @for (person of otherPeople; track person.id) {
+                        @for (person of otherPeople(); track person.id) {
                         <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
                         }
                         }
@@ -184,10 +184,10 @@
                 <div class="guest-actions">
                     <button type="button" matButton="text" (click)="openAddPerson()">Add person</button>
                 </div>
-                @if (selectedGuests.length > 0) {
+                @if (selectedGuests().length > 0) {
                 <div class="guest-suggestions">
                     <span>Selected:</span>
-                    @for (person of selectedGuests; track person.id) {
+                    @for (person of selectedGuests(); track person.id) {
                     <div class="guest-row">
                         <span>{{personLabel(person)}}</span>
                         <button type="button" matButton="text" (click)="openEditPerson(person)">Edit</button>
@@ -195,10 +195,10 @@
                     }
                 </div>
                 }
-                @if (guestSuggestions.length > 0) {
+                @if (guestSuggestions().length > 0) {
                 <div class="guest-suggestions">
                     <span>Suggested from title/description:</span>
-                    @for (suggestion of guestSuggestions; track suggestion.person.id) {
+                    @for (suggestion of guestSuggestions(); track suggestion.person.id) {
                     <div class="guest-row">
                         <span>{{personLabel(suggestion.person)}} ({{suggestion.matchResults[0]?.term}})</span>
                         <button type="button" matButton="text" (click)="addSuggestedGuest(suggestion.person.name)">Add</button>
@@ -214,5 +214,5 @@
 
 <mat-dialog-actions>
     <button matButton="text" (click)="close()">Close</button>
-    <button matButton="filled" [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+    <button matButton="filled" [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

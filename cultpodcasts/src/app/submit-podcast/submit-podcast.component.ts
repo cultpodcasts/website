@@ -16,7 +16,7 @@ import { TextFieldModule } from '@angular/cdk/text-field';
   selector: 'app-submit-podcast',
   templateUrl: './submit-podcast.component.html',
   styleUrls: ['./submit-podcast.component.sass'],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatDialogModule,
     FormsModule,
