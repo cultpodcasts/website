@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { firstValueFrom, ReplaySubject, Subscription, timer } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -12,16 +13,16 @@ const interval = 60000;
 })
 export class DiscoveryInfoService {
   public discoveryInfo: ReplaySubject<DiscoveryInfo> = new ReplaySubject<DiscoveryInfo>(1);
-  roles: string[] = [];
-  timer: Subscription | undefined;
-  currentDiscoveryInfo: DiscoveryInfo | undefined;
+  private timer: Subscription | undefined;
+  private currentDiscoveryInfo: DiscoveryInfo | undefined;
 
-  constructor(
-    private auth: AuthServiceWrapper,
-    private http: HttpClient
-  ) {
-    this.auth.roles.subscribe(roles => {
-      this.roles = roles;
+  private readonly auth = inject(AuthServiceWrapper);
+  private readonly http = inject(HttpClient);
+  /** Curator roles drive whether the poll loop calls the API. */
+  private readonly roles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+
+  constructor() {
+    this.auth.roles.subscribe(() => {
       this.getDiscoveryInfo();
     });
   }
@@ -31,7 +32,7 @@ export class DiscoveryInfoService {
       this.timer.unsubscribe();
     }
     this.timer = timer(0, interval).subscribe(() => {
-      if (this.roles.includes("Curator")) {
+      if (this.roles().includes("Curator")) {
         var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
           authorizationParams: {
             audience: `https://api.cultpodcasts.com/`,
@@ -75,11 +76,5 @@ export class DiscoveryInfoService {
     return a?.documentCount === b?.documentCount &&
       a.numberOfResults === b.numberOfResults &&
       a.discoveryBegan?.getTime() === b.discoveryBegan?.getTime();
-  }
-
-  ngOnDestroy() {
-    if (this.timer) {
-      this.timer.unsubscribe();
-    }
   }
 }

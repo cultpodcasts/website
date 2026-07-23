@@ -1,4 +1,5 @@
-import { Component, inject, Input, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -42,6 +43,13 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
   styleUrl: './podcast-episode.component.sass'
 })
 export class PodcastEpisodeComponent {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  protected readonly auth = inject(AuthServiceWrapper);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
+  private readonly siteService = inject(SiteService);
 
   @Input()
   get episode(): SearchResult | undefined {
@@ -62,22 +70,9 @@ export class PodcastEpisodeComponent {
   private _parentLoaded: boolean = false;
 
   podcastName = signal("");
-  resultsHeading: string = "";
-  authRoles = signal<string[]>([]);
-  isSignedIn = signal(false);
+  protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
-
-  constructor(
-    private router: Router,
-    protected auth: AuthServiceWrapper,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private siteService: SiteService,
-  ) {
-    this.auth.roles.subscribe(roles => this.authRoles.set(roles));
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn.set(isSignedIn));
-  }
-  private route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<any> {
     this.populatePage();
@@ -87,8 +82,10 @@ export class PodcastEpisodeComponent {
     combineLatest(
       [this.route.params, this.route.queryParams],
       (params: Params, queryParams: Params) => ({ params, queryParams })
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
+      const { params } = res;
       this.podcastName.set(params["podcastName"]);
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName());

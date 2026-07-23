@@ -13,6 +13,7 @@ Angular 22 marks legacy Zone-dependent components with `ChangeDetectionStrategy.
 - [x] **Wave 1** Eager → OnPush (+ signals where async UI flags): send/* (`add/edit-episode-send`, `add/edit-podcast-send`, `edit-person-send`, `edit-subject-send`), snackbars (`episode-publish-response`, `submit-url-origin-response`), `publish-homepage`, `run-search-indexer`, `privacy-policy`, `terms-and-conditions`
 - [x] **Wave 2** remaining Eager → OnPush (+ signals): form dialogs (`add/edit-episode`, `add/edit-podcast`, `post-episode`, `edit-person`, `edit-subject`), thin dialogs (`send/submit-podcast`, `delete-episode`, `rename-podcast`, `manual-tweet`, `add-term`, `podcast-index`), `discovery-submit`, `discovery-schedule`, `podcast-episode`
 - [x] **API-page plain-field → signals**: podcast/search/subject/outgoing/episodes/bookmarks (template-bound query/sort/filter/heading/name/error state)
+- [x] **Auth0 / discovery poll**: `podcast-episode` + `PodcastsService` no longer cache auth in plain fields; `DiscoveryInfoService` roles via `toSignal` (toolbar already `toSignal(discoveryInfo)`)
 
 ## Before flipping zoneless
 
@@ -20,8 +21,8 @@ Do **not** call `provideZonelessChangeDetection()` or remove `zone.js` from [`an
 
 1. **Eager → OnPush + signals** — **done** (no remaining `ChangeDetectionStrategy.Eager` in `src/app`).
 2. **OnPush plain-field async writes** — **done** for list/API pages: podcast/search/subject/outgoing/episodes/bookmarks use signals for template-bound async state (`sortDirection`, filters, headings, names, etc.).
-3. **Auth0** — prefer `toSignal` / `async` pipe everywhere (toolbar is the pattern); stop assigning Auth0 observables into plain fields where still used.
-4. **Polling** — `DiscoveryInfoService` 60s `timer` consumers must stay reactive under zoneless.
+3. **Auth0** — **mostly done**: components use `toSignal(auth.roles)` / `toSignal(auth.isSignedIn)` / `async` pipe (toolbar); `PodcastsService` reads auth at call time via `firstValueFrom`. `AuthServiceWrapper` still bridges Auth0 → ReplaySubjects (fine).
+4. **Polling** — **done**: `DiscoveryInfoService` uses `toSignal` for roles; toolbar already binds via `toSignal(discoveryInfo)`.
 5. **Regression** — Material dialogs, infinite scroll (`ScrollDispatcher`), service worker messages, drag-drop, slot-machine counter, SSR prerender on Cloudflare.
 
 ## Flip steps (later)
