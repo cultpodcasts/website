@@ -1,10 +1,10 @@
 <section id="results">
     <div id="progresswrapper">
-        @if (isLoading) {
+        @if (isLoading()) {
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
         }
     </div>
-    @if (!isLoading && error) {
+    @if (!isLoading() && error()) {
     <ng-container>
         <p id="error">
             An error occurred.
@@ -16,7 +16,7 @@
     }
     <section id="resultsheading">
         <h2>Outgoing Episodes</h2>
-        @if (!isLoading && !error) {
+        @if (!isLoading() && !error()) {
         <button id="sort" mat-icon-button [matMenuTriggerFor]="options">
             <mat-icon>more_vert</mat-icon>
         </button>
@@ -53,10 +53,10 @@
             </button>
         </mat-menu>
     </section>
-    @if (!isLoading && episodes?.length==0) {
+    @if (!isLoading() && episodes()?.length==0) {
     <p>No outgoing episodes. Adjust the filters to broaden the range of episodes checked.</p>
     }
-    @for (result of episodes;track result.id) {
+    @for (result of episodes(); track result.id) {
     <mat-card class="result">
         <mat-card-header>
             <button mat-icon-button [matMenuTriggerFor]="menu">
@@ -71,13 +71,13 @@
                     <mat-icon>send</mat-icon>
                     <span>Post Episode</span>
                 </button>
-                @if (authRoles.includes("Curator") && result.podcastName) {
+                @if (authRoles().includes("Curator") && result.podcastName) {
                 <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName!)">
                     <mat-icon>edit</mat-icon>
                     <span>Edit Podcast</span>
                 </button>
                 }
-                @if (authRoles.includes("Admin")) {
+                @if (authRoles().includes("Admin")) {
                 <button [disabled]="result.tweeted||result.posted" mat-menu-item
                     (click)="delete(result.podcastId!, result.id)">
                     <mat-icon>delete</mat-icon>
@@ -129,7 +129,7 @@
     </mat-card>
     }
 </section>
-@if (!isLoading && !error) {
+@if (!isLoading() && !error()) {
 <div id="cta-button">
     <button mat-flat-button color="primary" (click)="ngOnInit()">Refresh</button>
 </div>

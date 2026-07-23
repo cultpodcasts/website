@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
@@ -33,27 +33,30 @@ const autoHiddenThreshold = 0.05;
     DatePipe
   ],
   templateUrl: './discovery-api.component.html',
-  styleUrl: './discovery-api.component.sass'
+  styleUrl: './discovery-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DiscoveryApiComponent implements OnDestroy {
+export class DiscoveryApiComponent {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
 
-  results: DiscoveryResult[] | undefined;
-  documentIds: string[] = [];
-  selectedIds: string[] = [];
-  hiddenCount: number = 0;
-  includeHidden: boolean = false;
-  isLoading: boolean = true;
-  minDate: Date | undefined;
-  saveDisabled: boolean = true;
-  closeDisabled: boolean = false;
-  displaySave: boolean = false;
-  submitted: boolean = false;
+  results = signal<DiscoveryResult[] | undefined>(undefined);
+  documentIds = signal<string[]>([]);
+  selectedIds = signal<string[]>([]);
+  hiddenCount = signal<number>(0);
+  includeHidden = signal<boolean>(false);
+  isLoading = signal<boolean>(true);
+  minDate = signal<Date | undefined>(undefined);
+  saveDisabled = signal<boolean>(true);
+  closeDisabled = signal<boolean>(false);
+  displaySave = signal<boolean>(false);
+  submitted = signal<boolean>(false);
   submittedSubject: Subject<boolean> = new Subject<boolean>();
   resultsFilterSubject: Subject<string> = new Subject<string>();
   erroredSubject: Subject<string[]> = new Subject<string[]>();
-  resultsFilter: string = "all";
-  isInError: boolean = false;
+  resultsFilter = signal<string>("all");
+  isInError = signal<boolean>(false);
+
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -62,7 +65,9 @@ export class DiscoveryApiComponent implements OnDestroy {
     private snackBar: MatSnackBar,
     private router: Router,
     private siteService: SiteService
-  ) { }
+  ) {
+    this.destroyRef.onDestroy(() => this.toggleDiscoverySnapClass(false));
+  }
 
   ngOnInit() {
     this.toggleDiscoverySnapClass(true);
@@ -72,10 +77,6 @@ export class DiscoveryApiComponent implements OnDestroy {
     this.siteService.setSubject(null);
 
     this.loadResults(false);
-  }
-
-  ngOnDestroy() {
-    this.toggleDiscoverySnapClass(false);
   }
 
   private toggleDiscoverySnapClass(enabled: boolean) {
@@ -89,9 +90,9 @@ export class DiscoveryApiComponent implements OnDestroy {
   }
 
   loadResults(includeHidden: boolean) {
-    this.isLoading = true;
-    this.isInError = false;
-    this.includeHidden = includeHidden;
+    this.isLoading.set(true);
+    this.isInError.set(false);
+    this.includeHidden.set(includeHidden);
 
     const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
@@ -110,58 +111,58 @@ export class DiscoveryApiComponent implements OnDestroy {
       this.http.get<DiscoveryResults>(endpoint.toString(), { headers: headers })
         .subscribe({
           next: resp => {
-            this.isInError = false;
-            this.results = resp.results.map(x => this.normalizeResult(x));
-            this.documentIds = resp.ids;
-            this.hiddenCount = resp.hiddenCount ?? 0;
+            this.isInError.set(false);
+            this.results.set(resp.results.map(x => this.normalizeResult(x)));
+            this.documentIds.set(resp.ids);
+            this.hiddenCount.set(resp.hiddenCount ?? 0);
             const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
             if (dates.length > 0) {
-              this.minDate = new Date(Math.min(...dates));
+              this.minDate.set(new Date(Math.min(...dates)));
             }
-            this.isLoading = false;
-            this.displaySave = this.hasQueueItems();
-            this.resultsFilterSubject.next(this.resultsFilter);
+            this.isLoading.set(false);
+            this.displaySave.set(this.hasQueueItems());
+            this.resultsFilterSubject.next(this.resultsFilter());
           },
           error: () => {
-            this.isLoading = false;
-            this.isInError = true;
+            this.isLoading.set(false);
+            this.isInError.set(true);
           }
         });
     }).catch(() => {
-      this.isLoading = false;
-      this.isInError = true;
+      this.isLoading.set(false);
+      this.isInError.set(true);
     });
   }
 
   visibleResults(): DiscoveryResult[] {
-    return this.results?.filter(x => !x.autoHidden) ?? [];
+    return this.results()?.filter(x => !x.autoHidden) ?? [];
   }
 
   hiddenResults(): DiscoveryResult[] {
-    return this.results?.filter(x => x.autoHidden) ?? [];
+    return this.results()?.filter(x => x.autoHidden) ?? [];
   }
 
   displayedResults(): DiscoveryResult[] {
-    switch (this.resultsFilter) {
+    switch (this.resultsFilter()) {
       case 'hidden':
         return this.hiddenResults();
       case 'selected':
-        return (this.results ?? []).filter(x => this.selectedIds.includes(x.id));
+        return (this.results() ?? []).filter(x => this.selectedIds().includes(x.id));
       default:
         return this.visibleResults();
     }
   }
 
   hasQueueItems(): boolean {
-    return this.visibleResults().length > 0 || this.hiddenCount > 0;
+    return this.visibleResults().length > 0 || this.hiddenCount() > 0;
   }
 
   async close() {
-    if (this.selectedIds.length > 0) {
+    if (this.selectedIds().length > 0) {
       return;
     }
-    const hiddenNote = this.hiddenCount > 0
-      ? ` ${this.hiddenCount} auto-hidden item(s) will also be rejected.`
+    const hiddenNote = this.hiddenCount() > 0
+      ? ` ${this.hiddenCount()} auto-hidden item(s) will also be rejected.`
       : '';
     let dialogRef = this.dialog.open(ConfirmComponent, {
       data: {
@@ -179,10 +180,10 @@ export class DiscoveryApiComponent implements OnDestroy {
   }
 
   private async confirmSubmit(): Promise<boolean> {
-    const unselectedVisible = this.visibleResults().filter(x => !this.selectedIds.includes(x.id)).length;
-    const unreviewedHidden = this.includeHidden
-      ? this.results?.filter(x => x.autoHidden && !this.selectedIds.includes(x.id)).length ?? 0
-      : this.hiddenCount;
+    const unselectedVisible = this.visibleResults().filter(x => !this.selectedIds().includes(x.id)).length;
+    const unreviewedHidden = this.includeHidden()
+      ? this.results()?.filter(x => x.autoHidden && !this.selectedIds().includes(x.id)).length ?? 0
+      : this.hiddenCount();
 
     if (unselectedVisible === 0 && unreviewedHidden === 0) {
       return true;
@@ -209,12 +210,12 @@ export class DiscoveryApiComponent implements OnDestroy {
   }
 
   async save() {
-    if (this.selectedIds.length > 0 && !(await this.confirmSubmit())) {
+    if (this.selectedIds().length > 0 && !(await this.confirmSubmit())) {
       return;
     }
 
-    this.saveDisabled = true;
-    this.closeDisabled = true;
+    this.saveDisabled.set(true);
+    this.closeDisabled.set(true);
     this.submittedSubject.next(true);
 
     const dialog = this.dialog
@@ -228,9 +229,9 @@ export class DiscoveryApiComponent implements OnDestroy {
           if (result.hasErrors) {
             snackBarMessage = "Discovery Sent! Errors Occured."
             snackBarDuration = 10000;
-            this.resultsFilter = "errored";
+            this.resultsFilter.set("errored");
             this.erroredSubject.next(result.erroredItems);
-            this.resultsFilterSubject.next(this.resultsFilter);
+            this.resultsFilterSubject.next(this.resultsFilter());
           }
           const results = result.episodeIds?.length ?? 0;
           const review: boolean = !result.hasErrors && results > 0;
@@ -241,41 +242,39 @@ export class DiscoveryApiComponent implements OnDestroy {
               this.router.navigate(["/episodes", episodeIds])
             });
           }
-          this.displaySave = false;
-          this.submitted = true;
-          this.submittedSubject.next(this.submitted);
+          this.displaySave.set(false);
+          this.submitted.set(true);
+          this.submittedSubject.next(this.submitted());
         } else {
-          this.submitted = false;
-          this.submittedSubject.next(this.submitted);
-          this.closeDisabled = this.selectedIds.length > 0;
-          this.saveDisabled = this.selectedIds.length === 0;
+          this.submitted.set(false);
+          this.submittedSubject.next(this.submitted());
+          this.closeDisabled.set(this.selectedIds().length > 0);
+          this.saveDisabled.set(this.selectedIds().length === 0);
         }
       });
     await dialog.componentInstance.submit({
-      documentIds: this.documentIds!,
-      resultIds: this.selectedIds
+      documentIds: this.documentIds(),
+      resultIds: this.selectedIds()
     });
   }
 
   handleEvent($event: { id: string; selected: boolean; }) {
     if ($event.selected) {
-      if (!this.selectedIds.includes($event.id)) {
-        this.selectedIds.push($event.id);
-      }
+      this.selectedIds.update(ids => ids.includes($event.id) ? ids : [...ids, $event.id]);
     } else {
-      this.selectedIds = this.selectedIds.filter(x => x !== $event.id);
+      this.selectedIds.update(ids => ids.filter(x => x !== $event.id));
     }
-    this.closeDisabled = this.selectedIds.length > 0;
-    this.saveDisabled = this.selectedIds.length === 0;
+    this.closeDisabled.set(this.selectedIds().length > 0);
+    this.saveDisabled.set(this.selectedIds().length === 0);
   }
 
   selectLikelyMatches() {
     const likelyIds = this.visibleResults()
       .filter(x => x.acceptProbability != null && x.acceptProbability >= likelyMatchThreshold)
       .map(x => x.id);
-    this.selectedIds = [...new Set([...this.selectedIds, ...likelyIds])];
-    this.closeDisabled = this.selectedIds.length > 0;
-    this.saveDisabled = this.selectedIds.length === 0;
+    this.selectedIds.update(ids => [...new Set([...ids, ...likelyIds])]);
+    this.closeDisabled.set(this.selectedIds().length > 0);
+    this.saveDisabled.set(this.selectedIds().length === 0);
     this.submittedSubject.next(false);
   }
 
@@ -288,13 +287,13 @@ export class DiscoveryApiComponent implements OnDestroy {
 
   resultsFilterChange($event: MatButtonToggleChange) {
     const nextFilter = $event.value;
-    if (nextFilter === 'hidden' && !this.includeHidden) {
-      this.resultsFilter = nextFilter;
+    if (nextFilter === 'hidden' && !this.includeHidden()) {
+      this.resultsFilter.set(nextFilter);
       this.loadResults(true);
       return;
     }
-    this.resultsFilter = nextFilter;
-    this.resultsFilterSubject.next(this.resultsFilter);
+    this.resultsFilter.set(nextFilter);
+    this.resultsFilterSubject.next(this.resultsFilter());
   }
 
   showHiddenReview() {

@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -58,16 +59,17 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodeGuestsComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
-  styleUrl: './outgoing-episodes-api.component.sass'
+  styleUrl: './outgoing-episodes-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OutgoingEpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected FeatureSwitch = FeatureSwitch;
 
-  episodes: ApiEpisode[] | undefined;
-  error: boolean = false;
-  isLoading: boolean = true;
+  protected episodes = signal<ApiEpisode[] | undefined>(undefined);
+  protected error = signal<boolean>(false);
+  protected isLoading = signal<boolean>(true);
   sortDirection: string = sortParamDateDesc;
 
   days: number | undefined;
@@ -75,22 +77,23 @@ export class OutgoingEpisodesApiComponent {
   tweeted: boolean | undefined;
   blueskyPosted: boolean | undefined = true;
   token: string = "";
-  authRoles: string[] = [];
-  updatingEpisodeId: string | null = null;
-  updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
-  addingGuest: { [episodeId: string]: string } = {};
+  protected updatingEpisodeId = signal<string | null>(null);
+  protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | null>(null);
+  protected addingGuest = signal<{ [episodeId: string]: string }>({});
+
+  private destroyRef = inject(DestroyRef);
+  private route = inject(ActivatedRoute);
+  protected auth = inject(AuthServiceWrapper);
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 
   constructor(
-    protected auth: AuthServiceWrapper,
     private http: HttpClient,
-    private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService,
     private episodeUpdate: EpisodeUpdateService,
     protected featureSwtichService: FeatureSwtichService
   ) {
-    this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
   ngOnInit() {
@@ -103,11 +106,13 @@ export class OutgoingEpisodesApiComponent {
       this.days = parseInt(daysValue);
     }
 
-    this.isLoading = true;
-    this.error = false;
-    this.episodes = [];
+    this.isLoading.set(true);
+    this.error.set(false);
+    this.episodes.set([]);
 
-    this.route.params.subscribe(params => {
+    this.route.params.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
       const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
@@ -118,8 +123,8 @@ export class OutgoingEpisodesApiComponent {
         this.token = _token;
         this.getEpisodes();
       }).catch(x => {
-        this.isLoading = false;
-        this.error = true;
+        this.isLoading.set(false);
+        this.error.set(true);
         console.error(x);
       });
     })
@@ -134,14 +139,18 @@ export class OutgoingEpisodesApiComponent {
   }
 
   setSort(sort: string) {
+    const current = this.episodes();
+    if (!current) {
+      return;
+    }
     if (sort != sortParamDateDesc) {
-      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
+      this.episodes.set([...current].sort((a: ApiEpisode, b: ApiEpisode) => {
         return a.release.getTime() - b.release.getTime();
-      })
+      }));
     } else {
-      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
+      this.episodes.set([...current].sort((a: ApiEpisode, b: ApiEpisode) => {
         return b.release.getTime() - a.release.getTime();
-      })
+      }));
     }
   }
 
@@ -165,23 +174,23 @@ export class OutgoingEpisodesApiComponent {
   }
 
   isUpdating(episodeId: string): boolean {
-    return this.updatingEpisodeId === episodeId;
+    return this.updatingEpisodeId() === episodeId;
   }
 
   isLoadingIgnored(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'ignored';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'ignored';
   }
 
   isLoadingRemoved(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'removed';
   }
 
   isLoadingTweeted(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'tweeted';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'tweeted';
   }
 
   isLoadingBluesky(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'bluesky';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'bluesky';
   }
 
   isStatusActionLoading(episodeId: string): boolean {
@@ -191,10 +200,17 @@ export class OutgoingEpisodesApiComponent {
       || this.isLoadingBluesky(episodeId);
   }
 
+  private refreshEpisodesSignal() {
+    const current = this.episodes();
+    if (current) {
+      this.episodes.set([...current]);
+    }
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
-      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated));
     } catch (e) {
       console.error(e);
     }
@@ -208,18 +224,18 @@ export class OutgoingEpisodesApiComponent {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    this.updatingEpisodeId = episode.id;
-    this.updatingFlag = flag;
+    this.updatingEpisodeId.set(episode.id);
+    this.updatingFlag.set(flag);
     try {
       const updated = await action();
-      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated));
     } catch (e) {
       console.error(e);
       this.snackBar.open("Failed to update episode", "Ok", { duration: 5000 });
       throw e;
     } finally {
-      this.updatingEpisodeId = null;
-      this.updatingFlag = null;
+      this.updatingEpisodeId.set(null);
+      this.updatingFlag.set(null);
     }
   }
 
@@ -232,7 +248,7 @@ export class OutgoingEpisodesApiComponent {
   }
 
   addSuggestedGuest(episode: ApiEpisode, guestName: string) {
-    if (this.isUpdating(episode.id) || this.addingGuest[episode.id]) {
+    if (this.isUpdating(episode.id) || this.addingGuest()[episode.id]) {
       return;
     }
     const suggestion = episode.guestSuggestions?.find(x => x.person.name === guestName);
@@ -245,7 +261,8 @@ export class OutgoingEpisodesApiComponent {
 
     episode.guestPeople = [...previousGuests, suggestion.person];
     episode.guestSuggestions = previousSuggestions.filter(x => x.person.name !== guestName);
-    this.addingGuest[episode.id] = guestName;
+    this.refreshEpisodesSignal();
+    this.addingGuest.update(g => ({ ...g, [episode.id]: guestName }));
 
     const nextGuestNames = previousGuestNames.includes(guestName)
       ? previousGuestNames
@@ -253,21 +270,26 @@ export class OutgoingEpisodesApiComponent {
 
     this.episodeUpdate.setGuests(episode, nextGuestNames)
       .then(updated => {
-        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated));
       })
       .catch(e => {
         console.error(e);
         episode.guestPeople = previousGuests;
         episode.guestSuggestions = previousSuggestions;
+        this.refreshEpisodesSignal();
         this.snackBar.open("Failed to add guest", "Ok", { duration: 5000 });
       })
       .finally(() => {
-        delete this.addingGuest[episode.id];
+        this.addingGuest.update(g => {
+          const next = { ...g };
+          delete next[episode.id];
+          return next;
+        });
       });
   }
 
   loadingGuestName(episodeId: string): string | null {
-    return this.addingGuest[episodeId] ?? null;
+    return this.addingGuest()[episodeId] ?? null;
   }
 
   toggleIgnored(episode: ApiEpisode) {
@@ -281,6 +303,7 @@ export class OutgoingEpisodesApiComponent {
     if (next) {
       episode.removed = false;
     }
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleIgnored(episode, next),
@@ -288,6 +311,7 @@ export class OutgoingEpisodesApiComponent {
     ).catch(() => {
       episode.ignored = previousIgnored;
       episode.removed = previousRemoved;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -302,6 +326,7 @@ export class OutgoingEpisodesApiComponent {
     if (next) {
       episode.ignored = false;
     }
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleRemoved(episode, next),
@@ -309,6 +334,7 @@ export class OutgoingEpisodesApiComponent {
     ).catch(() => {
       episode.ignored = previousIgnored;
       episode.removed = previousRemoved;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -319,12 +345,14 @@ export class OutgoingEpisodesApiComponent {
     if (episode.tweeted) {
       const previous = episode.tweeted;
       episode.tweeted = false;
+      this.refreshEpisodesSignal();
       this.runEpisodeUpdate(
         episode,
         () => this.episodeUpdate.untweet(episode),
         'tweeted'
       ).catch(() => {
         episode.tweeted = previous;
+        this.refreshEpisodesSignal();
       });
       return;
     }
@@ -339,13 +367,13 @@ export class OutgoingEpisodesApiComponent {
       this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
       return;
     }
-    this.updatingEpisodeId = episode.id;
-    this.updatingFlag = 'tweeted';
+    this.updatingEpisodeId.set(episode.id);
+    this.updatingFlag.set('tweeted');
     try {
       const result = await this.episodeUpdate.publishTweet(episode);
       if (result.tweeted) {
         const updated = await this.episodeUpdate.fetchEpisode(episode.id);
-        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated));
         return;
       }
       if (result.failedTweetContent) {
@@ -364,7 +392,7 @@ export class OutgoingEpisodesApiComponent {
         const dialogResult = await firstValueFrom(dialogRef.afterClosed());
         if (dialogResult?.updated) {
           const updated = await this.episodeUpdate.fetchEpisode(episode.id);
-          this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+          this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated));
         }
         return;
       }
@@ -373,8 +401,8 @@ export class OutgoingEpisodesApiComponent {
       console.error(e);
       this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
     } finally {
-      this.updatingEpisodeId = null;
-      this.updatingFlag = null;
+      this.updatingEpisodeId.set(null);
+      this.updatingFlag.set(null);
     }
   }
 
@@ -385,12 +413,14 @@ export class OutgoingEpisodesApiComponent {
     const previous = episode.bluesky == true;
     const next = !previous;
     episode.bluesky = next;
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => next ? this.episodeUpdate.postBluesky(episode) : this.episodeUpdate.unpostBluesky(episode),
       'bluesky'
     ).catch(() => {
       episode.bluesky = previous;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -421,7 +451,7 @@ export class OutgoingEpisodesApiComponent {
   }
 
   getEpisodes() {
-    this.isLoading = true;
+    this.isLoading.set(true);
     let headers: HttpHeaders = new HttpHeaders();
     headers = headers.set("Authorization", "Bearer " + this.token);
 
@@ -439,13 +469,13 @@ export class OutgoingEpisodesApiComponent {
       .subscribe(
         {
           next: resp => {
-            this.isLoading = false;
-            this.error = false;
-            this.episodes = resp.body!;
+            this.isLoading.set(false);
+            this.error.set(false);
+            this.episodes.set(resp.body!);
           },
           error: e => {
-            this.isLoading = false;
-            this.error = true;
+            this.isLoading.set(false);
+            this.error.set(true);
             console.error(e);
           }
         }
