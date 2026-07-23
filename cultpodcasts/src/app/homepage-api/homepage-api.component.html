@@ -1,4 +1,8 @@
 <section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()">
+  <div class="nflx-search">
+    <app-search-bar></app-search-bar>
+  </div>
+
   @if (isLoading()) {
   <div class="nflx-loading">
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -61,30 +65,6 @@
           </a>
         </div>
       </div>
-
-      <div class="billboard__search">
-        <app-search-bar></app-search-bar>
-      </div>
-
-      <div class="billboard__stats" aria-label="Catalogue">
-        @if (weekEpisodeCount(); as weekCount) {
-        <p class="billboard__stat billboard__stat--week">
-          <span class="billboard__stat-value">{{ weekCount | number }}</span>
-          new this week
-        </p>
-        }
-        <p class="billboard__stat billboard__stat--catalog">
-          <a href="https://github.com/cultpodcasts/PublicDatabase">Index</a>
-          of
-          <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
-            [value]="homepage()?.episodeCount"
-            [title]="totalDuration()"></app-slot-machine-counter>
-          episodes
-          @if (totalDuration()) {
-          <span class="billboard__stat-duration">· {{ totalDuration() }}</span>
-          }
-        </p>
-      </div>
     </div>
 
     @if (heroSlides().length > 1) {
@@ -113,6 +93,36 @@
     }
   </section>
   }
+
+  <section class="catalogue" aria-label="Catalogue scale">
+    <div class="catalogue__inner">
+      @if (weekEpisodeCount(); as weekCount) {
+      <div class="catalogue__stat">
+        <p class="catalogue__value">{{ weekCount | number }}</p>
+        <p class="catalogue__label">New this week</p>
+      </div>
+      }
+      @if (episodeCount(); as count) {
+      <div class="catalogue__stat catalogue__stat--hero">
+        <p class="catalogue__value catalogue__value--count">
+          <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+            [value]="count"
+            [title]="totalDurationDays() ? totalDurationDays() + ' days' : undefined"></app-slot-machine-counter>
+        </p>
+        <p class="catalogue__label">
+          Episodes in the
+          <a href="https://github.com/cultpodcasts/PublicDatabase">index</a>
+        </p>
+      </div>
+      }
+      @if (totalDurationDays(); as days) {
+      <div class="catalogue__stat">
+        <p class="catalogue__value catalogue__value--duration">{{ days }}</p>
+        <p class="catalogue__label">Days of listening</p>
+      </div>
+      }
+    </div>
+  </section>
 
   <div class="nflx-rows">
     @for (rail of rails(); track rail.id) {

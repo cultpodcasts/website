@@ -24,6 +24,8 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { episodeImageUrl } from '../search-result-links';
 import { languageLabel } from '../subject-language-filter';
+import { episodeEmbedOptions } from '../episode-embed';
+import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
 
 export interface EpisodeRail {
   id: string;
@@ -78,7 +80,8 @@ export class HomepageApiComponent {
   ];
 
   protected homepage = signal<Homepage | undefined>(undefined);
-  protected totalDuration = signal<string>('');
+  protected episodeCount = signal<number | undefined>(undefined);
+  protected totalDurationDays = signal<string>('');
   readonly episodeCountBaseline = 80000;
   protected auth = inject(AuthServiceWrapper);
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
@@ -317,7 +320,8 @@ export class HomepageApiComponent {
 
     if (homepageContent) {
       this.homepage.set(homepageContent);
-      this.totalDuration.set(homepageContent.totalDuration.split('.')[0] + ' days');
+      this.episodeCount.set(homepageContent.episodeCount);
+      this.totalDurationDays.set(homepageContent.totalDuration.split('.')[0]);
       this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
       this.hasStartedScrolling = false;
       this.visibleCount = 0;

@@ -1,0 +1,67 @@
+@if (episode(); as ep) {
+@if (active(); as current) {
+<div class="dock">
+  <div class="dock__embed" [class.dock__embed--video]="current.service === 'youtube'">
+    @if (safeEmbedUrl(); as src) {
+    <iframe
+      [src]="src"
+      [title]="'Play ' + ep.episodeTitle + ' on ' + current.label"
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    }
+  </div>
+
+  <div class="dock__meta">
+    @if (artwork(); as art) {
+    <img class="dock__art" [src]="art" [alt]="" />
+    }
+    <div class="dock__text">
+      <p class="dock__title">{{ ep.episodeTitle }}</p>
+      <a class="dock__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ ep.podcastName }}</a>
+    </div>
+
+    <div class="dock__services" role="tablist" aria-label="Playback service">
+      @for (option of options(); track option.service) {
+      <button type="button" class="dock__service" role="tab"
+        [class.is-active]="option.service === current.service"
+        [attr.aria-selected]="option.service === current.service"
+        [attr.aria-label]="'Play on ' + option.label"
+        [attr.title]="option.label"
+        (click)="selectService(option.service, $event)">
+        @switch (option.service) {
+        @case ('youtube') {
+        <mat-icon svgIcon="youtube"></mat-icon>
+        }
+        @case ('spotify') {
+        <mat-icon svgIcon="spotify"></mat-icon>
+        }
+        @case ('apple') {
+        <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+        }
+        }
+      </button>
+      }
+    </div>
+
+    <a class="dock__external" mat-icon-button [href]="current.externalUrl" target="_blank"
+      rel="noopener noreferrer" [attr.aria-label]="'Open in ' + current.label">
+      <mat-icon>open_in_new</mat-icon>
+    </a>
+
+    <button type="button" class="dock__close" mat-icon-button aria-label="Close player" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+</div>
+} @else {
+<div class="dock dock--empty">
+  <p>No playable link for this episode.</p>
+  <a mat-stroked-button [routerLink]="['/podcast', ep.podcastName, ep.id]">Episode page</a>
+  <button type="button" mat-icon-button aria-label="Close player" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+}
+}

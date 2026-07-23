@@ -1,22 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  HostBinding,
-  Inject,
-  Input,
-  OnChanges,
-  OnDestroy,
-  OnInit,
+  DestroyRef,
   PLATFORM_ID,
-  SimpleChanges,
-  signal
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   DEFAULT_SLOT_MACHINE_PRESET,
   SLOT_MACHINE_PRESETS,
   SlotMachineAnimationPreset,
-  SlotMachinePreset
+  SlotMachinePreset,
 } from './slot-machine-counter.animation';
 
 export interface SlotColumn {
@@ -30,69 +28,62 @@ export interface SlotColumn {
   selector: 'app-slot-machine-counter',
   templateUrl: './slot-machine-counter.component.html',
   styleUrl: './slot-machine-counter.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.--slot-spin-duration]': 'spinDuration()',
+    '[style.--slot-settle-duration]': 'settleDuration()',
+    '[attr.title]': 'title() ?? null',
+  },
 })
-export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() baseline: number = 0;
-  @Input() value: number | null | undefined;
-  @Input() title: string | undefined;
-  @Input() preset: SlotMachinePreset = DEFAULT_SLOT_MACHINE_PRESET;
+export class SlotMachineCounterComponent {
+  readonly baseline = input(0);
+  readonly value = input<number | null | undefined>(undefined);
+  readonly title = input<string | undefined>(undefined);
+  readonly preset = input<SlotMachinePreset>(DEFAULT_SLOT_MACHINE_PRESET);
 
   protected readonly columns = signal<SlotColumn[]>([]);
-  reelDigits = Array.from({ length: 30 }, (_, index) => index % 10);
+  readonly reelDigits = Array.from({ length: 30 }, (_, index) => index % 10);
+
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
   private settleTimers: ReturnType<typeof setTimeout>[] = [];
   private displayedValue: number | undefined;
-  private prefersReducedMotion = false;
-  private animationPreset: SlotMachineAnimationPreset = SLOT_MACHINE_PRESETS[DEFAULT_SLOT_MACHINE_PRESET];
+  private readonly prefersReducedMotion: boolean;
+  private readonly animationPreset = computed((): SlotMachineAnimationPreset =>
+    SLOT_MACHINE_PRESETS[this.preset()] ?? SLOT_MACHINE_PRESETS[DEFAULT_SLOT_MACHINE_PRESET]
+  );
 
-  @HostBinding('style.--slot-spin-duration')
-  get spinDuration(): string {
-    return `${this.animationPreset.spinCycleMs}ms`;
-  }
+  protected readonly spinDuration = computed(() => `${this.animationPreset().spinCycleMs}ms`);
+  protected readonly settleDuration = computed(() => `${this.animationPreset().settleMs}ms`);
 
-  @HostBinding('style.--slot-settle-duration')
-  get settleDuration(): string {
-    return `${this.animationPreset.settleMs}ms`;
-  }
+  constructor() {
+    const browser = isPlatformBrowser(this.platformId);
+    this.prefersReducedMotion =
+      !browser ||
+      (typeof window !== 'undefined' &&
+        !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
-  constructor(@Inject(PLATFORM_ID) platformId: object) {
-    // Skip spin timers on SSR — Zone waits on setTimeout and deadlocks Workers.
-    if (!isPlatformBrowser(platformId)) {
-      this.prefersReducedMotion = true;
-      return;
-    }
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
-  }
+    // SSR: show baseline/value statically — Zone historically deadlocked on setTimeout.
+    this.columns.set(this.buildColumns(this.baseline(), false));
 
-  ngOnInit() {
-    this.applyPreset();
-    this.setColumns(this.baseline, false);
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['preset']) {
-      this.applyPreset();
-    }
-
-    if (this.value == null) {
-      if (changes['baseline']) {
-        this.displayedValue = undefined;
-        this.setColumns(this.baseline, false);
+    effect(() => {
+      const next = this.value();
+      const baseline = this.baseline();
+      if (next == null || Number.isNaN(next)) {
+        if (this.displayedValue !== undefined) {
+          this.displayedValue = undefined;
+        }
+        this.clearTimers();
+        this.columns.set(this.buildColumns(baseline, false));
+        return;
       }
-      return;
-    }
+      if (this.displayedValue === next) {
+        return;
+      }
+      this.animateTo(next);
+    });
 
-    const nextValue = this.value;
-    if (this.displayedValue === nextValue) {
-      return;
-    }
-    this.animateTo(nextValue);
-  }
-
-  ngOnDestroy() {
-    this.clearTimers();
+    this.destroyRef.onDestroy(() => this.clearTimers());
   }
 
   reelTransform(column: SlotColumn): string {
@@ -102,70 +93,71 @@ export class SlotMachineCounterComponent implements OnInit, OnChanges, OnDestroy
     return `translateY(-${column.settleDigit}em)`;
   }
 
-  private animateTo(target: number) {
+  private animateTo(target: number): void {
     this.clearTimers();
     this.displayedValue = target;
 
-    if (this.prefersReducedMotion) {
-      this.setColumns(target, false);
+    if (this.prefersReducedMotion || !isPlatformBrowser(this.platformId)) {
+      this.columns.set(this.buildColumns(target, false));
       return;
     }
 
-    this.setColumns(target, true);
+    this.columns.set(this.buildColumns(target, true));
 
     const digitColumnIndexes = this.columns()
       .map((column, index) => ({ column, index }))
-      .filter(entry => entry.column.type === 'digit')
-      .map(entry => entry.index);
+      .filter((entry) => entry.column.type === 'digit')
+      .map((entry) => entry.index);
 
     const [firstDigitIndex, ...spinningDigitIndexes] = digitColumnIndexes;
     if (firstDigitIndex !== undefined) {
-      this.columns.update(cols => cols.map((column, index) =>
-        index === firstDigitIndex && column.type === 'digit'
-          ? { ...column, spinning: false }
-          : column
-      ));
-    }
-
-    const { baseDelayMs, staggerMs } = this.animationPreset;
-
-    spinningDigitIndexes.forEach((columnIndex, order) => {
-      const timer = setTimeout(() => {
-        this.columns.update(cols => cols.map((column, index) =>
-          index === columnIndex && column.type === 'digit'
+      this.columns.update((cols) =>
+        cols.map((column, index) =>
+          index === firstDigitIndex && column.type === 'digit'
             ? { ...column, spinning: false }
             : column
-        ));
+        )
+      );
+    }
+
+    const { baseDelayMs, staggerMs } = this.animationPreset();
+    spinningDigitIndexes.forEach((columnIndex, order) => {
+      const timer = setTimeout(() => {
+        this.columns.update((cols) =>
+          cols.map((column, index) =>
+            index === columnIndex && column.type === 'digit'
+              ? { ...column, spinning: false }
+              : column
+          )
+        );
       }, baseDelayMs + order * staggerMs);
       this.settleTimers.push(timer);
     });
   }
 
-  private applyPreset() {
-    this.animationPreset = SLOT_MACHINE_PRESETS[this.preset] ?? SLOT_MACHINE_PRESETS[DEFAULT_SLOT_MACHINE_PRESET];
-  }
-
-  private setColumns(value: number, spinning: boolean) {
-    this.columns.set(this.formatValue(value).split('').map(char => {
-      if (char === ',') {
-        return { type: 'comma', display: ',', spinning: false, settleDigit: 0 };
-      }
-      const digit = parseInt(char, 10);
-      return {
-        type: 'digit',
-        display: char,
-        spinning,
-        settleDigit: digit
-      };
-    }));
+  private buildColumns(value: number, spinning: boolean): SlotColumn[] {
+    return this.formatValue(value)
+      .split('')
+      .map((char) => {
+        if (char === ',') {
+          return { type: 'comma', display: ',', spinning: false, settleDigit: 0 };
+        }
+        const digit = parseInt(char, 10);
+        return {
+          type: 'digit',
+          display: char,
+          spinning,
+          settleDigit: digit,
+        };
+      });
   }
 
   private formatValue(value: number): string {
     return value.toLocaleString('en-US');
   }
 
-  private clearTimers() {
-    this.settleTimers.forEach(timer => clearTimeout(timer));
+  private clearTimers(): void {
+    this.settleTimers.forEach((timer) => clearTimeout(timer));
     this.settleTimers = [];
   }
 }
