@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,12 +9,12 @@ import { CurationSubmitService } from '../curation-submit.service';
   selector: 'app-add-podcast-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './add-podcast-send.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './add-podcast-send.component.sass'
 })
 export class AddPodcastSendComponent {
-  isSending: boolean = true;
-  sendError: boolean = false;
+  readonly isSending = signal(true);
+  readonly sendError = signal(false);
 
   constructor(
     private dialogRef: MatDialogRef<AddPodcastSendComponent>,
@@ -27,8 +27,8 @@ export class AddPodcastSendComponent {
         this.dialogRef.close({ updated: true, response: resp.body });
       },
       error: e => {
-        this.isSending = false;
-        this.sendError = true;
+        this.isSending.set(false);
+        this.sendError.set(true);
         console.error(e);
       }
     });

@@ -1,4 +1,4 @@
-import { Component, Inject, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Inject, ViewEncapsulation, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { MatDialog } from '@angular/material/dialog';
@@ -10,13 +10,12 @@ import { PostEpisodeDialogResponseWrapper } from '../post-episode-dialog-respons
   imports: [],
   templateUrl: './episode-publish-response-snackbar.component.html',
   styleUrl: './episode-publish-response-snackbar.component.sass',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
 export class EpisodePublishResponseSnackbarComponent {
-  message: string | undefined;
-  failedTweet: string | undefined;
-  showManualTweet: boolean = false;
+  readonly message = signal<string | undefined>(undefined);
+  readonly showManualTweet = signal(false);
 
   constructor(
     public snackBarRef: MatSnackBarRef<EpisodePublishResponseSnackbarComponent>,
@@ -32,16 +31,16 @@ export class EpisodePublishResponseSnackbarComponent {
       console.error(this.data.postEpisodeDialogResponse.response.failedTweetContent)
     }
     if (this.data.postEpisodeDialogResponse.noChange) {
-      this.message = "No change made";
+      this.message.set("No change made");
     } else if (this.data.postEpisodeDialogResponse.response && this.data.postEpisodeDialogResponse.expectation) {
-      this.message = this.messageBuilder.createMessage(this.data.postEpisodeDialogResponse.response, this.data.postEpisodeDialogResponse.expectation);
+      this.message.set(this.messageBuilder.createMessage(this.data.postEpisodeDialogResponse.response, this.data.postEpisodeDialogResponse.expectation));
       if (this.data.postEpisodeDialogResponse.expectation.tweet && this.data.postEpisodeDialogResponse.response.failedTweetContent) {
         if (!this.data.postEpisodeDialogResponse.response.tweeted) {
-          this.showManualTweet = true;
+          this.showManualTweet.set(true);
         }
       }
     } else {
-      this.message = "Unknown state";
+      this.message.set("Unknown state");
     }
   }
 

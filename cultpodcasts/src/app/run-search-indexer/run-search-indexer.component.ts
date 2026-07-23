@@ -11,7 +11,7 @@ import { IndexerState } from '../indexer-state.interface';
   selector: 'app-run-search-indexer',
   imports: [MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './run-search-indexer.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './run-search-indexer.component.sass'
 })
 export class RunSearchIndexerComponent {

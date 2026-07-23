@@ -5,7 +5,7 @@ import { SeoService } from '../seo.service';
     selector: 'terms-and-conditions',
     templateUrl: './terms-and-conditions.component.html',
     styleUrls: ['./terms-and-conditions.component.sass'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true
 })
 export class TermsAndConditionsComponent {

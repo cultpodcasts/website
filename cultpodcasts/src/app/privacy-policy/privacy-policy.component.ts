@@ -8,7 +8,7 @@ import { environment } from './../../environments/environment';
   selector: 'privacy-policy',
   templateUrl: './privacy-policy.component.html',
   styleUrls: ['./privacy-policy.component.sass'],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true
 })
 export class PrivacyPolicyComponent {

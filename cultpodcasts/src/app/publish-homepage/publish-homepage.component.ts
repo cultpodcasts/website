@@ -10,7 +10,7 @@ import { environment } from './../../environments/environment';
   selector: 'app-publish-homepage',
   imports: [MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './publish-homepage.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './publish-homepage.component.sass'
 })
 export class PublishHomepageComponent {

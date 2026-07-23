@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { SubjectEntity } from '../subject-entity.interface';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,14 +9,14 @@ import { CurationSubmitService } from '../curation-submit.service';
   selector: 'app-edit-subject-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-subject-send.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-subject-send.component.sass'
 })
 export class EditSubjectSendComponent {
-  isSending: boolean = true;
-  sendError: boolean = false;
-  conflict: string | undefined;
-  create: boolean;
+  readonly isSending = signal(true);
+  readonly sendError = signal(false);
+  readonly conflict = signal<string | undefined>(undefined);
+  readonly create: boolean;
 
   constructor(
     private dialogRef: MatDialogRef<EditSubjectSendComponent>,
@@ -43,12 +43,12 @@ export class EditSubjectSendComponent {
       },
       error: e => {
         if (create && e.status == 409) {
-          this.isSending = false;
-          this.sendError = true;
-          this.conflict = e.error.conflict;
+          this.isSending.set(false);
+          this.sendError.set(true);
+          this.conflict.set(e.error.conflict);
         } else {
-          this.isSending = false;
-          this.sendError = true;
+          this.isSending.set(false);
+          this.sendError.set(true);
           console.error(e);
         }
       }
@@ -56,8 +56,9 @@ export class EditSubjectSendComponent {
   }
 
   close() {
-    if (this.conflict) {
-      this.dialogRef.close({ conflict: this.conflict });
+    const conflict = this.conflict();
+    if (conflict) {
+      this.dialogRef.close({ conflict });
     } else {
       this.dialogRef.close({ updated: false });
     }

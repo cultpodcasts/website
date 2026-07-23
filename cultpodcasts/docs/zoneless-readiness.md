@@ -9,13 +9,14 @@ Angular 22 marks legacy Zone-dependent components with `ChangeDetectionStrategy.
 - [x] Angular / Material **22** upgrade
 - [x] Cloudflare Worker `fetch` no longer uses `__zone_symbol__Promise` ([`server.ts`](../server.ts)) — native async Promise return
 - [x] ~37 components already `OnPush`; list/API pages use signals
-- [x] Angular 22 `Eager` applied to ~29 dialogs/send/snackbar components that still rely on Zone CD
+- [x] Angular 22 `Eager` applied to dialogs/send/snackbar components that still rely on Zone CD
+- [x] **Wave 1** Eager → OnPush (+ signals where async UI flags): send/* (`add/edit-episode-send`, `add/edit-podcast-send`, `edit-person-send`, `edit-subject-send`), snackbars (`episode-publish-response`, `submit-url-origin-response`), `publish-homepage`, `run-search-indexer`, `privacy-policy`, `terms-and-conditions`
 
 ## Before flipping zoneless
 
 Do **not** call `provideZonelessChangeDetection()` or remove `zone.js` from [`angular.json`](../angular.json) / [`package.json`](../package.json) until:
 
-1. **Eager → OnPush + signals** — convert each `ChangeDetectionStrategy.Eager` component so loading/error/auth flags are signals (or `async` pipe), not plain fields mutated inside `.subscribe`.
+1. **Eager → OnPush + signals** — remaining Eager form dialogs (`add/edit-episode`, `add/edit-podcast`, `post-episode`, `discovery-schedule`, …) and other Eager surfaces; loading/error/auth flags as signals (or `async` pipe), not plain fields mutated inside `.subscribe`.
 2. **OnPush plain-field async writes** — on API pages already OnPush, replace async assigns (`prevPage`, `resultsHeading`, auth role flags, etc.) with signals.
 3. **Auth0** — prefer `toSignal` / `async` pipe everywhere (toolbar is the pattern); stop assigning Auth0 observables into plain fields (`podcast-episode`, `discovery-submit`, `send-podcast`, …).
 4. **Polling** — `DiscoveryInfoService` 60s `timer` consumers must stay reactive under zoneless.
