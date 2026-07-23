@@ -38,6 +38,13 @@
         }
       </p>
       <p class="billboard__desc">{{ featuredDesc() }}</p>
+      @if (featuredSubjects().length > 0) {
+      <div class="billboard__subjects" aria-label="Subjects">
+        @for (subject of featuredSubjects(); track subject) {
+        <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ subject }}</a>
+        }
+      </div>
+      }
       <div class="billboard__actions">
         <a mat-flat-button class="billboard__play"
           [routerLink]="['/podcast', feature.podcastName, feature.id]">
@@ -91,8 +98,18 @@
 
   <div class="nflx-rows">
     @for (rail of rails(); track rail.id) {
-    <section class="rail" [attr.aria-label]="rail.title">
-      <h2 class="rail__title">{{ rail.title }}</h2>
+    <section class="rail" [class.rail--subject]="!!rail.subject" [attr.aria-label]="rail.title">
+      <div class="rail__heading">
+        @if (rail.subject; as subject) {
+        <a class="rail__title rail__title--link" [routerLink]="['/subject', subject]">
+          <span>{{ rail.title }}</span>
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+        <a class="rail__see-all" [routerLink]="['/subject', subject]">Browse all</a>
+        } @else {
+        <h2 class="rail__title">{{ rail.title }}</h2>
+        }
+      </div>
       <div class="rail__scroller" tabindex="0">
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {

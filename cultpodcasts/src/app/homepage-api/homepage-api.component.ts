@@ -28,6 +28,8 @@ export interface EpisodeRail {
   id: string;
   title: string;
   episodes: HomepageEpisode[];
+  /** When set, rail title links to /subject/:subject */
+  subject?: string;
 }
 
 @Component({
@@ -47,9 +49,11 @@ export interface EpisodeRail {
 export class HomepageApiComponent {
   private static readonly heroSlideCount = 8;
   private static readonly heroIntervalMs = 7500;
+  private static readonly subjectRailCount = 8;
+  private static readonly subjectRailMinEpisodes = 3;
 
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
-  private allEpisodes: HomepageEpisode[] = [];
+  private allEpisodes = signal<HomepageEpisode[]>([]);
   private visibleCount: number = 0;
   private hasStartedScrolling: boolean = false;
   protected podcastCount = signal<number | undefined>(undefined);
@@ -115,17 +119,63 @@ export class HomepageApiComponent {
     return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
   });
 
+  protected readonly featuredSubjects = computed(() => {
+    const subjects = this.featured()?.subjects ?? [];
+    return subjects.filter((s) => !s.startsWith('_')).slice(0, 4);
+  });
+
+  /** Full-week subject playlists (not limited to progressive day render). */
+  protected readonly subjectRails = computed((): EpisodeRail[] => {
+    const bySubject = new Map<string, HomepageEpisode[]>();
+    for (const ep of this.allEpisodes()) {
+      for (const raw of ep.subjects ?? []) {
+        if (!raw || raw.startsWith('_')) {
+          continue;
+        }
+        const list = bySubject.get(raw);
+        if (list) {
+          if (!list.some((e) => e.id === ep.id)) {
+            list.push(ep);
+          }
+        } else {
+          bySubject.set(raw, [ep]);
+        }
+      }
+    }
+
+    return [...bySubject.entries()]
+      .filter(([, eps]) => eps.length >= HomepageApiComponent.subjectRailMinEpisodes)
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
+      .slice(0, HomepageApiComponent.subjectRailCount)
+      .map(([subject, episodes]) => ({
+        id: `subject:${subject}`,
+        title: subject,
+        subject,
+        episodes: episodes
+          .slice()
+          .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime()),
+      }));
+  });
+
   protected readonly rails = computed((): EpisodeRail[] => {
     const g = this.grouped();
     const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
-    return keys.map((key) => {
+    const dayRails = keys.map((key) => {
       const d = this.ToDate(key);
       return {
-        id: key,
+        id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
         episodes: g[key],
-      };
+      } satisfies EpisodeRail;
     });
+
+    const subjects = this.subjectRails();
+    if (subjects.length === 0 || dayRails.length === 0) {
+      return [...dayRails, ...subjects];
+    }
+
+    // Lead with the newest day, then subject playlists, then remaining days.
+    return [dayRails[0], ...subjects, ...dayRails.slice(1)];
   });
 
   private siteService = inject(SiteService);
@@ -151,7 +201,7 @@ export class HomepageApiComponent {
 
   @HostListener('window:scroll')
   onWindowScroll(): void {
-    if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes.length === 0) {
+    if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes().length === 0) {
       return;
     }
 
@@ -256,10 +306,12 @@ export class HomepageApiComponent {
       this.podcastCount.set(homepageContent.recentEpisodes.length);
       this.hasStartedScrolling = false;
       this.visibleCount = 0;
-      this.allEpisodes = homepageContent.recentEpisodes.map((item) => ({
-        ...item,
-        release: new Date(item.release),
-      }));
+      this.allEpisodes.set(
+        homepageContent.recentEpisodes.map((item) => ({
+          ...item,
+          release: new Date(item.release),
+        }))
+      );
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
       this.isLoading.set(false);
       this.isInError.set(false);
@@ -271,13 +323,14 @@ export class HomepageApiComponent {
   }
 
   private loadMoreEpisodes(count: number): void {
-    const nextVisibleCount = Math.min(this.visibleCount + count, this.allEpisodes.length);
+    const episodes = this.allEpisodes();
+    const nextVisibleCount = Math.min(this.visibleCount + count, episodes.length);
     if (nextVisibleCount === this.visibleCount) {
       return;
     }
 
     this.visibleCount = nextVisibleCount;
-    const visibleEpisodes = this.allEpisodes.slice(0, this.visibleCount);
+    const visibleEpisodes = episodes.slice(0, this.visibleCount);
     this.grouped.set(
       visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
         const releaseDate = item.release as Date;
