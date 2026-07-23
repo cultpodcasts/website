@@ -1,8 +1,17 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser, KeyValue } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { KeyValue } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,13 +38,16 @@ export interface EpisodeRail {
     MatButtonModule,
     MatIconModule,
     SlotMachineCounterComponent,
-    SearchBarComponent
+    SearchBarComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageApiComponent {
+  private static readonly heroSlideCount = 8;
+  private static readonly heroIntervalMs = 7500;
+
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   private allEpisodes: HomepageEpisode[] = [];
   private visibleCount: number = 0;
@@ -44,7 +56,20 @@ export class HomepageApiComponent {
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
   readonly Weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  readonly Month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  readonly Month = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
 
   protected homepage = signal<Homepage | undefined>(undefined);
   protected totalDuration = signal<string>('');
@@ -58,18 +83,33 @@ export class HomepageApiComponent {
     nearEndThresholdPixels: 1200,
   };
 
-  /** Flat list currently rendered (for featured + “New this week” rail). */
+  protected readonly heroIndex = signal(0);
+  protected readonly heroPaused = signal(false);
+  protected readonly heroAnimating = signal(false);
+
   private readonly allEpisodesVisible = computed(() => {
     const g = this.grouped();
     const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
     return keys.flatMap((k) => g[k]);
   });
 
-  protected readonly featured = computed(() => this.allEpisodesVisible()[0] ?? undefined);
+  protected readonly heroSlides = computed(() =>
+    this.allEpisodesVisible().slice(0, HomepageApiComponent.heroSlideCount)
+  );
+
+  protected readonly featured = computed(() => {
+    const slides = this.heroSlides();
+    if (slides.length === 0) {
+      return undefined;
+    }
+    return slides[this.heroIndex() % slides.length];
+  });
+
   protected readonly featuredImage = computed(() => {
     const ep = this.featured();
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
+
   protected readonly featuredDesc = computed(() => {
     const text = this.featured()?.episodeDescription ?? '';
     return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
@@ -78,7 +118,7 @@ export class HomepageApiComponent {
   protected readonly rails = computed((): EpisodeRail[] => {
     const g = this.grouped();
     const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
-    const dayRails: EpisodeRail[] = keys.map((key) => {
+    return keys.map((key) => {
       const d = this.ToDate(key);
       return {
         id: key,
@@ -86,28 +126,27 @@ export class HomepageApiComponent {
         episodes: g[key],
       };
     });
-    const week = this.allEpisodesVisible();
-    if (week.length === 0) {
-      return dayRails;
-    }
-    return [
-      { id: 'new-this-week', title: 'New this week', episodes: week },
-      ...dayRails,
-    ];
   });
 
   private siteService = inject(SiteService);
   private homepageService = inject(HomepageService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private heroTimer: ReturnType<typeof setInterval> | undefined;
+  private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
+  private reduceMotion = false;
 
   ngOnInit() {
-    this.siteService.homepageRefresh$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        void this.loadHomepage();
-      });
+    this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      void this.loadHomepage();
+    });
     this.populatePage();
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      this.destroyRef.onDestroy(() => this.stopHeroCycle());
+    }
   }
 
   @HostListener('window:scroll')
@@ -135,8 +174,47 @@ export class HomepageApiComponent {
     return episodeImageUrl(episode)?.toString();
   }
 
+  slideImage(episode: HomepageEpisode): string | undefined {
+    return episodeImageUrl(episode)?.toString();
+  }
+
   durationLabel(duration: string): string {
     return duration.startsWith('0') ? duration.substring(1) : duration;
+  }
+
+  pauseHero(): void {
+    this.heroPaused.set(true);
+  }
+
+  resumeHero(): void {
+    this.heroPaused.set(false);
+  }
+
+  goHero(index: number): void {
+    const slides = this.heroSlides();
+    if (slides.length === 0) {
+      return;
+    }
+    this.transitionTo(index % slides.length);
+    this.restartHeroCycle();
+  }
+
+  nextHero(): void {
+    const n = this.heroSlides().length;
+    if (n === 0) {
+      return;
+    }
+    this.transitionTo((this.heroIndex() + 1) % n);
+    this.restartHeroCycle();
+  }
+
+  prevHero(): void {
+    const n = this.heroSlides().length;
+    if (n === 0) {
+      return;
+    }
+    this.transitionTo((this.heroIndex() - 1 + n) % n);
+    this.restartHeroCycle();
   }
 
   populatePage() {
@@ -156,6 +234,8 @@ export class HomepageApiComponent {
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
+    this.stopHeroCycle();
+    this.heroIndex.set(0);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 });
     }
@@ -183,6 +263,7 @@ export class HomepageApiComponent {
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
       this.isLoading.set(false);
       this.isInError.set(false);
+      this.startHeroCycle();
     } else {
       this.isLoading.set(false);
       this.isInError.set(true);
@@ -208,6 +289,53 @@ export class HomepageApiComponent {
         return group;
       }, {})
     );
+  }
+
+  private transitionTo(index: number): void {
+    if (index === this.heroIndex()) {
+      return;
+    }
+    this.heroAnimating.set(true);
+    this.heroIndex.set(index);
+    if (this.heroAnimTimer) {
+      clearTimeout(this.heroAnimTimer);
+    }
+    this.heroAnimTimer = setTimeout(() => this.heroAnimating.set(false), 700);
+  }
+
+  private startHeroCycle(): void {
+    this.stopHeroCycle();
+    if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
+      return;
+    }
+    if (this.heroSlides().length < 2) {
+      return;
+    }
+    this.heroTimer = setInterval(() => {
+      if (this.heroPaused()) {
+        return;
+      }
+      const n = this.heroSlides().length;
+      if (n < 2) {
+        return;
+      }
+      this.transitionTo((this.heroIndex() + 1) % n);
+    }, HomepageApiComponent.heroIntervalMs);
+  }
+
+  private restartHeroCycle(): void {
+    this.startHeroCycle();
+  }
+
+  private stopHeroCycle(): void {
+    if (this.heroTimer) {
+      clearInterval(this.heroTimer);
+      this.heroTimer = undefined;
+    }
+    if (this.heroAnimTimer) {
+      clearTimeout(this.heroAnimTimer);
+      this.heroAnimTimer = undefined;
+    }
   }
 
   ToDate = (dateStr: string) => {

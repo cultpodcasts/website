@@ -10,12 +10,25 @@
   </div>
   } @else {
   @if (featured(); as feature) {
-  <section class="billboard" aria-label="Featured episode">
-    <div class="billboard__backdrop" [style.background-image]="featuredImage() ? 'url(' + featuredImage() + ')' : null">
+  <section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
+    (mouseenter)="pauseHero()" (mouseleave)="resumeHero()" (focusin)="pauseHero()" (focusout)="resumeHero()">
+
+    <div class="billboard__stages" aria-hidden="true">
+      @for (slide of heroSlides(); track slide.id; let i = $index) {
+      <div class="billboard__stage" [class.is-active]="i === heroIndex()"
+        [style.background-image]="slideImage(slide) ? 'url(' + slideImage(slide) + ')' : null">
+      </div>
+      }
     </div>
+    <div class="billboard__grain" aria-hidden="true"></div>
     <div class="billboard__scrim" aria-hidden="true"></div>
-    <div class="billboard__content">
-      <p class="billboard__eyebrow">Cult Podcasts</p>
+    <div class="billboard__vignette" aria-hidden="true"></div>
+
+    <div class="billboard__content" [class.is-animating]="heroAnimating()">
+      <p class="billboard__eyebrow">
+        <span class="billboard__live" aria-hidden="true"></span>
+        Now featuring
+      </p>
       <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
       <p class="billboard__meta">
         <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
@@ -48,6 +61,31 @@
         episodes
       </p>
     </div>
+
+    @if (heroSlides().length > 1) {
+    <div class="billboard__controls">
+      <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
+        (click)="prevHero()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
+        (click)="nextHero()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
+        @for (slide of heroSlides(); track slide.id; let i = $index) {
+        <button type="button" class="billboard__dot" role="tab"
+          [class.is-active]="i === heroIndex()"
+          [attr.aria-selected]="i === heroIndex()"
+          [attr.aria-label]="'Show featured episode ' + (i + 1)"
+          (click)="goHero(i)">
+          <span class="billboard__dot-fill"
+            [class.is-running]="i === heroIndex() && !heroPaused()"></span>
+        </button>
+        }
+      </div>
+    </div>
+    }
   </section>
   }
 
