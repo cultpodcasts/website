@@ -1,16 +1,20 @@
 import { HttpContextToken, HttpInterceptorFn } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { switchMap } from 'rxjs';
+import { catchError, switchMap } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { environment } from '../environments/environment';
 
-/** Opt-in Auth0 scope for API calls (default: curate). */
-export const AUTH_SCOPE = new HttpContextToken(() => 'curate' as string);
+/**
+ * Opt-in Auth0 scope for API calls.
+ * Default `null` = public request (no Bearer). Curate callers must `.set(AUTH_SCOPE, 'curate')`.
+ */
+export const AUTH_SCOPE = new HttpContextToken<string | null>(() => null);
 
 /**
- * Attaches Bearer token for requests targeting the Cult Podcasts API host.
- * Skips when Authorization is already set, or when not running in the browser.
+ * Attaches Bearer token for API requests that opt in via AUTH_SCOPE.
+ * Skips when no scope, Authorization already set, or not running in the browser.
+ * If silent auth fails, continues without a token so public GETs still work.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const platformId = inject(PLATFORM_ID);
@@ -27,8 +31,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const auth = inject(AuthServiceWrapper);
   const scope = req.context.get(AUTH_SCOPE);
+  if (!scope) {
+    return next(req);
+  }
+
+  const auth = inject(AuthServiceWrapper);
 
   return auth.authService.getAccessTokenSilently({
     authorizationParams: {
@@ -42,6 +50,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           setHeaders: { Authorization: `Bearer ${token}` }
         })
       )
-    )
+    ),
+    catchError(() => next(req))
   );
 };
