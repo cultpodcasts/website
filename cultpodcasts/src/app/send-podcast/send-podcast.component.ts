@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { Share } from '../share.interface';
 import { ShareMode } from "../share-mode.enum";
@@ -28,14 +29,14 @@ export class SendPodcastComponent {
   readonly unknownError = signal(false);
   readonly submitError = signal(false);
   readonly shareUrl = signal<URL | undefined>(undefined);
-  private isAuthenticated = false;
   originResponse: SubmitUrlOriginResponse | undefined;
+
+  private auth = inject(AuthServiceWrapper);
+  private readonly isAuthenticated = toSignal(this.auth.authService.isAuthenticated$, { initialValue: false });
 
   constructor(
     private http: HttpClient,
-    private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>,
-    private auth: AuthServiceWrapper) {
-    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
+    private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>) {
   }
 
   close() {
@@ -49,7 +50,7 @@ export class SendPodcastComponent {
       this.isSending.set(true);
       const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
       let headers: HttpHeaders = new HttpHeaders();
-      if (this.isAuthenticated || localStorage.getItem("hasLoggedIn")) {
+      if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {
         let token: string | undefined;
         try {
           token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({

@@ -20,7 +20,6 @@ import { DiscoveryInfoService } from '../discovery-info.service';
 })
 
 export class DiscoverySubmitComponent {
-  isAuthenticated: boolean = false;
   isSending = signal(false);
 
   submitState = signal<SubmitDiscoveryState>({
@@ -35,7 +34,6 @@ export class DiscoverySubmitComponent {
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, SubmitDiscoveryState>,
     private auth: AuthServiceWrapper,
     private discoveryInfoSvc: DiscoveryInfoService) {
-    auth.authService.isAuthenticated$.subscribe(x => this.isAuthenticated = x);
   }
 
   public async submit(data: DiscoverySubmit) {

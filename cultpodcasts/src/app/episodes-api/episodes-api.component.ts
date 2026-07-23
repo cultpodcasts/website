@@ -61,7 +61,7 @@ export class EpisodesApiComponent {
   protected episodes = signal<ApiEpisode[] | undefined>(undefined);
   protected error = signal<boolean>(false);
   protected isLoading = signal<boolean>(true);
-  sortDirection: string = sortParamDateDesc;
+  protected sortDirection = signal<string>(sortParamDateDesc);
   protected updatingEpisodeId = signal<string | null>(null);
   protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | null>(null);
   protected addingGuest = signal<Record<string, string>>({});
@@ -145,7 +145,7 @@ export class EpisodesApiComponent {
   }
 
   setSort(sort: string) {
-    this.sortDirection = sort;
+    this.sortDirection.set(sort);
     const current = this.episodes();
     if (!current) {
       return;

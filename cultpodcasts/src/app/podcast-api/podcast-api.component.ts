@@ -4,7 +4,6 @@ import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
-import { SearchState } from '../search-state.interface';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
@@ -72,22 +71,18 @@ const sortParamDateDesc: string = "date-desc";
 })
 
 export class PodcastApiComponent {
-  searchState: SearchState = {
-    query: "",
-    page: 1,
-    sort: sortParamDateDesc,
-    filter: null
-  }
+  protected query = signal<string>("");
+  protected sortOrder = signal<string>(sortParamDateDesc);
+  private page: number = 1;
+  private filter: string | null = null;
 
-  podcastName: string = "";
-  prevPage: number = 0;
-  nextPage: number = 0;
+  protected podcastName = signal<string>("");
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected results = signal<SearchResult[]>([]);
   protected count = signal<number>(0);
-  resultsHeading: string = "";
+  protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
   protected facets = signal<SearchResultsFacets>({});
   protected subjects = signal<string[]>([]);
@@ -133,55 +128,52 @@ export class PodcastApiComponent {
         }
       }
       const { params, queryParams } = res;
-      this.podcastName = params["podcastName"];
+      this.podcastName.set(params["podcastName"]);
       let query = params["query"] ?? "";
       this.isLoading.set(true);
-      this.searchState.query = query;
-      this.siteService.setQuery(this.searchState.query);
-      this.siteService.setPodcast(this.podcastName);
+      this.query.set(query);
+      this.siteService.setQuery(this.query());
+      this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);
       if (queryParams[pageParam]) {
-        this.searchState.page = parseInt(queryParams[pageParam]);
-        this.prevPage = this.searchState.page - 1;
-        this.nextPage = this.searchState.page + 1;
+        this.page = parseInt(queryParams[pageParam]);
       } else {
-        this.nextPage = 2;
-        this.searchState.page = 1;
+        this.page = 1;
       }
       if (queryParams[sortParam]) {
-        this.searchState.sort = queryParams[sortParam];
+        this.sortOrder.set(queryParams[sortParam]);
       } else {
-        if (this.searchState.query) {
-          this.searchState.sort = sortParamRank;
+        if (this.query()) {
+          this.sortOrder.set(sortParamRank);
         } else {
-          this.searchState.sort = sortParamDateDesc;
+          this.sortOrder.set(sortParamDateDesc);
         }
       }
-      this.searchState.filter = `(podcastName eq '${this.podcastName.replaceAll("'", "''")}')`;
-      this.siteService.setFilter(this.searchState.filter);
+      this.filter = `(podcastName eq '${this.podcastName().replaceAll("'", "''")}')`;
+      this.siteService.setFilter(this.filter);
       this.execSearch(initial, initial);
     });
   }
 
   execSearch(reset: boolean, subsequent: boolean) {
     var sort: string = "";
-    if (this.searchState.sort == "date-asc") {
+    if (this.sortOrder() == "date-asc") {
       sort = "release asc";
-    } else if (this.searchState.sort == "date-desc") {
+    } else if (this.sortOrder() == "date-desc") {
       sort = "release desc";
     }
     this.oDataService.getEntitiesWithFacets<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
-        search: this.searchState.query,
+        search: this.query(),
         filter:
-          this.searchState.filter +
+          this.filter +
           this.subjectsFilter,
         searchMode: 'any',
         queryType: 'simple',
         count: true,
-        skip: this.infiniteScrollStrategy.getSkip(this.searchState.page),
-        top: this.infiniteScrollStrategy.getTake(this.searchState.page),
+        skip: this.infiniteScrollStrategy.getSkip(this.page),
+        top: this.infiniteScrollStrategy.getTake(this.page),
         facets: ["subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
@@ -197,7 +189,7 @@ export class PodcastApiComponent {
                 this.isScrolledToBottom() &&
                 !this.isSubsequentLoading()) {
                 this.isSubsequentLoading.set(true);
-                this.searchState.page++;
+                this.page++;
                 this.execSearch(false, false);
               }
             });
@@ -218,7 +210,7 @@ export class PodcastApiComponent {
         },
         error: (e) => {
           console.error(e);
-          this.resultsHeading = "Something went wrong. Please try again.";
+          this.errorMessage.set("Something went wrong. Please try again.");
           this.isLoading.set(false);
         }
       });
@@ -226,7 +218,7 @@ export class PodcastApiComponent {
 
   edit(episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { podcastIdentifier: this.podcastName, episodeId: episodeId },
+      data: { podcastIdentifier: this.podcastName(), episodeId: episodeId },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -251,7 +243,7 @@ export class PodcastApiComponent {
 
   editPodcast() {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
-      data: { podcastName: this.podcastName },
+      data: { podcastName: this.podcastName() },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -273,13 +265,13 @@ export class PodcastApiComponent {
   }
 
   setSort(sort: string) {
-    var url = `/podcast/${this.podcastName}`;
+    var url = `/podcast/${this.podcastName()}`;
     var query = this.siteService.getSiteData().query;
     if (query && query != "") {
       url = `${url}/${query}`;
     }
     var params: Params = {};
-    if (this.searchState.query) {
+    if (this.query()) {
       if (sort != sortParamRank) {
         params[sortParam] = sort;
       }
@@ -292,9 +284,9 @@ export class PodcastApiComponent {
   }
 
   search() {
-    let url = `search/${this.podcastName}`;
-    if (this.searchState.query) {
-      url += ` ${this.searchState.query}`;
+    let url = `search/${this.podcastName()}`;
+    if (this.query()) {
+      url += ` ${this.query()}`;
     }
     this.router.navigate([url]);
   }
@@ -331,7 +323,7 @@ export class PodcastApiComponent {
       .afterClosed()
       .subscribe(async result => {
         if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastName: this.podcastName, podcastId: undefined, shareMode: ShareMode.Text });
+          await this.sendPodcast({ url: result.url, podcastName: this.podcastName(), podcastId: undefined, shareMode: ShareMode.Text });
         }
       });
   }
@@ -354,7 +346,7 @@ export class PodcastApiComponent {
 
   renamePodcast() {
     const dialogRef = this.dialog.open<RenamePodcastDialogComponent, any, RenamePodcastDialogResponse>(RenamePodcastDialogComponent, {
-      data: { podcastName: this.podcastName },
+      data: { podcastName: this.podcastName() },
       disableClose: true,
       autoFocus: true
     });
@@ -405,13 +397,13 @@ export class PodcastApiComponent {
       var subjectsList = subjects.join(delimiter);
       this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsList}', '${delimiter}'))`;
     }
-    this.searchState.page = 1;
+    this.page = 1;
     this.execSearch(true, false);
   }
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;
-    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.searchState.page);
+    const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
   }
 

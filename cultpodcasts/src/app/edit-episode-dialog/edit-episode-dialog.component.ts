@@ -73,7 +73,7 @@ export class EditEpisodeDialogComponent {
 
   episodeId: string;
   podcastIdentifier: string;
-  podcastName: string = "";
+  readonly podcastName = signal<string>("");
   readonly isLoading = signal<boolean>(true);
   readonly isInError = signal<boolean>(false);
   subjects: string[] = [];
@@ -140,7 +140,7 @@ export class EditEpisodeDialogComponent {
         return;
       }
       this.podcastDefaultSubject = podcast?.defaultSubject ?? null;
-      this.podcastName = podcast.name!;
+      this.podcastName.set(podcast.name!);
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));

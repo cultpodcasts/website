@@ -77,7 +77,7 @@ export class BookmarksApiComponent {
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected noBookmarks = signal<boolean>(false);
   protected episodes = signal<ApiEpisode[]>([]);
-  protected sortDirection: sortMode = sortMode.addDatedDesc;
+  protected sortDirection = signal<sortMode>(sortMode.addDatedDesc);
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
   private scrollSubscribed = false;
@@ -147,7 +147,7 @@ export class BookmarksApiComponent {
         headers = headers.set("Authorization", "Bearer " + _token);
         const episodeResponses: Observable<BookmarkEpisodeLoadResult>[] = [];
         let orderedBookmarks = Array.from(this.bookmarks!);
-        if (this.sortDirection == sortMode.addDatedDesc) {
+        if (this.sortDirection() == sortMode.addDatedDesc) {
           orderedBookmarks = orderedBookmarks.reverse();
         }
         const items = orderedBookmarks.slice(start, end);
@@ -277,7 +277,7 @@ export class BookmarksApiComponent {
   }
 
   async setSort(mode: sortMode) {
-    this.sortDirection = mode;
+    this.sortDirection.set(mode);
     await this.reset();
   }
 
