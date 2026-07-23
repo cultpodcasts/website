@@ -23,6 +23,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { episodeImageUrl } from '../search-result-links';
+import { languageLabel } from '../subject-language-filter';
 
 export interface EpisodeRail {
   id: string;
@@ -231,6 +232,19 @@ export class HomepageApiComponent {
 
   durationLabel(duration: string): string {
     return duration.startsWith('0') ? duration.substring(1) : duration;
+  }
+
+  /** Non-English language label for badges; undefined when English/unknown. */
+  nonEnglishLabel(episode: HomepageEpisode): string | undefined {
+    const code = episode.language?.trim();
+    if (!code) {
+      return undefined;
+    }
+    const lower = code.toLowerCase();
+    if (lower === 'en' || lower.startsWith('en-') || lower.startsWith('en_')) {
+      return undefined;
+    }
+    return languageLabel(code);
   }
 
   pauseHero(): void {

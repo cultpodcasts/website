@@ -12,4 +12,6 @@ export interface HomepageEpisode {
   internetArchive: URL | undefined;
   subjects: string[] | undefined;
   image: URL | undefined;
+  /** Non-English IETF tag when present; omitted/undefined means English. */
+  language?: string;
 }

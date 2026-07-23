@@ -115,6 +115,24 @@
     a:hover
         text-decoration: underline
 
+.billboard__lang
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    margin-left: 8px
+    padding: 2px 8px 2px 6px
+    border-radius: 999px
+    background: rgba(255, 255, 255, 0.12)
+    border: 1px solid rgba(255, 255, 255, 0.22)
+    color: #fff
+    font-size: 0.78rem
+    font-weight: 600
+    vertical-align: middle
+    mat-icon
+        font-size: 14px
+        width: 14px
+        height: 14px
+
 .billboard__desc
     margin: 0 0 22px
     font-size: 1.05rem
@@ -418,6 +436,43 @@
         height: 48px
         color: #fff
         filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6))
+
+.poster__badges
+    position: absolute
+    left: 8px
+    right: 8px
+    bottom: 8px
+    z-index: 1
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 6px
+    pointer-events: none
+
+.poster__badge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    padding: 3px 7px
+    border-radius: 4px
+    background: rgba(0, 0, 0, 0.72)
+    color: #fff
+    font-size: 0.72rem
+    font-weight: 700
+    font-variant-numeric: tabular-nums
+    letter-spacing: 0.02em
+    backdrop-filter: blur(4px)
+    line-height: 1.2
+
+.poster__badge--lang
+    padding: 3px
+    mat-icon
+        font-size: 14px
+        width: 14px
+        height: 14px
+
+.poster__badge--duration
+    margin-left: auto
 
 .poster__meta
     margin-top: 8px

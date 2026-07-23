@@ -34,6 +34,12 @@
         <p class="billboard__meta">
           <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
           <span> · {{ durationLabel(feature.duration) }}</span>
+          @if (nonEnglishLabel(feature); as lang) {
+          <span class="billboard__lang" [attr.title]="lang">
+            <mat-icon aria-hidden="true">translate</mat-icon>
+            {{ lang }}
+          </span>
+          }
         </p>
         <p class="billboard__desc">{{ featuredDesc() }}</p>
         @if (featuredSubjects().length > 0) {
@@ -134,6 +140,14 @@
               }
               <div class="poster__play" aria-hidden="true">
                 <mat-icon>play_arrow</mat-icon>
+              </div>
+              <div class="poster__badges">
+                @if (nonEnglishLabel(item); as lang) {
+                <span class="poster__badge poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
+                  <mat-icon aria-hidden="true">translate</mat-icon>
+                </span>
+                }
+                <span class="poster__badge poster__badge--duration">{{ durationLabel(item.duration) }}</span>
               </div>
             </div>
             <div class="poster__meta">
