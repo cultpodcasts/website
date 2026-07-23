@@ -1,16 +1,14 @@
 #searchcontainer
-    margin-left: 8px
-    margin-right: 8px
+    margin: 12px 10px 4px
     #searchbar
-        align-items: baseline
-        margin-top: 10px
-        display: -webkit-flex
+        align-items: stretch
         display: flex
         list-style-type: none
         padding: 0
-        justify-content: flex-end
+        gap: 10px
         #searchbox
             flex-grow: 1
+            margin-bottom: -1.25em
             mat-chip
                 margin-top: -4px
                 margin-bottom: -4px
@@ -22,8 +20,12 @@
             input.mat-mdc-chip-input
                 flex: 1 0 10px
         #searchcta
-            margin-right: auto
-            margin-left: 8px
+            align-self: flex-start
+            height: 56px
+            min-width: 6.5rem
+            border-radius: 999px
+            font-weight: 600
+            letter-spacing: 0.02em
 
 @media screen and (min-width: 400px)
     .chiptext

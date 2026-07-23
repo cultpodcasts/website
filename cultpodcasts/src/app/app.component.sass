@@ -1,11 +1,12 @@
 @media screen and (max-width: 599px)
     #body
         width: 100%
-        max-width: 580px
+        max-width: var(--cp-column, 680px)
 
 @media screen and (min-width: 600px)
     #body
-        width: 580px
+        width: var(--cp-column, 680px)
+
 #body
     margin: 0 auto
     min-height: 100%
@@ -21,15 +22,18 @@
     align-items: center
     justify-content: center
     padding: 16px
-    background-color: rgba(0, 0, 0, 0.45)
+    background: color-mix(in srgb, var(--cp-ink, #0b0d12) 72%, transparent)
+    backdrop-filter: blur(8px)
 
 .drop-overlay-message
     margin: 0
-    padding: 16px 24px
-    border-radius: 12px
-    background-color: rgba(0, 0, 0, 0.7)
-    font-size: 1.1em
-    font-weight: 600
+    padding: 18px 28px
+    border-radius: var(--cp-radius, 14px)
+    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, transparent)
+    border: 1px solid color-mix(in srgb, var(--cp-amber, #e8a23a) 45%, transparent)
+    font-size: 1.15rem
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-weight: 400
 
 .drop-targets
     display: flex
@@ -44,29 +48,28 @@
     align-items: center
     gap: 8px
     padding: 24px 20px
-    border-radius: 12px
-    background-color: rgba(0, 0, 0, 0.7)
-    border: 2px solid rgba(255, 255, 255, 0.2)
+    border-radius: var(--cp-radius, 14px)
+    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, transparent)
+    border: 2px solid color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent)
     text-align: center
     cursor: copy
     mat-icon
         font-size: 32px
         width: 32px
         height: 32px
+        color: var(--cp-amber, #e8a23a)
     .drop-target-title
         margin: 0
-        font-size: 1.1em
-        font-weight: 600
+        font-size: 1.15rem
+        font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+        font-weight: 400
     .drop-target-desc
         margin: 0
         font-size: 0.9em
         opacity: 0.85
     &.drop-target-active
-        border-color: var(--mat-sys-primary, #8ab4f8)
-        background-color: rgba(0, 0, 0, 0.85)
+        border-color: var(--cp-amber, #e8a23a)
+        box-shadow: 0 0 0 1px var(--cp-amber, #e8a23a)
 
 #results, #homepage
-    margin-top: 5px
-    
-
-
+    margin-top: 8px

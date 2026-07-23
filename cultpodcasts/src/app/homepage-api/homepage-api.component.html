@@ -1,7 +1,12 @@
-<section id="notices">
-  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <app-slot-machine-counter
-      preset="classic" [baseline]="episodeCountBaseline" [value]="$safeNavigationMigration(homepage()?.episodeCount)"
-      [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
+<section id="masthead" class="site-masthead">
+  <p class="masthead-brand">Cult Podcasts</p>
+  <p class="masthead-lede">An indexed archive of podcasts on the subject of cults.</p>
+  <p class="masthead-stat">
+    <a href="https://github.com/cultpodcasts/PublicDatabase" class="masthead-index-link">Index</a>
+    of
+    <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+      [value]="$safeNavigationMigration(homepage()?.episodeCount)" [title]="totalDuration()"></app-slot-machine-counter>
+    episodes tracked.
   </p>
 </section>
 <div id="progresswrapper">
@@ -16,13 +21,13 @@
     <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
   </div>
   } @else {
-  <h2>This weeks new releases.
+  <h2 class="week-heading">This week’s new releases
     @if (podcastCount()) {
-    <span>{{podcastCount()}} Podcasts.</span>
+    <span class="week-count">{{podcastCount()}} podcasts</span>
     }
   </h2>
   @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key) {
-  <div>
+  <div class="day-group">
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
     @for (item of dateItems.value; track item.id) {
