@@ -55,8 +55,15 @@ export class DiscoveryInfoService {
               }
             })
         }).catch(e => {
-          // Expected when session has no refresh token (Firefox blocks iframe silent auth).
-          if (e?.error !== 'login_required' && e?.message !== 'Login required') {
+          // Expected until re-login after refresh-token / scope config changes,
+          // or when Firefox blocks iframe silent auth.
+          const code = e?.error ?? e?.message;
+          if (
+            code !== 'login_required' &&
+            code !== 'Login required' &&
+            code !== 'missing_refresh_token' &&
+            !String(e?.message ?? '').startsWith('Missing Refresh Token')
+          ) {
             console.error(e);
           }
         });

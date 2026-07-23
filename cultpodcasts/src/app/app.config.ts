@@ -35,7 +35,10 @@ export const appConfig: ApplicationConfig = {
       authorizationParams: {
         redirect_uri: authRedirectUri(environment.assetHost),
         audience: 'https://api.cultpodcasts.com/',
-        scope: 'openid profile email offline_access'
+        // Include every scope callers pass to getAccessTokenSilently — refresh
+        // tokens cannot upscope; a later `curate` request otherwise throws
+        // Missing Refresh Token (and Firefox cannot fall back to the iframe).
+        scope: 'openid profile email offline_access curate'
       }
     }),
     { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
