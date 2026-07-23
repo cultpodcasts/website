@@ -55,7 +55,10 @@ export class DiscoveryInfoService {
               }
             })
         }).catch(e => {
-          console.error(e);
+          // Expected when session has no refresh token (Firefox blocks iframe silent auth).
+          if (e?.error !== 'login_required' && e?.message !== 'Login required') {
+            console.error(e);
+          }
         });
       }
     });

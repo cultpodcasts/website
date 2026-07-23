@@ -26,8 +26,16 @@ export const appConfig: ApplicationConfig = {
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,
+      // Firefox (and Safari) block Auth0 silent auth iframes when the app host
+      // (e.g. *.pages.dev) is cross-site to the Auth0 custom domain. Refresh
+      // tokens + localStorage avoid that path for getAccessTokenSilently.
+      useRefreshTokens: true,
+      useRefreshTokensFallback: false,
+      cacheLocation: 'localstorage',
       authorizationParams: {
-        redirect_uri: authRedirectUri(environment.assetHost)
+        redirect_uri: authRedirectUri(environment.assetHost),
+        audience: 'https://api.cultpodcasts.com/',
+        scope: 'openid profile email offline_access'
       }
     }),
     { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
