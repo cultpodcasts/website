@@ -21,8 +21,6 @@ export const appConfig: ApplicationConfig = {
       BrowserModule
     ),
     SiteService,
-    // HOMEPAGE_SSR_DATA is provided only from server.ts platformProviders.
-    // Do not default it here — app injector would override the R2 seed with null.
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,

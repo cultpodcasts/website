@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, PLATFORM_ID, TransferState, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
+import { KeyValue, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,10 +18,6 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
-import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
-import { HOMEPAGE_SSR_DATA, HOMEPAGE_SSR_STATE_KEY } from '../homepage-ssr.token';
-import { PreProcessedHomepage } from '../preprocessed-homepage.interface';
 
 @Component({
   selector: 'app-homepage-api',
@@ -31,6 +27,7 @@ import { PreProcessedHomepage } from '../preprocessed-homepage.interface';
     RouterLink,
     MatButtonModule,
     MatIconModule,
+    KeyValuePipe,
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
@@ -44,22 +41,6 @@ import { PreProcessedHomepage } from '../preprocessed-homepage.interface';
 })
 export class HomepageApiComponent {
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
-  protected useSsrDayLabels = signal(false);
-  /** Prefer computed groups over KeyValuePipe — pipe was not emitting day cards under SSR. */
-  protected dayGroups = computed(() => {
-    const grouped = this.grouped();
-    const useSsrLabels = this.useSsrDayLabels();
-    return Object.keys(grouped)
-      .map(key => ({ key, value: grouped[key] ?? [] }))
-      .sort((a, b) => {
-        if (useSsrLabels) {
-          const aRelease = a.value[0]?.release ? new Date(a.value[0].release).getTime() : 0;
-          const bRelease = b.value[0]?.release ? new Date(b.value[0].release).getTime() : 0;
-          return bRelease - aRelease;
-        }
-        return this.descDateKeys(a.key, b.key);
-      });
-  });
   private allEpisodes: HomepageEpisode[] = [];
   private visibleCount: number = 0;
   private hasStartedScrolling: boolean = false;
@@ -85,13 +66,8 @@ export class HomepageApiComponent {
   private homepageService = inject(HomepageService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  private platformId = inject(PLATFORM_ID);
-  private transferState = inject(TransferState);
-  private featureSwitch = inject(FeatureSwtichService);
-  private ssrInjected = inject(HOMEPAGE_SSR_DATA, { optional: true });
 
   ngOnInit() {
-    this.trySeedFromSsr();
     this.populatePage();
   }
 
@@ -125,92 +101,39 @@ export class HomepageApiComponent {
       })
     ).pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe(async () => {
+    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
       this.siteService.setQuery(null);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
 
-      if (isPlatformServer(this.platformId)) {
-        return;
-      }
-
       let homepageContent: Homepage | undefined;
       try {
-        homepageContent = await this.homepageService.getHomepageFromApi()
+        if (!homepageContent) {
+          homepageContent = await this.homepageService.getHomepageFromApi()
+        }
       } catch (error) {
         console.error(error);
-        if (!this.homepage()) {
-          this.isLoading.set(false);
-          this.isInError.set(true);
-        }
-        return;
+        this.isLoading.set(false);
+        this.isInError.set(true);
       }
       if (homepageContent) {
-        this.applyApiHomepage(homepageContent);
-      } else if (!this.homepage()) {
+        this.homepage.set(homepageContent);
+        this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
+        this.podcastCount.set(homepageContent.recentEpisodes.length);
+        this.hasStartedScrolling = false;
+        this.visibleCount = 0;
+        this.allEpisodes = homepageContent.recentEpisodes.map(item => ({
+          ...item,
+          release: new Date(item.release)
+        }));
+        this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+        this.isLoading.set(false);
+        this.isInError.set(false);
+      } else {
         this.isLoading.set(false);
         this.isInError.set(true);
       }
     });
-  }
-
-  private trySeedFromSsr(): void {
-    if (!this.featureSwitch.IsEnabled(FeatureSwitch.homepageSsr)) {
-      return;
-    }
-
-    let seed: PreProcessedHomepage | null = null;
-    if (isPlatformServer(this.platformId) && this.ssrInjected) {
-      seed = this.ssrInjected;
-      this.transferState.set(HOMEPAGE_SSR_STATE_KEY, seed);
-    } else if (isPlatformBrowser(this.platformId) && this.transferState.hasKey(HOMEPAGE_SSR_STATE_KEY)) {
-      seed = this.transferState.get(HOMEPAGE_SSR_STATE_KEY, null as unknown as PreProcessedHomepage);
-      this.transferState.remove(HOMEPAGE_SSR_STATE_KEY);
-    }
-
-    if (seed) {
-      this.applySsrSeed(seed);
-    }
-  }
-
-  private applySsrSeed(seed: PreProcessedHomepage): void {
-    const byDay: { [key: string]: HomepageEpisode[] } = {};
-    for (const [day, episodes] of Object.entries(seed.episodesByDay ?? {})) {
-      const list = Array.isArray(episodes) ? episodes : [];
-      byDay[day] = list.map(item => this.normalizeEpisode(item));
-    }
-
-    this.useSsrDayLabels.set(true);
-    this.grouped.set(byDay);
-    this.podcastCount.set(seed.episodesThisWeek);
-    this.totalDuration.set(`${seed.totalDurationDays} days`);
-    this.homepage.set({
-      recentEpisodes: Object.values(byDay).flat(),
-      episodeCount: seed.episodeCount,
-      totalDuration: `${seed.totalDurationDays}.00:00:00`
-    });
-    this.isLoading.set(false);
-    this.isInError.set(false);
-  }
-
-  private applyApiHomepage(homepageContent: Homepage): void {
-    this.useSsrDayLabels.set(false);
-    this.homepage.set(homepageContent);
-    this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
-    this.podcastCount.set(homepageContent.recentEpisodes.length);
-    this.hasStartedScrolling = false;
-    this.visibleCount = 0;
-    this.allEpisodes = homepageContent.recentEpisodes.map(item => this.normalizeEpisode(item));
-    this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-    this.isLoading.set(false);
-    this.isInError.set(false);
-  }
-
-  private normalizeEpisode(item: HomepageEpisode): HomepageEpisode {
-    return {
-      ...item,
-      release: new Date(item.release)
-    };
   }
 
   private loadMoreEpisodes(count: number): void {
@@ -237,9 +160,9 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  private descDateKeys(aKey: string, bKey: string): number {
-    const aD = this.ToDate(aKey);
-    const bD = this.ToDate(bKey);
+  descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
+    var aD = this.ToDate(a.key);
+    var bD = this.ToDate(b.key);
     if (aD > bD) {
       return -1;
     }
@@ -247,13 +170,5 @@ export class HomepageApiComponent {
       return 1
     }
     return 0;
-  }
-
-  dayHeading(key: string): string {
-    if (this.useSsrDayLabels()) {
-      return key;
-    }
-    const date = this.ToDate(key);
-    return `${this.Weekday[date.getDay()]} ${date.getDate()} ${this.Month[date.getMonth()]}`;
   }
 }
