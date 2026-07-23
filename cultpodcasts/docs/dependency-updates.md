@@ -72,7 +72,7 @@ Preview hosts change; Auth0 redirect uses runtime origin. See [auth0-preview-hos
 
 ## Zoneless
 
-Zone is still required until the checklist in [zoneless-readiness.md](./zoneless-readiness.md) is done. Framework bumps do not imply dropping `zone.js`.
+App uses `provideZonelessChangeDetection()` (Jul 2026). See [zoneless-readiness.md](./zoneless-readiness.md). Do not re-add `zone.js` unless diagnosing a regression.
 
 ## Later automation ideas
 

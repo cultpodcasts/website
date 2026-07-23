@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
@@ -18,6 +18,7 @@ describe('authInterceptor', () => {
     getAccessTokenSilently = jasmine.createSpy('getAccessTokenSilently').and.returnValue(of('test-token'));
     TestBed.configureTestingModule({
       providers: [
+        provideZonelessChangeDetection(),
         provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: PLATFORM_ID, useValue: platformId },
