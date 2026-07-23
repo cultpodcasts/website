@@ -32,7 +32,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
 import { EpisodeUpdateService } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 
 const sortParamDateAsc: string = "date-asc";
@@ -92,7 +92,7 @@ export class OutgoingEpisodesApiComponent {
     private snackBar: MatSnackBar,
     private siteService: SiteService,
     private episodeUpdate: EpisodeUpdateService,
-    protected featureSwtichService: FeatureSwtichService
+    protected featureSwitchService: FeatureSwitchService
   ) {
   }
 
@@ -461,7 +461,7 @@ export class OutgoingEpisodesApiComponent {
       url.searchParams.append("days", this.days()!.toString());
     if (this.tweeted())
       url.searchParams.append("tweeted", this.tweeted()!.toString());
-    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) && this.posted())
+    if (this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost) && this.posted())
       url.searchParams.append("posted", this.posted()!.toString());
     if (this.blueskyPosted())
       url.searchParams.append("blueskyPosted", this.blueskyPosted()!.toString())

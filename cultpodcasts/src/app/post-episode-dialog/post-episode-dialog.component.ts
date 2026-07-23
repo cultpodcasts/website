@@ -16,7 +16,7 @@ import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -48,7 +48,7 @@ export class PostEpisodeDialogComponent {
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
-    protected featureSwtichService: FeatureSwtichService,
+    protected featureSwitchService: FeatureSwitchService,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string }) {
     this.podcastIdentifier = data.podcastIdentifier;
@@ -79,7 +79,7 @@ export class PostEpisodeDialogComponent {
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
             this.podcastId = resp.podcastId!;
-            if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
+            if (this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
               if (this.hasPosted) {
                 this.form?.controls.post.disable();
               } else {
@@ -110,7 +110,7 @@ export class PostEpisodeDialogComponent {
                 this.form?.controls.blueskyPost.setValue(true);
               }
             }
-            const redditPostComplete = !this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) || this.hasPosted;
+            const redditPostComplete = !this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost) || this.hasPosted;
             if (this.hasTweeted && redditPostComplete && this.hasBlueskyPosted) {
               this.dialogRef.close({ noChange: true });
             }
@@ -137,7 +137,7 @@ export class PostEpisodeDialogComponent {
       change = true;
       model.tweet = true;
     }
-    if (this.featureSwtichService.IsEnabled(FeatureSwitch.redditPost) &&
+    if (this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost) &&
       !this.hasPosted && this.form?.controls.post.value) {
       change = true;
       model.post = true;

@@ -22,7 +22,7 @@
         </button>
         }
         <mat-menu #options="matMenu">
-            @if (featureSwtichService.IsEnabled(FeatureSwitch.redditPost)) {
+            @if (featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
             <div mat-menu-item>
                 <mat-checkbox [ngModel]="posted()" (ngModelChange)="posted.set($event)"
                     (change)="getEpisodes()">Posted</mat-checkbox>

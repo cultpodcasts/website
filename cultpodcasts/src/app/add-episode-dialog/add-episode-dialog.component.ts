@@ -29,7 +29,7 @@ import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 import { comparePeopleBySortKey } from '../person-sort';
 import { FeatureSwitch } from '../feature-switch.enum';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 import {
   buildEpisodeForm,
   getEpisodeChanges,
@@ -99,7 +99,7 @@ export class AddEpisodeDialogComponent {
     private dialogRef: MatDialogRef<AddEpisodeDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string, isNewPodcast: boolean },
     private dialog: MatDialog,
-    protected featureSwtichService: FeatureSwtichService,
+    protected featureSwitchService: FeatureSwitchService,
   ) {
     this.podcastId = data.podcastId;
     this.episodeId = data.episodeId;

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { FeatureSwtichService } from '../feature-switch-service';
+import { FeatureSwitchService } from '../feature-switch-service';
 import { AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { MatIconModule } from "@angular/material/icon";
@@ -48,7 +48,7 @@ export class ToolbarComponent {
   protected auth = inject(AuthServiceWrapper);
   protected discoveryInfoService = inject(DiscoveryInfoService);
   protected siteService = inject(SiteService);
-  protected featureSwtichService = inject(FeatureSwtichService);
+  protected featureSwitchService = inject(FeatureSwitchService);
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly disoveryInfo = toSignal(this.discoveryInfoService.discoveryInfo, { initialValue: undefined });
 
