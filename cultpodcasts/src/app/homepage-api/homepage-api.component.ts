@@ -18,6 +18,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
+import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 @Component({
   selector: 'app-homepage-api',
@@ -33,7 +34,8 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
     BookmarkComponent,
     SubjectsComponent,
     ClampableTextComponent,
-    SlotMachineCounterComponent
+    SlotMachineCounterComponent,
+    SearchBarComponent
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',

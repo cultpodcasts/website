@@ -1,18 +1,18 @@
-@media screen and (max-width: 599px)
-    #body
-        width: 100%
-        max-width: var(--cp-column, 680px)
-
-@media screen and (min-width: 600px)
-    #body
-        width: var(--cp-column, 680px)
-
 #body
     margin: 0 auto
     min-height: 100%
+    width: 100%
+    max-width: none
     padding-bottom: calc(3.2em + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
+
+.chrome-search
+    padding-top: 8px
+    padding-bottom: 4px
+
+.home-shell
+    // Toolbar chrome handled via :host-context in toolbar.component.sass
 
 .drop-overlay
     position: fixed
@@ -73,3 +73,6 @@
 
 #results, #homepage
     margin-top: 8px
+
+footer
+    width: min(920px, 100%)

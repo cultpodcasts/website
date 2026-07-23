@@ -67,3 +67,16 @@
 button#menu
     border: none
     background-color: transparent
+
+:host-context(.home-shell)
+    .app-toolbar
+        background: transparent !important
+        border-bottom-color: transparent
+        backdrop-filter: none
+        -webkit-backdrop-filter: none
+    #site span
+        position: absolute
+        width: 1px
+        height: 1px
+        overflow: hidden
+        clip: rect(0, 0, 0, 0)

@@ -64,6 +64,10 @@ export class AppComponent implements OnDestroy {
     return match ? decodeURIComponent(match[1]) : undefined;
   });
   protected readonly isOnPodcastPage = computed(() => this.podcastPageName() !== undefined);
+  protected readonly isHomePage = computed(() => {
+    const path = this.routeUrl().split('?')[0].split('#')[0];
+    return path === '/' || path === '';
+  });
   private ignoreDragUntilEnd = false;
 
   @ViewChild(ToolbarComponent)

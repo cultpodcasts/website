@@ -1,4 +1,4 @@
-<section id="results">
+<section id="results" class="page-rail">
   <div id="progresswrapper">
     @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -70,36 +70,39 @@
   </mat-expansion-panel>
   }
 
-  @for (result of results(); track result.id) {
-  <mat-card class="result">
-    <mat-card-header>
-      <app-bookmark [episodeId]="result.id" />
-      <mat-card-title [class.hasBookmark]="isSignedIn()">
-        <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
-      </mat-card-title>
-      <mat-card-subtitle>
-        <a [routerLink]="['/podcast', result.podcastName]">
-          {{result.podcastName}}
-        </a>
-      </mat-card-subtitle>
-      <mat-card-subtitle>{{result.release | date:'d MMM yyyy'}}
-        [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="resultdescription">
-      <app-episode-image [searchResult]="result" [linksOverlay]="true"></app-episode-image>
-      <p>{{result.episodeDescription | searchDescription}}</p>
-    </mat-card-content>
-    <mat-card-actions>
-      <app-episode-links [episode]="result"></app-episode-links>
-      <mat-card-footer class="subjects">
-        <app-subjects [subjects]="result.subjects!"></app-subjects>
-      </mat-card-footer>
-    </mat-card-actions>
-  </mat-card>
+  @for (result of results(); track result.id; let i = $index) {
+  <article class="episode-entry" [class.episode-entry--featured]="i === 0">
+    <div class="episode-entry__art">
+      <app-episode-image [searchResult]="result" [linksOverlay]="true"
+        [layout]="i === 0 ? 'wide' : 'tile'"></app-episode-image>
+    </div>
+    <div class="episode-entry__body">
+      <div class="episode-entry__topline">
+        <app-bookmark [episodeId]="result.id" />
+        <h3 class="episode-entry__title" [class.hasBookmark]="isSignedIn()">
+          <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
+        </h3>
+      </div>
+      <p class="episode-entry__show">
+        <a [routerLink]="['/podcast', result.podcastName]">{{result.podcastName}}</a>
+        <span class="duration"> · {{result.release | date:'d MMM yyyy'}} ·
+          {{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}</span>
+      </p>
+      <div class="episode-entry__desc">
+        <p>{{result.episodeDescription | searchDescription}}</p>
+      </div>
+      <div class="episode-entry__meta">
+        <app-episode-links [episode]="result"></app-episode-links>
+        <mat-card-footer class="subjects">
+          <app-subjects [subjects]="result.subjects!"></app-subjects>
+        </mat-card-footer>
+      </div>
+    </div>
+  </article>
   }
 </section>
 @if (isSubsequentLoading()) {
-<div class="progresswrapper">
+<div class="progresswrapper page-rail">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
 }

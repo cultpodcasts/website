@@ -1,60 +1,83 @@
-<section id="masthead" class="site-masthead">
-  <p class="masthead-brand">Cult Podcasts</p>
-  <p class="masthead-lede">An indexed archive of podcasts on the subject of cults.</p>
-  <p class="masthead-stat">
-    <a href="https://github.com/cultpodcasts/PublicDatabase" class="masthead-index-link">Index</a>
-    of
-    <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
-      [value]="$safeNavigationMigration(homepage()?.episodeCount)" [title]="totalDuration()"></app-slot-machine-counter>
-    episodes tracked.
-  </p>
+<section class="broadcast-hero" aria-label="Cult Podcasts">
+  <div class="broadcast-hero__glow" aria-hidden="true"></div>
+  <div class="broadcast-hero__inner">
+    <p class="broadcast-hero__brand">Cult Podcasts</p>
+    <p class="broadcast-hero__lede">An indexed archive of podcasts on the subject of cults.</p>
+    <div class="broadcast-hero__search">
+      <app-search-bar></app-search-bar>
+    </div>
+    <p class="broadcast-hero__stat">
+      <a href="https://github.com/cultpodcasts/PublicDatabase" class="masthead-index-link">Public index</a>
+      ·
+      <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+        [value]="$safeNavigationMigration(homepage()?.episodeCount)"
+        [title]="totalDuration()"></app-slot-machine-counter>
+      episodes
+    </p>
+  </div>
 </section>
-<div id="progresswrapper">
-  @if (isLoading()) {
-  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  }
+
+<div class="page-rail">
+  <div id="progresswrapper">
+    @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+  </div>
+
+  <section id="thisweek" class="broadcast-feed">
+    @if (isInError()) {
+    <p>An error occurred.</p>
+    <div id="cta-button">
+      <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
+    </div>
+    } @else {
+    <header class="feed-header">
+      <h2>This week’s new releases</h2>
+      @if (podcastCount()) {
+      <p class="feed-header__meta">{{podcastCount()}} podcasts</p>
+      }
+    </header>
+
+    @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key; let dayIndex = $index) {
+    <div class="day-group">
+      <div class="day-spine">
+        <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
+          {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
+      </div>
+
+      @for (item of dateItems.value; track item.id; let epIndex = $index) {
+      <article class="episode-entry" [class.episode-entry--featured]="dayIndex === 0 && epIndex === 0"
+        id="{{item.id}}">
+        <div class="episode-entry__art">
+          <app-episode-image [searchResult]="item" [linksOverlay]="true"
+            [layout]="dayIndex === 0 && epIndex === 0 ? 'wide' : 'tile'"></app-episode-image>
+        </div>
+        <div class="episode-entry__body">
+          <div class="episode-entry__topline">
+            <app-bookmark [episodeId]="item.id" />
+            <h3 class="episode-entry__title" [class.hasBookmark]="isSignedIn()">
+              <a [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a>
+            </h3>
+          </div>
+          <p class="episode-entry__show">
+            <a [routerLink]="['/podcast', item.podcastName]">{{item.podcastName}}</a>
+            <span class="duration"> ·
+              {{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}</span>
+          </p>
+          <div class="episode-entry__desc">
+            <app-clampable-text [maxLines]="dayIndex === 0 && epIndex === 0 ? 8 : 4">{{item.episodeDescription}}</app-clampable-text>
+          </div>
+          <div class="episode-entry__meta">
+            <app-episode-links [episode]="item"></app-episode-links>
+            <mat-card-footer class="subjects">
+              <app-subjects [subjects]="item.subjects!"></app-subjects>
+            </mat-card-footer>
+          </div>
+        </div>
+      </article>
+      }
+    </div>
+    }
+    }
+  </section>
 </div>
-<section id="thisweek">
-  @if (isInError()) {
-  <p>An error occurred.</p>
-  <div id="cta-button">
-    <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
-  </div>
-  } @else {
-  <h2 class="week-heading">This week’s new releases
-    @if (podcastCount()) {
-    <span class="week-count">{{podcastCount()}} podcasts</span>
-    }
-  </h2>
-  @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key) {
-  <div class="day-group">
-    <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
-      {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
-    @for (item of dateItems.value; track item.id) {
-    <mat-card class="result" id="{{item.id}}">
-      <mat-card-header>
-        <app-bookmark [episodeId]="item.id" />
-        <mat-card-title [class.hasBookmark]="isSignedIn()"><a
-            [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a></mat-card-title>
-        <mat-card-subtitle>
-          <a [routerLink]="['/podcast', item.podcastName]">
-            {{item.podcastName}}</a>
-          <span class="duration"> [{{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}]</span>
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-episode-image [searchResult]="item" [linksOverlay]="true"></app-episode-image>
-        <app-clampable-text [maxLines]="10">{{item.episodeDescription}}</app-clampable-text>
-      </mat-card-content>
-      <mat-card-actions>
-        <app-episode-links [episode]="item"></app-episode-links>
-        <mat-card-footer class="subjects">
-          <app-subjects [subjects]="item.subjects!"></app-subjects>
-        </mat-card-footer>
-      </mat-card-actions>
-    </mat-card>
-    }
-  </div>
-  }
-  }
-</section>

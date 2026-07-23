@@ -32,10 +32,15 @@
 </div>
 }
 <section id="body"
+  [class.home-shell]="isHomePage()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
   <app-toolbar></app-toolbar>
-  <app-search-bar></app-search-bar>
+  @if (!isHomePage()) {
+  <div class="page-rail chrome-search">
+    <app-search-bar></app-search-bar>
+  </div>
+  }
   <router-outlet></router-outlet>
 
   <footer>
