@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { FeatureSwtichService } from '../feature-switch-service';
 import { AsyncPipe } from '@angular/common';
@@ -23,7 +24,6 @@ import { DiscoveryScheduleComponent } from '../discovery-schedule/discovery-sche
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
-import { DiscoveryInfo } from '../discovery-info.interface';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
 
@@ -38,33 +38,22 @@ import { DiscoveryInfoService } from '../discovery-info.service';
     MatBadgeModule
   ],
   templateUrl: './toolbar.component.html',
-  styleUrl: './toolbar.component.sass'
+  styleUrl: './toolbar.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
-  authRoles: string[] = [];
-  disoveryInfo: DiscoveryInfo | undefined;
+  protected auth = inject(AuthServiceWrapper);
+  protected discoveryInfoService = inject(DiscoveryInfoService);
+  protected siteService = inject(SiteService);
+  protected featureSwtichService = inject(FeatureSwtichService);
+  protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected readonly disoveryInfo = toSignal(this.discoveryInfoService.discoveryInfo, { initialValue: undefined });
 
-  constructor(
-    protected siteService: SiteService,
-    protected auth: AuthServiceWrapper,
-    protected featureSwtichService: FeatureSwtichService,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar,
-    private router: Router,
-    protected discoveryInfoService: DiscoveryInfoService
-  ) {
-    discoveryInfoService.discoveryInfo.subscribe(info => {
-      console.log("discovery-info", info);
-      this.disoveryInfo = info;
-    });
-  }
-
-  ngOnInit() {
-    this.auth.roles.subscribe(roles => {
-      this.authRoles = roles;
-    });
-  }
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   login() {
     if (localStorage.getItem("hasLoggedIn")) {
@@ -73,11 +62,20 @@ export class ToolbarComponent {
       this.dialog
         .open(FirstLoginNoticeComponent, { disableClose: true, autoFocus: true })
         .afterClosed()
+        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(async result => {
           if (result?.continue) {
             this.auth.authService.loginWithRedirect();;
           }
         });
+    }
+  }
+
+  onSiteClick() {
+    this.siteService.setQuery('');
+    const path = this.router.url.split('?')[0];
+    if (path === '/' || path === '') {
+      this.siteService.requestHomepageRefresh();
     }
   }
 
@@ -89,6 +87,7 @@ export class ToolbarComponent {
     this.dialog
       .open(SubmitPodcastComponent, { disableClose: true, autoFocus: true })
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async result => {
         if (result?.url) {
           await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, podcastName: undefined, shareMode: ShareMode.Text });
@@ -103,43 +102,50 @@ export class ToolbarComponent {
       autoFocus: true,
       width: '90%'
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open("Subject created", "Edit", { duration: 10000 });
-        snackBarRef.onAction().subscribe(() => {
-          const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
-            data: { subjectName: result.subjectName },
-            disableClose: true,
-            autoFocus: true,
-            width: '90%'
-          });
-        });
-      } else if (result.conflict) {
-        let snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
-        snackBarRef.onAction().subscribe(() => {
-          const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
-            data: { subjectName: result.conflict },
-            disableClose: true,
-            autoFocus: true,
-            width: '90%'
-          });
-        });
-      } else if (result.noChange) {
-        let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
-      }
-    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async result => {
+        if (result.updated) {
+          const snackBarRef = this.snackBar.open("Subject created", "Edit", { duration: 10000 });
+          snackBarRef.onAction()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+              this.dialog.open(EditSubjectDialogComponent, {
+                data: { subjectName: result.subjectName },
+                disableClose: true,
+                autoFocus: true,
+                width: '90%'
+              });
+            });
+        } else if (result.conflict) {
+          const snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
+          snackBarRef.onAction()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+              this.dialog.open(EditSubjectDialogComponent, {
+                data: { subjectName: result.conflict },
+                disableClose: true,
+                autoFocus: true,
+                width: '90%'
+              });
+            });
+        } else if (result.noChange) {
+          this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
+      });
   }
 
   async sendPodcast(share: Share) {
     const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success } });
+            this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success } });
           } else {
-            let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
+            this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }
         }
       });
@@ -155,30 +161,32 @@ export class ToolbarComponent {
       disableClose: true,
       autoFocus: true
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      let message: string;
-      if (result?.message) {
-        message = result.message;
-      } else {
-        if (result?.indexerState?.state == "Executed") {
-          message = "Index Success";
-        } else if (result?.indexerState?.state == "AlreadyRunning" || result?.indexerState?.state == "TooManyRequests") {
-          var status = result.indexerState.state.replace(/([A-Z])/g, ' $1').trim();
-          if (result.indexerState.nextRun) {
-            message = `${status}. Run Index in ${this.timespanToDisplay(result.indexerState.nextRun)}`;
-          } else if (result.indexerState.lastRan) {
-            message = `${status}. Index last executed ${this.timespanToDisplay(result.indexerState.lastRan)} ago`;
-          } else {
-            message = status;
-          }
-        } else if (result?.indexerState?.state == "Failure") {
-          message = "Index Failure";
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async result => {
+        let message: string;
+        if (result?.message) {
+          message = result.message;
         } else {
-          message = "Unknown Failure.";
+          if (result?.indexerState?.state == "Executed") {
+            message = "Index Success";
+          } else if (result?.indexerState?.state == "AlreadyRunning" || result?.indexerState?.state == "TooManyRequests") {
+            var status = result.indexerState.state.replace(/([A-Z])/g, ' $1').trim();
+            if (result.indexerState.nextRun) {
+              message = `${status}. Run Index in ${this.timespanToDisplay(result.indexerState.nextRun)}`;
+            } else if (result.indexerState.lastRan) {
+              message = `${status}. Index last executed ${this.timespanToDisplay(result.indexerState.lastRan)} ago`;
+            } else {
+              message = status;
+            }
+          } else if (result?.indexerState?.state == "Failure") {
+            message = "Index Failure";
+          } else {
+            message = "Unknown Failure.";
+          }
         }
-      }
-      let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-    });
+        this.snackBar.open(message, "Ok", { duration: 10000 });
+      });
   }
 
   timespanToDisplay(timespan: string): string {
@@ -209,9 +217,11 @@ export class ToolbarComponent {
       disableClose: true,
       autoFocus: true
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef = this.snackBar.open(result.replace(/([A-Z])/g, ' $1').trim(), "Ok", { duration: 10000 });
-    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async result => {
+        this.snackBar.open(result.replace(/([A-Z])/g, ' $1').trim(), "Ok", { duration: 10000 });
+      });
   }
 
   addTerm() {
@@ -219,11 +229,13 @@ export class ToolbarComponent {
       disableClose: true,
       autoFocus: true
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        let snackBarRef = this.snackBar.open(`Term '${result.term}' added`, "Ok", { duration: 10000 });
-      }
-    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async result => {
+        if (result.updated) {
+          this.snackBar.open(`Term '${result.term}' added`, "Ok", { duration: 10000 });
+        }
+      });
   }
 
   openDiscoverySchedule() {
@@ -233,10 +245,12 @@ export class ToolbarComponent {
       width: '40em',
       maxWidth: '95vw'
     });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result?.saved) {
-        this.snackBar.open('Discovery schedule saved', 'Ok', { duration: 5000 });
-      }
-    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result?.saved) {
+          this.snackBar.open('Discovery schedule saved', 'Ok', { duration: 5000 });
+        }
+      });
   }
 }

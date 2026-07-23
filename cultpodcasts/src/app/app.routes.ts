@@ -1,6 +1,5 @@
-import { NgModule } from '@angular/core';
+import { Routes } from '@angular/router';
 import { PodcastComponent } from './podcast/podcast.component';
-import { RouterModule, Routes } from '@angular/router';
 import { ContentComponent } from './content/content.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
@@ -27,10 +26,3 @@ export const routes: Routes = [
   { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" },
   { path: 'bookmarks', component: BookmarksComponent, canActivate: [isUserGuard], title: 'My Bookmarks' }
 ];
-
-@NgModule({
-  imports: [RouterModule.forRoot(routes, { scrollPositionRestoration: 'enabled' })],
-  exports: [RouterModule]
-})
-export class AppRoutingModule { }
-

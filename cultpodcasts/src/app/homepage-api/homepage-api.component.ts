@@ -1,4 +1,5 @@
-import { Component, HostListener, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
 import { KeyValue, KeyValuePipe } from '@angular/common';
@@ -35,23 +36,25 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
     SlotMachineCounterComponent
   ],
   templateUrl: './homepage-api.component.html',
-  styleUrl: './homepage-api.component.sass'
+  styleUrl: './homepage-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomepageApiComponent {
-  grouped: { [key: string]: HomepageEpisode[]; };
-  allEpisodes: HomepageEpisode[] = [];
-  visibleCount: number = 0;
-  hasStartedScrolling: boolean = false;
-  podcastCount: number | undefined;
-  isLoading: boolean = true;
-  isInError: boolean = false;
-  Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
+  private allEpisodes: HomepageEpisode[] = [];
+  private visibleCount: number = 0;
+  private hasStartedScrolling: boolean = false;
+  protected podcastCount = signal<number | undefined>(undefined);
+  protected isLoading = signal<boolean>(true);
+  protected isInError = signal<boolean>(false);
+  readonly Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  readonly Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
-  homepage: Homepage | undefined;
-  totalDuration: string = "";
+  protected homepage = signal<Homepage | undefined>(undefined);
+  protected totalDuration = signal<string>("");
   readonly episodeCountBaseline = 80000;
-  isSignedIn: boolean = false;
+  protected auth = inject(AuthServiceWrapper);
+  protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   readonly renderConfig = {
     initialBlockSize: 10,
     firstScrollBlockSize: 100,
@@ -59,23 +62,23 @@ export class HomepageApiComponent {
     nearEndThresholdPixels: 1200,
   };
 
-  constructor(
-    private siteService: SiteService,
-    private homepageService: HomepageService,
-    protected auth: AuthServiceWrapper
-  ) {
-    this.grouped = {};
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
-  }
+  private siteService = inject(SiteService);
+  private homepageService = inject(HomepageService);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   ngOnInit() {
+    this.siteService.homepageRefresh$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        void this.loadHomepage();
+      });
     this.populatePage();
   }
 
   @HostListener('window:scroll')
   onWindowScroll(): void {
-    if (!this.homepage || this.isLoading || this.isInError || this.allEpisodes.length === 0) {
+    if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes.length === 0) {
       return;
     }
 
@@ -101,41 +104,50 @@ export class HomepageApiComponent {
         params,
         queryParams,
       })
-    ).subscribe(async (res: { params: Params; queryParams: Params }) => {
-      const { params, queryParams } = res;
-
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(async () => {
       this.siteService.setQuery(null);
       this.siteService.setPodcast(null);
       this.siteService.setSubject(null);
-
-      let homepageContent: Homepage | undefined;
-      try {
-        if (!homepageContent) {
-          homepageContent = await this.homepageService.getHomepageFromApi()
-        }
-      } catch (error) {
-        console.error(error);
-        this.isLoading = false;
-        this.isInError = true;
-      }
-      if (homepageContent) {
-        this.homepage = homepageContent;
-        this.totalDuration = this.homepage.totalDuration.split(".")[0] + " days";
-        this.podcastCount = this.homepage.recentEpisodes.length;
-        this.hasStartedScrolling = false;
-        this.visibleCount = 0;
-        this.allEpisodes = this.homepage.recentEpisodes.map(item => ({
-          ...item,
-          release: new Date(item.release)
-        }));
-        this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-        this.isLoading = false;
-        this.isInError = false;
-      } else {
-        this.isLoading = false;
-        this.isInError = true;
-      }
+      await this.loadHomepage();
     });
+  }
+
+  private async loadHomepage(): Promise<void> {
+    this.isLoading.set(true);
+    this.isInError.set(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0 });
+    }
+
+    let homepageContent: Homepage | undefined;
+    try {
+      homepageContent = await this.homepageService.getHomepageFromApi();
+    } catch (error) {
+      console.error(error);
+      this.isLoading.set(false);
+      this.isInError.set(true);
+      return;
+    }
+
+    if (homepageContent) {
+      this.homepage.set(homepageContent);
+      this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
+      this.podcastCount.set(homepageContent.recentEpisodes.length);
+      this.hasStartedScrolling = false;
+      this.visibleCount = 0;
+      this.allEpisodes = homepageContent.recentEpisodes.map(item => ({
+        ...item,
+        release: new Date(item.release)
+      }));
+      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+      this.isLoading.set(false);
+      this.isInError.set(false);
+    } else {
+      this.isLoading.set(false);
+      this.isInError.set(true);
+    }
   }
 
   private loadMoreEpisodes(count: number): void {
@@ -146,7 +158,7 @@ export class HomepageApiComponent {
 
     this.visibleCount = nextVisibleCount;
     const visibleEpisodes = this.allEpisodes.slice(0, this.visibleCount);
-    this.grouped = visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
+    this.grouped.set(visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
       const releaseDate = item.release as Date;
       const releaseDateKey = releaseDate.toLocaleDateString();
       if (!group[releaseDateKey]) {
@@ -154,7 +166,7 @@ export class HomepageApiComponent {
       }
       group[releaseDateKey].push(item);
       return group;
-    }, {});
+    }, {}));
   }
 
   ToDate = (dateStr: string) => {

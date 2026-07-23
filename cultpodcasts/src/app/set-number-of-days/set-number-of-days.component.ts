@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,8 @@ import { FormsModule } from '@angular/forms';
     FormsModule
   ],
   templateUrl: './set-number-of-days.component.html',
-  styleUrl: './set-number-of-days.component.sass'
+  styleUrl: './set-number-of-days.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SetNumberOfDaysComponent {
   days: any;

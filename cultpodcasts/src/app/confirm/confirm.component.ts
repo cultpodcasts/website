@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
   selector: 'app-confirm',
   templateUrl: './confirm.component.html',
   styleUrls: ['./confirm.component.sass'],
-  imports: [MatDialogModule, MatButtonModule]
+  imports: [MatDialogModule, MatButtonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfirmComponent {
   title: string;

@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 'rxjs';
@@ -60,36 +61,37 @@ interface BookmarkEpisodeLoadResult {
     ScrollingModule
   ],
   templateUrl: './bookmarks-api.component.html',
-  styleUrl: './bookmarks-api.component.sass'
+  styleUrl: './bookmarks-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class BookmarksApiComponent {
-  protected isLoading: boolean = true;
+  protected isLoading = signal<boolean>(true);
   protected isSubsequentLoading = signal<boolean>(false);
-  protected error: boolean = false;
-  protected removedEpisodesNotice: boolean = false;
+  protected error = signal<boolean>(false);
+  protected removedEpisodesNotice = signal<boolean>(false);
   protected readonly removedEpisodesMessage = removedEpisodesMessage;
   protected sortMode = sortMode;
-  protected authRoles: string[] = [];
-  protected isSignedIn: boolean = false;
-  protected noBookmarks: boolean = false;
+  protected auth = inject(AuthServiceWrapper);
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
+  protected noBookmarks = signal<boolean>(false);
   protected episodes = signal<ApiEpisode[]>([]);
   protected sortDirection: sortMode = sortMode.addDatedDesc;
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
+  private scrollSubscribed = false;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private profileService: ProfileService,
-    private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy,
     private siteService: SiteService
   ) {
-    this.auth.roles.subscribe(roles => this.authRoles = roles);
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   ngOnInit() {
@@ -100,9 +102,9 @@ export class BookmarksApiComponent {
   }
 
   async populatePage() {
-    this.error = false;
-    this.removedEpisodesNotice = false;
-    this.isLoading = true;
+    this.error.set(false);
+    this.removedEpisodesNotice.set(false);
+    this.isLoading.set(true);
     this.episodes.set([]);
     this.page = 0;
 
@@ -111,8 +113,10 @@ export class BookmarksApiComponent {
       return;
     }
 
-    this.profileService.bookmarks$.pipe(take(1)).subscribe(async bookmarks => {
-      console.log("bookmarks", bookmarks);
+    this.profileService.bookmarks$.pipe(
+      take(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(async bookmarks => {
       this.bookmarks = bookmarks;
       await this.batch(true);
     });
@@ -131,7 +135,7 @@ export class BookmarksApiComponent {
       this.isSubsequentLoading.set(true);
     }
     if (this.bookmarks!.size > 0) {
-      this.noBookmarks = false;
+      this.noBookmarks.set(false);
       // Bookmarks are available to any signed-in user; do not require curator scope.
       firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -161,18 +165,21 @@ export class BookmarksApiComponent {
             const hasFailure = episodes.some(x => x.failed);
 
             if (hasRemoved) {
-              this.removedEpisodesNotice = true;
+              this.removedEpisodesNotice.set(true);
             }
             this.episodes.update(v => v.concat(loaded));
             if (hasFailure) {
-              this.error = true;
+              this.error.set(true);
             } else if (loaded.length === 0 && items.length > 0 && !hasRemoved) {
-              this.error = true;
+              this.error.set(true);
             }
-            this.isLoading = false;
+            this.isLoading.set(false);
             this.isSubsequentLoading.set(false);
-            if (first && this.bookmarks!.size > pageSize) {
-              this.scrollDisplatcher.scrolled().subscribe(async () => {
+            if (!this.scrollSubscribed && first && this.bookmarks!.size > pageSize) {
+              this.scrollSubscribed = true;
+              this.scrollDispatcher.scrolled().pipe(
+                takeUntilDestroyed(this.destroyRef)
+              ).subscribe(async () => {
                 if (
                   this.bookmarks &&
                   this.episodes().length < this.bookmarks.size &&
@@ -186,15 +193,15 @@ export class BookmarksApiComponent {
             }
           },
           error: e => {
-            this.error = true;
-            this.isLoading = false;
+            this.error.set(true);
+            this.isLoading.set(false);
             this.isSubsequentLoading.set(false);
             console.error(e);
           }
         })
       }).catch(e => {
-        this.error = true;
-        this.isLoading = false;
+        this.error.set(true);
+        this.isLoading.set(false);
         this.isSubsequentLoading.set(false);
         console.error(e);
       });
@@ -204,10 +211,10 @@ export class BookmarksApiComponent {
   }
 
   zeroBookmarks() {
-    this.error = false;
-    this.isLoading = false;
+    this.error.set(false);
+    this.isLoading.set(false);
     this.isSubsequentLoading.set(false);
-    this.noBookmarks = true;
+    this.noBookmarks.set(true);
   }
 
   handleRequest() {
@@ -261,9 +268,9 @@ export class BookmarksApiComponent {
   }
 
   async reset() {
-    this.error = false;
-    this.removedEpisodesNotice = false;
-    this.isLoading = true;
+    this.error.set(false);
+    this.removedEpisodesNotice.set(false);
+    this.isLoading.set(true);
     this.episodes.set([]);
     this.page = 0;
     await this.batch(true);

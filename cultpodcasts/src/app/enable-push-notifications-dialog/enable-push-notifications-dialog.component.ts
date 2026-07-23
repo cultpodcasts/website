@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
@@ -9,7 +9,8 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
     MatButtonModule,
   ],
   templateUrl: './enable-push-notifications-dialog.component.html',
-  styleUrl: './enable-push-notifications-dialog.component.sass'
+  styleUrl: './enable-push-notifications-dialog.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EnablePushNotificationsDialogComponent {
   constructor(

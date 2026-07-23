@@ -1,5 +1,5 @@
 import { Component, Inject } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,6 +26,14 @@ import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
+import {
+  buildPodcastFormControls,
+  filterSubjectsByTerm,
+  getPodcastChanges,
+  noCompareFunction,
+  asEmptyString,
+  asStringArray
+} from '../podcast-form.util';
 
 @Component({
   selector: 'app-edit-podcast-dialog-component',
@@ -50,6 +58,7 @@ import { buildPodcastLanguageOptions } from '../language-options.util';
 export class EditPodcastDialogComponent {
   readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  protected readonly noCompareFunction = noCompareFunction;
 
   podcastName: string;
   isLoading: boolean = true;
@@ -116,34 +125,7 @@ export class EditPodcastDialogComponent {
       if (resp.podcast.status == 200 && resp.podcast.body) {
         this.podcastId = resp.podcast.body.id;
         this.originalPodcast = resp.podcast.body;
-        this.form = new FormGroup<EditPodcastForm>({
-          removed: new FormControl(resp.podcast.body.removed, { nonNullable: true }),
-          indexAllEpisodes: new FormControl(resp.podcast.body.indexAllEpisodes, { nonNullable: true }),
-          bypassShortEpisodeChecking: new FormControl(resp.podcast.body.bypassShortEpisodeChecking, { nonNullable: true }),
-          releaseAuthority: new FormControl(resp.podcast.body.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-          primaryPostService: new FormControl(resp.podcast.body.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
-          spotifyId: new FormControl(resp.podcast.body.spotifyId, { nonNullable: true }),
-          appleId: new FormControl(resp.podcast.body.appleId, { nonNullable: false }),
-          youTubePublicationDelay: new FormControl(resp.podcast.body.youTubePublicationDelay, { nonNullable: true }),
-          skipEnrichingFromYouTube: new FormControl(resp.podcast.body.skipEnrichingFromYouTube, { nonNullable: true }),
-          twitterHandle: new FormControl(resp.podcast.body.twitterHandle, { nonNullable: true }),
-          blueskyHandle: new FormControl(resp.podcast.body.blueskyHandle, { nonNullable: true }),
-          titleRegex: new FormControl(resp.podcast.body.titleRegex, { nonNullable: true }),
-          descriptionRegex: new FormControl(resp.podcast.body.descriptionRegex, { nonNullable: true }),
-          episodeMatchRegex: new FormControl(resp.podcast.body.episodeMatchRegex, { nonNullable: true }),
-          episodeIncludeTitleRegex: new FormControl(resp.podcast.body.episodeIncludeTitleRegex, { nonNullable: true }),
-          defaultSubject: new FormControl(resp.podcast.body.defaultSubject, { nonNullable: false }),
-          ignoreAllEpisodes: new FormControl(resp.podcast.body.ignoreAllEpisodes, { nonNullable: true }),
-          youTubeChannelId: new FormControl(resp.podcast.body.youTubeChannelId, { nonNullable: true }),
-          youTubePlaylistId: new FormControl(resp.podcast.body.youTubePlaylistId, { nonNullable: true }),
-          ignoredAssociatedSubjects: new FormControl<string[]>(resp.podcast.body.ignoredAssociatedSubjects ?? [], { nonNullable: true }),
-          ignoredSubjects: new FormControl<string[]>(resp.podcast.body.ignoredSubjects ?? [], { nonNullable: true }),
-          lang: new FormControl(resp.podcast.body.lang || "unset", { nonNullable: true }),
-          knownTerms: new FormControl<string[]>(resp.podcast.body.knownTerms ?? [], { nonNullable: true }),
-          minimumDuration: new FormControl(resp.podcast.body.minimumDuration, { nonNullable: true }),
-          enrichmentHashTags: new FormControl(resp.podcast.body.enrichmentHashTags, { nonNullable: false }),
-          hashTag: new FormControl(resp.podcast.body.hashTag, { nonNullable: false }),
-        });
+        this.form = new FormGroup<EditPodcastForm>(buildPodcastFormControls(resp.podcast.body));
         let initial: string[] = [];
         if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
           initial.push(resp.podcast.body.defaultSubject);
@@ -222,13 +204,13 @@ export class EditPodcastDialogComponent {
         ignoreAllEpisodes: this.form!.controls.ignoreAllEpisodes.value,
         youTubeChannelId: this.form!.controls.youTubeChannelId.value,
         youTubePlaylistId: this.form!.controls.youTubePlaylistId.value,
-        ignoredAssociatedSubjects: this.translateForEntityA(this.form!.controls.ignoredAssociatedSubjects),
-        ignoredSubjects: this.translateForEntityA(this.form!.controls.ignoredSubjects),
+        ignoredAssociatedSubjects: asStringArray(this.form!.controls.ignoredAssociatedSubjects.value),
+        ignoredSubjects: asStringArray(this.form!.controls.ignoredSubjects.value),
         lang: this.form!.controls.lang.value,
-        knownTerms: this.translateForEntityA(this.form!.controls.knownTerms),
-        minimumDuration: this.translateForEntity(this.form!.controls.minimumDuration),
-        enrichmentHashTags: this.translateForEntityA(this.form!.controls.enrichmentHashTags),
-        hashTag: this.translateForEntity(this.form!.controls.hashTag),
+        knownTerms: asStringArray(this.form!.controls.knownTerms.value),
+        minimumDuration: asEmptyString(this.form!.controls.minimumDuration.value),
+        enrichmentHashTags: asStringArray(this.form!.controls.enrichmentHashTags.value),
+        hashTag: asEmptyString(this.form!.controls.hashTag.value),
       };
 
       var changes = this.getChanges(this.originalPodcast!, update);
@@ -240,94 +222,8 @@ export class EditPodcastDialogComponent {
     }
   }
 
-  isSame(a: string | null | undefined, b: string | null | undefined): boolean {
-    if (!a && !b) {
-      return true;
-    }
-    return JSON.stringify(a) == JSON.stringify(b);
-  }
-
   getChanges(prev: Podcast, now: Podcast): EditPodcastPost {
-    var changes: EditPodcastPost = {};
-    if (prev.removed != now.removed) changes.removed = now.removed;
-    if (prev.indexAllEpisodes != now.indexAllEpisodes) changes.indexAllEpisodes = now.indexAllEpisodes;
-    if (prev.bypassShortEpisodeChecking != now.bypassShortEpisodeChecking) changes.bypassShortEpisodeChecking = now.bypassShortEpisodeChecking;
-    if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority) changes.releaseAuthority = now.releaseAuthority;
-    if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority == undefined) changes.unsetReleaseAuthority = true;
-    if (prev.primaryPostService != now.primaryPostService && now.primaryPostService) changes.primaryPostService = now.primaryPostService;
-    if (prev.primaryPostService != now.primaryPostService && now.primaryPostService == undefined) changes.unsetPrimaryPostService = true;
-    if (prev.spotifyId != now.spotifyId) changes.spotifyId = now.spotifyId;
-    if (!this.isSameA(prev.enrichmentHashTags, now.enrichmentHashTags)) changes.enrichmentHashTags = now.enrichmentHashTags;
-    if (!this.isSame(prev.hashTag, now.hashTag)) changes.hashTag = now.hashTag;
-    if (prev.removed != now.removed) changes.removed = now.removed;
-    if (prev.appleId != now.appleId) {
-      changes.appleId = now.appleId;
-      if (now.appleId == null) {
-        changes.nullAppleId = true;
-      }
-    }
-    if (prev.youTubePublicationDelay != now.youTubePublicationDelay) changes.youTubePublicationDelay = now.youTubePublicationDelay;
-    if (prev.skipEnrichingFromYouTube != now.skipEnrichingFromYouTube) changes.skipEnrichingFromYouTube = now.skipEnrichingFromYouTube;
-    if (prev.twitterHandle != now.twitterHandle) changes.twitterHandle = now.twitterHandle;
-    if (prev.blueskyHandle != now.blueskyHandle) changes.blueskyHandle = now.blueskyHandle;
-    if (prev.titleRegex != now.titleRegex) changes.titleRegex = now.titleRegex;
-    if (prev.descriptionRegex != now.descriptionRegex) changes.descriptionRegex = now.descriptionRegex;
-    if (prev.episodeMatchRegex != now.episodeMatchRegex) changes.episodeMatchRegex = now.episodeMatchRegex;
-    if (prev.episodeIncludeTitleRegex != now.episodeIncludeTitleRegex) changes.episodeIncludeTitleRegex = now.episodeIncludeTitleRegex;
-    if (prev.defaultSubject != now.defaultSubject) changes.defaultSubject = now.defaultSubject ?? "";
-    if (prev.ignoreAllEpisodes != now.ignoreAllEpisodes) changes.ignoreAllEpisodes = now.ignoreAllEpisodes;
-    if (prev.youTubePlaylistId != now.youTubePlaylistId) changes.youTubePlaylistId = now.youTubePlaylistId;
-    if (!this.isSameA(prev.ignoredAssociatedSubjects, now.ignoredAssociatedSubjects)) changes.ignoredAssociatedSubjects = now.ignoredAssociatedSubjects;
-    if (!this.isSameA(prev.ignoredSubjects, now.ignoredSubjects)) changes.ignoredSubjects = now.ignoredSubjects;
-    if (!this.areEqual(prev.lang ?? "unset", now.lang ?? "unset")) changes.lang = now.lang == "unset" ? "" : now.lang ?? "";
-    if (!this.isSameA(prev.knownTerms, now.knownTerms)) changes.knownTerms = now.knownTerms;
-    if (!this.isSame(prev.minimumDuration, now.minimumDuration)) changes.minimumDuration = now.minimumDuration;
-    return changes;
-  }
-
-  areEqual(url1: URL | null | undefined | string, url2: URL | null | undefined | string): boolean {
-    let result: boolean;
-    if ((url1 == undefined || url1 == null) && (url2 == undefined || url2 == null)) {
-      result = true;
-    } else if ((url1 == undefined || url1 == null) && (url2 != undefined && url2 != null)) {
-      result = false;
-    } else if ((url2 == undefined || url2 == null) && (url1 != undefined && url1 != null)) {
-      result = false;
-    } else {
-      result = url1!.toString() === url2!.toString()
-    }
-    return result;
-  }
-
-  isSameA(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
-    if (!a && !b) {
-      return true;
-    }
-    if (!a && b?.length == 0) {
-      return true;
-    }
-    if (a?.length == 0 && !b) {
-      return true;
-    }
-    return JSON.stringify(a) == JSON.stringify(b);
-  }
-
-  translateForEntity(x: FormControl<string | undefined | null>): string | undefined {
-    if (x.value) return x.value;
-    return "";
-  }
-
-  translateForEntityA(x: FormControl<string[] | undefined | null>): string[] | undefined {
-    if (x.value) {
-      const valueS: any = x.value;
-      if (valueS.push) {
-        return x.value;
-      } else if (valueS.split) {
-        const valueSt: string = valueS;
-        return valueSt.split(",");
-      }
-    };
-    return [];
+    return getPodcastChanges(prev, now);
   }
 
   send(id: string, changes: EditPodcastPost) {
@@ -338,10 +234,6 @@ export class EditPodcastDialogComponent {
         this.dialogRef.close({ updated: true, response: result.response });
       }
     });
-  }
-
-  noCompareFunction() {
-    return 0;
   }
 
   onDefaultSubjectDropdownOpenChange(opened: boolean) {
@@ -365,7 +257,7 @@ export class EditPodcastDialogComponent {
   }
 
   filteredDefaultSubjects() {
-    return this.filterSubjectsByTerm(this.defaultSubjects, this.defaultSubjectFilterTerm);
+    return filterSubjectsByTerm(this.defaultSubjects, this.defaultSubjectFilterTerm);
   }
 
   filteredIgnoredSubjects() {
@@ -400,14 +292,6 @@ export class EditPodcastDialogComponent {
       this[key] += event.key;
       event.preventDefault();
     }
-  }
-
-  filterSubjectsByTerm(subjects: string[], term: string): string[] {
-    const trimmedTerm = term.trim().toLowerCase();
-    if (!trimmedTerm) {
-      return subjects;
-    }
-    return subjects.filter(subject => subject.toLowerCase().includes(trimmedTerm));
   }
 
 }

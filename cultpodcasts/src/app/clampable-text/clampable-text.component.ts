@@ -1,12 +1,14 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   Input,
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  signal
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +17,8 @@ import { MatIconModule } from '@angular/material/icon';
   selector: 'app-clampable-text',
   imports: [MatButtonModule, MatIconModule],
   templateUrl: './clampable-text.component.html',
-  styleUrl: './clampable-text.component.sass'
+  styleUrl: './clampable-text.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() maxLines: number = 6;
@@ -23,16 +26,16 @@ export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestr
 
   @ViewChild('content') contentRef!: ElementRef<HTMLElement>;
 
-  expanded = false;
-  showToggle = false;
+  protected readonly expanded = signal(false);
+  protected readonly showToggle = signal(false);
   private resizeObserver: ResizeObserver | undefined;
   private wasTruncated = false;
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['html'] || changes['maxLines']) {
-      this.expanded = false;
+      this.expanded.set(false);
       this.wasTruncated = false;
-      this.showToggle = false;
+      this.showToggle.set(false);
       queueMicrotask(() => this.updateTruncation());
     }
   }
@@ -51,8 +54,8 @@ export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestr
 
   toggle(event: Event) {
     event.stopPropagation();
-    this.expanded = !this.expanded;
-    if (!this.expanded) {
+    this.expanded.update(value => !value);
+    if (!this.expanded()) {
       queueMicrotask(() => this.updateTruncation());
     }
   }
@@ -63,8 +66,8 @@ export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestr
       return;
     }
 
-    if (this.expanded) {
-      this.showToggle = this.wasTruncated;
+    if (this.expanded()) {
+      this.showToggle.set(this.wasTruncated);
       return;
     }
 
@@ -72,6 +75,6 @@ export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestr
     if (truncated) {
       this.wasTruncated = true;
     }
-    this.showToggle = this.wasTruncated;
+    this.showToggle.set(this.wasTruncated);
   }
 }

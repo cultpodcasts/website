@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiEpisode } from '../api-episode.interface';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,7 +19,8 @@ import { BBCServiceResolver } from '../service-resolver';
     ApplePodcastsSvgComponent
   ],
   templateUrl: './episode-podcast-links.component.html',
-  styleUrl: './episode-podcast-links.component.sass'
+  styleUrl: './episode-podcast-links.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodePodcastLinksComponent {
 

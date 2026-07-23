@@ -59,7 +59,6 @@ export class DiscoverySubmitComponent {
           { headers: headers, observe: "response" }
         ));
       if (resp.status === 200) {
-        console.log(resp.body);
         this.isSending = false;
         const podcastEpisodeIds = (resp.body?.results ?? [])
           .filter(x => x.podcastId != null && x.episodeId != null)

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { SubjectApiComponent } from '../subject-api/subject-api.component';
@@ -7,6 +7,7 @@ import { SubjectApiComponent } from '../subject-api/subject-api.component';
   selector: 'app-subject',
   templateUrl: './subject.component.html',
   styleUrls: ['./subject.component.sass'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SubjectApiComponent]
 })
 

@@ -26,8 +26,12 @@ export class ProfileService {
         var bookmarksResponse = await this.getBookmarks();
         if (bookmarksResponse.isUser && bookmarksResponse.success) {
           this.bookmarks = new Set(bookmarksResponse.episodeIds);
-          this.bookmarks$.next(this.bookmarks);
         }
+        // Always emit (new Set) so bookmark buttons leave the loading state.
+        this.publishBookmarks();
+      } else {
+        this.bookmarks = new Set();
+        this.publishBookmarks();
       }
     });
   }
@@ -74,7 +78,7 @@ export class ProfileService {
         console.error(resp);
       } else {
         this.bookmarks.delete(episodeId!);
-        this.bookmarks$.next(this.bookmarks);
+        this.publishBookmarks();
       }
     } catch (error) {
       console.error(error);
@@ -99,10 +103,15 @@ export class ProfileService {
         console.error(resp);
       } else {
         this.bookmarks.add(episodeId!);
-        this.bookmarks$.next(this.bookmarks);
+        this.publishBookmarks();
       }
     } catch (error) {
       console.error(error);
     }
+  }
+
+  /** Emit a new Set instance — in-place mutation does not update Angular signals. */
+  private publishBookmarks(): void {
+    this.bookmarks$.next(new Set(this.bookmarks));
   }
 }

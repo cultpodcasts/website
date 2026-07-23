@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -13,7 +13,8 @@ import { PersonMatch } from '../person-match.interface';
     MatProgressSpinnerModule
   ],
   templateUrl: './episode-guests.component.html',
-  styleUrl: './episode-guests.component.sass'
+  styleUrl: './episode-guests.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodeGuestsComponent {
   @Input()

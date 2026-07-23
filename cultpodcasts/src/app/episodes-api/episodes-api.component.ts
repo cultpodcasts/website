@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -50,32 +51,34 @@ const sortParamDateDesc: string = "date-desc";
     EpisodeGuestsComponent
   ],
   templateUrl: './episodes-api.component.html',
-  styleUrl: './episodes-api.component.sass'
+  styleUrl: './episodes-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodesApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
 
-  episodes: ApiEpisode[] | undefined;
-  error: boolean = false;
-  isLoading: boolean = true;
+  protected episodes = signal<ApiEpisode[] | undefined>(undefined);
+  protected error = signal<boolean>(false);
+  protected isLoading = signal<boolean>(true);
   sortDirection: string = sortParamDateDesc;
-  authRoles: string[] = [];
-  updatingEpisodeId: string | null = null;
-  updatingFlag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null;
-  addingGuest: { [episodeId: string]: string } = {};
+  protected updatingEpisodeId = signal<string | null>(null);
+  protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | null>(null);
+  protected addingGuest = signal<Record<string, string>>({});
+
+  private destroyRef = inject(DestroyRef);
+  private route = inject(ActivatedRoute);
+  protected auth = inject(AuthServiceWrapper);
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 
   constructor(
     private router: Router,
-    private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private route: ActivatedRoute,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private siteService: SiteService,
     private episodeUpdate: EpisodeUpdateService
   ) {
-    this.auth.roles.subscribe(roles => this.authRoles = roles);
   }
 
   ngOnInit() {
@@ -83,11 +86,13 @@ export class EpisodesApiComponent {
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
 
-    this.isLoading = true;
-    this.error = false;
-    this.episodes = [];
-    this.route.params.subscribe(params => {
-      this.isLoading = true;
+    this.isLoading.set(true);
+    this.error.set(false);
+    this.episodes.set([]);
+    this.route.params.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
+      this.isLoading.set(true);
       var serialisedEpisodeId = params['episodeIds'];
       let episodeIds: string[] = [];
       if (serialisedEpisodeId) {
@@ -111,12 +116,12 @@ export class EpisodesApiComponent {
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
-            this.episodes = episodes.filter(x => x != null);
-            this.isLoading = false;
+            this.episodes.set(episodes.filter(x => x != null));
+            this.isLoading.set(false);
           },
           error: e => {
-            this.error = true;
-            this.isLoading = false;
+            this.error.set(true);
+            this.isLoading.set(false);
             console.error(e);
           }
         })
@@ -124,15 +129,15 @@ export class EpisodesApiComponent {
     })
   }
 
-  handleRequest(that: any) {
+  handleRequest(that: EpisodesApiComponent) {
     return function (observable: Observable<any>) {
       return observable.pipe(
         map((result) => {
           return result;
         }),
         catchError((err) => {
-          console.log(err);
-          that.error = true;
+          console.error(err);
+          that.error.set(true);
           return of(null);
         })
       );
@@ -140,14 +145,19 @@ export class EpisodesApiComponent {
   }
 
   setSort(sort: string) {
+    this.sortDirection = sort;
+    const current = this.episodes();
+    if (!current) {
+      return;
+    }
     if (sort != sortParamDateDesc) {
-      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
+      this.episodes.set([...current].sort((a: ApiEpisode, b: ApiEpisode) => {
         return a.release.getTime() - b.release.getTime();
-      })
+      }));
     } else {
-      this.episodes = this.episodes?.sort((a: ApiEpisode, b: ApiEpisode) => {
+      this.episodes.set([...current].sort((a: ApiEpisode, b: ApiEpisode) => {
         return b.release.getTime() - a.release.getTime();
-      })
+      }));
     }
   }
 
@@ -171,23 +181,23 @@ export class EpisodesApiComponent {
   }
 
   isUpdating(episodeId: string): boolean {
-    return this.updatingEpisodeId === episodeId;
+    return this.updatingEpisodeId() === episodeId;
   }
 
   isLoadingIgnored(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'ignored';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'ignored';
   }
 
   isLoadingRemoved(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'removed';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'removed';
   }
 
   isLoadingTweeted(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'tweeted';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'tweeted';
   }
 
   isLoadingBluesky(episodeId: string): boolean {
-    return this.isUpdating(episodeId) && this.updatingFlag === 'bluesky';
+    return this.isUpdating(episodeId) && this.updatingFlag() === 'bluesky';
   }
 
   isStatusActionLoading(episodeId: string): boolean {
@@ -200,10 +210,14 @@ export class EpisodesApiComponent {
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
-      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated) ?? []);
     } catch (e) {
       console.error(e);
     }
+  }
+
+  private refreshEpisodesSignal() {
+    this.episodes.set([...(this.episodes() ?? [])]);
   }
 
   private async runEpisodeUpdate(
@@ -214,18 +228,18 @@ export class EpisodesApiComponent {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    this.updatingEpisodeId = episode.id;
-    this.updatingFlag = flag;
+    this.updatingEpisodeId.set(episode.id);
+    this.updatingFlag.set(flag);
     try {
       const updated = await action();
-      this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+      this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated) ?? []);
     } catch (e) {
       console.error(e);
       this.snackBar.open("Failed to update episode", "Ok", { duration: 5000 });
       throw e;
     } finally {
-      this.updatingEpisodeId = null;
-      this.updatingFlag = null;
+      this.updatingEpisodeId.set(null);
+      this.updatingFlag.set(null);
     }
   }
 
@@ -238,7 +252,7 @@ export class EpisodesApiComponent {
   }
 
   addSuggestedGuest(episode: ApiEpisode, guestName: string) {
-    if (this.isUpdating(episode.id) || this.addingGuest[episode.id]) {
+    if (this.isUpdating(episode.id) || this.addingGuest()[episode.id]) {
       return;
     }
     const suggestion = episode.guestSuggestions?.find(x => x.person.name === guestName);
@@ -251,7 +265,8 @@ export class EpisodesApiComponent {
 
     episode.guestPeople = [...previousGuests, suggestion.person];
     episode.guestSuggestions = previousSuggestions.filter(x => x.person.name !== guestName);
-    this.addingGuest[episode.id] = guestName;
+    this.refreshEpisodesSignal();
+    this.addingGuest.update(m => ({ ...m, [episode.id]: guestName }));
 
     const nextGuestNames = previousGuestNames.includes(guestName)
       ? previousGuestNames
@@ -259,21 +274,26 @@ export class EpisodesApiComponent {
 
     this.episodeUpdate.setGuests(episode, nextGuestNames)
       .then(updated => {
-        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated) ?? []);
       })
       .catch(e => {
         console.error(e);
         episode.guestPeople = previousGuests;
         episode.guestSuggestions = previousSuggestions;
+        this.refreshEpisodesSignal();
         this.snackBar.open("Failed to add guest", "Ok", { duration: 5000 });
       })
       .finally(() => {
-        delete this.addingGuest[episode.id];
+        this.addingGuest.update(m => {
+          const next = { ...m };
+          delete next[episode.id];
+          return next;
+        });
       });
   }
 
   loadingGuestName(episodeId: string): string | null {
-    return this.addingGuest[episodeId] ?? null;
+    return this.addingGuest()[episodeId] ?? null;
   }
 
   toggleIgnored(episode: ApiEpisode) {
@@ -287,6 +307,7 @@ export class EpisodesApiComponent {
     if (next) {
       episode.removed = false;
     }
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleIgnored(episode, next),
@@ -294,6 +315,7 @@ export class EpisodesApiComponent {
     ).catch(() => {
       episode.ignored = previousIgnored;
       episode.removed = previousRemoved;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -308,6 +330,7 @@ export class EpisodesApiComponent {
     if (next) {
       episode.ignored = false;
     }
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => this.episodeUpdate.toggleRemoved(episode, next),
@@ -315,6 +338,7 @@ export class EpisodesApiComponent {
     ).catch(() => {
       episode.ignored = previousIgnored;
       episode.removed = previousRemoved;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -325,12 +349,14 @@ export class EpisodesApiComponent {
     if (episode.tweeted) {
       const previous = episode.tweeted;
       episode.tweeted = false;
+      this.refreshEpisodesSignal();
       this.runEpisodeUpdate(
         episode,
         () => this.episodeUpdate.untweet(episode),
         'tweeted'
       ).catch(() => {
         episode.tweeted = previous;
+        this.refreshEpisodesSignal();
       });
       return;
     }
@@ -345,13 +371,13 @@ export class EpisodesApiComponent {
       this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
       return;
     }
-    this.updatingEpisodeId = episode.id;
-    this.updatingFlag = 'tweeted';
+    this.updatingEpisodeId.set(episode.id);
+    this.updatingFlag.set('tweeted');
     try {
       const result = await this.episodeUpdate.publishTweet(episode);
       if (result.tweeted) {
         const updated = await this.episodeUpdate.fetchEpisode(episode.id);
-        this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+        this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated) ?? []);
         return;
       }
       if (result.failedTweetContent) {
@@ -370,7 +396,7 @@ export class EpisodesApiComponent {
         const dialogResult = await firstValueFrom(dialogRef.afterClosed());
         if (dialogResult?.updated) {
           const updated = await this.episodeUpdate.fetchEpisode(episode.id);
-          this.episodes = this.episodeUpdate.replaceEpisode(this.episodes, updated);
+          this.episodes.set(this.episodeUpdate.replaceEpisode(this.episodes(), updated) ?? []);
         }
         return;
       }
@@ -379,8 +405,8 @@ export class EpisodesApiComponent {
       console.error(e);
       this.snackBar.open("Failed to tweet", "Ok", { duration: 5000 });
     } finally {
-      this.updatingEpisodeId = null;
-      this.updatingFlag = null;
+      this.updatingEpisodeId.set(null);
+      this.updatingFlag.set(null);
     }
   }
 
@@ -391,12 +417,14 @@ export class EpisodesApiComponent {
     const previous = episode.bluesky == true;
     const next = !previous;
     episode.bluesky = next;
+    this.refreshEpisodesSignal();
     this.runEpisodeUpdate(
       episode,
       () => next ? this.episodeUpdate.postBluesky(episode) : this.episodeUpdate.unpostBluesky(episode),
       'bluesky'
     ).catch(() => {
       episode.bluesky = previous;
+      this.refreshEpisodesSignal();
     });
   }
 
@@ -475,4 +503,3 @@ export class EpisodesApiComponent {
     });
   }
 }
-

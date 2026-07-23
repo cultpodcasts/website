@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-apple-podcasts-svg',
   imports: [],
   templateUrl: './apple-podcasts-svg.component.html',
-  styleUrl: './apple-podcasts-svg.component.sass'
+  styleUrl: './apple-podcasts-svg.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ApplePodcastsSvgComponent {
   fillId: string;

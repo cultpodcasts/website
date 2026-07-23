@@ -1,27 +1,45 @@
-# Cultpodcasts
+# Cult Podcasts (Angular client)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.2.1.
+Angular **21** PWA for [cultpodcasts.com](https://cultpodcasts.com). Consumes the Cult Podcasts API via the Cloudflare Worker gateway.
 
-## Development server
+## Local ports
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+| Port | Service | Command |
+|------|---------|---------|
+| **8788** | Website (Wrangler Pages) | `npm run start` |
+| **8787** | API gateway (Wrangler Worker, `~/source/repos/Api`) | `npm run start` in Api |
+| **7071** | Azure Functions API (`RedditPodcastPoster/Cloud/Api`) | `func start` |
+| **4200** | Website hot reload | `npm run dev` |
 
-## Code scaffolding
+Auth0 requires hostname **`local.cultpodcasts.com`** (hosts → `127.0.0.1`). Dev certs: `.cert/dev-cert.pem` + `dev-key.pem`.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+`environment.api` points at **`https://local.cultpodcasts.com:8787`** (API worker).
+
+## Development
+
+| Command | URL |
+|---------|-----|
+| `npm run start` | `https://local.cultpodcasts.com:8788` (build `local` + Wrangler) |
+| `npm run dev` | `https://local.cultpodcasts.com:4200` (`ng serve`) |
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+ng build --configuration production   # or: npm run build -- production
+npm run build:local
+npm run build:staging
+```
 
-## Running unit tests
+Artifacts go under `dist/`.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Unit tests
 
-## Running end-to-end tests
+```bash
+npm test
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Runs Karma/Jasmine (util specs only today).
 
 ## Further help
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+See `AGENTS.md` for curator/discovery notes and `MOBILE_BUILDS.md` for TWA/Bubblewrap.

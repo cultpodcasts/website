@@ -1,32 +1,29 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { ApiEpisode } from './api-episode.interface';
 import { EpisodePost } from './episode-post.interface';
 import { EpisodePublishResponse } from './episode-publish-response.interface';
 import { PostEpisodeModel } from './post-episode-model.interface';
+import { AUTH_SCOPE } from './auth.interceptor';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EpisodeUpdateService {
   constructor(
-    private auth: AuthServiceWrapper,
     private http: HttpClient
   ) { }
 
   async updateEpisode(podcastId: string, episodeId: string, changes: EpisodePost): Promise<void> {
-    const headers = await this.getAuthHeaders();
     const episodeEndpoint = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-    await firstValueFrom(this.http.post(episodeEndpoint, changes, { headers: headers }));
+    await firstValueFrom(this.http.post(episodeEndpoint, changes, { context: this.curateContext() }));
   }
 
   async fetchEpisode(episodeId: string): Promise<ApiEpisode> {
-    const headers = await this.getAuthHeaders();
     const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-    const episode = await firstValueFrom(this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }));
+    const episode = await firstValueFrom(this.http.get<ApiEpisode>(episodeEndpoint, { context: this.curateContext() }));
     return this.normalizeEpisode(episode);
   }
 
@@ -93,12 +90,11 @@ export class EpisodeUpdateService {
     if (!podcastId) {
       throw new Error('Episode podcastId is required for updates.');
     }
-    const headers = await this.getAuthHeaders();
     const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
     const body: PostEpisodeModel = { tweet: true };
     try {
       return await firstValueFrom(
-        this.http.post<EpisodePublishResponse>(endpoint, body, { headers })
+        this.http.post<EpisodePublishResponse>(endpoint, body, { context: this.curateContext() })
       );
     } catch (e: unknown) {
       const err = e as { status?: number; error?: EpisodePublishResponse };
@@ -114,11 +110,10 @@ export class EpisodeUpdateService {
     if (!podcastId) {
       throw new Error('Episode podcastId is required for updates.');
     }
-    const headers = await this.getAuthHeaders();
     const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
     const body: PostEpisodeModel = { blueskyPost: true };
     const response = await firstValueFrom(
-      this.http.post<EpisodePublishResponse>(endpoint, body, { headers })
+      this.http.post<EpisodePublishResponse>(endpoint, body, { context: this.curateContext() })
     );
     if (!response.blueskyPosted) {
       throw new Error('Bluesky post failed.');
@@ -152,14 +147,8 @@ export class EpisodeUpdateService {
     return episodes.map((episode, i) => i === index ? updated : episode);
   }
 
-  private async getAuthHeaders(): Promise<HttpHeaders> {
-    const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
-      authorizationParams: {
-        audience: `https://api.cultpodcasts.com/`,
-        scope: 'curate'
-      }
-    }));
-    return new HttpHeaders().set('Authorization', 'Bearer ' + token);
+  private curateContext(): HttpContext {
+    return new HttpContext().set(AUTH_SCOPE, 'curate');
   }
 
   private normalizeEpisode(episode: ApiEpisode): ApiEpisode {

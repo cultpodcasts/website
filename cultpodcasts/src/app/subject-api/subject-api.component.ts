@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -66,7 +67,8 @@ const sortParamDateDesc: string = "date-desc";
     SearchDescriptionPipe
   ],
   templateUrl: './subject-api.component.html',
-  styleUrl: './subject-api.component.sass'
+  styleUrl: './subject-api.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class SubjectApiComponent {
@@ -78,42 +80,42 @@ export class SubjectApiComponent {
   }
 
   subjectName: string = "";
-  count: number = 0;
+  protected count = signal<number>(0);
   prevPage: number = 0;
   nextPage: number = 0;
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
-  authRoles: string[] = [];
-  podcasts: string[] = [];
-  podcastFilter: string = "";
+  protected auth = inject(AuthServiceWrapper);
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
+  protected podcasts = signal<string[]>([]);
+  private podcastFilter: string = "";
   languageSelection: SubjectLanguageSelection = { mode: "english" };
   langFilter = buildSubjectLangFilter(this.languageSelection);
-  selectedLanguageValues: string[] = [ENGLISH_LANGUAGE_VALUE];
-  languageOptions: SearchResultFacet[] = [];
-  englishLanguageCount: number = 0;
+  protected selectedLanguageValues = signal<string[]>([ENGLISH_LANGUAGE_VALUE]);
+  protected languageOptions = signal<SearchResultFacet[]>([]);
+  protected englishLanguageCount = signal<number>(0);
   readonly englishLanguageValue = ENGLISH_LANGUAGE_VALUE;
   readonly allLanguagesValue = ALL_LANGUAGES_VALUE;
-  isSignedIn: boolean = false;
+  private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
-  facets: SearchResultsFacets = {};
+  protected facets = signal<SearchResultsFacets>({});
   resultsHeading: string = "";
-  isLoading: boolean = true;
+  protected isLoading = signal<boolean>(true);
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
+  private scrollSubscribed = false;
 
   constructor(
     private router: Router,
     private siteService: SiteService,
     private oDataService: ODataService,
-    protected auth: AuthServiceWrapper,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private scrollDisplatcher: ScrollDispatcher,
+    private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy
   ) {
-    this.auth.roles.subscribe(roles => this.authRoles = roles);
-    this.auth.isSignedIn.subscribe(isSignedIn => this.isSignedIn = isSignedIn);
   }
 
   ngOnInit() {
@@ -127,6 +129,8 @@ export class SubjectApiComponent {
         params,
         queryParams,
       })
+    ).pipe(
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const navigation = this.router.currentNavigation();
       let initial = true;
@@ -134,13 +138,13 @@ export class SubjectApiComponent {
         const facetState = navigation.extras.state as FacetState;
         if (facetState) {
           initial = false;
-          this.facets = facetState.searchResultsFacets;
-          this.podcasts = facetState.podcasts!;
+          this.facets.set(facetState.searchResultsFacets);
+          this.podcasts.set(facetState.podcasts!);
         }
       }
       const { params, queryParams } = res;
       this.subjectName = params["subjectName"];
-      this.isLoading = true;
+      this.isLoading.set(true);
       this.searchState.query = this.searchState.query = params["query"] ?? "";
       this.siteService.setQuery(this.searchState.query);
       this.siteService.setPodcast(null);
@@ -198,8 +202,13 @@ export class SubjectApiComponent {
         }).subscribe(
           {
             next: data => {
-              if (data.entities.length && !this.results().length) {
-                this.scrollDisplatcher.scrolled().subscribe(async () => {
+              const count = data.metadata.get("count");
+              this.count.set(count);
+              if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
+                this.scrollSubscribed = true;
+                this.scrollDispatcher.scrolled().pipe(
+                  takeUntilDestroyed(this.destroyRef)
+                ).subscribe(async () => {
                   if (this.results().length < count &&
                     this.isScrolledToBottom() && !this.isSubsequentLoading()) {
                     this.isSubsequentLoading.set(true);
@@ -215,23 +224,22 @@ export class SubjectApiComponent {
               }
               this.isSubsequentLoading.set(false);
               if (subsequent && facetsFromResponse) {
-                this.facets = {
+                const newFacets: SearchResultsFacets = {
                   podcastName: facetsFromResponse.podcastName,
                   subjects: facetsFromResponse.subjects?.filter(x => !x.value.startsWith("_")),
                   lang: facetsFromResponse.lang
                 };
-                this.languageOptions = this.facets.lang ?? [];
-                const subjectScopedTotal = facetCount ?? data.metadata.get("count");
-                this.englishLanguageCount = englishFacetCount(subjectScopedTotal, this.languageOptions);
+                this.facets.set(newFacets);
+                this.languageOptions.set(newFacets.lang ?? []);
+                const subjectScopedTotal = facetCount ?? count;
+                this.englishLanguageCount.set(englishFacetCount(subjectScopedTotal, this.languageOptions()));
               }
-              const count = data.metadata.get("count");
-              this.count = count;
-              this.isLoading = false;
+              this.isLoading.set(false);
             },
             error: (e) => {
               console.error(e);
               this.resultsHeading = "Something went wrong. Please try again.";
-              this.isLoading = false;
+              this.isLoading.set(false);
             }
           });
     };
@@ -258,7 +266,7 @@ export class SubjectApiComponent {
           error: (e) => {
             console.error(e);
             this.resultsHeading = "Something went wrong. Please try again.";
-            this.isLoading = false;
+            this.isLoading.set(false);
           }
         });
       return;
@@ -323,11 +331,12 @@ export class SubjectApiComponent {
   podcastsChange($event: MatChipListboxChange) {
     const delimiter = '£';
     var items: { count: number, value: string }[] = $event.value;
-    this.podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    if (this.podcasts.length == 0) {
+    const podcasts = items.map(x => x.value.replaceAll("'", "''"));
+    this.podcasts.set(podcasts);
+    if (podcasts.length == 0) {
       this.podcastFilter = "";
     } else {
-      var podcastsNameList = this.podcasts.join(delimiter);
+      var podcastsNameList = podcasts.join(delimiter);
       this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
     }
     this.searchState.page = 1;
@@ -337,12 +346,14 @@ export class SubjectApiComponent {
   languagesChange($event: MatChipListboxChange) {
     const values: string[] = ($event.value as Array<string | { value: string }>)
       .map(item => typeof item === "string" ? item : item.value);
+    let selected: string[];
     if (values.includes(ALL_LANGUAGES_VALUE) && values.length > 1) {
-      this.selectedLanguageValues = [ALL_LANGUAGES_VALUE];
+      selected = [ALL_LANGUAGES_VALUE];
     } else {
-      this.selectedLanguageValues = values;
+      selected = values;
     }
-    this.languageSelection = selectionFromChipValues(this.selectedLanguageValues);
+    this.selectedLanguageValues.set(selected);
+    this.languageSelection = selectionFromChipValues(selected);
     this.langFilter = buildSubjectLangFilter(this.languageSelection);
     this.searchState.page = 1;
     this.execSearch(true, false);
@@ -353,11 +364,11 @@ export class SubjectApiComponent {
   }
 
   get showLanguageSelector(): boolean {
-    return shouldShowLanguageSelector(this.languageOptions, this.languageSelection);
+    return shouldShowLanguageSelector(this.languageOptions(), this.languageSelection);
   }
 
   get visibleLanguageOptions(): SearchResultFacet[] {
-    return displayedLanguageOptions(this.languageOptions, this.languageSelection);
+    return displayedLanguageOptions(this.languageOptions(), this.languageSelection);
   }
 
   isScrolledToBottom(): boolean {

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 
 @Component({
@@ -7,6 +7,7 @@ import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
         EpisodesApiComponent
     ],
     templateUrl: './episodes.component.html',
-    styleUrl: './episodes.component.sass'
+    styleUrl: './episodes.component.sass',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EpisodesComponent { }

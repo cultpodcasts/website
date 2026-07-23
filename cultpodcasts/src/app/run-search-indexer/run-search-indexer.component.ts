@@ -34,7 +34,6 @@ export class RunSearchIndexerComponent {
         .subscribe(
           {
             next: resp => {
-              console.log(resp);
               this.close({ indexerState: resp });
             },
             error: e => {

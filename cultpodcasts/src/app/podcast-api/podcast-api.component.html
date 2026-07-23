@@ -1,12 +1,12 @@
-@if (count > 0) {
+@if (count() > 0) {
 <section id="results">
   <div id="progresswrapper">
-    @if (isLoading) {
+    @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
   </div>
   <section id="resultsheading">
-    <h2>{{podcastName}} has {{count}} episode@if(count>1 || count==0){s}
+    <h2>{{podcastName}} has {{count()}} episode@if(count()>1 || count()==0){s}
       @if (searchState.query && searchState.query!='') {
       matching "{{searchState.query}}"
       }
@@ -15,7 +15,7 @@
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #sort="matMenu">
-      @if (authRoles.includes('Curator')) {
+      @if (authRoles().includes('Curator')) {
       <button mat-menu-item id="index" (click)="index()">
         <mat-icon>refresh</mat-icon>
         <span>Index Podcast</span>
@@ -29,7 +29,7 @@
         <span>Submit Url for Podcast</span>
       </button>
       }
-      @if (authRoles.includes('Admin')) {
+      @if (authRoles().includes('Admin')) {
       <button mat-menu-item (click)="renamePodcast()">
         <mat-icon>arrow_right_alt</mat-icon>
         <span>Rename Podcast</span>
@@ -55,21 +55,21 @@
     </mat-menu>
   </section>
 
-  @if (facets.subjects && facets.subjects.length > 0) {
+  @if (facets().subjects && facets().subjects!.length > 0) {
   <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>Subjects ({{facets.subjects!.length}})</mat-panel-title>
+      <mat-panel-title>Subjects ({{facets().subjects!.length}})</mat-panel-title>
       <mat-panel-description>
-        @if (subjects.length==0) {
+        @if (subjects().length==0) {
         All Selected
         } @else {
-        {{subjects.length}} Selected
+        {{subjects().length}} Selected
         }
       </mat-panel-description>
     </mat-expansion-panel-header>
     <mat-chip-listbox multiple (change)="subjectsChange($event)">
-      @for (subject of facets.subjects; track subject.value) {
-      <mat-chip-option [value]="subject" [selected]="subjects.indexOf(subject.value)>=0">{{subject.value}}
+      @for (subject of facets().subjects; track subject.value) {
+      <mat-chip-option [value]="subject" [selected]="subjects().indexOf(subject.value)>=0">{{subject.value}}
         ({{subject.count}})</mat-chip-option>
       }
     </mat-chip-listbox>
@@ -79,7 +79,7 @@
   <mat-card class="result">
     <mat-card-header>
       <app-bookmark [episodeId]="result.id" />
-      <mat-card-title [class.hasBookmark]="isSignedIn">
+      <mat-card-title [class.hasBookmark]="isSignedIn()">
         <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
       </mat-card-title>
       <mat-card-subtitle>
@@ -111,7 +111,7 @@
 </div>
 }
 
-@if (count === 0 && !isLoading) {
+@if (count() === 0 && !isLoading()) {
 <section id="resultsheading">
   <h2>There were no results for "{{podcastName}}"@if (searchState.query) { and "{{searchState.query}}"}</h2>
 </section>

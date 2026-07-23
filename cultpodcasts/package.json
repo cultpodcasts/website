@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.9.974",
+  "version": "1.10.0",
   "scripts": {
     "ng": "ng",
     "start": "ng build --configuration local && npm run process && wrangler pages dev dist/cloudflare --compatibility-date=2024-09-02 --local-protocol https --https-cert-path .cert/dev-cert.pem --https-key-path .cert/dev-key.pem --port 8788 --kv kv --r2 content",
@@ -9,6 +9,7 @@
     "build:local": "ng build --configuration local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:e2e": "playwright test",
     "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
     "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",
@@ -40,6 +41,7 @@
     "@angular/cli": "^21.0.0",
     "@angular/compiler-cli": "^21.0.6",
     "@cloudflare/workers-types": "^4.20241022.0",
+    "@playwright/test": "^1.61.1",
     "@types/express": "^4.17.17",
     "@types/jasmine": "~4.3.0",
     "@types/node": "^24.9.1",
