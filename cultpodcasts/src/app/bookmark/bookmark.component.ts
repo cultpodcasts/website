@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostBinding,
+  OnInit,
   PLATFORM_ID,
   Signal,
   computed,
@@ -27,7 +29,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   styleUrl: './bookmark.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BookmarkComponent {
+export class BookmarkComponent implements OnInit {
   episodeId = input.required<string>();
   hasMenu = input<boolean>(false);
   protected readonly waitingCallback = signal(true);
@@ -38,6 +40,7 @@ export class BookmarkComponent {
     { initialValue: false }
   );
   private readonly profileService = inject(ProfileService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly bookmarks = toSignal(
     this.profileService.bookmarks$,
     { initialValue: new Set<string>() }
@@ -50,9 +53,11 @@ export class BookmarkComponent {
   @HostBinding('class.has-menu')
   get hasMenuGet() { return this.hasMenu(); }
 
-  constructor() {
+  ngOnInit(): void {
+    // Required input is only safe after construction (NG0950 if read in constructor
+    // when bookmarks$ ReplaySubject already has a value and emits synchronously).
     this.profileService.bookmarks$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(bookmarks => {
         const state = bookmarks.has(this.episodeId());
         if (this.waitingCallback() && state !== this.isBookmarkedState()) {
