@@ -23,14 +23,32 @@ Do **not** call `provideZonelessChangeDetection()` or remove `zone.js` from [`an
 2. **OnPush plain-field async writes** — **done** for list/API pages: podcast/search/subject/outgoing/episodes/bookmarks use signals for template-bound async state (`sortDirection`, filters, headings, names, etc.).
 3. **Auth0** — **mostly done**: components use `toSignal(auth.roles)` / `toSignal(auth.isSignedIn)` / `async` pipe (toolbar); `PodcastsService` reads auth at call time via `firstValueFrom`. `AuthServiceWrapper` still bridges Auth0 → ReplaySubjects (fine).
 4. **Polling** — **done**: `DiscoveryInfoService` uses `toSignal` for roles; toolbar already binds via `toSignal(discoveryInfo)`.
-5. **Regression** — Material dialogs, infinite scroll (`ScrollDispatcher`), service worker messages, drag-drop, slot-machine counter, SSR prerender on Cloudflare.
+5. **Regression** — code audit **done** (Jul 2026); complete the smoke checklist below on Zone first, then flip.
+
+### Regression smoke checklist (manual)
+
+Code review notes: infinite scroll uses CDK `ScrollDispatcher` + signal updates; homepage uses `@HostListener` + `grouped.set`; drag-drop / SW share path use signals / dialogs; slot-machine uses OnPush + `columns` signal + `setTimeout`. No CDK `DragDrop` module.
+
+On **preview** (still Zone), verify:
+
+- [ ] Homepage loads; slot-machine counter animates (or respects reduced motion)
+- [ ] Homepage infinite scroll loads more episodes near bottom
+- [ ] Search / podcast / subject pages: infinite scroll appends results
+- [ ] Material dialogs open/close (edit episode, post episode, manual tweet, submit podcast)
+- [ ] Drag URL onto page → submit dialog (general + podcast-page target if Curator)
+- [ ] Service-worker share message still opens submit (Android/share target if available)
+- [ ] Discovery badge updates for Curator (~60s poll or after discovery submit refresh)
+- [ ] SSR/prerender: homepage / privacy / terms render without console Zone errors
+- [ ] Tweet icon → manual-tweet dialog (auth interceptor fix)
+
+When all checked, proceed to **Flip steps**.
 
 ## Flip steps (later)
 
 1. Replace `provideZoneChangeDetection({ eventCoalescing: true })` with `provideZonelessChangeDetection()` in [`app.config.ts`](../src/app/app.config.ts).
 2. Remove `zone.js` from `angular.json` polyfills (app + test) and uninstall the package.
 3. Ensure `TestBed` uses zoneless (or no `zone.js` polyfill) and `await fixture.whenStable()`.
-4. Smoke local + production build + `npm run process` + Pages SSR.
+4. Smoke local + production build + `npm run process` + Pages SSR (re-run checklist above under zoneless).
 
 ## Related
 
