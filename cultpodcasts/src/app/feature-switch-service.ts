@@ -13,6 +13,8 @@ export class FeatureSwtichService {
                 return false;
             case FeatureSwitch.redditPost:
                 return false;
+            case FeatureSwitch.homepageSsr:
+                return true;
             default:
                 return false;
         }

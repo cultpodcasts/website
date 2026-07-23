@@ -14,6 +14,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
 import { authInterceptor } from './auth.interceptor';
+import { HOMEPAGE_SSR_DATA } from './homepage-ssr.token';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
       BrowserModule
     ),
     SiteService,
+    { provide: HOMEPAGE_SSR_DATA, useValue: null },
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,
