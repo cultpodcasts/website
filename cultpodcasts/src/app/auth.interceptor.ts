@@ -1,7 +1,7 @@
 import { HttpContextToken, HttpInterceptorFn } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, switchMap } from 'rxjs';
+import { catchError, of, switchMap } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { environment } from '../environments/environment';
 
@@ -15,6 +15,7 @@ export const AUTH_SCOPE = new HttpContextToken<string | null>(() => null);
  * Attaches Bearer token for API requests that opt in via AUTH_SCOPE.
  * Skips when no scope, Authorization already set, or not running in the browser.
  * If silent auth fails, continues without a token so public GETs still work.
+ * API HTTP errors (e.g. 400 with a body) must propagate — do not retry unauthenticated.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const platformId = inject(PLATFORM_ID);
@@ -44,13 +45,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       scope
     }
   }).pipe(
-    switchMap((token) =>
-      next(
+    catchError(() => of(null)),
+    switchMap((token: string | null) => {
+      if (!token) {
+        return next(req);
+      }
+      return next(
         req.clone({
           setHeaders: { Authorization: `Bearer ${token}` }
         })
-      )
-    ),
-    catchError(() => next(req))
+      );
+    })
   );
 };
