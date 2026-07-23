@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { SearchApiComponent } from '../search-api/search-api.component';
@@ -9,6 +9,7 @@ const queryParam: string = "query";
   selector: 'app-search',
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.sass'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [SearchApiComponent]
 })
 export class SearchComponent {

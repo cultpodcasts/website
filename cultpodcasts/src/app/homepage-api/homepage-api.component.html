@@ -1,27 +1,27 @@
 <section id="notices">
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <app-slot-machine-counter
-      preset="classic" [baseline]="episodeCountBaseline" [value]="homepage?.episodeCount"
-      [title]="totalDuration"></app-slot-machine-counter> podcasts on the subject of Cults.
+      preset="classic" [baseline]="episodeCountBaseline" [value]="homepage()?.episodeCount"
+      [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
   </p>
 </section>
 <div id="progresswrapper">
-  @if (isLoading) {
+  @if (isLoading()) {
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
   }
 </div>
 <section id="thisweek">
-  @if (isInError) {
+  @if (isInError()) {
   <p>An error occurred.</p>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
   </div>
   } @else {
   <h2>This weeks new releases.
-    @if (podcastCount) {
-    <span>{{podcastCount}} Podcasts.</span>
+    @if (podcastCount()) {
+    <span>{{podcastCount()}} Podcasts.</span>
     }
   </h2>
-  @for (dateItems of grouped | keyvalue: descDate; track dateItems.key) {
+  @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key) {
   <div>
     <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
       {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
@@ -29,7 +29,7 @@
     <mat-card class="result" id="{{item.id}}">
       <mat-card-header>
         <app-bookmark [episodeId]="item.id" />
-        <mat-card-title [class.hasBookmark]="isSignedIn"><a
+        <mat-card-title [class.hasBookmark]="isSignedIn()"><a
             [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a></mat-card-title>
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
