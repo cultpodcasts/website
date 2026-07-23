@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { Share } from '../share.interface';
 import { ShareMode } from "../share-mode.enum";
@@ -16,6 +16,7 @@ import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
   selector: 'app-send-podcast',
   templateUrl: './send-podcast.component.html',
   styleUrls: ['./send-podcast.component.sass'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 

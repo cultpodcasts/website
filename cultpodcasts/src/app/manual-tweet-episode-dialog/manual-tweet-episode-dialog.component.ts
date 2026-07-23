@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,6 +9,7 @@ import { EpisodeChangeResponse } from '../episode-change-response.interface';
   selector: 'app-manual-tweet-episode-dialog',
   imports: [MatDialogModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './manual-tweet-episode-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './manual-tweet-episode-dialog.component.sass'
 })
 export class ManualTweetEpisodeDialogComponent {

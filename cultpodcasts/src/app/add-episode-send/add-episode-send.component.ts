@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -10,6 +10,7 @@ import { CurationSubmitService } from '../curation-submit.service';
   selector: 'app-add-episode-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './add-episode-send.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './add-episode-send.component.sass'
 })
 export class AddEpisodeSendComponent {

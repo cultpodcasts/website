@@ -1,6 +1,6 @@
 <section id="notices">
   <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <app-slot-machine-counter
-      preset="classic" [baseline]="episodeCountBaseline" [value]="homepage()?.episodeCount"
+      preset="classic" [baseline]="episodeCountBaseline" [value]="$safeNavigationMigration(homepage()?.episodeCount)"
       [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
   </p>
 </section>

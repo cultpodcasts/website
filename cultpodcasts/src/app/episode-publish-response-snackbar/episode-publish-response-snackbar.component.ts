@@ -1,4 +1,4 @@
-import { Component, Inject, ViewEncapsulation } from '@angular/core';
+import { Component, Inject, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBarRef } from '@angular/material/snack-bar';
 import { EpisodePublishResponseAdaptor } from '../episode-publish-response-adaptor';
 import { MatDialog } from '@angular/material/dialog';
@@ -10,6 +10,7 @@ import { PostEpisodeDialogResponseWrapper } from '../post-episode-dialog-respons
   imports: [],
   templateUrl: './episode-publish-response-snackbar.component.html',
   styleUrl: './episode-publish-response-snackbar.component.sass',
+  changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None
 })
 export class EpisodePublishResponseSnackbarComponent {

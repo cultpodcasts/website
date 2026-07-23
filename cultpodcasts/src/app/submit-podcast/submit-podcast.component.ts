@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { UrlValidator } from '../url.validator';
@@ -16,6 +16,7 @@ import { TextFieldModule } from '@angular/cdk/text-field';
   selector: 'app-submit-podcast',
   templateUrl: './submit-podcast.component.html',
   styleUrls: ['./submit-podcast.component.sass'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [
     MatDialogModule,
     FormsModule,

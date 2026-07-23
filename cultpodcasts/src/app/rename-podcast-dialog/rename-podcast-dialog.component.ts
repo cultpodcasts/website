@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -19,6 +19,7 @@ import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.i
     FormsModule,
   ],
   templateUrl: './rename-podcast-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './rename-podcast-dialog.component.sass'
 })
 export class RenamePodcastDialogComponent {

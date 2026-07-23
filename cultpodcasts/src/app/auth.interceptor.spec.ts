@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { PLATFORM_ID } from '@angular/core';
@@ -18,7 +18,7 @@ describe('authInterceptor', () => {
     getAccessTokenSilently = jasmine.createSpy('getAccessTokenSilently').and.returnValue(of('test-token'));
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: PLATFORM_ID, useValue: platformId },
         {

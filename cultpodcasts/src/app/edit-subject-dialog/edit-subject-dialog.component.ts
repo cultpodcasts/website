@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -36,6 +36,7 @@ import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.ut
     MatInputModule
   ],
   templateUrl: './edit-subject-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-subject-dialog.component.sass'
 })
 export class EditSubjectDialogComponent {

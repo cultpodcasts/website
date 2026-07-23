@@ -49,9 +49,5 @@ async function workerFetchHandler(request: Request, env: Env) {
 }
 
 export default {
-	fetch: (request: Request, env: Env) => {
-		return (globalThis as any)["__zone_symbol__Promise"].resolve(
-			workerFetchHandler(request, env)
-		)
-	}
+	fetch: (request: Request, env: Env) => workerFetchHandler(request, env)
 };

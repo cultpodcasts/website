@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -17,6 +17,7 @@ import { environment } from './../../environments/environment';
     FormsModule
   ],
   templateUrl: './add-term.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './add-term.component.sass'
 })
 export class AddTermComponent {

@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmit } from '../discovery-submit.interface';
@@ -15,6 +15,7 @@ import { DiscoveryInfoService } from '../discovery-info.service';
   selector: 'app-discovery-submit',
   templateUrl: './discovery-submit.component.html',
   styleUrls: ['./discovery-submit.component.sass'],
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule]
 })
 

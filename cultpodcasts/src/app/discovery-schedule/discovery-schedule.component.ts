@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -20,6 +20,7 @@ import { DiscoverySchedule, DiscoveryScheduleNextRun, DiscoveryScheduleUpdate } 
     FormsModule
   ],
   templateUrl: './discovery-schedule.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './discovery-schedule.component.sass'
 })
 export class DiscoveryScheduleComponent {

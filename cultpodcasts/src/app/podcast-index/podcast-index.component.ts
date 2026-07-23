@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { firstValueFrom } from 'rxjs';
@@ -12,6 +12,7 @@ import { IndexPodcastResponse } from '../index-podcast-response.interface';
   selector: 'app-podcast-index',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './podcast-index.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './podcast-index.component.sass'
 })
 export class PodcastIndexComponent {

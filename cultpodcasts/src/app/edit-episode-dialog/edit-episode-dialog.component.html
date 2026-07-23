@@ -13,15 +13,15 @@
                     <span>Podcast:</span>
                     <p>{{podcastName}}</p>
                 </label>
-                <label>
-                    <span>Title:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Title</mat-label>
                     <input type="text" [formControl]="form!.controls.title" matInput>
-                </label>
-                <label>
-                    <span>Description:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Description</mat-label>
                     <textarea [formControl]="form!.controls.description" matInput cdkTextareaAutosize
                         cdkAutosizeMaxRows="5" matInput></textarea>
-                </label>
+                </mat-form-field>
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
@@ -54,45 +54,45 @@
                 </div>
             </mat-tab>
             <mat-tab label="Urls">
-                <label>
-                    <span>Spotify:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Spotify</mat-label>
                     <input type="text" [formControl]="form!.controls.spotify" matInput>
-                </label>
-                <label>
-                    <span>Apple:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Apple</mat-label>
                     <input type="text" [formControl]="form!.controls.apple" matInput>
-                </label>
-                <label>
-                    <span>YouTube:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>YouTube</mat-label>
                     <input type="text" [formControl]="form!.controls.youtube" matInput>
-                </label>
+                </mat-form-field>
                 <mat-accordion>
                     <mat-expansion-panel>
                         <mat-expansion-panel-header>
                             <mat-panel-title>More</mat-panel-title>
                         </mat-expansion-panel-header>
-                        <label>
-                            <span>BBC:</span>
-                            <input type="text" [formControl]="form!.controls.bbc" matInput>
-                        </label>
-                        <label>
-                            <span>Internet Archive:</span>
-                            <input type="text" [formControl]="form!.controls.internetArchive" matInput>
-                        </label>
+                        <mat-form-field class="full-width">
+                    <mat-label>BBC</mat-label>
+                    <input type="text" [formControl]="form!.controls.bbc" matInput>
+                </mat-form-field>
+                        <mat-form-field class="full-width">
+                    <mat-label>Internet Archive</mat-label>
+                    <input type="text" [formControl]="form!.controls.internetArchive" matInput>
+                </mat-form-field>
                     </mat-expansion-panel>
                 </mat-accordion>
             </mat-tab>
             <mat-tab label="Meta">
-                <label>
-                    <span>Release:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Release</mat-label>
                     <input type="datetime-local" [formControl]="form!.controls.release" matInput>
-                </label>
-                <label>
-                    <span>Duration:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Duration</mat-label>
                     <input type="text" [formControl]="form!.controls.duration" matInput>
-                </label>
-                <label>
-                    <span>Subjects:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Subjects</mat-label>
                     <mat-select [formControl]="form!.controls.subjects" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onSubjectsSelectionChange()"
                         (openedChange)="onSubjectsDropdownOpenChange($event)"
@@ -123,41 +123,41 @@
                         }
                         }
                     </mat-select>
-                </label>
-                <label>
-                    <span>Search Terms:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Search Terms</mat-label>
                     <input type="text" [formControl]="form!.controls.searchTerms" matInput>
-                </label>
-                <label>
-                    <span>Language:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Language</mat-label>
                     <select matNativeControl [formControl]="form!.controls.lang">
                         @for (language of languages | keyvalue:null; track language) {
                         <option [value]="language.key">{{language.value}}</option>
                         }
                     </select>
-                </label>
+                </mat-form-field>
             </mat-tab>
             <mat-tab label="Images">
-                <label>
-                    <span>Spotify:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Spotify</mat-label>
                     <input type="text" [formControl]="form!.controls.spotifyImage" matInput>
-                </label>
-                <label>
-                    <span>Apple:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Apple</mat-label>
                     <input type="text" [formControl]="form!.controls.appleImage" matInput>
-                </label>
-                <label>
-                    <span>YouTube:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>YouTube</mat-label>
                     <input type="text" [formControl]="form!.controls.youtubeImage" matInput>
-                </label>
-                <label>
-                    <span>Other:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Other</mat-label>
                     <input type="text" [formControl]="form!.controls.otherImage" matInput>
-                </label>
+                </mat-form-field>
             </mat-tab>
             <mat-tab label="Guests">
-                <label>
-                    <span>Guests:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Guests</mat-label>
                     <mat-select [formControl]="form!.controls.guests" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onGuestsSelectionChange()"
                         (openedChange)="onGuestsDropdownOpenChange($event)"
@@ -180,9 +180,9 @@
                         }
                         }
                     </mat-select>
-                </label>
+                </mat-form-field>
                 <div class="guest-actions">
-                    <button type="button" mat-button (click)="openAddPerson()">Add person</button>
+                    <button type="button" matButton="text" (click)="openAddPerson()">Add person</button>
                 </div>
                 @if (selectedGuests.length > 0) {
                 <div class="guest-suggestions">
@@ -190,7 +190,7 @@
                     @for (person of selectedGuests; track person.id) {
                     <div class="guest-row">
                         <span>{{personLabel(person)}}</span>
-                        <button type="button" mat-button (click)="openEditPerson(person)">Edit</button>
+                        <button type="button" matButton="text" (click)="openEditPerson(person)">Edit</button>
                     </div>
                     }
                 </div>
@@ -201,7 +201,7 @@
                     @for (suggestion of guestSuggestions; track suggestion.person.id) {
                     <div class="guest-row">
                         <span>{{personLabel(suggestion.person)}} ({{suggestion.matchResults[0]?.term}})</span>
-                        <button type="button" mat-button (click)="addSuggestedGuest(suggestion.person.name)">Add</button>
+                        <button type="button" matButton="text" (click)="addSuggestedGuest(suggestion.person.name)">Add</button>
                     </div>
                     }
                 </div>
@@ -213,6 +213,6 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
+    <button matButton="text" (click)="close()">Close</button>
+    <button matButton="filled" [disabled]="!form || !form.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

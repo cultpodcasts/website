@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -20,6 +20,7 @@ const long = 30 * 1000;
     ApplePodcastsSvgComponent
   ],
   templateUrl: './submit-url-origin-response-snackbar.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './submit-url-origin-response-snackbar.component.sass'
 })
 

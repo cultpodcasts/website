@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,7 @@ import { environment } from './../../environments/environment';
   selector: 'app-publish-homepage',
   imports: [MatDialogModule, MatProgressSpinnerModule],
   templateUrl: './publish-homepage.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './publish-homepage.component.sass'
 })
 export class PublishHomepageComponent {

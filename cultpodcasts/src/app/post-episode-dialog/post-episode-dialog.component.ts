@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -31,6 +31,7 @@ import { FeatureSwtichService } from '../feature-switch-service';
     MatCheckboxModule
   ],
   templateUrl: './post-episode-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './post-episode-dialog.component.sass'
 })
 export class PostEpisodeDialogComponent {

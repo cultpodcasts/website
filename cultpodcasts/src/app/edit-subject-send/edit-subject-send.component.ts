@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { SubjectEntity } from '../subject-entity.interface';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,6 +9,7 @@ import { CurationSubmitService } from '../curation-submit.service';
   selector: 'app-edit-subject-send',
   imports: [MatDialogModule, MatProgressSpinnerModule, MatButtonModule],
   templateUrl: './edit-subject-send.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './edit-subject-send.component.sass'
 })
 export class EditSubjectSendComponent {

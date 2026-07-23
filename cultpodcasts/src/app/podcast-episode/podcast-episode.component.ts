@@ -1,4 +1,4 @@
-import { Component, inject, Input } from '@angular/core';
+import { Component, inject, Input, ChangeDetectionStrategy } from '@angular/core';
 import { SearchResult } from '../search-result.interface';
 import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,6 +38,7 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
     SearchDescriptionPipe
   ],
   templateUrl: './podcast-episode.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './podcast-episode.component.sass'
 })
 export class PodcastEpisodeComponent {

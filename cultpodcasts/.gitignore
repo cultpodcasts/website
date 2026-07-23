@@ -1,5 +1,11 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
+# Secrets / local env (never commit tokens)
+.env
+.env.*
+!.env.staging.example
+!.env.*.example
+
 # Compiled output
 /dist
 /tmp
