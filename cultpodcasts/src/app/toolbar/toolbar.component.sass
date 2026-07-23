@@ -70,13 +70,23 @@ button#menu
 
 :host-context(.home-shell)
     .app-toolbar
-        background: transparent !important
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        z-index: 20
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent) !important
         border-bottom-color: transparent
         backdrop-filter: none
         -webkit-backdrop-filter: none
+        color: #fff
+    #site
+        color: #fff
     #site span
         position: absolute
         width: 1px
         height: 1px
         overflow: hidden
         clip: rect(0, 0, 0, 0)
+    button#menu
+        color: #fff

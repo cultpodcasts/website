@@ -1,39 +1,33 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { KeyValue, KeyValuePipe } from '@angular/common';
+import { KeyValue } from '@angular/common';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HomepageService } from '../homepage.service';
-import { EpisodeImageComponent } from '../episode-image/episode-image.component';
-import { HomepageEpisode } from "../homepage-episode.interface";
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
+import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SubjectsComponent } from "../subjects/subjects.component";
-import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
+import { episodeImageUrl } from '../search-result-links';
+
+export interface EpisodeRail {
+  id: string;
+  title: string;
+  episodes: HomepageEpisode[];
+}
 
 @Component({
   selector: 'app-homepage-api',
   imports: [
     MatProgressBarModule,
-    MatCardModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
-    KeyValuePipe,
-    EpisodeImageComponent,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    SubjectsComponent,
-    ClampableTextComponent,
     SlotMachineCounterComponent,
     SearchBarComponent
   ],
@@ -49,20 +43,58 @@ export class HomepageApiComponent {
   protected podcastCount = signal<number | undefined>(undefined);
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
-  readonly Weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  readonly Month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  readonly Weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  readonly Month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   protected homepage = signal<Homepage | undefined>(undefined);
-  protected totalDuration = signal<string>("");
+  protected totalDuration = signal<string>('');
   readonly episodeCountBaseline = 80000;
   protected auth = inject(AuthServiceWrapper);
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   readonly renderConfig = {
-    initialBlockSize: 10,
-    firstScrollBlockSize: 100,
-    nearEndBlockSize: 100,
+    initialBlockSize: 40,
+    firstScrollBlockSize: 80,
+    nearEndBlockSize: 80,
     nearEndThresholdPixels: 1200,
   };
+
+  /** Flat list currently rendered (for featured + “New this week” rail). */
+  private readonly allEpisodesVisible = computed(() => {
+    const g = this.grouped();
+    const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
+    return keys.flatMap((k) => g[k]);
+  });
+
+  protected readonly featured = computed(() => this.allEpisodesVisible()[0] ?? undefined);
+  protected readonly featuredImage = computed(() => {
+    const ep = this.featured();
+    return ep ? episodeImageUrl(ep)?.toString() : undefined;
+  });
+  protected readonly featuredDesc = computed(() => {
+    const text = this.featured()?.episodeDescription ?? '';
+    return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
+  });
+
+  protected readonly rails = computed((): EpisodeRail[] => {
+    const g = this.grouped();
+    const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
+    const dayRails: EpisodeRail[] = keys.map((key) => {
+      const d = this.ToDate(key);
+      return {
+        id: key,
+        title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
+        episodes: g[key],
+      };
+    });
+    const week = this.allEpisodesVisible();
+    if (week.length === 0) {
+      return dayRails;
+    }
+    return [
+      { id: 'new-this-week', title: 'New this week', episodes: week },
+      ...dayRails,
+    ];
+  });
 
   private siteService = inject(SiteService);
   private homepageService = inject(HomepageService);
@@ -92,28 +124,33 @@ export class HomepageApiComponent {
 
     const currentBottom = window.innerHeight + window.scrollY;
     const documentHeight = document.documentElement.scrollHeight;
-    const isNearEnd = currentBottom >= (documentHeight - this.renderConfig.nearEndThresholdPixels);
+    const isNearEnd = currentBottom >= documentHeight - this.renderConfig.nearEndThresholdPixels;
 
     if (isNearEnd) {
       this.loadMoreEpisodes(this.renderConfig.nearEndBlockSize);
     }
   }
 
+  posterImage(episode: HomepageEpisode): string | undefined {
+    return episodeImageUrl(episode)?.toString();
+  }
+
+  durationLabel(duration: string): string {
+    return duration.startsWith('0') ? duration.substring(1) : duration;
+  }
+
   populatePage() {
-    combineLatest(
-      [this.route.params, this.route.queryParams],
-      (params: Params, queryParams: Params) => ({
-        params,
-        queryParams,
-      })
-    ).pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(async () => {
-      this.siteService.setQuery(null);
-      this.siteService.setPodcast(null);
-      this.siteService.setSubject(null);
-      await this.loadHomepage();
-    });
+    combineLatest([this.route.params, this.route.queryParams], (params: Params, queryParams: Params) => ({
+      params,
+      queryParams,
+    }))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async () => {
+        this.siteService.setQuery(null);
+        this.siteService.setPodcast(null);
+        this.siteService.setSubject(null);
+        await this.loadHomepage();
+      });
   }
 
   private async loadHomepage(): Promise<void> {
@@ -135,13 +172,13 @@ export class HomepageApiComponent {
 
     if (homepageContent) {
       this.homepage.set(homepageContent);
-      this.totalDuration.set(homepageContent.totalDuration.split(".")[0] + " days");
+      this.totalDuration.set(homepageContent.totalDuration.split('.')[0] + ' days');
       this.podcastCount.set(homepageContent.recentEpisodes.length);
       this.hasStartedScrolling = false;
       this.visibleCount = 0;
-      this.allEpisodes = homepageContent.recentEpisodes.map(item => ({
+      this.allEpisodes = homepageContent.recentEpisodes.map((item) => ({
         ...item,
-        release: new Date(item.release)
+        release: new Date(item.release),
       }));
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
       this.isLoading.set(false);
@@ -160,31 +197,33 @@ export class HomepageApiComponent {
 
     this.visibleCount = nextVisibleCount;
     const visibleEpisodes = this.allEpisodes.slice(0, this.visibleCount);
-    this.grouped.set(visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
-      const releaseDate = item.release as Date;
-      const releaseDateKey = releaseDate.toLocaleDateString();
-      if (!group[releaseDateKey]) {
-        group[releaseDateKey] = [];
-      }
-      group[releaseDateKey].push(item);
-      return group;
-    }, {}));
+    this.grouped.set(
+      visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
+        const releaseDate = item.release as Date;
+        const releaseDateKey = releaseDate.toLocaleDateString();
+        if (!group[releaseDateKey]) {
+          group[releaseDateKey] = [];
+        }
+        group[releaseDateKey].push(item);
+        return group;
+      }, {})
+    );
   }
 
   ToDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split("/")
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    const [day, month, year] = dateStr.split('/');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+
+  private descDateKey(a: string, b: string): number {
+    const aD = this.ToDate(a);
+    const bD = this.ToDate(b);
+    if (aD > bD) return -1;
+    if (aD < bD) return 1;
+    return 0;
   }
 
   descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
-    var aD = this.ToDate(a.key);
-    var bD = this.ToDate(b.key);
-    if (aD > bD) {
-      return -1;
-    }
-    if (aD < bD) {
-      return 1
-    }
-    return 0;
-  }
+    return this.descDateKey(a.key, b.key);
+  };
 }

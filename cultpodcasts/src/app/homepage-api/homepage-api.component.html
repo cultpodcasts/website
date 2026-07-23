@@ -1,83 +1,84 @@
-<section class="broadcast-hero" aria-label="Cult Podcasts">
-  <div class="broadcast-hero__glow" aria-hidden="true"></div>
-  <div class="broadcast-hero__inner">
-    <p class="broadcast-hero__brand">Cult Podcasts</p>
-    <p class="broadcast-hero__lede">An indexed archive of podcasts on the subject of cults.</p>
-    <div class="broadcast-hero__search">
-      <app-search-bar></app-search-bar>
-    </div>
-    <p class="broadcast-hero__stat">
-      <a href="https://github.com/cultpodcasts/PublicDatabase" class="masthead-index-link">Public index</a>
-      ·
-      <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
-        [value]="$safeNavigationMigration(homepage()?.episodeCount)"
-        [title]="totalDuration()"></app-slot-machine-counter>
-      episodes
-    </p>
-  </div>
-</section>
-
-<div class="page-rail">
-  <div id="progresswrapper">
-    @if (isLoading()) {
+<section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()">
+  @if (isLoading()) {
+  <div class="nflx-loading">
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+  } @else if (isInError()) {
+  <div class="nflx-error page-rail">
+    <p>An error occurred.</p>
+    <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
+  </div>
+  } @else {
+  @if (featured(); as feature) {
+  <section class="billboard" aria-label="Featured episode">
+    <div class="billboard__backdrop" [style.background-image]="featuredImage() ? 'url(' + featuredImage() + ')' : null">
+    </div>
+    <div class="billboard__scrim" aria-hidden="true"></div>
+    <div class="billboard__content">
+      <p class="billboard__eyebrow">Cult Podcasts</p>
+      <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+      <p class="billboard__meta">
+        <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
+        <span> · {{ durationLabel(feature.duration) }}</span>
+        @if (podcastCount()) {
+        <span> · {{ podcastCount() }} new this week</span>
+        }
+      </p>
+      <p class="billboard__desc">{{ featuredDesc() }}</p>
+      <div class="billboard__actions">
+        <a mat-flat-button class="billboard__play"
+          [routerLink]="['/podcast', feature.podcastName, feature.id]">
+          <mat-icon>play_arrow</mat-icon>
+          Listen
+        </a>
+        <a mat-stroked-button class="billboard__more"
+          [routerLink]="['/podcast', feature.podcastName]">
+          More info
+        </a>
+      </div>
+      <div class="billboard__search">
+        <app-search-bar></app-search-bar>
+      </div>
+      <p class="billboard__catalog">
+        <a href="https://github.com/cultpodcasts/PublicDatabase">Index</a>
+        of
+        <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+          [value]="$safeNavigationMigration(homepage()?.episodeCount)"
+          [title]="totalDuration()"></app-slot-machine-counter>
+        episodes
+      </p>
+    </div>
+  </section>
+  }
+
+  <div class="nflx-rows">
+    @for (rail of rails(); track rail.id) {
+    <section class="rail" [attr.aria-label]="rail.title">
+      <h2 class="rail__title">{{ rail.title }}</h2>
+      <div class="rail__scroller" tabindex="0">
+        <div class="rail__track">
+          @for (item of rail.episodes; track item.id) {
+          <a class="poster" [routerLink]="['/podcast', item.podcastName, item.id]">
+            <div class="poster__art">
+              @if (posterImage(item); as src) {
+              <img [src]="src" [alt]="item.episodeTitle" loading="lazy" />
+              } @else {
+              <div class="poster__placeholder" aria-hidden="true"></div>
+              }
+              <div class="poster__play" aria-hidden="true">
+                <mat-icon>play_arrow</mat-icon>
+              </div>
+            </div>
+            <div class="poster__meta">
+              <span class="poster__episode">{{ item.episodeTitle }}</span>
+              <span class="poster__show">{{ item.podcastName }}</span>
+            </div>
+          </a>
+          }
+        </div>
+      </div>
+    </section>
     }
   </div>
-
-  <section id="thisweek" class="broadcast-feed">
-    @if (isInError()) {
-    <p>An error occurred.</p>
-    <div id="cta-button">
-      <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
-    </div>
-    } @else {
-    <header class="feed-header">
-      <h2>This week’s new releases</h2>
-      @if (podcastCount()) {
-      <p class="feed-header__meta">{{podcastCount()}} podcasts</p>
-      }
-    </header>
-
-    @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key; let dayIndex = $index) {
-    <div class="day-group">
-      <div class="day-spine">
-        <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
-          {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
-      </div>
-
-      @for (item of dateItems.value; track item.id; let epIndex = $index) {
-      <article class="episode-entry" [class.episode-entry--featured]="dayIndex === 0 && epIndex === 0"
-        id="{{item.id}}">
-        <div class="episode-entry__art">
-          <app-episode-image [searchResult]="item" [linksOverlay]="true"
-            [layout]="dayIndex === 0 && epIndex === 0 ? 'wide' : 'tile'"></app-episode-image>
-        </div>
-        <div class="episode-entry__body">
-          <div class="episode-entry__topline">
-            <app-bookmark [episodeId]="item.id" />
-            <h3 class="episode-entry__title" [class.hasBookmark]="isSignedIn()">
-              <a [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a>
-            </h3>
-          </div>
-          <p class="episode-entry__show">
-            <a [routerLink]="['/podcast', item.podcastName]">{{item.podcastName}}</a>
-            <span class="duration"> ·
-              {{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}</span>
-          </p>
-          <div class="episode-entry__desc">
-            <app-clampable-text [maxLines]="dayIndex === 0 && epIndex === 0 ? 8 : 4">{{item.episodeDescription}}</app-clampable-text>
-          </div>
-          <div class="episode-entry__meta">
-            <app-episode-links [episode]="item"></app-episode-links>
-            <mat-card-footer class="subjects">
-              <app-subjects [subjects]="item.subjects!"></app-subjects>
-            </mat-card-footer>
-          </div>
-        </div>
-      </article>
-      }
-    </div>
-    }
-    }
-  </section>
-</div>
+  }
+</section>
