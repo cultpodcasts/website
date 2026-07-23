@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, PLATFORM_ID, TransferState, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, PLATFORM_ID, TransferState, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, isPlatformServer, KeyValue, KeyValuePipe } from '@angular/common';
+import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
@@ -31,7 +31,6 @@ import { PreProcessedHomepage } from '../preprocessed-homepage.interface';
     RouterLink,
     MatButtonModule,
     MatIconModule,
-    KeyValuePipe,
     EpisodeImageComponent,
     EpisodeLinksComponent,
     BookmarkComponent,
@@ -46,6 +45,21 @@ import { PreProcessedHomepage } from '../preprocessed-homepage.interface';
 export class HomepageApiComponent {
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   protected useSsrDayLabels = signal(false);
+  /** Prefer computed groups over KeyValuePipe — pipe was not emitting day cards under SSR. */
+  protected dayGroups = computed(() => {
+    const grouped = this.grouped();
+    const useSsrLabels = this.useSsrDayLabels();
+    return Object.keys(grouped)
+      .map(key => ({ key, value: grouped[key] ?? [] }))
+      .sort((a, b) => {
+        if (useSsrLabels) {
+          const aRelease = a.value[0]?.release ? new Date(a.value[0].release).getTime() : 0;
+          const bRelease = b.value[0]?.release ? new Date(b.value[0].release).getTime() : 0;
+          return bRelease - aRelease;
+        }
+        return this.descDateKeys(a.key, b.key);
+      });
+  });
   private allEpisodes: HomepageEpisode[] = [];
   private visibleCount: number = 0;
   private hasStartedScrolling: boolean = false;
@@ -162,7 +176,8 @@ export class HomepageApiComponent {
   private applySsrSeed(seed: PreProcessedHomepage): void {
     const byDay: { [key: string]: HomepageEpisode[] } = {};
     for (const [day, episodes] of Object.entries(seed.episodesByDay ?? {})) {
-      byDay[day] = (episodes ?? []).map(item => this.normalizeEpisode(item));
+      const list = Array.isArray(episodes) ? episodes : [];
+      byDay[day] = list.map(item => this.normalizeEpisode(item));
     }
 
     this.useSsrDayLabels.set(true);
@@ -222,9 +237,9 @@ export class HomepageApiComponent {
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
   }
 
-  descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
-    var aD = this.ToDate(a.key);
-    var bD = this.ToDate(b.key);
+  private descDateKeys(aKey: string, bKey: string): number {
+    const aD = this.ToDate(aKey);
+    const bD = this.ToDate(bKey);
     if (aD > bD) {
       return -1;
     }
@@ -234,13 +249,11 @@ export class HomepageApiComponent {
     return 0;
   }
 
-  /** Preserve SSR day order by first episode release; for API locale keys use descDate. */
-  daySort = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
+  dayHeading(key: string): string {
     if (this.useSsrDayLabels()) {
-      const aRelease = a.value[0]?.release ? new Date(a.value[0].release).getTime() : 0;
-      const bRelease = b.value[0]?.release ? new Date(b.value[0].release).getTime() : 0;
-      return bRelease - aRelease;
+      return key;
     }
-    return this.descDate(a, b);
+    const date = this.ToDate(key);
+    return `${this.Weekday[date.getDay()]} ${date.getDate()} ${this.Month[date.getMonth()]}`;
   }
 }

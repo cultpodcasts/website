@@ -21,16 +21,9 @@
     <span>{{podcastCount()}} Podcasts.</span>
     }
   </h2>
-  @for (dateItems of grouped() | keyvalue: daySort; track dateItems.key) {
+  @for (dateItems of dayGroups(); track dateItems.key) {
   <div>
-    <h3>
-      @if (useSsrDayLabels()) {
-      {{dateItems.key}}
-      } @else {
-      {{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
-      {{Month[ToDate(dateItems.key).getMonth()]}}
-      }
-    </h3>
+    <h3>{{dayHeading(dateItems.key)}}</h3>
     @for (item of dateItems.value; track item.id) {
     <mat-card class="result" id="{{item.id}}">
       <mat-card-header>
@@ -40,7 +33,7 @@
         <mat-card-subtitle>
           <a [routerLink]="['/podcast', item.podcastName]">
             {{item.podcastName}}</a>
-          <span class="duration"> [{{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}]</span>
+          <span class="duration"> [{{item.duration?.startsWith("0")?item.duration.substring(1):item.duration}}]</span>
         </mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
