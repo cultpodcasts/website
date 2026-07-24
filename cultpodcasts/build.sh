@@ -18,15 +18,22 @@ else
    echo "Leaving environment config"
 fi
 
-# Homepage Flix promo — Cloudflare Pages *build* variable FLIX_PROMO_ENABLED (default true).
-# Set to false/0/off in the dashboard and re-deploy to hide the promo.
-raw_promo="${FLIX_PROMO_ENABLED:-true}"
+# Homepage Flix promo — ONLY Cloudflare Pages dashboard var FLIX_PROMO_ENABLED
+# (Preview / Production). Not set in wrangler.jsonc so the dashboard can override.
+# Unset locally → default on. Redeploy after flipping the dashboard value.
+if [ "${FLIX_PROMO_ENABLED+x}" = "x" ] && [ -n "${FLIX_PROMO_ENABLED}" ]; then
+  raw_promo="$FLIX_PROMO_ENABLED"
+  echo "FLIX_PROMO_ENABLED from dashboard/env: ${raw_promo}"
+else
+  raw_promo=true
+  echo "FLIX_PROMO_ENABLED unset — defaulting to true"
+fi
 promo_norm="$(printf '%s' "$raw_promo" | tr '[:upper:]' '[:lower:]')"
 case "$promo_norm" in
   false|0|off) promo_enabled=false ;;
   *) promo_enabled=true ;;
 esac
-echo "FLIX_PROMO_ENABLED=${raw_promo} → flixPromoEnabled=${promo_enabled}"
+echo "→ baking flixPromoEnabled=${promo_enabled} into environment files"
 node -e "
 const fs = require('fs');
 const enabled = process.argv[1] === 'true';

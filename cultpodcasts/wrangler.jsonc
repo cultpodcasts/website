@@ -4,14 +4,12 @@
   "pages_build_output_dir": "dist/cloudflare",
   "compatibility_date": "2025-09-27",
   "vars": {
-    "env": "development",
-    "FLIX_PROMO_ENABLED": "true"
+    "env": "development"
   },
   "env": {
     "preview": {
       "vars": {
-        "env": "staging",
-        "FLIX_PROMO_ENABLED": "true"
+        "env": "staging"
       },
       "kv_namespaces": [
         {
@@ -22,8 +20,7 @@
     },
     "production": {
       "vars": {
-        "env": "production",
-        "FLIX_PROMO_ENABLED": "true"
+        "env": "production"
       },
       "kv_namespaces": [
         {
