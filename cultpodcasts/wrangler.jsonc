@@ -3,11 +3,14 @@
   "name": "website",
   "pages_build_output_dir": "dist/cloudflare",
   "compatibility_date": "2025-09-27",
-  // No `vars` here — plain env vars (env, FLIX_PROMO_ENABLED) are owned by the
-  // Pages dashboard. If vars are declared in this file, Cloudflare treats wrangler
-  // as source of truth and wipes dashboard-only plaintext on every deploy.
+  "vars": {
+    "env": "development"
+  },
   "env": {
     "preview": {
+      "vars": {
+        "env": "staging"
+      },
       "kv_namespaces": [
         {
           "binding": "redirects",
@@ -16,6 +19,9 @@
       ]
     },
     "production": {
+      "vars": {
+        "env": "production"
+      },
       "kv_namespaces": [
         {
           "binding": "redirects",

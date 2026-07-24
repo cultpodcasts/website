@@ -18,9 +18,10 @@ else
    echo "Leaving environment config"
 fi
 
-# Homepage Flix promo — Cloudflare Pages plaintext var FLIX_PROMO_ENABLED
-# (Preview / Production). Kept out of wrangler.jsonc `vars` so the dashboard
-# owns it. Unset locally → default on. Redeploy after flipping the value.
+# Homepage Flix promo — Pages SECRET "FLIX_PROMO_ENABLED" (Preview / Production).
+# With wrangler.jsonc present, Cloudflare only lets the dashboard override via
+# Secrets; plaintext vars are owned by wrangler and wiped/ignored from the dash.
+# Unset locally → default on. Redeploy after flipping the Secret.
 if [ "${FLIX_PROMO_ENABLED+x}" = "x" ] && [ -n "${FLIX_PROMO_ENABLED}" ]; then
   raw_promo="$FLIX_PROMO_ENABLED"
   echo "FLIX_PROMO_ENABLED from dashboard/env: ${raw_promo}"
