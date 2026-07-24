@@ -37,11 +37,10 @@
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
   <app-toolbar></app-toolbar>
-  @if (!isHomePage()) {
-  <div class="chrome-search browse-chrome-search">
+  <!-- Always in DOM (CSS-hide on home) so browse-route hydration matches SSR. -->
+  <div class="chrome-search" [class.browse-chrome-search]="!isHomePage()">
     <app-search-bar></app-search-bar>
   </div>
-  }
   <router-outlet></router-outlet>
 
   <footer class="site-footer">

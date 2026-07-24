@@ -13,6 +13,9 @@
 
 .home-shell
     background: #0b0b0b
+    // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
+    .chrome-search
+        display: none
 
 .browse-shell
     background: #0b0b0b
