@@ -5,17 +5,24 @@ Standalone Netflix-style homepage prototype. **Not** for merge into `main`. **Do
 | | |
 |--|--|
 | Pages project | `flix` (`flix-ac4.pages.dev`) |
-| Production branch label | `design/visual-refresh-v1` |
+| Git repo | `cultpodcasts/website` |
+| Production branch | `design/visual-refresh-v1` |
 | Custom domain | `flix.cultpodcasts.com` |
-| Build config | `staging` |
+| Build config | `./build.sh` with `env=production` |
+| Auth / API | Production Auth0 + `api.cultpodcasts.com` |
+| Preview deploys | Off (production branch only) |
 
-## Deploy (from this branch only)
+## Deploy
+
+Pushes to `design/visual-refresh-v1` build and deploy **flix** automatically (Cloudflare Pages Git integration).
+
+Manual fallback (direct upload to the same project):
 
 ```bash
 npm run deploy:flix
 ```
 
-That builds staging and deploys **only** to `--project-name=flix`. Never run `npm run deploy` for this prototype (that targets production `website`).
+Never run `npm run deploy` for this prototype (that targets production `website`).
 
 ## DNS
 
@@ -31,5 +38,5 @@ Do **not** change the `cultpodcasts.com` record (production `website` project).
 
 ## Auth0 / API
 
-- Staging SPA allowlists include `https://flix.cultpodcasts.com` (and `*.flix-ac4.pages.dev`). Sync with `npm run auth0:sync-staging-urls`.
-- API gateway `AllowedOrigins` must include `https://flix.cultpodcasts.com` (api-preview). Redeploy the Api worker after that change.
+- Production SPA allowlists must include `https://flix.cultpodcasts.com` (and `*.flix-ac4.pages.dev`) on callbacks / logout / web origins / allowed origins.
+- Production API gateway `AllowedOrigins` must include `https://flix.cultpodcasts.com`. Redeploy the Api worker after that change.
