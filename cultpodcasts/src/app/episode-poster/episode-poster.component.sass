@@ -22,7 +22,8 @@
     padding: 0
     border: 0
     cursor: pointer
-    aspect-ratio: 16 / 9
+    // Default square for podcast cover art; --wide overrides for YouTube thumbs.
+    aspect-ratio: 1
     border-radius: 6px
     overflow: hidden
     background: var(--nflx-panel, #141414)
@@ -38,6 +39,9 @@
     &:focus-visible
         outline: 2px solid var(--nflx-accent, #e8a23a)
         outline-offset: 2px
+
+:host.episode-poster--wide .episode-poster__art
+    aspect-ratio: 16 / 9
 
 .episode-poster__placeholder
     width: 100%

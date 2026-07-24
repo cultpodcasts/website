@@ -47,6 +47,28 @@ const youtubeQualityByCode: Record<string, string> = {
   d: "default"
 };
 
+/** True when the displayed cover is a YouTube thumbnail (wide 16:9), not square podcast art. */
+export function isYoutubeThumbnailUrl(image: URL | string | undefined): boolean {
+  if (!image) {
+    return false;
+  }
+  if (!(image instanceof URL)) {
+    // Compact search-index token (y{q}) before expandImage.
+    if (image.length >= 2 && image[0] === "y" && image[1] in youtubeQualityByCode) {
+      return true;
+    }
+  }
+  const url = toUrl(image);
+  return !!url && url.hostname === "i.ytimg.com";
+}
+
+export type EpisodeArtAspect = "wide" | "square";
+
+/** Layout for cover art: YouTube thumbs → 16:9; Spotify/Apple/feed art → square. */
+export function episodeArtAspect(episode: SearchDisplayEpisode): EpisodeArtAspect {
+  return isYoutubeThumbnailUrl(episodeImageUrl(episode)) ? "wide" : "square";
+}
+
 // Loss-less inverse of the search index's image compaction (RPP `SearchEpisodeImage`). `image` holds
 // either a full URL (used as-is) or a short token whose first character is the platform sigil:
 //   y{q}       -> https://i.ytimg.com/vi/{youtubeId}/{quality}.jpg   (x/s/h/m/d)

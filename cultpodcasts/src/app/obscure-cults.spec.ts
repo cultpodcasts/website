@@ -63,4 +63,25 @@ describe('obscure-cults', () => {
     }).map((c) => c.subject);
     expect(a).toEqual(b);
   });
+
+  it('flags youtubeArt from the cover URL host', () => {
+    const episodes = [
+      ep('yt', ['Geelong Revival Centre']),
+      ep('sq', ['Oneida Community']),
+    ];
+    const picked = pickObscureCults(
+      episodes,
+      (e) =>
+        e.id === 'yt'
+          ? 'https://i.ytimg.com/vi/abc123/hqdefault.jpg'
+          : 'https://i.scdn.co/image/square-cover',
+      {
+        limit: 10,
+        now: new Date('2026-07-23T12:00:00Z'),
+      }
+    );
+
+    expect(picked.find((c) => c.subject === 'Geelong Revival Centre')?.youtubeArt).toBeTrue();
+    expect(picked.find((c) => c.subject === 'Oneida Community')?.youtubeArt).toBeFalse();
+  });
 });

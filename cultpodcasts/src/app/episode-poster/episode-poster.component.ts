@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
-import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
+import { SearchDisplayEpisode, episodeArtAspect, episodeImageUrl } from '../search-result-links';
 import { displayCatalogName } from '../display-catalog-name';
 import { PlayerService } from '../player.service';
 
@@ -16,6 +16,8 @@ import { PlayerService } from '../player.service';
   host: {
     class: 'episode-poster',
     '[class.episode-poster--playing]': 'playing()',
+    '[class.episode-poster--wide]': 'artAspect() === "wide"',
+    '[class.episode-poster--square]': 'artAspect() === "square"',
   },
 })
 export class EpisodePosterComponent {
@@ -35,6 +37,9 @@ export class EpisodePosterComponent {
   protected readonly imageUrl = computed(() =>
     episodeImageUrl(this.episode())?.toString()
   );
+
+  /** YouTube thumbnail → wide 16:9; Spotify/Apple/feed art → square. */
+  protected readonly artAspect = computed(() => episodeArtAspect(this.episode()));
 
   protected readonly playable = computed(() => canPlayEpisode(this.episode()));
 

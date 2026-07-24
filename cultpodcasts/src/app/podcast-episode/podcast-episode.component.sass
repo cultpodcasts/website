@@ -282,11 +282,17 @@
 .rail-poster
     width: min(42vw, 220px)
     flex: 0 0 min(42vw, 220px)
+    &.episode-poster--square
+        width: min(32vw, 160px)
+        flex-basis: min(32vw, 160px)
 
 @media screen and (min-width: 900px)
     .rail-poster
         width: 260px
         flex-basis: 260px
+        &.episode-poster--square
+            width: 180px
+            flex-basis: 180px
 
 @media screen and (max-width: 700px)
     .episode-hero
@@ -305,3 +311,6 @@
     .rail-poster
         width: 68vw
         flex-basis: 68vw
+        &.episode-poster--square
+            width: 48vw
+            flex-basis: 48vw

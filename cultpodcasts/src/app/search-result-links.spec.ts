@@ -1,4 +1,4 @@
-import { appleUrl, episodeImageUrl, expandImage, spotifyUrl, youtubeUrl } from "./search-result-links";
+import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
 import { SearchResult } from "./search-result.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 
@@ -27,6 +27,45 @@ describe("search-result-links", () => {
     const withToken: SearchResult = { ...searchResult, image: "ys" };
     expect(episodeImageUrl(withToken)?.toString())
       .toBe("https://i.ytimg.com/vi/yt123456789/sddefault.jpg");
+  });
+
+  it("detects YouTube thumbnail hosts and compact y-tokens vs square podcast art", () => {
+    expect(isYoutubeThumbnailUrl("https://i.ytimg.com/vi/abc/hqdefault.jpg")).toBeTrue();
+    expect(isYoutubeThumbnailUrl(new URL("https://i.ytimg.com/vi/abc/maxresdefault.jpg"))).toBeTrue();
+    expect(isYoutubeThumbnailUrl("yh")).toBeTrue();
+    expect(isYoutubeThumbnailUrl("https://i.scdn.co/image/opaque")).toBeFalse();
+    expect(isYoutubeThumbnailUrl("https://is3-ssl.mzstatic.com/image/thumb/Music/x.jpg")).toBeFalse();
+    expect(isYoutubeThumbnailUrl("sab6765")).toBeFalse();
+    expect(isYoutubeThumbnailUrl(undefined)).toBeFalse();
+  });
+
+  it("picks wide aspect for YouTube art and square otherwise", () => {
+    const yt: SearchResult = { ...searchResult, image: "yx" };
+    const spotify: SearchResult = { ...searchResult, image: "sab6765cover", youtubeId: undefined };
+    const homepageSquare: HomepageEpisode = {
+      id: "id",
+      podcastName: "Podcast",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:01:02",
+      spotify: undefined,
+      apple: undefined,
+      youtube: undefined,
+      bbc: undefined,
+      internetArchive: undefined,
+      subjects: [],
+      image: new URL("https://i.scdn.co/image/opaque")
+    };
+    const homepageYt: HomepageEpisode = {
+      ...homepageSquare,
+      image: new URL("https://i.ytimg.com/vi/abc/hqdefault.jpg")
+    };
+
+    expect(episodeArtAspect(yt)).toBe("wide");
+    expect(episodeArtAspect(spotify)).toBe("square");
+    expect(episodeArtAspect(homepageSquare)).toBe("square");
+    expect(episodeArtAspect(homepageYt)).toBe("wide");
   });
 
   it("keeps opaque homepage URLs unchanged", () => {

@@ -1,10 +1,13 @@
 import { HomepageEpisode } from './homepage-episode.interface';
+import { isYoutubeThumbnailUrl } from './search-result-links';
 
 export interface ObscureCult {
   subject: string;
   episodes: HomepageEpisode[];
   /** Cover art from the newest episode in the set. */
   imageUrl?: string;
+  /** True when imageUrl is a YouTube thumbnail — use wide (16:9) tile, not square. */
+  youtubeArt?: boolean;
 }
 
 /** Topic / meta tags — not named groups to “discover”. */
@@ -109,6 +112,7 @@ export function pickObscureCults(
     subject,
     episodes,
     imageUrl,
+    youtubeArt: isYoutubeThumbnailUrl(imageUrl),
   }));
 }
 

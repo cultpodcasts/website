@@ -431,6 +431,13 @@
             box-shadow: 0 0 0 2px var(--nflx-accent), 0 16px 32px rgba(0, 0, 0, 0.5)
         .obscure__name
             color: var(--nflx-accent)
+    // YouTube thumbs are wide — match day-row poster aspect instead of square crop.
+    &--youtube
+        width: min(55vw, 240px)
+        flex-basis: min(55vw, 240px)
+        .obscure__art
+            aspect-ratio: 16 / 9
+            border-radius: 8px
 
 .obscure__art
     position: relative
@@ -556,8 +563,13 @@
     width: max-content
 
 .rail-poster
+    // Wide (YouTube) posters — match day-row / flix feel.
     width: min(42vw, 220px)
     flex: 0 0 min(42vw, 220px)
+    &.episode-poster--square
+        // Square podcast art — narrower so height stays closer to wide neighbours.
+        width: min(32vw, 160px)
+        flex-basis: min(32vw, 160px)
 
 @keyframes ken-burns
     from
@@ -605,11 +617,17 @@
     .rail-poster
         width: 260px
         flex-basis: 260px
+        &.episode-poster--square
+            width: 180px
+            flex-basis: 180px
 
 @media screen and (min-width: 900px)
     .obscure__card
         width: 180px
         flex-basis: 180px
+        &--youtube
+            width: 260px
+            flex-basis: 260px
 
 @media screen and (max-width: 700px)
     .nflx-search
@@ -627,6 +645,9 @@
     .obscure__card
         width: 42vw
         flex-basis: 42vw
+        &--youtube
+            width: 55vw
+            flex-basis: 55vw
 
 @media screen and (max-width: 600px)
     .billboard
@@ -645,3 +666,6 @@
     .rail-poster
         width: 68vw
         flex-basis: 68vw
+        &.episode-poster--square
+            width: 48vw
+            flex-basis: 48vw

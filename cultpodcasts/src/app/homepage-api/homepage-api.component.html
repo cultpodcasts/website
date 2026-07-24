@@ -146,7 +146,7 @@
     <div class="obscure__scroller" tabindex="0">
       <div class="obscure__track">
         @for (cult of obscureCults(); track cult.subject) {
-        <a class="obscure__card" [routerLink]="['/subject', cult.subject]">
+        <a class="obscure__card" [class.obscure__card--youtube]="cult.youtubeArt" [routerLink]="['/subject', cult.subject]">
           <div class="obscure__art">
             @if (cult.imageUrl) {
             <img [src]="cult.imageUrl" [alt]="" loading="lazy" />
