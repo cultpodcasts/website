@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import { Suggestion } from '../search-suggestions.interface';
+import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -36,7 +37,10 @@ const SUGGESTION_DEBOUNCE_MS = 150;
   ],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // Chip @if DOM is easy to desync across SSR/client (SiteService is not
+  // transferred). Skip hydrating the bar; URL/site data re-seeds on client.
+  host: { ngSkipHydration: 'true' }
 })
 
 export class SearchBarComponent {
@@ -54,7 +58,8 @@ export class SearchBarComponent {
   constructor(
     private router: Router,
     private siteService: SiteService,
-    private suggestionsService: SearchSuggestionsService) {
+    private suggestionsService: SearchSuggestionsService,
+    private guidService: GuidService) {
     // Derive the chip from the URL before the first template pass so SSR and
     // client hydration agree. SiteService is not transferred across hydration,
     // so waiting for podcast-api/subject-api to call setPodcast/setSubject
@@ -190,8 +195,16 @@ export class SearchBarComponent {
   /** Keep search-chip DOM stable across SSR/client by reading browse routes from the URL. */
   private applyChipFromUrl(url: string): void {
     const path = url.split('?')[0].split('#')[0];
-    const podcastMatch = path.match(/^\/podcast\/([^/]+)/);
+    const podcastMatch = path.match(/^\/podcast\/([^/]+)(?:\/([^/]+))?/);
     if (podcastMatch) {
+      const rest = podcastMatch[2] ? decodeURIComponent(podcastMatch[2]) : '';
+      // Episode SSR never mounts podcast-episode (so never setPodcast). Keep the
+      // first paint chip-less on episode URLs so client hydration matches SSR.
+      if (rest && this.guidService.getEpisodeUuid(rest)) {
+        this.searchChip.set(null);
+        this.searchBoxMode.set(SearchBoxMode.Default);
+        return;
+      }
       this.searchChip.set(decodeURIComponent(podcastMatch[1]));
       this.searchBoxMode.set(SearchBoxMode.Podcast);
       return;
