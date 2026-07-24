@@ -9,7 +9,6 @@ import { HTTP_INTERCEPTORS, withInterceptorsFromDi, provideHttpClient, withFetch
 import { environment } from '../environments/environment';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { SiteService } from './site.service';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { InfiniteScrollStrategy } from './infinite-scroll-strategy';
 import { EpisodePublishResponseAdaptor } from './episode-publish-response-adaptor';
 import { authInterceptor } from './auth.interceptor';
@@ -53,7 +52,6 @@ export const appConfig: ApplicationConfig = {
       enabled: true,
       registrationStrategy: 'registerImmediately' //'registerWhenStable:30000'
     }),
-    provideAnimationsAsync(),
     InfiniteScrollStrategy,
     EpisodePublishResponseAdaptor
   ]
