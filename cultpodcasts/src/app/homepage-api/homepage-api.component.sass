@@ -17,6 +17,7 @@
 
 .nflx-search
     --nflx-search-h: 48px
+    --search-bar-control-h: var(--nflx-search-h)
     // Feed Material's own outline-sizing tokens too, since the MDC outlined
     // field hardcodes `.mdc-text-field--outlined { height: 56px }` — the
     // token override below isn't read by that rule, so the explicit
@@ -33,48 +34,18 @@
         margin: 0
     ::ng-deep
         #searchbar
-            align-items: center
             gap: 12px
         #searchbox
-            margin-bottom: 0
-            // `.mdc-text-field--outlined` ships a hardcoded `height: 56px` in
-            // Angular Material with the same (single-class) specificity as
-            // our own rule, so without matching its exact selectors + !important
-            // the library rule can win the cascade and the wrapper renders
-            // taller than the infix inside it (measured 68px vs 48px infix).
             .mat-mdc-text-field-wrapper,
             .mdc-text-field,
             .mdc-text-field--outlined,
             .mdc-text-field--no-label
-                height: var(--nflx-search-h) !important
-                min-height: var(--nflx-search-h) !important
-                align-items: center !important
                 background: rgba(20, 20, 20, 0.72) !important
                 backdrop-filter: blur(10px)
-            .mat-mdc-form-field-flex
-                height: var(--nflx-search-h) !important
-                align-items: center !important
-            .mat-mdc-form-field-infix
-                min-height: var(--nflx-search-h) !important
-                padding-top: 0 !important
-                padding-bottom: 0 !important
-                display: flex
-                align-items: center
-            .mat-mdc-chip-grid,
-            .mdc-evolution-chip-set__chips
-                align-items: center
-                min-height: 0
             input.mat-mdc-chip-input,
             #searchtext
                 font-size: 1.05rem
-                line-height: 1.25
-                margin: 0
-            .mat-mdc-form-field-subscript-wrapper
-                display: none
         #searchcta
-            align-self: center
-            height: var(--nflx-search-h) !important
-            min-height: var(--nflx-search-h)
             background: var(--nflx-accent) !important
             color: #111 !important
 

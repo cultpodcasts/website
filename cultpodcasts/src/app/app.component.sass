@@ -29,6 +29,7 @@
     // width: 100% + 4vw padding, uncapped) so the box lines up with the pill
     // filters directly beneath it instead of the unrelated .page-rail (920px) grid.
     --nflx-search-h: 48px
+    --search-bar-control-h: var(--nflx-search-h)
     // Angular Material hardcodes `.mdc-text-field--outlined { height: 56px }`
     // with the same specificity as a plain `.mdc-text-field` override, so the
     // token below is belt-and-braces — the !important heights further down on
@@ -44,43 +45,18 @@
         #searchcontainer
             margin: 0
         #searchbar
-            align-items: center
             gap: 12px
         #searchbox
-            margin-bottom: 0
             .mat-mdc-text-field-wrapper,
             .mdc-text-field,
             .mdc-text-field--outlined,
             .mdc-text-field--no-label
-                height: var(--nflx-search-h) !important
-                min-height: var(--nflx-search-h) !important
-                align-items: center !important
                 background: rgba(20, 20, 20, 0.85) !important
                 backdrop-filter: blur(10px)
-            .mat-mdc-form-field-flex
-                height: var(--nflx-search-h) !important
-                align-items: center !important
-            .mat-mdc-form-field-infix
-                min-height: var(--nflx-search-h) !important
-                padding-top: 0 !important
-                padding-bottom: 0 !important
-                display: flex
-                align-items: center
-            .mat-mdc-chip-grid,
-            .mdc-evolution-chip-set__chips
-                align-items: center
-                min-height: 0
             input.mat-mdc-chip-input,
             #searchtext
                 font-size: 1.05rem
-                line-height: 1.25
-                margin: 0
-            .mat-mdc-form-field-subscript-wrapper
-                display: none
         #searchcta
-            align-self: center
-            height: var(--nflx-search-h) !important
-            min-height: var(--nflx-search-h)
             background: #e8a23a !important
             color: #111 !important
 

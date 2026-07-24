@@ -1,14 +1,47 @@
 #searchcontainer
+    --search-bar-control-h: 48px
     margin: 12px 10px 4px
     #searchbar
-        align-items: stretch
+        align-items: center
         display: flex
         list-style-type: none
         padding: 0
         gap: 10px
         #searchbox
             flex-grow: 1
-            margin-bottom: -1.25em
+            margin-bottom: 0
+            height: var(--search-bar-control-h)
+            ::ng-deep
+                .mat-mdc-form-field-subscript-wrapper
+                    display: none
+                    height: 0
+                    min-height: 0
+                    margin: 0
+                    padding: 0
+                .mat-mdc-text-field-wrapper,
+                .mdc-text-field,
+                .mdc-text-field--outlined,
+                .mdc-text-field--no-label
+                    height: var(--search-bar-control-h) !important
+                    min-height: var(--search-bar-control-h) !important
+                    align-items: center !important
+                .mat-mdc-form-field-flex
+                    height: var(--search-bar-control-h) !important
+                    align-items: center !important
+                .mat-mdc-form-field-infix
+                    min-height: var(--search-bar-control-h) !important
+                    padding-top: 0 !important
+                    padding-bottom: 0 !important
+                    display: flex
+                    align-items: center
+                .mat-mdc-chip-grid,
+                .mdc-evolution-chip-set__chips
+                    align-items: center
+                    min-height: 0
+                input.mat-mdc-chip-input,
+                #searchtext
+                    margin: 0
+                    line-height: 1.25
             mat-chip
                 margin-top: -4px
                 margin-bottom: -4px
@@ -20,12 +53,18 @@
             input.mat-mdc-chip-input
                 flex: 1 0 10px
         #searchcta
-            align-self: flex-start
-            height: 56px
+            align-self: center
+            display: inline-flex
+            align-items: center
+            justify-content: center
+            height: var(--search-bar-control-h)
+            min-height: var(--search-bar-control-h)
+            margin: 0
             min-width: 6.5rem
             border-radius: 999px
             font-weight: 600
             letter-spacing: 0.02em
+            line-height: 1
 
 @media screen and (min-width: 400px)
     .chiptext

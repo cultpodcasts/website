@@ -1,6 +1,6 @@
 <section id="searchcontainer">
     <form (onsubmit)="search(searchBox)" id="searchbar">
-        <mat-form-field id="searchbox">
+        <mat-form-field id="searchbox" subscriptSizing="dynamic">
             <mat-chip-grid #chips>
                 @if (searchChip()) {
                 <mat-chip (removed)="removeSearchChip()">
