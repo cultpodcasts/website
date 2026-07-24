@@ -29,6 +29,7 @@ import { isMetaSubject, pickObscureCults } from '../obscure-cults';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
+import { dateFromKey, dateKey } from '../homepage-date.util';
 
 export interface EpisodeRail {
   id: string;
@@ -402,7 +403,7 @@ export class HomepageApiComponent {
     this.grouped.set(
       visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
         const releaseDate = item.release as Date;
-        const releaseDateKey = releaseDate.toLocaleDateString();
+        const releaseDateKey = dateKey(releaseDate);
         if (!group[releaseDateKey]) {
           group[releaseDateKey] = [];
         }
@@ -459,10 +460,7 @@ export class HomepageApiComponent {
     }
   }
 
-  ToDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split('/');
-    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-  };
+  ToDate = (key: string) => dateFromKey(key);
 
   private descDateKey(a: string, b: string): number {
     const aD = this.ToDate(a);
