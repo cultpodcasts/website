@@ -18,10 +18,9 @@ else
    echo "Leaving environment config"
 fi
 
-# Homepage Flix promo — Pages SECRET "FLIX_PROMO_ENABLED" (Preview / Production).
-# With wrangler.jsonc present, Cloudflare only lets the dashboard override via
-# Secrets; plaintext vars are owned by wrangler and wiped/ignored from the dash.
-# Unset locally → default on. Redeploy after flipping the Secret.
+# Build-time flags → src/config/build.json (imported by the app as buildConfig).
+# Set FLIX_PROMO_ENABLED in the Pages dashboard (Preview / Production), then redeploy.
+# Unset locally → default on.
 if [ "${FLIX_PROMO_ENABLED+x}" = "x" ] && [ -n "${FLIX_PROMO_ENABLED}" ]; then
   raw_promo="$FLIX_PROMO_ENABLED"
   echo "FLIX_PROMO_ENABLED from dashboard/env: ${raw_promo}"
@@ -34,27 +33,17 @@ case "$promo_norm" in
   false|0|off) promo_enabled=false ;;
   *) promo_enabled=true ;;
 esac
-echo "→ baking flixPromoEnabled=${promo_enabled} into environment files"
+
+BUILD_JSON=src/config/build.json
+echo "→ writing ${BUILD_JSON} (flixPromoEnabled=${promo_enabled})"
 node -e "
 const fs = require('fs');
-const enabled = process.argv[1] === 'true';
-for (const p of [
-  'src/environments/environment.ts',
-  'src/environments/environment.staging.ts',
-  'src/environments/environment.production.ts',
-  'src/environments/environment.local.ts',
-]) {
-  if (!fs.existsSync(p)) continue;
-  let s = fs.readFileSync(p, 'utf8');
-  if (!/flixPromoEnabled\s*:/.test(s)) {
-    console.warn('skip ' + p + ': flixPromoEnabled missing');
-    continue;
-  }
-  s = s.replace(/flixPromoEnabled\s*:\s*(true|false)/, 'flixPromoEnabled: ' + enabled);
-  fs.writeFileSync(p, s);
-  console.log(p + ': flixPromoEnabled=' + enabled);
-}
-" "$promo_enabled"
+const path = process.argv[1];
+const enabled = process.argv[2] === 'true';
+const config = { flixPromoEnabled: enabled };
+fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+console.log(path + ': ' + JSON.stringify(config));
+" "$BUILD_JSON" "$promo_enabled"
 
 echo "Node $(node -v) (need >=22.22.3 for Angular 22)"
 

@@ -13,6 +13,5 @@ export const environment: IEnvironment = {
    bundleAssetHost: '',
    shortner: 'https://s.cultpodcasts.com',
    name: "stg",
-   vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is",
-   flixPromoEnabled: true
+   vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is"
 };

@@ -9,6 +9,4 @@ export interface IEnvironment {
     name: string;
     vapidPublicKey: string;
     ssrIgnoresSsl?: boolean;
-    /** Homepage Flix promo. Overridden at build time by Cloudflare `FLIX_PROMO_ENABLED`. */
-    flixPromoEnabled: boolean;
 }
