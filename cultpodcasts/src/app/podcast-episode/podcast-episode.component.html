@@ -34,10 +34,12 @@
         {{ displayCatalogName(podcastName()) }}
       </a>
     </p>
-    <h1 class="episode-hero__title" [outerHTML]="episode.episodeTitle"></h1>
+    <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
     <p class="episode-hero__meta">
+      @if (episode.release) {
       <span>{{ episode.release | date:'d MMM yyyy' }}</span>
       <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
+      }
       <span>{{ duration() }}</span>
       @if (languageFlag(); as lang) {
       <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
