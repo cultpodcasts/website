@@ -12,6 +12,9 @@
     min-height: 100vh
     padding-bottom: 48px
 
+.nflx--playing
+    padding-bottom: min(52vh, 420px)
+
 .nflx-search
     position: absolute
     top: 72px
@@ -524,24 +527,40 @@
     scroll-snap-align: start
     transition: transform 0.25s ease
     &:hover,
-    &:focus-visible
+    &:focus-within
         transform: scale(1.06)
         z-index: 2
+        .poster__play
+            opacity: 1
+    &.poster--playing
+        .poster__art
+            box-shadow: 0 0 0 2px var(--nflx-accent), 0 8px 24px rgba(0, 0, 0, 0.45)
         .poster__play
             opacity: 1
 
 .poster__art
     position: relative
+    display: block
+    width: 100%
+    padding: 0
+    border: 0
+    cursor: pointer
     aspect-ratio: 16 / 9
     border-radius: 6px
     overflow: hidden
     background: var(--nflx-panel)
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45)
+    color: inherit
+    text-align: left
+    text-decoration: none
     img
         width: 100%
         height: 100%
         object-fit: cover
         display: block
+    &:focus-visible
+        outline: 2px solid var(--nflx-accent)
+        outline-offset: 2px
 
 .poster__placeholder
     width: 100%
@@ -602,7 +621,15 @@
     margin-left: auto
 
 .poster__meta
+    display: block
     margin-top: 8px
+    text-decoration: none
+    color: inherit
+    &:hover .poster__episode,
+    &:focus-visible .poster__episode
+        text-decoration: underline
+    &:focus-visible
+        outline: none
 
 .poster__episode
     display: -webkit-box

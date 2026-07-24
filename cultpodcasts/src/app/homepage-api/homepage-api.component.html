@@ -1,4 +1,5 @@
-<section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()">
+<section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()"
+  [class.nflx--playing]="!!playingEpisode()">
   <div class="nflx-search">
     <app-search-bar></app-search-bar>
   </div>
@@ -54,13 +55,20 @@
         </div>
         }
         <div class="billboard__actions">
+          @if (canPlay(feature)) {
+          <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">
+            <mat-icon>play_arrow</mat-icon>
+            Listen
+          </button>
+          } @else {
           <a mat-flat-button class="billboard__play"
             [routerLink]="['/podcast', feature.podcastName, feature.id]">
             <mat-icon>play_arrow</mat-icon>
             Listen
           </a>
+          }
           <a mat-stroked-button class="billboard__more"
-            [routerLink]="['/podcast', feature.podcastName]">
+            [routerLink]="['/podcast', feature.podcastName, feature.id]">
             More info
           </a>
         </div>
@@ -170,10 +178,12 @@
       <div class="rail__scroller" tabindex="0">
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {
-          <a class="poster" [routerLink]="['/podcast', item.podcastName, item.id]">
-            <div class="poster__art">
+          <div class="poster" [class.poster--playing]="playingEpisode()?.id === item.id">
+            @if (canPlay(item)) {
+            <button type="button" class="poster__art" (click)="playEpisode(item)"
+              [attr.aria-label]="'Play ' + item.episodeTitle">
               @if (posterImage(item); as src) {
-              <img [src]="src" [alt]="item.episodeTitle" loading="lazy" />
+              <img [src]="src" [alt]="" loading="lazy" />
               } @else {
               <div class="poster__placeholder" aria-hidden="true"></div>
               }
@@ -188,12 +198,29 @@
                 }
                 <span class="poster__badge poster__badge--duration">{{ durationLabel(item.duration) }}</span>
               </div>
-            </div>
-            <div class="poster__meta">
+            </button>
+            } @else {
+            <a class="poster__art" [routerLink]="['/podcast', item.podcastName, item.id]">
+              @if (posterImage(item); as src) {
+              <img [src]="src" [alt]="item.episodeTitle" loading="lazy" />
+              } @else {
+              <div class="poster__placeholder" aria-hidden="true"></div>
+              }
+              <div class="poster__badges">
+                @if (nonEnglishLabel(item); as lang) {
+                <span class="poster__badge poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
+                  <mat-icon aria-hidden="true">translate</mat-icon>
+                </span>
+                }
+                <span class="poster__badge poster__badge--duration">{{ durationLabel(item.duration) }}</span>
+              </div>
+            </a>
+            }
+            <a class="poster__meta" [routerLink]="['/podcast', item.podcastName, item.id]">
               <span class="poster__episode">{{ item.episodeTitle }}</span>
               <span class="poster__show">{{ item.podcastName }}</span>
-            </div>
-          </a>
+            </a>
+          </div>
           }
         </div>
       </div>
@@ -201,4 +228,6 @@
     }
   </div>
   }
+
+  <app-episode-player [episode]="playingEpisode()" (closed)="closePlayer()" />
 </section>

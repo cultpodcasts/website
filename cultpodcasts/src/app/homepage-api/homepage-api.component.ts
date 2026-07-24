@@ -22,9 +22,11 @@ import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
+import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
 import { episodeImageUrl } from '../search-result-links';
 import { languageLabel } from '../subject-language-filter';
 import { isMetaSubject, pickObscureCults } from '../obscure-cults';
+import { episodeEmbedOptions } from '../episode-embed';
 
 export interface EpisodeRail {
   id: string;
@@ -44,6 +46,7 @@ export interface EpisodeRail {
     MatIconModule,
     SlotMachineCounterComponent,
     SearchBarComponent,
+    EpisodePlayerComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',
@@ -63,6 +66,7 @@ export class HomepageApiComponent {
   protected weekEpisodeCount = signal<number | undefined>(undefined);
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
+  protected playingEpisode = signal<HomepageEpisode | undefined>(undefined);
   readonly Weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   readonly Month = [
     'January',
@@ -246,6 +250,24 @@ export class HomepageApiComponent {
     return duration.startsWith('0') ? duration.substring(1) : duration;
   }
 
+  canPlay(episode: HomepageEpisode): boolean {
+    return episodeEmbedOptions(episode).length > 0;
+  }
+
+  playEpisode(episode: HomepageEpisode, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.canPlay(episode)) {
+      return;
+    }
+    this.playingEpisode.set(episode);
+    this.heroPaused.set(true);
+  }
+
+  closePlayer(): void {
+    this.playingEpisode.set(undefined);
+  }
+
   /** Non-English language label for badges; undefined when English/unknown. */
   nonEnglishLabel(episode: HomepageEpisode): string | undefined {
     const code = episode.language?.trim();
@@ -264,7 +286,17 @@ export class HomepageApiComponent {
   }
 
   resumeHero(): void {
+    if (this.playingEpisode()) {
+      return;
+    }
     this.heroPaused.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.playingEpisode()) {
+      this.closePlayer();
+    }
   }
 
   goHero(index: number): void {
@@ -311,6 +343,7 @@ export class HomepageApiComponent {
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
+    this.playingEpisode.set(undefined);
     this.stopHeroCycle();
     this.heroIndex.set(0);
     if (typeof window !== 'undefined') {
