@@ -28,6 +28,7 @@ import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag
 import { isMetaSubject, pickObscureCults } from '../obscure-cults';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
@@ -51,6 +52,7 @@ export interface EpisodeRail {
     SearchBarComponent,
     EpisodePosterComponent,
     SiteLoadingComponent,
+    SubjectChipComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',

@@ -16,6 +16,7 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
@@ -47,6 +48,7 @@ const MAX_SUBJECT_RAILS = 4;
     BookmarkComponent,
     EpisodePosterComponent,
     SiteLoadingComponent,
+    SubjectChipComponent,
     SearchDescriptionPipe
   ],
   templateUrl: './podcast-episode.component.html',

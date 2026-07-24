@@ -54,7 +54,7 @@
     @if (visibleSubjects().length > 0) {
     <div class="episode-hero__subjects" aria-label="Subjects">
       @for (subject of visibleSubjects(); track subject) {
-      <a class="episode-hero__subject" [routerLink]="['/subject', subject]">{{ displayCatalogName(subject) }}</a>
+      <app-subject-chip [subject]="subject" size="hero" />
       }
     </div>
     }

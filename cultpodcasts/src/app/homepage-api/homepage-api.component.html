@@ -52,7 +52,7 @@
         @if (featuredSubjects().length > 0) {
         <div class="billboard__subjects" aria-label="Subjects">
           @for (subject of featuredSubjects(); track subject) {
-          <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ displayCatalogName(subject) }}</a>
+          <app-subject-chip [subject]="subject" size="hero" />
           }
         </div>
         }

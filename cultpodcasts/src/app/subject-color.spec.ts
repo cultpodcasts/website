@@ -16,6 +16,31 @@ function contrastRatio(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+function hexHue(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) {
+    return 0;
+  }
+  const d = max - min;
+  let h = 0;
+  switch (max) {
+    case r:
+      h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+    case g:
+      h = (b - r) / d + 2;
+      break;
+    default:
+      h = (r - g) / d + 4;
+      break;
+  }
+  return Math.round(h * 60);
+}
+
 describe('subjectColor', () => {
   it('gives a subject the same colour every time it is asked', () => {
     const first = subjectColor('Scientology');
@@ -27,11 +52,11 @@ describe('subjectColor', () => {
   it('pins known subjects to fixed palette entries so colours survive rebuilds and deploys', () => {
     // Changing the hash or the palette order would break these — that is the point:
     // a subject people have learned must not change colour between releases.
-    expect(subjectColor('Scientology').name).toBe('indigo');
-    expect(subjectColor('NXIVM').name).toBe('magenta');
-    expect(subjectColor('Jehovah\'s Witnesses').name).toBe('violet');
-    expect(subjectColor('Peoples Temple').name).toBe('crimson');
-    expect(subjectColor('Manson Family').name).toBe('gold');
+    expect(subjectColor('Scientology').name).toBe('chartreuse');
+    expect(subjectColor('NXIVM').name).toBe('mint');
+    expect(subjectColor('Jehovah\'s Witnesses').name).toBe('orchid');
+    expect(subjectColor('Peoples Temple').name).toBe('indigo');
+    expect(subjectColor('Manson Family').name).toBe('magenta');
   });
 
   it('separates different subjects across the palette rather than clustering them', () => {
@@ -84,6 +109,22 @@ describe('subjectColor', () => {
       // Backgrounds are muted, not bright fills competing with cover art.
       expect(relativeLuminance(color.background)).toBeLessThan(0.06);
     }
+  });
+
+  it('spreads palette hues around the wheel rather than clustering in a narrow band', () => {
+    const hues = SUBJECT_COLORS.map((c) => hexHue(c.background)).sort((a, b) => a - b);
+    expect(SUBJECT_COLORS.length).toBeGreaterThanOrEqual(16);
+
+    const gaps: number[] = [];
+    for (let i = 1; i < hues.length; i++) {
+      gaps.push(hues[i] - hues[i - 1]);
+    }
+    gaps.push(360 - (hues[hues.length - 1] - hues[0]));
+
+    // Even spacing around 360°/n — allow some character variation, forbid big empty arcs.
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(12);
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(40);
+    expect(hues[hues.length - 1] - hues[0]).toBeGreaterThan(280);
   });
 
   it('uses palette names that are unique, so a name identifies one colour', () => {

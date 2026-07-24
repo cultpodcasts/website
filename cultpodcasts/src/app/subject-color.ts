@@ -13,25 +13,28 @@ export interface SubjectColor {
 }
 
 /**
- * Hues spread around the wheel at fixed saturation/lightness bands: a dark muted background
- * with light same-hue text and a mid-tone border. Generated from hsl(h, 38%, 15%) /
- * hsl(h, 42%, 34%) / hsl(h, 78%, 80%) and then frozen as hex so the mapping cannot drift.
- * Every text-on-background pair clears 7:1 (WCAG AAA for normal text) — asserted in
- * subject-color.spec.ts, so editing this table cannot silently break contrast.
+ * Sixteen hues spaced around the wheel (~22°) with varied saturation/lightness so chips
+ * read as distinct characters on dark UI — not a single muted band stepped by hue alone.
+ * Hex is frozen from hsl() so the mapping cannot drift. Every text-on-background pair
+ * clears 7:1 (WCAG AAA for normal text) — asserted in subject-color.spec.ts.
  */
 export const SUBJECT_COLORS: readonly SubjectColor[] = [
-  { name: 'crimson', background: '#35181c', border: '#7b323c', text: '#f4a4af' },
-  { name: 'ember', background: '#352018', border: '#7b4832', text: '#f4bca4' },
-  { name: 'amber', background: '#352a18', border: '#7b6032', text: '#f4d7a4' },
-  { name: 'gold', background: '#353418', border: '#7b7932', text: '#f4f1a4' },
-  { name: 'lime', background: '#283518', border: '#5c7b32', text: '#d1f4a4' },
-  { name: 'fern', background: '#183521', border: '#327b4b', text: '#a4f4bf' },
-  { name: 'jade', background: '#18352f', border: '#327b6d', text: '#a4f4e4' },
-  { name: 'teal', background: '#183035', border: '#326f7b', text: '#a4e7f4' },
-  { name: 'azure', background: '#182535', border: '#32547b', text: '#a4c9f4' },
-  { name: 'indigo', background: '#181935', border: '#32357b', text: '#a4a7f4' },
-  { name: 'violet', background: '#251835', border: '#54327b', text: '#c9a4f4' },
-  { name: 'magenta', background: '#351831', border: '#7b3271', text: '#f4a4e9' },
+  { name: 'rose', background: '#37151e', border: '#842e44', text: '#f6acbf' },
+  { name: 'scarlet', background: '#361916', border: '#7f352f', text: '#f6a9a2' },
+  { name: 'coral', background: '#3d2714', border: '#8c592c', text: '#f7cca6' },
+  { name: 'amber', background: '#352e13', border: '#7e6d2a', text: '#f6e49c' },
+  { name: 'gold', background: '#353616', border: '#7c7f2f', text: '#f0f3a5' },
+  { name: 'chartreuse', background: '#253215', border: '#54762e', text: '#cff2a6' },
+  { name: 'lime', background: '#193518', border: '#357b32', text: '#aef1ac' },
+  { name: 'mint', background: '#173625', border: '#317d54', text: '#a8f0ca' },
+  { name: 'teal', background: '#14332f', border: '#2c7d72', text: '#abf2e9' },
+  { name: 'cyan', background: '#153338', border: '#2d7a86', text: '#aeebf4' },
+  { name: 'sky', background: '#142939', border: '#2c648c', text: '#add7f5' },
+  { name: 'cobalt', background: '#151d38', border: '#2d4386', text: '#aabcf3' },
+  { name: 'indigo', background: '#1f183a', border: '#423286', text: '#bdb0f2' },
+  { name: 'violet', background: '#2b1537', border: '#652e84', text: '#d8aaf3' },
+  { name: 'orchid', background: '#381537', border: '#862d83', text: '#f4a9f2' },
+  { name: 'magenta', background: '#391429', border: '#882b61', text: '#f6a7d5' },
 ];
 
 /**
