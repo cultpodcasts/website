@@ -1,17 +1,37 @@
 <section id="searchcontainer">
     <form (onsubmit)="search(searchBox)" id="searchbar">
-        <mat-form-field id="searchbox">
-            <mat-chip-grid #chips>
-                @if (searchChip()) {
-                <mat-chip (removed)="removeSearchChip()">
-                    <span class="chiptext">{{searchChip()}}</span>
-                    <mat-icon matChipRemove>cancel</mat-icon>
-                </mat-chip>
+        <div id="searchboxwrapper">
+            <mat-form-field id="searchbox" subscriptSizing="dynamic">
+                <mat-chip-grid #chips>
+                    @if (searchChip()) {
+                    <mat-chip (removed)="removeSearchChip()">
+                        <span class="chiptext">{{searchChip()}}</span>
+                        <mat-icon matChipRemove>cancel</mat-icon>
+                    </mat-chip>
+                    }
+                    <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext"
+                        #searchBox autocomplete="off" role="combobox" aria-autocomplete="list"
+                        [attr.aria-expanded]="suggestionsOpen()" aria-controls="search-suggestions-listbox"
+                        (input)="onInput(searchBox.value)" (focus)="onFocus()" (blur)="onBlur()"
+                        (keydown)="onKeydown($event, searchBox)">
+                </mat-chip-grid>
+            </mat-form-field>
+            @if (suggestionsOpen() && suggestions().length) {
+            <ul id="search-suggestions-listbox" role="listbox">
+                @for (suggestion of suggestions(); track suggestion.type + suggestion.value; let i = $index) {
+                <li role="option" [attr.aria-selected]="i === activeSuggestionIndex()"
+                    class="suggestion-item" [class.active]="i === activeSuggestionIndex()"
+                    (mousedown)="$event.preventDefault(); selectSuggestion(suggestion)">
+                    <mat-icon class="suggestion-icon">{{suggestion.type === 'podcast' ? 'podcasts' : 'sell'}}</mat-icon>
+                    <span class="suggestion-label">{{suggestion.label}}</span>
+                    @if (suggestion.matchedAlias) {
+                    <span class="suggestion-alias">via {{suggestion.matchedAlias}}</span>
+                    }
+                </li>
                 }
-                <input type="text" matInput [matChipInputFor]="chips" placeholder="Search" id="searchtext" #searchBox
-                    (keydown.enter)="search(searchBox)">
-            </mat-chip-grid>
-        </mat-form-field>
+            </ul>
+            }
+        </div>
         <button (click)="search(searchBox)" mat-flat-button color="secondary" id="searchcta">Search</button>
     </form>
 </section>

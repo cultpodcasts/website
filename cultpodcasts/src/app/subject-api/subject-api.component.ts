@@ -333,6 +333,40 @@ export class SubjectApiComponent {
     }
     this.page = 1;
     this.execSearch(true, false);
+    this.refreshLanguageFacets();
+  }
+
+  /**
+   * Re-fetch lang facets for the current subject (+ selected podcasts).
+   * Podcast chips stay subject-wide; language chips/counts must match the active podcast filter.
+   */
+  private refreshLanguageFacets(): void {
+    if (!this.filter) {
+      return;
+    }
+    this.oDataService.getEntitiesWithFacets<SearchResult>(
+      new URL("/search", environment.api).toString(),
+      {
+        search: this.query(),
+        filter: this.filter + this.podcastFilter,
+        searchMode: 'any',
+        queryType: 'simple',
+        count: true,
+        skip: 0,
+        top: 0,
+        facets: ["lang,count:50,sort:count"],
+        orderby: "release desc"
+      }
+    ).subscribe({
+      next: facetData => {
+        const langFacets = facetData.facets.lang ?? [];
+        this.languageOptions.set(langFacets);
+        this.facets.update(current => ({ ...current, lang: langFacets }));
+        const scopedTotal = facetData.metadata.get("count") ?? 0;
+        this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
+      },
+      error: e => console.error(e)
+    });
   }
 
   languagesChange($event: MatChipListboxChange) {

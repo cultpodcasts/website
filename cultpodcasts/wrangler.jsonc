@@ -17,7 +17,7 @@
           "id": "19eea88f0cb14548bcab925238a68cc4"
         }
       ]
-    },
+    }, 
     "production": {
       "vars": {
         "env": "production"

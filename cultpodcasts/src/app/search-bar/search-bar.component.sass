@@ -1,29 +1,94 @@
+// Selectors stay flat: emulated encapsulation appends a host attribute to every
+// compound selector, so an id ancestor chain is repeated on every rule.
 #searchcontainer
     margin-left: 8px
     margin-right: 8px
-    #searchbar
-        align-items: baseline
-        margin-top: 10px
-        display: -webkit-flex
-        display: flex
-        list-style-type: none
+
+#searchbar
+    align-items: baseline
+    margin-top: 10px
+    display: -webkit-flex
+    display: flex
+    list-style-type: none
+    padding: 0
+    justify-content: flex-end
+    gap: 8px
+
+#searchboxwrapper
+    position: relative
+    flex-grow: 1
+
+#searchbox
+    width: 100%
+    margin-bottom: 0
+    // Id prefix retained where the rule has to outweigh Material's own styles.
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper
+        display: none
+        height: 0
+        min-height: 0
+        margin: 0
         padding: 0
-        justify-content: flex-end
-        #searchbox
-            flex-grow: 1
-            mat-chip
-                margin-top: -4px
-                margin-bottom: -4px
-                margin-left: 0
-                .chiptext
-                    display: block
-                    overflow: hidden
-                    text-overflow: ellipsis
-            input.mat-mdc-chip-input
-                flex: 1 0 10px
-        #searchcta
-            margin-right: auto
-            margin-left: 8px
+    mat-chip
+        margin-top: -4px
+        margin-bottom: -4px
+        margin-left: 0
+    input.mat-mdc-chip-input
+        flex: 1 0 10px
+
+.chiptext
+    display: block
+    overflow: hidden
+    text-overflow: ellipsis
+
+#search-suggestions-listbox
+    position: absolute
+    top: calc(100% + 6px)
+    left: 0
+    right: 0
+    z-index: 20
+    margin: 0
+    padding: 6px
+    list-style: none
+    border-radius: 12px
+    background: var(--mat-sys-surface-container-high)
+    border: 1px solid var(--mat-sys-outline-variant)
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--mat-sys-shadow, #000) 28%, transparent)
+    max-height: 320px
+    overflow-y: auto
+
+.suggestion-item
+    display: flex
+    align-items: center
+    gap: 8px
+    padding: 8px 10px
+    border-radius: 8px
+    cursor: pointer
+    color: var(--mat-sys-on-surface)
+    &:hover,
+    &.active
+        background: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent)
+
+.suggestion-icon
+    flex-shrink: 0
+    font-size: 20px
+    height: 20px
+    width: 20px
+    opacity: 0.75
+
+.suggestion-label
+    flex: 1 1 auto
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+.suggestion-alias
+    flex-shrink: 0
+    font-size: 0.75rem
+    opacity: 0.6
+
+#searchcta
+    margin-right: auto
+    margin-left: 0
 
 @media screen and (min-width: 400px)
     .chiptext

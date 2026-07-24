@@ -4,6 +4,22 @@
       [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
   </p>
 </section>
+
+@if (showFlixPromo) {
+<section id="flix-promo" aria-label="Try Flix, a new way to browse">
+  <h2 class="flix-promo__title">Looking for a fresher way to browse?</h2>
+  <p class="flix-promo__lede">
+    Meet Flix — a new Cult Podcasts experience built around discovering episodes.
+    Everything you know stays right here; Flix is just another door in if you’d like to explore.
+  </p>
+  <a mat-flat-button color="primary" class="flix-promo__cta"
+    href="https://flix.cultpodcasts.com" target="_blank" rel="noopener noreferrer">
+    <mat-icon>open_in_new</mat-icon>
+    Try Flix
+  </a>
+</section>
+}
+
 <div id="progresswrapper">
   @if (isLoading()) {
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>

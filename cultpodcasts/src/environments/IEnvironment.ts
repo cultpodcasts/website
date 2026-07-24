@@ -8,5 +8,5 @@ export interface IEnvironment {
     shortner: string;
     name: string;
     vapidPublicKey: string;
-    ssrIgnoresSsl?: boolean,
+    ssrIgnoresSsl?: boolean;
 }
