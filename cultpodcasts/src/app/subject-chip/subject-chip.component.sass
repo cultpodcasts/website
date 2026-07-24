@@ -1,0 +1,28 @@
+:host
+    display: inline-flex
+    min-width: 0
+    max-width: 100%
+
+.subject-chip
+    display: inline-flex
+    align-items: center
+    max-width: 100%
+    padding: 3px 9px
+    border: 1px solid transparent
+    border-radius: 999px
+    font-size: 0.72rem
+    font-weight: 600
+    letter-spacing: 0.02em
+    line-height: 1.35
+    text-decoration: none
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+    // Colours are set inline per subject, so hover/focus lift them rather than replace them.
+    transition: filter 0.15s ease
+    &:hover
+        filter: brightness(1.25)
+    &:focus-visible
+        filter: brightness(1.25)
+        outline: 2px solid currentColor
+        outline-offset: 1px

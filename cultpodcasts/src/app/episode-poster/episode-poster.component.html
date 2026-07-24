@@ -61,4 +61,7 @@
     <span class="episode-poster__show">{{ displayCatalogName(episode().podcastName) }}</span>
     }
   </a>
+  @if (subject(); as subject) {
+  <app-subject-chip class="episode-poster__subject" [subject]="subject" />
+  }
 </div>

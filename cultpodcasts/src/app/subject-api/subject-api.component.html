@@ -90,8 +90,8 @@
   @if (count() > 0) {
   <div class="browse-grid">
     @for (result of results(); track result.id) {
-    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)" [titleAsHtml]="true"
-      (play)="playEpisode($event)" />
+    <app-episode-poster [episode]="result" [excludeSubject]="subjectName()"
+      [playing]="isPlayingId(result.id)" [titleAsHtml]="true" (play)="playEpisode($event)" />
     }
   </div>
 

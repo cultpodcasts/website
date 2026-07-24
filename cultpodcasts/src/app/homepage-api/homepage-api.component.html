@@ -180,7 +180,7 @@
       <div class="rail__scroller" tabindex="0">
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {
-          <app-episode-poster class="rail-poster" [episode]="item"
+          <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="rail.subject"
             [playing]="isPlayingId(item.id)" (play)="playEpisode($event)" />
           }
         </div>
