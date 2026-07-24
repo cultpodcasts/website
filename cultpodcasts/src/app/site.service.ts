@@ -22,8 +22,16 @@ export class SiteService {
     /** Emitted when the site logo is clicked while already on the homepage. */
     readonly homepageRefresh$ = this.homepageRefresh.asObservable();
 
+    private readonly searchFocus = new Subject<void>();
+    /** Emitted when the search input should take focus (e.g. after clearing a filter chip). */
+    readonly searchFocus$ = this.searchFocus.asObservable();
+
     requestHomepageRefresh() {
         this.homepageRefresh.next();
+    }
+
+    requestSearchFocus() {
+        this.searchFocus.next();
     }
 
     setQuery(query: string | null) {

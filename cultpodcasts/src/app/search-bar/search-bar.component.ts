@@ -97,6 +97,23 @@ export class SearchBarComponent {
         this.activeSuggestionIndex.set(-1);
         this.suggestionsOpen.set(results.length > 0);
       });
+
+    this.siteService.searchFocus$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.focusSearchInput());
+  }
+
+  private focusSearchInput(): void {
+    const el = this.searchBox?.nativeElement as HTMLInputElement | undefined;
+    if (!el) {
+      return;
+    }
+    // Chrome search stays in DOM but is display:none on home; skip so the
+    // homepage instance (which is visible) can take the same focus request.
+    if (!el.getClientRects().length) {
+      return;
+    }
+    el.focus();
   }
 
   onFocus(): void {
@@ -182,14 +199,13 @@ export class SearchBarComponent {
 
   removeSearchChip() {
     this.searchChip.set(null);
-    var query = this.siteService.getSiteData().query;
-    if (query && query != "") {
-      const url = `/search/` + query;
-      this.router.navigate([url]);
-    } else {
-      const url = `/`;
-      this.router.navigate([url]);
-    }
+    const query = this.siteService.getSiteData().query;
+    const url = query && query !== '' ? `/search/${query}` : `/`;
+    // Focus after navigation completes so a newly mounted homepage search bar
+    // is subscribed; setTimeout lets Angular finish creating it first.
+    void this.router.navigate([url]).then(() => {
+      setTimeout(() => this.siteService.requestSearchFocus(), 0);
+    });
   }
 
   /** Keep search-chip DOM stable across SSR/client by reading browse routes from the URL. */
