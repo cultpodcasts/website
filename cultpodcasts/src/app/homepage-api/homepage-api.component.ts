@@ -18,7 +18,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
-import { environment } from '../environments/environment';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-homepage-api',
