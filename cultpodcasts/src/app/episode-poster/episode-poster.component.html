@@ -12,9 +12,8 @@
   </div>
   <div class="episode-poster__badges">
     @if (languageBadge(); as lang) {
-    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
-      <mat-icon aria-hidden="true">translate</mat-icon>
-    </span>
+    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
+      [attr.aria-label]="lang.label">{{ lang.flag }}</span>
     }
     @if (duration()) {
     <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
@@ -30,9 +29,8 @@
   }
   <div class="episode-poster__badges">
     @if (languageBadge(); as lang) {
-    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
-      <mat-icon aria-hidden="true">translate</mat-icon>
-    </span>
+    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
+      [attr.aria-label]="lang.label">{{ lang.flag }}</span>
     }
     @if (duration()) {
     <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>

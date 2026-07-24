@@ -24,7 +24,7 @@ import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { languageLabel } from '../subject-language-filter';
+import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { isMetaSubject, pickObscureCults } from '../obscure-cults';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
@@ -336,17 +336,9 @@ export class HomepageApiComponent {
     return this.playerService.episode()?.id === id;
   }
 
-  /** Non-English language label for badges; undefined when English/unknown. */
-  nonEnglishLabel(episode: HomepageEpisode): string | undefined {
-    const code = episode.language?.trim();
-    if (!code) {
-      return undefined;
-    }
-    const lower = code.toLowerCase();
-    if (lower === 'en' || lower.startsWith('en-') || lower.startsWith('en_')) {
-      return undefined;
-    }
-    return languageLabel(code);
+  /** Non-English language flag badge; undefined when English/unknown. */
+  languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
+    return languageFlagBadgeForEpisode(episode);
   }
 
   pauseHero(): void {

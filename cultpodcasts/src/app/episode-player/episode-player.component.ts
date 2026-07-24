@@ -20,6 +20,8 @@ import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-
 import { EmbedService, EpisodeEmbedOption, episodeEmbedOptions } from '../episode-embed';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { PlayerService } from '../player.service';
+import { languageFlagBadgeForEpisode } from '../language-flag';
+import { displayCatalogName } from '../display-catalog-name';
 
 interface YouTubePlayerLike {
   destroy(): void;
@@ -127,6 +129,12 @@ export class EpisodePlayerComponent {
     const ep = this.episode();
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
+
+  protected readonly languageFlag = computed(() =>
+    languageFlagBadgeForEpisode(this.episode() ?? {})
+  );
+
+  protected readonly displayCatalogName = displayCatalogName;
 
   protected readonly queueCount = computed(() => this.queue().length);
 

@@ -27,6 +27,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { PlayerService } from '../player.service';
+import { languageFlagBadgeForEpisode } from '../language-flag';
 
 interface SubjectRail {
   subject: string;
@@ -117,6 +118,10 @@ export class PodcastEpisodeComponent {
 
   protected readonly visibleSubjects = computed(() =>
     (this._episode()?.subjects ?? []).filter((s) => !s.startsWith('_'))
+  );
+
+  protected readonly languageFlag = computed(() =>
+    languageFlagBadgeForEpisode(this._episode() ?? {})
   );
 
   /** "More from this podcast" rail — other episodes from the same show. */

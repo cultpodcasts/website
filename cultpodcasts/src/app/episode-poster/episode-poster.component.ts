@@ -2,9 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
-import { languageLabel } from '../subject-language-filter';
+import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
-import { HomepageEpisode } from '../homepage-episode.interface';
 import { displayCatalogName } from '../display-catalog-name';
 import { PlayerService } from '../player.service';
 
@@ -50,18 +49,9 @@ export class EpisodePosterComponent {
     return cleaned.startsWith('0') ? cleaned.substring(1) : cleaned;
   });
 
-  protected readonly languageBadge = computed(() => {
-    const ep = this.episode();
-    const code = 'language' in ep ? (ep as HomepageEpisode).language?.trim() : undefined;
-    if (!code) {
-      return undefined;
-    }
-    const lower = code.toLowerCase();
-    if (lower === 'en' || lower.startsWith('en-') || lower.startsWith('en_')) {
-      return undefined;
-    }
-    return languageLabel(code);
-  });
+  protected readonly languageBadge = computed((): LanguageFlagBadge | undefined =>
+    languageFlagBadgeForEpisode(this.episode())
+  );
 
   onPlay(event?: Event): void {
     event?.preventDefault();

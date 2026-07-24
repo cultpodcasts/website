@@ -172,9 +172,16 @@
     overflow: hidden
     text-overflow: ellipsis
 
+.stage__show-row
+    display: flex
+    align-items: center
+    gap: 8px
+    margin: 2px 0 0
+    min-width: 0
+
 .stage__show
     display: block
-    margin-top: 2px
+    min-width: 0
     font-size: 0.78rem
     color: #b3b3b3
     text-decoration: none
@@ -184,6 +191,11 @@
     &:hover
         color: #fff
         text-decoration: underline
+
+.stage__lang
+    flex: 0 0 auto
+    font-size: 0.95rem
+    line-height: 1
 
 .stage__services
     display: inline-flex

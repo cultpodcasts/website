@@ -35,7 +35,12 @@
     }
     <div class="stage__text">
       <p class="stage__title">{{ ep.episodeTitle }}</p>
-      <a class="stage__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ ep.podcastName }}</a>
+      <p class="stage__show-row">
+        <a class="stage__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ displayCatalogName(ep.podcastName) }}</a>
+        @if (languageFlag(); as lang) {
+        <span class="stage__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">{{ lang.flag }}</span>
+        }
+      </p>
     </div>
 
     <div class="stage__services" role="tablist" aria-label="Playback service">
