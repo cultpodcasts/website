@@ -7,11 +7,11 @@
 @if (active(); as current) {
 <div class="stage" [class.stage--video]="current.service === 'youtube'">
   <div class="stage__embed" [class.stage__embed--video]="current.service === 'youtube'">
-    @if (embedKey(); as key) {
-    @if (safeEmbedUrl(); as src) {
-    <div class="stage__frame" [attr.data-embed-key]="key">
+    @for (src of [safeEmbedUrl()]; track src) {
+    @if (src) {
+    <div class="stage__frame" [attr.data-embed-key]="embedKey()">
       <iframe
-        [id]="YOUTUBE_IFRAME_ID"
+        [attr.id]="current.service === 'youtube' ? YOUTUBE_IFRAME_ID : null"
         [src]="src"
         [title]="'Play ' + ep.episodeTitle + ' on ' + current.label"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
