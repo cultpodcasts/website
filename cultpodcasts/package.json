@@ -50,5 +50,13 @@
     "typescript": "6.0.3",
     "vitest": "^4.0.8",
     "wrangler": "^4.114.0"
+  },
+  "allowScripts": {
+    "browser-tabs-lock": false,
+    "esbuild": true,
+    "workerd": true,
+    "lmdb": true,
+    "msgpackr-extract": true,
+    "@parcel/watcher": true
   }
 }
