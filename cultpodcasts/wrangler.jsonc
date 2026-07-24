@@ -11,7 +11,7 @@
     "preview": {
       "vars": {
         "env": "staging",
-        "FLIX_PROMO_ENABLED": "false"
+        "FLIX_PROMO_ENABLED": "true"
       },
       "kv_namespaces": [
         {
