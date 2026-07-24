@@ -64,7 +64,7 @@
           (click)="selectLanguage(allLanguagesValue)">All</button>
         <button type="button" class="browse-pill"
           [class.is-active]="selectedLanguageValues().indexOf(englishLanguageValue) >= 0"
-          (click)="selectLanguage(englishLanguageValue)">
+          (click)="toggleLanguage(englishLanguageValue)">
           English
         </button>
         @for (language of visibleLanguageOptions(); track language.value) {
