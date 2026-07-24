@@ -68,6 +68,44 @@ export function englishFacetCount(
   return Math.max(0, subjectTotal - nonNull);
 }
 
+/** Chip values that have episodes under the current subject (+ optional show) filter. */
+export function availableLanguageChipValues(
+  scopedTotal: number,
+  langFacets: SearchResultFacet[] | undefined
+): string[] {
+  const chips: string[] = [];
+  if (englishFacetCount(scopedTotal, langFacets) > 0) {
+    chips.push(ENGLISH_LANGUAGE_VALUE);
+  }
+  for (const facet of langFacets ?? []) {
+    if (facet.value && (facet.count ?? 0) > 0) {
+      chips.push(facet.value);
+    }
+  }
+  return chips;
+}
+
+/** True when the active language filter can match any of the available chip values. */
+export function languageSelectionIntersectsAvailable(
+  selection: SubjectLanguageSelection,
+  availableChips: string[]
+): boolean {
+  if (selection.mode === "all") {
+    return true;
+  }
+  if (availableChips.length === 0) {
+    return false;
+  }
+  if (selection.mode === "english") {
+    return availableChips.includes(ENGLISH_LANGUAGE_VALUE);
+  }
+  if (selection.mode === "codes") {
+    return selection.codes.some(code => availableChips.includes(code));
+  }
+  return availableChips.includes(ENGLISH_LANGUAGE_VALUE)
+    || selection.codes.some(code => availableChips.includes(code));
+}
+
 export function hasNonEnglishFacets(langFacets: SearchResultFacet[] | undefined): boolean {
   return (langFacets ?? []).some(facet => !!facet.value && (facet.count ?? 0) > 0);
 }

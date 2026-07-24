@@ -21,10 +21,12 @@ import {
   ALL_LANGUAGES_VALUE,
   ENGLISH_LANGUAGE_VALUE,
   SubjectLanguageSelection,
+  availableLanguageChipValues,
   buildSubjectLangFilter,
   displayedLanguageOptions,
   englishFacetCount,
   languageLabel,
+  languageSelectionIntersectsAvailable,
   selectionFromChipValues,
   shouldShowLanguageSelector
 } from '../subject-language-filter';
@@ -326,7 +328,7 @@ export class SubjectApiComponent {
     this.podcasts.set([]);
     this.podcastFilter = '';
     this.page = 1;
-    this.execSearch(true, false);
+    this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
   togglePodcast(value: string): void {
@@ -339,7 +341,70 @@ export class SubjectApiComponent {
       ? ''
       : ` and search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
     this.page = 1;
-    this.execSearch(true, false);
+    this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
+  }
+
+  clearAllFilters(): void {
+    this.podcasts.set([]);
+    this.podcastFilter = '';
+    this.setLanguageSelection([ALL_LANGUAGES_VALUE]);
+    this.page = 1;
+    this.refreshLanguageFacets({ reconcileSelection: false, thenSearch: true });
+  }
+
+  /**
+   * Re-fetch lang facets for the current subject (+ selected shows).
+   * Podcast chips stay subject-wide; language chips must shrink to the active show filter.
+   * When the active language filter would exclude all episodes for the selected shows,
+   * select the languages those shows actually have.
+   */
+  private refreshLanguageFacets(options?: {
+    reconcileSelection?: boolean;
+    thenSearch?: boolean;
+  }): void {
+    if (!this.filter) {
+      return;
+    }
+    this.oDataService.getEntitiesWithFacets<SearchResult>(
+      new URL("/search", environment.api).toString(),
+      {
+        search: this.query(),
+        filter: this.filter + this.podcastFilter,
+        searchMode: 'any',
+        queryType: 'simple',
+        count: true,
+        skip: 0,
+        top: 0,
+        facets: ["lang,count:50,sort:count"],
+        orderby: "release desc"
+      }
+    ).subscribe({
+      next: facetData => {
+        const langFacets = facetData.facets.lang ?? [];
+        this.languageOptions.set(langFacets);
+        this.facets.update(current => ({ ...current, lang: langFacets }));
+        const scopedTotal = facetData.metadata.get("count") ?? 0;
+        this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
+
+        if (options?.reconcileSelection) {
+          const available = availableLanguageChipValues(scopedTotal, langFacets);
+          if (!languageSelectionIntersectsAvailable(this.languageSelection(), available)
+            && available.length > 0) {
+            this.setLanguageSelection(available);
+          }
+        }
+
+        if (options?.thenSearch) {
+          this.execSearch(true, false);
+        }
+      },
+      error: e => {
+        console.error(e);
+        if (options?.thenSearch) {
+          this.execSearch(true, false);
+        }
+      }
+    });
   }
 
   selectLanguage(value: string): void {
@@ -361,15 +426,13 @@ export class SubjectApiComponent {
     this.applyLanguageSelection(selected);
   }
 
-  clearAllFilters(): void {
-    this.podcasts.set([]);
-    this.podcastFilter = '';
-    this.applyLanguageSelection([ALL_LANGUAGES_VALUE]);
+  private setLanguageSelection(selected: string[]): void {
+    this.selectedLanguageValues.set(selected);
+    this.languageSelection.set(selectionFromChipValues(selected));
   }
 
   private applyLanguageSelection(selected: string[]): void {
-    this.selectedLanguageValues.set(selected);
-    this.languageSelection.set(selectionFromChipValues(selected));
+    this.setLanguageSelection(selected);
     this.page = 1;
     this.execSearch(true, false);
   }
