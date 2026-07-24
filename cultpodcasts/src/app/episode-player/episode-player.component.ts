@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   HostListener,
   PLATFORM_ID,
   computed,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -44,6 +46,8 @@ declare global {
 const YOUTUBE_IFRAME_ID = 'flix-player-frame';
 const YOUTUBE_ENDED_STATE = 0;
 const YOUTUBE_API_SCRIPT_ID = 'flix-youtube-iframe-api';
+/** Published on the document root so other fixed UI (e.g. the "back to top" FAB) can clear the docked player. */
+const DOCK_HEIGHT_CSS_VAR = '--flix-dock-height';
 
 @Component({
   selector: 'app-episode-player',
@@ -126,8 +130,12 @@ export class EpisodePlayerComponent {
 
   protected readonly queueCount = computed(() => this.queue().length);
 
+  /** Tracks whichever `.stage` element is currently rendered (playable or empty state). */
+  private readonly stageEl = viewChild<ElementRef<HTMLElement>>('stageEl');
+
   private ytPlayer: YouTubePlayerLike | undefined;
   private ytApiPromise: Promise<void> | undefined;
+  private dockResizeObserver: ResizeObserver | undefined;
 
   constructor() {
     effect(() => {
@@ -151,8 +159,14 @@ export class EpisodePlayerComponent {
         void this.attachYouTubeListener();
       });
 
+      effect(() => {
+        const isDocked = this.isOpen() && this.mode() === 'dock';
+        this.observeDockHeight(isDocked ? this.stageEl()?.nativeElement : undefined);
+      });
+
       this.destroyRef.onDestroy(() => {
         this.teardownYouTubePlayer();
+        this.observeDockHeight(undefined);
         document.body.classList.remove('flix-theater-lock');
       });
     }
@@ -251,6 +265,20 @@ export class EpisodePlayerComponent {
       }
     });
     return this.ytApiPromise;
+  }
+
+  private observeDockHeight(el: HTMLElement | undefined): void {
+    this.dockResizeObserver?.disconnect();
+    this.dockResizeObserver = undefined;
+    if (!el) {
+      document.documentElement.style.setProperty(DOCK_HEIGHT_CSS_VAR, '0px');
+      return;
+    }
+    this.dockResizeObserver = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height ?? el.offsetHeight;
+      document.documentElement.style.setProperty(DOCK_HEIGHT_CSS_VAR, `${Math.ceil(height)}px`);
+    });
+    this.dockResizeObserver.observe(el);
   }
 
   private teardownYouTubePlayer(): void {

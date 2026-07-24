@@ -36,7 +36,7 @@ body {
 
 body {
   margin: 0;
-  padding: 0 0 calc(3.2em + env(safe-area-inset-bottom)) 0;
+  padding: 0 0 calc(24px + env(safe-area-inset-bottom)) 0;
   font-family: var(--cp-font-ui);
   color: var(--mat-sys-on-surface);
   background-color: var(--cp-ink);
@@ -223,81 +223,82 @@ mat-card .mdc-card__actions:not(.review-actions) {
   margin-bottom: 1rem;
 }
 
+// ——— Flix page footer: a quiet strip of legal/social links at the end of
+// content, not a sticky bar. Sits in normal document flow below whatever
+// page is routed in, so it never competes with the docked episode player.
 footer {
-  width: var(--cp-column);
-  max-width: 100%;
-  margin: 0 auto;
-  padding-left: 12px;
-  padding-right: 12px;
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 0;
-  background: color-mix(in srgb, var(--cp-ink) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
-  height: 2.1em;
-  padding-top: 8px;
-  margin-bottom: 0;
-  font-size: 0.95rem;
-  z-index: 10;
+  width: 100%;
   box-sizing: border-box;
+  margin: 40px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 30%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 55%, transparent);
 
-  .mat-icon {
-    vertical-align: bottom;
-    padding-left: 10px;
-    padding-right: 5px;
+  .site-footer__link,
+  .site-footer__brand {
+    color: inherit;
   }
 
   a {
-    color: color-mix(in srgb, var(--mat-sys-on-surface) 70%, transparent);
     text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    height: 24px;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--cp-amber);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      outline: none;
+    }
   }
 
-  #privacy {
-    margin-top: 0;
+  .site-footer__dot {
+    opacity: 0.6;
   }
 
-  #goTop {
-    float: right;
+  .site-footer__brand {
+    font-family: var(--cp-font-display);
+    letter-spacing: 0.02em;
   }
 
   #socialLinksButton {
     border: none;
     background: transparent;
-    color: color-mix(in srgb, var(--mat-sys-on-surface) 70%, transparent);
+    color: inherit;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    line-height: 1;
-    width: 164px;
-    min-width: 164px;
-    max-width: 164px;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
     padding: 0;
+    line-height: 1;
     cursor: pointer;
-    vertical-align: middle;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+      outline: none;
+    }
   }
 
   #socialLinksButton .socialPreviewIcon,
   #socialLinksButton .githubPreviewIcon,
   #socialLinksButton .socialPreviewSvgIcon {
-    width: 25px;
-    height: 25px;
-    min-width: 25px;
-    min-height: 25px;
-    max-width: 25px;
-    max-height: 25px;
-    flex: 0 0 25px;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    flex: 0 0 16px;
     display: block;
+    filter: grayscale(1) brightness(1.6);
+    opacity: 0.85;
   }
 
   #socialLinksButton .githubPreviewIcon {
@@ -306,20 +307,70 @@ footer {
   }
 
   #socialLinksButton .socialPreviewSvgIcon {
-    color: #3ddc84;
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 70%, transparent);
     padding: 0;
     margin: 0;
-    line-height: 25px;
+    line-height: 16px;
+    filter: none;
+  }
+}
+
+// ——— Back to top: floating affordance, hidden near the top of the page and
+// offset above the docked episode player (via --flix-dock-height, published
+// by EpisodePlayerComponent) so it never collides with playback controls.
+.back-to-top {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom) + var(--flix-dock-height, 0px));
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cp-ink-elevated) 92%, transparent);
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, bottom 0.2s ease;
+
+  .mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
   }
 
-  #socialLinksButton .socialPreviewMaterialIcon {
-    width: 25px;
-    height: 25px;
-    font-size: 25px;
-    line-height: 25px;
-    color: #3ddc84;
-    display: block;
-    padding: 0;
+  &:hover,
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cp-amber) 55%, transparent);
+    color: var(--cp-amber);
+    outline: none;
+  }
+
+  &.back-to-top--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+// Fully hidden while the theater overlay is open — the scrim already blocks
+// interaction with everything behind it.
+.flix-theater-lock .back-to-top {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media screen and (max-width: 600px) {
+  .back-to-top {
+    left: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom) + var(--flix-dock-height, 0px));
   }
 }
 

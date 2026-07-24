@@ -5,7 +5,7 @@
 <div class="frame-shell">
 @if (episode(); as ep) {
 @if (active(); as current) {
-<div class="stage"
+<div class="stage" #stageEl
   [class.stage--video]="current.service === 'youtube'"
   [class.stage--spotify]="current.service === 'spotify'"
   [class.stage--apple]="current.service === 'apple'">
@@ -94,7 +94,7 @@
   </div>
 </div>
 } @else {
-<div class="stage stage--empty">
+<div class="stage stage--empty" #stageEl>
   <p>No playable link for this episode.</p>
   <a mat-stroked-button [routerLink]="['/podcast', ep.podcastName, ep.id]">Episode page</a>
   <button type="button" mat-icon-button aria-label="Close player" (click)="close()">

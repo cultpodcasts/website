@@ -3,7 +3,7 @@
     min-height: 100%
     width: 100%
     max-width: none
-    padding-bottom: calc(3.2em + env(safe-area-inset-bottom))
+    padding-bottom: calc(24px + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
 
@@ -13,16 +13,9 @@
 
 .home-shell
     background: #0b0b0b
-    // Pull footer styling quieter on browse home
-    footer
-        background: rgba(11, 11, 11, 0.92)
-        border-top-color: #222
 
 .browse-shell
     background: #0b0b0b
-    footer
-        background: rgba(11, 11, 11, 0.92)
-        border-top-color: #222
 
 .browse-chrome-search
     // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
@@ -119,6 +112,3 @@
 
 #results, #homepage
     margin-top: 8px
-
-footer
-    width: min(920px, 100%)

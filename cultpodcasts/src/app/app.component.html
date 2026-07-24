@@ -44,11 +44,12 @@
   }
   <router-outlet></router-outlet>
 
-  <footer>
-    <a [routerLink]="['/content/privacy-policy']" id="privacy">Privacy Policy</a>
+  <footer class="site-footer">
+    <a [routerLink]="['/content/privacy-policy']" id="privacy" class="site-footer__link">Privacy Policy</a>
 
     @if (featureSwitchService.IsEnabled(FeatureSwitch.reddit) || featureSwitchService.IsEnabled(FeatureSwitch.socials)) {
-    <button id="socialLinksButton" [matMenuTriggerFor]="socialLinksMenu" type="button" aria-label="Open social links">
+    <span class="site-footer__dot" aria-hidden="true">&middot;</span>
+    <button id="socialLinksButton" class="site-footer__social" [matMenuTriggerFor]="socialLinksMenu" type="button" aria-label="Open social links">
       @if (featureSwitchService.IsEnabled(FeatureSwitch.reddit)) {
       <img src="/assets/reddit.svg" alt="Reddit" class="socialPreviewIcon">
       }
@@ -88,9 +89,15 @@
     </mat-menu>
     }
 
-    <a [routerLink]="[]" fragment="top" id="goTop" (click)="goTop($event)">Go to top<mat-icon>arrow_upward</mat-icon></a>
+    <span class="site-footer__dot" aria-hidden="true">&middot;</span>
+    <span class="site-footer__brand">Cult Podcasts</span>
   </footer>
 </section>
+
+<a [routerLink]="[]" fragment="top" class="back-to-top" [class.back-to-top--visible]="showBackToTop()"
+  (click)="goTop($event)" aria-label="Back to top">
+  <mat-icon>arrow_upward</mat-icon>
+</a>
 
 <app-episode-player></app-episode-player>
 <app-resume-session-prompt></app-resume-session-prompt>
