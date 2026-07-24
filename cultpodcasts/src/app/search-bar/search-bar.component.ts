@@ -55,21 +55,28 @@ export class SearchBarComponent {
     private router: Router,
     private siteService: SiteService,
     private suggestionsService: SearchSuggestionsService) {
+    // Derive the chip from the URL before the first template pass so SSR and
+    // client hydration agree. SiteService is not transferred across hydration,
+    // so waiting for podcast-api/subject-api to call setPodcast/setSubject
+    // leaves a structural @if (searchChip) mismatch on browse routes.
+    this.applyChipFromUrl(this.router.url);
+
     this.siteService.currentSiteData
       .pipe(takeUntilDestroyed())
       .subscribe(siteData => {
         if (this.searchBox) {
           this.searchBox.nativeElement.value = siteData.query ?? "";
-          if (siteData.podcast != null) {
-            this.searchChip.set(siteData.podcast);
-            this.searchBoxMode.set(SearchBoxMode.Podcast);
-          } else if (siteData.subject != null) {
-            this.searchChip.set(siteData.subject);
-            this.searchBoxMode.set(SearchBoxMode.Subject);
-          } else {
-            this.searchChip.set(null);
-            this.searchBoxMode.set(SearchBoxMode.Default);
-          }
+        }
+        if (siteData.podcast != null) {
+          this.searchChip.set(siteData.podcast);
+          this.searchBoxMode.set(SearchBoxMode.Podcast);
+        } else if (siteData.subject != null) {
+          this.searchChip.set(siteData.subject);
+          this.searchBoxMode.set(SearchBoxMode.Subject);
+        } else {
+          // Re-derive from the URL instead of clearing — the initial
+          // BehaviorSubject emit is always nulls and would wipe the URL chip.
+          this.applyChipFromUrl(this.router.url);
         }
       });
 
@@ -178,5 +185,24 @@ export class SearchBarComponent {
       const url = `/`;
       this.router.navigate([url]);
     }
+  }
+
+  /** Keep search-chip DOM stable across SSR/client by reading browse routes from the URL. */
+  private applyChipFromUrl(url: string): void {
+    const path = url.split('?')[0].split('#')[0];
+    const podcastMatch = path.match(/^\/podcast\/([^/]+)/);
+    if (podcastMatch) {
+      this.searchChip.set(decodeURIComponent(podcastMatch[1]));
+      this.searchBoxMode.set(SearchBoxMode.Podcast);
+      return;
+    }
+    const subjectMatch = path.match(/^\/subject\/([^/]+)/);
+    if (subjectMatch) {
+      this.searchChip.set(decodeURIComponent(subjectMatch[1]));
+      this.searchBoxMode.set(SearchBoxMode.Subject);
+      return;
+    }
+    this.searchChip.set(null);
+    this.searchBoxMode.set(SearchBoxMode.Default);
   }
 }

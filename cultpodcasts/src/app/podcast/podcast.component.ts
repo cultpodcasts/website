@@ -23,10 +23,17 @@ import { SiteLoadingComponent } from '../site-loading/site-loading.component';
     SiteLoadingComponent,
     MatButtonModule,
     RouterLink
-  ]
+  ],
+  // Episode SSR emits a loading shell while the client fetches the body. Skip
+  // hydrating this host so the @if (isEpisode) branch cannot mismatch the
+  // AppComponent claim cursor (TypeError reading 'd' on browse/episode).
+  host: { ngSkipHydration: 'true' }
 })
 
 export class PodcastComponent {
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+
   podcastName: string = "";
   isServer: boolean;
   protected episode = signal<SearchResult | undefined>(undefined);
@@ -39,26 +46,30 @@ export class PodcastComponent {
     private episodeService: EpisodeService,
     @Inject(PLATFORM_ID) platformId: any) {
     this.isServer = isPlatformServer(platformId);
+    // First template pass must match the episode vs podcast-api branch.
+    this.applyRouteParams(this.route.snapshot.params);
   }
 
   ngOnInit() {
     this.populateTags();
   }
 
-  private route = inject(ActivatedRoute);
-  private destroyRef = inject(DestroyRef);
+  private applyRouteParams(params: Record<string, string | undefined>): void {
+    this.podcastName = params["podcastName"] ?? "";
+    const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
+    this.isEpisode.set(episodeUuid != "");
+    this.episode.set(undefined);
+    this.isLoading.set(true);
+  }
 
   populateTags() {
     this.route.params.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(async params => {
-      this.podcastName = params["podcastName"];
-      this.episode.set(undefined);
+      this.applyRouteParams(params);
       let pageDetails: IPageDetails = { title: this.podcastName };
-      const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
+      const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
       const isEpisode = episodeUuid != "";
-      this.isEpisode.set(isEpisode);
-      this.isLoading.set(true);
       if (isEpisode) {
         if (this.isServer) {
           // SSR: SEO tags only — do not SSR episode body (avoids hydration mismatch with client).
