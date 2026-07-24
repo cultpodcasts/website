@@ -19,6 +19,7 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
+import { displayCatalogName } from '../display-catalog-name';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -63,6 +64,7 @@ export class SearchApiComponent {
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
   protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
+  protected readonly displayCatalogName = displayCatalogName;
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);

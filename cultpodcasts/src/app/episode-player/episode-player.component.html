@@ -1,11 +1,17 @@
+@if (mode() === 'theater' && episode()) {
+<div class="scrim" aria-hidden="true" (click)="minimize()"></div>
+}
+
+<div class="frame-shell">
 @if (episode(); as ep) {
 @if (active(); as current) {
-<div class="dock" [class.dock--video]="current.service === 'youtube'">
-  <div class="dock__embed" [class.dock__embed--video]="current.service === 'youtube'">
+<div class="stage" [class.stage--video]="current.service === 'youtube'">
+  <div class="stage__embed" [class.stage__embed--video]="current.service === 'youtube'">
     @if (embedKey(); as key) {
     @if (safeEmbedUrl(); as src) {
-    <div class="dock__frame" [attr.data-embed-key]="key">
+    <div class="stage__frame" [attr.data-embed-key]="key">
       <iframe
+        [id]="YOUTUBE_IFRAME_ID"
         [src]="src"
         [title]="'Play ' + ep.episodeTitle + ' on ' + current.label"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -17,18 +23,18 @@
     }
   </div>
 
-  <div class="dock__meta">
+  <div class="stage__chrome">
     @if (artwork(); as art) {
-    <img class="dock__art" [src]="art" [alt]="" />
+    <img class="stage__art" [src]="art" [alt]="" />
     }
-    <div class="dock__text">
-      <p class="dock__title">{{ ep.episodeTitle }}</p>
-      <a class="dock__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ ep.podcastName }}</a>
+    <div class="stage__text">
+      <p class="stage__title">{{ ep.episodeTitle }}</p>
+      <a class="stage__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ ep.podcastName }}</a>
     </div>
 
-    <div class="dock__services" role="tablist" aria-label="Playback service">
+    <div class="stage__services" role="tablist" aria-label="Playback service">
       @for (option of options(); track option.service) {
-      <button type="button" class="dock__service" role="tab"
+      <button type="button" class="stage__service" role="tab"
         [class.is-active]="option.service === current.service"
         [attr.aria-selected]="option.service === current.service"
         [attr.aria-label]="'Play on ' + option.label"
@@ -49,18 +55,40 @@
       }
     </div>
 
-    <a class="dock__external" mat-icon-button [href]="current.externalUrl" target="_blank"
+    <button type="button" class="stage__queue-toggle" mat-icon-button
+      [class.has-items]="queueCount() > 0"
+      [attr.aria-label]="'Up next, ' + queueCount() + ' queued'"
+      (click)="toggleQueuePanel()">
+      <mat-icon>queue_music</mat-icon>
+      @if (queueCount() > 0) {
+      <span class="stage__queue-count">{{ queueCount() }}</span>
+      }
+    </button>
+
+    @if (mode() === 'theater') {
+    <button type="button" class="stage__mode-btn" mat-icon-button aria-label="Minimize player" title="Minimize"
+      (click)="minimize()">
+      <mat-icon>close_fullscreen</mat-icon>
+    </button>
+    } @else {
+    <button type="button" class="stage__mode-btn" mat-icon-button aria-label="Expand player" title="Expand"
+      (click)="expand()">
+      <mat-icon>open_in_full</mat-icon>
+    </button>
+    }
+
+    <a class="stage__external" mat-icon-button [href]="current.externalUrl" target="_blank"
       rel="noopener noreferrer" [attr.aria-label]="'Open in ' + current.label">
       <mat-icon>open_in_new</mat-icon>
     </a>
 
-    <button type="button" class="dock__close" mat-icon-button aria-label="Close player" (click)="close()">
+    <button type="button" class="stage__close" mat-icon-button aria-label="Close player" (click)="close()">
       <mat-icon>close</mat-icon>
     </button>
   </div>
 </div>
 } @else {
-<div class="dock dock--empty">
+<div class="stage stage--empty">
   <p>No playable link for this episode.</p>
   <a mat-stroked-button [routerLink]="['/podcast', ep.podcastName, ep.id]">Episode page</a>
   <button type="button" mat-icon-button aria-label="Close player" (click)="close()">
@@ -68,4 +96,49 @@
   </button>
 </div>
 }
+}
+</div>
+
+@if (!episode() && queueCount() > 0) {
+<button type="button" class="queue-fab" (click)="toggleQueuePanel()"
+  [attr.aria-label]="'Up next, ' + queueCount() + ' queued'">
+  <mat-icon>queue_music</mat-icon>
+  <span>Up next · {{ queueCount() }}</span>
+</button>
+}
+
+@if (queueOpen()) {
+<div class="queue-panel" role="dialog" aria-label="Up next queue">
+  <div class="queue-panel__header">
+    <h3>Up next</h3>
+    <button type="button" mat-icon-button aria-label="Close queue" (click)="toggleQueuePanel()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  @if (queue().length === 0) {
+  <p class="queue-panel__empty">Nothing queued yet. Use "Add to queue" on any poster.</p>
+  } @else {
+  <ul class="queue-panel__list">
+    @for (item of queue(); track item.key) {
+    <li class="queue-panel__item">
+      <button type="button" class="queue-panel__play" (click)="playFromQueue(item.episode, $event)">
+        @if (episodeImage(item.episode); as art) {
+        <img [src]="art" [alt]="" loading="lazy" />
+        } @else {
+        <div class="queue-panel__placeholder" aria-hidden="true"></div>
+        }
+        <span class="queue-panel__info">
+          <span class="queue-panel__title">{{ item.episode.episodeTitle }}</span>
+          <span class="queue-panel__show">{{ item.episode.podcastName }}</span>
+        </span>
+      </button>
+      <button type="button" class="queue-panel__remove" mat-icon-button aria-label="Remove from queue"
+        (click)="removeFromQueue(item.episode, $event)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </li>
+    }
+  </ul>
+  }
+</div>
 }

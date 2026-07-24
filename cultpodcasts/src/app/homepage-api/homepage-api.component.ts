@@ -30,6 +30,7 @@ import { EpisodePosterComponent } from '../episode-poster/episode-poster.compone
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
+import { displayCatalogName } from '../display-catalog-name';
 
 export interface EpisodeRail {
   id: string;
@@ -103,6 +104,8 @@ export class HomepageApiComponent {
   protected readonly heroIndex = signal(0);
   protected readonly heroPaused = signal(false);
   protected readonly heroAnimating = signal(false);
+
+  protected readonly displayCatalogName = displayCatalogName;
 
   private readonly allEpisodesVisible = computed(() => {
     const g = this.grouped();

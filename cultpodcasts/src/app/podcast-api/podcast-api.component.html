@@ -6,7 +6,7 @@
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
     <div class="browse-toolbar">
-      <h2>{{podcastName()}} has {{count()}} episode@if(count()>1 || count()==0){s}
+      <h2>{{ displayCatalogName(podcastName()) }} has {{count()}} episode@if(count()>1 || count()==0){s}
         @if (query() && query()!='') {
         matching "{{query()}}"
         }
@@ -63,7 +63,7 @@
         <button type="button" class="browse-pill"
           [class.is-active]="subjects().indexOf(subject.value) >= 0"
           (click)="toggleSubject(subject.value)">
-          {{ subject.value }}
+          {{ displayCatalogName(subject.value) }}
         </button>
         }
       </div>
@@ -97,7 +97,7 @@
 </section>
 } @else if (count() === 0 && !isLoading()) {
 <section class="browse-empty">
-  <h2>There were no results for "{{podcastName()}}"@if (query()) { and "{{query()}}"}</h2>
+  <h2>There were no results for "{{ displayCatalogName(podcastName()) }}"@if (query()) { and "{{query()}}"}</h2>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
   </div>

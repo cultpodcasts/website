@@ -22,6 +22,7 @@ import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.inter
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { SearchDescriptionPipe } from '../search-description.pipe';
+import { displayCatalogName } from '../display-catalog-name';
 
 @Component({
   selector: 'app-podcast-episode',
@@ -70,6 +71,7 @@ export class PodcastEpisodeComponent {
   private _parentLoaded: boolean = false;
 
   podcastName = signal("");
+  protected readonly displayCatalogName = displayCatalogName;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);

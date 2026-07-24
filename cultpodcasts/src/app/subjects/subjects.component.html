@@ -1,7 +1,7 @@
 @for (subject of subjects; track subject) {
 @if (!subject.startsWith("_") || showHidden) {
 <div class="subject">
-    <a [routerLink]="['/subject', subject]" (click)="stopPropagate($event)">{{subject}}</a>
+    <a [routerLink]="['/subject', subject]" (click)="stopPropagate($event)">{{ displayCatalogName(subject) }}</a>
     @if (editable) {
     <button mat-icon-button type="button" class="remove-btn" [disabled]="disabled"
         (click)="onRemove(subject, $event)" [attr.aria-label]="'Remove subject ' + subject">

@@ -34,6 +34,7 @@ import { EpisodePlayerComponent } from '../episode-player/episode-player.compone
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
+import { displayCatalogName } from '../display-catalog-name';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -72,6 +73,7 @@ export class PodcastApiComponent {
   protected isLoading = signal<boolean>(true);
   protected facets = signal<SearchResultsFacets>({});
   protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
+  protected readonly displayCatalogName = displayCatalogName;
   protected subjects = signal<string[]>([]);
   private subjectsFilter: string = "";
   protected isSubsequentLoading = signal<boolean>(false);

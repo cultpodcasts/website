@@ -39,7 +39,7 @@
         </p>
         <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
         <p class="billboard__meta">
-          <a [routerLink]="['/podcast', feature.podcastName]">{{ feature.podcastName }}</a>
+          <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
           <span> · {{ durationLabel(feature.duration) }}</span>
           @if (nonEnglishLabel(feature); as lang) {
           <span class="billboard__lang" [attr.title]="lang">
@@ -52,7 +52,7 @@
         @if (featuredSubjects().length > 0) {
         <div class="billboard__subjects" aria-label="Subjects">
           @for (subject of featuredSubjects(); track subject) {
-          <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ subject }}</a>
+          <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ displayCatalogName(subject) }}</a>
           }
         </div>
         }
@@ -155,7 +155,7 @@
             }
             <span class="obscure__count">{{ cult.episodes.length }} new</span>
           </div>
-          <span class="obscure__name">{{ cult.subject }}</span>
+          <span class="obscure__name">{{ displayCatalogName(cult.subject) }}</span>
         </a>
         }
       </div>
@@ -169,12 +169,12 @@
       <div class="rail__heading">
         @if (rail.subject; as subject) {
         <a class="rail__title rail__title--link" [routerLink]="['/subject', subject]">
-          <span>{{ rail.title }}</span>
+          <span>{{ displayCatalogName(rail.title) }}</span>
           <mat-icon aria-hidden="true">chevron_right</mat-icon>
         </a>
         <a class="rail__see-all" [routerLink]="['/subject', subject]">Browse all</a>
         } @else {
-        <h2 class="rail__title">{{ rail.title }}</h2>
+        <h2 class="rail__title">{{ displayCatalogName(rail.title) }}</h2>
         }
       </div>
       <div class="rail__scroller" tabindex="0">

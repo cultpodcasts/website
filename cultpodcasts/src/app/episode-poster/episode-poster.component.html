@@ -54,7 +54,7 @@
     <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
     }
     @if (showShow()) {
-    <span class="episode-poster__show">{{ episode().podcastName }}</span>
+    <span class="episode-poster__show">{{ displayCatalogName(episode().podcastName) }}</span>
     }
   </a>
 </div>

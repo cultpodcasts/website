@@ -23,7 +23,7 @@
       </mat-card-title>
       <mat-card-subtitle>
         <a [routerLink]="['/podcast', podcastName()]">
-          {{podcastName()}}
+          {{ displayCatalogName(podcastName()) }}
         </a>
       </mat-card-subtitle>
       <mat-card-subtitle>{{episode.release | date:'d MMM yyyy'}}

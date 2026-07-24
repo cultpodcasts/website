@@ -34,6 +34,7 @@ import { EpisodePlayerComponent } from '../episode-player/episode-player.compone
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
+import { displayCatalogName } from '../display-catalog-name';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -72,6 +73,7 @@ export class SubjectApiComponent {
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
   protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
+  protected readonly displayCatalogName = displayCatalogName;
   private podcastFilter: string = "";
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));

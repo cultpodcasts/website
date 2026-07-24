@@ -5,6 +5,7 @@ import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { languageLabel } from '../subject-language-filter';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { HomepageEpisode } from '../homepage-episode.interface';
+import { displayCatalogName } from '../display-catalog-name';
 
 @Component({
   selector: 'app-episode-poster',
@@ -26,6 +27,8 @@ export class EpisodePosterComponent {
   readonly titleAsHtml = input(false);
 
   readonly play = output<SearchDisplayEpisode>();
+
+  protected readonly displayCatalogName = displayCatalogName;
 
   protected readonly imageUrl = computed(() =>
     episodeImageUrl(this.episode())?.toString()

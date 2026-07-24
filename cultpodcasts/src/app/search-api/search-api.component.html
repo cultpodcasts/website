@@ -36,7 +36,7 @@
         <button type="button" class="browse-pill"
           [class.is-active]="subjects().indexOf(subject.value) >= 0"
           (click)="toggleSubject(subject.value)">
-          {{ subject.value }}
+          {{ displayCatalogName(subject.value) }}
         </button>
         }
       </div>
@@ -53,7 +53,7 @@
         <button type="button" class="browse-pill"
           [class.is-active]="podcasts().indexOf(podcast.value) >= 0"
           (click)="togglePodcast(podcast.value)">
-          {{ podcast.value }}
+          {{ displayCatalogName(podcast.value) }}
         </button>
         }
       </div>
