@@ -20,6 +20,7 @@ import { DomSanitizer } from "@angular/platform-browser";
 import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
 import { EpisodePlayerComponent } from './episode-player/episode-player.component';
+import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -39,7 +40,7 @@ import { filter, map, startWith } from 'rxjs';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, EpisodePlayerComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, EpisodePlayerComponent, ResumeSessionPromptComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 

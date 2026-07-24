@@ -1,0 +1,30 @@
+@if (isOpen()) {
+<div class="resume-prompt">
+  @if (artwork(); as art) {
+  <img class="resume-prompt__art" [src]="art" [alt]="" />
+  } @else {
+  <div class="resume-prompt__icon" aria-hidden="true">
+    <mat-icon>queue_music</mat-icon>
+  </div>
+  }
+
+  <div class="resume-prompt__body">
+    <p class="resume-prompt__title">Resume your listening session?</p>
+    @if (nowPlaying(); as ep) {
+    <p class="resume-prompt__detail">
+      You were on <strong>{{ ep.episodeTitle }}</strong> · {{ ep.podcastName }}
+      @if (queuedCount() > 0) {
+      <span class="resume-prompt__extra">+{{ queuedCount() }} more up next</span>
+      }
+    </p>
+    } @else {
+    <p class="resume-prompt__detail">You had {{ queuedCount() }} episode{{ queuedCount() === 1 ? '' : 's' }} queued up.</p>
+    }
+  </div>
+
+  <div class="resume-prompt__actions">
+    <button type="button" mat-button (click)="dismiss()">Dismiss</button>
+    <button type="button" mat-raised-button class="resume-prompt__resume" (click)="resume()">Resume</button>
+  </div>
+</div>
+}
