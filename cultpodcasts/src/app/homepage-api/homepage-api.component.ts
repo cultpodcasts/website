@@ -21,7 +21,7 @@ import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
-import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
+import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { languageLabel } from '../subject-language-filter';
@@ -49,7 +49,6 @@ export interface EpisodeRail {
     MatIconModule,
     SlotMachineCounterComponent,
     SearchBarComponent,
-    EpisodePlayerComponent,
     EpisodePosterComponent,
     SiteLoadingComponent,
   ],
@@ -71,7 +70,7 @@ export class HomepageApiComponent {
   protected weekEpisodeCount = signal<number | undefined>(undefined);
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
-  protected playingEpisode = signal<HomepageEpisode | undefined>(undefined);
+  protected readonly playerService = inject(PlayerService);
   readonly Weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   readonly Month = [
     'January',
@@ -271,12 +270,12 @@ export class HomepageApiComponent {
     if (!this.canPlay(episode)) {
       return;
     }
-    this.playingEpisode.set(episode as HomepageEpisode);
+    this.playerService.play(episode);
     this.heroPaused.set(true);
   }
 
-  closePlayer(): void {
-    this.playingEpisode.set(undefined);
+  isPlayingId(id: string): boolean {
+    return this.playerService.episode()?.id === id;
   }
 
   /** Non-English language label for badges; undefined when English/unknown. */
@@ -297,17 +296,10 @@ export class HomepageApiComponent {
   }
 
   resumeHero(): void {
-    if (this.playingEpisode()) {
+    if (this.playerService.episode()) {
       return;
     }
     this.heroPaused.set(false);
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.playingEpisode()) {
-      this.closePlayer();
-    }
   }
 
   goHero(index: number): void {
@@ -354,7 +346,6 @@ export class HomepageApiComponent {
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
-    this.playingEpisode.set(undefined);
     this.stopHeroCycle();
     this.heroIndex.set(0);
     if (typeof window !== 'undefined') {

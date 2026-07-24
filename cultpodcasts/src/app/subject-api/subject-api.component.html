@@ -2,7 +2,7 @@
   [label]="isSubsequentLoading() ? 'Loading more episodes' : 'Updating results'" />
 
 @if (count() > 0) {
-<section class="browse" [class.browse--playing]="!!playingEpisode()"
+<section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
     <div class="browse-toolbar">
@@ -85,7 +85,7 @@
 
   <div class="browse-grid">
     @for (result of results(); track result.id) {
-    <app-episode-poster [episode]="result" [playing]="playingEpisode()?.id === result.id" [titleAsHtml]="true"
+    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)" [titleAsHtml]="true"
       (play)="playEpisode($event)" />
     }
   </div>
@@ -111,5 +111,3 @@
   </div>
 </section>
 }
-
-<app-episode-player [episode]="playingEpisode()" (closed)="closePlayer()" />

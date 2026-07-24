@@ -927,3 +927,8 @@ mat-card-actions {
   }
 }
 
+/* ——— Flix player: lock page scroll while the theater overlay is open ——— */
+.flix-theater-lock {
+  overflow: hidden;
+}
+

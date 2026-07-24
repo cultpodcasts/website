@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
@@ -30,10 +30,10 @@ import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.inter
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
 import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
-import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
+import { PlayerService } from '../player.service';
 import { displayCatalogName } from '../display-catalog-name';
 
 const sortParam: string = "sort";
@@ -49,7 +49,6 @@ const sortParamDateDesc: string = "date-desc";
     MatMenuModule,
     MatIconModule,
     EpisodePosterComponent,
-    EpisodePlayerComponent,
     SiteLoadingComponent,
   ],
   templateUrl: './podcast-api.component.html',
@@ -72,7 +71,7 @@ export class PodcastApiComponent {
   protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
   protected facets = signal<SearchResultsFacets>({});
-  protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
+  protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
   protected subjects = signal<string[]>([]);
   private subjectsFilter: string = "";
@@ -423,18 +422,11 @@ export class PodcastApiComponent {
     if (!canPlayEpisode(episode)) {
       return;
     }
-    this.playingEpisode.set(episode);
+    this.playerService.play(episode);
   }
 
-  closePlayer(): void {
-    this.playingEpisode.set(undefined);
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.playingEpisode()) {
-      this.closePlayer();
-    }
+  isPlayingId(id: string): boolean {
+    return this.playerService.episode()?.id === id;
   }
 
 }

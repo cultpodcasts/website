@@ -46,6 +46,12 @@
   <button type="button" class="episode-poster__cta" (click)="onPlay($event)">
     {{ playLabel() }}
   </button>
+  <button type="button" class="episode-poster__queue-btn" [class.is-queued]="queued()"
+    [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'"
+    [attr.title]="queued() ? 'Remove from queue' : 'Add to queue'"
+    (click)="onToggleQueue($event)">
+    <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
+  </button>
   }
   <a class="episode-poster__titles" [routerLink]="['/podcast', episode().podcastName, episode().id]">
     @if (titleAsHtml()) {

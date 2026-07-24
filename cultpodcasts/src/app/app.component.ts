@@ -19,6 +19,7 @@ import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
+import { EpisodePlayerComponent } from './episode-player/episode-player.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -38,7 +39,7 @@ import { filter, map, startWith } from 'rxjs';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, EpisodePlayerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 

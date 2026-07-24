@@ -109,8 +109,8 @@
 
 .episode-poster__meta
     display: flex
-    flex-direction: column
-    align-items: flex-start
+    flex-wrap: wrap
+    align-items: center
     gap: 6px
     margin-top: 8px
     color: inherit
@@ -135,7 +135,36 @@
         background: var(--nflx-accent, #e8a23a)
         outline: none
 
+.episode-poster__queue-btn
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    flex: 0 0 auto
+    width: 28px
+    height: 28px
+    margin: 0
+    padding: 0
+    border: 1px solid rgba(255, 255, 255, 0.25)
+    border-radius: 999px
+    background: transparent
+    color: var(--nflx-text, #fff)
+    cursor: pointer
+    mat-icon
+        font-size: 17px
+        width: 17px
+        height: 17px
+    &:hover,
+    &:focus-visible
+        border-color: var(--nflx-accent, #e8a23a)
+        color: var(--nflx-accent, #e8a23a)
+        outline: none
+    &.is-queued
+        border-color: var(--nflx-accent, #e8a23a)
+        background: rgba(232, 162, 58, 0.18)
+        color: var(--nflx-accent, #e8a23a)
+
 .episode-poster__titles
+    order: 1
     display: block
     text-decoration: none
     color: inherit

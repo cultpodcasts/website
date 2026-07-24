@@ -1,5 +1,5 @@
 <section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()"
-  [class.nflx--playing]="!!playingEpisode()">
+  [class.nflx--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
   <app-site-loading [active]="isLoading()" label="Loading homepage" />
 
   <div class="nflx-search">
@@ -181,7 +181,7 @@
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {
           <app-episode-poster class="rail-poster" [episode]="item"
-            [playing]="playingEpisode()?.id === item.id" (play)="playEpisode($event)" />
+            [playing]="isPlayingId(item.id)" (play)="playEpisode($event)" />
           }
         </div>
       </div>
@@ -189,6 +189,4 @@
     }
   </div>
   }
-
-  <app-episode-player [episode]="playingEpisode()" (closed)="closePlayer()" />
 </section>

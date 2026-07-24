@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
@@ -6,6 +6,7 @@ import { languageLabel } from '../subject-language-filter';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { displayCatalogName } from '../display-catalog-name';
+import { PlayerService } from '../player.service';
 
 @Component({
   selector: 'app-episode-poster',
@@ -19,6 +20,8 @@ import { displayCatalogName } from '../display-catalog-name';
   },
 })
 export class EpisodePosterComponent {
+  private readonly playerService = inject(PlayerService);
+
   readonly episode = input.required<SearchDisplayEpisode>();
   readonly playing = input(false);
   /** Show podcast name under the title (hide on podcast pages). */
@@ -37,6 +40,9 @@ export class EpisodePosterComponent {
   protected readonly playable = computed(() => canPlayEpisode(this.episode()));
 
   protected readonly playLabel = computed(() => playActionLabel(this.episode()));
+
+  /** "Add to queue" is a secondary action — only offered when the episode is embeddable. */
+  protected readonly queued = computed(() => this.playerService.isQueued(this.episode()));
 
   protected readonly duration = computed(() => {
     const raw = this.episode().duration ?? '';
@@ -62,6 +68,14 @@ export class EpisodePosterComponent {
     event?.stopPropagation();
     if (this.playable()) {
       this.play.emit(this.episode());
+    }
+  }
+
+  onToggleQueue(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (this.playable()) {
+      this.playerService.toggleQueue(this.episode());
     }
   }
 }

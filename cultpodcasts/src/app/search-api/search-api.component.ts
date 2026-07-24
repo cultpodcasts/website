@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
@@ -13,13 +13,13 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
-import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
+import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -36,7 +36,6 @@ const sortParamDateDesc: string = "date-desc";
     MatMenuModule,
     MatIconModule,
     EpisodePosterComponent,
-    EpisodePlayerComponent,
     SiteLoadingComponent,
   ],
   templateUrl: './search-api.component.html',
@@ -63,7 +62,7 @@ export class SearchApiComponent {
   private subjectsFilter: string = "";
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
-  protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
+  protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
@@ -336,17 +335,10 @@ export class SearchApiComponent {
     if (!canPlayEpisode(episode)) {
       return;
     }
-    this.playingEpisode.set(episode);
+    this.playerService.play(episode);
   }
 
-  closePlayer(): void {
-    this.playingEpisode.set(undefined);
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.playingEpisode()) {
-      this.closePlayer();
-    }
+  isPlayingId(id: string): boolean {
+    return this.playerService.episode()?.id === id;
   }
 }
