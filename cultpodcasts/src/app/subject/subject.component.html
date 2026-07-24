@@ -1,3 +1,9 @@
-@defer  {
+@defer {
   <app-subject-api></app-subject-api>
+} @placeholder {
+  <app-site-loading [active]="true" label="Loading subject" />
+} @error {
+  <section class="browse-empty">
+    <h2>Failed to load this subject.</h2>
+  </section>
 }

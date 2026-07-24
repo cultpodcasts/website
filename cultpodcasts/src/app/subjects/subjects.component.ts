@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { displayCatalogName } from '../display-catalog-name';
 
 @Component({
   selector: 'app-subjects',
@@ -15,6 +16,8 @@ import { MatIconModule } from '@angular/material/icon';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SubjectsComponent {
+  protected readonly displayCatalogName = displayCatalogName;
+
   @Input({ required: true })
   subjects: string[] = [];
 

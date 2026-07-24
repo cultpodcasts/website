@@ -6,9 +6,14 @@ import {
   signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, from } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { SearchBoxMode } from '../search-box-mode.enum';
 import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
+import { SearchSuggestionsService } from '../search-suggestions.service';
+import { Suggestion } from '../search-suggestions.interface';
+import { GuidService } from '../guid.service';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -16,6 +21,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { TextFieldModule } from '@angular/cdk/text-field';
+
+const SUGGESTION_DEBOUNCE_MS = 150;
 
 @Component({
   selector: 'app-search-bar',
@@ -30,40 +37,154 @@ import { TextFieldModule } from '@angular/cdk/text-field';
   ],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // Chip @if DOM is easy to desync across SSR/client (SiteService is not
+  // transferred). Skip hydrating the bar; URL/site data re-seeds on client.
+  host: { ngSkipHydration: 'true' }
 })
 
 export class SearchBarComponent {
   protected readonly searchChip = signal<string | null>(null);
   protected readonly searchBoxMode = signal(SearchBoxMode.Default);
+  protected readonly suggestions = signal<Suggestion[]>([]);
+  protected readonly suggestionsOpen = signal<boolean>(false);
+  protected readonly activeSuggestionIndex = signal<number>(-1);
 
   @ViewChild('searchBox', { static: true })
   searchBox: ElementRef | undefined;
 
+  private readonly queryInput$ = new Subject<string>();
+
   constructor(
     private router: Router,
-    private siteService: SiteService) {
+    private siteService: SiteService,
+    private suggestionsService: SearchSuggestionsService,
+    private guidService: GuidService) {
+    // Derive the chip from the URL before the first template pass so SSR and
+    // client hydration agree. SiteService is not transferred across hydration,
+    // so waiting for podcast-api/subject-api to call setPodcast/setSubject
+    // leaves a structural @if (searchChip) mismatch on browse routes.
+    this.applyChipFromUrl(this.router.url);
+
     this.siteService.currentSiteData
       .pipe(takeUntilDestroyed())
       .subscribe(siteData => {
         if (this.searchBox) {
           this.searchBox.nativeElement.value = siteData.query ?? "";
-          if (siteData.podcast != null) {
-            this.searchChip.set(siteData.podcast);
-            this.searchBoxMode.set(SearchBoxMode.Podcast);
-          } else if (siteData.subject != null) {
-            this.searchChip.set(siteData.subject);
-            this.searchBoxMode.set(SearchBoxMode.Subject);
-          } else {
-            this.searchChip.set(null);
-            this.searchBoxMode.set(SearchBoxMode.Default);
-          }
+        }
+        if (siteData.podcast != null) {
+          this.searchChip.set(siteData.podcast);
+          this.searchBoxMode.set(SearchBoxMode.Podcast);
+        } else if (siteData.subject != null) {
+          this.searchChip.set(siteData.subject);
+          this.searchBoxMode.set(SearchBoxMode.Subject);
+        } else {
+          // Re-derive from the URL instead of clearing — the initial
+          // BehaviorSubject emit is always nulls and would wipe the URL chip.
+          this.applyChipFromUrl(this.router.url);
         }
       });
+
+    this.queryInput$
+      .pipe(
+        takeUntilDestroyed(),
+        debounceTime(SUGGESTION_DEBOUNCE_MS),
+        distinctUntilChanged(),
+        switchMap(term => from(this.suggestionsService.suggest(term)))
+      )
+      .subscribe(results => {
+        this.suggestions.set(results);
+        this.activeSuggestionIndex.set(-1);
+        this.suggestionsOpen.set(results.length > 0);
+      });
+
+    this.siteService.searchFocus$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.focusSearchInput());
+  }
+
+  private focusSearchInput(): void {
+    const el = this.searchBox?.nativeElement as HTMLInputElement | undefined;
+    if (!el) {
+      return;
+    }
+    // Chrome search stays in DOM but is display:none on home; skip so the
+    // homepage instance (which is visible) can take the same focus request.
+    if (!el.getClientRects().length) {
+      return;
+    }
+    el.focus();
+  }
+
+  onFocus(): void {
+    this.suggestionsService.preload();
+    if (this.searchBox?.nativeElement.value) {
+      this.queryInput$.next(this.searchBox.nativeElement.value);
+    }
+  }
+
+  onInput(value: string): void {
+    this.queryInput$.next(value);
+  }
+
+  onBlur(): void {
+    setTimeout(() => this.suggestionsOpen.set(false), 100);
+  }
+
+  onKeydown(event: KeyboardEvent, input: HTMLInputElement): void {
+    const items = this.suggestions();
+    switch (event.key) {
+      case 'ArrowDown':
+        if (this.suggestionsOpen() && items.length > 0) {
+          event.preventDefault();
+          this.activeSuggestionIndex.set((this.activeSuggestionIndex() + 1) % items.length);
+        }
+        break;
+      case 'ArrowUp':
+        if (this.suggestionsOpen() && items.length > 0) {
+          event.preventDefault();
+          this.activeSuggestionIndex.set(
+            (this.activeSuggestionIndex() - 1 + items.length) % items.length
+          );
+        }
+        break;
+      case 'Enter': {
+        const activeIndex = this.activeSuggestionIndex();
+        if (this.suggestionsOpen() && activeIndex >= 0 && activeIndex < items.length) {
+          event.preventDefault();
+          this.selectSuggestion(items[activeIndex]);
+        } else {
+          this.suggestionsOpen.set(false);
+          this.search(input);
+        }
+        break;
+      }
+      case 'Escape':
+        if (this.suggestionsOpen()) {
+          this.suggestionsOpen.set(false);
+          this.activeSuggestionIndex.set(-1);
+        }
+        break;
+    }
+  }
+
+  /** Bound via (mousedown) with preventDefault so selecting a suggestion never blurs the input first. */
+  selectSuggestion(suggestion: Suggestion): void {
+    this.suggestionsOpen.set(false);
+    this.activeSuggestionIndex.set(-1);
+    if (this.searchBox) {
+      this.searchBox.nativeElement.value = '';
+    }
+    if (suggestion.type === 'podcast') {
+      this.router.navigate(['/podcast/' + suggestion.value]);
+    } else {
+      this.router.navigate(['/subject/' + suggestion.value]);
+    }
   }
 
   search = (input: HTMLInputElement) => {
     input.blur();
+    this.suggestionsOpen.set(false);
     const chip = this.searchChip();
     if (chip) {
       if (this.searchBoxMode() == SearchBoxMode.Podcast) {
@@ -78,13 +199,39 @@ export class SearchBarComponent {
 
   removeSearchChip() {
     this.searchChip.set(null);
-    var query = this.siteService.getSiteData().query;
-    if (query && query != "") {
-      const url = `/search/` + query;
-      this.router.navigate([url]);
-    } else {
-      const url = `/`;
-      this.router.navigate([url]);
+    const query = this.siteService.getSiteData().query;
+    const url = query && query !== '' ? `/search/${query}` : `/`;
+    // Focus after navigation completes so a newly mounted homepage search bar
+    // is subscribed; setTimeout lets Angular finish creating it first.
+    void this.router.navigate([url]).then(() => {
+      setTimeout(() => this.siteService.requestSearchFocus(), 0);
+    });
+  }
+
+  /** Keep search-chip DOM stable across SSR/client by reading browse routes from the URL. */
+  private applyChipFromUrl(url: string): void {
+    const path = url.split('?')[0].split('#')[0];
+    const podcastMatch = path.match(/^\/podcast\/([^/]+)(?:\/([^/]+))?/);
+    if (podcastMatch) {
+      const rest = podcastMatch[2] ? decodeURIComponent(podcastMatch[2]) : '';
+      // Episode SSR never mounts podcast-episode (so never setPodcast). Keep the
+      // first paint chip-less on episode URLs so client hydration matches SSR.
+      if (rest && this.guidService.getEpisodeUuid(rest)) {
+        this.searchChip.set(null);
+        this.searchBoxMode.set(SearchBoxMode.Default);
+        return;
+      }
+      this.searchChip.set(decodeURIComponent(podcastMatch[1]));
+      this.searchBoxMode.set(SearchBoxMode.Podcast);
+      return;
     }
+    const subjectMatch = path.match(/^\/subject\/([^/]+)/);
+    if (subjectMatch) {
+      this.searchChip.set(decodeURIComponent(subjectMatch[1]));
+      this.searchBoxMode.set(SearchBoxMode.Subject);
+      return;
+    }
+    this.searchChip.set(null);
+    this.searchBoxMode.set(SearchBoxMode.Default);
   }
 }

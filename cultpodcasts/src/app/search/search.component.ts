@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { SearchApiComponent } from '../search-api/search-api.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 
 const queryParam: string = "query";
 
@@ -10,7 +11,7 @@ const queryParam: string = "query";
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.sass'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SearchApiComponent]
+  imports: [SearchApiComponent, SiteLoadingComponent]
 })
 export class SearchComponent {
   private route = inject(ActivatedRoute);

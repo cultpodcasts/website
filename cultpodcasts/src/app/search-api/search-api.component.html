@@ -1,105 +1,81 @@
-<section id="results">
-  <div id="progresswrapper">
-    @if (isLoading()) {
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+<app-site-loading [active]="isLoading() || isSubsequentLoading()"
+  [label]="isSubsequentLoading() ? 'Loading more episodes' : 'Updating results'" />
+
+<section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
+  [class.is-updating]="isLoading() && results().length > 0" id="results">
+  <div class="browse-filters">
+    <div class="browse-toolbar">
+      <h2>{{resultsHeading()}}</h2>
+      <button type="button" class="browse-sort" [matMenuTriggerFor]="sort" id="sort">
+        {{ sortLabel() }}
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #sort="matMenu">
+        <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
+          [class.selected]="sortOrder()==sortParamRank">
+          <span>Suggestions</span>
+        </button>
+        <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
+          [class.selected]="sortOrder()==sortParamDateDesc">
+          <span>Newest first</span>
+        </button>
+        <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
+          [class.selected]="sortOrder()==sortParamDateAsc">
+          <span>Oldest first</span>
+        </button>
+      </mat-menu>
+    </div>
+
+    @if (facets().subjects && facets().subjects!.length > 0) {
+    <div class="browse-facet" aria-label="Filter by subject">
+      <span class="browse-facet__label">Subjects</span>
+      <div class="browse-facet__scroller" tabindex="0">
+        <button type="button" class="browse-pill" [class.is-active]="subjects().length === 0"
+          (click)="clearSubjects()">All</button>
+        @for (subject of facets().subjects; track subject.value) {
+        <button type="button" class="browse-pill"
+          [class.is-active]="subjects().indexOf(subject.value) >= 0"
+          (click)="toggleSubject(subject.value)">
+          {{ displayCatalogName(subject.value) }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    @if (facets().podcastName && facets().podcastName!.length > 0) {
+    <div class="browse-facet" aria-label="Filter by podcast">
+      <span class="browse-facet__label">Shows</span>
+      <div class="browse-facet__scroller" tabindex="0">
+        <button type="button" class="browse-pill" [class.is-active]="podcasts().length === 0"
+          (click)="clearPodcasts()">All</button>
+        @for (podcast of facets().podcastName; track podcast.value) {
+        <button type="button" class="browse-pill"
+          [class.is-active]="podcasts().indexOf(podcast.value) >= 0"
+          (click)="togglePodcast(podcast.value)">
+          {{ displayCatalogName(podcast.value) }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    @if (subjects().length > 0 || podcasts().length > 0) {
+    <button type="button" class="browse-clear" (click)="clearAllFilters()">Clear filters</button>
     }
   </div>
-  <section id="resultsheading">
-    <h2>{{resultsHeading()}}</h2>
-    <button id="sort" mat-icon-button [matMenuTriggerFor]="sort">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-    <mat-menu #sort="matMenu">
-      <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
-        [class.selected]="sortOrder()==sortParamDateAsc">
-        <mat-icon>arrow_upward</mat-icon>
-        <span>Date ascending</span>
-      </button>
-      <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
-        [class.selected]="sortOrder()==sortParamDateDesc">
-        <mat-icon>arrow_downward</mat-icon>
-        <span>Date descending</span>
-      </button>
-      <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
-        [class.selected]="sortOrder()==sortParamRank">
-        <mat-icon></mat-icon>
-        <span>Rank</span>
-      </button>
-    </mat-menu>
-  </section>
 
-  @if (facets().subjects && facets().subjects!.length > 0) {
-  <mat-expansion-panel>
-    <mat-expansion-panel-header>
-      <mat-panel-title>Subjects ({{facets().subjects!.length}})</mat-panel-title>
-      <mat-panel-description>
-        @if (subjects().length==0) {
-        All Selected
-        } @else {
-        {{subjects().length}} Selected
-        }
-      </mat-panel-description>
-    </mat-expansion-panel-header>
-    <mat-chip-listbox multiple (change)="subjectsChange($event)">
-      @for (subject of facets().subjects; track subject.value) {
-      <mat-chip-option [value]="subject" [selected]="subjects().indexOf(subject.value)>=0">{{subject.value}}
-        ({{subject.count}})</mat-chip-option>
-      }
-    </mat-chip-listbox>
-  </mat-expansion-panel>
-  }
+  <div class="browse-grid">
+    @for (result of results(); track result.id) {
+    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)" [titleAsHtml]="true"
+      (play)="playEpisode($event)" />
+    }
+  </div>
 
-  @if (facets().podcastName && facets().podcastName!.length > 0) {
-  <mat-expansion-panel>
-    <mat-expansion-panel-header>
-      <mat-panel-title>Podcasts ({{facets().podcastName!.length}})</mat-panel-title>
-      <mat-panel-description>
-        @if (podcasts().length==0) {
-        All Selected
-        } @else {
-        {{podcasts().length}} Selected
-        }
-      </mat-panel-description>
-    </mat-expansion-panel-header>
-    <mat-chip-listbox multiple (change)="podcastsChange($event)">
-      @for (podcast of facets().podcastName; track podcast.value) {
-      <mat-chip-option [value]="podcast" [selected]="podcasts().indexOf(podcast.value)>=0">{{podcast.value}}
-        ({{podcast.count}})</mat-chip-option>
-      }
-    </mat-chip-listbox>
-  </mat-expansion-panel>
-  }
-
-  @for (result of results(); track result.id) {
-  <mat-card class="result">
-    <mat-card-header>
-      <app-bookmark [episodeId]="result.id" />
-      <mat-card-title [class.hasBookmark]="isSignedIn()">
-        <a [routerLink]="['/podcast', result.podcastName, result.id]" [innerHTML]="result.episodeTitle"></a>
-      </mat-card-title>
-      <mat-card-subtitle>
-        <a [routerLink]="['/podcast', result.podcastName]">
-          {{result.podcastName}}
-        </a>
-      </mat-card-subtitle>
-      <mat-card-subtitle>{{result.release | date:'d MMM yyyy'}}
-        [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="resultdescription">
-      <app-episode-image [searchResult]="result" [linksOverlay]="true"></app-episode-image>
-      <p>{{result.episodeDescription | searchDescription}}</p>
-    </mat-card-content>
-    <mat-card-actions>
-      <app-episode-links [episode]="result"></app-episode-links>
-      <mat-card-footer class="subjects">
-        <app-subjects [subjects]="result.subjects!"></app-subjects>
-      </mat-card-footer>
-    </mat-card-actions>
-  </mat-card>
+  @if (isSubsequentLoading()) {
+  <div class="browse-more" aria-hidden="true">
+    <div class="browse-more__dots"><span></span><span></span><span></span></div>
+    Loading more
+  </div>
   }
 </section>
-@if (isSubsequentLoading()) {
-<div class="progresswrapper">
-  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-</div>
-}

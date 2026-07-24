@@ -1,55 +1,192 @@
-<section id="notices">
-  <p>Cult Podcasts has an <a href="https://github.com/cultpodcasts/PublicDatabase">index</a> of <app-slot-machine-counter
-      preset="classic" [baseline]="episodeCountBaseline" [value]="$safeNavigationMigration(homepage()?.episodeCount)"
-      [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
-  </p>
-</section>
-<div id="progresswrapper">
+<section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()"
+  [class.nflx--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
+  <app-site-loading [active]="isLoading()" label="Loading homepage" />
+
+  <div class="nflx-search">
+    <app-search-bar></app-search-bar>
+  </div>
+
   @if (isLoading()) {
-  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-  }
-</div>
-<section id="thisweek">
-  @if (isInError()) {
-  <p>An error occurred.</p>
-  <div id="cta-button">
+  <div class="nflx-loading" aria-hidden="true">
+    <div class="nflx-loading__pulse"></div>
+  </div>
+  } @else if (isInError()) {
+  <div class="nflx-error page-rail">
+    <p>An error occurred.</p>
     <button mat-flat-button color="primary" (click)="ngOnInit()">Try Again!</button>
   </div>
   } @else {
-  <h2>This weeks new releases.
-    @if (podcastCount()) {
-    <span>{{podcastCount()}} Podcasts.</span>
+  @if (featured(); as feature) {
+  <section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
+    (mouseenter)="pauseHero()" (mouseleave)="resumeHero()" (focusin)="pauseHero()" (focusout)="resumeHero()">
+
+    <div class="billboard__stages" aria-hidden="true">
+      @for (slide of heroSlides(); track slide.id; let i = $index) {
+      <div class="billboard__stage" [class.is-active]="i === heroIndex()"
+        [style.background-image]="slideImage(slide) ? 'url(' + slideImage(slide) + ')' : null">
+      </div>
+      }
+    </div>
+    <div class="billboard__grain" aria-hidden="true"></div>
+    <div class="billboard__scrim" aria-hidden="true"></div>
+    <div class="billboard__vignette" aria-hidden="true"></div>
+
+    <div class="billboard__content">
+      <div class="billboard__feature" [class.is-animating]="heroAnimating()">
+        <p class="billboard__eyebrow">
+          <span class="billboard__live" aria-hidden="true"></span>
+          Now featuring
+        </p>
+        <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+        <p class="billboard__meta">
+          <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
+          <span> · {{ durationLabel(feature.duration) }}</span>
+          @if (languageFlag(feature); as lang) {
+          <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
+            <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+            <span class="billboard__lang-name">{{ lang.label }}</span>
+          </span>
+          }
+        </p>
+        <p class="billboard__desc">{{ featuredDesc() }}</p>
+        @if (featuredSubjects().length > 0) {
+        <div class="billboard__subjects" aria-label="Subjects">
+          @for (subject of featuredSubjects(); track subject) {
+          <a class="billboard__subject" [routerLink]="['/subject', subject]">{{ displayCatalogName(subject) }}</a>
+          }
+        </div>
+        }
+        <div class="billboard__actions">
+          @if (canPlay(feature)) {
+          <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">
+            <mat-icon>play_arrow</mat-icon>
+            {{ playLabel(feature) }}
+          </button>
+          } @else {
+          <a mat-flat-button class="billboard__play"
+            [routerLink]="['/podcast', feature.podcastName, feature.id]">
+            <mat-icon>play_arrow</mat-icon>
+            {{ playLabel(feature) }}
+          </a>
+          }
+          <a mat-stroked-button class="billboard__more"
+            [routerLink]="['/podcast', feature.podcastName, feature.id]">
+            More info
+          </a>
+        </div>
+      </div>
+    </div>
+
+    @if (heroSlides().length > 1) {
+    <div class="billboard__controls">
+      <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
+        (click)="prevHero()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
+        (click)="nextHero()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
+        @for (slide of heroSlides(); track slide.id; let i = $index) {
+        <button type="button" class="billboard__dot" role="tab"
+          [class.is-active]="i === heroIndex()"
+          [attr.aria-selected]="i === heroIndex()"
+          [attr.aria-label]="'Show featured episode ' + (i + 1)"
+          (click)="goHero(i)">
+          <span class="billboard__dot-fill"
+            [class.is-running]="i === heroIndex() && !heroPaused()"></span>
+        </button>
+        }
+      </div>
+    </div>
     }
-  </h2>
-  @for (dateItems of grouped() | keyvalue: descDate; track dateItems.key) {
-  <div>
-    <h3>{{Weekday[ToDate(dateItems.key).getDay()]}} {{ToDate(dateItems.key).getDate()}}
-      {{Month[ToDate(dateItems.key).getMonth()]}}</h3>
-    @for (item of dateItems.value; track item.id) {
-    <mat-card class="result" id="{{item.id}}">
-      <mat-card-header>
-        <app-bookmark [episodeId]="item.id" />
-        <mat-card-title [class.hasBookmark]="isSignedIn()"><a
-            [routerLink]="['/podcast', item.podcastName, item.id]">{{item.episodeTitle}}</a></mat-card-title>
-        <mat-card-subtitle>
-          <a [routerLink]="['/podcast', item.podcastName]">
-            {{item.podcastName}}</a>
-          <span class="duration"> [{{item.duration.startsWith("0")?item.duration.substring(1):item.duration}}]</span>
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <app-episode-image [searchResult]="item" [linksOverlay]="true"></app-episode-image>
-        <app-clampable-text [maxLines]="10">{{item.episodeDescription}}</app-clampable-text>
-      </mat-card-content>
-      <mat-card-actions>
-        <app-episode-links [episode]="item"></app-episode-links>
-        <mat-card-footer class="subjects">
-          <app-subjects [subjects]="item.subjects!"></app-subjects>
-        </mat-card-footer>
-      </mat-card-actions>
-    </mat-card>
+  </section>
+  }
+
+  <section class="catalogue" aria-label="Catalogue scale">
+    <div class="catalogue__inner">
+      @if (weekEpisodeCount(); as weekCount) {
+      <div class="catalogue__stat">
+        <p class="catalogue__value">{{ weekCount | number }}</p>
+        <p class="catalogue__label">New this week</p>
+      </div>
+      }
+      @if (episodeCount(); as count) {
+      <div class="catalogue__stat catalogue__stat--hero">
+        <p class="catalogue__value catalogue__value--count">
+          <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline"
+            [value]="count"
+            [title]="totalDurationDays() ? totalDurationDays() + ' days' : undefined"></app-slot-machine-counter>
+        </p>
+        <p class="catalogue__label">
+          Episodes in the
+          <a href="https://github.com/cultpodcasts/PublicDatabase">index</a>
+        </p>
+      </div>
+      }
+      @if (totalDurationDays(); as days) {
+      <div class="catalogue__stat">
+        <p class="catalogue__value catalogue__value--duration">{{ days }}</p>
+        <p class="catalogue__label">Days of listening</p>
+      </div>
+      }
+    </div>
+  </section>
+
+  @if (obscureCults().length > 0) {
+  <section class="obscure" aria-label="Discover">
+    <div class="obscure__heading">
+      <div>
+        <p class="obscure__eyebrow">This week</p>
+        <h2 class="obscure__title">Discover</h2>
+        <p class="obscure__lede">Lesser-known groups turning up in new episodes</p>
+      </div>
+    </div>
+    <div class="obscure__scroller" tabindex="0">
+      <div class="obscure__track">
+        @for (cult of obscureCults(); track cult.subject) {
+        <a class="obscure__card" [class.obscure__card--youtube]="cult.youtubeArt" [routerLink]="['/subject', cult.subject]">
+          <div class="obscure__art">
+            @if (cult.imageUrl) {
+            <img [src]="cult.imageUrl" [alt]="" loading="lazy" />
+            } @else {
+            <div class="obscure__placeholder" aria-hidden="true"></div>
+            }
+            <span class="obscure__count">{{ cult.episodes.length }} new</span>
+          </div>
+          <span class="obscure__name">{{ displayCatalogName(cult.subject) }}</span>
+        </a>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
+  <div class="nflx-rows">
+    @for (rail of rails(); track rail.id) {
+    <section class="rail" [class.rail--subject]="!!rail.subject" [attr.aria-label]="rail.title">
+      <div class="rail__heading">
+        @if (rail.subject; as subject) {
+        <a class="rail__title rail__title--link" [routerLink]="['/subject', subject]">
+          <span>{{ displayCatalogName(rail.title) }}</span>
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+        <a class="rail__see-all" [routerLink]="['/subject', subject]">Browse all</a>
+        } @else {
+        <h2 class="rail__title">{{ displayCatalogName(rail.title) }}</h2>
+        }
+      </div>
+      <div class="rail__scroller" tabindex="0">
+        <div class="rail__track">
+          @for (item of rail.episodes; track item.id) {
+          <app-episode-poster class="rail-poster" [episode]="item"
+            [playing]="isPlayingId(item.id)" (play)="playEpisode($event)" />
+          }
+        </div>
+      </div>
+    </section>
     }
   </div>
-  }
   }
 </section>

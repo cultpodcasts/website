@@ -13,4 +13,6 @@ export interface SearchResult {
   internetArchive?: URL | string;
   subjects?: string[];
   image?: URL | string;
+  /** Non-English IETF tag from the search index when present; null/omitted ≈ English. */
+  lang?: string | null;
 }

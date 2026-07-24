@@ -15,10 +15,17 @@
         margin-left: auto
         display: flex
         justify-content: flex-end
+        align-items: center
+        gap: 4px
 
 .app-toolbar
-    background-color: var(--mat-sys-surface-container)
+    background: color-mix(in srgb, var(--cp-ink-elevated, var(--mat-sys-surface-container)) 72%, transparent) !important
+    backdrop-filter: blur(14px)
+    -webkit-backdrop-filter: blur(14px)
     color: var(--mat-sys-on-surface)
+    border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent)
+    padding-top: 4px
+    padding-bottom: 4px
 
 .beta
     color: #aaa
@@ -26,28 +33,60 @@
 #site
     color: var(--mat-sys-on-surface)
     text-decoration: none
+    display: inline-flex
+    align-items: center
+    gap: 12px
     img
-        vertical-align : middle
-        width: 40px
-        height: 40px
+        vertical-align: middle
+        width: 42px
+        height: 42px
+        filter: drop-shadow(0 0 10px color-mix(in srgb, var(--cp-amber, #e8a23a) 35%, transparent))
     span
-        padding-left: 16px
-        vertical-align : middle
-        font-size: 1.7em
+        padding-left: 0
+        vertical-align: middle
+        font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+        font-size: clamp(1.45rem, 4vw, 1.85rem)
+        font-weight: 400
+        letter-spacing: -0.02em
+        line-height: 1
 
 .socialbutton
     width: 40px
     height: 40px
-    padding-left: 20px
-    vertical-align : middle
-    
+    padding-left: 12px
+    vertical-align: middle
+
 #socialbuttons
     .button:hover
         cursor: pointer
     #avatar
         border-radius: 50%
         height: 40px
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
 
 button#menu
     border: none
-    background-color: var(--mat-sys-surface-container)
+    background-color: transparent
+
+:host-context(.home-shell)
+    .app-toolbar
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        z-index: 20
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent) !important
+        border-bottom-color: transparent
+        backdrop-filter: none
+        -webkit-backdrop-filter: none
+        color: #fff
+    #site
+        color: #fff
+    #site span
+        position: absolute
+        width: 1px
+        height: 1px
+        overflow: hidden
+        clip: rect(0, 0, 0, 0)
+    button#menu
+        color: #fff

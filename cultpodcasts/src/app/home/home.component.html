@@ -1,3 +1,9 @@
 @defer {
-<app-homepage-api></app-homepage-api>
+  <app-homepage-api></app-homepage-api>
+} @placeholder {
+  <app-site-loading [active]="true" label="Loading home" />
+} @error {
+  <section class="browse-empty">
+    <h2>Failed to load the homepage.</h2>
+  </section>
 }

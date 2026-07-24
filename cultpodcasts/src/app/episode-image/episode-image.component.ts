@@ -33,6 +33,10 @@ export class EpisodeImageComponent {
   @Input()
   linksOverlay: boolean = false;
 
+  /** wide = 16:9 banner; tile = square thumb for list rows */
+  @Input()
+  layout: 'wide' | 'tile' = 'wide';
+
   protected readonly overlayVisible = signal(false);
 
   get imageUrl(): URL | undefined {

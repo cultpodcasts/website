@@ -1,47 +1,316 @@
-#progresswrapper
-    height: 15px
-.result
-    border: 1px black solid
-    margin-bottom: 10px
-    padding: 2px 6px 10px
-    h3
-        font-weight: bold
-        margin-bottom: 2px
-.resultdescription
-    padding-top: 5px
-    display: -webkit-box
-    -webkit-box-orient: vertical
-    -webkit-line-clamp: 5
-    overflow: hidden
-mat-card-title.hasMenu.hasBookmark
-    margin-right: 78px
-@media screen and (max-width: 400px)
-    mat-card-title.hasMenu.hasBookmark
-        margin-right: 64px
-mat-card-title.hasMenu,
-mat-card-title.hasBookmark 
-    margin-right: 30px
-#resultsheading
-    display: flex
-    margin-bottom: 10px
-    h2
-        margin: 10px 8px 0 8px
-    #sort
-        margin-left: auto
-        display: flex
-        justify-content: flex-end
-        margin-bottom: 0px
-button.selected
-    span
-        font-weight: bold
-mat-card-header
-    .mdc-icon-button
-        position: absolute
-        top: 12px
-        right: 12px
-        margin-right: 0
-@media screen and (max-width: 400px)
-    mat-card-header
-        .mdc-icon-button
-            right: 0
+// Netflix-style episode detail — backdrop hero + "more from"/"more on" rails,
+// matching the .browse / .nflx homepage visual language.
+.episode
+    --nflx-bg: #0b0b0b
+    --nflx-panel: #141414
+    --nflx-text: #fff
+    --nflx-muted: #b3b3b3
+    --nflx-accent: #e8a23a
+    position: relative
+    display: block
+    color: var(--nflx-text)
+    background: var(--nflx-bg)
+    min-height: 60vh
+    padding-bottom: 40px
 
+.episode--playing
+    padding-bottom: min(52vh, 420px)
+
+.episode-backdrop
+    position: relative
+    width: 100%
+    min-height: min(58vh, 480px)
+    background-color: #121212
+    background-size: cover
+    background-position: center 32%
+    filter: saturate(1.05) contrast(1.03)
+
+.episode-backdrop__scrim
+    position: absolute
+    inset: 0
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.65) 55%, var(--nflx-bg) 98%), linear-gradient(100deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.3) 48%, transparent 78%)
+
+.episode-toolbar
+    position: absolute
+    top: 14px
+    right: 4vw
+    z-index: 6
+    display: flex
+    align-items: center
+    gap: 8px
+    ::ng-deep
+        app-bookmark .mdc-icon-button
+            position: static !important
+            top: auto !important
+            right: auto !important
+            margin-right: 0 !important
+            background: rgba(0, 0, 0, 0.55)
+            backdrop-filter: blur(8px)
+            color: #fff
+            border-radius: 50%
+
+.episode-toolbar__btn
+    background: rgba(0, 0, 0, 0.55)
+    backdrop-filter: blur(8px)
+    color: #fff
+    border-radius: 50%
+
+.episode-hero
+    position: relative
+    z-index: 2
+    margin-top: -140px
+    padding: 0 4vw
+    max-width: 900px
+    box-sizing: border-box
+
+.episode-hero__eyebrow
+    margin: 0 0 8px
+
+.episode-hero__podcast
+    display: inline-flex
+    align-items: center
+    padding: 4px 12px
+    border-radius: 999px
+    border: 1px solid rgba(255, 255, 255, 0.28)
+    background: rgba(0, 0, 0, 0.35)
+    color: #fff
+    font-size: 0.8rem
+    font-weight: 700
+    letter-spacing: 0.04em
+    text-transform: uppercase
+    text-decoration: none
+    backdrop-filter: blur(6px)
+    transition: border-color 0.15s ease, color 0.15s ease
+    &:hover,
+    &:focus-visible
+        border-color: var(--nflx-accent)
+        color: var(--nflx-accent)
+        outline: none
+
+.episode-hero__title
+    margin: 0 0 12px
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-size: clamp(2rem, 5.5vw, 3.2rem)
+    font-weight: 400
+    line-height: 1.05
+    letter-spacing: -0.02em
+    text-shadow: 0 4px 32px rgba(0, 0, 0, 0.7)
+
+.episode-hero__meta
+    margin: 0 0 16px
+    display: flex
+    align-items: center
+    gap: 8px
+    font-size: 0.95rem
+    font-weight: 600
+    color: var(--nflx-muted)
+    font-variant-numeric: tabular-nums
+
+.episode-hero__dot
+    opacity: 0.6
+
+.episode-hero__lang
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin-left: 2px
+    padding: 3px 12px 3px 8px
+    border-radius: 999px
+    background: rgba(255, 255, 255, 0.12)
+    border: 1px solid rgba(255, 255, 255, 0.22)
+    color: #fff
+    font-size: 0.82rem
+    font-weight: 700
+    vertical-align: middle
+
+.episode-hero__lang-flag
+    font-size: 1.25rem
+    line-height: 1
+    font-weight: 400
+
+.episode-hero__desc
+    margin: 0 0 18px
+    max-width: 42em
+    font-size: 1.05rem
+    line-height: 1.5
+    color: #e8e8e8
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4)
+
+.episode-hero__subjects
+    display: flex
+    flex-wrap: wrap
+    gap: 8px
+    margin: 0 0 22px
+
+.episode-hero__subject
+    display: inline-flex
+    align-items: center
+    padding: 5px 12px
+    border-radius: 999px
+    border: 1px solid rgba(255, 255, 255, 0.28)
+    background: rgba(0, 0, 0, 0.35)
+    color: #fff
+    font-size: 0.78rem
+    font-weight: 600
+    letter-spacing: 0.02em
+    text-decoration: none
+    backdrop-filter: blur(6px)
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease
+    &:hover,
+    &:focus-visible
+        border-color: var(--nflx-accent)
+        background: rgba(232, 162, 58, 0.18)
+        color: var(--nflx-accent)
+        outline: none
+
+.episode-hero__actions
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 12px
+    margin-bottom: 28px
+
+.episode-hero__play
+    background: #fff !important
+    color: #000 !important
+    font-weight: 700
+    padding-inline: 22px
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35)
+    mat-icon
+        margin-right: 4px
+
+.episode-hero__queue
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin: 0
+    padding: 9px 16px
+    border: 1px solid rgba(255, 255, 255, 0.4)
+    border-radius: 4px
+    background: rgba(109, 109, 110, 0.35)
+    color: #fff
+    font: inherit
+    font-size: 0.92rem
+    font-weight: 600
+    cursor: pointer
+    backdrop-filter: blur(8px)
+    mat-icon
+        font-size: 20px
+        width: 20px
+        height: 20px
+    &:hover,
+    &:focus-visible
+        border-color: var(--nflx-accent)
+        color: var(--nflx-accent)
+        outline: none
+    &.is-queued
+        border-color: var(--nflx-accent)
+        background: rgba(232, 162, 58, 0.18)
+        color: var(--nflx-accent)
+
+.episode-hero__links
+    display: inline-flex
+    align-items: center
+    gap: 2px
+    color: #fff
+    ::ng-deep
+        .mat-mdc-icon-button
+            color: #fff
+
+/* ——— Related rails (mirror homepage-api's .rail/.rail__track) ——— */
+.rail
+    position: relative
+    z-index: 2
+    margin: 0 0 28px
+
+.rail__heading
+    display: flex
+    align-items: baseline
+    gap: 14px
+    margin: 0 4vw 10px
+
+.rail__title
+    margin: 0
+    font-size: 1.25rem
+    font-weight: 700
+    letter-spacing: 0.01em
+    color: #fff
+
+.rail__title--link
+    display: inline-flex
+    align-items: center
+    gap: 2px
+    text-decoration: none
+    transition: color 0.15s ease
+    mat-icon
+        font-size: 22px
+        width: 22px
+        height: 22px
+        opacity: 0.75
+        transition: transform 0.15s ease, opacity 0.15s ease
+    &:hover,
+    &:focus-visible
+        color: var(--nflx-accent)
+        outline: none
+        mat-icon
+            opacity: 1
+            transform: translateX(3px)
+
+.rail--subject .rail__title
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-size: 1.45rem
+    font-weight: 400
+    letter-spacing: -0.01em
+
+.rail__scroller
+    overflow-x: auto
+    overflow-y: hidden
+    padding: 4px 0 12px
+    scroll-snap-type: x proximity
+    scrollbar-width: thin
+    scrollbar-color: #444 transparent
+    &:focus-visible
+        outline: 2px solid var(--nflx-accent)
+        outline-offset: -2px
+
+.rail__track
+    display: flex
+    gap: 10px
+    padding: 0 4vw
+    width: max-content
+
+.rail-poster
+    width: min(42vw, 220px)
+    flex: 0 0 min(42vw, 220px)
+    &.episode-poster--square
+        width: min(32vw, 160px)
+        flex-basis: min(32vw, 160px)
+
+@media screen and (min-width: 900px)
+    .rail-poster
+        width: 260px
+        flex-basis: 260px
+        &.episode-poster--square
+            width: 180px
+            flex-basis: 180px
+
+@media screen and (max-width: 700px)
+    .episode-hero
+        margin-top: -96px
+
+@media screen and (max-width: 600px)
+    .episode-backdrop
+        min-height: 46vh
+    .episode-hero
+        margin-top: -72px
+    .episode-hero__actions
+        align-items: stretch
+    .episode-hero__play,
+    .episode-hero__queue
+        justify-content: center
+    .rail-poster
+        width: 68vw
+        flex-basis: 68vw
+        &.episode-poster--square
+            width: 48vw
+            flex-basis: 48vw

@@ -1,492 +1,985 @@
 @use '@angular/material' as mat;
 
+// Late-night broadcast: ink surfaces + amber signal (not azure / not purple).
 html {
-    color-scheme: light dark;
-    @include mat.theme((color: mat.$azure-palette,
-            typography: Roboto,
-            density: 0));
-    @include mat.elevation-classes();
-    @include mat.app-background();
+  color-scheme: dark light;
+  @include mat.theme((
+    color: (
+      primary: mat.$orange-palette,
+      tertiary: mat.$cyan-palette,
+    ),
+    typography: (
+      plain-family: Figtree,
+      brand-family: 'Instrument Serif',
+    ),
+    density: -1,
+  ));
+  @include mat.elevation-classes();
+  @include mat.app-background();
+
+  // Atmosphere — soft studio glow behind the column
+  --cp-ink: #0b0d12;
+  --cp-ink-elevated: #141821;
+  --cp-amber: #e8a23a;
+  --cp-amber-soft: color-mix(in srgb, var(--cp-amber) 22%, transparent);
+  --cp-mist: color-mix(in srgb, #7ec8e3 8%, transparent);
+  --cp-column: min(680px, 100%);
+  --cp-radius: 14px;
+  --cp-font-display: 'Instrument Serif', Georgia, serif;
+  --cp-font-ui: Figtree, 'Segoe UI', sans-serif;
 }
 
 html,
 body {
-    height: 100%;
+  height: 100%;
 }
 
 body {
-    margin: 0;
-    padding: 0 0 calc(3.2em + env(safe-area-inset-bottom)) 0;
-    font-family: Roboto, "Helvetica Neue", sans-serif;
-    background-color: var(--mat-sys-surface);
+  margin: 0;
+  padding: 0 0 calc(24px + env(safe-area-inset-bottom)) 0;
+  font-family: var(--cp-font-ui);
+  color: var(--mat-sys-on-surface);
+  background-color: var(--cp-ink);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -10%, var(--cp-amber-soft), transparent 55%),
+    radial-gradient(ellipse 70% 40% at 100% 20%, var(--cp-mist), transparent 50%),
+    radial-gradient(ellipse 50% 30% at 0% 60%, color-mix(in srgb, #c45c26 10%, transparent), transparent 45%),
+    linear-gradient(180deg, var(--cp-ink) 0%, #0f1219 40%, var(--cp-ink) 100%);
+  background-attachment: fixed;
+  min-height: 100%;
 }
 
 html.discovery-snap-enabled {
-    scroll-snap-type: y mandatory;
+  scroll-snap-type: y mandatory;
 }
 
 p {
-    font-size: 18px;
-    line-height: 1.3em;
+  font-size: 1.05rem;
+  line-height: 1.45;
 }
 
 mat-card-footer.subjects,
 mat-card-footer.guests {
-    width: 100%;
-    text-align: right;
+  width: 100%;
+  text-align: right;
 }
 
-// Review (/episodes) + outgoing cards only. margin-top separates the podcast-
-// service icons (YouTube etc.) from the Twitter/Bluesky row in the status
-// cluster above. The two-column actions layout (icons left, subjects/people
-// right) and its flex-wrap live in the two components' scoped sass.
 mat-card-actions.review-actions {
-    align-items: flex-start;
-    margin-top: 14px;
+  align-items: flex-start;
+  margin-top: 14px;
 }
 
-// Public result cards (homepage, search, podcast list, podcast episode, subject,
-// bookmarks, discovery) — ONE shared rule for all of these surfaces.
-// Review/outgoing (.review-actions) keep their own two-column layout.
-//
-// Layout model (variable icon count — YT / Spotify / Apple / BBC / IA / Share / …):
-// - Flex row-wrap; subjects + icon host participate via display:contents.
-// - Leading subjects: flex-basis 100% (full width rows).
-// - Icon cluster + last/only subject share the final row (order: 2); island width
-//   is the real host width — never a magic padding-left for N icons.
-// - Coexist vs stack: island + subject min-content (+ gap) must fit — not a fixed
-//   100px subject column (tiny labels like "Qanon" sit beside when they fit).
-// - Icon host is a fixed-height row; all service buttons mid-align inside it.
-// - Last/only subject: last-line mid ↔ icon mid via flex-end + optical margin.
-// - Card padding-bottom ≈ 10px clearance; actions padding-top = 8px desc→footer.
-// - Uniform 6px gaps between all consecutive subjects (leading↔leading and
-//   leading↔last); do NOT min-height *leading* subjects.
-// - Icons flush left with description (actions padding only — no extra host margin).
-// - Keep mat-card-actions icon margin-right (25px / 18px / 12px) — do not squeeze.
+// Public result cards footer layout (preserved)
 mat-card:has(> .mdc-card__actions:not(.review-actions)) {
-    --public-card-footer-clearance: 10px;
-    padding-bottom: var(--public-card-footer-clearance);
+  --public-card-footer-clearance: 12px;
+  padding-bottom: var(--public-card-footer-clearance);
 }
 
 mat-card .mdc-card__actions:not(.review-actions) {
-    // Flex wrap + row-reverse so last/only subject can sit beside the icon
-    // island when there is room (island left, subject right), but when island
-    // intrinsic width + subject min-content exceed the row, the subject stays
-    // on its line and the island wraps below — never crushed, never overlapping,
-    // never between subject lines. Leading subjects are always full-width above
-    // (order 1).
-    display: flex !important;
-    flex-wrap: wrap;
-    flex-direction: row-reverse;
-    align-items: flex-end;
-    justify-content: flex-start;
-    position: relative;
-    --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
-    --public-card-desc-gap: 8px;
-    // Subject line-height (matches .subject a) for last-line mid ↔ icon mid.
-    --public-card-subject-line: 1.25em;
-    // Optical offset so icon mid meets the middle of the subject's last line.
-    --public-card-subject-mid-offset: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
-    box-sizing: border-box;
-    min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
-    padding-top: var(--public-card-desc-gap);
-    padding-bottom: 0;
-    column-gap: 0;
-    row-gap: 0;
+  display: flex !important;
+  flex-wrap: wrap;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  justify-content: flex-start;
+  position: relative;
+  --public-card-icon-row: var(--mdc-icon-button-state-layer-size, 40px);
+  --public-card-desc-gap: 10px;
+  --public-card-subject-line: 1.25em;
+  --public-card-subject-mid-offset: calc((var(--public-card-icon-row) - var(--public-card-subject-line)) / 2);
+  box-sizing: border-box;
+  min-height: calc(var(--public-card-desc-gap) + var(--public-card-icon-row));
+  padding-top: var(--public-card-desc-gap);
+  padding-bottom: 0;
+  column-gap: 0;
+  row-gap: 0;
 
-    // Content-sized island (YT/Spotify/Apple/BBC/IA/Share/youtube-stats/…).
-    // order 3 + row-reverse: packs left of last subject when coexisting; wraps
-    // below when the row cannot keep the subject's min-content width.
-    // margin-right: auto keeps a lone (wrapped) island flush left.
+  app-episode-links,
+  app-episode-podcast-links,
+  .discovery-service-links {
+    order: 3;
+    flex: 0 0 auto;
+    align-self: flex-end;
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin-left: 0;
+    margin-right: auto;
+    position: static;
+    z-index: 1;
+    height: var(--public-card-icon-row);
+    min-height: var(--public-card-icon-row);
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    #episodelinks {
+      display: contents;
+    }
+
+    a[mat-icon-button],
+    button[mat-icon-button] {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+      margin-top: 0;
+      margin-bottom: 0;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+
+    mat-icon {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      margin: 0 !important;
+      line-height: 1 !important;
+      width: var(--mdc-icon-button-icon-size, 24px);
+      height: var(--mdc-icon-button-icon-size, 24px);
+      font-size: var(--mdc-icon-button-icon-size, 24px);
+      overflow: visible;
+    }
+
+    mat-icon svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  mat-card-footer.subjects,
+  mat-card-footer.subjects app-subjects {
+    display: contents !important;
+  }
+
+  .subject {
+    box-sizing: border-box;
+    text-align: right;
+    padding-left: 0;
+    padding-bottom: 6px;
+    min-width: 0;
+
+    a {
+      color: color-mix(in srgb, var(--mat-sys-on-surface) 72%, var(--cp-amber));
+      text-decoration: underline dashed 1px;
+      text-underline-offset: 5px;
+      line-height: 1.25;
+    }
+
+    &:not(:last-child) {
+      flex: 0 0 100%;
+      width: 100%;
+      order: 1;
+      align-self: stretch;
+    }
+
+    &:last-child {
+      order: 2;
+      flex: 1 1 min-content;
+      width: auto;
+      max-width: 100%;
+      min-width: min-content;
+      padding-bottom: 0;
+      align-self: flex-end;
+      margin-bottom: var(--public-card-subject-mid-offset);
+      display: flex !important;
+      flex-direction: row;
+      align-items: flex-end !important;
+      justify-content: flex-end;
+    }
+  }
+
+  &:has(.subject:not(:last-child)) {
+    .subject:last-child {
+      margin-top: calc(-1 * var(--public-card-subject-mid-offset));
+      padding-top: var(--public-card-subject-mid-offset);
+      box-sizing: border-box;
+    }
+
     app-episode-links,
     app-episode-podcast-links,
     .discovery-service-links {
-        order: 3;
-        flex: 0 0 auto;
-        align-self: flex-end;
-        display: flex !important;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-        margin-left: 0;
-        margin-right: auto;
-        position: static;
-        z-index: 1;
-        height: var(--public-card-icon-row);
-        min-height: var(--public-card-icon-row);
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-
-        #episodelinks {
-            display: contents;
-        }
-
-        a[mat-icon-button],
-        button[mat-icon-button] {
-            display: inline-flex !important;
-            align-items: center;
-            justify-content: center;
-            align-self: center;
-            margin-top: 0;
-            margin-bottom: 0;
-            vertical-align: middle;
-            box-sizing: border-box;
-        }
-
-        mat-icon {
-            display: inline-flex !important;
-            align-items: center;
-            justify-content: center;
-            margin: 0 !important;
-            line-height: 1 !important;
-            width: var(--mdc-icon-button-icon-size, 24px);
-            height: var(--mdc-icon-button-icon-size, 24px);
-            font-size: var(--mdc-icon-button-icon-size, 24px);
-            overflow: visible;
-        }
-
-        mat-icon svg {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+      margin-top: calc(-1 * var(--public-card-subject-mid-offset));
     }
+  }
 
-    mat-card-footer.subjects,
-    mat-card-footer.subjects app-subjects {
-        display: contents !important;
+  .discovery-service-links {
+    .youtubemeta {
+      height: var(--public-card-icon-row);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-self: center;
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      line-height: 1.2;
     }
-
-    .subject {
-        box-sizing: border-box;
-        text-align: right;
-        padding-left: 0;
-        padding-bottom: 6px;
-        min-width: 0;
-
-        a {
-            color: var(--mat-theme-text-secondary);
-            text-decoration: dashed underline 1px;
-            text-underline-offset: 5px;
-            line-height: 1.25;
-        }
-
-        // Leading subjects: full-width rows above the bottom icon/subject row.
-        &:not(:last-child) {
-            flex: 0 0 100%;
-            width: 100%;
-            order: 1;
-            align-self: stretch;
-        }
-
-        // Last / only: shares the bottom row with the island when island +
-        // subject min-content fit; otherwise full line above a wrapped island.
-        // min-width/flex-basis = min-content (label needs), not a fixed 100px
-        // column — tiny labels coexist whenever they fit.
-        // align-self/end + mid-offset optically match icon mid to the middle of
-        // the last line of the subject (not the whole wrapped block).
-        &:last-child {
-            order: 2;
-            flex: 1 1 min-content;
-            width: auto;
-            max-width: 100%;
-            min-width: min-content;
-            padding-bottom: 0;
-            align-self: flex-end;
-            margin-bottom: var(--public-card-subject-mid-offset);
-            display: flex !important;
-            flex-direction: row;
-            align-items: flex-end !important;
-            justify-content: flex-end;
-        }
-    }
-
-    // When leading subjects sit above the icon row, flex-end mid-align leaves
-    // empty space above the last subject inside the taller icon line — that
-    // inflates leading→last gap vs leading→leading (6px). Pull the whole
-    // bottom row up by the same mid-offset so text gaps stay uniform while
-    // icon mid ↔ last-line mid is preserved. padding-top on the last subject
-    // cancels that pull for the label itself when it stacks full-width above
-    // the island (Cases F/H) so subjects do not overlap.
-    &:has(.subject:not(:last-child)) {
-        .subject:last-child {
-            margin-top: calc(-1 * var(--public-card-subject-mid-offset));
-            padding-top: var(--public-card-subject-mid-offset);
-            box-sizing: border-box;
-        }
-
-        app-episode-links,
-        app-episode-podcast-links,
-        .discovery-service-links {
-            margin-top: calc(-1 * var(--public-card-subject-mid-offset));
-        }
-    }
-
-    .discovery-service-links {
-        .youtubemeta {
-            height: var(--public-card-icon-row);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-self: center;
-            box-sizing: border-box;
-            flex: 0 0 auto;
-            line-height: 1.2;
-        }
-    }
+  }
 }
 
 #cta-button {
-    text-align: center;
-    margin-bottom: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
-@media screen and (max-width: 599px) {
-    footer {
-        width: 100%;
-        max-width: 580px;
-        margin: 0 auto;
-    }
-}
-
-@media screen and (min-width: 600px) {
-    footer {
-        width: 580px;
-        margin: 0 auto;
-    }
-}
-
+// ——— Flix page footer: a quiet strip of legal/social links at the end of
+// content, not a sticky bar. Sits in normal document flow below whatever
+// page is routed in, so it never competes with the docked episode player.
 footer {
-    padding-left: 5px;
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 0;
-    background-color: var(--mat-sys-surface);
-    height: 1.7em;
-    padding-top: 5px;
-    margin-bottom: 0;
-    font-size: 1.1em;
-    z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 40px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 30%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 55%, transparent);
 
-    .mat-icon {
-        vertical-align: bottom;
-        padding-left: 10px;
-        padding-right: 5px;
+  .site-footer__link,
+  .site-footer__brand {
+    color: inherit;
+  }
+
+  a {
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--cp-amber);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      outline: none;
     }
+  }
 
-    a {
-        color: var(--mat-theme-text-secondary);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        height: 24px;
+  .site-footer__dot {
+    opacity: 0.6;
+  }
+
+  .site-footer__brand {
+    font-family: var(--cp-font-display);
+    letter-spacing: 0.02em;
+  }
+
+  #socialLinksButton {
+    border: none;
+    background: transparent;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      opacity: 1;
+      outline: none;
     }
+  }
 
-    #privacy {
-        margin-top: 0;
-    }
+  #socialLinksButton .socialPreviewIcon,
+  #socialLinksButton .githubPreviewIcon,
+  #socialLinksButton .socialPreviewSvgIcon {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    flex: 0 0 16px;
+    display: block;
+    filter: grayscale(1) brightness(1.6);
+    opacity: 0.85;
+  }
 
-    #goTop {
-        float: right;
-    }
+  #socialLinksButton .githubPreviewIcon {
+    object-fit: contain;
+    object-position: center;
+  }
 
-    #socialLinksButton {
-        border: none;
-        background: transparent;
-        color: var(--mat-theme-text-secondary);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        line-height: 1;
-        width: 164px;
-        min-width: 164px;
-        max-width: 164px;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        padding: 0;
-        cursor: pointer;
-        vertical-align: middle;
-    }
-
-    #socialLinksButton .socialPreviewIcon {
-        width: 25px;
-        height: 25px;
-        min-width: 25px;
-        min-height: 25px;
-        max-width: 25px;
-        max-height: 25px;
-        flex: 0 0 25px;
-        display: block;
-    }
-
-    #socialLinksButton .githubPreviewIcon {
-        width: 25px;
-        height: 25px;
-        min-width: 25px;
-        min-height: 25px;
-        max-width: 25px;
-        max-height: 25px;
-        flex: 0 0 25px;
-        object-fit: contain;
-        object-position: center;
-    }
-
-    #socialLinksButton .socialPreviewSvgIcon {
-        width: 25px;
-        height: 25px;
-        min-width: 25px;
-        min-height: 25px;
-        max-width: 25px;
-        max-height: 25px;
-        flex: 0 0 25px;
-        color: #3DDC84;
-        display: block;
-        padding: 0;
-        margin: 0;
-        line-height: 25px;
-    }
-
-    /* Keep Android mark stable if hydrated DOM renders the material icon variant. */
-    #socialLinksButton .socialPreviewMaterialIcon {
-        width: 25px;
-        height: 25px;
-        font-size: 25px;
-        line-height: 25px;
-        color: #3DDC84;
-        display: block;
-        padding: 0;
-    }
-
+  #socialLinksButton .socialPreviewSvgIcon {
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 70%, transparent);
+    padding: 0;
+    margin: 0;
+    line-height: 16px;
+    filter: none;
+  }
 }
 
-body {
-    --mat-card-title-text-line-height: 32px !important;
-    --mat-card-title-text-size: 20px !important;
-    --mat-card-title-text-weight: 500 !important;
-    --mat-card-subtitle-text-line-height: 22px !important;
-    --mat-card-subtitle-text-size: 14px !important;
-    --mat-card-subtitle-text-weight: 500 !important;
+// ——— Back to top: floating affordance, hidden near the top of the page and
+// offset above the docked episode player (via --flix-dock-height, published
+// by EpisodePlayerComponent) so it never collides with playback controls.
+.back-to-top {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom) + var(--flix-dock-height, 0px));
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cp-ink-elevated) 92%, transparent);
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, bottom 0.2s ease;
 
-    h2 {
-        font-size: 20px !important;
-        font-weight: 500 !important;
-        line-height: 32px !important;
-        font-family: Roboto, sans-serif !important;
-        letter-spacing: .0125em !important;
-    }
+  .mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--cp-amber) 55%, transparent);
+    color: var(--cp-amber);
+    outline: none;
+  }
+
+  &.back-to-top--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 }
 
-mat-card {
-    mat-card-title {
-        a {
-            color: var(--mat-app-text-color);
-            text-decoration: none;
-        }
-        word-wrap: anywhere;
-        overflow-wrap: anywhere;
-    }
-
-    mat-card-subtitle {
-        font-size: 1.3em !important;
-        margin-top: 10px;
-        padding-bottom: 10px;
-        word-wrap: anywhere;
-        overflow-wrap: anywhere;
-
-        a {
-            color: var(--mat-theme-text-secondary);
-            text-decoration: dashed underline 1px;
-            text-underline-offset: 5px;
-            line-height: 1.5em
-        }
-
-        a:hover {
-            text-decoration: none;
-        }
-    }
-
-    mat-card-content {
-        font-size: 18px;
-        line-height: 1.3em;
-    }
-
-    .mdc-card__actions {
-        align-items: end;
-        padding-left: 20px;
-    }
-}
-
-mat-card:not(.selected) {
-    background-color: var(--mat-sys-surface-container);
-}
-
-mat-card-actions {
-    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
-        margin-right: 25px;
-        transform: scale(1.2);
-    }
+// Fully hidden while the theater overlay is open — the scrim already blocks
+// interaction with everything behind it.
+.flix-theater-lock .back-to-top {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media screen and (max-width: 600px) {
-    mat-card-actions {
+  .back-to-top {
+    left: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom) + var(--flix-dock-height, 0px));
+  }
+}
 
-        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
-            margin-right: 18px;
-        }
+body {
+  --mat-card-title-text-line-height: 1.25 !important;
+  --mat-card-title-text-size: 1.2rem !important;
+  --mat-card-title-text-weight: 600 !important;
+  --mat-card-subtitle-text-line-height: 1.35 !important;
+  --mat-card-subtitle-text-size: 0.95rem !important;
+  --mat-card-subtitle-text-weight: 500 !important;
+
+  h2 {
+    font-family: var(--cp-font-display) !important;
+    font-size: 1.65rem !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0 !important;
+  }
+
+  h3 {
+    font-family: var(--cp-font-ui);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-size: 0.78rem !important;
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 55%, var(--cp-amber));
+  }
+}
+
+mat-card {
+  border-radius: var(--cp-radius) !important;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 65%, transparent) !important;
+  box-shadow: none !important;
+  background:
+    linear-gradient(90deg, var(--cp-amber) 0 3px, transparent 3px),
+    color-mix(in srgb, var(--cp-ink-elevated) 92%, #1c2433) !important;
+  overflow: hidden;
+
+  mat-card-title {
+    a {
+      color: var(--mat-sys-on-surface);
+      text-decoration: none;
     }
 
-    mat-card {
-        .mdc-card__actions {
-            padding-left: 10px;
-        }
+    a:hover {
+      color: var(--cp-amber);
     }
+
+    word-wrap: anywhere;
+    overflow-wrap: anywhere;
+  }
+
+  mat-card-subtitle {
+    font-size: 1.05em !important;
+    margin-top: 8px;
+    padding-bottom: 8px;
+    word-wrap: anywhere;
+    overflow-wrap: anywhere;
+
+    a {
+      color: color-mix(in srgb, var(--mat-sys-on-surface) 68%, var(--cp-amber));
+      text-decoration: underline dashed 1px;
+      text-underline-offset: 5px;
+      line-height: 1.5em;
+    }
+
+    a:hover {
+      text-decoration: none;
+      color: var(--cp-amber);
+    }
+  }
+
+  mat-card-content {
+    font-size: 1.02rem;
+    line-height: 1.45;
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 88%, transparent);
+  }
+
+  .mdc-card__actions {
+    align-items: end;
+    padding-left: 20px;
+  }
+}
+
+mat-card:not(.selected) {
+  background:
+    linear-gradient(90deg, var(--cp-amber) 0 3px, transparent 3px),
+    color-mix(in srgb, var(--cp-ink-elevated) 92%, #1c2433) !important;
+}
+
+mat-card-actions {
+  a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+  button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+    margin-right: 25px;
+    transform: scale(1.15);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  mat-card-actions {
+    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+      margin-right: 18px;
+    }
+  }
+
+  mat-card {
+    .mdc-card__actions {
+      padding-left: 10px;
+    }
+  }
 }
 
 @media screen and (max-width: 400px) {
-    mat-card-actions {
-
-        a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-        button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
-            margin-right: 12px;
-        }
+  mat-card-actions {
+    a[mat-icon-button]:not(.remove-btn):not(.add-btn),
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+      margin-right: 12px;
     }
+  }
 
-    mat-card {
-        margin-left: 3px;
-        margin-right: 3px;
+  mat-card {
+    margin-left: 4px;
+    margin-right: 4px;
 
-        .mat-mdc-card-header,
-        .mdc-card__actions,
-        .mat-mdc-card-content {
-            padding-left: 2px;
-            padding-right: 2px;
-        }
+    .mat-mdc-card-header,
+    .mdc-card__actions,
+    .mat-mdc-card-content {
+      padding-left: 4px;
+      padding-right: 4px;
     }
+  }
 }
 
 @media (display-mode: standalone) {
-    *:not(input):not(select):not(code):not(textarea):not([contenteditable]) {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
+  *:not(input):not(select):not(code):not(textarea):not([contenteditable]) {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
 }
 
 .mat-mdc-menu-panel:has(a[href*="bsky.app/profile/cultpodcasts.bsky.social"]) {
-    background-color: var(--mat-sys-surface);
-    opacity: 1;
-    z-index: 20;
-    width: 164px !important;
-    min-width: 164px !important;
-    max-width: 164px !important;
+  background-color: var(--cp-ink-elevated);
+  opacity: 1;
+  z-index: 20;
+  width: 164px !important;
+  min-width: 164px !important;
+  max-width: 164px !important;
 }
+
+// Light-mode visitors still get atmosphere (toned)
+@media (prefers-color-scheme: light) {
+  html {
+    color-scheme: light;
+    --cp-ink: #f4f0e8;
+    --cp-ink-elevated: #fffdf8;
+    --cp-amber: #b86a00;
+    --cp-amber-soft: color-mix(in srgb, #e8a23a 28%, transparent);
+    --cp-mist: color-mix(in srgb, #2a6f8a 10%, transparent);
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 90% 50% at 50% -8%, var(--cp-amber-soft), transparent 55%),
+      radial-gradient(ellipse 60% 35% at 100% 10%, var(--cp-mist), transparent 50%),
+      linear-gradient(180deg, #f7f3eb 0%, #efe8dc 100%);
+  }
+}
+
+/* ——— Structural public episode rows (not Material cards) ——— */
+.page-rail {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.episode-entry {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 16px 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
+  position: relative;
+}
+
+.episode-entry__art {
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.episode-entry__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.episode-entry__topline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.episode-entry__title {
+  margin: 0;
+  font-family: var(--cp-font-display);
+  font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+
+  a {
+    color: var(--mat-sys-on-surface);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--cp-amber);
+  }
+}
+
+.episode-entry__show {
+  margin: 0;
+  font-size: 0.92rem;
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 65%, var(--cp-amber));
+
+  a {
+    color: inherit;
+    text-decoration: underline dashed 1px;
+    text-underline-offset: 4px;
+  }
+
+  a:hover {
+    color: var(--cp-amber);
+    text-decoration: none;
+  }
+
+  .duration {
+    opacity: 0.75;
+  }
+}
+
+.episode-entry__desc {
+  margin: 2px 0 0;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 82%, transparent);
+}
+
+.episode-entry__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 8px;
+
+  mat-card-footer.subjects,
+  mat-card-footer.subjects app-subjects {
+    display: contents !important;
+  }
+
+  .subject {
+    text-align: right;
+
+    a {
+      color: color-mix(in srgb, var(--mat-sys-on-surface) 70%, var(--cp-amber));
+      text-decoration: underline dashed 1px;
+      text-underline-offset: 4px;
+      font-size: 0.9rem;
+    }
+  }
+
+  app-episode-links,
+  app-episode-podcast-links {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+
+    a[mat-icon-button],
+    button[mat-icon-button] {
+      margin-right: 14px;
+      transform: scale(1.05);
+    }
+  }
+}
+
+.episode-entry--featured {
+  grid-template-columns: 1fr;
+  padding-top: 8px;
+  padding-bottom: 28px;
+  margin-bottom: 8px;
+  border-bottom-width: 2px;
+  border-bottom-color: color-mix(in srgb, var(--cp-amber) 45%, transparent);
+
+  .episode-entry__art {
+    grid-row: auto;
+    margin: 0 -4px;
+  }
+
+  .episode-entry__art .container {
+    border-radius: 12px;
+    aspect-ratio: 16 / 9;
+  }
+
+  .episode-entry__title {
+    font-size: clamp(1.55rem, 4vw, 2.1rem);
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .episode-entry:not(.episode-entry--featured) {
+    grid-template-columns: 84px 1fr;
+    gap: 12px;
+  }
+}
+
+.day-spine {
+  position: relative;
+  padding-left: 18px;
+  margin: 28px 0 8px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.35em;
+    bottom: -12px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--cp-amber), color-mix(in srgb, var(--cp-amber) 10%, transparent));
+  }
+
+  h3 {
+    margin: 0 0 4px;
+  }
+}
+
+/* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
+.browse {
+  --nflx-bg: #0b0b0b;
+  --nflx-panel: #141414;
+  --nflx-text: #fff;
+  --nflx-muted: #b3b3b3;
+  --nflx-accent: #e8a23a;
+  color: var(--nflx-text);
+  background: var(--nflx-bg);
+  min-height: 50vh;
+  padding-bottom: min(52vh, 420px);
+}
+
+.browse--playing {
+  padding-bottom: min(52vh, 420px);
+}
+
+.browse-filters {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 4vw;
+  box-sizing: border-box;
+}
+
+.browse-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 18px;
+  flex-wrap: wrap;
+}
+
+.browse-toolbar h2,
+.browse #resultsheading h2 {
+  flex: 1;
+  margin: 0;
+  min-width: 12rem;
+  font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif);
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.browse-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 6px 4px 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    opacity: 0.85;
+  }
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+  }
+}
+
+.browse-facet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+
+.browse-facet__label {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nflx-muted);
+  min-width: 4.5rem;
+}
+
+.browse-facet__scroller {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: #444 transparent;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 28px), transparent 100%);
+}
+
+.browse-pill {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  margin: 0;
+  padding: 7px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+  }
+  &.is-active {
+    background: #fff;
+    border-color: #fff;
+    color: #111;
+    font-weight: 700;
+  }
+}
+
+.browse-pill__count {
+  margin-left: 4px;
+  opacity: 0.55;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  .browse-pill.is-active & {
+    opacity: 0.65;
+  }
+}
+
+.browse-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--nflx-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    outline: none;
+  }
+}
+
+.browse.is-updating .browse-grid {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.browse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 20px 14px;
+  width: min(1400px, 100%);
+  margin: 12px auto 0;
+  padding: 8px 4vw 32px;
+  box-sizing: border-box;
+  transition: opacity 0.2s ease;
+}
+
+.browse-more {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px 28px;
+  color: var(--nflx-muted, #b3b3b3);
+  font-size: 0.85rem;
+}
+
+.browse-more__dots {
+  display: inline-flex;
+  gap: 5px;
+  span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--nflx-accent, #e8a23a);
+    opacity: 0.35;
+    animation: browse-more-pulse 0.9s ease-in-out infinite;
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@keyframes browse-more-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.browse-empty,
+.browse-error {
+  width: min(920px, 100%);
+  margin: 48px auto;
+  padding: 0 16px;
+  text-align: center;
+  color: var(--nflx-muted);
+
+  h2 {
+    color: #fff;
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif);
+    font-weight: 400;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .browse-facet {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .browse-facet__label {
+    min-width: 0;
+  }
+
+  .browse-facet__scroller {
+    mask-image: none;
+  }
+}
+
+@media screen and (min-width: 900px) {
+  .browse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 22px 16px;
+  }
+}
+
+/* ——— Flix player: lock page scroll while the theater overlay is open ——— */
+.flix-theater-lock {
+  overflow: hidden;
+}
+

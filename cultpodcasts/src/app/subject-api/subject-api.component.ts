@@ -1,44 +1,42 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { SearchResultsFacets } from '../search-results-facets.interface';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { FacetState } from '../facet-state.interface';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import {
   ALL_LANGUAGES_VALUE,
   ENGLISH_LANGUAGE_VALUE,
   SubjectLanguageSelection,
+  availableLanguageChipValues,
   buildSubjectLangFilter,
   displayedLanguageOptions,
   englishFacetCount,
   languageLabel,
+  reconcileLanguageChipsForPodcasts,
   selectionFromChipValues,
   shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
-import { SearchDescriptionPipe } from '../search-description.pipe';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SearchDisplayEpisode } from '../search-result-links';
+import { canPlayEpisode } from '../episode-embed';
+import { displayCatalogName } from '../display-catalog-name';
+import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -49,21 +47,11 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-subject-api',
   imports: [
-    MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    MatExpansionModule,
-    MatChipListbox,
-    MatChipOption,
-    EpisodeImageComponent,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    SubjectsComponent,
-    SearchDescriptionPipe
+    EpisodePosterComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass',
@@ -85,6 +73,8 @@ export class SubjectApiComponent {
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
+  protected readonly playerService = inject(PlayerService);
+  protected readonly displayCatalogName = displayCatalogName;
   private podcastFilter: string = "";
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
@@ -320,32 +310,131 @@ export class SubjectApiComponent {
     });
   }
 
-  podcastsChange($event: MatChipListboxChange) {
-    const delimiter = '£';
-    var items: { count: number, value: string }[] = $event.value;
-    const podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    this.podcasts.set(podcasts);
-    if (podcasts.length == 0) {
-      this.podcastFilter = "";
-    } else {
-      var podcastsNameList = podcasts.join(delimiter);
-      this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
+  protected sortLabel = computed(() => {
+    switch (this.sortOrder()) {
+      case sortParamDateAsc:
+        return 'Oldest first';
+      case sortParamRank:
+        return 'Suggestions';
+      default:
+        return 'Newest first';
     }
+  });
+
+  clearPodcasts(): void {
+    if (this.podcasts().length === 0) {
+      return;
+    }
+    this.podcasts.set([]);
+    this.podcastFilter = '';
     this.page = 1;
-    this.execSearch(true, false);
+    this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
-  languagesChange($event: MatChipListboxChange) {
-    const values: string[] = ($event.value as Array<string | { value: string }>)
-      .map(item => typeof item === "string" ? item : item.value);
-    let selected: string[];
-    if (values.includes(ALL_LANGUAGES_VALUE) && values.length > 1) {
-      selected = [ALL_LANGUAGES_VALUE];
-    } else {
-      selected = values;
+  togglePodcast(value: string): void {
+    const current = this.podcasts();
+    const next = current.includes(value)
+      ? current.filter((p) => p !== value)
+      : [...current, value];
+    this.podcasts.set(next);
+    this.podcastFilter = next.length === 0
+      ? ''
+      : ` and search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+    this.page = 1;
+    this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
+  }
+
+  clearAllFilters(): void {
+    this.podcasts.set([]);
+    this.podcastFilter = '';
+    this.setLanguageSelection([ALL_LANGUAGES_VALUE]);
+    this.page = 1;
+    this.refreshLanguageFacets({ reconcileSelection: false, thenSearch: true });
+  }
+
+  /**
+   * Re-fetch lang facets for the current subject (+ selected shows).
+   * Podcast chips stay subject-wide; language chips shrink to the active show filter.
+   * When the active language filter would exclude all episodes for the selected shows,
+   * widen language to All so later show picks are not stuck on a narrow code.
+   */
+  private refreshLanguageFacets(options?: {
+    reconcileSelection?: boolean;
+    thenSearch?: boolean;
+  }): void {
+    if (!this.filter) {
+      return;
     }
+    this.oDataService.getEntitiesWithFacets<SearchResult>(
+      new URL("/search", environment.api).toString(),
+      {
+        search: this.query(),
+        filter: this.filter + this.podcastFilter,
+        searchMode: 'any',
+        queryType: 'simple',
+        count: true,
+        skip: 0,
+        top: 0,
+        facets: ["lang,count:50,sort:count"],
+        orderby: "release desc"
+      }
+    ).subscribe({
+      next: facetData => {
+        const langFacets = facetData.facets.lang ?? [];
+        this.languageOptions.set(langFacets);
+        this.facets.update(current => ({ ...current, lang: langFacets }));
+        const scopedTotal = facetData.metadata.get("count") ?? 0;
+        this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
+
+        if (options?.reconcileSelection) {
+          const nextChips = reconcileLanguageChipsForPodcasts(
+            this.languageSelection(),
+            availableLanguageChipValues(scopedTotal, langFacets)
+          );
+          if (nextChips) {
+            this.setLanguageSelection(nextChips);
+          }
+        }
+
+        if (options?.thenSearch) {
+          this.execSearch(true, false);
+        }
+      },
+      error: e => {
+        console.error(e);
+        if (options?.thenSearch) {
+          this.execSearch(true, false);
+        }
+      }
+    });
+  }
+
+  selectLanguage(value: string): void {
+    this.applyLanguageSelection([value]);
+  }
+
+  toggleLanguage(value: string): void {
+    let selected = this.selectedLanguageValues().filter(
+      (v) => v !== ALL_LANGUAGES_VALUE
+    );
+    if (selected.includes(value)) {
+      selected = selected.filter((v) => v !== value);
+    } else {
+      selected = [...selected, value];
+    }
+    if (selected.length === 0) {
+      selected = [ALL_LANGUAGES_VALUE];
+    }
+    this.applyLanguageSelection(selected);
+  }
+
+  private setLanguageSelection(selected: string[]): void {
     this.selectedLanguageValues.set(selected);
     this.languageSelection.set(selectionFromChipValues(selected));
+  }
+
+  private applyLanguageSelection(selected: string[]): void {
+    this.setLanguageSelection(selected);
     this.page = 1;
     this.execSearch(true, false);
   }
@@ -364,5 +453,16 @@ export class SubjectApiComponent {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
+  }
+
+  playEpisode(episode: SearchDisplayEpisode): void {
+    if (!canPlayEpisode(episode)) {
+      return;
+    }
+    this.playerService.play(episode);
+  }
+
+  isPlayingId(id: string): boolean {
+    return this.playerService.episode()?.id === id;
   }
 }

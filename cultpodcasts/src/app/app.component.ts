@@ -19,6 +19,8 @@ import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { environment } from 'src/environments/environment';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
+import { EpisodePlayerComponent } from './episode-player/episode-player.component';
+import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -38,7 +40,7 @@ import { filter, map, startWith } from 'rxjs';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, EpisodePlayerComponent, ResumeSessionPromptComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 
@@ -64,7 +66,16 @@ export class AppComponent implements OnDestroy {
     return match ? decodeURIComponent(match[1]) : undefined;
   });
   protected readonly isOnPodcastPage = computed(() => this.podcastPageName() !== undefined);
+  protected readonly isHomePage = computed(() => {
+    const path = this.routeUrl().split('?')[0].split('#')[0];
+    return path === '/' || path === '';
+  });
   private ignoreDragUntilEnd = false;
+
+  /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
+  private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
+  protected readonly showBackToTop = signal(false);
+  private scrollRaf = 0;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -96,11 +107,13 @@ export class AppComponent implements OnDestroy {
   ngOnDestroy(): void {
     if (this.isBrowser) {
       this.removeDragListeners();
+      this.removeScrollListener();
     }
   }
 
   initialiseBrowser() {
     this.addDragListeners();
+    this.addScrollListener();
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -201,6 +214,29 @@ export class AppComponent implements OnDestroy {
     window.removeEventListener('mouseup', this.onPointerUp);
     window.removeEventListener('pointerup', this.onPointerUp);
   }
+
+  private addScrollListener(): void {
+    window.addEventListener('scroll', this.onWindowScroll, { passive: true });
+    this.onWindowScroll();
+  }
+
+  private removeScrollListener(): void {
+    window.removeEventListener('scroll', this.onWindowScroll);
+    if (this.scrollRaf) {
+      window.cancelAnimationFrame(this.scrollRaf);
+      this.scrollRaf = 0;
+    }
+  }
+
+  private readonly onWindowScroll = () => {
+    if (this.scrollRaf) {
+      return;
+    }
+    this.scrollRaf = window.requestAnimationFrame(() => {
+      this.scrollRaf = 0;
+      this.showBackToTop.set(window.scrollY > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
+    });
+  };
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {
     if (this.ignoreDragUntilEnd || !this.hasDroppableUrl(event)) {
@@ -331,7 +367,7 @@ export class AppComponent implements OnDestroy {
 
     // Keep #top in the URL while avoiding a full document navigation.
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#top`);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   private registerSvg(iconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
