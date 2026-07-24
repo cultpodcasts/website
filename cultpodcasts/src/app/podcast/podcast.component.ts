@@ -23,11 +23,7 @@ import { SiteLoadingComponent } from '../site-loading/site-loading.component';
     SiteLoadingComponent,
     MatButtonModule,
     RouterLink
-  ],
-  // Episode SSR emits a loading shell while the client fetches the body. Skip
-  // hydrating this host so the @if (isEpisode) branch cannot mismatch the
-  // AppComponent claim cursor (TypeError reading 'd' on browse/episode).
-  host: { ngSkipHydration: 'true' }
+  ]
 })
 
 export class PodcastComponent {
@@ -46,7 +42,9 @@ export class PodcastComponent {
     private episodeService: EpisodeService,
     @Inject(PLATFORM_ID) platformId: any) {
     this.isServer = isPlatformServer(platformId);
-    // First template pass must match the episode vs podcast-api branch.
+    // Align the @if (isEpisode) branch with SSR before the first template pass.
+    // Starting at false made the client claim app-podcast-api against an SSR
+    // loading shell and blew up AppComponent hydration (TypeError on 'd'/hasAttribute).
     this.applyRouteParams(this.route.snapshot.params);
   }
 
