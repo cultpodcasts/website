@@ -1,51 +1,113 @@
+<app-site-loading [active]="isLoading()" label="Loading episode" />
+
 @if (episode) {
-<section id="results" class="episodePage">
-  <mat-card class="result">
-    <mat-card-header>
-      <app-bookmark [episodeId]="episode.id" [hasMenu]="authRoles().includes('Curator')" />
-      @if (authRoles().includes('Curator')) {
-      <button mat-icon-button [matMenuTriggerFor]="menu">
-        <mat-icon>more_vert</mat-icon>
+<section id="results" class="episode"
+  [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
+
+  <div class="episode-backdrop" aria-hidden="true"
+    [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null">
+    <div class="episode-backdrop__scrim"></div>
+  </div>
+
+  <div class="episode-toolbar">
+    <app-bookmark [episodeId]="episode.id" [hasMenu]="authRoles().includes('Curator')" />
+    @if (authRoles().includes('Curator')) {
+    <button mat-icon-button class="episode-toolbar__btn" [matMenuTriggerFor]="menu" aria-label="Episode actions">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item (click)="edit(episode.podcastName, episode.id)">
+        <mat-icon>edit</mat-icon>
+        <span>Edit Episode</span>
       </button>
-      <mat-menu #menu="matMenu">
-        <button mat-menu-item (click)="edit(episode.podcastName, episode.id)">
-          <mat-icon>edit</mat-icon>
-          <span>Edit Episode</span>
-        </button>
-        <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
-          <mat-icon>send</mat-icon>
-          <span>Post Episode</span>
-        </button>
-      </mat-menu>
+      <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
+        <mat-icon>send</mat-icon>
+        <span>Post Episode</span>
+      </button>
+    </mat-menu>
+    }
+  </div>
+
+  <div class="episode-hero">
+    <p class="episode-hero__eyebrow">
+      <a class="episode-hero__podcast" [routerLink]="['/podcast', podcastName()]">
+        {{ displayCatalogName(podcastName()) }}
+      </a>
+    </p>
+    <h1 class="episode-hero__title" [outerHTML]="episode.episodeTitle"></h1>
+    <p class="episode-hero__meta">
+      <span>{{ episode.release | date:'d MMM yyyy' }}</span>
+      <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
+      <span>{{ duration() }}</span>
+    </p>
+
+    <p class="episode-hero__desc">{{ episode.episodeDescription | searchDescription }}</p>
+
+    @if (visibleSubjects().length > 0) {
+    <div class="episode-hero__subjects" aria-label="Subjects">
+      @for (subject of visibleSubjects(); track subject) {
+      <a class="episode-hero__subject" [routerLink]="['/subject', subject]">{{ displayCatalogName(subject) }}</a>
       }
-      <mat-card-title [class.hasMenu]="authRoles().includes('Curator')" [class.hasBookmark]="isSignedIn()">
-        <span [outerHTML]="episode.episodeTitle"></span>
-      </mat-card-title>
-      <mat-card-subtitle>
-        <a [routerLink]="['/podcast', podcastName()]">
-          {{ displayCatalogName(podcastName()) }}
-        </a>
-      </mat-card-subtitle>
-      <mat-card-subtitle>{{episode.release | date:'d MMM yyyy'}}
-        [{{episode.duration.startsWith("0")?episode.duration.split(".")[0].substring(1):episode.duration.split(".")[0]}}]</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content class="resultdescription">
-      <app-episode-image [searchResult]="episode" [linksOverlay]="true"></app-episode-image>
-      <p>{{episode.episodeDescription | searchDescription}}</p>
-    </mat-card-content>
-    <mat-card-actions>
-      <app-episode-links [episode]="episode"></app-episode-links>
-      <mat-card-footer class="subjects">
-        <app-subjects [subjects]="episode.subjects!"></app-subjects>
-      </mat-card-footer>
-    </mat-card-actions>
-  </mat-card>
+    </div>
+    }
+
+    <div class="episode-hero__actions">
+      @if (playable()) {
+      <button type="button" mat-flat-button class="episode-hero__play" (click)="playEpisode()">
+        <mat-icon>play_arrow</mat-icon>
+        {{ playLabel() }}
+      </button>
+      <button type="button" class="episode-hero__queue" [class.is-queued]="queued()"
+        [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggleQueue()">
+        <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
+        {{ queued() ? 'Queued' : 'Add to Queue' }}
+      </button>
+      }
+      <app-episode-links class="episode-hero__links" [episode]="episode"></app-episode-links>
+    </div>
+  </div>
+
+  @if (morePodcastEpisodes().length > 0) {
+  <section class="rail" aria-label="More from this podcast">
+    <div class="rail__heading">
+      <a class="rail__title rail__title--link" [routerLink]="['/podcast', podcastName()]">
+        <span>More from {{ displayCatalogName(podcastName()) }}</span>
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </div>
+    <div class="rail__scroller" tabindex="0">
+      <div class="rail__track">
+        @for (item of morePodcastEpisodes(); track item.id) {
+        <app-episode-poster class="rail-poster" [episode]="item" [playing]="isPlayingId(item.id)"
+          [showShow]="false" (play)="playEpisode($event)" />
+        }
+      </div>
+    </div>
+  </section>
+  }
+
+  @for (rail of subjectRails(); track rail.subject) {
+  <section class="rail rail--subject" [attr.aria-label]="'More on ' + displayCatalogName(rail.subject)">
+    <div class="rail__heading">
+      <a class="rail__title rail__title--link" [routerLink]="['/subject', rail.subject]">
+        <span>More on {{ displayCatalogName(rail.subject) }}</span>
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </div>
+    <div class="rail__scroller" tabindex="0">
+      <div class="rail__track">
+        @for (item of rail.episodes; track item.id) {
+        <app-episode-poster class="rail-poster" [episode]="item" [playing]="isPlayingId(item.id)"
+          (play)="playEpisode($event)" />
+        }
+      </div>
+    </div>
+  </section>
+  }
 </section>
 } @else if (!isLoading()) {
-<section id="resultsheading">
+<section class="browse-empty">
   <h2>Episode not found.</h2>
-</section>
-<section>
   <div id="cta-button">
     <button mat-flat-button color="primary" (click)="podcastPage()">Try the Podcast's page!</button>
   </div>
