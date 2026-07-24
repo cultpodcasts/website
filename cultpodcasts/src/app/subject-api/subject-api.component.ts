@@ -26,7 +26,7 @@ import {
   displayedLanguageOptions,
   englishFacetCount,
   languageLabel,
-  languageSelectionIntersectsAvailable,
+  reconcileLanguageChipsForPodcasts,
   selectionFromChipValues,
   shouldShowLanguageSelector
 } from '../subject-language-filter';
@@ -354,9 +354,9 @@ export class SubjectApiComponent {
 
   /**
    * Re-fetch lang facets for the current subject (+ selected shows).
-   * Podcast chips stay subject-wide; language chips must shrink to the active show filter.
+   * Podcast chips stay subject-wide; language chips shrink to the active show filter.
    * When the active language filter would exclude all episodes for the selected shows,
-   * select the languages those shows actually have.
+   * widen language to All so later show picks are not stuck on a narrow code.
    */
   private refreshLanguageFacets(options?: {
     reconcileSelection?: boolean;
@@ -387,10 +387,12 @@ export class SubjectApiComponent {
         this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
 
         if (options?.reconcileSelection) {
-          const available = availableLanguageChipValues(scopedTotal, langFacets);
-          if (!languageSelectionIntersectsAvailable(this.languageSelection(), available)
-            && available.length > 0) {
-            this.setLanguageSelection(available);
+          const nextChips = reconcileLanguageChipsForPodcasts(
+            this.languageSelection(),
+            availableLanguageChipValues(scopedTotal, langFacets)
+          );
+          if (nextChips) {
+            this.setLanguageSelection(nextChips);
           }
         }
 

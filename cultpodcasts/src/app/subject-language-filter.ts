@@ -106,6 +106,25 @@ export function languageSelectionIntersectsAvailable(
     || selection.codes.some(code => availableChips.includes(code));
 }
 
+/**
+ * After show selection changes: if the current language filter would match nothing
+ * for the selected shows, widen to All — not the show's specific languages — so
+ * later show picks are not stuck on a narrow auto-selected code.
+ * Returns chip values to apply, or null when the current selection should stay.
+ */
+export function reconcileLanguageChipsForPodcasts(
+  selection: SubjectLanguageSelection,
+  availableChips: string[]
+): string[] | null {
+  if (languageSelectionIntersectsAvailable(selection, availableChips)) {
+    return null;
+  }
+  if (availableChips.length === 0) {
+    return null;
+  }
+  return [ALL_LANGUAGES_VALUE];
+}
+
 export function hasNonEnglishFacets(langFacets: SearchResultFacet[] | undefined): boolean {
   return (langFacets ?? []).some(facet => !!facet.value && (facet.count ?? 0) > 0);
 }

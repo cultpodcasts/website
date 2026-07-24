@@ -7,6 +7,7 @@ import {
   englishFacetCount,
   languageLabel,
   languageSelectionIntersectsAvailable,
+  reconcileLanguageChipsForPodcasts,
   selectionFromChipValues,
   shouldShowLanguageSelector
 } from "./subject-language-filter";
@@ -85,6 +86,34 @@ describe("subject-language-filter", () => {
         { mode: "englishAndCodes", codes: ["es"] },
         [ENGLISH_LANGUAGE_VALUE]
       )).toBe(true);
+    });
+  });
+
+  describe("reconcileLanguageChipsForPodcasts", () => {
+    it("widens to All when English has no intersection with a French-only show", () => {
+      expect(reconcileLanguageChipsForPodcasts({ mode: "english" }, ["fr"]))
+        .toEqual([ALL_LANGUAGES_VALUE]);
+    });
+
+    it("does not switch to the show's specific language codes", () => {
+      expect(reconcileLanguageChipsForPodcasts({ mode: "codes", codes: ["es"] }, ["fr"]))
+        .toEqual([ALL_LANGUAGES_VALUE]);
+      expect(reconcileLanguageChipsForPodcasts({ mode: "codes", codes: ["es"] }, ["fr"]))
+        .not.toEqual(["fr"]);
+    });
+
+    it("keeps the selection when it still intersects available languages", () => {
+      expect(reconcileLanguageChipsForPodcasts(
+        { mode: "english" },
+        [ENGLISH_LANGUAGE_VALUE, "fr"]
+      )).toBeNull();
+      expect(reconcileLanguageChipsForPodcasts({ mode: "all" }, ["fr"])).toBeNull();
+      expect(reconcileLanguageChipsForPodcasts({ mode: "codes", codes: ["fr"] }, ["fr"]))
+        .toBeNull();
+    });
+
+    it("leaves selection alone when the show has no language facets", () => {
+      expect(reconcileLanguageChipsForPodcasts({ mode: "english" }, [])).toBeNull();
     });
   });
 
