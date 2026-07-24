@@ -25,12 +25,51 @@
         border-top-color: #222
 
 .browse-chrome-search
-    // Keep search readable on black browse pages
+    // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
+    // width: 100% + 4vw padding, uncapped) so the box lines up with the pill
+    // filters directly beneath it instead of the unrelated .page-rail (920px) grid.
+    width: 100%
+    margin: 0 auto
+    box-sizing: border-box
+    padding-left: 4vw
+    padding-right: 4vw
     ::ng-deep
+        #searchcontainer
+            margin: 0
+        #searchbar
+            align-items: center
+            gap: 12px
         #searchbox
+            margin-bottom: 0
+            .mat-mdc-text-field-wrapper,
             .mdc-text-field
+                height: 48px
                 background: rgba(20, 20, 20, 0.85) !important
+                backdrop-filter: blur(10px)
+            .mat-mdc-form-field-flex
+                height: 48px
+                align-items: center
+            .mat-mdc-form-field-infix
+                min-height: 48px !important
+                padding-top: 0 !important
+                padding-bottom: 0 !important
+                display: flex
+                align-items: center
+            .mat-mdc-chip-grid,
+            .mdc-evolution-chip-set__chips
+                align-items: center
+                min-height: 0
+            input.mat-mdc-chip-input,
+            #searchtext
+                font-size: 1.05rem
+                line-height: 1.25
+                margin: 0
+            .mat-mdc-form-field-subscript-wrapper
+                display: none
         #searchcta
+            align-self: center
+            height: 48px !important
+            min-height: 48px
             background: #e8a23a !important
             color: #111 !important
 
