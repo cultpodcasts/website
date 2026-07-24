@@ -74,46 +74,6 @@
     color: #fff
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7)
 
-.episode-poster__badges
-    position: absolute
-    left: 8px
-    right: 8px
-    bottom: 8px
-    z-index: 1
-    display: flex
-    align-items: flex-end
-    justify-content: space-between
-    gap: 6px
-    pointer-events: none
-
-.episode-poster__badge
-    display: inline-flex
-    align-items: center
-    justify-content: center
-    padding: 3px 7px
-    border-radius: 4px
-    background: rgba(0, 0, 0, 0.72)
-    color: #fff
-    font-size: 0.72rem
-    font-weight: 700
-    font-variant-numeric: tabular-nums
-    letter-spacing: 0.02em
-    backdrop-filter: blur(4px)
-    line-height: 1.2
-
-.episode-poster__badge--lang
-    padding: 6px 9px
-    font-size: 1.65rem
-    line-height: 1
-    font-weight: 400
-    letter-spacing: 0
-    // Keep the flag readable on busy thumbnails (homepage rails + search cards).
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6)
-    background: rgba(0, 0, 0, 0.78)
-
-.episode-poster__badge--duration
-    margin-left: auto
-
 .episode-poster__meta
     display: flex
     flex-wrap: wrap
@@ -121,6 +81,35 @@
     gap: 6px
     margin-top: 8px
     color: inherit
+
+// Lang then duration, flush right of Watch / queue on the action row.
+.episode-poster__meta-badges
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin-left: auto
+
+.episode-poster__badge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    padding: 3px 7px
+    border-radius: 4px
+    background: rgba(255, 255, 255, 0.12)
+    color: var(--nflx-text, #fff)
+    font-size: 0.72rem
+    font-weight: 700
+    font-variant-numeric: tabular-nums
+    letter-spacing: 0.02em
+    line-height: 1.2
+
+.episode-poster__badge--lang
+    padding: 2px 4px
+    font-size: 1.15rem
+    line-height: 1
+    font-weight: 400
+    letter-spacing: 0
+    background: transparent
 
 .episode-poster__cta
     display: inline-flex

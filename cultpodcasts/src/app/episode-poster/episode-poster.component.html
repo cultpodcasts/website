@@ -10,15 +10,6 @@
     <mat-icon>play_arrow</mat-icon>
     <span class="episode-poster__play-label">{{ playLabel() }}</span>
   </div>
-  <div class="episode-poster__badges">
-    @if (languageBadge(); as lang) {
-    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
-      [attr.aria-label]="lang.label">{{ lang.flag }}</span>
-    }
-    @if (duration()) {
-    <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
-    }
-  </div>
 </button>
 } @else {
 <a class="episode-poster__art" [routerLink]="['/podcast', episode().podcastName, episode().id]">
@@ -27,15 +18,6 @@
   } @else {
   <div class="episode-poster__placeholder" aria-hidden="true"></div>
   }
-  <div class="episode-poster__badges">
-    @if (languageBadge(); as lang) {
-    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
-      [attr.aria-label]="lang.label">{{ lang.flag }}</span>
-    }
-    @if (duration()) {
-    <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
-    }
-  </div>
 </a>
 }
 
@@ -50,6 +32,17 @@
     (click)="onToggleQueue($event)">
     <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
   </button>
+  }
+  @if (languageBadge() || duration()) {
+  <div class="episode-poster__meta-badges">
+    @if (languageBadge(); as lang) {
+    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
+      [attr.aria-label]="lang.label">{{ lang.flag }}</span>
+    }
+    @if (duration()) {
+    <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
+    }
+  </div>
   }
   <a class="episode-poster__titles" [routerLink]="['/podcast', episode().podcastName, episode().id]">
     @if (titleAsHtml()) {
