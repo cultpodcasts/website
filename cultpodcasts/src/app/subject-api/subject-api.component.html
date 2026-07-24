@@ -1,7 +1,11 @@
 <app-site-loading [active]="isLoading() || isSubsequentLoading()"
   [label]="isSubsequentLoading() ? 'Loading more episodes' : 'Updating results'" />
 
-@if (count() > 0) {
+@if (errorMessage() && !isLoading()) {
+<section class="browse-error">
+  <h2>{{errorMessage()}}</h2>
+</section>
+} @else {
 <section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
@@ -83,6 +87,7 @@
     }
   </div>
 
+  @if (count() > 0) {
   <div class="browse-grid">
     @for (result of results(); track result.id) {
     <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)" [titleAsHtml]="true"
@@ -96,18 +101,13 @@
     Loading more
   </div>
   }
-</section>
-}
-
-@if (errorMessage() && !isLoading()) {
-<section class="browse-error">
-  <h2>{{errorMessage()}}</h2>
-</section>
-} @else if (count() === 0 && !isLoading()) {
-<section class="browse-empty">
-  <h2>There were no results for "{{ displayCatalogName(subjectName()) }}"@if (query()){ and "{{query()}}"}</h2>
-  <div id="cta-button">
-    <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
-  </div>
+  } @else if (!isLoading()) {
+  <section class="browse-empty">
+    <h2>There were no results for "{{ displayCatalogName(subjectName()) }}"@if (query()){ and "{{query()}}"}</h2>
+    <div id="cta-button">
+      <button mat-flat-button color="primary" (click)="search()">Try Search!</button>
+    </div>
+  </section>
+  }
 </section>
 }
