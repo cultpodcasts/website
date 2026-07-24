@@ -19,8 +19,7 @@ import {
   episodeEmbedOptions,
   preferredEmbedService,
 } from '../episode-embed';
-import { HomepageEpisode } from '../homepage-episode.interface';
-import { episodeImageUrl } from '../search-result-links';
+import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 
 @Component({
   selector: 'app-episode-player',
@@ -38,7 +37,7 @@ import { episodeImageUrl } from '../search-result-links';
 export class EpisodePlayerComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
-  readonly episode = input<HomepageEpisode | undefined>(undefined);
+  readonly episode = input<SearchDisplayEpisode | undefined>(undefined);
   readonly closed = output<void>();
 
   protected readonly service = signal<EmbedService | undefined>(undefined);
@@ -57,6 +56,16 @@ export class EpisodePlayerComponent {
   protected readonly safeEmbedUrl = computed((): SafeResourceUrl | undefined => {
     const url = this.active()?.embedUrl;
     return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : undefined;
+  });
+
+  /** Force iframe remount when episode or service changes (browsers often ignore src-only updates). */
+  protected readonly embedKey = computed((): string | undefined => {
+    const ep = this.episode();
+    const current = this.active();
+    if (!ep || !current) {
+      return undefined;
+    }
+    return `${ep.id}:${current.service}:${current.embedUrl}`;
   });
 
   protected readonly artwork = computed(() => {

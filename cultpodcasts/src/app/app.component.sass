@@ -18,6 +18,22 @@
         background: rgba(11, 11, 11, 0.92)
         border-top-color: #222
 
+.browse-shell
+    background: #0b0b0b
+    footer
+        background: rgba(11, 11, 11, 0.92)
+        border-top-color: #222
+
+.browse-chrome-search
+    // Keep search readable on black browse pages
+    ::ng-deep
+        #searchbox
+            .mdc-text-field
+                background: rgba(20, 20, 20, 0.85) !important
+        #searchcta
+            background: #e8a23a !important
+            color: #111 !important
+
 .drop-overlay
     position: fixed
     inset: 0

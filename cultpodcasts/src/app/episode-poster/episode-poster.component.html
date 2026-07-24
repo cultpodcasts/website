@@ -1,0 +1,60 @@
+@if (playable()) {
+<button type="button" class="episode-poster__art" (click)="onPlay($event)"
+  [attr.aria-label]="playLabel() + ' ' + episode().episodeTitle">
+  @if (imageUrl(); as src) {
+  <img [src]="src" [alt]="" loading="lazy" />
+  } @else {
+  <div class="episode-poster__placeholder" aria-hidden="true"></div>
+  }
+  <div class="episode-poster__play" aria-hidden="true">
+    <mat-icon>play_arrow</mat-icon>
+    <span class="episode-poster__play-label">{{ playLabel() }}</span>
+  </div>
+  <div class="episode-poster__badges">
+    @if (languageBadge(); as lang) {
+    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
+      <mat-icon aria-hidden="true">translate</mat-icon>
+    </span>
+    }
+    @if (duration()) {
+    <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
+    }
+  </div>
+</button>
+} @else {
+<a class="episode-poster__art" [routerLink]="['/podcast', episode().podcastName, episode().id]">
+  @if (imageUrl(); as src) {
+  <img [src]="src" [alt]="episode().episodeTitle" loading="lazy" />
+  } @else {
+  <div class="episode-poster__placeholder" aria-hidden="true"></div>
+  }
+  <div class="episode-poster__badges">
+    @if (languageBadge(); as lang) {
+    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
+      <mat-icon aria-hidden="true">translate</mat-icon>
+    </span>
+    }
+    @if (duration()) {
+    <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
+    }
+  </div>
+</a>
+}
+
+<div class="episode-poster__meta">
+  @if (playable()) {
+  <button type="button" class="episode-poster__cta" (click)="onPlay($event)">
+    {{ playLabel() }}
+  </button>
+  }
+  <a class="episode-poster__titles" [routerLink]="['/podcast', episode().podcastName, episode().id]">
+    @if (titleAsHtml()) {
+    <span class="episode-poster__episode" [innerHTML]="episode().episodeTitle"></span>
+    } @else {
+    <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
+    }
+    @if (showShow()) {
+    <span class="episode-poster__show">{{ episode().podcastName }}</span>
+    }
+  </a>
+</div>

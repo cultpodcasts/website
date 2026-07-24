@@ -1,0 +1,28 @@
+:host
+    display: contents
+
+.site-loading
+    position: fixed
+    top: 0
+    left: 0
+    right: 0
+    z-index: 200
+    pointer-events: none
+
+.site-loading__track
+    height: 3px
+    overflow: hidden
+    background: rgba(232, 162, 58, 0.18)
+
+.site-loading__bar
+    height: 100%
+    width: 35%
+    border-radius: 0 2px 2px 0
+    background: linear-gradient(90deg, transparent, #e8a23a 30%, #f0c36a 70%, transparent)
+    animation: site-loading-slide 1.05s ease-in-out infinite
+
+@keyframes site-loading-slide
+    0%
+        transform: translateX(-120%)
+    100%
+        transform: translateX(320%)

@@ -16,7 +16,6 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { HomepageService } from '../homepage.service';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -24,9 +23,12 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
 import { episodeImageUrl } from '../search-result-links';
+import { SearchDisplayEpisode } from '../search-result-links';
 import { languageLabel } from '../subject-language-filter';
 import { isMetaSubject, pickObscureCults } from '../obscure-cults';
-import { episodeEmbedOptions } from '../episode-embed';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
 
 export interface EpisodeRail {
   id: string;
@@ -40,13 +42,14 @@ export interface EpisodeRail {
   selector: 'app-homepage-api',
   imports: [
     DecimalPipe,
-    MatProgressBarModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
     SlotMachineCounterComponent,
     SearchBarComponent,
     EpisodePlayerComponent,
+    EpisodePosterComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',
@@ -250,17 +253,21 @@ export class HomepageApiComponent {
     return duration.startsWith('0') ? duration.substring(1) : duration;
   }
 
-  canPlay(episode: HomepageEpisode): boolean {
+  canPlay(episode: HomepageEpisode | SearchDisplayEpisode): boolean {
     return episodeEmbedOptions(episode).length > 0;
   }
 
-  playEpisode(episode: HomepageEpisode, event?: Event): void {
+  playLabel(episode: HomepageEpisode | SearchDisplayEpisode): 'Watch' | 'Listen' {
+    return playActionLabel(episode);
+  }
+
+  playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
     if (!this.canPlay(episode)) {
       return;
     }
-    this.playingEpisode.set(episode);
+    this.playingEpisode.set(episode as HomepageEpisode);
     this.heroPaused.set(true);
   }
 

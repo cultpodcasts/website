@@ -1,15 +1,19 @@
 @if (episode(); as ep) {
 @if (active(); as current) {
-<div class="dock">
+<div class="dock" [class.dock--video]="current.service === 'youtube'">
   <div class="dock__embed" [class.dock__embed--video]="current.service === 'youtube'">
+    @if (embedKey(); as key) {
     @if (safeEmbedUrl(); as src) {
-    <iframe
-      [src]="src"
-      [title]="'Play ' + ep.episodeTitle + ' on ' + current.label"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      allowfullscreen
-      loading="lazy"
-      referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <div class="dock__frame" [attr.data-embed-key]="key">
+      <iframe
+        [src]="src"
+        [title]="'Play ' + ep.episodeTitle + ' on ' + current.label"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+    }
     }
   </div>
 

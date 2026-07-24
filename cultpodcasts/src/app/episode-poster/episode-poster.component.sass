@@ -1,0 +1,167 @@
+:host
+    display: block
+    color: inherit
+    scroll-snap-align: start
+    transition: transform 0.25s ease
+    &:hover,
+    &:focus-within
+        transform: scale(1.04)
+        z-index: 2
+        .episode-poster__play
+            opacity: 1
+    &.episode-poster--playing
+        .episode-poster__art
+            box-shadow: 0 0 0 2px var(--nflx-accent, #e8a23a), 0 8px 24px rgba(0, 0, 0, 0.45)
+        .episode-poster__play
+            opacity: 1
+
+.episode-poster__art
+    position: relative
+    display: block
+    width: 100%
+    padding: 0
+    border: 0
+    cursor: pointer
+    aspect-ratio: 16 / 9
+    border-radius: 6px
+    overflow: hidden
+    background: var(--nflx-panel, #141414)
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45)
+    color: inherit
+    text-align: left
+    text-decoration: none
+    img
+        width: 100%
+        height: 100%
+        object-fit: cover
+        display: block
+    &:focus-visible
+        outline: 2px solid var(--nflx-accent, #e8a23a)
+        outline-offset: 2px
+
+.episode-poster__placeholder
+    width: 100%
+    height: 100%
+    background: linear-gradient(135deg, #222, #111)
+
+.episode-poster__play
+    position: absolute
+    inset: 0
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: 6px
+    background: rgba(0, 0, 0, 0.4)
+    opacity: 0
+    transition: opacity 0.2s ease
+    mat-icon
+        font-size: 40px
+        width: 40px
+        height: 40px
+        color: #fff
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6))
+
+.episode-poster__play-label
+    font-size: 0.78rem
+    font-weight: 700
+    letter-spacing: 0.04em
+    text-transform: uppercase
+    color: #fff
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7)
+
+.episode-poster__badges
+    position: absolute
+    left: 8px
+    right: 8px
+    bottom: 8px
+    z-index: 1
+    display: flex
+    align-items: center
+    justify-content: space-between
+    gap: 6px
+    pointer-events: none
+
+.episode-poster__badge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    padding: 3px 7px
+    border-radius: 4px
+    background: rgba(0, 0, 0, 0.72)
+    color: #fff
+    font-size: 0.72rem
+    font-weight: 700
+    font-variant-numeric: tabular-nums
+    letter-spacing: 0.02em
+    backdrop-filter: blur(4px)
+    line-height: 1.2
+
+.episode-poster__badge--lang
+    padding: 3px
+    mat-icon
+        font-size: 14px
+        width: 14px
+        height: 14px
+
+.episode-poster__badge--duration
+    margin-left: auto
+
+.episode-poster__meta
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    gap: 6px
+    margin-top: 8px
+    color: inherit
+
+.episode-poster__cta
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    margin: 0
+    padding: 5px 12px
+    border: 0
+    border-radius: 4px
+    background: #fff
+    color: #111
+    font: inherit
+    font-size: 0.78rem
+    font-weight: 700
+    letter-spacing: 0.02em
+    cursor: pointer
+    &:hover,
+    &:focus-visible
+        background: var(--nflx-accent, #e8a23a)
+        outline: none
+
+.episode-poster__titles
+    display: block
+    text-decoration: none
+    color: inherit
+    min-width: 0
+    width: 100%
+    &:hover .episode-poster__episode,
+    &:focus-visible .episode-poster__episode
+        text-decoration: underline
+    &:focus-visible
+        outline: none
+
+.episode-poster__episode
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
+    overflow: hidden
+    font-size: 0.92rem
+    font-weight: 600
+    line-height: 1.25
+    color: #fff
+
+.episode-poster__show
+    display: block
+    margin-top: 2px
+    font-size: 0.8rem
+    color: var(--nflx-muted, #b3b3b3)
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis

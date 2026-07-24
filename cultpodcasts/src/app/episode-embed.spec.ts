@@ -1,6 +1,7 @@
 import {
   appleEmbedUrl,
   episodeEmbedOptions,
+  playActionLabel,
   preferredEmbedService,
   spotifyEmbedUrl,
   youtubeEmbedUrl,
@@ -51,6 +52,16 @@ describe('episode-embed', () => {
     }));
     expect(options.map((o) => o.service)).toEqual(['youtube', 'spotify', 'apple']);
     expect(preferredEmbedService(options)).toBe('youtube');
+  });
+
+  it('labels YouTube-first episodes Watch and others Listen', () => {
+    expect(playActionLabel(episode({
+      youtube: new URL('https://www.youtube.com/watch?v=abc123DEF45'),
+    }))).toBe('Watch');
+    expect(playActionLabel(episode({
+      spotify: new URL('https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P'),
+    }))).toBe('Listen');
+    expect(playActionLabel(episode())).toBe('Listen');
   });
 
   it('returns no options when no embeddable links exist', () => {

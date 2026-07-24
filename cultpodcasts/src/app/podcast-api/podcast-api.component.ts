@@ -1,17 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -24,21 +21,19 @@ import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { SubmitDialogResponse } from '../submit-dialog-response.interface';
 import { Share } from '../share.interface';
 import { RenamePodcastDialogComponent } from '../rename-podcast-dialog/rename-podcast-dialog.component';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
 import { SearchIndexerState } from '../search-indexer-state.interface';
-import { SearchDescriptionPipe } from '../search-description.pipe';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SearchDisplayEpisode } from '../search-result-links';
+import { canPlayEpisode } from '../episode-embed';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -49,21 +44,12 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-podcast-api',
   imports: [
-    MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    MatExpansionModule,
-    MatChipListbox,
-    MatChipOption,
-    EpisodeImageComponent,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    SubjectsComponent,
-    SearchDescriptionPipe
+    EpisodePosterComponent,
+    EpisodePlayerComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass',
@@ -85,6 +71,7 @@ export class PodcastApiComponent {
   protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
   protected facets = signal<SearchResultsFacets>({});
+  protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
   protected subjects = signal<string[]>([]);
   private subjectsFilter: string = "";
   protected isSubsequentLoading = signal<boolean>(false);
@@ -386,17 +373,36 @@ export class PodcastApiComponent {
     });
   }
 
-  subjectsChange($event: MatChipListboxChange) {
-    const delimiter = '£';
-    var items: { count: number, value: string }[] = $event.value;
-    const subjects = items.map(x => x.value.replaceAll("'", "''"));
-    this.subjects.set(subjects);
-    if (subjects.length == 0) {
-      this.subjectsFilter = "";
-    } else {
-      var subjectsList = subjects.join(delimiter);
-      this.subjectsFilter = ` and subjects/any(s: search.in(s, '${subjectsList}', '${delimiter}'))`;
+  protected sortLabel = computed(() => {
+    switch (this.sortOrder()) {
+      case sortParamDateAsc:
+        return 'Oldest first';
+      case sortParamRank:
+        return 'Suggestions';
+      default:
+        return 'Newest first';
     }
+  });
+
+  clearSubjects(): void {
+    if (this.subjects().length === 0) {
+      return;
+    }
+    this.subjects.set([]);
+    this.subjectsFilter = '';
+    this.page = 1;
+    this.execSearch(true, false);
+  }
+
+  toggleSubject(value: string): void {
+    const current = this.subjects();
+    const next = current.includes(value)
+      ? current.filter((s) => s !== value)
+      : [...current, value];
+    this.subjects.set(next);
+    this.subjectsFilter = next.length === 0
+      ? ''
+      : ` and subjects/any(s: search.in(s, '${next.map((s) => s.replaceAll("'", "''")).join('£')}', '£'))`;
     this.page = 1;
     this.execSearch(true, false);
   }
@@ -409,6 +415,24 @@ export class PodcastApiComponent {
 
   isSelected(o1: any, o2: any): boolean {
     return true;
+  }
+
+  playEpisode(episode: SearchDisplayEpisode): void {
+    if (!canPlayEpisode(episode)) {
+      return;
+    }
+    this.playingEpisode.set(episode);
+  }
+
+  closePlayer(): void {
+    this.playingEpisode.set(undefined);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.playingEpisode()) {
+      this.closePlayer();
+    }
   }
 
 }

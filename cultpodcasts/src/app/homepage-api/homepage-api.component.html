@@ -1,12 +1,14 @@
 <section class="nflx" [class.nflx--ready]="!isLoading() && !isInError()"
   [class.nflx--playing]="!!playingEpisode()">
+  <app-site-loading [active]="isLoading()" label="Loading homepage" />
+
   <div class="nflx-search">
     <app-search-bar></app-search-bar>
   </div>
 
   @if (isLoading()) {
-  <div class="nflx-loading">
-    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  <div class="nflx-loading" aria-hidden="true">
+    <div class="nflx-loading__pulse"></div>
   </div>
   } @else if (isInError()) {
   <div class="nflx-error page-rail">
@@ -58,13 +60,13 @@
           @if (canPlay(feature)) {
           <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">
             <mat-icon>play_arrow</mat-icon>
-            Listen
+            {{ playLabel(feature) }}
           </button>
           } @else {
           <a mat-flat-button class="billboard__play"
             [routerLink]="['/podcast', feature.podcastName, feature.id]">
             <mat-icon>play_arrow</mat-icon>
-            Listen
+            {{ playLabel(feature) }}
           </a>
           }
           <a mat-stroked-button class="billboard__more"
@@ -133,11 +135,11 @@
   </section>
 
   @if (obscureCults().length > 0) {
-  <section class="obscure" aria-label="Obscure cults">
+  <section class="obscure" aria-label="Discover">
     <div class="obscure__heading">
       <div>
         <p class="obscure__eyebrow">This week</p>
-        <h2 class="obscure__title">Obscure cults</h2>
+        <h2 class="obscure__title">Discover</h2>
         <p class="obscure__lede">Lesser-known groups turning up in new episodes</p>
       </div>
     </div>
@@ -178,49 +180,8 @@
       <div class="rail__scroller" tabindex="0">
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {
-          <div class="poster" [class.poster--playing]="playingEpisode()?.id === item.id">
-            @if (canPlay(item)) {
-            <button type="button" class="poster__art" (click)="playEpisode(item)"
-              [attr.aria-label]="'Play ' + item.episodeTitle">
-              @if (posterImage(item); as src) {
-              <img [src]="src" [alt]="" loading="lazy" />
-              } @else {
-              <div class="poster__placeholder" aria-hidden="true"></div>
-              }
-              <div class="poster__play" aria-hidden="true">
-                <mat-icon>play_arrow</mat-icon>
-              </div>
-              <div class="poster__badges">
-                @if (nonEnglishLabel(item); as lang) {
-                <span class="poster__badge poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
-                  <mat-icon aria-hidden="true">translate</mat-icon>
-                </span>
-                }
-                <span class="poster__badge poster__badge--duration">{{ durationLabel(item.duration) }}</span>
-              </div>
-            </button>
-            } @else {
-            <a class="poster__art" [routerLink]="['/podcast', item.podcastName, item.id]">
-              @if (posterImage(item); as src) {
-              <img [src]="src" [alt]="item.episodeTitle" loading="lazy" />
-              } @else {
-              <div class="poster__placeholder" aria-hidden="true"></div>
-              }
-              <div class="poster__badges">
-                @if (nonEnglishLabel(item); as lang) {
-                <span class="poster__badge poster__badge--lang" [attr.title]="lang" [attr.aria-label]="lang">
-                  <mat-icon aria-hidden="true">translate</mat-icon>
-                </span>
-                }
-                <span class="poster__badge poster__badge--duration">{{ durationLabel(item.duration) }}</span>
-              </div>
-            </a>
-            }
-            <a class="poster__meta" [routerLink]="['/podcast', item.podcastName, item.id]">
-              <span class="poster__episode">{{ item.episodeTitle }}</span>
-              <span class="poster__show">{{ item.podcastName }}</span>
-            </a>
-          </div>
+          <app-episode-poster class="rail-poster" [episode]="item"
+            [playing]="playingEpisode()?.id === item.id" (play)="playEpisode($event)" />
           }
         </div>
       </div>

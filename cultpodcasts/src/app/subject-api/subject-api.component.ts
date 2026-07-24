@@ -1,29 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DatePipe } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { SearchResultsFacets } from '../search-results-facets.interface';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
 import { FacetState } from '../facet-state.interface';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import {
@@ -38,7 +29,11 @@ import {
   shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
-import { SearchDescriptionPipe } from '../search-description.pipe';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SearchDisplayEpisode } from '../search-result-links';
+import { canPlayEpisode } from '../episode-embed';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -49,21 +44,12 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-subject-api',
   imports: [
-    MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    MatExpansionModule,
-    MatChipListbox,
-    MatChipOption,
-    EpisodeImageComponent,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    SubjectsComponent,
-    SearchDescriptionPipe
+    EpisodePosterComponent,
+    EpisodePlayerComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './subject-api.component.html',
   styleUrl: './subject-api.component.sass',
@@ -85,6 +71,7 @@ export class SubjectApiComponent {
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
+  protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
   private podcastFilter: string = "";
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
@@ -320,30 +307,66 @@ export class SubjectApiComponent {
     });
   }
 
-  podcastsChange($event: MatChipListboxChange) {
-    const delimiter = '£';
-    var items: { count: number, value: string }[] = $event.value;
-    const podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    this.podcasts.set(podcasts);
-    if (podcasts.length == 0) {
-      this.podcastFilter = "";
-    } else {
-      var podcastsNameList = podcasts.join(delimiter);
-      this.podcastFilter = ` and search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
+  protected sortLabel = computed(() => {
+    switch (this.sortOrder()) {
+      case sortParamDateAsc:
+        return 'Oldest first';
+      case sortParamRank:
+        return 'Suggestions';
+      default:
+        return 'Newest first';
     }
+  });
+
+  clearPodcasts(): void {
+    if (this.podcasts().length === 0) {
+      return;
+    }
+    this.podcasts.set([]);
+    this.podcastFilter = '';
     this.page = 1;
     this.execSearch(true, false);
   }
 
-  languagesChange($event: MatChipListboxChange) {
-    const values: string[] = ($event.value as Array<string | { value: string }>)
-      .map(item => typeof item === "string" ? item : item.value);
-    let selected: string[];
-    if (values.includes(ALL_LANGUAGES_VALUE) && values.length > 1) {
-      selected = [ALL_LANGUAGES_VALUE];
+  togglePodcast(value: string): void {
+    const current = this.podcasts();
+    const next = current.includes(value)
+      ? current.filter((p) => p !== value)
+      : [...current, value];
+    this.podcasts.set(next);
+    this.podcastFilter = next.length === 0
+      ? ''
+      : ` and search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+    this.page = 1;
+    this.execSearch(true, false);
+  }
+
+  selectLanguage(value: string): void {
+    this.applyLanguageSelection([value]);
+  }
+
+  toggleLanguage(value: string): void {
+    let selected = this.selectedLanguageValues().filter(
+      (v) => v !== ALL_LANGUAGES_VALUE
+    );
+    if (selected.includes(value)) {
+      selected = selected.filter((v) => v !== value);
     } else {
-      selected = values;
+      selected = [...selected, value];
     }
+    if (selected.length === 0) {
+      selected = [ALL_LANGUAGES_VALUE];
+    }
+    this.applyLanguageSelection(selected);
+  }
+
+  clearAllFilters(): void {
+    this.podcasts.set([]);
+    this.podcastFilter = '';
+    this.applyLanguageSelection([ALL_LANGUAGES_VALUE]);
+  }
+
+  private applyLanguageSelection(selected: string[]): void {
     this.selectedLanguageValues.set(selected);
     this.languageSelection.set(selectionFromChipValues(selected));
     this.page = 1;
@@ -364,5 +387,23 @@ export class SubjectApiComponent {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
+  }
+
+  playEpisode(episode: SearchDisplayEpisode): void {
+    if (!canPlayEpisode(episode)) {
+      return;
+    }
+    this.playingEpisode.set(episode);
+  }
+
+  closePlayer(): void {
+    this.playingEpisode.set(undefined);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.playingEpisode()) {
+      this.closePlayer();
+    }
   }
 }

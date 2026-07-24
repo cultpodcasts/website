@@ -1,29 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DatePipe } from '@angular/common';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatChipListbox, MatChipListboxChange, MatChipOption } from '@angular/material/chips';
-import { SearchResultsFacets } from '../search-results-facets.interface';
-import { FacetState } from '../facet-state.interface';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SubjectsComponent } from "../subjects/subjects.component";
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
-import { SearchDescriptionPipe } from '../search-description.pipe';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { SearchDisplayEpisode } from '../search-result-links';
+import { canPlayEpisode } from '../episode-embed';
+import { SearchResultsFacets } from '../search-results-facets.interface';
+import { FacetState } from '../facet-state.interface';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -36,21 +31,12 @@ const sortParamDateDesc: string = "date-desc";
 @Component({
   selector: 'app-search-api',
   imports: [
-    MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    MatExpansionModule,
-    MatChipListbox,
-    MatChipOption,
-    EpisodeImageComponent,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    SubjectsComponent,
-    SearchDescriptionPipe
+    EpisodePosterComponent,
+    EpisodePlayerComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass',
@@ -76,6 +62,7 @@ export class SearchApiComponent {
   private subjectsFilter: string = "";
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
+  protected playingEpisode = signal<SearchDisplayEpisode | undefined>(undefined);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
@@ -251,36 +238,70 @@ export class SearchApiComponent {
     this.router.navigate([url], { queryParams: params });
   }
 
-  podcastsChange($event: MatChipListboxChange) {
-    const delimiter = '£';
-    var items: { count: number, value: string }[] = $event.value;
-    const podcasts = items.map(x => x.value.replaceAll("'", "''"));
-    this.podcasts.set(podcasts);
-    if (podcasts.length == 0) {
-      this.podcastsFilter = "";
-    } else {
-      var podcastsNameList = podcasts.join(delimiter);
-      this.podcastsFilter = `search.in(podcastName, '${podcastsNameList}', '${delimiter}')`;
+  protected sortLabel = computed(() => {
+    switch (this.sortOrder()) {
+      case sortParamDateAsc:
+        return 'Oldest first';
+      case sortParamDateDesc:
+        return 'Newest first';
+      default:
+        return 'Suggestions';
     }
-    const reset = { subjects: true };
+  });
+
+  clearSubjects(): void {
+    if (this.subjects().length === 0) {
+      return;
+    }
+    this.subjects.set([]);
+    this.subjectsFilter = '';
     this.page = 1;
-    this.execSearch(true, reset);
+    this.execSearch(true, { podcasts: true });
   }
 
-  subjectsChange($event: MatChipListboxChange) {
-    const delimiter = '£';
-    var items: { count: number, value: string }[] = $event.value;
-    const subjects = items.map(x => x.value.replaceAll("'", "''"));
-    this.subjects.set(subjects);
-    if (subjects.length == 0) {
-      this.subjectsFilter = "";
-    } else {
-      var subjectsameList = subjects.join(delimiter);
-      this.subjectsFilter = `subjects/any(s: search.in(s, '${subjectsameList}', '${delimiter}'))`;
-    }
-    const reset = { podcasts: true };
+  toggleSubject(value: string): void {
+    const current = this.subjects();
+    const next = current.includes(value)
+      ? current.filter((s) => s !== value)
+      : [...current, value];
+    this.subjects.set(next);
+    this.subjectsFilter = next.length === 0
+      ? ''
+      : `subjects/any(s: search.in(s, '${next.map((s) => s.replaceAll("'", "''")).join('£')}', '£'))`;
     this.page = 1;
-    this.execSearch(true, reset);
+    this.execSearch(true, { podcasts: true });
+  }
+
+  clearPodcasts(): void {
+    if (this.podcasts().length === 0) {
+      return;
+    }
+    this.podcasts.set([]);
+    this.podcastsFilter = '';
+    this.page = 1;
+    this.execSearch(true, { subjects: true });
+  }
+
+  togglePodcast(value: string): void {
+    const current = this.podcasts();
+    const next = current.includes(value)
+      ? current.filter((p) => p !== value)
+      : [...current, value];
+    this.podcasts.set(next);
+    this.podcastsFilter = next.length === 0
+      ? ''
+      : `search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+    this.page = 1;
+    this.execSearch(true, { subjects: true });
+  }
+
+  clearAllFilters(): void {
+    this.subjects.set([]);
+    this.podcasts.set([]);
+    this.subjectsFilter = '';
+    this.podcastsFilter = '';
+    this.page = 1;
+    this.execSearch(true, { subjects: true, podcasts: true });
   }
 
   isScrolledToBottom(): boolean {
@@ -307,5 +328,23 @@ export class SearchApiComponent {
       filter += subjectsFilter;
     }
     return filter;
+  }
+
+  playEpisode(episode: SearchDisplayEpisode): void {
+    if (!canPlayEpisode(episode)) {
+      return;
+    }
+    this.playingEpisode.set(episode);
+  }
+
+  closePlayer(): void {
+    this.playingEpisode.set(undefined);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.playingEpisode()) {
+      this.closePlayer();
+    }
   }
 }

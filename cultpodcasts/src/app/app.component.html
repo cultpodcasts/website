@@ -33,11 +33,12 @@
 }
 <section id="body"
   [class.home-shell]="isHomePage()"
+  [class.browse-shell]="!isHomePage()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
   <app-toolbar></app-toolbar>
   @if (!isHomePage()) {
-  <div class="page-rail chrome-search">
+  <div class="page-rail chrome-search browse-chrome-search">
     <app-search-bar></app-search-bar>
   </div>
   }

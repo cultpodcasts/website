@@ -1,5 +1,4 @@
-import { HomepageEpisode } from './homepage-episode.interface';
-import { appleUrl, spotifyUrl, youtubeUrl } from './search-result-links';
+import { SearchDisplayEpisode, appleUrl, spotifyUrl, youtubeUrl } from './search-result-links';
 
 export type EmbedService = 'youtube' | 'spotify' | 'apple';
 
@@ -14,7 +13,7 @@ export interface EpisodeEmbedOption {
 
 const SERVICE_ORDER: EmbedService[] = ['youtube', 'spotify', 'apple'];
 
-export function episodeEmbedOptions(episode: HomepageEpisode): EpisodeEmbedOption[] {
+export function episodeEmbedOptions(episode: SearchDisplayEpisode): EpisodeEmbedOption[] {
   const options: EpisodeEmbedOption[] = [];
 
   const yt = youtubeUrl(episode);
@@ -57,6 +56,16 @@ export function episodeEmbedOptions(episode: HomepageEpisode): EpisodeEmbedOptio
 
 export function preferredEmbedService(options: EpisodeEmbedOption[]): EmbedService | undefined {
   return options[0]?.service;
+}
+
+/** Primary CTA label: Watch when YouTube is preferred, otherwise Listen. */
+export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Listen' {
+  const preferred = preferredEmbedService(episodeEmbedOptions(episode));
+  return preferred === 'youtube' ? 'Watch' : 'Listen';
+}
+
+export function canPlayEpisode(episode: SearchDisplayEpisode): boolean {
+  return episodeEmbedOptions(episode).length > 0;
 }
 
 export function youtubeEmbedUrl(watchUrl: URL): string | undefined {
