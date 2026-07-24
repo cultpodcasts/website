@@ -7,8 +7,11 @@
         list-style-type: none
         padding: 0
         gap: 10px
-        #searchbox
+        #searchboxwrapper
+            position: relative
             flex-grow: 1
+        #searchbox
+            width: 100%
             margin-bottom: 0
             height: var(--search-bar-control-h)
             ::ng-deep
@@ -52,6 +55,45 @@
                     text-overflow: ellipsis
             input.mat-mdc-chip-input
                 flex: 1 0 10px
+        #search-suggestions-listbox
+            position: absolute
+            top: calc(100% + 6px)
+            left: 0
+            right: 0
+            z-index: 20
+            margin: 0
+            padding: 6px
+            list-style: none
+            border-radius: 12px
+            background: var(--mat-sys-surface-container-high, #2a2a2e)
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35)
+            max-height: 320px
+            overflow-y: auto
+            .suggestion-item
+                display: flex
+                align-items: center
+                gap: 8px
+                padding: 8px 10px
+                border-radius: 8px
+                cursor: pointer
+                .suggestion-icon
+                    flex-shrink: 0
+                    font-size: 20px
+                    height: 20px
+                    width: 20px
+                    opacity: 0.75
+                .suggestion-label
+                    flex: 1 1 auto
+                    overflow: hidden
+                    text-overflow: ellipsis
+                    white-space: nowrap
+                .suggestion-alias
+                    flex-shrink: 0
+                    font-size: 0.75rem
+                    opacity: 0.6
+                &:hover,
+                &.active
+                    background: rgba(255, 255, 255, 0.08)
         #searchcta
             align-self: center
             display: inline-flex
