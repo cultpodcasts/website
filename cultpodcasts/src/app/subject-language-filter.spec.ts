@@ -29,6 +29,14 @@ describe("subject-language-filter", () => {
     expect(selectionFromChipValues([ALL_LANGUAGES_VALUE])).toEqual({ mode: "all" });
   });
 
+  it("allows non-English-only selection after English is deselected", () => {
+    expect(selectionFromChipValues([ENGLISH_LANGUAGE_VALUE, "pt"]))
+      .toEqual({ mode: "englishAndCodes", codes: ["pt"] });
+    expect(selectionFromChipValues(["pt"])).toEqual({ mode: "codes", codes: ["pt"] });
+    expect(selectionFromChipValues(["es", "pt"]))
+      .toEqual({ mode: "codes", codes: ["es", "pt"] });
+  });
+
   it("synthesizes English count from omitted null facet buckets", () => {
     expect(englishFacetCount(100, [{ value: "es", count: 30 }, { value: "fr", count: 20 }])).toBe(50);
   });
