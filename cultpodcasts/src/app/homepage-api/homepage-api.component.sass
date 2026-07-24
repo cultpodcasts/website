@@ -17,6 +17,12 @@
 
 .nflx-search
     --nflx-search-h: 48px
+    // Feed Material's own outline-sizing tokens too, since the MDC outlined
+    // field hardcodes `.mdc-text-field--outlined { height: 56px }` — the
+    // token override below isn't read by that rule, so the explicit
+    // !important heights further down are what actually win the cascade.
+    --mat-form-field-container-height: var(--nflx-search-h)
+    --mat-form-field-container-vertical-padding: 0px
     position: absolute
     top: 72px
     left: 50%
@@ -31,14 +37,23 @@
             gap: 12px
         #searchbox
             margin-bottom: 0
+            // `.mdc-text-field--outlined` ships a hardcoded `height: 56px` in
+            // Angular Material with the same (single-class) specificity as
+            // our own rule, so without matching its exact selectors + !important
+            // the library rule can win the cascade and the wrapper renders
+            // taller than the infix inside it (measured 68px vs 48px infix).
             .mat-mdc-text-field-wrapper,
-            .mdc-text-field
-                height: var(--nflx-search-h)
+            .mdc-text-field,
+            .mdc-text-field--outlined,
+            .mdc-text-field--no-label
+                height: var(--nflx-search-h) !important
+                min-height: var(--nflx-search-h) !important
+                align-items: center !important
                 background: rgba(20, 20, 20, 0.72) !important
                 backdrop-filter: blur(10px)
             .mat-mdc-form-field-flex
-                height: var(--nflx-search-h)
-                align-items: center
+                height: var(--nflx-search-h) !important
+                align-items: center !important
             .mat-mdc-form-field-infix
                 min-height: var(--nflx-search-h) !important
                 padding-top: 0 !important

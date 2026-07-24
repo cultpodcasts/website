@@ -28,6 +28,13 @@
     // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
     // width: 100% + 4vw padding, uncapped) so the box lines up with the pill
     // filters directly beneath it instead of the unrelated .page-rail (920px) grid.
+    --nflx-search-h: 48px
+    // Angular Material hardcodes `.mdc-text-field--outlined { height: 56px }`
+    // with the same specificity as a plain `.mdc-text-field` override, so the
+    // token below is belt-and-braces — the !important heights further down on
+    // the library's own selectors are what actually win the cascade.
+    --mat-form-field-container-height: var(--nflx-search-h)
+    --mat-form-field-container-vertical-padding: 0px
     width: 100%
     margin: 0 auto
     box-sizing: border-box
@@ -42,15 +49,19 @@
         #searchbox
             margin-bottom: 0
             .mat-mdc-text-field-wrapper,
-            .mdc-text-field
-                height: 48px
+            .mdc-text-field,
+            .mdc-text-field--outlined,
+            .mdc-text-field--no-label
+                height: var(--nflx-search-h) !important
+                min-height: var(--nflx-search-h) !important
+                align-items: center !important
                 background: rgba(20, 20, 20, 0.85) !important
                 backdrop-filter: blur(10px)
             .mat-mdc-form-field-flex
-                height: 48px
-                align-items: center
+                height: var(--nflx-search-h) !important
+                align-items: center !important
             .mat-mdc-form-field-infix
-                min-height: 48px !important
+                min-height: var(--nflx-search-h) !important
                 padding-top: 0 !important
                 padding-bottom: 0 !important
                 display: flex
@@ -68,8 +79,8 @@
                 display: none
         #searchcta
             align-self: center
-            height: 48px !important
-            min-height: 48px
+            height: var(--nflx-search-h) !important
+            min-height: var(--nflx-search-h)
             background: #e8a23a !important
             color: #111 !important
 
