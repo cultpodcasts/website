@@ -5,8 +5,14 @@
 <div class="frame-shell">
 @if (episode(); as ep) {
 @if (active(); as current) {
-<div class="stage" [class.stage--video]="current.service === 'youtube'">
-  <div class="stage__embed" [class.stage__embed--video]="current.service === 'youtube'">
+<div class="stage"
+  [class.stage--video]="current.service === 'youtube'"
+  [class.stage--spotify]="current.service === 'spotify'"
+  [class.stage--apple]="current.service === 'apple'">
+  <div class="stage__embed"
+    [class.stage__embed--video]="current.service === 'youtube'"
+    [class.stage__embed--spotify]="current.service === 'spotify'"
+    [class.stage__embed--apple]="current.service === 'apple'">
     @for (src of [safeEmbedUrl()]; track src) {
     @if (src) {
     <div class="stage__frame" [attr.data-embed-key]="embedKey()">

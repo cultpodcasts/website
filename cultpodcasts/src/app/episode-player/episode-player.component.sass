@@ -74,9 +74,18 @@
     iframe
         display: block
         width: 100%
-        height: 152px
         border: 0
         background: #000
+
+// Per-service embed heights (dock defaults).
+.stage__embed--spotify iframe
+    height: 152px
+
+.stage__embed--apple
+    background: #fff
+    iframe
+        height: 175px
+        background: transparent
 
 .stage__embed--video
     background: transparent
@@ -104,10 +113,12 @@
     border-radius: 12px
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7)
 
-// Audio (Spotify/Apple) embeds get a taller iframe in theater so "expand" reads
-// as an actual expansion rather than the same compact dock-height widget.
-:host.episode-player--theater .stage__embed:not(.stage__embed--video) iframe
+// Spotify expands in theater; Apple episode embed stays compact (175px min per Apple docs).
+:host.episode-player--theater .stage__embed--spotify iframe
     height: 352px
+
+:host.episode-player--theater .stage__embed--apple iframe
+    height: 175px
 
 :host.episode-player--theater .stage__embed--video .stage__frame
     width: 100%
