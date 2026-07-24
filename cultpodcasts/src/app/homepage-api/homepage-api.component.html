@@ -4,6 +4,21 @@
       [title]="totalDuration()"></app-slot-machine-counter> podcasts on the subject of Cults.
   </p>
 </section>
+
+<section id="flix-promo" aria-label="New interface prototype">
+  <p class="flix-promo__eyebrow">Prototype</p>
+  <h2 class="flix-promo__title">Try a new Cult Podcasts interface</h2>
+  <p class="flix-promo__lede">
+    A browse-first experiment for discovering episodes. The classic site stays here —
+    open the prototype if you want to take a look.
+  </p>
+  <a mat-flat-button color="primary" class="flix-promo__cta"
+    href="https://flix.cultpodcasts.com" target="_blank" rel="noopener noreferrer">
+    <mat-icon>open_in_new</mat-icon>
+    Open Flix
+  </a>
+</section>
+
 <div id="progresswrapper">
   @if (isLoading()) {
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
