@@ -24,8 +24,7 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { episodeImageUrl } from '../search-result-links';
 import { languageLabel } from '../subject-language-filter';
-import { episodeEmbedOptions } from '../episode-embed';
-import { EpisodePlayerComponent } from '../episode-player/episode-player.component';
+import { isMetaSubject, pickObscureCults } from '../obscure-cults';
 
 export interface EpisodeRail {
   id: string;
@@ -53,8 +52,9 @@ export interface EpisodeRail {
 export class HomepageApiComponent {
   private static readonly heroSlideCount = 8;
   private static readonly heroIntervalMs = 7500;
-  private static readonly subjectRailCount = 8;
+  private static readonly subjectRailCount = 6;
   private static readonly subjectRailMinEpisodes = 3;
+  private static readonly obscureCultCount = 12;
 
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   private allEpisodes = signal<HomepageEpisode[]>([]);
@@ -134,7 +134,7 @@ export class HomepageApiComponent {
     const bySubject = new Map<string, HomepageEpisode[]>();
     for (const ep of this.allEpisodes()) {
       for (const raw of ep.subjects ?? []) {
-        if (!raw || raw.startsWith('_')) {
+        if (!raw || raw.startsWith('_') || isMetaSubject(raw)) {
           continue;
         }
         const list = bySubject.get(raw);
@@ -161,6 +161,15 @@ export class HomepageApiComponent {
           .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime()),
       }));
   });
+
+  /** Lesser-known named groups from this week's episodes. */
+  protected readonly obscureCults = computed(() =>
+    pickObscureCults(
+      this.allEpisodes(),
+      (episode) => episodeImageUrl(episode)?.toString(),
+      { limit: HomepageApiComponent.obscureCultCount }
+    )
+  );
 
   protected readonly rails = computed((): EpisodeRail[] => {
     const g = this.grouped();

@@ -124,6 +124,35 @@
     </div>
   </section>
 
+  @if (obscureCults().length > 0) {
+  <section class="obscure" aria-label="Obscure cults">
+    <div class="obscure__heading">
+      <div>
+        <p class="obscure__eyebrow">This week</p>
+        <h2 class="obscure__title">Obscure cults</h2>
+        <p class="obscure__lede">Lesser-known groups turning up in new episodes</p>
+      </div>
+    </div>
+    <div class="obscure__scroller" tabindex="0">
+      <div class="obscure__track">
+        @for (cult of obscureCults(); track cult.subject) {
+        <a class="obscure__card" [routerLink]="['/subject', cult.subject]">
+          <div class="obscure__art">
+            @if (cult.imageUrl) {
+            <img [src]="cult.imageUrl" [alt]="" loading="lazy" />
+            } @else {
+            <div class="obscure__placeholder" aria-hidden="true"></div>
+            }
+            <span class="obscure__count">{{ cult.episodes.length }} new</span>
+          </div>
+          <span class="obscure__name">{{ cult.subject }}</span>
+        </a>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
   <div class="nflx-rows">
     @for (rail of rails(); track rail.id) {
     <section class="rail" [class.rail--subject]="!!rail.subject" [attr.aria-label]="rail.title">

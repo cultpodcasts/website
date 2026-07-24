@@ -329,6 +329,115 @@
 .billboard:focus-within .billboard__dot-fill.is-running
     animation-play-state: paused
 
+.obscure
+    position: relative
+    z-index: 2
+    margin: 28px 0 8px
+    padding: 0 0 8px
+
+.obscure__heading
+    margin: 0 4vw 14px
+
+.obscure__eyebrow
+    margin: 0 0 4px
+    font-size: 0.75rem
+    font-weight: 700
+    letter-spacing: 0.18em
+    text-transform: uppercase
+    color: var(--nflx-accent)
+
+.obscure__title
+    margin: 0
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-size: clamp(1.8rem, 3.5vw, 2.4rem)
+    font-weight: 400
+    letter-spacing: -0.02em
+
+.obscure__lede
+    margin: 6px 0 0
+    font-size: 0.95rem
+    color: var(--nflx-muted)
+
+.obscure__scroller
+    overflow-x: auto
+    overflow-y: hidden
+    padding: 4px 0 12px
+    scroll-snap-type: x mandatory
+    scrollbar-width: thin
+    scrollbar-color: #444 transparent
+    &:focus-visible
+        outline: 2px solid var(--nflx-accent)
+        outline-offset: -2px
+
+.obscure__track
+    display: flex
+    gap: 14px
+    padding: 0 4vw
+    width: max-content
+
+.obscure__card
+    display: block
+    width: min(42vw, 168px)
+    flex: 0 0 min(42vw, 168px)
+    text-decoration: none
+    color: inherit
+    scroll-snap-align: start
+    transition: transform 0.22s ease
+    &:hover,
+    &:focus-visible
+        transform: translateY(-4px) scale(1.03)
+        outline: none
+        .obscure__art
+            box-shadow: 0 0 0 2px var(--nflx-accent), 0 16px 32px rgba(0, 0, 0, 0.5)
+        .obscure__name
+            color: var(--nflx-accent)
+
+.obscure__art
+    position: relative
+    aspect-ratio: 1
+    border-radius: 12px
+    overflow: hidden
+    background: var(--nflx-panel)
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4)
+    transition: box-shadow 0.22s ease
+    img
+        width: 100%
+        height: 100%
+        object-fit: cover
+        display: block
+        filter: saturate(1.05) contrast(1.04)
+
+.obscure__placeholder
+    width: 100%
+    height: 100%
+    background: linear-gradient(145deg, #2a2218, #121212)
+
+.obscure__count
+    position: absolute
+    left: 8px
+    bottom: 8px
+    padding: 3px 8px
+    border-radius: 999px
+    background: rgba(0, 0, 0, 0.72)
+    border: 1px solid rgba(232, 162, 58, 0.45)
+    color: #f0d2a0
+    font-size: 0.68rem
+    font-weight: 700
+    letter-spacing: 0.04em
+    text-transform: uppercase
+    backdrop-filter: blur(4px)
+
+.obscure__name
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
+    overflow: hidden
+    margin-top: 10px
+    font-size: 0.95rem
+    font-weight: 700
+    line-height: 1.25
+    transition: color 0.15s ease
+
 .nflx-rows
     position: relative
     z-index: 2
@@ -561,6 +670,11 @@
         width: 260px
         flex-basis: 260px
 
+@media screen and (min-width: 900px)
+    .obscure__card
+        width: 180px
+        flex-basis: 180px
+
 @media screen and (max-width: 700px)
     .nflx-search
         top: 64px
@@ -574,6 +688,9 @@
         padding: 0 0 18px
         border-inline: 0
         border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    .obscure__card
+        width: 42vw
+        flex-basis: 42vw
 
 @media screen and (max-width: 600px)
     .billboard
