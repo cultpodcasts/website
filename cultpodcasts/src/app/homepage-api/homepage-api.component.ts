@@ -63,11 +63,16 @@ export class HomepageApiComponent {
   private static readonly subjectRailCount = 6;
   private static readonly subjectRailMinEpisodes = 3;
   private static readonly obscureCultCount = 12;
-  /** Hero pool draws from recent releases, top subjects and Discover — always kept above 8. */
-  private static readonly heroPoolSize = 14;
-  private static readonly heroRecentContribution = 6;
+  /** Hero pool draws across the past week — recent releases, subjects and Discover. */
+  private static readonly heroPoolSize = 18;
+  /** How many week-wide recent picks (time-bucket rotated, not always the absolute newest). */
+  private static readonly heroRecentContribution = 10;
   private static readonly heroSubjectContribution = 6;
   private static readonly heroDiscoverContribution = 6;
+  /** Recency window to rotate through before capping contribution (covers most of a busy week). */
+  private static readonly heroRecentWindow = 48;
+  /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
+  private static readonly heroBucketMs = 3 * 60 * 60 * 1000;
   /** Background freshness: cadence for the homepage staying open unattended. */
   private static readonly backgroundRefreshIntervalMs = 20 * 60 * 1000;
   /** Floor between any two fetches (interval or visibility-triggered) so a tab-switch flurry can't spam the API. */
@@ -117,11 +122,11 @@ export class HomepageApiComponent {
   protected readonly displayCatalogName = displayCatalogName;
 
   /**
-   * Broad hero pool: interleaves the freshest releases with a highlight from each of this
-   * week's top subjects and each Discover (obscure-cult) pick, so the billboard rotation
-   * isn't limited to whatever happens to be most recent. Always aims for more than 8 items
-   * when the week's data supports it (subjectRails/obscureCults are themselves derived from
-   * the full recentEpisodes payload, not the progressively-rendered rail view).
+   * Broad hero pool from this week's homepage episodes. Interleaves a time-bucketed walk
+   * across recent releases (not only the absolute newest) with subject / Discover highlights
+   * that are also offset by the bucket — so the billboard feels fresher across the day
+   * without random flicker on every change-detection cycle. Pool is derived from the full
+   * recentEpisodes payload, not the progressively-rendered rail view.
    */
   protected readonly heroSlides = computed((): HomepageEpisode[] => {
     const all = this.allEpisodes();
@@ -129,17 +134,23 @@ export class HomepageApiComponent {
       return [];
     }
 
+    const bucket = HomepageApiComponent.heroTimeBucket();
     const byRecency = all
       .slice()
       .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime());
 
-    const recentSource = byRecency.slice(0, HomepageApiComponent.heroRecentContribution);
+    const recentWindow = byRecency.slice(0, HomepageApiComponent.heroRecentWindow);
+    const recentSource = HomepageApiComponent.rotateTake(
+      recentWindow,
+      bucket * 3,
+      HomepageApiComponent.heroRecentContribution
+    );
     const subjectSource = this.subjectRails()
       .slice(0, HomepageApiComponent.heroSubjectContribution)
-      .map((rail) => rail.episodes[0]);
+      .map((rail, i) => HomepageApiComponent.pickAtOffset(rail.episodes, bucket + i));
     const discoverSource = this.obscureCults()
       .slice(0, HomepageApiComponent.heroDiscoverContribution)
-      .map((cult) => cult.episodes[0]);
+      .map((cult, i) => HomepageApiComponent.pickAtOffset(cult.episodes, bucket + i + 1));
 
     const seen = new Set<string>();
     const pool: HomepageEpisode[] = [];
@@ -162,8 +173,15 @@ export class HomepageApiComponent {
       }
     }
 
-    // Backfill from the wider recency-sorted list if the week's subjects/discover picks
-    // were too sparse to reach the target pool size.
+    // Backfill from the rotated week window, then the full recency list.
+    if (pool.length < HomepageApiComponent.heroPoolSize) {
+      for (const ep of HomepageApiComponent.rotateTake(recentWindow, bucket, recentWindow.length)) {
+        if (pool.length >= HomepageApiComponent.heroPoolSize) {
+          break;
+        }
+        add(ep);
+      }
+    }
     if (pool.length < HomepageApiComponent.heroPoolSize) {
       for (const ep of byRecency) {
         if (pool.length >= HomepageApiComponent.heroPoolSize) {
@@ -269,7 +287,14 @@ export class HomepageApiComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private heroTimer: ReturnType<typeof setInterval> | undefined;
   private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
+  private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
+  private lastBackgroundFetchAt = 0;
   private reduceMotion = false;
+  private readonly onDocumentVisibility = (): void => {
+    if (!document.hidden) {
+      this.maybeBackgroundRefresh();
+    }
+  };
 
   ngOnInit() {
     this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -279,7 +304,11 @@ export class HomepageApiComponent {
 
     if (isPlatformBrowser(this.platformId)) {
       this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      this.destroyRef.onDestroy(() => this.stopHeroCycle());
+      this.startBackgroundRefresh();
+      this.destroyRef.onDestroy(() => {
+        this.stopHeroCycle();
+        this.stopBackgroundRefresh();
+      });
     }
   }
 
@@ -407,6 +436,7 @@ export class HomepageApiComponent {
     let homepageContent: Homepage | undefined;
     try {
       homepageContent = await this.homepageService.getHomepageFromApi();
+      this.lastBackgroundFetchAt = Date.now();
     } catch (error) {
       console.error(error);
       this.isLoading.set(false);
@@ -415,19 +445,7 @@ export class HomepageApiComponent {
     }
 
     if (homepageContent) {
-      this.homepage.set(homepageContent);
-      this.episodeCount.set(homepageContent.episodeCount);
-      this.totalDurationDays.set(homepageContent.totalDuration.split('.')[0]);
-      this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
-      this.hasStartedScrolling = false;
-      this.visibleCount = 0;
-      this.allEpisodes.set(
-        homepageContent.recentEpisodes.map((item) => ({
-          ...item,
-          release: new Date(item.release),
-        }))
-      );
-      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+      this.applyHomepage(homepageContent, { resetScrollProgress: true, resetHeroIndex: true });
       this.isLoading.set(false);
       this.isInError.set(false);
       this.startHeroCycle();
@@ -435,6 +453,124 @@ export class HomepageApiComponent {
       this.isLoading.set(false);
       this.isInError.set(true);
     }
+  }
+
+  /** Quiet re-fetch while the tab stays open — no spinner, no scroll jump. */
+  private async refreshHomepageInBackground(): Promise<void> {
+    if (this.isLoading()) {
+      return;
+    }
+    let homepageContent: Homepage | undefined;
+    try {
+      homepageContent = await this.homepageService.getHomepageFromApi();
+      this.lastBackgroundFetchAt = Date.now();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+    if (!homepageContent) {
+      return;
+    }
+    const prevFeaturedId = this.featured()?.id;
+    this.applyHomepage(homepageContent, { resetScrollProgress: false, resetHeroIndex: false });
+    const slides = this.heroSlides();
+    if (slides.length === 0) {
+      return;
+    }
+    const keepIndex = prevFeaturedId ? slides.findIndex((s) => s.id === prevFeaturedId) : -1;
+    if (keepIndex >= 0) {
+      this.heroIndex.set(keepIndex);
+    } else {
+      this.heroIndex.set(this.heroIndex() % slides.length);
+    }
+    this.startHeroCycle();
+  }
+
+  private applyHomepage(
+    homepageContent: Homepage,
+    options: { resetScrollProgress: boolean; resetHeroIndex: boolean }
+  ): void {
+    this.homepage.set(homepageContent);
+    this.episodeCount.set(homepageContent.episodeCount);
+    this.totalDurationDays.set(homepageContent.totalDuration.split('.')[0]);
+    this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
+    if (options.resetScrollProgress) {
+      this.hasStartedScrolling = false;
+      this.visibleCount = 0;
+    }
+    this.allEpisodes.set(
+      homepageContent.recentEpisodes.map((item) => ({
+        ...item,
+        release: new Date(item.release),
+      }))
+    );
+    if (options.resetScrollProgress) {
+      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+    } else if (this.visibleCount > 0) {
+      const keep = this.visibleCount;
+      this.visibleCount = 0;
+      this.loadMoreEpisodes(keep);
+    } else {
+      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
+    }
+    if (options.resetHeroIndex) {
+      const slides = this.heroSlides();
+      const start =
+        slides.length > 0 ? HomepageApiComponent.heroTimeBucket() % slides.length : 0;
+      this.heroIndex.set(start);
+    }
+  }
+
+  private startBackgroundRefresh(): void {
+    this.stopBackgroundRefresh();
+    document.addEventListener('visibilitychange', this.onDocumentVisibility);
+    this.backgroundRefreshTimer = setInterval(
+      () => this.maybeBackgroundRefresh(),
+      HomepageApiComponent.backgroundRefreshIntervalMs
+    );
+  }
+
+  private stopBackgroundRefresh(): void {
+    if (this.backgroundRefreshTimer) {
+      clearInterval(this.backgroundRefreshTimer);
+      this.backgroundRefreshTimer = undefined;
+    }
+    document.removeEventListener('visibilitychange', this.onDocumentVisibility);
+  }
+
+  private maybeBackgroundRefresh(): void {
+    if (!isPlatformBrowser(this.platformId) || document.hidden || this.isLoading()) {
+      return;
+    }
+    const elapsed = Date.now() - this.lastBackgroundFetchAt;
+    if (elapsed < HomepageApiComponent.minBackgroundRefreshGapMs) {
+      return;
+    }
+    void this.refreshHomepageInBackground();
+  }
+
+  private static heroTimeBucket(now: Date = new Date()): number {
+    return Math.floor(now.getTime() / HomepageApiComponent.heroBucketMs);
+  }
+
+  private static rotateTake<T>(items: T[], offset: number, count: number): T[] {
+    if (items.length === 0 || count <= 0) {
+      return [];
+    }
+    const start = ((offset % items.length) + items.length) % items.length;
+    const take = Math.min(count, items.length);
+    const out: T[] = [];
+    for (let i = 0; i < take; i++) {
+      out.push(items[(start + i) % items.length]);
+    }
+    return out;
+  }
+
+  private static pickAtOffset<T>(items: T[], offset: number): T | undefined {
+    if (items.length === 0) {
+      return undefined;
+    }
+    return items[((offset % items.length) + items.length) % items.length];
   }
 
   private loadMoreEpisodes(count: number): void {
