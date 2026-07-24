@@ -57,11 +57,19 @@ export interface EpisodeRail {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageApiComponent {
-  private static readonly heroSlideCount = 8;
   private static readonly heroIntervalMs = 7500;
   private static readonly subjectRailCount = 6;
   private static readonly subjectRailMinEpisodes = 3;
   private static readonly obscureCultCount = 12;
+  /** Hero pool draws from recent releases, top subjects and Discover — always kept above 8. */
+  private static readonly heroPoolSize = 14;
+  private static readonly heroRecentContribution = 6;
+  private static readonly heroSubjectContribution = 6;
+  private static readonly heroDiscoverContribution = 6;
+  /** Background freshness: cadence for the homepage staying open unattended. */
+  private static readonly backgroundRefreshIntervalMs = 20 * 60 * 1000;
+  /** Floor between any two fetches (interval or visibility-triggered) so a tab-switch flurry can't spam the API. */
+  private static readonly minBackgroundRefreshGapMs = 5 * 60 * 1000;
 
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   private allEpisodes = signal<HomepageEpisode[]>([]);
@@ -106,15 +114,65 @@ export class HomepageApiComponent {
 
   protected readonly displayCatalogName = displayCatalogName;
 
-  private readonly allEpisodesVisible = computed(() => {
-    const g = this.grouped();
-    const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
-    return keys.flatMap((k) => g[k]);
-  });
+  /**
+   * Broad hero pool: interleaves the freshest releases with a highlight from each of this
+   * week's top subjects and each Discover (obscure-cult) pick, so the billboard rotation
+   * isn't limited to whatever happens to be most recent. Always aims for more than 8 items
+   * when the week's data supports it (subjectRails/obscureCults are themselves derived from
+   * the full recentEpisodes payload, not the progressively-rendered rail view).
+   */
+  protected readonly heroSlides = computed((): HomepageEpisode[] => {
+    const all = this.allEpisodes();
+    if (all.length === 0) {
+      return [];
+    }
 
-  protected readonly heroSlides = computed(() =>
-    this.allEpisodesVisible().slice(0, HomepageApiComponent.heroSlideCount)
-  );
+    const byRecency = all
+      .slice()
+      .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime());
+
+    const recentSource = byRecency.slice(0, HomepageApiComponent.heroRecentContribution);
+    const subjectSource = this.subjectRails()
+      .slice(0, HomepageApiComponent.heroSubjectContribution)
+      .map((rail) => rail.episodes[0]);
+    const discoverSource = this.obscureCults()
+      .slice(0, HomepageApiComponent.heroDiscoverContribution)
+      .map((cult) => cult.episodes[0]);
+
+    const seen = new Set<string>();
+    const pool: HomepageEpisode[] = [];
+    const add = (ep: HomepageEpisode | undefined): void => {
+      if (!ep || seen.has(ep.id) || pool.length >= HomepageApiComponent.heroPoolSize) {
+        return;
+      }
+      seen.add(ep.id);
+      pool.push(ep);
+    };
+
+    // Interleave the three sources (recent / subject / discover) so early slides already
+    // show variety, rather than running through one source before touching the next.
+    const sources = [recentSource, subjectSource, discoverSource];
+    for (let i = 0; pool.length < HomepageApiComponent.heroPoolSize && sources.some((s) => i < s.length); i++) {
+      for (const source of sources) {
+        if (i < source.length) {
+          add(source[i]);
+        }
+      }
+    }
+
+    // Backfill from the wider recency-sorted list if the week's subjects/discover picks
+    // were too sparse to reach the target pool size.
+    if (pool.length < HomepageApiComponent.heroPoolSize) {
+      for (const ep of byRecency) {
+        if (pool.length >= HomepageApiComponent.heroPoolSize) {
+          break;
+        }
+        add(ep);
+      }
+    }
+
+    return pool;
+  });
 
   protected readonly featured = computed(() => {
     const slides = this.heroSlides();
