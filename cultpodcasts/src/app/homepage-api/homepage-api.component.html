@@ -5,6 +5,7 @@
   </p>
 </section>
 
+@if (showFlixPromo) {
 <section id="flix-promo" aria-label="Try Flix, a new way to browse">
   <h2 class="flix-promo__title">Looking for a fresher way to browse?</h2>
   <p class="flix-promo__lede">
@@ -17,6 +18,7 @@
     Try Flix
   </a>
 </section>
+}
 
 <div id="progresswrapper">
   @if (isLoading()) {

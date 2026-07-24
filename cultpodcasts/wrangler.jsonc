@@ -4,12 +4,15 @@
   "pages_build_output_dir": "dist/cloudflare",
   "compatibility_date": "2025-09-27",
   "vars": {
-    "env": "development"
+    "env": "development",
+    // Homepage Flix promo; set false in the Cloudflare Pages dashboard to hide without a code change.
+    "FLIX_PROMO_ENABLED": "true"
   },
   "env": {
     "preview": {
       "vars": {
-        "env": "staging"
+        "env": "staging",
+        "FLIX_PROMO_ENABLED": "true"
       },
       "kv_namespaces": [
         {
@@ -20,7 +23,8 @@
     },
     "production": {
       "vars": {
-        "env": "production"
+        "env": "production",
+        "FLIX_PROMO_ENABLED": "true"
       },
       "kv_namespaces": [
         {

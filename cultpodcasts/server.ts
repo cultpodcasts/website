@@ -1,10 +1,13 @@
 import { renderApplication } from "@angular/platform-server";
-import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
+import { KVNamespace } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
+import { FLIX_PROMO_META_NAME, parseFlixPromoEnabled } from "./src/app/flix-promo.enabled";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
 	redirects: KVNamespace;
+	/** Pages env var — set `false` in the Cloudflare dashboard to hide the homepage Flix promo. */
+	FLIX_PROMO_ENABLED?: string;
 }
 
 // We attach the Cloudflare `fetch()` handler to the global scope
@@ -34,7 +37,13 @@ async function workerFetchHandler(request: Request, env: Env) {
 	// Get the root `index.html` content.
 	const indexUrl = new URL("/", url);
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
-	const document = await indexResponse.text();
+	let document = await indexResponse.text();
+
+	const flixPromoEnabled = parseFlixPromoEnabled(env.FLIX_PROMO_ENABLED);
+	const flixPromoMeta = `<meta name="${FLIX_PROMO_META_NAME}" content="${flixPromoEnabled ? '1' : '0'}">`;
+	if (!document.includes(`name="${FLIX_PROMO_META_NAME}"`)) {
+		document = document.replace(/<head([^>]*)>/i, `<head$1>${flixPromoMeta}`);
+	}
 
 	const content = await renderApplication(bootstrap, {
 		document,

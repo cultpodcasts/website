@@ -18,6 +18,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
+import { FLIX_PROMO_ENABLED } from '../flix-promo.enabled';
 
 @Component({
   selector: 'app-homepage-api',
@@ -40,6 +41,7 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomepageApiComponent {
+  protected readonly showFlixPromo = inject(FLIX_PROMO_ENABLED);
   protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   private allEpisodes: HomepageEpisode[] = [];
   private visibleCount: number = 0;
