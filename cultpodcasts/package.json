@@ -13,6 +13,7 @@
     "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
     "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",
+    "deploy:flix": "npm run build:staging && npm run process && wrangler pages deploy dist/cloudflare --project-name=flix --branch=design/visual-refresh-v1",
     "dev": "ng serve --configuration development",
     "deps:check": "node ./tools/check-dependency-updates.mjs",
     "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs"

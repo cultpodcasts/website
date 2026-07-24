@@ -19,6 +19,9 @@ Required allowlist entries (no trailing slash):
 
 - `https://*.website-83e.pages.dev`
 - `https://website-83e.pages.dev`
+- `https://*.flix-ac4.pages.dev`
+- `https://flix-ac4.pages.dev`
+- `https://flix.cultpodcasts.com`
 - `https://local.cultpodcasts.com:8788`
 - `https://local.cultpodcasts.com:4200`
 
