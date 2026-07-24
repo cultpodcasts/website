@@ -21,10 +21,10 @@ function ep(id: string, subjects: string[]): HomepageEpisode {
 
 describe('obscure-cults', () => {
   it('flags meta and well-known subjects', () => {
-    expect(isMetaSubject('Cult Psychology')).toBeTrue();
-    expect(isMetaSubject('Geelong Revival Centre')).toBeFalse();
-    expect(isWellKnownCult('Scientology')).toBeTrue();
-    expect(isWellKnownCult('Ramtha\'s School of Enlightenment')).toBeFalse();
+    expect(isMetaSubject('Cult Psychology')).toBe(true);
+    expect(isMetaSubject('Geelong Revival Centre')).toBe(false);
+    expect(isWellKnownCult('Scientology')).toBe(true);
+    expect(isWellKnownCult('Ramtha\'s School of Enlightenment')).toBe(false);
   });
 
   it('picks long-tail groups and skips household names / meta', () => {
@@ -81,7 +81,7 @@ describe('obscure-cults', () => {
       }
     );
 
-    expect(picked.find((c) => c.subject === 'Geelong Revival Centre')?.youtubeArt).toBeTrue();
-    expect(picked.find((c) => c.subject === 'Oneida Community')?.youtubeArt).toBeFalse();
+    expect(picked.find((c) => c.subject === 'Geelong Revival Centre')?.youtubeArt).toBe(true);
+    expect(picked.find((c) => c.subject === 'Oneida Community')?.youtubeArt).toBe(false);
   });
 });

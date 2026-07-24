@@ -30,13 +30,13 @@ describe("search-result-links", () => {
   });
 
   it("detects YouTube thumbnail hosts and compact y-tokens vs square podcast art", () => {
-    expect(isYoutubeThumbnailUrl("https://i.ytimg.com/vi/abc/hqdefault.jpg")).toBeTrue();
-    expect(isYoutubeThumbnailUrl(new URL("https://i.ytimg.com/vi/abc/maxresdefault.jpg"))).toBeTrue();
-    expect(isYoutubeThumbnailUrl("yh")).toBeTrue();
-    expect(isYoutubeThumbnailUrl("https://i.scdn.co/image/opaque")).toBeFalse();
-    expect(isYoutubeThumbnailUrl("https://is3-ssl.mzstatic.com/image/thumb/Music/x.jpg")).toBeFalse();
-    expect(isYoutubeThumbnailUrl("sab6765")).toBeFalse();
-    expect(isYoutubeThumbnailUrl(undefined)).toBeFalse();
+    expect(isYoutubeThumbnailUrl("https://i.ytimg.com/vi/abc/hqdefault.jpg")).toBe(true);
+    expect(isYoutubeThumbnailUrl(new URL("https://i.ytimg.com/vi/abc/maxresdefault.jpg"))).toBe(true);
+    expect(isYoutubeThumbnailUrl("yh")).toBe(true);
+    expect(isYoutubeThumbnailUrl("https://i.scdn.co/image/opaque")).toBe(false);
+    expect(isYoutubeThumbnailUrl("https://is3-ssl.mzstatic.com/image/thumb/Music/x.jpg")).toBe(false);
+    expect(isYoutubeThumbnailUrl("sab6765")).toBe(false);
+    expect(isYoutubeThumbnailUrl(undefined)).toBe(false);
   });
 
   it("picks wide aspect for YouTube art and square otherwise", () => {

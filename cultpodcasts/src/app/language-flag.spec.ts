@@ -17,7 +17,7 @@ describe('language-flag', () => {
     expect(languageFlagBadge('en-GB')).toBeUndefined();
     expect(languageFlagBadge('')).toBeUndefined();
     expect(languageFlagBadge(undefined)).toBeUndefined();
-    expect(isEnglishLanguageCode(null)).toBeTrue();
+    expect(isEnglishLanguageCode(null)).toBe(true);
   });
 
   it('falls back to base language for unknown regions', () => {
