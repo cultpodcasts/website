@@ -1,3 +1,9 @@
-@defer  {
+@defer {
   <app-search-api></app-search-api>
+} @placeholder {
+  <app-site-loading [active]="true" label="Loading search" />
+} @error {
+  <section class="browse-empty">
+    <h2>Failed to load search results.</h2>
+  </section>
 }

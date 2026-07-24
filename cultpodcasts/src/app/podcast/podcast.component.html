@@ -1,4 +1,3 @@
-@defer {
 @if (isEpisode()) {
   @if (episode(); as ep) {
   <app-podcast-episode [episode]="ep" [parentLoaded]="true"></app-podcast-episode>
@@ -13,6 +12,13 @@
   </section>
   }
 } @else {
-  <app-podcast-api></app-podcast-api>
-}
+  @defer {
+    <app-podcast-api></app-podcast-api>
+  } @placeholder {
+    <app-site-loading [active]="true" label="Loading podcast" />
+  } @error {
+    <section class="browse-empty">
+      <h2>Failed to load this podcast.</h2>
+    </section>
+  }
 }
