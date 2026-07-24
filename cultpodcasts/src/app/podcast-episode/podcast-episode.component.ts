@@ -1,7 +1,4 @@
-import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -28,6 +25,8 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
+import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 interface SubjectRail {
   subject: string;
@@ -44,7 +43,6 @@ const MAX_SUBJECT_RAILS = 4;
     MatMenuModule,
     MatIconModule,
     RouterLink,
-    DatePipe,
     EpisodeLinksComponent,
     BookmarkComponent,
     EpisodePosterComponent,
@@ -53,7 +51,9 @@ const MAX_SUBJECT_RAILS = 4;
   ],
   templateUrl: './podcast-episode.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './podcast-episode.component.sass'
+  styleUrl: './podcast-episode.component.sass',
+  // Episode body is client-fetched; skip hydration to avoid SSR/client tree mismatches.
+  host: { ngSkipHydration: 'true' }
 })
 export class PodcastEpisodeComponent {
   private readonly destroyRef = inject(DestroyRef);
@@ -109,6 +109,23 @@ export class PodcastEpisodeComponent {
     }
     const cleaned = (ep.duration ?? '').split('.')[0];
     return cleaned.startsWith('0') ? cleaned.substring(1) : cleaned;
+  });
+
+  /** Locale-safe release label (avoids DatePipe/locale hydration issues). */
+  protected readonly releaseLabel = computed(() => {
+    const release = this._episode()?.release;
+    if (!release) {
+      return undefined;
+    }
+    const date = release instanceof Date ? release : new Date(release);
+    if (Number.isNaN(date.getTime())) {
+      return undefined;
+    }
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
   });
 
   protected readonly backdropUrl = computed(() => {

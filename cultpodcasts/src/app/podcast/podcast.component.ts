@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
 import { EpisodeService } from '../episode.service';
 import { isPlatformServer } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { IPageDetails } from '../page-details.interface';
 import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 
 @Component({
   selector: 'app-podcast',
@@ -17,7 +19,10 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PodcastApiComponent,
-    PodcastEpisodeComponent
+    PodcastEpisodeComponent,
+    SiteLoadingComponent,
+    MatButtonModule,
+    RouterLink
   ]
 })
 
@@ -48,12 +53,15 @@ export class PodcastComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(async params => {
       this.podcastName = params["podcastName"];
+      this.episode.set(undefined);
       let pageDetails: IPageDetails = { title: this.podcastName };
       const episodeUuid = this.guidService.getEpisodeUuid(params["query"]);
       const isEpisode = episodeUuid != "";
       this.isEpisode.set(isEpisode);
+      this.isLoading.set(true);
       if (isEpisode) {
         if (this.isServer) {
+          // SSR: SEO tags only — do not SSR episode body (avoids hydration mismatch with client).
           this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
             .then(episodePageDetails => {
               if (episodePageDetails) {
@@ -64,18 +72,21 @@ export class PodcastComponent {
               console.error(JSON.stringify(e));
             }).finally(() => {
               this.seoService.AddMetaTags(pageDetails);
-              this.isLoading.set(false);
+              // Stay in loading on server so we don't emit a "not found" shell for hydration.
+              this.isLoading.set(true);
             });
         } else {
           this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
             .then(episode => {
               this.episode.set(episode);
-              pageDetails = {
-                description: this.podcastName,
-                title: `${episode!.episodeTitle} | ${this.podcastName}`,
-                releaseDate: episode!.release.toString(),
-                duration: episode!.duration
-              };
+              if (episode) {
+                pageDetails = {
+                  description: this.podcastName,
+                  title: `${episode.episodeTitle} | ${this.podcastName}`,
+                  releaseDate: episode.release.toString(),
+                  duration: episode.duration
+                };
+              }
             })
             .catch(e => {
               console.error(e);
