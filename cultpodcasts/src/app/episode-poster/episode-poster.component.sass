@@ -77,7 +77,7 @@
     bottom: 8px
     z-index: 1
     display: flex
-    align-items: center
+    align-items: flex-end
     justify-content: space-between
     gap: 6px
     pointer-events: none
@@ -98,11 +98,14 @@
     line-height: 1.2
 
 .episode-poster__badge--lang
-    padding: 2px 5px
-    font-size: 0.95rem
+    padding: 6px 9px
+    font-size: 1.65rem
     line-height: 1
     font-weight: 400
     letter-spacing: 0
+    // Keep the flag readable on busy thumbnails (homepage rails + search cards).
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6)
+    background: rgba(0, 0, 0, 0.78)
 
 .episode-poster__badge--duration
     margin-left: auto

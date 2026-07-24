@@ -42,7 +42,6 @@
       }
       <span>{{ duration() }}</span>
       @if (languageFlag(); as lang) {
-      <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
       <span class="episode-hero__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
         <span class="episode-hero__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
         <span>{{ lang.label }}</span>
