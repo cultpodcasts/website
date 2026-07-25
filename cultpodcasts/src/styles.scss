@@ -22,6 +22,7 @@ html {
   --cp-ink-elevated: #141821;
   --cp-amber: #e8a23a;
   --cp-amber-soft: color-mix(in srgb, var(--cp-amber) 22%, transparent);
+  --cp-warn: #f44336;
   --cp-mist: color-mix(in srgb, #7ec8e3 8%, transparent);
   --cp-column: min(680px, 100%);
   --cp-radius: 14px;
@@ -51,6 +52,8 @@ body {
 
 html.discovery-snap-enabled {
   scroll-snap-type: y mandatory;
+  /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
+  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
 }
 
 p {
@@ -455,10 +458,34 @@ mat-card {
   }
 }
 
-mat-card:not(.selected) {
+/* Card state chrome. The base mat-card rule above sets border / background with
+   !important to beat Material's own tokens, so every state has to do the same.
+   Ordered weakest to strongest: a warning rim still shows on a selected card. */
+mat-card.selected {
+  border-color: color-mix(in srgb, var(--cp-amber) 80%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cp-amber) 45%, transparent) !important;
   background:
-    linear-gradient(90deg, var(--cp-amber) 0 3px, transparent 3px),
+    linear-gradient(90deg, var(--cp-amber) 0 6px, transparent 6px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--cp-amber) 28%, transparent),
+      transparent 58%
+    ),
     color-mix(in srgb, var(--cp-ink-elevated) 92%, #1c2433) !important;
+}
+
+mat-card.auto-hidden {
+  border-style: dashed !important;
+}
+
+/* Incomplete data (e.g. unknown duration) — needs review before accepting. */
+mat-card.unknownDuration {
+  border-color: var(--cp-warn) !important;
+}
+
+mat-card.error {
+  border-color: var(--cp-warn) !important;
+  border-width: 2px !important;
 }
 
 mat-card-actions {
@@ -779,13 +806,17 @@ option {
   }
 }
 
-/* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
-.browse {
+/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse). */
+:root {
   --nflx-bg: #0b0b0b;
   --nflx-panel: #141414;
   --nflx-text: #fff;
   --nflx-muted: #b3b3b3;
   --nflx-accent: #e8a23a;
+}
+
+/* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
+.browse {
   color: var(--nflx-text);
   background: var(--nflx-bg);
   min-height: 50vh;
@@ -1047,7 +1078,7 @@ option {
   overflow: hidden;
 }
 
-/* Homepage billboard chrome + hero keyframes (global to keep component style budget) */
+/* Homepage loading skeleton + shared flix hero keyframes (used by homepage-hero). */
 .nflx-loading {
   padding: 160px 24px 24px;
   display: flex;
@@ -1063,30 +1094,6 @@ option {
   animation: nflx-loading-shimmer 1.2s ease-in-out infinite;
 }
 
-.billboard__stages,
-.billboard__grain,
-.billboard__scrim,
-.billboard__vignette {
-  position: absolute;
-  inset: 0;
-}
-
-.billboard__grain {
-  pointer-events: none;
-  opacity: 0.12;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-.billboard__scrim {
-  background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, var(--nflx-bg) 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%);
-}
-
-.billboard__vignette {
-  pointer-events: none;
-  background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%);
-}
-
 @keyframes nflx-loading-shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
@@ -1095,11 +1102,6 @@ option {
 @keyframes nflx-ken-burns {
   from { transform: scale(1.08); }
   to { transform: scale(1.18); }
-}
-
-@keyframes nflx-content-swap {
-  0% { opacity: 0; transform: translateY(18px); }
-  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes nflx-pulse-live {
@@ -1112,4 +1114,3 @@ option {
   from { width: 0; }
   to { width: 100%; }
 }
-

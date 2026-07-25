@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, PLATFORM_ID, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -9,7 +9,7 @@ import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,6 +34,7 @@ import { EpisodeUpdateService } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
+import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -56,7 +57,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent,
-    EpisodeGuestsComponent
+    EpisodeGuestsComponent,
+    ClampableTextComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass',
@@ -96,10 +98,16 @@ export class OutgoingEpisodesApiComponent {
   ) {
   }
 
+  private readonly platformId = inject(PLATFORM_ID);
+
   ngOnInit() {
     this.siteService.setQuery(null);
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
+
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
 
     const daysValue: string | null = localStorage.getItem(daysKey);
     if (daysValue && parseInt(daysValue)) {

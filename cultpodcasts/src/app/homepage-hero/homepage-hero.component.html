@@ -1,0 +1,118 @@
+@if (featured(); as feature) {
+<section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
+  (mouseenter)="pauseHero()" (mouseleave)="resumeHero()" (focusin)="pauseHero()" (focusout)="resumeHero()">
+
+  <div class="billboard__stages" aria-hidden="true">
+    <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
+      [class.is-kenburns]="heroKenBurnsA()"
+      [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null">
+    </div>
+    <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'b'"
+      [class.is-kenburns]="heroKenBurnsB()"
+      [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null">
+    </div>
+  </div>
+  <div class="billboard__grain" aria-hidden="true"></div>
+  <div class="billboard__scrim" aria-hidden="true"></div>
+  <div class="billboard__vignette" aria-hidden="true"></div>
+
+  <div class="billboard__content">
+    <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
+      <p class="billboard__eyebrow">
+        <span class="billboard__live" aria-hidden="true"></span>
+        Now featuring
+      </p>
+      <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+      <p class="billboard__meta">
+        <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
+        <span> · {{ durationLabel(feature.duration) }}</span>
+        @if (languageFlag(feature); as lang) {
+        <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
+          <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+          <span class="billboard__lang-name">{{ lang.label }}</span>
+        </span>
+        }
+      </p>
+      <p class="billboard__desc">{{ featuredDesc() }}</p>
+      @if (featuredSubjects().length > 0) {
+      <div class="billboard__subjects" aria-label="Subjects">
+        @for (subject of featuredSubjects(); track subject) {
+        <app-subject-chip [subject]="subject" size="hero" />
+        }
+      </div>
+      }
+      <div class="billboard__actions">
+        @if (canPlay(feature)) {
+        <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">
+          <mat-icon>play_arrow</mat-icon>
+          {{ playLabel(feature) }}
+        </button>
+        } @else {
+        <a mat-flat-button class="billboard__play"
+          [routerLink]="['/podcast', feature.podcastName, feature.id]">
+          <mat-icon>play_arrow</mat-icon>
+          {{ playLabel(feature) }}
+        </a>
+        }
+        <a mat-stroked-button class="billboard__more"
+          [routerLink]="['/podcast', feature.podcastName, feature.id]">
+          More info
+        </a>
+        @if (isCurator() && featuredIsCurated()) {
+        <button type="button" mat-stroked-button class="billboard__curate"
+          (click)="removeFeatured.emit(feature.id)" aria-label="Remove from hero">
+          <mat-icon>star</mat-icon>
+          Remove from hero
+        </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="billboard__controls">
+    @if (isCurator()) {
+    <button type="button" class="billboard__manage" (click)="manageHero.emit()"
+      aria-label="Manage hero curation">
+      <mat-icon>playlist_add_check</mat-icon>
+      <span>Manage hero</span>
+    </button>
+    <button type="button" class="billboard__manage" (click)="manageRails.emit()"
+      aria-label="Manage subject rails">
+      <mat-icon>view_week</mat-icon>
+      <span>Manage rails</span>
+    </button>
+    }
+    @if (slides().length > 1) {
+    <div class="billboard__pager">
+      <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
+        (click)="prevHero()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <div class="billboard__dots-viewport"
+        [class.has-overflow-start]="heroDotsOverflowStart()"
+        [class.has-overflow-end]="heroDotsOverflowEnd()"
+        #heroDotsViewport>
+        <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
+          @for (slide of slides(); track slide.id; let i = $index) {
+          <button type="button" class="billboard__dot" role="tab"
+            [class.is-active]="i === heroIndex()"
+            [class.is-curated]="isPromoted(slide.id)"
+            [attr.data-hero-dot]="i"
+            [attr.aria-selected]="i === heroIndex()"
+            [attr.aria-label]="'Show featured episode ' + (i + 1)"
+            (click)="goHero(i)">
+            <span class="billboard__dot-fill"
+              [class.is-running]="i === heroIndex() && !heroPaused() && heroImageReady()"></span>
+          </button>
+          }
+        </div>
+      </div>
+      <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
+        (click)="nextHero()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+    }
+  </div>
+</section>
+}

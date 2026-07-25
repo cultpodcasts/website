@@ -1,22 +1,48 @@
-<section id="results" #resultsContainer>
+<section id="results" class="curator-page" #resultsContainer>
 
   <div id="progresswrapper">
     @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
   </div>
-  <section id="resultsheading">
-    <h2>Discovery results@if (minDate()){ since {{minDate()| date:'d MMM yyyy H:mm'}}}</h2>
-    @if (!isLoading() && !isInError() && resultsFilter() !== 'hidden' && visibleResults().length > 0) {
-    <h3>{{visibleResults().length}} results@if (hiddenCount() > 0) { ({{hiddenCount()}} auto-hidden)}</h3>
+
+  <div class="curator-toolbar" #curatorToolbar>
+    <div class="curator-toolbar__title">
+      <h2>Discovery</h2>
+      @if (!isLoading() && !isInError() && resultsFilter() !== 'hidden' && visibleResults().length > 0) {
+      <span class="curator-toolbar__count">{{visibleResults().length}} results@if (hiddenCount() > 0) { · {{hiddenCount()}} auto-hidden}</span>
+      }
+      @if (!isLoading() && !isInError() && resultsFilter() === 'selected') {
+      <span class="curator-toolbar__count">{{displayedResults().length}} selected</span>
+      }
+      @if (!isLoading() && !isInError() && resultsFilter() === 'hidden' && includeHidden()) {
+      <span class="curator-toolbar__count">{{hiddenResults().length}} auto-hidden</span>
+      }
+      @if (minDate()) {
+      <span class="curator-toolbar__meta">since {{minDate()| date:'d MMM yyyy H:mm'}}</span>
+      }
+    </div>
+    @if (hasQueueItems()) {
+    <div class="curator-toolbar__actions">
+      <mat-button-toggle-group [value]="resultsFilter()" (change)="resultsFilterChange($event)">
+        <mat-button-toggle value="all">All</mat-button-toggle>
+        <mat-button-toggle value="selected">Selected</mat-button-toggle>
+        <mat-button-toggle value="hidden">
+          Hidden@if (hiddenCount() > 0) {<span class="hidden-count">{{hiddenCount()}}</span>}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (displaySave() && resultsFilter() !== 'hidden') {
+      <button matButton="tonal" (click)="selectLikelyMatches()">Select likely</button>
+      }
+      @if (displaySave()) {
+      <button matButton="tonal" (click)="close()" [disabled]="closeDisabled()">Close</button>
+      <button matButton="tonal" (click)="save()" [disabled]="saveDisabled()" [matBadge]="selectedIds().length"
+        [matBadgeHidden]="saveDisabled()">Save</button>
+      }
+    </div>
     }
-    @if (!isLoading() && !isInError() && resultsFilter() === 'selected') {
-    <h3>{{displayedResults().length}} selected</h3>
-    }
-    @if (!isLoading() && !isInError() && resultsFilter() === 'hidden' && includeHidden()) {
-    <h3>{{hiddenResults().length}} auto-hidden results</h3>
-    }
-  </section>
+  </div>
+
   @if (!isLoading() && !isInError() && visibleResults().length === 0 && hiddenCount() > 0 && resultsFilter() !== 'hidden') {
   <h3>All pending items are auto-hidden</h3>
   <p class="hidden-cta">Review {{hiddenCount()}} low-confidence result(s) before closing the queue.</p>
@@ -45,24 +71,5 @@
     [selectedEvent]="submittedSubject.asObservable()" [resultFilterEvent]="resultsFilterSubject.asObservable()"
     [erroredEvent]="erroredSubject.asObservable()" [selectedIds]="selectedIds()"></discovery-item>
   }
-  }
-  @if (hasQueueItems()) {
-  <div id="actions">
-    <mat-button-toggle-group [value]="resultsFilter()" (change)="resultsFilterChange($event)">
-      <mat-button-toggle value="all">All</mat-button-toggle>
-      <mat-button-toggle value="selected">Selected</mat-button-toggle>
-      <mat-button-toggle value="hidden">
-        Hidden@if (hiddenCount() > 0) {<span class="hidden-count">{{hiddenCount()}}</span>}
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-    @if (displaySave() && resultsFilter() !== 'hidden') {
-    <button matButton="tonal" (click)="selectLikelyMatches()">Select likely</button>
-    }
-    @if (displaySave()) {
-    <button matButton="tonal" (click)="close()" [disabled]="closeDisabled()">Close</button>
-    <button matButton="tonal" (click)="save()" [disabled]="saveDisabled()" [matBadge]="selectedIds().length"
-      [matBadgeHidden]="saveDisabled()">Save</button>
-    }
-  </div>
   }
 </section>

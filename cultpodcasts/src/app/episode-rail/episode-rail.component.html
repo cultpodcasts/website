@@ -1,0 +1,46 @@
+<section class="rail" [class.rail--display-title]="useDisplayTitle()" [attr.aria-label]="resolvedAriaLabel()">
+  <div class="rail__heading">
+    @if (titleLink(); as link) {
+    <a class="rail__title rail__title--link" [routerLink]="link">
+      <span>{{ title() }}</span>
+      <mat-icon aria-hidden="true">chevron_right</mat-icon>
+    </a>
+    @if (showPin() || browseAllLink()) {
+    <div class="rail__heading-actions">
+      @if (showPin() && subject(); as pinSubject) {
+      <button type="button" class="rail__pin"
+        [class.is-pinned]="pinned()"
+        [attr.aria-label]="(pinned() ? 'Unpin ' : 'Pin ') + pinSubject + ' rail'"
+        [attr.title]="pinned() ? 'Unpin rail' : 'Pin rail'"
+        (click)="onPin($event)">
+        <mat-icon>push_pin</mat-icon>
+      </button>
+      }
+      @if (browseAllLink(); as browse) {
+      <a class="rail__see-all" [routerLink]="browse">Browse all</a>
+      }
+    </div>
+    }
+    } @else {
+    <h2 class="rail__title">{{ title() }}</h2>
+    }
+  </div>
+  <div class="rail__scroller" tabindex="0">
+    @if (postersActive()) {
+    <div class="rail__track">
+      @for (item of episodes(); track item.id) {
+      <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="subject()"
+        [playing]="isPlaying(item.id)"
+        [queued]="isQueued(item.id)"
+        [showShow]="showShow()"
+        [showPromote]="showPromote()"
+        [promoted]="isPromoted(item.id)"
+        (play)="play.emit($event)"
+        (promoteToggle)="promoteToggle.emit($event)" />
+      }
+    </div>
+    } @else {
+    <div class="rail__placeholder" aria-hidden="true"></div>
+    }
+  </div>
+</section>

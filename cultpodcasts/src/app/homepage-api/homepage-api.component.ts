@@ -2,36 +2,52 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  HostListener,
   PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DecimalPipe, isPlatformBrowser, KeyValue } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { ActivatedRoute, Params, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { HomepageService } from '../homepage.service';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
-import { isMetaSubject, pickObscureCults } from '../obscure-cults';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { pickObscureCults } from '../obscure-cults';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
-import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
-import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
+import { episodeEmbedOptions } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
+import { HeroCurationService } from '../hero-curation.service';
+import { buildHeroSlides, pruneCuratedIdsToWeek } from '../hero-slides';
+import {
+  RAIL_DISPLAY_SIZE,
+  SUBJECT_RAIL_MIN_EPISODES,
+  buildSubjectRails,
+  collectSubjectRailCandidates,
+  pruneRailSubjectsToWeek,
+} from '../rail-subjects';
+import {
+  HeroManageDialogComponent,
+  HeroManageDialogResult,
+} from '../hero-manage-dialog/hero-manage-dialog.component';
+import {
+  RailsManageDialogComponent,
+  RailsManageDialogResult,
+} from '../rails-manage-dialog/rails-manage-dialog.component';
+import { HomepageHeroComponent } from '../homepage-hero/homepage-hero.component';
+import { HomepageCatalogueComponent } from '../homepage-catalogue/homepage-catalogue.component';
+import { HomepageDiscoverRailComponent } from '../homepage-discover-rail/homepage-discover-rail.component';
+import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 
 export interface EpisodeRail {
   id: string;
@@ -44,33 +60,22 @@ export interface EpisodeRail {
 @Component({
   selector: 'app-homepage-api',
   imports: [
-    DecimalPipe,
-    RouterLink,
     MatButtonModule,
-    MatIconModule,
-    SlotMachineCounterComponent,
     SearchBarComponent,
-    EpisodePosterComponent,
     SiteLoadingComponent,
-    SubjectChipComponent,
+    HomepageHeroComponent,
+    HomepageCatalogueComponent,
+    HomepageDiscoverRailComponent,
+    EpisodeRailComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageApiComponent {
-  private static readonly heroIntervalMs = 7500;
-  private static readonly subjectRailCount = 6;
-  private static readonly subjectRailMinEpisodes = 3;
+  private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
+  private static readonly railDisplaySize = RAIL_DISPLAY_SIZE;
   private static readonly obscureCultCount = 12;
-  /** Hero pool draws across the past week — recent releases, subjects and Discover. */
-  private static readonly heroPoolSize = 18;
-  /** How many week-wide recent picks (time-bucket rotated, not always the absolute newest). */
-  private static readonly heroRecentContribution = 10;
-  private static readonly heroSubjectContribution = 6;
-  private static readonly heroDiscoverContribution = 6;
-  /** Recency window to rotate through before capping contribution (covers most of a busy week). */
-  private static readonly heroRecentWindow = 48;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
   private static readonly heroBucketMs = 3 * 60 * 60 * 1000;
   /** Background freshness: cadence for the homepage staying open unattended. */
@@ -108,6 +113,8 @@ export class HomepageApiComponent {
   readonly episodeCountBaseline = 80000;
   protected auth = inject(AuthServiceWrapper);
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected readonly isCurator = computed(() => this.authRoles().includes('Curator'));
   readonly renderConfig = {
     initialBlockSize: 40,
     firstScrollBlockSize: 80,
@@ -115,140 +122,60 @@ export class HomepageApiComponent {
     nearEndThresholdPixels: 1200,
   };
 
-  protected readonly heroIndex = signal(0);
-  protected readonly heroPaused = signal(false);
-  protected readonly heroAnimating = signal(false);
+  /** Ordered episode IDs from the hero-curation API (may include stale ids). */
+  protected readonly curatedEpisodeIds = signal<string[]>([]);
+  /** Ordered subject names pinned as homepage rails (may include stale names). */
+  protected readonly curatedRailSubjects = signal<string[]>([]);
 
   protected readonly displayCatalogName = displayCatalogName;
 
+  protected readonly heroTimeBucket = computed(() => HomepageApiComponent.heroTimeBucket());
+
   /**
-   * Broad hero pool from this week's homepage episodes. Interleaves a time-bucketed walk
-   * across recent releases (not only the absolute newest) with subject / Discover highlights
-   * that are also offset by the bucket — so the billboard feels fresher across the day
-   * without random flicker on every change-detection cycle. Pool is derived from the full
-   * recentEpisodes payload, not the progressively-rendered rail view.
+   * Billboard slides: curated picks first (in order), autofilled from the week-wide
+   * recent / subject / Discover interleave when curated count is under the pool size.
    */
   protected readonly heroSlides = computed((): HomepageEpisode[] => {
     const all = this.allEpisodes();
     if (all.length === 0) {
       return [];
     }
-
-    const bucket = HomepageApiComponent.heroTimeBucket();
-    const byRecency = all
-      .slice()
-      .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime());
-
-    const recentWindow = byRecency.slice(0, HomepageApiComponent.heroRecentWindow);
-    const recentSource = HomepageApiComponent.rotateTake(
-      recentWindow,
-      bucket * 3,
-      HomepageApiComponent.heroRecentContribution
-    );
-    const subjectSource = this.subjectRails()
-      .slice(0, HomepageApiComponent.heroSubjectContribution)
-      .map((rail, i) => HomepageApiComponent.pickAtOffset(rail.episodes, bucket + i));
-    const discoverSource = this.obscureCults()
-      .slice(0, HomepageApiComponent.heroDiscoverContribution)
-      .map((cult, i) => HomepageApiComponent.pickAtOffset(cult.episodes, bucket + i + 1));
-
-    const seen = new Set<string>();
-    const pool: HomepageEpisode[] = [];
-    const add = (ep: HomepageEpisode | undefined): void => {
-      if (!ep || seen.has(ep.id) || pool.length >= HomepageApiComponent.heroPoolSize) {
-        return;
-      }
-      seen.add(ep.id);
-      pool.push(ep);
-    };
-
-    // Interleave the three sources (recent / subject / discover) so early slides already
-    // show variety, rather than running through one source before touching the next.
-    const sources = [recentSource, subjectSource, discoverSource];
-    for (let i = 0; pool.length < HomepageApiComponent.heroPoolSize && sources.some((s) => i < s.length); i++) {
-      for (const source of sources) {
-        if (i < source.length) {
-          add(source[i]);
-        }
-      }
-    }
-
-    // Backfill from the rotated week window, then the full recency list.
-    if (pool.length < HomepageApiComponent.heroPoolSize) {
-      for (const ep of HomepageApiComponent.rotateTake(recentWindow, bucket, recentWindow.length)) {
-        if (pool.length >= HomepageApiComponent.heroPoolSize) {
-          break;
-        }
-        add(ep);
-      }
-    }
-    if (pool.length < HomepageApiComponent.heroPoolSize) {
-      for (const ep of byRecency) {
-        if (pool.length >= HomepageApiComponent.heroPoolSize) {
-          break;
-        }
-        add(ep);
-      }
-    }
-
-    return pool;
+    return buildHeroSlides(this.curatedEpisodeIds(), all, {
+      subjectRails: this.subjectRails(),
+      obscureCults: this.obscureCults(),
+      bucket: this.heroTimeBucket(),
+    });
   });
 
-  protected readonly featured = computed(() => {
-    const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return undefined;
-    }
-    return slides[this.heroIndex() % slides.length];
-  });
+  protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
-  protected readonly featuredImage = computed(() => {
-    const ep = this.featured();
-    return ep ? episodeImageUrl(ep)?.toString() : undefined;
-  });
+  protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
-  protected readonly featuredDesc = computed(() => {
-    const text = this.featured()?.episodeDescription ?? '';
-    return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
-  });
+  /** Eligible subject groups from this week's episodes (popularity-sorted). */
+  protected readonly subjectRailCandidates = computed(() =>
+    collectSubjectRailCandidates(
+      this.allEpisodes(),
+      HomepageApiComponent.subjectRailMinEpisodes
+    )
+  );
 
-  protected readonly featuredSubjects = computed(() => {
-    const subjects = this.featured()?.subjects ?? [];
-    return subjects.filter((s) => !s.startsWith('_')).slice(0, 4);
-  });
+  /** Subject playlists from curator pins only (no popularity autofill). */
+  protected readonly subjectRails = computed((): EpisodeRail[] =>
+    buildSubjectRails(
+      this.curatedRailSubjects(),
+      this.subjectRailCandidates()
+    ).map((rail) => ({
+      id: `subject:${rail.subject}`,
+      title: rail.subject,
+      subject: rail.subject,
+      // Cap DOM: full week list stays on candidates for counts / prune; scroller shows a page.
+      episodes: rail.episodes.slice(0, HomepageApiComponent.railDisplaySize),
+    }))
+  );
 
-  /** Full-week subject playlists (not limited to progressive day render). */
-  protected readonly subjectRails = computed((): EpisodeRail[] => {
-    const bySubject = new Map<string, HomepageEpisode[]>();
-    for (const ep of this.allEpisodes()) {
-      for (const raw of ep.subjects ?? []) {
-        if (!raw || raw.startsWith('_') || isMetaSubject(raw)) {
-          continue;
-        }
-        const list = bySubject.get(raw);
-        if (list) {
-          if (!list.some((e) => e.id === ep.id)) {
-            list.push(ep);
-          }
-        } else {
-          bySubject.set(raw, [ep]);
-        }
-      }
-    }
-
-    return [...bySubject.entries()]
-      .filter(([, eps]) => eps.length >= HomepageApiComponent.subjectRailMinEpisodes)
-      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
-      .slice(0, HomepageApiComponent.subjectRailCount)
-      .map(([subject, episodes]) => ({
-        id: `subject:${subject}`,
-        title: subject,
-        subject,
-        episodes: episodes
-          .slice()
-          .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime()),
-      }));
-  });
+  protected readonly curatedRailSubjectSet = computed(
+    () => new Set(this.curatedRailSubjects())
+  );
 
   /** Lesser-known named groups from this week's episodes. */
   protected readonly obscureCults = computed(() =>
@@ -267,6 +194,7 @@ export class HomepageApiComponent {
       return {
         id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
+        // Day rails have no "Browse all" destination — show the full progressive window.
         episodes: g[key],
       } satisfies EpisodeRail;
     });
@@ -282,18 +210,35 @@ export class HomepageApiComponent {
 
   private siteService = inject(SiteService);
   private homepageService = inject(HomepageService);
+  private heroCurationService = inject(HeroCurationService);
+  private dialog = inject(MatDialog);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private heroTimer: ReturnType<typeof setInterval> | undefined;
-  private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
   private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
   private lastBackgroundFetchAt = 0;
-  private reduceMotion = false;
+  /** True when local curated list was pruned for the week but KV was not yet updated. */
+  private pendingKvPrune = false;
   private readonly onDocumentVisibility = (): void => {
     if (!document.hidden) {
       this.maybeBackgroundRefresh();
     }
+  };
+  private scrollFrame = 0;
+  /**
+   * Bound outside Angular's event manager on purpose: in a zoneless app every listener
+   * invocation schedules a change-detection pass, so a `@HostListener` here would run one
+   * per scroll event. Only `loadMoreEpisodes` writes signals, so CD now runs when the
+   * visible set actually grows.
+   */
+  private readonly onScrollEvent = (): void => {
+    if (this.scrollFrame) {
+      return;
+    }
+    this.scrollFrame = requestAnimationFrame(() => {
+      this.scrollFrame = 0;
+      this.onWindowScroll();
+    });
   };
 
   ngOnInit() {
@@ -303,16 +248,25 @@ export class HomepageApiComponent {
     this.populatePage();
 
     if (isPlatformBrowser(this.platformId)) {
-      this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       this.startBackgroundRefresh();
+      this.startScrollWatch();
+      // If curation was pruned for display while anonymous, persist once a Curator signs in.
+      this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
+        if (roles.includes('Curator') && this.pendingKvPrune) {
+          this.pendingKvPrune = false;
+          void this.quietPersistPrune({
+            episodeIds: this.curatedEpisodeIds(),
+            railSubjects: this.curatedRailSubjects(),
+          });
+        }
+      });
       this.destroyRef.onDestroy(() => {
-        this.stopHeroCycle();
         this.stopBackgroundRefresh();
+        this.stopScrollWatch();
       });
     }
   }
 
-  @HostListener('window:scroll')
   onWindowScroll(): void {
     if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes().length === 0) {
       return;
@@ -333,81 +287,116 @@ export class HomepageApiComponent {
     }
   }
 
-  posterImage(episode: HomepageEpisode): string | undefined {
-    return episodeImageUrl(episode)?.toString();
-  }
-
-  slideImage(episode: HomepageEpisode): string | undefined {
-    return episodeImageUrl(episode)?.toString();
-  }
-
-  durationLabel(duration: string): string {
-    return duration.startsWith('0') ? duration.substring(1) : duration;
-  }
-
-  canPlay(episode: HomepageEpisode | SearchDisplayEpisode): boolean {
-    return episodeEmbedOptions(episode).length > 0;
-  }
-
-  playLabel(episode: HomepageEpisode | SearchDisplayEpisode): 'Watch' | 'Listen' {
-    return playActionLabel(episode);
+  isRailPinned(subject: string | undefined): boolean {
+    return !!subject && this.curatedRailSubjectSet().has(subject);
   }
 
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (!this.canPlay(episode)) {
+    if (episodeEmbedOptions(episode).length === 0) {
       return;
     }
     this.playerService.play(episode);
-    this.heroPaused.set(true);
   }
 
-  isPlayingId(id: string): boolean {
-    return this.playerService.episode()?.id === id;
-  }
-
-  /** Non-English language flag badge; undefined when English/unknown. */
-  languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode);
-  }
-
-  pauseHero(): void {
-    this.heroPaused.set(true);
-  }
-
-  resumeHero(): void {
-    if (this.playerService.episode()) {
+  async togglePromote(episode: SearchDisplayEpisode): Promise<void> {
+    if (!this.isCurator()) {
       return;
     }
-    this.heroPaused.set(false);
+    const ids = [...this.curatedEpisodeIds()];
+    const idx = ids.indexOf(episode.id);
+    if (idx >= 0) {
+      ids.splice(idx, 1);
+    } else {
+      // Newest star leads the hero rotation.
+      ids.unshift(episode.id);
+    }
+    await this.persistCuration(ids);
   }
 
-  goHero(index: number): void {
+  async removeFeaturedFromHero(episodeId: string): Promise<void> {
+    if (!this.isCurator() || !episodeId) {
+      return;
+    }
+    const ids = this.curatedEpisodeIds().filter((id) => id !== episodeId);
+    await this.persistCuration(ids);
+  }
+
+  openManageHero(): void {
+    if (!this.isCurator()) {
+      return;
+    }
+    const curatedSet = this.curatedIdSet();
     const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return;
-    }
-    this.transitionTo(index % slides.length);
-    this.restartHeroCycle();
+    const curated = slides.filter((s) => curatedSet.has(s.id));
+    // Prefer curated order from the API list, not slide order after resolve.
+    const byId = new Map(this.allEpisodes().map((ep) => [ep.id, ep]));
+    const curatedOrdered = this.curatedEpisodeIds()
+      .map((id) => byId.get(id))
+      .filter((ep): ep is HomepageEpisode => !!ep);
+    const autofilled = slides.filter((s) => !curatedSet.has(s.id));
+
+    const ref = this.dialog.open(HeroManageDialogComponent, {
+      data: {
+        curated: curatedOrdered.length > 0 ? curatedOrdered : curated,
+        autofilled,
+      },
+      width: '520px',
+      maxWidth: '94vw',
+      autoFocus: 'dialog',
+    });
+    ref.afterClosed().subscribe((result: HeroManageDialogResult | undefined) => {
+      if (result?.saved && result.episodeIds) {
+        this.curatedEpisodeIds.set(result.episodeIds);
+      }
+    });
   }
 
-  nextHero(): void {
-    const n = this.heroSlides().length;
-    if (n === 0) {
+  async toggleRailPin(subject: string | undefined, event?: Event): Promise<void> {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!subject || !this.isCurator()) {
       return;
     }
-    this.transitionTo((this.heroIndex() + 1) % n);
-    this.restartHeroCycle();
+    const subjects = [...this.curatedRailSubjects()];
+    const idx = subjects.indexOf(subject);
+    if (idx >= 0) {
+      subjects.splice(idx, 1);
+    } else {
+      subjects.push(subject);
+    }
+    await this.persistRailSubjects(subjects);
   }
 
-  prevHero(): void {
-    const n = this.heroSlides().length;
-    if (n === 0) {
+  openManageRails(): void {
+    if (!this.isCurator()) {
       return;
     }
-    this.transitionTo((this.heroIndex() - 1 + n) % n);
-    this.restartHeroCycle();
+    const candidates = this.subjectRailCandidates();
+    const pinned = this.curatedRailSubjects().filter((subject) =>
+      candidates.some((c) => c.subject === subject)
+    );
+    const eligible = candidates.map((c) => c.subject);
+    const episodeCounts = Object.fromEntries(
+      candidates.map((c) => [c.subject, c.episodes.length])
+    );
+
+    const ref = this.dialog.open(RailsManageDialogComponent, {
+      data: {
+        pinned,
+        eligible,
+        episodeCounts,
+      },
+      width: '520px',
+      maxWidth: '94vw',
+      autoFocus: 'dialog',
+    });
+    ref.afterClosed().subscribe((result: RailsManageDialogResult | undefined) => {
+      if (result?.saved && result.railSubjects) {
+        this.curatedRailSubjects.set(result.railSubjects);
+      }
+    });
   }
 
   populatePage() {
@@ -424,18 +413,104 @@ export class HomepageApiComponent {
       });
   }
 
+  private async persistCuration(ids: string[]): Promise<void> {
+    const previous = this.curatedEpisodeIds();
+    this.curatedEpisodeIds.set(ids);
+    try {
+      const saved = await this.heroCurationService.setHeroCuration(ids);
+      this.curatedEpisodeIds.set(saved.episodeIds);
+      if (saved.railSubjects) {
+        this.curatedRailSubjects.set(saved.railSubjects);
+      }
+    } catch {
+      this.curatedEpisodeIds.set(previous);
+    }
+  }
+
+  private async persistRailSubjects(subjects: string[]): Promise<void> {
+    const previous = this.curatedRailSubjects();
+    this.curatedRailSubjects.set(subjects);
+    try {
+      const saved = await this.heroCurationService.setRailSubjects(subjects);
+      this.curatedRailSubjects.set(saved.railSubjects);
+      if (saved.episodeIds) {
+        this.curatedEpisodeIds.set(saved.episodeIds);
+      }
+    } catch {
+      this.curatedRailSubjects.set(previous);
+    }
+  }
+
+  private async fetchCuration(): Promise<void> {
+    const curation = await this.heroCurationService.getHeroCuration();
+    this.curatedEpisodeIds.set(curation.episodeIds ?? []);
+    this.curatedRailSubjects.set(curation.railSubjects ?? []);
+  }
+
+  /**
+   * Drop curated picks / pinned rails that left the current homepage week window.
+   * Always updates local display; when a Curator is signed in, quietly PUT
+   * the cleaned lists so KV stays in sync (week-window drop is intentional).
+   */
+  private pruneCurationToCurrentWeek(): void {
+    const rawEpisodes = this.curatedEpisodeIds();
+    const episodePrune = pruneCuratedIdsToWeek(rawEpisodes, this.allEpisodes());
+    if (episodePrune.pruned) {
+      this.curatedEpisodeIds.set(episodePrune.ids);
+    }
+
+    const rawRails = this.curatedRailSubjects();
+    const railPrune = pruneRailSubjectsToWeek(
+      rawRails,
+      this.subjectRailCandidates()
+    );
+    if (railPrune.pruned) {
+      this.curatedRailSubjects.set(railPrune.subjects);
+    }
+
+    if (!episodePrune.pruned && !railPrune.pruned) {
+      return;
+    }
+    if (this.isCurator()) {
+      this.pendingKvPrune = false;
+      void this.quietPersistPrune({
+        episodeIds: episodePrune.pruned ? episodePrune.ids : undefined,
+        railSubjects: railPrune.pruned ? railPrune.subjects : undefined,
+      });
+    } else {
+      this.pendingKvPrune = true;
+    }
+  }
+
+  private async quietPersistPrune(update: {
+    episodeIds?: string[];
+    railSubjects?: string[];
+  }): Promise<void> {
+    try {
+      const saved = await this.heroCurationService.setHomepageCuration(update);
+      this.curatedEpisodeIds.set(saved.episodeIds ?? this.curatedEpisodeIds());
+      this.curatedRailSubjects.set(saved.railSubjects ?? this.curatedRailSubjects());
+      this.pendingKvPrune = false;
+    } catch (error) {
+      console.warn('Homepage curation week prune failed to persist; local lists kept clean.', error);
+      this.pendingKvPrune = true;
+    }
+  }
+
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
-    this.stopHeroCycle();
-    this.heroIndex.set(0);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 });
     }
 
     let homepageContent: Homepage | undefined;
     try {
-      homepageContent = await this.homepageService.getHomepageFromApi();
+      const [homepage] = await Promise.all([
+        this.homepageService.getHomepageFromApi(),
+        this.fetchCuration(),
+      ]);
+      homepageContent = homepage;
       this.lastBackgroundFetchAt = Date.now();
     } catch (error) {
       console.error(error);
@@ -445,10 +520,9 @@ export class HomepageApiComponent {
     }
 
     if (homepageContent) {
-      this.applyHomepage(homepageContent, { resetScrollProgress: true, resetHeroIndex: true });
+      this.applyHomepage(homepageContent, { resetScrollProgress: true });
       this.isLoading.set(false);
       this.isInError.set(false);
-      this.startHeroCycle();
     } else {
       this.isLoading.set(false);
       this.isInError.set(true);
@@ -462,7 +536,11 @@ export class HomepageApiComponent {
     }
     let homepageContent: Homepage | undefined;
     try {
-      homepageContent = await this.homepageService.getHomepageFromApi();
+      const [homepage] = await Promise.all([
+        this.homepageService.getHomepageFromApi(),
+        this.fetchCuration(),
+      ]);
+      homepageContent = homepage;
       this.lastBackgroundFetchAt = Date.now();
     } catch (error) {
       console.error(error);
@@ -471,24 +549,12 @@ export class HomepageApiComponent {
     if (!homepageContent) {
       return;
     }
-    const prevFeaturedId = this.featured()?.id;
-    this.applyHomepage(homepageContent, { resetScrollProgress: false, resetHeroIndex: false });
-    const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return;
-    }
-    const keepIndex = prevFeaturedId ? slides.findIndex((s) => s.id === prevFeaturedId) : -1;
-    if (keepIndex >= 0) {
-      this.heroIndex.set(keepIndex);
-    } else {
-      this.heroIndex.set(this.heroIndex() % slides.length);
-    }
-    this.startHeroCycle();
+    this.applyHomepage(homepageContent, { resetScrollProgress: false });
   }
 
   private applyHomepage(
     homepageContent: Homepage,
-    options: { resetScrollProgress: boolean; resetHeroIndex: boolean }
+    options: { resetScrollProgress: boolean }
   ): void {
     this.homepage.set(homepageContent);
     this.episodeCount.set(homepageContent.episodeCount);
@@ -504,6 +570,9 @@ export class HomepageApiComponent {
         release: new Date(item.release),
       }))
     );
+    // Week-window drop: curated picks that left recentEpisodes fall out locally
+    // (and persist when a Curator is signed in).
+    this.pruneCurationToCurrentWeek();
     if (options.resetScrollProgress) {
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
     } else if (this.visibleCount > 0) {
@@ -513,11 +582,17 @@ export class HomepageApiComponent {
     } else {
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
     }
-    if (options.resetHeroIndex) {
-      const slides = this.heroSlides();
-      const start =
-        slides.length > 0 ? HomepageApiComponent.heroTimeBucket() % slides.length : 0;
-      this.heroIndex.set(start);
+  }
+
+  private startScrollWatch(): void {
+    window.addEventListener('scroll', this.onScrollEvent, { passive: true });
+  }
+
+  private stopScrollWatch(): void {
+    window.removeEventListener('scroll', this.onScrollEvent);
+    if (this.scrollFrame) {
+      cancelAnimationFrame(this.scrollFrame);
+      this.scrollFrame = 0;
     }
   }
 
@@ -553,26 +628,6 @@ export class HomepageApiComponent {
     return Math.floor(now.getTime() / HomepageApiComponent.heroBucketMs);
   }
 
-  private static rotateTake<T>(items: T[], offset: number, count: number): T[] {
-    if (items.length === 0 || count <= 0) {
-      return [];
-    }
-    const start = ((offset % items.length) + items.length) % items.length;
-    const take = Math.min(count, items.length);
-    const out: T[] = [];
-    for (let i = 0; i < take; i++) {
-      out.push(items[(start + i) % items.length]);
-    }
-    return out;
-  }
-
-  private static pickAtOffset<T>(items: T[], offset: number): T | undefined {
-    if (items.length === 0) {
-      return undefined;
-    }
-    return items[((offset % items.length) + items.length) % items.length];
-  }
-
   private loadMoreEpisodes(count: number): void {
     const episodes = this.allEpisodes();
     const nextVisibleCount = Math.min(this.visibleCount + count, episodes.length);
@@ -595,53 +650,6 @@ export class HomepageApiComponent {
     );
   }
 
-  private transitionTo(index: number): void {
-    if (index === this.heroIndex()) {
-      return;
-    }
-    this.heroAnimating.set(true);
-    this.heroIndex.set(index);
-    if (this.heroAnimTimer) {
-      clearTimeout(this.heroAnimTimer);
-    }
-    this.heroAnimTimer = setTimeout(() => this.heroAnimating.set(false), 700);
-  }
-
-  private startHeroCycle(): void {
-    this.stopHeroCycle();
-    if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
-      return;
-    }
-    if (this.heroSlides().length < 2) {
-      return;
-    }
-    this.heroTimer = setInterval(() => {
-      if (this.heroPaused()) {
-        return;
-      }
-      const n = this.heroSlides().length;
-      if (n < 2) {
-        return;
-      }
-      this.transitionTo((this.heroIndex() + 1) % n);
-    }, HomepageApiComponent.heroIntervalMs);
-  }
-
-  private restartHeroCycle(): void {
-    this.startHeroCycle();
-  }
-
-  private stopHeroCycle(): void {
-    if (this.heroTimer) {
-      clearInterval(this.heroTimer);
-      this.heroTimer = undefined;
-    }
-    if (this.heroAnimTimer) {
-      clearTimeout(this.heroAnimTimer);
-      this.heroAnimTimer = undefined;
-    }
-  }
-
   ToDate = (key: string) => dateFromKey(key);
 
   private descDateKey(a: string, b: string): number {
@@ -651,8 +659,4 @@ export class HomepageApiComponent {
     if (aD < bD) return 1;
     return 0;
   }
-
-  descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
-    return this.descDateKey(a.key, b.key);
-  };
 }

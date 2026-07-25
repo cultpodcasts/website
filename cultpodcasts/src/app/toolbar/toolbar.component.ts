@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { AuthServiceWrapper, HAS_LOGGED_IN_STORAGE_KEY } from '../auth-service-wrapper.class';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../feature-switch.enum';
@@ -41,7 +41,10 @@ import { environment } from '../../environments/environment';
   ],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // SSR always renders the logged-out chrome (FakeAuth); the client may render
+  // the cached avatar immediately. Skip hydration so those trees can't mismatch.
+  host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
@@ -57,8 +60,17 @@ export class ToolbarComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
+  /** True while Auth0 has a user, or we still have a cached avatar during session restore. */
+  protected showSignedInChrome(): boolean {
+    return !!this.auth.avatarUrl();
+  }
+
+  protected avatarSrc(): string {
+    return this.auth.avatarUrl() ?? '/assets/profile.svg';
+  }
+
   login() {
-    if (localStorage.getItem("hasLoggedIn")) {
+    if (localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)) {
       this.auth.authService.loginWithRedirect();
     } else {
       this.dialog
@@ -82,6 +94,7 @@ export class ToolbarComponent {
   }
 
   logout() {
+    this.auth.clearCachedAvatar();
     this.auth.authService.logout({
       logoutParams: {
         returnTo: authRedirectUri(environment.assetHost)

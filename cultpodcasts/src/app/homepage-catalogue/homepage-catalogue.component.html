@@ -1,0 +1,29 @@
+<section class="catalogue" aria-label="Catalogue scale">
+  <div class="catalogue__inner">
+    @if (weekEpisodeCount(); as weekCount) {
+    <div class="catalogue__stat">
+      <p class="catalogue__value">{{ weekCount | number }}</p>
+      <p class="catalogue__label">New this week</p>
+    </div>
+    }
+    @if (episodeCount(); as count) {
+    <div class="catalogue__stat catalogue__stat--hero">
+      <p class="catalogue__value catalogue__value--count">
+        <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline()"
+          [value]="count"
+          [title]="totalDurationDays() ? totalDurationDays() + ' days' : undefined"></app-slot-machine-counter>
+      </p>
+      <p class="catalogue__label">
+        Episodes in the
+        <a href="https://github.com/cultpodcasts/PublicDatabase">index</a>
+      </p>
+    </div>
+    }
+    @if (totalDurationDays(); as days) {
+    <div class="catalogue__stat">
+      <p class="catalogue__value catalogue__value--duration">{{ days }}</p>
+      <p class="catalogue__label">Days of listening</p>
+    </div>
+    }
+  </div>
+</section>

@@ -6,6 +6,9 @@ import { DiscoveryApiComponent } from '../discovery-api/discovery-api.component'
     templateUrl: './discovery.component.html',
     styleUrls: ['./discovery.component.sass'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    // Auth-gated + client-fetched: skip hydration so FakeAuth SSR shells cannot
+    // mismatch the post-Auth0 client tree (hasAttribute-on-null crashes).
+    host: { ngSkipHydration: 'true' },
     imports: [
         DiscoveryApiComponent
     ]

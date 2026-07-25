@@ -8,6 +8,7 @@ import { OutgoingEpisodesApiComponent } from '../outgoing-episodes-api/outgoing-
     ],
     templateUrl: './outgoing-episodes.component.html',
     styleUrl: './outgoing-episodes.component.sass',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { ngSkipHydration: 'true' },
 })
 export class OutgoingEpisodesComponent { }

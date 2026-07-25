@@ -16,7 +16,11 @@
         display: flex
         justify-content: flex-end
         align-items: center
-        gap: 4px
+        gap: 12px
+        overflow: visible
+        // Keep the avatar badge inside the toolbar paint box.
+        padding-top: 4px
+        padding-right: 4px
 
 .app-toolbar
     background: color-mix(in srgb, var(--cp-ink-elevated, var(--mat-sys-surface-container)) 72%, transparent) !important
@@ -24,8 +28,14 @@
     -webkit-backdrop-filter: blur(14px)
     color: var(--mat-sys-on-surface)
     border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent)
-    padding-top: 4px
-    padding-bottom: 4px
+    // Room for the discovery matBadge that sits above the avatar corner.
+    padding-top: 8px
+    padding-bottom: 8px
+    overflow: visible
+
+    .mat-toolbar-row,
+    .mat-toolbar-single-row
+        overflow: visible
 
 .beta
     color: #aaa
@@ -53,14 +63,27 @@
 .socialbutton
     width: 40px
     height: 40px
-    padding-left: 12px
     vertical-align: middle
+
+// Hide the SSR logged-out profile glyph when a cached avatar exists, until the
+// skip-hydration toolbar re-renders with #avatar (avoids logged-out flash).
+:host-context(html.has-cached-avatar)
+    img.socialbutton[alt="Profile"]:not(#avatar)
+        opacity: 0
 
 #socialbuttons
     .button:hover
         cursor: pointer
+    // Signed-in chrome wraps the avatar + matBadge. Do not overflow:hidden here —
+    // that clips the discovery count badge. Circle the img itself instead.
+    div.socialbutton
+        box-sizing: border-box
+        padding: 0
+        overflow: visible
     #avatar
+        display: block
         border-radius: 50%
+        width: 40px
         height: 40px
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
 

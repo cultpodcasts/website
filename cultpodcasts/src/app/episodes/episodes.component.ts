@@ -8,6 +8,7 @@ import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
     ],
     templateUrl: './episodes.component.html',
     styleUrl: './episodes.component.sass',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { ngSkipHydration: 'true' },
 })
 export class EpisodesComponent { }

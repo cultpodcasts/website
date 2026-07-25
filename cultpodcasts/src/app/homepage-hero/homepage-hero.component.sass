@@ -1,0 +1,328 @@
+:host
+    display: block
+    --hero-interval: 7.5s
+
+.billboard
+    position: relative
+    width: 100%
+    min-height: min(88vh, 720px)
+    display: flex
+    align-items: flex-end
+    padding: 0 4vw 48px
+    box-sizing: border-box
+    overflow: hidden
+
+.billboard__stages,
+.billboard__grain,
+.billboard__scrim,
+.billboard__vignette
+    position: absolute
+    inset: 0
+
+.billboard__grain
+    pointer-events: none
+    opacity: 0.07
+    mix-blend-mode: soft-light
+    // Static noise tile — avoids animated SVG feTurbulence paint cost on every frame.
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")
+    background-size: 160px 160px
+
+.billboard__scrim
+    background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, var(--nflx-bg, #0b0b0b) 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
+
+.billboard__vignette
+    pointer-events: none
+    background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
+
+.billboard__stage
+    position: absolute
+    inset: -4%
+    background-color: #121212
+    background-size: cover
+    background-position: center 20%
+    opacity: 0
+    transform: scale(1.08)
+    transition: opacity 1.15s cubic-bezier(0.33, 0.1, 0.25, 1)
+    &.is-active
+        opacity: 1
+    &.is-kenburns
+        animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+
+.billboard__content
+    position: relative
+    z-index: 2
+    width: min(640px, 100%)
+    padding-top: 96px
+
+.billboard__feature
+    opacity: 1
+    transition: opacity 0.4s cubic-bezier(0.33, 0.1, 0.25, 1)
+    &.is-hidden
+        opacity: 0
+        pointer-events: none
+        transition-duration: 0.32s
+
+.billboard__eyebrow
+    margin: 0 0 10px
+    display: inline-flex
+    align-items: center
+    gap: 10px
+    font-size: 0.8rem
+    font-weight: 700
+    letter-spacing: 0.2em
+    text-transform: uppercase
+    color: var(--nflx-accent)
+
+.billboard__live
+    width: 8px
+    height: 8px
+    border-radius: 50%
+    background: var(--nflx-accent)
+    box-shadow: 0 0 0 0 #e8a23ab3
+    animation: nflx-pulse-live 1.8s ease-out infinite
+
+.billboard__title
+    margin: 0 0 12px
+    font-family: var(--cp-font-display)
+    font-size: clamp(2.3rem, 6.5vw, 3.85rem)
+    font-weight: 400
+    line-height: 1.02
+    letter-spacing: -0.025em
+    text-shadow: 0 4px 40px #000000bf
+
+.billboard__meta
+    margin: 0 0 12px
+    font-size: 0.95rem
+    color: var(--nflx-muted)
+    a
+        color: var(--nflx-text, #fff)
+        text-decoration: none
+        font-weight: 600
+        &:hover
+            text-decoration: underline
+
+.billboard__lang
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    margin-left: 8px
+    padding: 2px 10px 2px 8px
+    border-radius: 999px
+    background: #ffffff1f
+    border: 1px solid #ffffff38
+    color: #fff
+    font-size: 0.78rem
+    font-weight: 600
+    vertical-align: middle
+
+.billboard__lang-flag
+    font-size: 1rem
+    line-height: 1
+    font-weight: 400
+
+.billboard__lang-name
+    line-height: 1.2
+
+.billboard__desc
+    margin: 0 0 22px
+    font-size: 1.05rem
+    line-height: 1.45
+    color: #e8e8e8
+    max-width: 36em
+    text-shadow: 0 1px 12px #0000008c
+
+.billboard__subjects
+    display: flex
+    flex-wrap: wrap
+    gap: 8px
+    margin: -8px 0 20px
+
+.billboard__actions
+    display: flex
+    flex-wrap: wrap
+    gap: 12px
+
+.billboard__play
+    background: #fff !important
+    color: #000 !important
+    font-weight: 700
+    padding-inline: 22px
+    box-shadow: 0 8px 28px #00000059
+    mat-icon
+        margin-right: 4px
+
+.billboard__more
+    border-color: #ffffff8c !important
+    color: #fff !important
+    background: #2a2a2acc !important
+    font-weight: 600
+
+.billboard__curate
+    border-color: #e8a23a99 !important
+    color: var(--nflx-accent) !important
+    background: #1a140fcc !important
+    font-weight: 600
+    mat-icon
+        margin-right: 4px
+        color: var(--nflx-accent)
+
+.billboard__controls
+    position: absolute
+    right: 4vw
+    bottom: 56px
+    z-index: 3
+    display: flex
+    align-items: center
+    gap: 10px
+    flex-wrap: wrap
+    justify-content: flex-end
+    max-width: calc(100% - 8vw)
+
+.billboard__manage
+    display: inline-flex
+    align-items: center
+    gap: 6px
+    height: 36px
+    padding: 0 12px
+    border-radius: 999px
+    border: 1px solid #ffffff59
+    background: #141414e6
+    color: #fff
+    font-size: 0.78rem
+    font-weight: 600
+    cursor: pointer
+    transition: background 0.2s ease, border-color 0.2s ease
+    mat-icon
+        font-size: 18px
+        width: 18px
+        height: 18px
+        color: var(--nflx-accent)
+    &:hover,
+    &:focus-visible
+        background: #2a2a2a
+        border-color: var(--nflx-accent)
+        outline: none
+
+.billboard__pager
+    display: flex
+    align-items: center
+    gap: 8px
+    min-width: 0
+    max-width: min(420px, calc(100vw - 8vw))
+
+.billboard__nav
+    width: 44px
+    height: 44px
+    flex: 0 0 auto
+    border-radius: 50%
+    border: 1px solid #ffffff59
+    background: #141414e6
+    color: #fff
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease
+    &:hover
+        background: #2a2a2a
+        border-color: #ffffffb3
+        transform: scale(1.05)
+
+.billboard__dots-viewport
+    position: relative
+    flex: 1 1 auto
+    min-width: 0
+    overflow-x: auto
+    overflow-y: hidden
+    scroll-behavior: smooth
+    scrollbar-width: none
+    -ms-overflow-style: none
+    &::-webkit-scrollbar
+        display: none
+    mask-image: linear-gradient(to right, #000, #000)
+    &.has-overflow-start
+        mask-image: linear-gradient(to right, transparent, #000 18px, #000)
+    &.has-overflow-end
+        mask-image: linear-gradient(to right, #000, #000 calc(100% - 18px), transparent)
+    &.has-overflow-start.has-overflow-end
+        mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent)
+
+.billboard__dots
+    display: flex
+    gap: 6px
+    width: max-content
+    padding: 10px 2px
+
+.billboard__dot
+    position: relative
+    flex-shrink: 0
+    width: 28px
+    height: 3px
+    padding: 0
+    border: none
+    border-radius: 2px
+    background: #ffffff47
+    cursor: pointer
+    overflow: hidden
+    &.is-active
+        background: #ffffff59
+    &.is-curated
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--nflx-accent) 55%, transparent)
+
+.billboard__dot-fill
+    position: absolute
+    inset: 0
+    width: 0
+    background: var(--nflx-accent)
+    border-radius: inherit
+    &.is-running
+        animation: nflx-dot-progress var(--hero-interval) linear forwards
+
+.billboard:hover .billboard__dot-fill.is-running,
+.billboard:focus-within .billboard__dot-fill.is-running
+    animation-play-state: paused
+
+@media (prefers-reduced-motion: reduce)
+    .billboard__grain
+        display: none
+    .billboard__stage.is-kenburns
+        animation: none
+        transform: scale(1.05)
+    .billboard__stage
+        transition: none
+    .billboard__feature,
+    .billboard__dot-fill.is-running,
+    .billboard__live
+        animation: none
+        transition: none
+    .billboard__feature.is-hidden
+        opacity: 0
+    .billboard__dot-fill.is-running
+        width: 100%
+    .billboard__dots-viewport
+        scroll-behavior: auto
+
+@media screen and (min-width: 900px)
+    .billboard__pager
+        max-width: min(480px, 42vw)
+
+@media screen and (max-width: 600px)
+    .billboard
+        min-height: 78vh
+        padding-bottom: 72px
+    .billboard__actions
+        flex-direction: column
+        align-items: stretch
+    .billboard__controls
+        left: 4vw
+        right: 4vw
+        bottom: 20px
+        justify-content: space-between
+        max-width: none
+    .billboard__pager
+        flex: 1 1 auto
+        max-width: none
+        width: 100%
+    .billboard__nav
+        width: 40px
+        height: 40px

@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>Manage hero</h2>
+
+<mat-dialog-content class="hero-manage">
+  <p class="hero-manage__lede">
+    Drag to reorder curated picks. Autofilled slides are shown for context and are not editable here.
+  </p>
+
+  @if (curated().length === 0) {
+  <p class="hero-manage__empty">No curated picks yet. Star episodes on any homepage rail to promote them.</p>
+  } @else {
+  <ul class="hero-manage__list" cdkDropList (cdkDropListDropped)="drop($event)">
+    @for (ep of curated(); track ep.id; let i = $index) {
+    <li class="hero-manage__item" cdkDrag>
+      <button type="button" class="hero-manage__handle" cdkDragHandle aria-label="Drag to reorder">
+        <mat-icon>drag_indicator</mat-icon>
+      </button>
+      <span class="hero-manage__index">{{ i + 1 }}</span>
+      @if (thumb(ep); as src) {
+      <img class="hero-manage__thumb" [src]="src" alt="" />
+      } @else {
+      <span class="hero-manage__thumb hero-manage__thumb--empty" aria-hidden="true"></span>
+      }
+      <div class="hero-manage__meta">
+        <span class="hero-manage__title">{{ ep.episodeTitle }}</span>
+        <span class="hero-manage__show">{{ displayCatalogName(ep.podcastName) }}</span>
+      </div>
+      <button type="button" mat-icon-button class="hero-manage__remove"
+        [attr.aria-label]="'Remove ' + ep.episodeTitle + ' from hero'"
+        (click)="remove(ep.id)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </li>
+    }
+  </ul>
+  }
+
+  @if (autofilled.length > 0) {
+  <h3 class="hero-manage__section">Autofilled</h3>
+  <ul class="hero-manage__list hero-manage__list--autofill">
+    @for (ep of autofilled; track ep.id) {
+    <li class="hero-manage__item hero-manage__item--autofill">
+      @if (thumb(ep); as src) {
+      <img class="hero-manage__thumb" [src]="src" alt="" />
+      } @else {
+      <span class="hero-manage__thumb hero-manage__thumb--empty" aria-hidden="true"></span>
+      }
+      <div class="hero-manage__meta">
+        <span class="hero-manage__title">{{ ep.episodeTitle }}</span>
+        <span class="hero-manage__show">{{ displayCatalogName(ep.podcastName) }}</span>
+      </div>
+    </li>
+    }
+  </ul>
+  }
+
+  @if (error()) {
+  <p class="hero-manage__error" role="alert">Could not save. Try again.</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()" [disabled]="saving()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving()">
+    @if (saving()) {
+    <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+    Save
+    }
+  </button>
+</mat-dialog-actions>

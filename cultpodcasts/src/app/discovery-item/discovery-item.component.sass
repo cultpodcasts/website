@@ -1,83 +1,118 @@
-mat-card
-    border: 1px black solid
-    margin-bottom: 10px
-    padding: 2px 6px 10px
+mat-card.curator-card
+    margin-bottom: 12px
+    padding: 12px
+    border: 1px solid color-mix(in srgb, #fff 10%, transparent)
+    border-radius: var(--cp-radius, 14px)
+    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433)
     h3
         font-weight: bold
         margin-bottom: 2px
-    .score-row
-        margin-top: 4px
-    .score-badge
-        display: inline-block
-        font-size: 0.85em
-        font-weight: 600
-        padding: 2px 8px
-        border-radius: 12px
-        background-color: #e0e0e0
-        color: #333
-    .score-likely
-        background-color: #c8e6c9
-        color: #1b5e20
-    .score-review
-        background-color: #fff3e0
-        color: #e65100
-    .score-unlikely
-        background-color: #ffcdd2
-        color: #b71c1c
-    .score-unscored
-        background-color: #eeeeee
-        color: #616161
-    .multipleMatchingPodcasts
-        color: red
-        font-weight: bold
-    .matchedPodcast
-        font-weight: bold
-    mat-card-subtitle
-        margin-top: 7px
-        .duration
-            color: var(--mat-theme-text-secondary)
-            padding-left: 5px
-        a
-            color: var(--mat-theme-text-secondary)
-            line-height: 1.4em
-        span.unknown
-            color: #f00
-    mat-card-content
-        padding-top: 5px
-        overflow: hidden
-        img
-            width: 100%
-        .showDescription,
-        .resultdescription
-            display: block
-        .resultdescription
-            padding-top: 5px
 
-    mat-card-actions
-        .discovery-service-links
-            .youtubemeta
-                flex-direction: column
-                margin-left: 10px
-                display: flex
-                min-width: 160px
+.curator-card__body
+    display: flex
+    gap: 14px
+    align-items: flex-start
+
+.curator-card__art
+    flex: 0 0 112px
+    width: 112px
+    app-episode-image
+        display: block
+
+.curator-card__main
+    flex: 1 1 auto
+    min-width: 0
+
+.score-row
+    margin-top: 4px
+
+.score-badge
+    display: inline-block
+    font-size: 0.78rem
+    font-weight: 600
+    padding: 3px 10px
+    border-radius: 999px
+    background: color-mix(in srgb, #fff 10%, transparent)
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 85%, transparent)
+    border: 1px solid color-mix(in srgb, #fff 12%, transparent)
+
+.score-likely
+    background: color-mix(in srgb, var(--cp-amber, #e8a23a) 22%, transparent)
+    border-color: color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
+    color: var(--cp-amber, #e8a23a)
+
+.score-review
+    background: color-mix(in srgb, #ffb74d 18%, transparent)
+    border-color: color-mix(in srgb, #ffb74d 35%, transparent)
+    color: #ffcc80
+
+.score-unlikely
+    background: color-mix(in srgb, #ef5350 16%, transparent)
+    border-color: color-mix(in srgb, #ef5350 35%, transparent)
+    color: #ef9a9a
+
+.score-unscored
+    background: color-mix(in srgb, #fff 8%, transparent)
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 55%, transparent)
+
+.multipleMatchingPodcasts
+    color: #ef9a9a
+    font-weight: bold
+
+.matchedPodcast
+    font-weight: bold
+
+mat-card-subtitle
+    margin-top: 6px
+    .duration
+        color: var(--mat-theme-text-secondary)
+        padding-left: 5px
+    a
+        color: var(--mat-theme-text-secondary)
+        line-height: 1.4em
+    span.unknown
+        color: var(--cp-warn, #f44336)
+        font-weight: 600
+
+mat-card-content
+    padding-top: 4px
+    overflow: hidden
+    .showDescription,
+    .resultdescription
+        display: block
+    .resultdescription
+        padding-top: 4px
+
+.curator-card__subjects
+    margin-top: 10px
+
+.curator-card__actions
+    padding-top: 4px
+    .discovery-service-links
+        display: flex
+        flex-wrap: wrap
+        align-items: center
+        gap: 4px
+        .youtubemeta
+            flex-direction: column
+            margin-left: 6px
+            display: flex
+            min-width: 120px
+            font-size: 0.78rem
+            color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
+
+// State chrome (border / background) lives in styles.scss — global mat-card rules use
+// !important and would otherwise hide any local selected / warning treatment.
 mat-card.selected
-    background-color: #547c7cff
     .matchedPodcast
         color: var(--mat-theme-text-primary-on-background)
-mat-card.error
-        border-color: red
-        border-width: 3px
-mat-card.unknownDuration
-    border-color: #f00
+
 mat-card.auto-hidden
-    opacity: 0.75
-    border-style: dashed
+    opacity: 0.78
 
-@media (prefers-color-scheme: dark)
-    mat-card.selected
-        border-color: #ffffff;
-
-@media (prefers-color-scheme: light)
-    mat-card.selected
-        background-color: #cecaca
-
+@media screen and (max-width: 560px)
+    .curator-card__body
+        gap: 10px
+    .curator-card__art
+        flex-basis: 88px
+        width: 88px

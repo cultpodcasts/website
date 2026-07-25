@@ -341,4 +341,8 @@ export class SearchApiComponent {
   isPlayingId(id: string): boolean {
     return this.playerService.episode()?.id === id;
   }
+
+  isQueuedId(id: string): boolean {
+    return this.playerService.isQueuedId(id);
+  }
 }

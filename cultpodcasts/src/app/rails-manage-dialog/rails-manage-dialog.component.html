@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>Manage subject rails</h2>
+
+<mat-dialog-content class="rails-manage">
+  <p class="rails-manage__lede">
+    Pin subjects to show them as homepage rails. Drag to reorder. Only pinned subjects appear — nothing is autofilled.
+  </p>
+
+  @if (pinned().length === 0) {
+  <p class="rails-manage__empty">No pinned subjects yet. Use the pin on a rail heading, or add one below.</p>
+  } @else {
+  <ul class="rails-manage__list" cdkDropList (cdkDropListDropped)="drop($event)">
+    @for (subject of pinned(); track subject; let i = $index) {
+    <li class="rails-manage__item" cdkDrag>
+      <button type="button" class="rails-manage__handle" cdkDragHandle aria-label="Drag to reorder">
+        <mat-icon>drag_indicator</mat-icon>
+      </button>
+      <span class="rails-manage__index">{{ i + 1 }}</span>
+      <app-subject-chip [subject]="subject" />
+      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
+      <button type="button" mat-icon-button class="rails-manage__remove"
+        [attr.aria-label]="'Unpin ' + displayCatalogName(subject)"
+        (click)="remove(subject)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </li>
+    }
+  </ul>
+  }
+
+  @if (available().length > 0) {
+  <h3 class="rails-manage__section">Subjects this week</h3>
+  <ul class="rails-manage__list">
+    @for (subject of available(); track subject) {
+    <li class="rails-manage__item">
+      <app-subject-chip [subject]="subject" />
+      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
+      <button type="button" mat-stroked-button class="rails-manage__pin"
+        (click)="pin(subject)">
+        <mat-icon>push_pin</mat-icon>
+        Pin
+      </button>
+    </li>
+    }
+  </ul>
+  }
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (error()) {
+  <p class="rails-manage__error" role="alert">Could not save. Try again.</p>
+  }
+  <button mat-button type="button" (click)="close()" [disabled]="saving()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving()">
+    @if (saving()) {
+    <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+    Save
+    }
+  </button>
+</mat-dialog-actions>

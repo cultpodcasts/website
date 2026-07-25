@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, PLATFORM_ID, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -9,7 +9,7 @@ import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
@@ -30,6 +30,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EpisodeUpdateService } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
+import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -48,7 +49,8 @@ const sortParamDateDesc: string = "date-desc";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent,
-    EpisodeGuestsComponent
+    EpisodeGuestsComponent,
+    ClampableTextComponent
   ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass',
@@ -81,10 +83,16 @@ export class EpisodesApiComponent {
   ) {
   }
 
+  private readonly platformId = inject(PLATFORM_ID);
+
   ngOnInit() {
     this.siteService.setQuery(null);
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
+
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
 
     this.isLoading.set(true);
     this.error.set(false);

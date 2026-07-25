@@ -33,8 +33,18 @@ export class EpisodePosterComponent {
   readonly titleAsHtml = input(false);
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
   readonly excludeSubject = input<string | undefined>(undefined);
+  /** Curator-only: show a star to promote/demote this episode in the homepage hero. */
+  readonly showPromote = input(false);
+  /** Whether this episode is currently in the curated hero list. */
+  readonly promoted = input(false);
+  /**
+   * Queue membership from the parent (`playerService.queuedKeys().has(id)`).
+   * Kept as an input so OnPush only refreshes posters whose flag actually flipped.
+   */
+  readonly queued = input(false);
 
   readonly play = output<SearchDisplayEpisode>();
+  readonly promoteToggle = output<SearchDisplayEpisode>();
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -48,9 +58,6 @@ export class EpisodePosterComponent {
   protected readonly playable = computed(() => canPlayEpisode(this.episode()));
 
   protected readonly playLabel = computed(() => playActionLabel(this.episode()));
-
-  /** "Add to queue" is a secondary action — only offered when the episode is embeddable. */
-  protected readonly queued = computed(() => this.playerService.isQueued(this.episode()));
 
   protected readonly duration = computed(() => {
     const raw = this.episode().duration ?? '';
@@ -81,5 +88,11 @@ export class EpisodePosterComponent {
     if (this.playable()) {
       this.playerService.toggleQueue(this.episode());
     }
+  }
+
+  onPromoteToggle(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.promoteToggle.emit(this.episode());
   }
 }
