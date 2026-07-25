@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   HostListener,
   PLATFORM_ID,
+  afterRenderEffect,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe, isPlatformBrowser, KeyValue } from '@angular/common';
@@ -143,6 +146,10 @@ export class HomepageApiComponent {
   protected readonly curatedEpisodeIds = signal<string[]>([]);
   /** Ordered subject names pinned as homepage rails (may include stale names). */
   protected readonly curatedRailSubjects = signal<string[]>([]);
+  /** Fade cues when the hero dash strip overflows its viewport. */
+  protected readonly heroDotsOverflowStart = signal(false);
+  protected readonly heroDotsOverflowEnd = signal(false);
+  private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -265,11 +272,24 @@ export class HomepageApiComponent {
   private reduceMotion = false;
   /** True when local curated list was pruned for the week but KV was not yet updated. */
   private pendingKvPrune = false;
+  private heroDotsOverflowTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly onDocumentVisibility = (): void => {
     if (!document.hidden) {
       this.maybeBackgroundRefresh();
     }
   };
+
+  constructor() {
+    // Keep the active dash centered in the strip when the hero rotates or the pool grows.
+    afterRenderEffect(() => {
+      const index = this.heroIndex();
+      const slideCount = this.heroSlides().length;
+      if (!isPlatformBrowser(this.platformId) || slideCount < 2) {
+        return;
+      }
+      this.scrollActiveHeroDotIntoView(index);
+    });
+  }
 
   ngOnInit() {
     this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -294,6 +314,9 @@ export class HomepageApiComponent {
         this.stopHeroCycle();
         this.stopBackgroundRefresh();
         this.clearHeroImageWait();
+        if (this.heroDotsOverflowTimer) {
+          clearTimeout(this.heroDotsOverflowTimer);
+        }
       });
     }
   }
@@ -384,6 +407,18 @@ export class HomepageApiComponent {
     }
     this.transitionTo(index % slides.length);
     this.restartHeroCycle();
+  }
+
+  onHeroDotsScroll(): void {
+    this.syncHeroDotsOverflow();
+  }
+
+  @HostListener('window:resize')
+  onHeroDotsResize(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
   }
 
   nextHero(): void {
@@ -776,6 +811,57 @@ export class HomepageApiComponent {
     if (this.heroIndex() >= n) {
       this.heroIndex.set(this.heroIndex() % n);
     }
+  }
+
+  /** Smoothly keep the active dash in view when the strip is wider than its viewport. */
+  private scrollActiveHeroDotIntoView(
+    index: number,
+    behavior: ScrollBehavior = this.reduceMotion ? 'auto' : 'smooth'
+  ): void {
+    const viewport = this.heroDotsViewport()?.nativeElement;
+    if (!viewport) {
+      return;
+    }
+    const active = viewport.querySelector<HTMLElement>(`[data-hero-dot="${index}"]`);
+    if (!active) {
+      this.syncHeroDotsOverflow();
+      return;
+    }
+
+    const viewportWidth = viewport.clientWidth;
+    const targetLeft =
+      active.offsetLeft - (viewportWidth - active.offsetWidth) / 2;
+    const maxScroll = Math.max(0, viewport.scrollWidth - viewportWidth);
+    const nextLeft = Math.max(0, Math.min(targetLeft, maxScroll));
+
+    if (Math.abs(viewport.scrollLeft - nextLeft) > 1) {
+      viewport.scrollTo({ left: nextLeft, behavior });
+    }
+    // Overflow fades may lag smooth scroll; resync after the animation settles.
+    this.syncHeroDotsOverflow();
+    if (behavior === 'smooth') {
+      if (this.heroDotsOverflowTimer) {
+        clearTimeout(this.heroDotsOverflowTimer);
+      }
+      this.heroDotsOverflowTimer = setTimeout(() => this.syncHeroDotsOverflow(), 320);
+    }
+  }
+
+  private syncHeroDotsOverflow(): void {
+    const viewport = this.heroDotsViewport()?.nativeElement;
+    if (!viewport) {
+      this.heroDotsOverflowStart.set(false);
+      this.heroDotsOverflowEnd.set(false);
+      return;
+    }
+    const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+    if (maxScroll <= 1) {
+      this.heroDotsOverflowStart.set(false);
+      this.heroDotsOverflowEnd.set(false);
+      return;
+    }
+    this.heroDotsOverflowStart.set(viewport.scrollLeft > 1);
+    this.heroDotsOverflowEnd.set(viewport.scrollLeft < maxScroll - 1);
   }
 
   private transitionTo(index: number): void {

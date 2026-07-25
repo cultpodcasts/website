@@ -269,6 +269,7 @@
     gap: 10px
     flex-wrap: wrap
     justify-content: flex-end
+    max-width: calc(100% - 8vw)
 
 .billboard__manage
     display: inline-flex
@@ -296,9 +297,17 @@
         border-color: var(--nflx-accent)
         outline: none
 
+.billboard__pager
+    display: flex
+    align-items: center
+    gap: 8px
+    min-width: 0
+    max-width: min(420px, calc(100vw - 8vw))
+
 .billboard__nav
     width: 44px
     height: 44px
+    flex: 0 0 auto
     border-radius: 50%
     border: 1px solid #ffffff59
     background: #00000073
@@ -314,10 +323,31 @@
         border-color: #ffffffb3
         transform: scale(1.05)
 
+.billboard__dots-viewport
+    position: relative
+    flex: 1 1 auto
+    min-width: 0
+    overflow-x: auto
+    overflow-y: hidden
+    scroll-behavior: smooth
+    scrollbar-width: none
+    -ms-overflow-style: none
+    &::-webkit-scrollbar
+        display: none
+    // Soft edge fades when more dashes exist off-screen.
+    mask-image: linear-gradient(to right, #000, #000)
+    &.has-overflow-start
+        mask-image: linear-gradient(to right, transparent, #000 18px, #000)
+    &.has-overflow-end
+        mask-image: linear-gradient(to right, #000, #000 calc(100% - 18px), transparent)
+    &.has-overflow-start.has-overflow-end
+        mask-image: linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent)
+
 .billboard__dots
     display: flex
     gap: 6px
-    margin-left: 6px
+    width: max-content
+    padding: 10px 2px
 
 .billboard__dot
     position: relative
@@ -360,6 +390,8 @@
         animation: none
     .billboard__dot-fill.is-running
         width: 100%
+    .billboard__dots-viewport
+        scroll-behavior: auto
 
 @media screen and (min-width: 900px)
     .nflx
@@ -367,6 +399,8 @@
         --rail-poster-sq: 180px
         --obscure-card-w: 180px
         --obscure-yt-w: 260px
+    .billboard__pager
+        max-width: min(480px, 42vw)
 
 @media screen and (max-width: 700px)
     .nflx
@@ -400,5 +434,11 @@
         right: 4vw
         bottom: 20px
         justify-content: space-between
-    .billboard__dots
-        margin-left: auto
+        max-width: none
+    .billboard__pager
+        flex: 1 1 auto
+        max-width: none
+        width: 100%
+    .billboard__nav
+        width: 40px
+        height: 40px

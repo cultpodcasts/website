@@ -101,26 +101,35 @@
       </button>
       }
       @if (heroSlides().length > 1) {
-      <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
-        (click)="prevHero()">
-        <mat-icon>chevron_left</mat-icon>
-      </button>
-      <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
-        (click)="nextHero()">
-        <mat-icon>chevron_right</mat-icon>
-      </button>
-      <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
-        @for (slide of heroSlides(); track slide.id; let i = $index) {
-        <button type="button" class="billboard__dot" role="tab"
-          [class.is-active]="i === heroIndex()"
-          [class.is-curated]="isPromoted(slide.id)"
-          [attr.aria-selected]="i === heroIndex()"
-          [attr.aria-label]="'Show featured episode ' + (i + 1)"
-          (click)="goHero(i)">
-          <span class="billboard__dot-fill"
-            [class.is-running]="i === heroIndex() && !heroPaused() && heroImageReady()"></span>
+      <div class="billboard__pager">
+        <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
+          (click)="prevHero()">
+          <mat-icon>chevron_left</mat-icon>
         </button>
-        }
+        <div class="billboard__dots-viewport"
+          [class.has-overflow-start]="heroDotsOverflowStart()"
+          [class.has-overflow-end]="heroDotsOverflowEnd()"
+          #heroDotsViewport
+          (scroll)="onHeroDotsScroll()">
+          <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
+            @for (slide of heroSlides(); track slide.id; let i = $index) {
+            <button type="button" class="billboard__dot" role="tab"
+              [class.is-active]="i === heroIndex()"
+              [class.is-curated]="isPromoted(slide.id)"
+              [attr.data-hero-dot]="i"
+              [attr.aria-selected]="i === heroIndex()"
+              [attr.aria-label]="'Show featured episode ' + (i + 1)"
+              (click)="goHero(i)">
+              <span class="billboard__dot-fill"
+                [class.is-running]="i === heroIndex() && !heroPaused() && heroImageReady()"></span>
+            </button>
+            }
+          </div>
+        </div>
+        <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
+          (click)="nextHero()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
       </div>
       }
     </div>
