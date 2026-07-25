@@ -4,9 +4,10 @@ import { HomepageEpisode } from './homepage-episode.interface';
 export const SUBJECT_RAIL_MIN_EPISODES = 3;
 
 /**
- * Max posters rendered per homepage rail. Candidates keep the full week list for
- * eligibility / manage-dialog counts; only the scroller DOM is capped — "Browse all"
- * covers the rest. Without this, a popular pin (100–200 eps) mounts that many cards.
+ * Max posters rendered per homepage *subject* rail. Candidates keep the full week
+ * list for eligibility / manage-dialog counts; the scroller is capped and "Browse all"
+ * links to `/subject/:name`. Day rails are not capped — they have no show-more destination
+ * and are already bounded by progressive load.
  */
 export const RAIL_DISPLAY_SIZE = 12;
 

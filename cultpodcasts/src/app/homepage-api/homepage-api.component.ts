@@ -194,7 +194,8 @@ export class HomepageApiComponent {
       return {
         id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
-        episodes: g[key].slice(0, HomepageApiComponent.railDisplaySize),
+        // Day rails have no "Browse all" destination — show the full progressive window.
+        episodes: g[key],
       } satisfies EpisodeRail;
     });
 

@@ -448,6 +448,10 @@ export class HomepageHeroComponent {
     }, HomepageHeroComponent.heroImageFallbackMs);
 
     const img = new Image();
+    // The billboard backdrop is the page's largest visual; a plain `new Image()`
+    // (like the CSS background-image it warms the cache for) fetches at Low priority.
+    img.fetchPriority = 'high';
+    img.decoding = 'async';
     const markReady = () => {
       if (token !== this.heroImageToken) {
         return;

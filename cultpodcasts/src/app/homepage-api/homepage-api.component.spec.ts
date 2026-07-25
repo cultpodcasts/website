@@ -248,16 +248,25 @@ describe('HomepageApiComponent', () => {
     expect(rails.slice(2).every((r) => r.id.startsWith('day:'))).toBe(true);
   });
 
-  it('caps each rail to RAIL_DISPLAY_SIZE posters so popular pins do not mount the full week', () => {
+  it('caps subject rails to RAIL_DISPLAY_SIZE but leaves day rails uncapped', () => {
     roles$.next(['Curator']);
     const subject = 'BusySubject';
-    const episodes = Array.from({ length: RAIL_DISPLAY_SIZE + 40 }, (_, i) =>
-      ep(`busy${i}`, { daysAgo: i % 3, subjects: [subject] })
-    );
+    const dayCount = RAIL_DISPLAY_SIZE + 8;
+    const episodes = [
+      ...Array.from({ length: dayCount }, (_, i) =>
+        ep(`day${i}`, { daysAgo: 0, subjects: [subject] })
+      ),
+      ...Array.from({ length: RAIL_DISPLAY_SIZE + 20 }, (_, i) =>
+        ep(`busy${i}`, { daysAgo: 1, subjects: [subject] })
+      ),
+    ];
     apply(episodes, { railSubjects: [subject] });
 
-    const subjectRail = component['rails']().find((r) => r.id === `subject:${subject}`);
+    const rails = component['rails']();
+    const subjectRail = rails.find((r) => r.id === `subject:${subject}`);
+    const dayRail = rails.find((r) => r.id.startsWith('day:'));
     expect(subjectRail?.episodes.length).toBe(RAIL_DISPLAY_SIZE);
+    expect(dayRail?.episodes.length).toBe(dayCount);
     expect(
       component['subjectRailCandidates']().find((c) => c.subject === subject)?.episodes.length
     ).toBeGreaterThan(RAIL_DISPLAY_SIZE);
