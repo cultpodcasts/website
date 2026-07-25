@@ -1,4 +1,4 @@
-<section class="rail" [class.rail--subject]="!!subject()" [attr.aria-label]="resolvedAriaLabel()">
+<section class="rail" [class.rail--display-title]="useDisplayTitle()" [attr.aria-label]="resolvedAriaLabel()">
   <div class="rail__heading">
     @if (titleLink(); as link) {
     <a class="rail__title rail__title--link" [routerLink]="link">

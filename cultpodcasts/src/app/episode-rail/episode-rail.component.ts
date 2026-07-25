@@ -19,6 +19,8 @@ export class EpisodeRailComponent {
   readonly episodes = input.required<SearchDisplayEpisode[]>();
   /** When set, applies subject rail styling and excludes this subject from poster chips. */
   readonly subject = input<string | undefined>(undefined);
+  /** Use the serif display heading (like subject rails) even when this isn't a subject rail. */
+  readonly displayTitle = input(false);
   /** Router commands for a linked title (e.g. `['/subject', name]`). */
   readonly titleLink = input<readonly string[] | undefined>(undefined);
   /** Optional “Browse all” link (homepage subject rails). */
@@ -37,6 +39,8 @@ export class EpisodeRailComponent {
   readonly pinToggle = output<string>();
 
   protected readonly resolvedAriaLabel = computed(() => this.ariaLabel() ?? this.title());
+
+  protected readonly useDisplayTitle = computed(() => this.displayTitle() || !!this.subject());
 
   protected isPromoted(episodeId: string): boolean {
     return this.promotedIds().has(episodeId);
