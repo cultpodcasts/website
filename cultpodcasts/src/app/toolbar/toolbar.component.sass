@@ -16,7 +16,7 @@
         display: flex
         justify-content: flex-end
         align-items: center
-        gap: 4px
+        gap: 12px
 
 .app-toolbar
     background: color-mix(in srgb, var(--cp-ink-elevated, var(--mat-sys-surface-container)) 72%, transparent) !important
@@ -53,14 +53,22 @@
 .socialbutton
     width: 40px
     height: 40px
-    padding-left: 12px
     vertical-align: middle
 
 #socialbuttons
     .button:hover
         cursor: pointer
-    #avatar
+    // Signed-in chrome wraps the avatar; padding here would offset the circle
+    // inside the 40px box (looks like a double/crescent ring on reload).
+    div.socialbutton
+        box-sizing: border-box
+        padding: 0
+        overflow: hidden
         border-radius: 50%
+    #avatar
+        display: block
+        border-radius: 50%
+        width: 40px
         height: 40px
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
 
