@@ -42,6 +42,7 @@
       [subject]="rail.subject"
       [titleLink]="rail.subject ? ['/subject', rail.subject] : undefined"
       [browseAllLink]="rail.subject ? ['/subject', rail.subject] : undefined"
+      [deferPosters]="!rail.subject"
       [showPin]="isCurator() && !!rail.subject"
       [pinned]="isRailPinned(rail.subject)"
       [showPromote]="isCurator()"

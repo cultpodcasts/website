@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { afterEach, vi } from 'vitest';
 import { EpisodeRailComponent } from './episode-rail.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { PlayerService } from '../player.service';
@@ -132,5 +133,89 @@ describe('EpisodeRailComponent', () => {
     fixture.detectChanges();
     expect(component['isQueued']('b')).toBe(true);
     expect(component['isQueued']('a')).toBe(false);
+  });
+
+  it('renders posters by default when deferPosters is off', () => {
+    expect(fixture.nativeElement.querySelectorAll('app-episode-poster').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('.rail__placeholder')).toBeNull();
+  });
+
+  it('keeps a placeholder and no posters when deferPosters is on (server)', async () => {
+    fixture.componentRef.setInput('deferPosters', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelectorAll('app-episode-poster').length).toBe(0);
+    expect(fixture.nativeElement.querySelector('.rail__placeholder')).toBeTruthy();
+  });
+});
+
+describe('EpisodeRailComponent deferPosters (browser IO)', () => {
+  let fixture: ComponentFixture<EpisodeRailComponent>;
+  let observeCalls: Element[];
+  let observerCallback: IntersectionObserverCallback | undefined;
+
+  beforeEach(async () => {
+    observeCalls = [];
+    observerCallback = undefined;
+
+    class MockIntersectionObserver {
+      readonly root = null;
+      readonly rootMargin = '';
+      readonly thresholds: readonly number[] = [];
+
+      constructor(callback: IntersectionObserverCallback) {
+        observerCallback = callback;
+      }
+
+      observe(target: Element): void {
+        observeCalls.push(target);
+      }
+
+      unobserve(): void {}
+      disconnect(): void {}
+      takeRecords(): IntersectionObserverEntry[] {
+        return [];
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+
+    await TestBed.configureTestingModule({
+      imports: [EpisodeRailComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        PlayerService,
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EpisodeRailComponent);
+    fixture.componentRef.setInput('title', 'Tuesday 1 January');
+    fixture.componentRef.setInput('episodes', [ep('a', true), ep('b', true)]);
+    fixture.componentRef.setInput('deferPosters', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('mounts posters once the rail intersects the viewport', async () => {
+    expect(fixture.nativeElement.querySelectorAll('app-episode-poster').length).toBe(0);
+    expect(observeCalls.length).toBe(1);
+    expect(observerCallback).toBeTruthy();
+
+    observerCallback?.(
+      [{ isIntersecting: true } as IntersectionObserverEntry],
+      {} as IntersectionObserver
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelectorAll('app-episode-poster').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('.rail__placeholder')).toBeNull();
   });
 });

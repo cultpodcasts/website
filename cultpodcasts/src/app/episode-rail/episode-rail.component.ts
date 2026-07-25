@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  PLATFORM_ID,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
@@ -17,6 +30,9 @@ import { PlayerService } from '../player.service';
 })
 export class EpisodeRailComponent {
   private readonly playerService = inject(PlayerService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly title = input.required<string>();
   readonly episodes = input.required<SearchDisplayEpisode[]>();
@@ -36,6 +52,11 @@ export class EpisodeRailComponent {
   readonly promotedIds = input<ReadonlySet<string>>(new Set());
   readonly showShow = input(true);
   readonly playingEpisodeId = input<string | undefined>(undefined);
+  /**
+   * When true, poster DOM stays empty until the rail nears the viewport
+   * (homepage day rails). Heading + reserved height always render.
+   */
+  readonly deferPosters = input(false);
 
   readonly play = output<SearchDisplayEpisode>();
   readonly promoteToggle = output<SearchDisplayEpisode>();
@@ -45,7 +66,35 @@ export class EpisodeRailComponent {
 
   protected readonly useDisplayTitle = computed(() => this.displayTitle() || !!this.subject());
 
+  /** Eager when not deferring; deferred until IntersectionObserver fires once. */
+  protected readonly postersActive = linkedSignal(() => !this.deferPosters());
+
   private readonly queuedKeys = computed(() => this.playerService.queuedKeys());
+  private observer: IntersectionObserver | undefined;
+
+  constructor() {
+    afterNextRender(() => {
+      if (!this.deferPosters() || this.postersActive()) {
+        return;
+      }
+      if (!isPlatformBrowser(this.platformId) || typeof IntersectionObserver === 'undefined') {
+        return;
+      }
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) {
+            return;
+          }
+          this.postersActive.set(true);
+          this.disconnectObserver();
+        },
+        { rootMargin: '800px 0px', threshold: 0 }
+      );
+      this.observer.observe(this.elementRef.nativeElement);
+    });
+
+    this.destroyRef.onDestroy(() => this.disconnectObserver());
+  }
 
   protected isPromoted(episodeId: string): boolean {
     return this.promotedIds().has(episodeId);
@@ -67,5 +116,10 @@ export class EpisodeRailComponent {
     event.preventDefault();
     event.stopPropagation();
     this.pinToggle.emit(subject);
+  }
+
+  private disconnectObserver(): void {
+    this.observer?.disconnect();
+    this.observer = undefined;
   }
 }

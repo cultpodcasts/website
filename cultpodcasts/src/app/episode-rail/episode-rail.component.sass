@@ -109,6 +109,13 @@
     padding: 0 4vw
     width: max-content
 
+// Reserved height while posters are deferred — approx one wide poster + title block.
+.rail__placeholder
+    box-sizing: border-box
+    width: var(--rail-poster-w, min(42vw, 220px))
+    min-height: calc(var(--rail-poster-w, min(42vw, 220px)) * 9 / 16 + 3.5rem)
+    margin: 0 4vw
+
 .rail-poster
     width: var(--rail-poster-w, min(42vw, 220px))
     flex: 0 0 var(--rail-poster-w, min(42vw, 220px))
