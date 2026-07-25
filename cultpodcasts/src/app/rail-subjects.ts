@@ -1,7 +1,5 @@
 import { HomepageEpisode } from './homepage-episode.interface';
 
-/** Soft UI hint for how many subject rails a curator might pin. */
-export const SUBJECT_RAIL_COUNT = 6;
 /** A subject needs at least this many week episodes to earn a rail. */
 export const SUBJECT_RAIL_MIN_EPISODES = 3;
 
