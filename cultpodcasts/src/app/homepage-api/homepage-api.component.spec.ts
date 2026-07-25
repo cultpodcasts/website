@@ -12,7 +12,7 @@ import { SiteService } from '../site.service';
 import { PlayerService } from '../player.service';
 import { Homepage } from '../homepage.interface';
 import { HomepageEpisode } from '../homepage-episode.interface';
-import { SUBJECT_RAIL_MIN_EPISODES } from '../rail-subjects';
+import { RAIL_DISPLAY_SIZE, SUBJECT_RAIL_MIN_EPISODES } from '../rail-subjects';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 @Component({ selector: 'app-search-bar', template: '', standalone: true })
@@ -246,5 +246,20 @@ describe('HomepageApiComponent', () => {
     expect(rails[0].id.startsWith('day:')).toBe(true);
     expect(rails[1].id).toBe(`subject:${subject}`);
     expect(rails.slice(2).every((r) => r.id.startsWith('day:'))).toBe(true);
+  });
+
+  it('caps each rail to RAIL_DISPLAY_SIZE posters so popular pins do not mount the full week', () => {
+    roles$.next(['Curator']);
+    const subject = 'BusySubject';
+    const episodes = Array.from({ length: RAIL_DISPLAY_SIZE + 40 }, (_, i) =>
+      ep(`busy${i}`, { daysAgo: i % 3, subjects: [subject] })
+    );
+    apply(episodes, { railSubjects: [subject] });
+
+    const subjectRail = component['rails']().find((r) => r.id === `subject:${subject}`);
+    expect(subjectRail?.episodes.length).toBe(RAIL_DISPLAY_SIZE);
+    expect(
+      component['subjectRailCandidates']().find((c) => c.subject === subject)?.episodes.length
+    ).toBeGreaterThan(RAIL_DISPLAY_SIZE);
   });
 });

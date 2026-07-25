@@ -2,11 +2,17 @@
     display: block
     color: inherit
     scroll-snap-align: start
-    transition: transform 0.25s ease
-    &:hover,
+    // Hover lift only when a real pointing device is present — avoids compositor
+    // work on every touch scroll over hundreds of posters.
+    @media (hover: hover) and (pointer: fine)
+        transition: transform 0.2s ease
+        &:hover,
+        &:focus-within
+            transform: scale(1.03)
+            z-index: 2
+            .episode-poster__play
+                opacity: 1
     &:focus-within
-        transform: scale(1.04)
-        z-index: 2
         .episode-poster__play
             opacity: 1
     &.episode-poster--playing
@@ -64,7 +70,8 @@
         width: 40px
         height: 40px
         color: #fff
-        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6))
+        // text-shadow instead of filter:drop-shadow — filter forces a layer on every poster.
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6)
 
 .episode-poster__play-label
     font-size: 0.78rem
@@ -84,13 +91,13 @@
     padding: 0
     border: 1px solid #ffffff59
     border-radius: 50%
-    background: #000000a6
+    // Solid fill — no backdrop-filter (hundreds of posters × blur = paint cost).
+    background: #1a1a1ae6
     color: #fff
     display: inline-flex
     align-items: center
     justify-content: center
     cursor: pointer
-    backdrop-filter: blur(6px)
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease
     mat-icon
         font-size: 20px

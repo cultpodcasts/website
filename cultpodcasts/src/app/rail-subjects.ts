@@ -3,6 +3,13 @@ import { HomepageEpisode } from './homepage-episode.interface';
 /** A subject needs at least this many week episodes to earn a rail. */
 export const SUBJECT_RAIL_MIN_EPISODES = 3;
 
+/**
+ * Max posters rendered per homepage rail. Candidates keep the full week list for
+ * eligibility / manage-dialog counts; only the scroller DOM is capped — "Browse all"
+ * covers the rest. Without this, a popular pin (100–200 eps) mounts that many cards.
+ */
+export const RAIL_DISPLAY_SIZE = 12;
+
 export interface SubjectRailCandidate {
   subject: string;
   episodes: HomepageEpisode[];

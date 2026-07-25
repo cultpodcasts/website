@@ -30,6 +30,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
 import { buildHeroSlides, pruneCuratedIdsToWeek } from '../hero-slides';
 import {
+  RAIL_DISPLAY_SIZE,
   SUBJECT_RAIL_MIN_EPISODES,
   buildSubjectRails,
   collectSubjectRailCandidates,
@@ -73,6 +74,7 @@ export interface EpisodeRail {
 })
 export class HomepageApiComponent {
   private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
+  private static readonly railDisplaySize = RAIL_DISPLAY_SIZE;
   private static readonly obscureCultCount = 12;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
   private static readonly heroBucketMs = 3 * 60 * 60 * 1000;
@@ -157,7 +159,7 @@ export class HomepageApiComponent {
     )
   );
 
-  /** Full-week subject playlists from curator pins only (no popularity autofill). */
+  /** Subject playlists from curator pins only (no popularity autofill). */
   protected readonly subjectRails = computed((): EpisodeRail[] =>
     buildSubjectRails(
       this.curatedRailSubjects(),
@@ -166,7 +168,8 @@ export class HomepageApiComponent {
       id: `subject:${rail.subject}`,
       title: rail.subject,
       subject: rail.subject,
-      episodes: rail.episodes,
+      // Cap DOM: full week list stays on candidates for counts / prune; scroller shows a page.
+      episodes: rail.episodes.slice(0, HomepageApiComponent.railDisplaySize),
     }))
   );
 
@@ -191,7 +194,7 @@ export class HomepageApiComponent {
       return {
         id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
-        episodes: g[key],
+        episodes: g[key].slice(0, HomepageApiComponent.railDisplaySize),
       } satisfies EpisodeRail;
     });
 

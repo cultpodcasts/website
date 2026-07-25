@@ -1,5 +1,6 @@
 import { HomepageEpisode } from './homepage-episode.interface';
 import {
+  RAIL_DISPLAY_SIZE,
   buildSubjectRails,
   collectSubjectRailCandidates,
   pruneRailSubjectsToWeek,
@@ -105,5 +106,15 @@ describe('rail-subjects', () => {
 
   it('returns empty when there are no candidates', () => {
     expect(buildSubjectRails(['Scientology'], [])).toEqual([]);
+  });
+
+  it('keeps full candidate lists so callers can cap display separately', () => {
+    const many = Array.from({ length: RAIL_DISPLAY_SIZE + 5 }, (_, i) =>
+      ep(`s${i}`, ['Scientology'], i)
+    );
+    const candidates = collectSubjectRailCandidates(many);
+    expect(candidates[0].episodes.length).toBe(RAIL_DISPLAY_SIZE + 5);
+    const displayed = candidates[0].episodes.slice(0, RAIL_DISPLAY_SIZE);
+    expect(displayed.length).toBe(RAIL_DISPLAY_SIZE);
   });
 });
