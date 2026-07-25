@@ -1,27 +1,33 @@
-import { inject } from "@angular/core";
-import { CanActivateFn, Router } from "@angular/router";
-import { map, catchError, of } from "rxjs";
-import { AuthServiceWrapper } from "./auth-service-wrapper.class";
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { catchError, filter, map, of, switchMap, take } from 'rxjs';
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
 
-export const isUserGuard: CanActivateFn = (route, state) => {
+/** Same loading gate as hasRoleGuard — avoid bouncing on Auth0's initial null user. */
+export const isUserGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const user$ = inject(AuthServiceWrapper).authService.user$;
-  if (user$) {
-    return user$.pipe(
-      map(e => {
-        if (e) {
-          return true;
-        }
-        router.navigate(['/unauthorised']);
-        return false;
-      }),
-      catchError((err) => {
-        router.navigate(['/unauthorised']);
-        return of(false);
-      })
-    );
-  } else {
-    router.navigate(['/unauthorised']);
+  const auth = inject(AuthServiceWrapper).authService;
+
+  if (!auth?.isLoading$ || !auth.user$) {
+    void router.navigate(['/unauthorised']);
     return of(false);
   }
+
+  return auth.isLoading$.pipe(
+    filter((loading) => !loading),
+    take(1),
+    switchMap(() => auth.user$),
+    take(1),
+    map((user) => {
+      if (user) {
+        return true;
+      }
+      void router.navigate(['/unauthorised']);
+      return false;
+    }),
+    catchError(() => {
+      void router.navigate(['/unauthorised']);
+      return of(false);
+    })
+  );
 };
