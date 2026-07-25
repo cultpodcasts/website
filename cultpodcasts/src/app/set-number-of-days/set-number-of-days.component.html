@@ -1,7 +1,10 @@
 <h2 mat-dialog-title>Set Number Of Days</h2>
 
 <mat-dialog-content>
-    <input matInput [(ngModel)]="days" type="number" min="1" max="14" (keydown.enter)="close(true)">
+    <mat-form-field class="full-width">
+        <mat-label>Days</mat-label>
+        <input matInput [(ngModel)]="days" type="number" min="1" max="14" (keydown.enter)="close(true)">
+    </mat-form-field>
 </mat-dialog-content>
 
 <mat-dialog-actions>

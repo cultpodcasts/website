@@ -9,19 +9,10 @@
     <form id="post" [formGroup]="form!" (ngSubmit)="onSubmit()">
         <div class="flags">
             @if (featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
-            <label>
-                <span>Post:</span>
-                <mat-checkbox [formControl]="form!.controls.post"/>
-            </label>
+            <mat-checkbox [formControl]="form!.controls.post">Post</mat-checkbox>
             }
-            <label>
-                <span>Tweet:</span>
-                <mat-checkbox [formControl]="form!.controls.tweet"/>
-            </label>
-            <label>
-                <span>Bluesky Post:</span>
-                <mat-checkbox [formControl]="form!.controls.blueskyPost"/>
-            </label>
+            <mat-checkbox [formControl]="form!.controls.tweet">Tweet</mat-checkbox>
+            <mat-checkbox [formControl]="form!.controls.blueskyPost">Bluesky Post</mat-checkbox>
         </div>
     </form>
     }

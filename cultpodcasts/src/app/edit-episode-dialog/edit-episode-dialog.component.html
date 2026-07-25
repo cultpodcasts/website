@@ -26,31 +26,13 @@
             <mat-tab label="Flags">
                 <div class="flags">
                     @if (featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
-                    <label>
-                        <span>Posted:</span>
-                        <mat-checkbox [formControl]="form()!.controls.posted" />
-                    </label>
+                    <mat-checkbox [formControl]="form()!.controls.posted">Posted</mat-checkbox>
                     }
-                    <label>
-                        <span>Tweeted:</span>
-                        <mat-checkbox [formControl]="form()!.controls.tweeted" />
-                    </label>
-                    <label>
-                        <span>Bluesky Post:</span>
-                        <mat-checkbox [formControl]="form()!.controls.blueskyPosted" />
-                    </label>
-                    <label>
-                        <span>Ignored:</span>
-                        <mat-checkbox [formControl]="form()!.controls.ignored" />
-                    </label>
-                    <label>
-                        <span>Removed:</span>
-                        <mat-checkbox [formControl]="form()!.controls.removed" />
-                    </label>
-                    <label>
-                        <span>Explicit:</span>
-                        <mat-checkbox [formControl]="form()!.controls.explicit" />
-                    </label>
+                    <mat-checkbox [formControl]="form()!.controls.tweeted">Tweeted</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.blueskyPosted">Bluesky Post</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.ignored">Ignored</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.explicit">Explicit</mat-checkbox>
                 </div>
             </mat-tab>
             <mat-tab label="Urls">

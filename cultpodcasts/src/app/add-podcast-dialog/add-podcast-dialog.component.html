@@ -40,26 +40,11 @@
             </mat-tab>
             <mat-tab label="Flags">
                 <div class="flags">
-                    <label>
-                        <span>Removed:</span>
-                        <mat-checkbox [formControl]="form()!.controls.removed" />
-                    </label>
-                    <label>
-                        <span>Index All Episodes:</span>
-                        <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes" />
-                    </label>
-                    <label>
-                        <span>Bypass Short Episode Checking:</span>
-                        <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking" />
-                    </label>
-                    <label>
-                        <span>Skip Enriching From YouTube:</span>
-                        <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube" />
-                    </label>
-                    <label>
-                        <span>Ignore All Episodes:</span>
-                        <mat-checkbox [formControl]="form()!.controls.ignoreAllEpisodes" />
-                    </label>
+                    <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking">Bypass Short Episode Checking</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube">Skip Enriching From YouTube</mat-checkbox>
+                    <mat-checkbox [formControl]="form()!.controls.ignoreAllEpisodes">Ignore All Episodes</mat-checkbox>
                 </div>
             </mat-tab>
             <mat-tab label="Subjects" [labelClass]="highlightSubjectsTab() ? 'subjects-tab-highlight' : ''">
