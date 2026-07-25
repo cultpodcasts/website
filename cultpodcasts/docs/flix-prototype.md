@@ -8,15 +8,18 @@ Standalone Netflix-style homepage prototype. **Not** for merge into `main`. **Do
 | Git repo | `cultpodcasts/website` |
 | Production branch | `design/visual-refresh-v1` |
 | Custom domain | `flix.cultpodcasts.com` |
-| Build config | `./build.sh` with `env=production` |
-| Auth / API | Production Auth0 + `api.cultpodcasts.com` |
-| Preview deploys | Off (production branch only) |
+| Build config | `./build.sh` (`env` from Pages env vars) |
+| Production Auth / API | Production Auth0 + `api.cultpodcasts.com` |
+| Preview Auth / API | Staging Auth0 + `api-preview.jonbreen.workers.dev` (`environment.staging.ts`) |
+| Preview deploys | On (`preview_deployment_setting: all`); Preview Pages env `env=staging` |
 
 ## Deploy
 
-Pushes to `design/visual-refresh-v1` build and deploy **flix** automatically (Cloudflare Pages Git integration).
+Pushes to `design/visual-refresh-v1` build and deploy **flix production** (Pages env `env=production`).
 
-Manual fallback (direct upload to the same project):
+Other branches build **flix preview** URLs (`https://<branch>.flix-ac4.pages.dev` / `https://<id>.flix-ac4.pages.dev`) with Pages Preview env `env=staging` so `build.sh` copies staging Auth0 + api-preview.
+
+Manual fallback (direct upload to the same project — uses whatever you built locally; prefer Git builds for correct `env`):
 
 ```bash
 npm run deploy:flix
