@@ -482,6 +482,70 @@ mat-card-actions {
     }
 }
 
+// Form controls — keep text/background contrast in both color schemes.
+// Native <select>/<option> popups ignore Material tokens (dark-on-dark in
+// Firefox/Chrome); prefer mat-select. These rules cover any remaining native
+// controls and reinforce Material field/option contrast.
+.mat-mdc-form-field {
+    .mat-mdc-input-element,
+    .mat-mdc-select-value,
+    .mat-mdc-select-placeholder,
+    .mat-mdc-select-min-line {
+        color: var(--mat-sys-on-surface);
+    }
+
+    textarea.mat-mdc-input-element {
+        color: var(--mat-sys-on-surface);
+    }
+}
+
+.mat-mdc-option {
+    color: var(--mat-sys-on-surface);
+
+    &.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+        .mdc-list-item__primary-text {
+            color: var(--mat-sys-on-surface);
+        }
+    }
+}
+
+.mat-mdc-select-panel {
+    background: var(--mat-sys-surface-container);
+}
+
+select,
+option {
+    color-scheme: light dark;
+    color: CanvasText;
+    background-color: Canvas;
+}
+
+@media (prefers-color-scheme: dark) {
+    option {
+        color: #f2f0f4;
+        background-color: #2b2930;
+    }
+
+    option:checked,
+    option:hover {
+        color: #fff;
+        background-color: #49454f;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    option {
+        color: #1c1b1f;
+        background-color: #fff;
+    }
+
+    option:checked,
+    option:hover {
+        color: #1c1b1f;
+        background-color: #e8e0ec;
+    }
+}
+
 .mat-mdc-menu-panel:has(a[href*="bsky.app/profile/cultpodcasts.bsky.social"]) {
     background-color: var(--mat-sys-surface);
     opacity: 1;
