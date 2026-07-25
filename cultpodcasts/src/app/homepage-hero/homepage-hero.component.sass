@@ -299,8 +299,7 @@
     &.is-running
         animation: nflx-dot-progress var(--hero-interval) linear forwards
 
-.billboard:hover .billboard__dot-fill.is-running,
-.billboard:focus-within .billboard__dot-fill.is-running
+.billboard.is-paused .billboard__dot-fill.is-running
     animation-play-state: paused
 
 @media (prefers-reduced-motion: reduce)

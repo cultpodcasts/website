@@ -1,6 +1,8 @@
 @if (featured(); as feature) {
 <section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
-  (mouseenter)="pauseHero()" (mouseleave)="resumeHero()" (focusin)="pauseHero()" (focusout)="resumeHero()">
+  [class.is-paused]="heroPaused()"
+  (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave()"
+  (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)">
 
   <div class="billboard__stages" aria-hidden="true">
     <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
@@ -85,7 +87,7 @@
     @if (slides().length > 1) {
     <div class="billboard__pager">
       <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
-        (click)="prevHero()">
+        (click)="prevHero($event)">
         <mat-icon>chevron_left</mat-icon>
       </button>
       <div class="billboard__dots-viewport"
@@ -100,15 +102,15 @@
             [attr.data-hero-dot]="i"
             [attr.aria-selected]="i === heroIndex()"
             [attr.aria-label]="'Show featured episode ' + (i + 1)"
-            (click)="goHero(i)">
+            (click)="goHero(i, $event)">
             <span class="billboard__dot-fill"
-              [class.is-running]="i === heroIndex() && !heroPaused() && heroImageReady()"></span>
+              [class.is-running]="i === heroIndex() && heroImageReady()"></span>
           </button>
           }
         </div>
       </div>
       <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next featured episode"
-        (click)="nextHero()">
+        (click)="nextHero($event)">
         <mat-icon>chevron_right</mat-icon>
       </button>
     </div>

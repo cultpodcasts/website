@@ -114,6 +114,10 @@ export class HomepageHeroComponent {
   private resizeFrame = 0;
   private dotsScrollFrame = 0;
   private dotsScrollTarget: HTMLElement | undefined;
+  /** Pointer is over the billboard (hover pause). */
+  private pointerInside = false;
+  /** Focus is inside the billboard (keyboard pause). */
+  private focusInside = false;
 
   /**
    * Window resize and dots-strip scroll are bound outside Angular's event manager: in a
@@ -259,42 +263,82 @@ export class HomepageHeroComponent {
     this.play.emit(episode);
   }
 
-  pauseHero(): void {
-    this.heroPaused.set(true);
+  onHeroPointerEnter(): void {
+    this.pointerInside = true;
+    this.syncHeroPaused();
   }
 
-  resumeHero(): void {
-    if (this.playerService.episode()) {
+  onHeroPointerLeave(): void {
+    this.pointerInside = false;
+    this.syncHeroPaused();
+  }
+
+  onHeroFocusIn(): void {
+    this.focusInside = true;
+    this.syncHeroPaused();
+  }
+
+  onHeroFocusOut(event: FocusEvent): void {
+    const root = event.currentTarget as HTMLElement | null;
+    const next = event.relatedTarget as Node | null;
+    // focusout bubbles for every child blur; only clear when focus leaves the billboard.
+    if (root && next && root.contains(next)) {
       return;
     }
-    this.heroPaused.set(false);
+    this.focusInside = false;
+    this.syncHeroPaused();
   }
 
-  goHero(index: number): void {
+  goHero(index: number, event?: Event): void {
     const slides = this.slides();
     if (slides.length === 0) {
       return;
     }
     this.transitionTo(index % slides.length);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
   }
 
-  nextHero(): void {
+  nextHero(event?: Event): void {
     const n = this.slides().length;
     if (n === 0) {
       return;
     }
     this.transitionTo((this.heroIndex() + 1) % n);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
   }
 
-  prevHero(): void {
+  prevHero(event?: Event): void {
     const n = this.slides().length;
     if (n === 0) {
       return;
     }
     this.transitionTo((this.heroIndex() - 1 + n) % n);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
+  }
+
+  /**
+   * Mouse clicks leave focus on the chevron/dash, which kept the hero paused forever
+   * via focusin. Blur and clear focus-pause so the dwell timer / dash fill can run
+   * again once the pointer leaves (hover pause still applies while the pointer is inside).
+   */
+  private releasePagerFocus(event?: Event): void {
+    const target = event?.currentTarget;
+    if (target instanceof HTMLElement) {
+      target.blur();
+    }
+    this.focusInside = false;
+    this.syncHeroPaused();
+  }
+
+  private syncHeroPaused(): void {
+    if (this.playerService.episode()) {
+      this.heroPaused.set(true);
+      return;
+    }
+    this.heroPaused.set(this.pointerInside || this.focusInside);
   }
 
   private scrollActiveHeroDotIntoView(

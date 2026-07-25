@@ -105,6 +105,56 @@ describe('HomepageHeroComponent', () => {
     expect(component['featured']()?.id).toBe('a');
   });
 
+  it('releases chevron focus so the dash timer can run again after navigation', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroImageReady'].set(true);
+    component['pointerInside'] = false;
+    component['focusInside'] = false;
+    component['syncHeroPaused']();
+    fixture.detectChanges();
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.focus();
+    component.onHeroFocusIn();
+    expect(component['heroPaused']()).toBe(true);
+
+    next.click();
+    vi.advanceTimersByTime(320);
+    // Cached/missing image gate may still be open in tests; the dwell fill only
+    // requires ready + not paused once the slide has settled.
+    component['heroImageReady'].set(true);
+    fixture.detectChanges();
+
+    expect(document.activeElement === next).toBe(false);
+    expect(component['focusInside']).toBe(false);
+    expect(component['heroPaused']()).toBe(false);
+
+    const activeFill = fixture.nativeElement.querySelector(
+      'button.billboard__dot.is-active .billboard__dot-fill'
+    ) as HTMLElement;
+    expect(activeFill.classList.contains('is-running')).toBe(true);
+  });
+
+  it('keeps the dwell paused while the pointer remains over the billboard after a chevron click', () => {
+    component['pointerInside'] = true;
+    component['focusInside'] = false;
+    component['syncHeroPaused']();
+    expect(component['heroPaused']()).toBe(true);
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.focus();
+    component.onHeroFocusIn();
+    next.click();
+
+    expect(component['pointerInside']).toBe(true);
+    expect(component['heroPaused']()).toBe(true);
+  });
+
   it('keeps the featured episode when slides refresh with the same id', () => {
     component['heroIndex'].set(2);
     component['lastFeaturedId'] = 'c';
