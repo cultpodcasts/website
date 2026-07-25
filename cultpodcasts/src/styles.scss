@@ -52,6 +52,8 @@ body {
 
 html.discovery-snap-enabled {
   scroll-snap-type: y mandatory;
+  /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
+  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
 }
 
 p {

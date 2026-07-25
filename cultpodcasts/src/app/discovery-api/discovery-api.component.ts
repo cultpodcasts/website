@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, signal, ViewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
@@ -37,8 +37,9 @@ const autoHiddenThreshold = 0.05;
   styleUrl: './discovery-api.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DiscoveryApiComponent {
+export class DiscoveryApiComponent implements AfterViewInit {
   @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
+  @ViewChild('curatorToolbar', { static: false }) curatorToolbar: ElementRef<HTMLElement> | undefined;
 
   results = signal<DiscoveryResult[] | undefined>(undefined);
   documentIds = signal<string[]>([]);
@@ -59,6 +60,7 @@ export class DiscoveryApiComponent {
 
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
+  private snapOffsetObserver: ResizeObserver | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -68,7 +70,10 @@ export class DiscoveryApiComponent {
     private router: Router,
     private siteService: SiteService
   ) {
-    this.destroyRef.onDestroy(() => this.toggleDiscoverySnapClass(false));
+    this.destroyRef.onDestroy(() => {
+      this.teardownSnapOffsetObserver();
+      this.toggleDiscoverySnapClass(false);
+    });
   }
 
   ngOnInit() {
@@ -84,6 +89,13 @@ export class DiscoveryApiComponent {
     }
   }
 
+  ngAfterViewInit() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.setupSnapOffsetObserver();
+  }
+
   private toggleDiscoverySnapClass(enabled: boolean) {
     if (typeof document === 'undefined') {
       return;
@@ -92,6 +104,44 @@ export class DiscoveryApiComponent {
     const method: 'add' | 'remove' = enabled ? 'add' : 'remove';
     document.documentElement.classList[method]('discovery-snap-enabled');
     document.body.classList[method]('discovery-snap-enabled');
+    if (!enabled) {
+      document.documentElement.style.removeProperty('--discovery-snap-offset');
+    }
+  }
+
+  /**
+   * Cards snap to the viewport top; the sticky Discovery toolbar covers that
+   * band. Keep scroll-padding-top equal to the live toolbar height (it grows
+   * when filter/actions wrap).
+   */
+  private setupSnapOffsetObserver() {
+    const toolbar = this.curatorToolbar?.nativeElement;
+    if (!toolbar || typeof ResizeObserver === 'undefined') {
+      this.syncSnapOffset();
+      return;
+    }
+
+    this.snapOffsetObserver = new ResizeObserver(() => this.syncSnapOffset());
+    this.snapOffsetObserver.observe(toolbar);
+    this.syncSnapOffset();
+  }
+
+  private syncSnapOffset() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const toolbar = this.curatorToolbar?.nativeElement;
+    if (!toolbar) {
+      return;
+    }
+    // Small gap so the card title isn't flush against the sticky chrome.
+    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    document.documentElement.style.setProperty('--discovery-snap-offset', `${offset}px`);
+  }
+
+  private teardownSnapOffsetObserver() {
+    this.snapOffsetObserver?.disconnect();
+    this.snapOffsetObserver = undefined;
   }
 
   loadResults(includeHidden: boolean) {
