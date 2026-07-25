@@ -30,6 +30,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EpisodeUpdateService } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
+import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -48,7 +49,8 @@ const sortParamDateDesc: string = "date-desc";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent,
-    EpisodeGuestsComponent
+    EpisodeGuestsComponent,
+    ClampableTextComponent
   ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass',

@@ -34,6 +34,7 @@ import { EpisodeUpdateService } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
+import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -56,7 +57,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodePodcastLinksComponent,
     EpisodeImageComponent,
     SubjectsComponent,
-    EpisodeGuestsComponent
+    EpisodeGuestsComponent,
+    ClampableTextComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass',

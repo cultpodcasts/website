@@ -1,23 +1,20 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { displayCatalogName } from '../display-catalog-name';
+import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 
 @Component({
   selector: 'app-subjects',
   imports: [
-    RouterLink,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    SubjectChipComponent,
   ],
   templateUrl: './subjects.component.html',
   styleUrl: './subjects.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SubjectsComponent {
-  protected readonly displayCatalogName = displayCatalogName;
-
   @Input({ required: true })
   subjects: string[] = [];
 

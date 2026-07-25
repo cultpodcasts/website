@@ -1,27 +1,54 @@
-#results
-    h2
-        margin: 10px 8px 10px 8px
+.curator-page
     h3
-        font-size: 1.3em
-        font-weight: bold
+        font-size: 1.15rem
+        font-weight: 700
         display: block
-        margin: 20px 8px 10px 8px
+        margin: 16px 8px 10px
         padding: 2px
     discovery-item
         display: block
         scroll-snap-align: start
         scroll-snap-stop: always
-#actions
-    display: flex
-    justify-content: center
-    align-items: center
-    flex-wrap: wrap
-    gap: 10px
-    margin: 20px 0
-    button
-        margin: 0
 
-:host ::ng-deep #actions
+.curator-toolbar
+    position: sticky
+    top: 0
+    z-index: 8
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 12px 16px
+    margin: 0 0 14px
+    padding: 10px 12px
+    border-radius: var(--cp-radius, 14px)
+    border: 1px solid color-mix(in srgb, #fff 10%, transparent)
+    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 94%, transparent)
+    backdrop-filter: blur(10px)
+
+.curator-toolbar__title
+    display: flex
+    flex-wrap: wrap
+    align-items: baseline
+    gap: 8px 12px
+    min-width: 0
+    h2
+        margin: 0
+        font-size: 1.25rem
+        font-weight: 700
+
+.curator-toolbar__count,
+.curator-toolbar__meta
+    font-size: 0.85rem
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 62%, transparent)
+
+.curator-toolbar__actions
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 10px
+    margin-left: auto
+
+:host ::ng-deep .curator-toolbar__actions
     .mat-button-toggle-group
         overflow: hidden
     .mat-button-toggle-checked:first-of-type
@@ -42,11 +69,12 @@
         color: #fff
         vertical-align: middle
 
-mat-divider
-    margin: 30px 0
-
 .hidden-cta
-    margin: 0 8px 10px 8px
+    margin: 0 8px 10px
 
 #cta-button
     margin: 10px 8px
+
+#progresswrapper
+    height: 4px
+    margin-bottom: 4px
