@@ -16,6 +16,7 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { HomepageService } from '../homepage.service';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -32,6 +33,12 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
+import { HeroCurationService } from '../hero-curation.service';
+import { buildHeroSlides, HERO_POOL_SIZE, pruneCuratedIdsToWeek } from '../hero-slides';
+import {
+  HeroManageDialogComponent,
+  HeroManageDialogResult,
+} from '../hero-manage-dialog/hero-manage-dialog.component';
 
 export interface EpisodeRail {
   id: string;
@@ -60,17 +67,12 @@ export interface EpisodeRail {
 })
 export class HomepageApiComponent {
   private static readonly heroIntervalMs = 7500;
+  private static readonly heroImageFallbackMs = 2500;
+  private static readonly heroTransitionMs = 1100;
+  private static readonly heroContentDelayMs = 180;
   private static readonly subjectRailCount = 6;
   private static readonly subjectRailMinEpisodes = 3;
   private static readonly obscureCultCount = 12;
-  /** Hero pool draws across the past week — recent releases, subjects and Discover. */
-  private static readonly heroPoolSize = 18;
-  /** How many week-wide recent picks (time-bucket rotated, not always the absolute newest). */
-  private static readonly heroRecentContribution = 10;
-  private static readonly heroSubjectContribution = 6;
-  private static readonly heroDiscoverContribution = 6;
-  /** Recency window to rotate through before capping contribution (covers most of a busy week). */
-  private static readonly heroRecentWindow = 48;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
   private static readonly heroBucketMs = 3 * 60 * 60 * 1000;
   /** Background freshness: cadence for the homepage staying open unattended. */
@@ -108,6 +110,8 @@ export class HomepageApiComponent {
   readonly episodeCountBaseline = 80000;
   protected auth = inject(AuthServiceWrapper);
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
+  protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  protected readonly isCurator = computed(() => this.authRoles().includes('Curator'));
   readonly renderConfig = {
     initialBlockSize: 40,
     firstScrollBlockSize: 80,
@@ -118,81 +122,34 @@ export class HomepageApiComponent {
   protected readonly heroIndex = signal(0);
   protected readonly heroPaused = signal(false);
   protected readonly heroAnimating = signal(false);
+  /** True once the active slide background has decoded (or fallback timer fired). */
+  protected readonly heroImageReady = signal(false);
+  /** Two-layer crossfade: which stage is currently visible. */
+  protected readonly heroFrontLayer = signal<'a' | 'b'>('a');
+  protected readonly heroLayerA = signal<string | undefined>(undefined);
+  protected readonly heroLayerB = signal<string | undefined>(undefined);
+  /** Ordered episode IDs from the hero-curation API (may include stale ids). */
+  protected readonly curatedEpisodeIds = signal<string[]>([]);
 
   protected readonly displayCatalogName = displayCatalogName;
 
   /**
-   * Broad hero pool from this week's homepage episodes. Interleaves a time-bucketed walk
-   * across recent releases (not only the absolute newest) with subject / Discover highlights
-   * that are also offset by the bucket — so the billboard feels fresher across the day
-   * without random flicker on every change-detection cycle. Pool is derived from the full
-   * recentEpisodes payload, not the progressively-rendered rail view.
+   * Billboard slides: curated picks first (in order), autofilled from the week-wide
+   * recent / subject / Discover interleave when curated count is under the pool size.
    */
   protected readonly heroSlides = computed((): HomepageEpisode[] => {
     const all = this.allEpisodes();
     if (all.length === 0) {
       return [];
     }
-
-    const bucket = HomepageApiComponent.heroTimeBucket();
-    const byRecency = all
-      .slice()
-      .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime());
-
-    const recentWindow = byRecency.slice(0, HomepageApiComponent.heroRecentWindow);
-    const recentSource = HomepageApiComponent.rotateTake(
-      recentWindow,
-      bucket * 3,
-      HomepageApiComponent.heroRecentContribution
-    );
-    const subjectSource = this.subjectRails()
-      .slice(0, HomepageApiComponent.heroSubjectContribution)
-      .map((rail, i) => HomepageApiComponent.pickAtOffset(rail.episodes, bucket + i));
-    const discoverSource = this.obscureCults()
-      .slice(0, HomepageApiComponent.heroDiscoverContribution)
-      .map((cult, i) => HomepageApiComponent.pickAtOffset(cult.episodes, bucket + i + 1));
-
-    const seen = new Set<string>();
-    const pool: HomepageEpisode[] = [];
-    const add = (ep: HomepageEpisode | undefined): void => {
-      if (!ep || seen.has(ep.id) || pool.length >= HomepageApiComponent.heroPoolSize) {
-        return;
-      }
-      seen.add(ep.id);
-      pool.push(ep);
-    };
-
-    // Interleave the three sources (recent / subject / discover) so early slides already
-    // show variety, rather than running through one source before touching the next.
-    const sources = [recentSource, subjectSource, discoverSource];
-    for (let i = 0; pool.length < HomepageApiComponent.heroPoolSize && sources.some((s) => i < s.length); i++) {
-      for (const source of sources) {
-        if (i < source.length) {
-          add(source[i]);
-        }
-      }
-    }
-
-    // Backfill from the rotated week window, then the full recency list.
-    if (pool.length < HomepageApiComponent.heroPoolSize) {
-      for (const ep of HomepageApiComponent.rotateTake(recentWindow, bucket, recentWindow.length)) {
-        if (pool.length >= HomepageApiComponent.heroPoolSize) {
-          break;
-        }
-        add(ep);
-      }
-    }
-    if (pool.length < HomepageApiComponent.heroPoolSize) {
-      for (const ep of byRecency) {
-        if (pool.length >= HomepageApiComponent.heroPoolSize) {
-          break;
-        }
-        add(ep);
-      }
-    }
-
-    return pool;
+    return buildHeroSlides(this.curatedEpisodeIds(), all, {
+      subjectRails: this.subjectRails(),
+      obscureCults: this.obscureCults(),
+      bucket: HomepageApiComponent.heroTimeBucket(),
+    });
   });
+
+  protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   protected readonly featured = computed(() => {
     const slides = this.heroSlides();
@@ -200,6 +157,11 @@ export class HomepageApiComponent {
       return undefined;
     }
     return slides[this.heroIndex() % slides.length];
+  });
+
+  protected readonly featuredIsCurated = computed(() => {
+    const ep = this.featured();
+    return !!ep && this.curatedIdSet().has(ep.id);
   });
 
   protected readonly featuredImage = computed(() => {
@@ -282,14 +244,21 @@ export class HomepageApiComponent {
 
   private siteService = inject(SiteService);
   private homepageService = inject(HomepageService);
+  private heroCurationService = inject(HeroCurationService);
+  private dialog = inject(MatDialog);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private heroTimer: ReturnType<typeof setInterval> | undefined;
   private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
+  private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
+  private heroImageFallbackTimer: ReturnType<typeof setTimeout> | undefined;
+  private heroImageToken = 0;
   private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
   private lastBackgroundFetchAt = 0;
   private reduceMotion = false;
+  /** True when local curated list was pruned for the week but KV was not yet updated. */
+  private pendingKvPrune = false;
   private readonly onDocumentVisibility = (): void => {
     if (!document.hidden) {
       this.maybeBackgroundRefresh();
@@ -305,9 +274,17 @@ export class HomepageApiComponent {
     if (isPlatformBrowser(this.platformId)) {
       this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       this.startBackgroundRefresh();
+      // If curation was pruned for display while anonymous, persist once a Curator signs in.
+      this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
+        if (roles.includes('Curator') && this.pendingKvPrune) {
+          this.pendingKvPrune = false;
+          void this.quietPersistPrune(this.curatedEpisodeIds());
+        }
+      });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
         this.stopBackgroundRefresh();
+        this.clearHeroImageWait();
       });
     }
   }
@@ -339,6 +316,10 @@ export class HomepageApiComponent {
 
   slideImage(episode: HomepageEpisode): string | undefined {
     return episodeImageUrl(episode)?.toString();
+  }
+
+  isPromoted(episodeId: string): boolean {
+    return this.curatedIdSet().has(episodeId);
   }
 
   durationLabel(duration: string): string {
@@ -410,6 +391,60 @@ export class HomepageApiComponent {
     this.restartHeroCycle();
   }
 
+  async togglePromote(episode: SearchDisplayEpisode): Promise<void> {
+    if (!this.isCurator()) {
+      return;
+    }
+    const ids = [...this.curatedEpisodeIds()];
+    const idx = ids.indexOf(episode.id);
+    if (idx >= 0) {
+      ids.splice(idx, 1);
+    } else {
+      ids.push(episode.id);
+    }
+    await this.persistCuration(ids);
+  }
+
+  async removeFeaturedFromHero(): Promise<void> {
+    const feature = this.featured();
+    if (!feature || !this.isCurator()) {
+      return;
+    }
+    const ids = this.curatedEpisodeIds().filter((id) => id !== feature.id);
+    await this.persistCuration(ids);
+  }
+
+  openManageHero(): void {
+    if (!this.isCurator()) {
+      return;
+    }
+    const curatedSet = this.curatedIdSet();
+    const slides = this.heroSlides();
+    const curated = slides.filter((s) => curatedSet.has(s.id));
+    // Prefer curated order from the API list, not slide order after resolve.
+    const byId = new Map(this.allEpisodes().map((ep) => [ep.id, ep]));
+    const curatedOrdered = this.curatedEpisodeIds()
+      .map((id) => byId.get(id))
+      .filter((ep): ep is HomepageEpisode => !!ep);
+    const autofilled = slides.filter((s) => !curatedSet.has(s.id));
+
+    const ref = this.dialog.open(HeroManageDialogComponent, {
+      data: {
+        curated: curatedOrdered.length > 0 ? curatedOrdered : curated,
+        autofilled,
+      },
+      width: '520px',
+      maxWidth: '94vw',
+      autoFocus: 'dialog',
+    });
+    ref.afterClosed().subscribe((result: HeroManageDialogResult | undefined) => {
+      if (result?.saved && result.episodeIds) {
+        this.curatedEpisodeIds.set(result.episodeIds);
+        this.clampHeroIndex();
+      }
+    });
+  }
+
   populatePage() {
     combineLatest([this.route.params, this.route.queryParams], (params: Params, queryParams: Params) => ({
       params,
@@ -424,6 +459,58 @@ export class HomepageApiComponent {
       });
   }
 
+  private async persistCuration(ids: string[]): Promise<void> {
+    const previous = this.curatedEpisodeIds();
+    this.curatedEpisodeIds.set(ids);
+    this.clampHeroIndex();
+    try {
+      const saved = await this.heroCurationService.setHeroCuration(ids);
+      this.curatedEpisodeIds.set(saved.episodeIds);
+      this.clampHeroIndex();
+    } catch {
+      this.curatedEpisodeIds.set(previous);
+      this.clampHeroIndex();
+    }
+  }
+
+  private async fetchCuration(): Promise<void> {
+    const curation = await this.heroCurationService.getHeroCuration();
+    this.curatedEpisodeIds.set(curation.episodeIds ?? []);
+  }
+
+  /**
+   * Drop curated picks that left the current homepage week window.
+   * Always updates local display; when a Curator is signed in, quietly PUT
+   * the cleaned list so KV stays in sync (week-window drop is intentional).
+   */
+  private pruneCurationToCurrentWeek(): void {
+    const raw = this.curatedEpisodeIds();
+    const { ids, pruned } = pruneCuratedIdsToWeek(raw, this.allEpisodes());
+    if (!pruned) {
+      return;
+    }
+    this.curatedEpisodeIds.set(ids);
+    this.clampHeroIndex();
+    if (this.isCurator()) {
+      this.pendingKvPrune = false;
+      void this.quietPersistPrune(ids);
+    } else {
+      this.pendingKvPrune = true;
+    }
+  }
+
+  private async quietPersistPrune(ids: string[]): Promise<void> {
+    try {
+      const saved = await this.heroCurationService.setHeroCuration(ids);
+      this.curatedEpisodeIds.set(saved.episodeIds ?? ids);
+      this.clampHeroIndex();
+      this.pendingKvPrune = false;
+    } catch (error) {
+      console.warn('Hero curation week prune failed to persist; local list kept clean.', error);
+      this.pendingKvPrune = true;
+    }
+  }
+
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
@@ -435,7 +522,11 @@ export class HomepageApiComponent {
 
     let homepageContent: Homepage | undefined;
     try {
-      homepageContent = await this.homepageService.getHomepageFromApi();
+      const [homepage] = await Promise.all([
+        this.homepageService.getHomepageFromApi(),
+        this.fetchCuration(),
+      ]);
+      homepageContent = homepage;
       this.lastBackgroundFetchAt = Date.now();
     } catch (error) {
       console.error(error);
@@ -448,6 +539,7 @@ export class HomepageApiComponent {
       this.applyHomepage(homepageContent, { resetScrollProgress: true, resetHeroIndex: true });
       this.isLoading.set(false);
       this.isInError.set(false);
+      this.syncHeroLayers(true);
       this.startHeroCycle();
     } else {
       this.isLoading.set(false);
@@ -462,7 +554,11 @@ export class HomepageApiComponent {
     }
     let homepageContent: Homepage | undefined;
     try {
-      homepageContent = await this.homepageService.getHomepageFromApi();
+      const [homepage] = await Promise.all([
+        this.homepageService.getHomepageFromApi(),
+        this.fetchCuration(),
+      ]);
+      homepageContent = homepage;
       this.lastBackgroundFetchAt = Date.now();
     } catch (error) {
       console.error(error);
@@ -483,6 +579,7 @@ export class HomepageApiComponent {
     } else {
       this.heroIndex.set(this.heroIndex() % slides.length);
     }
+    this.syncHeroLayers(true);
     this.startHeroCycle();
   }
 
@@ -504,6 +601,9 @@ export class HomepageApiComponent {
         release: new Date(item.release),
       }))
     );
+    // Week-window drop: curated picks that left recentEpisodes fall out locally
+    // (and persist when a Curator is signed in).
+    this.pruneCurationToCurrentWeek();
     if (options.resetScrollProgress) {
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
     } else if (this.visibleCount > 0) {
@@ -553,26 +653,6 @@ export class HomepageApiComponent {
     return Math.floor(now.getTime() / HomepageApiComponent.heroBucketMs);
   }
 
-  private static rotateTake<T>(items: T[], offset: number, count: number): T[] {
-    if (items.length === 0 || count <= 0) {
-      return [];
-    }
-    const start = ((offset % items.length) + items.length) % items.length;
-    const take = Math.min(count, items.length);
-    const out: T[] = [];
-    for (let i = 0; i < take; i++) {
-      out.push(items[(start + i) % items.length]);
-    }
-    return out;
-  }
-
-  private static pickAtOffset<T>(items: T[], offset: number): T | undefined {
-    if (items.length === 0) {
-      return undefined;
-    }
-    return items[((offset % items.length) + items.length) % items.length];
-  }
-
   private loadMoreEpisodes(count: number): void {
     const episodes = this.allEpisodes();
     const nextVisibleCount = Math.min(this.visibleCount + count, episodes.length);
@@ -595,36 +675,142 @@ export class HomepageApiComponent {
     );
   }
 
+  private clampHeroIndex(): void {
+    const n = this.heroSlides().length;
+    if (n === 0) {
+      this.heroIndex.set(0);
+      return;
+    }
+    if (this.heroIndex() >= n) {
+      this.heroIndex.set(this.heroIndex() % n);
+    }
+  }
+
   private transitionTo(index: number): void {
     if (index === this.heroIndex()) {
       return;
     }
-    this.heroAnimating.set(true);
     this.heroIndex.set(index);
+    this.syncHeroLayers(false);
+    // Restart content entrance after a short delay so the background crossfade leads.
+    this.heroAnimating.set(false);
     if (this.heroAnimTimer) {
       clearTimeout(this.heroAnimTimer);
     }
-    this.heroAnimTimer = setTimeout(() => this.heroAnimating.set(false), 700);
+    if (this.heroContentTimer) {
+      clearTimeout(this.heroContentTimer);
+    }
+    this.heroContentTimer = setTimeout(() => {
+      this.heroAnimating.set(true);
+      this.heroAnimTimer = setTimeout(
+        () => this.heroAnimating.set(false),
+        850
+      );
+    }, HomepageApiComponent.heroContentDelayMs);
+    this.beginHeroImageGate();
+  }
+
+  /** Seed or crossfade the two background layers for the active slide. */
+  private syncHeroLayers(immediate: boolean): void {
+    const url = this.featuredImage();
+    if (immediate || this.reduceMotion) {
+      this.heroLayerA.set(url);
+      this.heroLayerB.set(undefined);
+      this.heroFrontLayer.set('a');
+      return;
+    }
+    const front = this.heroFrontLayer();
+    if (front === 'a') {
+      this.heroLayerB.set(url);
+      // Flip after paint so the incoming layer starts at opacity 0.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.heroFrontLayer.set('b'));
+      });
+    } else {
+      this.heroLayerA.set(url);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.heroFrontLayer.set('a'));
+      });
+    }
+  }
+
+  private beginHeroImageGate(): void {
+    this.clearHeroImageWait();
+    this.heroImageReady.set(false);
+    if (!isPlatformBrowser(this.platformId)) {
+      this.heroImageReady.set(true);
+      return;
+    }
+    const url = this.featuredImage();
+    const token = ++this.heroImageToken;
+    if (!url) {
+      this.heroImageReady.set(true);
+      return;
+    }
+
+    this.heroImageFallbackTimer = setTimeout(() => {
+      if (token === this.heroImageToken) {
+        this.heroImageReady.set(true);
+      }
+    }, HomepageApiComponent.heroImageFallbackMs);
+
+    const img = new Image();
+    const markReady = () => {
+      if (token !== this.heroImageToken) {
+        return;
+      }
+      this.clearHeroImageWait();
+      this.heroImageReady.set(true);
+    };
+    img.onload = () => {
+      if (typeof img.decode === 'function') {
+        img.decode().then(markReady, markReady);
+      } else {
+        markReady();
+      }
+    };
+    img.onerror = markReady;
+    img.src = url;
+    if (img.complete) {
+      markReady();
+    }
+  }
+
+  private clearHeroImageWait(): void {
+    if (this.heroImageFallbackTimer) {
+      clearTimeout(this.heroImageFallbackTimer);
+      this.heroImageFallbackTimer = undefined;
+    }
   }
 
   private startHeroCycle(): void {
     this.stopHeroCycle();
     if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
+      this.heroImageReady.set(true);
       return;
     }
     if (this.heroSlides().length < 2) {
+      this.beginHeroImageGate();
       return;
     }
+    this.beginHeroImageGate();
+    let elapsed = 0;
+    const tickMs = 250;
     this.heroTimer = setInterval(() => {
-      if (this.heroPaused()) {
+      if (this.heroPaused() || !this.heroImageReady()) {
         return;
       }
+      elapsed += tickMs;
+      if (elapsed < HomepageApiComponent.heroIntervalMs) {
+        return;
+      }
+      elapsed = 0;
       const n = this.heroSlides().length;
       if (n < 2) {
         return;
       }
       this.transitionTo((this.heroIndex() + 1) % n);
-    }, HomepageApiComponent.heroIntervalMs);
+    }, tickMs);
   }
 
   private restartHeroCycle(): void {
@@ -639,6 +825,10 @@ export class HomepageApiComponent {
     if (this.heroAnimTimer) {
       clearTimeout(this.heroAnimTimer);
       this.heroAnimTimer = undefined;
+    }
+    if (this.heroContentTimer) {
+      clearTimeout(this.heroContentTimer);
+      this.heroContentTimer = undefined;
     }
   }
 
@@ -655,4 +845,7 @@ export class HomepageApiComponent {
   descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
     return this.descDateKey(a.key, b.key);
   };
+
+  /** Expose pool size for template/docs; selection logic lives in hero-slides.ts. */
+  protected readonly heroPoolSize = HERO_POOL_SIZE;
 }

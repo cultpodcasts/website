@@ -21,11 +21,14 @@
     (mouseenter)="pauseHero()" (mouseleave)="resumeHero()" (focusin)="pauseHero()" (focusout)="resumeHero()">
 
     <div class="billboard__stages" aria-hidden="true">
-      @for (slide of heroSlides(); track slide.id; let i = $index) {
-      <div class="billboard__stage" [class.is-active]="i === heroIndex()"
-        [style.background-image]="slideImage(slide) ? 'url(' + slideImage(slide) + ')' : null">
+      <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
+        [class.is-kenburns]="heroFrontLayer() === 'a' && heroImageReady()"
+        [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null">
       </div>
-      }
+      <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'b'"
+        [class.is-kenburns]="heroFrontLayer() === 'b' && heroImageReady()"
+        [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null">
+      </div>
     </div>
     <div class="billboard__grain" aria-hidden="true"></div>
     <div class="billboard__scrim" aria-hidden="true"></div>
@@ -73,12 +76,26 @@
             [routerLink]="['/podcast', feature.podcastName, feature.id]">
             More info
           </a>
+          @if (isCurator() && featuredIsCurated()) {
+          <button type="button" mat-stroked-button class="billboard__curate"
+            (click)="removeFeaturedFromHero()" aria-label="Remove from hero">
+            <mat-icon>star</mat-icon>
+            Remove from hero
+          </button>
+          }
         </div>
       </div>
     </div>
 
-    @if (heroSlides().length > 1) {
     <div class="billboard__controls">
+      @if (isCurator()) {
+      <button type="button" class="billboard__manage" (click)="openManageHero()"
+        aria-label="Manage hero curation">
+        <mat-icon>playlist_add_check</mat-icon>
+        <span>Manage hero</span>
+      </button>
+      }
+      @if (heroSlides().length > 1) {
       <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
         (click)="prevHero()">
         <mat-icon>chevron_left</mat-icon>
@@ -91,16 +108,17 @@
         @for (slide of heroSlides(); track slide.id; let i = $index) {
         <button type="button" class="billboard__dot" role="tab"
           [class.is-active]="i === heroIndex()"
+          [class.is-curated]="isPromoted(slide.id)"
           [attr.aria-selected]="i === heroIndex()"
           [attr.aria-label]="'Show featured episode ' + (i + 1)"
           (click)="goHero(i)">
           <span class="billboard__dot-fill"
-            [class.is-running]="i === heroIndex() && !heroPaused()"></span>
+            [class.is-running]="i === heroIndex() && !heroPaused() && heroImageReady()"></span>
         </button>
         }
       </div>
+      }
     </div>
-    }
   </section>
   }
 
@@ -181,7 +199,11 @@
         <div class="rail__track">
           @for (item of rail.episodes; track item.id) {
           <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="rail.subject"
-            [playing]="isPlayingId(item.id)" (play)="playEpisode($event)" />
+            [playing]="isPlayingId(item.id)"
+            [showPromote]="isCurator() && !rail.subject"
+            [promoted]="isPromoted(item.id)"
+            (play)="playEpisode($event)"
+            (promoteToggle)="togglePromote($event)" />
           }
         </div>
       </div>

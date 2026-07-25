@@ -10,6 +10,14 @@
     <mat-icon>play_arrow</mat-icon>
     <span class="episode-poster__play-label">{{ playLabel() }}</span>
   </div>
+  @if (showPromote()) {
+  <button type="button" class="episode-poster__promote" [class.is-promoted]="promoted()"
+    [attr.aria-pressed]="promoted()"
+    [attr.aria-label]="promoted() ? 'Remove from hero' : 'Promote to hero'"
+    (click)="onPromoteToggle($event)">
+    <mat-icon>{{ promoted() ? 'star' : 'star_border' }}</mat-icon>
+  </button>
+  }
 </button>
 } @else {
 <a class="episode-poster__art" [routerLink]="['/podcast', episode().podcastName, episode().id]">
@@ -17,6 +25,14 @@
   <img [src]="src" [alt]="episode().episodeTitle" loading="lazy" />
   } @else {
   <div class="episode-poster__placeholder" aria-hidden="true"></div>
+  }
+  @if (showPromote()) {
+  <button type="button" class="episode-poster__promote" [class.is-promoted]="promoted()"
+    [attr.aria-pressed]="promoted()"
+    [attr.aria-label]="promoted() ? 'Remove from hero' : 'Promote to hero'"
+    (click)="onPromoteToggle($event)">
+    <mat-icon>{{ promoted() ? 'star' : 'star_border' }}</mat-icon>
+  </button>
   }
 </a>
 }

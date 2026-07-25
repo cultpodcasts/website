@@ -1087,6 +1087,241 @@ option {
   background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%);
 }
 
+/* Discover + rails — shared with homepage-api (keeps component style under budget). */
+.obscure {
+  position: relative;
+  z-index: 2;
+  margin: 28px 0 8px;
+  padding: 0 0 8px;
+}
+
+.obscure__heading { margin: 0 4vw 14px; }
+
+.obscure__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--nflx-accent);
+}
+
+.obscure__title {
+  margin: 0;
+  font-family: var(--cp-font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.obscure__lede {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  color: var(--nflx-muted);
+}
+
+.obscure__scroller,
+.rail__scroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 12px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: #444 transparent;
+}
+
+.obscure__scroller:focus-visible,
+.rail__scroller:focus-visible {
+  outline: 2px solid var(--nflx-accent);
+  outline-offset: -2px;
+}
+
+.obscure__track {
+  display: flex;
+  gap: 14px;
+  padding: 0 4vw;
+  width: max-content;
+}
+
+.obscure__card {
+  display: block;
+  width: var(--obscure-card-w);
+  flex: 0 0 var(--obscure-card-w);
+  text-decoration: none;
+  color: inherit;
+  scroll-snap-align: start;
+  transition: transform 0.22s ease;
+}
+
+.obscure__card:hover,
+.obscure__card:focus-visible {
+  transform: translateY(-4px) scale(1.03);
+  outline: none;
+}
+
+.obscure__card:hover .obscure__art,
+.obscure__card:focus-visible .obscure__art {
+  box-shadow: 0 0 0 2px var(--nflx-accent), 0 16px 32px #00000080;
+}
+
+.obscure__card:hover .obscure__name,
+.obscure__card:focus-visible .obscure__name {
+  color: var(--nflx-accent);
+}
+
+.obscure__card--youtube {
+  width: var(--obscure-yt-w);
+  flex-basis: var(--obscure-yt-w);
+}
+
+.obscure__card--youtube .obscure__art {
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+}
+
+.obscure__art {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--nflx-panel);
+  box-shadow: 0 10px 28px #00000066;
+  transition: box-shadow 0.22s ease;
+}
+
+.obscure__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(1.05) contrast(1.04);
+}
+
+.obscure__placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #2a2218, #121212);
+}
+
+.obscure__count {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #000000b8;
+  border: 1px solid #e8a23a73;
+  color: #f0d2a0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+.obscure__name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
+  transition: color 0.15s ease;
+}
+
+.nflx-rows {
+  position: relative;
+  z-index: 2;
+  margin-top: 12px;
+  padding: 0 0 24px;
+}
+
+.rail { margin-bottom: 28px; }
+
+.rail__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0 4vw 10px;
+}
+
+.rail__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+
+.rail__title--link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.rail__title--link mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  opacity: 0.75;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.rail__title--link:hover,
+.rail__title--link:focus-visible {
+  color: var(--nflx-accent);
+  outline: none;
+}
+
+.rail__title--link:hover mat-icon,
+.rail__title--link:focus-visible mat-icon {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.rail__see-all {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--nflx-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rail__see-all:hover,
+.rail__see-all:focus-visible {
+  color: #fff;
+  outline: none;
+}
+
+.rail--subject .rail__title {
+  font-family: var(--cp-font-display);
+  font-size: 1.45rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.rail__track {
+  display: flex;
+  gap: 10px;
+  padding: 0 4vw;
+  width: max-content;
+}
+
+.rail-poster {
+  width: var(--rail-poster-w);
+  flex: 0 0 var(--rail-poster-w);
+}
+
+.rail-poster.episode-poster--square {
+  width: var(--rail-poster-sq);
+  flex-basis: var(--rail-poster-sq);
+}
+
 @keyframes nflx-loading-shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }

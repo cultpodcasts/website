@@ -33,8 +33,13 @@ export class EpisodePosterComponent {
   readonly titleAsHtml = input(false);
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
   readonly excludeSubject = input<string | undefined>(undefined);
+  /** Curator-only: show a star to promote/demote this episode in the homepage hero. */
+  readonly showPromote = input(false);
+  /** Whether this episode is currently in the curated hero list. */
+  readonly promoted = input(false);
 
   readonly play = output<SearchDisplayEpisode>();
+  readonly promoteToggle = output<SearchDisplayEpisode>();
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -81,5 +86,11 @@ export class EpisodePosterComponent {
     if (this.playable()) {
       this.playerService.toggleQueue(this.episode());
     }
+  }
+
+  onPromoteToggle(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.promoteToggle.emit(this.episode());
   }
 }

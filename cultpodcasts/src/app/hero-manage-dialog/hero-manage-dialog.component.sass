@@ -1,0 +1,105 @@
+.hero-manage
+    min-width: min(480px, 86vw)
+    color: var(--mat-sys-on-surface, #e8e8e8)
+
+.hero-manage__lede
+    margin: 0 0 16px
+    font-size: 0.9rem
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 70%, transparent)
+
+.hero-manage__empty
+    margin: 12px 0 20px
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 65%, transparent)
+
+.hero-manage__section
+    margin: 20px 0 10px
+    font-size: 0.75rem
+    font-weight: 700
+    letter-spacing: 0.12em
+    text-transform: uppercase
+    color: var(--cp-amber, #e8a23a)
+
+.hero-manage__list
+    list-style: none
+    margin: 0
+    padding: 0
+    display: flex
+    flex-direction: column
+    gap: 8px
+
+.hero-manage__item
+    display: flex
+    align-items: center
+    gap: 10px
+    padding: 8px 10px
+    border-radius: 10px
+    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 88%, #1c2433)
+    border: 1px solid color-mix(in srgb, #fff 10%, transparent)
+    &.cdk-drag-preview
+        box-shadow: 0 12px 32px #000000a6
+    &--autofill
+        opacity: 0.45
+        pointer-events: none
+
+.hero-manage__handle
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    padding: 0
+    border: 0
+    background: transparent
+    color: color-mix(in srgb, #fff 55%, transparent)
+    cursor: grab
+    &:active
+        cursor: grabbing
+
+.hero-manage__index
+    flex: 0 0 1.5rem
+    font-variant-numeric: tabular-nums
+    font-size: 0.8rem
+    color: var(--cp-amber, #e8a23a)
+    font-weight: 700
+
+.hero-manage__thumb
+    width: 44px
+    height: 44px
+    border-radius: 6px
+    object-fit: cover
+    flex-shrink: 0
+    background: #222
+    &--empty
+        display: block
+
+.hero-manage__meta
+    flex: 1 1 auto
+    min-width: 0
+    display: flex
+    flex-direction: column
+    gap: 2px
+
+.hero-manage__title
+    font-size: 0.92rem
+    font-weight: 600
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+.hero-manage__show
+    font-size: 0.78rem
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+.hero-manage__remove
+    flex-shrink: 0
+
+.hero-manage__error
+    margin: 12px 0 0
+    color: #f44336
+    font-size: 0.9rem
+
+mat-dialog-actions
+    mat-spinner
+        display: inline-block
+        margin: 0 8px

@@ -74,6 +74,37 @@
     color: #fff
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7)
 
+.episode-poster__promote
+    position: absolute
+    top: 8px
+    right: 8px
+    z-index: 3
+    width: 36px
+    height: 36px
+    padding: 0
+    border: 1px solid #ffffff59
+    border-radius: 50%
+    background: #000000a6
+    color: #fff
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    backdrop-filter: blur(6px)
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease
+    mat-icon
+        font-size: 20px
+        width: 20px
+        height: 20px
+    &:hover,
+    &:focus-visible
+        background: #ffffff26
+        border-color: var(--nflx-accent, #e8a23a)
+        outline: none
+    &.is-promoted
+        color: var(--nflx-accent, #e8a23a)
+        border-color: var(--nflx-accent, #e8a23a)
+
 .episode-poster__meta
     display: flex
     flex-wrap: wrap
