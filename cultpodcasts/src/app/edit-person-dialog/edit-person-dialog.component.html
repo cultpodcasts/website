@@ -7,36 +7,36 @@
     <p id="error">An error occurred</p>
     } @else {
     <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
-        <label>
-            <span>Name:</span>
+        <mat-form-field class="full-width">
+            <mat-label>Name</mat-label>
             <input type="text" [formControl]="form()!.controls.name" [readonly]="!create" matInput>
-        </label>
+        </mat-form-field>
         <div class="search-actions">
             <button type="button" mat-button (click)="searchX()" [disabled]="!searchTerm()">Search X</button>
             <button type="button" mat-button (click)="searchBluesky()" [disabled]="!searchTerm()">Search Bluesky</button>
         </div>
-        <label>
-            <span>Sort name:</span>
+        <mat-form-field class="full-width">
+            <mat-label>Sort name</mat-label>
             <input type="text" [formControl]="form()!.controls.sortName" matInput
                 placeholder="Suggested from name — edit to override">
-        </label>
+        </mat-form-field>
         <p class="sorts-as-hint">Sorts as: {{ sortsAsHint }}</p>
         <mat-checkbox [formControl]="useFullNameForSorting">
             Organization / use full name for sorting
         </mat-checkbox>
-        <label>
-            <span>Aliases:</span>
+        <mat-form-field class="full-width">
+            <mat-label>Aliases</mat-label>
             <textarea [formControl]="form()!.controls.aliases" matInput cdkTextareaAutosize
                 placeholder="Comma-separated aliases"></textarea>
-        </label>
-        <label>
-            <span>Twitter / X handle:</span>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Twitter / X handle</mat-label>
             <input type="text" [formControl]="form()!.controls.twitterHandle" matInput placeholder="@handle">
-        </label>
-        <label>
-            <span>Bluesky handle:</span>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Bluesky handle</mat-label>
             <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput placeholder="handle.bsky.social">
-        </label>
+        </mat-form-field>
     </form>
     }
 </mat-dialog-content>

@@ -9,45 +9,45 @@
     <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
-                <label>
-                    <span>Name:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Name</mat-label>
                     <input type="text" [formControl]="form()!.controls.name" [readonly]="!create" matInput>
-                </label>
-                <label>
-                    <span>Aliases:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Aliases</mat-label>
                     <textarea [formControl]="form()!.controls.aliases" matInput cdkTextareaAutosize></textarea>
-                </label>
-                <label>
-                    <span>Associated Subjects:</span>
-                    <textarea type="text" [formControl]="form()!.controls.associatedSubjects" matInput
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Associated Subjects</mat-label>
+                    <textarea [formControl]="form()!.controls.associatedSubjects" matInput
                         cdkTextareaAutosize></textarea>
-                </label>
-                <label>
-                    <span>Subject Type:</span>
-                    <select matNativeControl [formControl]="form()!.controls.subjectType">
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Subject Type</mat-label>
+                    <mat-select [formControl]="form()!.controls.subjectType">
                         @for (subjectType of subjectTypes; track $index) {
-                        <option [value]="subjectType">{{subjectType}}</option>
+                        <mat-option [value]="subjectType">{{subjectType}}</mat-option>
                         }
-                    </select>
-                </label>
+                    </mat-select>
+                </mat-form-field>
             </mat-tab>
             <mat-tab label="Hash Tags & Terms">
-                <label>
-                    <span>Hash Tags:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Hash Tags</mat-label>
                     <input type="text" [formControl]="form()!.controls.hashTag" matInput>
-                </label>
-                <label>
-                    <span>Enrichment Hash Tags:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Enrichment Hash Tags</mat-label>
                     <textarea [formControl]="form()!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
-                </label>
-                <label>
-                    <span>Known Terms</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Known Terms</mat-label>
                     <input type="text" [formControl]="form()!.controls.knownTerms" matInput>
-                </label>
+                </mat-form-field>
             </mat-tab>
             <mat-tab label="Reddit">
-                <label>
-                    <span>Flair Id:</span>
+                <mat-form-field class="full-width">
+                    <mat-label>Flair Id</mat-label>
                     <mat-select [formControl]="form()!.controls.redditFlairTemplateId" id="flair" [style]="styleSelect()"
                         panelClass="flairs">
                         <mat-option [value]="">No Subject</mat-option>
@@ -56,11 +56,11 @@
                             [style]="styleOption(flair.value)">{{flair.key.substring(0,8)}}</mat-option>
                         }
                     </mat-select>
-                </label>
-                <label>
-                    <span>Flair Text:</span>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Flair Text</mat-label>
                     <input type="text" [formControl]="form()!.controls.redditFlareText" matInput>
-                </label>
+                </mat-form-field>
             </mat-tab>
         </mat-tab-group>
     </form>
