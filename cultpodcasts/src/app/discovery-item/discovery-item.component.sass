@@ -71,7 +71,8 @@ mat-card-subtitle
         color: var(--mat-theme-text-secondary)
         line-height: 1.4em
     span.unknown
-        color: #f44336
+        color: var(--cp-warn, #f44336)
+        font-weight: 600
 
 mat-card-content
     padding-top: 4px
@@ -100,23 +101,14 @@ mat-card-content
             font-size: 0.78rem
             color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
 
+// State chrome (border / background) lives in styles.scss — global mat-card rules use
+// !important and would otherwise hide any local selected / warning treatment.
 mat-card.selected
-    border-color: color-mix(in srgb, var(--cp-amber, #e8a23a) 70%, transparent)
-    background: linear-gradient(90deg, var(--cp-amber-soft, color-mix(in srgb, #e8a23a 18%, transparent)), color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433) 48%)
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cp-amber, #e8a23a) 35%, transparent)
     .matchedPodcast
         color: var(--mat-theme-text-primary-on-background)
 
-mat-card.error
-    border-color: #f44336
-    border-width: 2px
-
-mat-card.unknownDuration
-    border-color: #f44336
-
 mat-card.auto-hidden
     opacity: 0.78
-    border-style: dashed
 
 @media screen and (max-width: 560px)
     .curator-card__body
