@@ -526,14 +526,18 @@ export class HomepageApiComponent {
     }
     const pinnedSet = this.curatedRailSubjectSet();
     const shown = this.subjectRails().map((rail) => rail.subject!);
+    const candidates = this.subjectRailCandidates();
     const pinned = this.curatedRailSubjects().filter((subject) =>
-      this.subjectRailCandidates().some((c) => c.subject === subject)
+      candidates.some((c) => c.subject === subject)
     );
     const autofilled = shown.filter((subject) => !pinnedSet.has(subject));
-    const eligible = this.subjectRailCandidates().map((c) => c.subject);
+    const eligible = candidates.map((c) => c.subject);
+    const episodeCounts = Object.fromEntries(
+      candidates.map((c) => [c.subject, c.episodes.length])
+    );
 
     const ref = this.dialog.open(RailsManageDialogComponent, {
-      data: { pinned, autofilled, eligible },
+      data: { pinned, autofilled, eligible, episodeCounts },
       width: '520px',
       maxWidth: '94vw',
       autoFocus: 'dialog',

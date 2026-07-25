@@ -16,6 +16,7 @@
       </button>
       <span class="rails-manage__index">{{ i + 1 }}</span>
       <app-subject-chip [subject]="subject" />
+      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
       <button type="button" mat-icon-button class="rails-manage__remove"
         [attr.aria-label]="'Unpin ' + displayCatalogName(subject)"
         (click)="remove(subject)">
@@ -32,6 +33,7 @@
     @for (subject of autofilled(); track subject) {
     <li class="rails-manage__item rails-manage__item--autofill">
       <app-subject-chip [subject]="subject" />
+      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
       <button type="button" mat-stroked-button class="rails-manage__pin"
         (click)="pin(subject)">
         <mat-icon>push_pin</mat-icon>
@@ -48,6 +50,7 @@
     @for (subject of moreAvailable(); track subject) {
     <li class="rails-manage__item">
       <app-subject-chip [subject]="subject" />
+      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
       <button type="button" mat-stroked-button class="rails-manage__pin"
         (click)="pin(subject)">
         <mat-icon>push_pin</mat-icon>

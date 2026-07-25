@@ -14,6 +14,8 @@ export interface RailsManageDialogData {
   autofilled: string[];
   /** Eligible subjects this week, popularity-sorted. */
   eligible: string[];
+  /** Episode count this week, keyed by subject name. */
+  episodeCounts: Record<string, number>;
 }
 
 export interface RailsManageDialogResult {
@@ -44,6 +46,7 @@ export class RailsManageDialogComponent {
   protected readonly pinned = signal<string[]>([]);
   private readonly initialAutofilled: string[];
   private readonly eligible: string[];
+  private readonly episodeCounts: Record<string, number>;
   protected readonly saving = signal(false);
   protected readonly error = signal(false);
   protected readonly displayCatalogName = displayCatalogName;
@@ -66,6 +69,11 @@ export class RailsManageDialogComponent {
     this.pinned.set([...data.pinned]);
     this.initialAutofilled = data.autofilled;
     this.eligible = data.eligible;
+    this.episodeCounts = data.episodeCounts ?? {};
+  }
+
+  episodeCount(subject: string): number {
+    return this.episodeCounts[subject] ?? 0;
   }
 
   drop(event: CdkDragDrop<string[]>): void {
