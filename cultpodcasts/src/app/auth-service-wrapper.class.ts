@@ -33,6 +33,7 @@ export class AuthServiceWrapper {
             const stored = AuthServiceWrapper.readStoredAvatar();
             if (stored) {
                 this._avatarUrl.set(stored);
+                AuthServiceWrapper.setCachedAvatarHtmlClass(true);
             }
         }
 
@@ -102,6 +103,7 @@ export class AuthServiceWrapper {
         if (typeof localStorage !== 'undefined') {
             localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
         }
+        AuthServiceWrapper.setCachedAvatarHtmlClass(false);
     }
 
     private persistAvatar(picture: string): void {
@@ -109,6 +111,15 @@ export class AuthServiceWrapper {
         if (typeof localStorage !== 'undefined') {
             localStorage.setItem(AUTH_AVATAR_STORAGE_KEY, picture);
         }
+        AuthServiceWrapper.setCachedAvatarHtmlClass(true);
+    }
+
+    /** Matches the optional index.html class that hides the SSR logged-out glyph. */
+    private static setCachedAvatarHtmlClass(enabled: boolean): void {
+        if (typeof document === 'undefined') {
+            return;
+        }
+        document.documentElement.classList.toggle('has-cached-avatar', enabled);
     }
 
     private static readStoredAvatar(): string | null {

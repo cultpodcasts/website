@@ -35,21 +35,18 @@
 <body class="mat-typography mat-app-background">
   <app-root></app-root>
   <!--
-    One-shot: swap the SSR logged-out profile icon for the cached Auth0 avatar
-    (key matches AUTH_AVATAR_STORAGE_KEY). Runs inline right after the SSR
-    markup parses — before Angular's deferred bundles — so the avatar is there
-    at first paint. Setting id="avatar" picks up the circular avatar styling.
-    The toolbar has ngSkipHydration, so mutating its DOM cannot break hydration.
+    Do not mutate toolbar DOM here — that breaks Angular hydration
+    (nextSibling / hasAttribute on null) and leaves auth pages stuck loading.
+    AuthServiceWrapper seeds the avatar from localStorage; the toolbar skips
+    hydration so the first client paint can show the cached letter-avatar.
+    Optional: hide the SSR logged-out icon until then (class only — safe).
   -->
   <script type="text/javascript">
     (function () {
       try {
-        var url = localStorage.getItem('authAvatarUrl');
-        if (!url) return;
-        document.querySelectorAll('app-toolbar img[alt="Profile"]').forEach(function (img) {
-          img.setAttribute('src', url);
-          img.id = 'avatar';
-        });
+        if (localStorage.getItem('authAvatarUrl')) {
+          document.documentElement.classList.add('has-cached-avatar');
+        }
       } catch (e) { /* private mode / blocked storage */ }
     })();
   </script>

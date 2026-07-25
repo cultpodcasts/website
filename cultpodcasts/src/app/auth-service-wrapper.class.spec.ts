@@ -40,6 +40,7 @@ describe('AuthServiceWrapper avatar cache', () => {
   afterEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+    document.documentElement.classList.remove('has-cached-avatar');
   });
 
   it('seeds avatarUrl from localStorage before Auth0 resolves', () => {
@@ -48,6 +49,7 @@ describe('AuthServiceWrapper avatar cache', () => {
     const wrapper = TestBed.inject(AuthServiceWrapper);
 
     expect(wrapper.avatarUrl()).toBe('https://cdn.example/avatar.png');
+    expect(document.documentElement.classList.contains('has-cached-avatar')).toBe(true);
   });
 
   it('persists the Auth0 picture when the user arrives', () => {
@@ -104,10 +106,12 @@ describe('AuthServiceWrapper avatar cache', () => {
   it('clearCachedAvatar removes storage and the signal for logout', () => {
     const wrapper = TestBed.inject(AuthServiceWrapper);
     user$.next({ picture: 'https://cdn.example/me.png' });
+    expect(document.documentElement.classList.contains('has-cached-avatar')).toBe(true);
 
     wrapper.clearCachedAvatar();
 
     expect(wrapper.avatarUrl()).toBeNull();
     expect(localStorage.getItem(AUTH_AVATAR_STORAGE_KEY)).toBeNull();
+    expect(document.documentElement.classList.contains('has-cached-avatar')).toBe(false);
   });
 });

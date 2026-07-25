@@ -36,6 +36,15 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
 	const document = await indexResponse.text();
 
+	// Auth-gated curator/user pages cannot SSR meaningfully (FakeAuth has no
+	// session). Rendering a shell and hydrating it crashes the client
+	// (nextSibling/hasAttribute on null) and leaves the page forever loading.
+	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
+	if (isAuthClientOnlyPath(url.pathname)) {
+		console.log("CSR shell (skip SSR)", url.pathname);
+		return new Response(document, indexResponse);
+	}
+
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,
@@ -46,6 +55,15 @@ async function workerFetchHandler(request: Request, env: Env) {
 
 	console.log("rendered SSR");
 	return new Response(content, indexResponse);
+}
+
+/** Routes that must boot on the client after Auth0 — never SSR with FakeAuth. */
+function isAuthClientOnlyPath(pathname: string): boolean {
+	return pathname === "/discovery"
+		|| pathname === "/outgoingEpisodes"
+		|| pathname === "/bookmarks"
+		|| pathname === "/unauthorised"
+		|| pathname.startsWith("/episodes/");
 }
 
 export default {
