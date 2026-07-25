@@ -27,6 +27,29 @@ npm run deploy:flix
 
 Never run `npm run deploy` for this prototype (that targets production `website`).
 
+### Keeping flix branches off the `website` project
+
+The production `website` Pages project builds previews for every branch (`preview_deployment_setting: custom`, includes `*`), so flix branches would build twice. Its `preview_branch_excludes` therefore lists:
+
+| Pattern | Why |
+|---------|-----|
+| `design/visual-refresh-v1` | flix production branch |
+| `flix/*` | convention for new flix work branches |
+| `feat/hero-curation-ux` | pre-convention flix branch |
+
+Name new flix branches `flix/<topic>` so they are excluded automatically; otherwise add the branch to that exclude list (Pages → website → Settings → Builds & deployments → Branch control).
+
+## Homepage curation (Curator role)
+
+Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation` (preview or production API, depending on build env):
+
+| Field | UI |
+|-------|----|
+| `episodeIds` | Star on any rail card; **Manage hero** panel (reorder / remove) |
+| `railSubjects` | Pin on subject rail headings; **Manage rails** panel (reorder / pin more) |
+
+Pinned rails that drop below the week's episode threshold autofill out; empty rail slots fill from this week's busiest subjects. Hero picks that leave the current week prune the same way.
+
 ## DNS
 
 If `flix.cultpodcasts.com` is not live yet, in the Cloudflare zone for `cultpodcasts.com` add:

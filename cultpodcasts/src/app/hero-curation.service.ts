@@ -5,10 +5,15 @@ import { environment } from '../environments/environment';
 import { AUTH_SCOPE } from './auth.interceptor';
 import { HeroCuration } from './hero-curation.interface';
 
+interface HeroCurationUpdate {
+  episodeIds?: string[];
+  railSubjects?: string[];
+}
+
 /**
- * KV-backed homepage hero curation list.
- * GET is public; PUT requires curate scope. Failures return an empty list so the
- * hero can still autofill when the worker endpoint is missing or down.
+ * KV-backed homepage curation: hero episode picks and pinned subject rails.
+ * GET is public; PUT requires curate scope. Failures return empty lists so the
+ * homepage can still autofill when the worker endpoint is missing or down.
  */
 @Injectable({ providedIn: 'root' })
 export class HeroCurationService {
@@ -17,23 +22,45 @@ export class HeroCurationService {
   async getHeroCuration(): Promise<HeroCuration> {
     try {
       const url = new URL('/hero-curation', environment.api).toString();
-      return await firstValueFrom(this.http.get<HeroCuration>(url));
+      const curation = await firstValueFrom(this.http.get<HeroCuration>(url));
+      return {
+        episodeIds: curation.episodeIds ?? [],
+        railSubjects: curation.railSubjects ?? [],
+        updatedAt: curation.updatedAt ?? null,
+      };
     } catch (error) {
-      console.warn('Hero curation unavailable; using empty curated list.', error);
-      return { episodeIds: [], updatedAt: null };
+      console.warn('Hero curation unavailable; using empty curated lists.', error);
+      return { episodeIds: [], railSubjects: [], updatedAt: null };
     }
   }
 
-  async setHeroCuration(episodeIds: string[]): Promise<HeroCuration> {
+  setHeroCuration(episodeIds: string[]): Promise<HeroCuration> {
+    return this.put({ episodeIds });
+  }
+
+  setRailSubjects(railSubjects: string[]): Promise<HeroCuration> {
+    return this.put({ railSubjects });
+  }
+
+  /** Persist any combination of hero and rail picks in one PUT. */
+  setHomepageCuration(update: HeroCurationUpdate): Promise<HeroCuration> {
+    return this.put(update);
+  }
+
+  /** Partial update: the worker merges, so hero and rail picks don't clobber each other. */
+  private async put(update: HeroCurationUpdate): Promise<HeroCuration> {
     try {
       const url = new URL('/hero-curation', environment.api).toString();
-      return await firstValueFrom(
-        this.http.put<HeroCuration>(
-          url,
-          { episodeIds },
-          { context: new HttpContext().set(AUTH_SCOPE, 'curate') }
-        )
+      const saved = await firstValueFrom(
+        this.http.put<HeroCuration>(url, update, {
+          context: new HttpContext().set(AUTH_SCOPE, 'curate'),
+        })
       );
+      return {
+        episodeIds: saved.episodeIds ?? [],
+        railSubjects: saved.railSubjects ?? [],
+        updatedAt: saved.updatedAt ?? null,
+      };
     } catch (error) {
       console.error('Failed to save hero curation.', error);
       throw error;

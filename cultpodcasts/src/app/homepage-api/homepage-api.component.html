@@ -94,6 +94,11 @@
         <mat-icon>playlist_add_check</mat-icon>
         <span>Manage hero</span>
       </button>
+      <button type="button" class="billboard__manage" (click)="openManageRails()"
+        aria-label="Manage subject rails">
+        <mat-icon>view_week</mat-icon>
+        <span>Manage rails</span>
+      </button>
       }
       @if (heroSlides().length > 1) {
       <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous featured episode"
@@ -190,7 +195,18 @@
           <span>{{ displayCatalogName(rail.title) }}</span>
           <mat-icon aria-hidden="true">chevron_right</mat-icon>
         </a>
-        <a class="rail__see-all" [routerLink]="['/subject', subject]">Browse all</a>
+        <div class="rail__heading-actions">
+          @if (isCurator()) {
+          <button type="button" class="rail__pin"
+            [class.is-pinned]="isRailPinned(subject)"
+            [attr.aria-label]="(isRailPinned(subject) ? 'Unpin ' : 'Pin ') + displayCatalogName(subject) + ' rail'"
+            [attr.title]="isRailPinned(subject) ? 'Unpin rail' : 'Pin rail'"
+            (click)="toggleRailPin(subject, $event)">
+            <mat-icon>push_pin</mat-icon>
+          </button>
+          }
+          <a class="rail__see-all" [routerLink]="['/subject', subject]">Browse all</a>
+        </div>
         } @else {
         <h2 class="rail__title">{{ displayCatalogName(rail.title) }}</h2>
         }
@@ -200,7 +216,7 @@
           @for (item of rail.episodes; track item.id) {
           <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="rail.subject"
             [playing]="isPlayingId(item.id)"
-            [showPromote]="isCurator() && !rail.subject"
+            [showPromote]="isCurator()"
             [promoted]="isPromoted(item.id)"
             (play)="playEpisode($event)"
             (promoteToggle)="togglePromote($event)" />

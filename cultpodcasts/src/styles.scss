@@ -1247,6 +1247,13 @@ option {
   margin: 0 4vw 10px;
 }
 
+.rail__heading-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .rail__title {
   margin: 0;
   font-size: 1.25rem;
@@ -1283,8 +1290,46 @@ option {
   transform: translateX(3px);
 }
 
+.rail__pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, #fff 18%, transparent);
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: color-mix(in srgb, #fff 55%, transparent);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.rail__pin mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+}
+
+.rail__pin:hover,
+.rail__pin:focus-visible {
+  color: #fff;
+  border-color: var(--nflx-accent);
+  outline: none;
+}
+
+.rail__pin.is-pinned {
+  color: var(--nflx-accent);
+  border-color: var(--nflx-accent);
+  background: color-mix(in srgb, var(--nflx-accent) 18%, transparent);
+}
+
+.rail__pin.is-pinned mat-icon {
+  transform: rotate(0deg);
+}
+
 .rail__see-all {
-  margin-left: auto;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--nflx-muted);

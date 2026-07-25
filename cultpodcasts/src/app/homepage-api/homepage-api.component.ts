@@ -26,7 +26,7 @@ import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
-import { isMetaSubject, pickObscureCults } from '../obscure-cults';
+import { pickObscureCults } from '../obscure-cults';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
@@ -36,9 +36,20 @@ import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
 import { buildHeroSlides, HERO_POOL_SIZE, pruneCuratedIdsToWeek } from '../hero-slides';
 import {
+  SUBJECT_RAIL_COUNT,
+  SUBJECT_RAIL_MIN_EPISODES,
+  buildSubjectRails,
+  collectSubjectRailCandidates,
+  pruneRailSubjectsToWeek,
+} from '../rail-subjects';
+import {
   HeroManageDialogComponent,
   HeroManageDialogResult,
 } from '../hero-manage-dialog/hero-manage-dialog.component';
+import {
+  RailsManageDialogComponent,
+  RailsManageDialogResult,
+} from '../rails-manage-dialog/rails-manage-dialog.component';
 
 export interface EpisodeRail {
   id: string;
@@ -70,8 +81,8 @@ export class HomepageApiComponent {
   private static readonly heroImageFallbackMs = 2500;
   private static readonly heroTransitionMs = 1100;
   private static readonly heroContentDelayMs = 180;
-  private static readonly subjectRailCount = 6;
-  private static readonly subjectRailMinEpisodes = 3;
+  private static readonly subjectRailCount = SUBJECT_RAIL_COUNT;
+  private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
   private static readonly obscureCultCount = 12;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
   private static readonly heroBucketMs = 3 * 60 * 60 * 1000;
@@ -130,6 +141,8 @@ export class HomepageApiComponent {
   protected readonly heroLayerB = signal<string | undefined>(undefined);
   /** Ordered episode IDs from the hero-curation API (may include stale ids). */
   protected readonly curatedEpisodeIds = signal<string[]>([]);
+  /** Ordered subject names pinned as homepage rails (may include stale names). */
+  protected readonly curatedRailSubjects = signal<string[]>([]);
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -179,38 +192,31 @@ export class HomepageApiComponent {
     return subjects.filter((s) => !s.startsWith('_')).slice(0, 4);
   });
 
-  /** Full-week subject playlists (not limited to progressive day render). */
-  protected readonly subjectRails = computed((): EpisodeRail[] => {
-    const bySubject = new Map<string, HomepageEpisode[]>();
-    for (const ep of this.allEpisodes()) {
-      for (const raw of ep.subjects ?? []) {
-        if (!raw || raw.startsWith('_') || isMetaSubject(raw)) {
-          continue;
-        }
-        const list = bySubject.get(raw);
-        if (list) {
-          if (!list.some((e) => e.id === ep.id)) {
-            list.push(ep);
-          }
-        } else {
-          bySubject.set(raw, [ep]);
-        }
-      }
-    }
+  /** Eligible subject groups from this week's episodes (popularity-sorted). */
+  protected readonly subjectRailCandidates = computed(() =>
+    collectSubjectRailCandidates(
+      this.allEpisodes(),
+      HomepageApiComponent.subjectRailMinEpisodes
+    )
+  );
 
-    return [...bySubject.entries()]
-      .filter(([, eps]) => eps.length >= HomepageApiComponent.subjectRailMinEpisodes)
-      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
-      .slice(0, HomepageApiComponent.subjectRailCount)
-      .map(([subject, episodes]) => ({
-        id: `subject:${subject}`,
-        title: subject,
-        subject,
-        episodes: episodes
-          .slice()
-          .sort((a, b) => (b.release as Date).getTime() - (a.release as Date).getTime()),
-      }));
-  });
+  /** Full-week subject playlists: curator pins first, then popularity autofill. */
+  protected readonly subjectRails = computed((): EpisodeRail[] =>
+    buildSubjectRails(
+      this.curatedRailSubjects(),
+      this.subjectRailCandidates(),
+      HomepageApiComponent.subjectRailCount
+    ).map((rail) => ({
+      id: `subject:${rail.subject}`,
+      title: rail.subject,
+      subject: rail.subject,
+      episodes: rail.episodes,
+    }))
+  );
+
+  protected readonly curatedRailSubjectSet = computed(
+    () => new Set(this.curatedRailSubjects())
+  );
 
   /** Lesser-known named groups from this week's episodes. */
   protected readonly obscureCults = computed(() =>
@@ -278,7 +284,10 @@ export class HomepageApiComponent {
       this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
         if (roles.includes('Curator') && this.pendingKvPrune) {
           this.pendingKvPrune = false;
-          void this.quietPersistPrune(this.curatedEpisodeIds());
+          void this.quietPersistPrune({
+            episodeIds: this.curatedEpisodeIds(),
+            railSubjects: this.curatedRailSubjects(),
+          });
         }
       });
       this.destroyRef.onDestroy(() => {
@@ -320,6 +329,10 @@ export class HomepageApiComponent {
 
   isPromoted(episodeId: string): boolean {
     return this.curatedIdSet().has(episodeId);
+  }
+
+  isRailPinned(subject: string | undefined): boolean {
+    return !!subject && this.curatedRailSubjectSet().has(subject);
   }
 
   durationLabel(duration: string): string {
@@ -445,6 +458,47 @@ export class HomepageApiComponent {
     });
   }
 
+  async toggleRailPin(subject: string | undefined, event?: Event): Promise<void> {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!subject || !this.isCurator()) {
+      return;
+    }
+    const subjects = [...this.curatedRailSubjects()];
+    const idx = subjects.indexOf(subject);
+    if (idx >= 0) {
+      subjects.splice(idx, 1);
+    } else {
+      subjects.push(subject);
+    }
+    await this.persistRailSubjects(subjects);
+  }
+
+  openManageRails(): void {
+    if (!this.isCurator()) {
+      return;
+    }
+    const pinnedSet = this.curatedRailSubjectSet();
+    const shown = this.subjectRails().map((rail) => rail.subject!);
+    const pinned = this.curatedRailSubjects().filter((subject) =>
+      this.subjectRailCandidates().some((c) => c.subject === subject)
+    );
+    const autofilled = shown.filter((subject) => !pinnedSet.has(subject));
+    const eligible = this.subjectRailCandidates().map((c) => c.subject);
+
+    const ref = this.dialog.open(RailsManageDialogComponent, {
+      data: { pinned, autofilled, eligible },
+      width: '520px',
+      maxWidth: '94vw',
+      autoFocus: 'dialog',
+    });
+    ref.afterClosed().subscribe((result: RailsManageDialogResult | undefined) => {
+      if (result?.saved && result.railSubjects) {
+        this.curatedRailSubjects.set(result.railSubjects);
+      }
+    });
+  }
+
   populatePage() {
     combineLatest([this.route.params, this.route.queryParams], (params: Params, queryParams: Params) => ({
       params,
@@ -466,6 +520,9 @@ export class HomepageApiComponent {
     try {
       const saved = await this.heroCurationService.setHeroCuration(ids);
       this.curatedEpisodeIds.set(saved.episodeIds);
+      if (saved.railSubjects) {
+        this.curatedRailSubjects.set(saved.railSubjects);
+      }
       this.clampHeroIndex();
     } catch {
       this.curatedEpisodeIds.set(previous);
@@ -473,40 +530,75 @@ export class HomepageApiComponent {
     }
   }
 
+  private async persistRailSubjects(subjects: string[]): Promise<void> {
+    const previous = this.curatedRailSubjects();
+    this.curatedRailSubjects.set(subjects);
+    try {
+      const saved = await this.heroCurationService.setRailSubjects(subjects);
+      this.curatedRailSubjects.set(saved.railSubjects);
+      if (saved.episodeIds) {
+        this.curatedEpisodeIds.set(saved.episodeIds);
+        this.clampHeroIndex();
+      }
+    } catch {
+      this.curatedRailSubjects.set(previous);
+    }
+  }
+
   private async fetchCuration(): Promise<void> {
     const curation = await this.heroCurationService.getHeroCuration();
     this.curatedEpisodeIds.set(curation.episodeIds ?? []);
+    this.curatedRailSubjects.set(curation.railSubjects ?? []);
   }
 
   /**
-   * Drop curated picks that left the current homepage week window.
+   * Drop curated picks / pinned rails that left the current homepage week window.
    * Always updates local display; when a Curator is signed in, quietly PUT
-   * the cleaned list so KV stays in sync (week-window drop is intentional).
+   * the cleaned lists so KV stays in sync (week-window drop is intentional).
    */
   private pruneCurationToCurrentWeek(): void {
-    const raw = this.curatedEpisodeIds();
-    const { ids, pruned } = pruneCuratedIdsToWeek(raw, this.allEpisodes());
-    if (!pruned) {
+    const rawEpisodes = this.curatedEpisodeIds();
+    const episodePrune = pruneCuratedIdsToWeek(rawEpisodes, this.allEpisodes());
+    if (episodePrune.pruned) {
+      this.curatedEpisodeIds.set(episodePrune.ids);
+      this.clampHeroIndex();
+    }
+
+    const rawRails = this.curatedRailSubjects();
+    const railPrune = pruneRailSubjectsToWeek(
+      rawRails,
+      this.subjectRailCandidates()
+    );
+    if (railPrune.pruned) {
+      this.curatedRailSubjects.set(railPrune.subjects);
+    }
+
+    if (!episodePrune.pruned && !railPrune.pruned) {
       return;
     }
-    this.curatedEpisodeIds.set(ids);
-    this.clampHeroIndex();
     if (this.isCurator()) {
       this.pendingKvPrune = false;
-      void this.quietPersistPrune(ids);
+      void this.quietPersistPrune({
+        episodeIds: episodePrune.pruned ? episodePrune.ids : undefined,
+        railSubjects: railPrune.pruned ? railPrune.subjects : undefined,
+      });
     } else {
       this.pendingKvPrune = true;
     }
   }
 
-  private async quietPersistPrune(ids: string[]): Promise<void> {
+  private async quietPersistPrune(update: {
+    episodeIds?: string[];
+    railSubjects?: string[];
+  }): Promise<void> {
     try {
-      const saved = await this.heroCurationService.setHeroCuration(ids);
-      this.curatedEpisodeIds.set(saved.episodeIds ?? ids);
+      const saved = await this.heroCurationService.setHomepageCuration(update);
+      this.curatedEpisodeIds.set(saved.episodeIds ?? this.curatedEpisodeIds());
+      this.curatedRailSubjects.set(saved.railSubjects ?? this.curatedRailSubjects());
       this.clampHeroIndex();
       this.pendingKvPrune = false;
     } catch (error) {
-      console.warn('Hero curation week prune failed to persist; local list kept clean.', error);
+      console.warn('Homepage curation week prune failed to persist; local lists kept clean.', error);
       this.pendingKvPrune = true;
     }
   }

@@ -6,7 +6,7 @@
   </p>
 
   @if (curated().length === 0) {
-  <p class="hero-manage__empty">No curated picks yet. Star episodes on the day rails to promote them.</p>
+  <p class="hero-manage__empty">No curated picks yet. Star episodes on any homepage rail to promote them.</p>
   } @else {
   <ul class="hero-manage__list" cdkDropList (cdkDropListDropped)="drop($event)">
     @for (ep of curated(); track ep.id; let i = $index) {
