@@ -130,11 +130,11 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Language</mat-label>
-                    <select matNativeControl [formControl]="form()!.controls.lang">
+                    <mat-select [formControl]="form()!.controls.lang">
                         @for (language of languages() | keyvalue:null; track language) {
-                        <option [value]="language.key">{{language.value}}</option>
+                        <mat-option [value]="language.key">{{language.value}}</mat-option>
                         }
-                    </select>
+                    </mat-select>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Images">

@@ -120,27 +120,27 @@
             <mat-tab label="Meta">
                 <mat-form-field class="full-width">
                     <mat-label>Release Authority</mat-label>
-                    <select matNativeControl [formControl]="form()!.controls.releaseAuthority">
+                    <mat-select [formControl]="form()!.controls.releaseAuthority">
                         @for (podcastService of podcastServices; track $index) {
-                        <option [value]="podcastService">{{podcastService}}</option>
+                        <mat-option [value]="podcastService">{{podcastService}}</mat-option>
                         }
-                    </select>
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Primary Post Service</mat-label>
-                    <select matNativeControl [formControl]="form()!.controls.primaryPostService">
+                    <mat-select [formControl]="form()!.controls.primaryPostService">
                         @for (podcastService of podcastServices; track $index) {
-                        <option [value]="podcastService">{{podcastService}}</option>
+                        <mat-option [value]="podcastService">{{podcastService}}</mat-option>
                         }
-                    </select>
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Language</mat-label>
-                    <select matNativeControl [formControl]="form()!.controls.lang">
+                    <mat-select [formControl]="form()!.controls.lang">
                         @for (language of languages() | keyvalue:null; track language) {
-                        <option [value]="language.key">{{language.value}}</option>
+                        <mat-option [value]="language.key">{{language.value}}</mat-option>
                         }
-                    </select>
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Minimum Duration</mat-label>
