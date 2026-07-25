@@ -90,10 +90,15 @@
     padding-top: 96px
 
 .billboard__feature
-    will-change: opacity, transform
-    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)
-    &.is-animating
-        animation: nflx-content-swap 0.85s cubic-bezier(0.22, 1, 0.36, 1)
+    will-change: opacity
+    opacity: 1
+    // Opacity only — no translateY, so title line-count changes can't dip/jump.
+    transition: opacity 0.4s cubic-bezier(0.33, 0.1, 0.25, 1)
+    &.is-hidden
+        opacity: 0
+        // Keep pointer events off while invisible so stale Watch/More targets aren't clicked.
+        pointer-events: none
+        transition-duration: 0.32s
 
 .billboard__eyebrow
     margin: 0 0 10px
@@ -388,10 +393,13 @@
         transform: scale(1.05)
     .billboard__stage
         transition: none
-    .billboard__feature.is-animating,
+    .billboard__feature,
     .billboard__dot-fill.is-running,
     .billboard__live
         animation: none
+        transition: none
+    .billboard__feature.is-hidden
+        opacity: 0
     .billboard__dot-fill.is-running
         width: 100%
     .billboard__dots-viewport

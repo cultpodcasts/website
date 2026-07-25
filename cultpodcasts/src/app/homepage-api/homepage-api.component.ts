@@ -82,7 +82,8 @@ export class HomepageApiComponent {
   private static readonly heroIntervalMs = 7500;
   private static readonly heroImageFallbackMs = 2500;
   private static readonly heroTransitionMs = 1200;
-  private static readonly heroContentDelayMs = 180;
+  /** Fade the current copy out before swapping so height/layout changes stay hidden. */
+  private static readonly heroContentOutMs = 320;
   private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
   private static readonly obscureCultCount = 12;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
@@ -133,7 +134,8 @@ export class HomepageApiComponent {
 
   protected readonly heroIndex = signal(0);
   protected readonly heroPaused = signal(false);
-  protected readonly heroAnimating = signal(false);
+  /** False while hero copy is fading out/in around a slide change. */
+  protected readonly heroContentVisible = signal(true);
   /** True once the active slide background has decoded (or fallback timer fired). */
   protected readonly heroImageReady = signal(false);
   /** Two-layer crossfade: which stage is currently visible. */
@@ -266,7 +268,6 @@ export class HomepageApiComponent {
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private heroTimer: ReturnType<typeof setInterval> | undefined;
-  private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
   private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
   private heroImageFallbackTimer: ReturnType<typeof setTimeout> | undefined;
   private heroKenBurnsClearTimer: ReturnType<typeof setTimeout> | undefined;
@@ -655,6 +656,7 @@ export class HomepageApiComponent {
     this.isLoading.set(true);
     this.isInError.set(false);
     this.stopHeroCycle();
+    this.heroContentVisible.set(true);
     this.heroIndex.set(0);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 });
@@ -881,24 +883,29 @@ export class HomepageApiComponent {
     if (index === this.heroIndex()) {
       return;
     }
-    this.heroIndex.set(index);
-    this.syncHeroLayers(false);
-    // Restart content entrance after a short delay so the background crossfade leads.
-    this.heroAnimating.set(false);
-    if (this.heroAnimTimer) {
-      clearTimeout(this.heroAnimTimer);
+    if (this.reduceMotion) {
+      this.heroIndex.set(index);
+      this.syncHeroLayers(true);
+      this.heroContentVisible.set(true);
+      this.beginHeroImageGate();
+      return;
     }
+
+    // 1) Fade current copy out while the old image is still fully visible.
+    this.heroContentVisible.set(false);
     if (this.heroContentTimer) {
       clearTimeout(this.heroContentTimer);
     }
     this.heroContentTimer = setTimeout(() => {
-      this.heroAnimating.set(true);
-      this.heroAnimTimer = setTimeout(
-        () => this.heroAnimating.set(false),
-        850
-      );
-    }, HomepageApiComponent.heroContentDelayMs);
-    this.beginHeroImageGate();
+      // 2) Swap copy + start image crossfade while text is invisible (no layout pop).
+      this.heroIndex.set(index);
+      this.syncHeroLayers(false);
+      this.beginHeroImageGate();
+      // 3) Fade the new copy in on the next frames, in step with the image bleed.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => this.heroContentVisible.set(true));
+      });
+    }, HomepageApiComponent.heroContentOutMs);
   }
 
   /** Seed or crossfade the two background layers for the active slide. */
@@ -1067,10 +1074,6 @@ export class HomepageApiComponent {
     if (this.heroTimer) {
       clearInterval(this.heroTimer);
       this.heroTimer = undefined;
-    }
-    if (this.heroAnimTimer) {
-      clearTimeout(this.heroAnimTimer);
-      this.heroAnimTimer = undefined;
     }
     if (this.heroContentTimer) {
       clearTimeout(this.heroContentTimer);

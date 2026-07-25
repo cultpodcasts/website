@@ -35,7 +35,7 @@
     <div class="billboard__vignette" aria-hidden="true"></div>
 
     <div class="billboard__content">
-      <div class="billboard__feature" [class.is-animating]="heroAnimating()">
+      <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
         <p class="billboard__eyebrow">
           <span class="billboard__live" aria-hidden="true"></span>
           Now featuring

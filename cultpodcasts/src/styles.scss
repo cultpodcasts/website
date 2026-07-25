@@ -1377,11 +1377,6 @@ option {
   to { transform: scale(1.18); }
 }
 
-@keyframes nflx-content-swap {
-  0% { opacity: 0; transform: translateY(18px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes nflx-pulse-live {
   0% { box-shadow: 0 0 0 0 rgba(232, 162, 58, 0.65); }
   70% { box-shadow: 0 0 0 10px rgba(232, 162, 58, 0); }
