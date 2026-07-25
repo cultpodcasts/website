@@ -2,7 +2,9 @@
 
 <mat-dialog-content class="rails-manage">
   <p class="rails-manage__lede">
-    Pin subjects to keep them on the homepage. Drag to reorder. Empty slots autofill from this week's busiest subjects.
+    Pin subjects to keep them on the homepage. Drag to reorder.
+    Fewer than {{ railCount }} pins autofill from this week's busiest subjects;
+    pin {{ railCount }} or more and only your picks show.
   </p>
 
   @if (pinned().length === 0) {
@@ -61,12 +63,12 @@
   </ul>
   }
 
-  @if (error()) {
-  <p class="rails-manage__error" role="alert">Could not save. Try again.</p>
-  }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  @if (error()) {
+  <p class="rails-manage__error" role="alert">Could not save. Try again.</p>
+  }
   <button mat-button type="button" (click)="close()" [disabled]="saving()">Cancel</button>
   <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving()">
     @if (saving()) {

@@ -72,8 +72,10 @@ export function pruneRailSubjectsToWeek(
 }
 
 /**
- * Build homepage subject rails: pinned subjects first (in curator order), then
- * autofill from the popularity-sorted candidates up to `railCount`.
+ * Build homepage subject rails: every pinned subject in curator order (like
+ * curated heroes, pinning `railCount` or more gives full control and disables
+ * autofill), then autofill from the popularity-sorted candidates up to
+ * `railCount` when pins alone fall short.
  */
 export function buildSubjectRails(
   pinnedSubjects: string[],
@@ -89,9 +91,6 @@ export function buildSubjectRails(
   const rails: SubjectRailCandidate[] = [];
 
   for (const subject of pinnedSubjects) {
-    if (rails.length >= railCount) {
-      break;
-    }
     const candidate = bySubject.get(subject);
     if (!candidate || used.has(subject)) {
       continue;

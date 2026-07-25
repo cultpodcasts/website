@@ -537,7 +537,13 @@ export class HomepageApiComponent {
     );
 
     const ref = this.dialog.open(RailsManageDialogComponent, {
-      data: { pinned, autofilled, eligible, episodeCounts },
+      data: {
+        pinned,
+        autofilled,
+        eligible,
+        episodeCounts,
+        railCount: HomepageApiComponent.subjectRailCount,
+      },
       width: '520px',
       maxWidth: '94vw',
       autoFocus: 'dialog',

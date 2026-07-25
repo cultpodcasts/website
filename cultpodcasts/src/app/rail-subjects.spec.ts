@@ -104,6 +104,20 @@ describe('rail-subjects', () => {
     ]);
   });
 
+  it('shows every pinned subject when pins exceed the rail count', () => {
+    const candidates = collectSubjectRailCandidates(episodes);
+    const rails = buildSubjectRails(
+      ['FLDS Church', 'NXIVM', 'Scientology'],
+      candidates,
+      2
+    );
+    expect(rails.map((r) => r.subject)).toEqual([
+      'FLDS Church',
+      'NXIVM',
+      'Scientology',
+    ]);
+  });
+
   it('returns empty when there are no candidates', () => {
     expect(buildSubjectRails(['Scientology'], [], 6)).toEqual([]);
   });
