@@ -47,6 +47,13 @@ export class PlayerService {
   readonly isOpen = computed(() => !!this._episode());
   readonly isVideo = computed(() => this.preferredServiceFor(this._episode()) === 'youtube');
 
+  /**
+   * O(1) membership for poster/rail templates. Parents bind `[queued]="queuedKeys().has(id)"`
+   * so OnPush posters only refresh when *their* boolean flips — not when every card
+   * re-reads the full queue array via `isQueued()`.
+   */
+  readonly queuedKeys = computed(() => new Set(this._queue().map((item) => item.key)));
+
   /** A previously-saved session offered for resume; unset once the user resumes or dismisses it. */
   private readonly _pendingResume = signal<PersistedPlayerSession | undefined>(undefined);
   readonly pendingResume = this._pendingResume.asReadonly();
@@ -207,7 +214,11 @@ export class PlayerService {
     if (!key) {
       return false;
     }
-    return this._queue().some((item) => item.key === key);
+    return this.queuedKeys().has(key);
+  }
+
+  isQueuedId(id: string | undefined): boolean {
+    return !!id && this.queuedKeys().has(id);
   }
 
   toggleQueue(episode: SearchDisplayEpisode): void {

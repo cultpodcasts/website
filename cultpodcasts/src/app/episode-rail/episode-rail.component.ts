@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SearchDisplayEpisode } from '../search-result-links';
+import { PlayerService } from '../player.service';
 
 @Component({
   selector: 'app-episode-rail',
@@ -15,6 +16,8 @@ import { SearchDisplayEpisode } from '../search-result-links';
   },
 })
 export class EpisodeRailComponent {
+  private readonly playerService = inject(PlayerService);
+
   readonly title = input.required<string>();
   readonly episodes = input.required<SearchDisplayEpisode[]>();
   /** When set, applies subject rail styling and excludes this subject from poster chips. */
@@ -42,12 +45,18 @@ export class EpisodeRailComponent {
 
   protected readonly useDisplayTitle = computed(() => this.displayTitle() || !!this.subject());
 
+  private readonly queuedKeys = computed(() => this.playerService.queuedKeys());
+
   protected isPromoted(episodeId: string): boolean {
     return this.promotedIds().has(episodeId);
   }
 
   protected isPlaying(episodeId: string): boolean {
     return this.playingEpisodeId() === episodeId;
+  }
+
+  protected isQueued(episodeId: string): boolean {
+    return this.queuedKeys().has(episodeId);
   }
 
   onPin(event: Event): void {

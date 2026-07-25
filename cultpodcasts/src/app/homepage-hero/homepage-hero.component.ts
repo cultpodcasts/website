@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  HostListener,
   PLATFORM_ID,
   afterRenderEffect,
   computed,
@@ -108,6 +107,35 @@ export class HomepageHeroComponent {
   private reduceMotion = false;
   private hasInitializedIndex = false;
   private lastFeaturedId: string | undefined;
+  private lastSlideSignature: string | undefined;
+  private resizeFrame = 0;
+  private dotsScrollFrame = 0;
+  private dotsScrollTarget: HTMLElement | undefined;
+
+  /**
+   * Window resize and dots-strip scroll are bound outside Angular's event manager: in a
+   * zoneless app each listener invocation schedules a change-detection pass, and both fire
+   * in bursts (mobile URL-bar collapse, smooth-scrolling the dots on every auto-advance).
+   */
+  private readonly onResizeEvent = (): void => {
+    if (this.resizeFrame) {
+      return;
+    }
+    this.resizeFrame = requestAnimationFrame(() => {
+      this.resizeFrame = 0;
+      this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
+    });
+  };
+
+  private readonly onDotsScrollEvent = (): void => {
+    if (this.dotsScrollFrame) {
+      return;
+    }
+    this.dotsScrollFrame = requestAnimationFrame(() => {
+      this.dotsScrollFrame = 0;
+      this.syncHeroDotsOverflow();
+    });
+  };
 
   constructor() {
     afterRenderEffect(() => {
@@ -119,6 +147,16 @@ export class HomepageHeroComponent {
       this.scrollActiveHeroDotIntoView(index);
     });
 
+    afterRenderEffect(() => {
+      const element = this.heroDotsViewport()?.nativeElement;
+      if (element === this.dotsScrollTarget) {
+        return;
+      }
+      this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
+      this.dotsScrollTarget = element;
+      element?.addEventListener('scroll', this.onDotsScrollEvent, { passive: true });
+    });
+
     // Full remount (loading shell) starts from timeBucket; quiet slide refreshes keep featured.
     effect(() => {
       const slides = this.slides();
@@ -127,10 +165,20 @@ export class HomepageHeroComponent {
       if (n === 0) {
         this.hasInitializedIndex = false;
         this.lastFeaturedId = undefined;
+        this.lastSlideSignature = undefined;
         this.heroIndex.set(0);
         this.stopHeroCycle();
         return;
       }
+
+      // A background refresh or a promote toggle re-emits an equal slide array. Rebuilding
+      // the image layers there would reload the backdrop and restart the dwell timer, so
+      // only react when the sequence itself changed.
+      const signature = slides.map((slide) => slide.id).join('|');
+      if (this.hasInitializedIndex && signature === this.lastSlideSignature) {
+        return;
+      }
+      this.lastSlideSignature = signature;
 
       if (!this.hasInitializedIndex) {
         this.heroIndex.set(bucket % n);
@@ -154,9 +202,19 @@ export class HomepageHeroComponent {
 
     if (isPlatformBrowser(this.platformId)) {
       this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.addEventListener('resize', this.onResizeEvent, { passive: true });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
         this.clearHeroImageWait();
+        window.removeEventListener('resize', this.onResizeEvent);
+        this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
+        this.dotsScrollTarget = undefined;
+        if (this.resizeFrame) {
+          cancelAnimationFrame(this.resizeFrame);
+        }
+        if (this.dotsScrollFrame) {
+          cancelAnimationFrame(this.dotsScrollFrame);
+        }
         if (this.heroDotsOverflowTimer) {
           clearTimeout(this.heroDotsOverflowTimer);
         }
@@ -215,18 +273,6 @@ export class HomepageHeroComponent {
     }
     this.transitionTo(index % slides.length);
     this.restartHeroCycle();
-  }
-
-  onHeroDotsScroll(): void {
-    this.syncHeroDotsOverflow();
-  }
-
-  @HostListener('window:resize')
-  onHeroDotsResize(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
   }
 
   nextHero(): void {

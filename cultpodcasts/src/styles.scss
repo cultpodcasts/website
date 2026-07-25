@@ -779,13 +779,17 @@ option {
   }
 }
 
-/* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
-.browse {
+/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse). */
+:root {
   --nflx-bg: #0b0b0b;
   --nflx-panel: #141414;
   --nflx-text: #fff;
   --nflx-muted: #b3b3b3;
   --nflx-accent: #e8a23a;
+}
+
+/* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
+.browse {
   color: var(--nflx-text);
   background: var(--nflx-bg);
   min-height: 50vh;

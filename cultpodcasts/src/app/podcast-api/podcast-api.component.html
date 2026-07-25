@@ -77,8 +77,9 @@
 
   <div class="browse-grid">
     @for (result of results(); track result.id) {
-    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)" [showShow]="false"
-      [titleAsHtml]="true" (play)="playEpisode($event)" />
+    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)"
+      [queued]="isQueuedId(result.id)" [showShow]="false" [titleAsHtml]="true"
+      (play)="playEpisode($event)" />
     }
   </div>
 

@@ -102,7 +102,9 @@ export class PodcastEpisodeComponent {
     return ep ? playActionLabel(ep) : 'Listen';
   });
 
-  protected readonly queued = computed(() => this.playerService.isQueued(this._episode()));
+  protected readonly queued = computed(() =>
+    this.playerService.isQueuedId(this._episode()?.id)
+  );
 
   protected readonly duration = computed(() => {
     const ep = this._episode();

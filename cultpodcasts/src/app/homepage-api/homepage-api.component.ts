@@ -2,14 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  HostListener,
   PLATFORM_ID,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, KeyValue } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
 import { ActivatedRoute, Params } from '@angular/router';
@@ -29,7 +28,7 @@ import { episodeEmbedOptions } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
-import { buildHeroSlides, HERO_POOL_SIZE, pruneCuratedIdsToWeek } from '../hero-slides';
+import { buildHeroSlides, pruneCuratedIdsToWeek } from '../hero-slides';
 import {
   SUBJECT_RAIL_MIN_EPISODES,
   buildSubjectRails,
@@ -221,6 +220,22 @@ export class HomepageApiComponent {
       this.maybeBackgroundRefresh();
     }
   };
+  private scrollFrame = 0;
+  /**
+   * Bound outside Angular's event manager on purpose: in a zoneless app every listener
+   * invocation schedules a change-detection pass, so a `@HostListener` here would run one
+   * per scroll event. Only `loadMoreEpisodes` writes signals, so CD now runs when the
+   * visible set actually grows.
+   */
+  private readonly onScrollEvent = (): void => {
+    if (this.scrollFrame) {
+      return;
+    }
+    this.scrollFrame = requestAnimationFrame(() => {
+      this.scrollFrame = 0;
+      this.onWindowScroll();
+    });
+  };
 
   ngOnInit() {
     this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -230,6 +245,7 @@ export class HomepageApiComponent {
 
     if (isPlatformBrowser(this.platformId)) {
       this.startBackgroundRefresh();
+      this.startScrollWatch();
       // If curation was pruned for display while anonymous, persist once a Curator signs in.
       this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
         if (roles.includes('Curator') && this.pendingKvPrune) {
@@ -242,11 +258,11 @@ export class HomepageApiComponent {
       });
       this.destroyRef.onDestroy(() => {
         this.stopBackgroundRefresh();
+        this.stopScrollWatch();
       });
     }
   }
 
-  @HostListener('window:scroll')
   onWindowScroll(): void {
     if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes().length === 0) {
       return;
@@ -564,6 +580,18 @@ export class HomepageApiComponent {
     }
   }
 
+  private startScrollWatch(): void {
+    window.addEventListener('scroll', this.onScrollEvent, { passive: true });
+  }
+
+  private stopScrollWatch(): void {
+    window.removeEventListener('scroll', this.onScrollEvent);
+    if (this.scrollFrame) {
+      cancelAnimationFrame(this.scrollFrame);
+      this.scrollFrame = 0;
+    }
+  }
+
   private startBackgroundRefresh(): void {
     this.stopBackgroundRefresh();
     document.addEventListener('visibilitychange', this.onDocumentVisibility);
@@ -627,11 +655,4 @@ export class HomepageApiComponent {
     if (aD < bD) return 1;
     return 0;
   }
-
-  descDate = (a: KeyValue<string, HomepageEpisode[]>, b: KeyValue<string, HomepageEpisode[]>): number => {
-    return this.descDateKey(a.key, b.key);
-  };
-
-  /** Expose pool size for template/docs; selection logic lives in hero-slides.ts. */
-  protected readonly heroPoolSize = HERO_POOL_SIZE;
 }

@@ -465,4 +465,8 @@ export class SubjectApiComponent {
   isPlayingId(id: string): boolean {
     return this.playerService.episode()?.id === id;
   }
+
+  isQueuedId(id: string): boolean {
+    return this.playerService.isQueuedId(id);
+  }
 }

@@ -37,6 +37,11 @@ export class EpisodePosterComponent {
   readonly showPromote = input(false);
   /** Whether this episode is currently in the curated hero list. */
   readonly promoted = input(false);
+  /**
+   * Queue membership from the parent (`playerService.queuedKeys().has(id)`).
+   * Kept as an input so OnPush only refreshes posters whose flag actually flipped.
+   */
+  readonly queued = input(false);
 
   readonly play = output<SearchDisplayEpisode>();
   readonly promoteToggle = output<SearchDisplayEpisode>();
@@ -53,9 +58,6 @@ export class EpisodePosterComponent {
   protected readonly playable = computed(() => canPlayEpisode(this.episode()));
 
   protected readonly playLabel = computed(() => playActionLabel(this.episode()));
-
-  /** "Add to queue" is a secondary action — only offered when the episode is embeddable. */
-  protected readonly queued = computed(() => this.playerService.isQueued(this.episode()));
 
   protected readonly duration = computed(() => {
     const raw = this.episode().duration ?? '';
