@@ -1,5 +1,4 @@
 import { HomepageEpisode } from './homepage-episode.interface';
-import { isMetaSubject } from './obscure-cults';
 
 /** How many subject rails the homepage shows between day rails. */
 export const SUBJECT_RAIL_COUNT = 6;
@@ -12,8 +11,10 @@ export interface SubjectRailCandidate {
 }
 
 /**
- * Group this week's episodes by non-meta subject, keeping subjects with enough
- * episodes to fill a rail. Sorted by episode count desc, then name.
+ * Group this week's episodes by subject (including meta topics such as
+ * Cult Recovery), keeping subjects with enough episodes to fill a rail.
+ * Internal `_`-prefixed tags are still skipped. Sorted by episode count desc,
+ * then name.
  */
 export function collectSubjectRailCandidates(
   allEpisodes: HomepageEpisode[],
@@ -22,7 +23,7 @@ export function collectSubjectRailCandidates(
   const bySubject = new Map<string, HomepageEpisode[]>();
   for (const ep of allEpisodes) {
     for (const raw of ep.subjects ?? []) {
-      if (!raw || raw.startsWith('_') || isMetaSubject(raw)) {
+      if (!raw || raw.startsWith('_')) {
         continue;
       }
       const list = bySubject.get(raw);

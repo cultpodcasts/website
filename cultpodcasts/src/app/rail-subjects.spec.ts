@@ -46,10 +46,11 @@ describe('rail-subjects', () => {
     ep('meta3', ['Cult Recovery'], 3),
   ];
 
-  it('collects subjects with enough episodes and skips meta subjects', () => {
+  it('collects subjects with enough episodes including meta topics', () => {
     const candidates = collectSubjectRailCandidates(episodes);
     expect(candidates.map((c) => c.subject)).toEqual([
       'Scientology',
+      'Cult Recovery',
       'FLDS Church',
       'NXIVM',
     ]);
@@ -59,6 +60,18 @@ describe('rail-subjects', () => {
       'a3',
       'a4',
     ]);
+  });
+
+  it('still skips internal underscore-prefixed subjects', () => {
+    const candidates = collectSubjectRailCandidates([
+      ep('x1', ['_internal'], 1),
+      ep('x2', ['_internal'], 2),
+      ep('x3', ['_internal'], 3),
+      ep('y1', ['NXIVM'], 1),
+      ep('y2', ['NXIVM'], 2),
+      ep('y3', ['NXIVM'], 3),
+    ]);
+    expect(candidates.map((c) => c.subject)).toEqual(['NXIVM']);
   });
 
   it('prunes pinned subjects that leave the eligible week set', () => {
@@ -87,6 +100,7 @@ describe('rail-subjects', () => {
     expect(rails.map((r) => r.subject)).toEqual([
       'NXIVM',
       'Scientology',
+      'Cult Recovery',
       'FLDS Church',
     ]);
   });
