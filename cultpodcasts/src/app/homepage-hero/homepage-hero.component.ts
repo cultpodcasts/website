@@ -41,8 +41,6 @@ export class HomepageHeroComponent {
   readonly slides = input.required<HomepageEpisode[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
   readonly isCurator = input(false);
-  /** Stable seed for initial slide index (e.g. 3-hour time bucket). */
-  readonly timeBucket = input(0);
 
   readonly manageHero = output<void>();
   readonly manageRails = output<void>();
@@ -157,10 +155,10 @@ export class HomepageHeroComponent {
       element?.addEventListener('scroll', this.onDotsScrollEvent, { passive: true });
     });
 
-    // Full remount (loading shell) starts from timeBucket; quiet slide refreshes keep featured.
+    // Full remount (loading shell) starts on the first curated/featured slide;
+    // quiet slide refreshes keep the currently featured episode when possible.
     effect(() => {
       const slides = this.slides();
-      const bucket = this.timeBucket();
       const n = slides.length;
       if (n === 0) {
         this.hasInitializedIndex = false;
@@ -181,7 +179,7 @@ export class HomepageHeroComponent {
       this.lastSlideSignature = signature;
 
       if (!this.hasInitializedIndex) {
-        this.heroIndex.set(bucket % n);
+        this.heroIndex.set(0);
         this.hasInitializedIndex = true;
       } else {
         const keep = this.lastFeaturedId

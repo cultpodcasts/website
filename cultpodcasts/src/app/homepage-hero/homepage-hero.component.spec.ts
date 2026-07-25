@@ -41,7 +41,6 @@ describe('HomepageHeroComponent', () => {
     fixture = TestBed.createComponent(HomepageHeroComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('slides', [ep('a'), ep('b'), ep('c')]);
-    fixture.componentRef.setInput('timeBucket', 1);
     fixture.detectChanges();
   });
 
@@ -50,9 +49,24 @@ describe('HomepageHeroComponent', () => {
     component['stopHeroCycle']();
   });
 
-  it('starts on timeBucket modulo slide count', () => {
-    expect(component['heroIndex']()).toBe(1);
-    expect(component['featured']()?.id).toBe('b');
+  it('starts on the first slide', () => {
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['featured']()?.id).toBe('a');
+  });
+
+  it('jumps to a slide when its hero dash is clicked', () => {
+    component['reduceMotion'] = true;
+    fixture.detectChanges();
+    const dots = fixture.nativeElement.querySelectorAll(
+      'button.billboard__dot'
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(dots.length).toBe(3);
+
+    dots[2].click();
+    fixture.detectChanges();
+
+    expect(component['heroIndex']()).toBe(2);
+    expect(component['featured']()?.id).toBe('c');
   });
 
   it('keeps the featured episode when slides refresh with the same id', () => {
@@ -73,7 +87,7 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('slides', [ep('a'), ep('b'), ep('c')]);
     fixture.detectChanges();
 
-    expect(component['heroIndex']()).toBe(1);
+    expect(component['heroIndex']()).toBe(0);
     expect(component['heroImageReady']()).toBe(true);
   });
 
@@ -81,14 +95,13 @@ describe('HomepageHeroComponent', () => {
     const removed: string[] = [];
     component.removeFeatured.subscribe((id) => removed.push(id));
     fixture.componentRef.setInput('isCurator', true);
-    fixture.componentRef.setInput('curatedEpisodeIds', ['b']);
-    fixture.componentRef.setInput('timeBucket', 1);
+    fixture.componentRef.setInput('curatedEpisodeIds', ['a']);
     fixture.detectChanges();
 
     const button = fixture.nativeElement.querySelector('button.billboard__curate') as HTMLButtonElement | null;
     expect(button).toBeTruthy();
     button?.click();
-    expect(removed).toEqual(['b']);
+    expect(removed).toEqual(['a']);
   });
 
   it('emits manageHero / manageRails from curator controls', () => {
