@@ -1,14 +1,23 @@
-import { inject } from '@angular/core';
+import { PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, CanActivateFn } from '@angular/router';
 import { catchError, filter, map, of, switchMap, take } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 
 /**
- * Wait for Auth0 to finish restoring the session before deciding.
- * On a hard reload `user$` emits `null` while loading — treating that as
- * unauthenticated bounced curators to /unauthorised until they client-nav from Home.
+ * Curator (etc.) role gate.
+ *
+ * Server/prerender uses FakeAuth with no session — denying there redirects to
+ * /unauthorised while the URL is still /discovery and blows up client hydration
+ * (`hasAttribute` on null). Allow the route on the server; enforce Auth0 only in
+ * the browser after `isLoading$` completes.
  */
 export const hasRoleGuard: CanActivateFn = (route) => {
+  const platformId = inject(PLATFORM_ID);
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
+
   const router = inject(Router);
   const auth = inject(AuthServiceWrapper).authService;
 

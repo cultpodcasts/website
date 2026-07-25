@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
 import { combineLatest, filter, of, ReplaySubject, take } from 'rxjs';
 
@@ -16,14 +17,25 @@ export const HAS_LOGGED_IN_STORAGE_KEY = 'hasLoggedIn';
 
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
+    private readonly platformId = inject(PLATFORM_ID);
+
     roles: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
     isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
 
     /** Avatar to show in the toolbar — seeded from localStorage, cleared when signed out. */
-    private readonly _avatarUrl = signal<string | null>(AuthServiceWrapper.readStoredAvatar());
+    private readonly _avatarUrl = signal<string | null>(null);
     readonly avatarUrl = this._avatarUrl.asReadonly();
 
     constructor(public authService: AuthService) {
+        // Re-seed on the browser only — SSR/prerender has no localStorage, and a null
+        // server value must not stick around after client bootstrap.
+        if (isPlatformBrowser(this.platformId)) {
+            const stored = AuthServiceWrapper.readStoredAvatar();
+            if (stored) {
+                this._avatarUrl.set(stored);
+            }
+        }
+
         if (typeof globalThis !== 'undefined' && globalThis.__E2E_CURATOR__) {
             const curatorUser = {
                 sub: 'e2e|curator',
@@ -59,14 +71,23 @@ export class AuthServiceWrapper {
                 this.isSignedIn.next(isAuthenticated);
             });
 
-            // Once Auth0 finishes loading, drop a stale cached avatar if the session is gone.
+            // Clear only after Auth0 has finished loading *and* confirmed signed-out.
+            // Do not clear while loading — isAuthenticated$ is often false during restore.
             if (this.authService.isLoading$) {
-                combineLatest([this.authService.isLoading$, this.authService.isAuthenticated$])
+                combineLatest([
+                    this.authService.isLoading$,
+                    this.authService.isAuthenticated$,
+                    this.authService.user$,
+                ])
                     .pipe(
                         filter(([loading]) => !loading),
                         take(1)
                     )
-                    .subscribe(([, isAuthenticated]) => {
+                    .subscribe(([, isAuthenticated, user]) => {
+                        if (isAuthenticated && user?.picture) {
+                            this.persistAvatar(user.picture);
+                            return;
+                        }
                         if (!isAuthenticated) {
                             this.clearCachedAvatar();
                         }

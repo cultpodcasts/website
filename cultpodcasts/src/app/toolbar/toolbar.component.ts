@@ -41,7 +41,10 @@ import { environment } from '../../environments/environment';
   ],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // SSR always renders the logged-out chrome (FakeAuth); the client may render
+  // the cached avatar immediately. Skip hydration so those trees can't mismatch.
+  host: { ngSkipHydration: 'true' }
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;

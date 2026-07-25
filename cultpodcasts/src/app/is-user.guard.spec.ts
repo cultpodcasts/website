@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { ActivatedRouteSnapshot, GuardResult, MaybeAsync, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
+import { BehaviorSubject, firstValueFrom, isObservable } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import { vi } from 'vitest';
 import { isUserGuard } from './is-user.guard';
@@ -21,6 +21,7 @@ describe('isUserGuard', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'browser' },
         {
           provide: AuthServiceWrapper,
           useValue: {
@@ -35,14 +36,19 @@ describe('isUserGuard', () => {
     });
   });
 
-  function runGuard(): Observable<boolean> {
+  function runGuard(): MaybeAsync<GuardResult> {
     const route = {} as ActivatedRouteSnapshot;
     const state = {} as RouterStateSnapshot;
-    return TestBed.runInInjectionContext(() => isUserGuard(route, state)) as Observable<boolean>;
+    return TestBed.runInInjectionContext(() => isUserGuard(route, state));
+  }
+
+  async function resolveGuard(): Promise<GuardResult> {
+    const result = runGuard();
+    return isObservable(result) ? firstValueFrom(result) : await result;
   }
 
   it('waits for Auth0 to finish loading before rejecting', async () => {
-    const pending = firstValueFrom(runGuard());
+    const pending = resolveGuard();
     expect(navigate).not.toHaveBeenCalled();
 
     user$.next({ sub: 'auth0|1' });
@@ -56,7 +62,7 @@ describe('isUserGuard', () => {
     user$.next(null);
     isLoading$.next(false);
 
-    await expect(firstValueFrom(runGuard())).resolves.toBe(false);
+    await expect(resolveGuard()).resolves.toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/unauthorised']);
   });
 });

@@ -30,6 +30,23 @@
       themeColor.attributes["content"].value = darkThemeColor;
     }
   </script>
+  <!--
+    One-shot: swap the SSR logged-out profile icon for the cached Auth0 avatar
+    (key matches AUTH_AVATAR_STORAGE_KEY) before Angular boots. The toolbar has
+    ngSkipHydration, so mutating its SSR DOM cannot break hydration.
+  -->
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      try {
+        var url = localStorage.getItem('authAvatarUrl');
+        if (!url) return;
+        document.querySelectorAll('app-toolbar img[alt="Profile"]').forEach(function (img) {
+          img.setAttribute('src', url);
+          img.id = 'avatar';
+        });
+      } catch (e) { /* private mode / blocked storage */ }
+    });
+  </script>
 </head>
 
 <body class="mat-typography mat-app-background">

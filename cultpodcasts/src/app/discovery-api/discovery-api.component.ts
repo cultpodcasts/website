@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, signal, ViewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
@@ -57,6 +58,7 @@ export class DiscoveryApiComponent {
   isInError = signal<boolean>(false);
 
   private destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -76,7 +78,10 @@ export class DiscoveryApiComponent {
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
 
-    this.loadResults(false);
+    // FakeAuth on the server cannot mint a curate token — wait for the browser.
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadResults(false);
+    }
   }
 
   private toggleDiscoverySnapClass(enabled: boolean) {

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import {
@@ -23,6 +23,7 @@ describe('AuthServiceWrapper avatar cache', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        { provide: PLATFORM_ID, useValue: 'browser' },
         {
           provide: AuthService,
           useValue: {
@@ -62,12 +63,23 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)).toBe('true');
   });
 
+  it('does not clear the cached avatar while Auth0 is still loading', () => {
+    localStorage.setItem(AUTH_AVATAR_STORAGE_KEY, 'https://cdn.example/me.png');
+    const wrapper = TestBed.inject(AuthServiceWrapper);
+
+    // Typical restore: authenticated stays false until loading completes.
+    isAuthenticated$.next(false);
+    expect(wrapper.avatarUrl()).toBe('https://cdn.example/me.png');
+    expect(localStorage.getItem(AUTH_AVATAR_STORAGE_KEY)).toBe('https://cdn.example/me.png');
+  });
+
   it('clears a stale cached avatar when Auth0 finishes signed out', () => {
     localStorage.setItem(AUTH_AVATAR_STORAGE_KEY, 'https://cdn.example/stale.png');
     const wrapper = TestBed.inject(AuthServiceWrapper);
     expect(wrapper.avatarUrl()).toBe('https://cdn.example/stale.png');
 
     isAuthenticated$.next(false);
+    user$.next(null);
     isLoading$.next(false);
 
     expect(wrapper.avatarUrl()).toBeNull();

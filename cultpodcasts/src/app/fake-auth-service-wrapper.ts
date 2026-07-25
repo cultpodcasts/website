@@ -12,6 +12,7 @@ export class FakeAuthServiceWrapper extends AuthServiceWrapper {
       logout: () => of(),
       getAccessTokenSilently: () => of(),
       isAuthenticated$: of(false),
+      isLoading$: of(false),
       user$: of(null)
     } as any);
   }

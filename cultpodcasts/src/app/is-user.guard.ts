@@ -1,10 +1,16 @@
-import { inject } from '@angular/core';
+import { PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CanActivateFn, Router } from '@angular/router';
 import { catchError, filter, map, of, switchMap, take } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 
-/** Same loading gate as hasRoleGuard — avoid bouncing on Auth0's initial null user. */
+/** Same SSR/browser split as hasRoleGuard — never bounce on the server FakeAuth session. */
 export const isUserGuard: CanActivateFn = () => {
+  const platformId = inject(PLATFORM_ID);
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
+
   const router = inject(Router);
   const auth = inject(AuthServiceWrapper).authService;
 

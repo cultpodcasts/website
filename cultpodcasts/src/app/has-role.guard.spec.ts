@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
-import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { ActivatedRouteSnapshot, GuardResult, MaybeAsync, Router, RouterStateSnapshot, provideRouter } from '@angular/router';
+import { BehaviorSubject, Observable, firstValueFrom, isObservable } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import { vi } from 'vitest';
 import { hasRoleGuard } from './has-role.guard';
@@ -21,6 +21,7 @@ describe('hasRoleGuard', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'browser' },
         {
           provide: AuthServiceWrapper,
           useValue: {
@@ -35,14 +36,43 @@ describe('hasRoleGuard', () => {
     });
   });
 
-  function runGuard(roles: string[] = ['Curator']): Observable<boolean> {
+  function runGuard(roles: string[] = ['Curator']): MaybeAsync<GuardResult> {
     const route = { data: { roles } } as unknown as ActivatedRouteSnapshot;
     const state = {} as RouterStateSnapshot;
-    return TestBed.runInInjectionContext(() => hasRoleGuard(route, state)) as Observable<boolean>;
+    return TestBed.runInInjectionContext(() => hasRoleGuard(route, state));
   }
 
+  async function resolveGuard(roles?: string[]): Promise<GuardResult> {
+    const result = runGuard(roles);
+    return isObservable(result) ? firstValueFrom(result) : await result;
+  }
+
+  it('allows the route on the server so SSR HTML matches the URL (hydration)', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        {
+          provide: AuthServiceWrapper,
+          useValue: {
+            authService: {
+              isLoading$: new BehaviorSubject(false),
+              user$: new BehaviorSubject(null),
+            } as unknown as AuthService,
+          },
+        },
+        { provide: Router, useValue: { navigate } },
+      ],
+    });
+
+    expect(runGuard()).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('waits for Auth0 to finish loading before rejecting a null user', async () => {
-    const pending = firstValueFrom(runGuard());
+    const pending = resolveGuard();
 
     // Still loading — must not navigate yet.
     expect(navigate).not.toHaveBeenCalled();
@@ -62,7 +92,7 @@ describe('hasRoleGuard', () => {
     });
     isLoading$.next(false);
 
-    await expect(firstValueFrom(runGuard())).resolves.toBe(true);
+    await expect(resolveGuard()).resolves.toBe(true);
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -72,7 +102,7 @@ describe('hasRoleGuard', () => {
     });
     isLoading$.next(false);
 
-    await expect(firstValueFrom(runGuard())).resolves.toBe(false);
+    await expect(resolveGuard()).resolves.toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/unauthorised']);
   });
 
@@ -80,7 +110,7 @@ describe('hasRoleGuard', () => {
     user$.next(null);
     isLoading$.next(false);
 
-    await expect(firstValueFrom(runGuard())).resolves.toBe(false);
+    await expect(resolveGuard()).resolves.toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/unauthorised']);
   });
 });
