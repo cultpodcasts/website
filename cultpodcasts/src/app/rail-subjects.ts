@@ -1,6 +1,6 @@
 import { HomepageEpisode } from './homepage-episode.interface';
 
-/** How many subject rails the homepage shows between day rails. */
+/** Soft UI hint for how many subject rails a curator might pin. */
 export const SUBJECT_RAIL_COUNT = 6;
 /** A subject needs at least this many week episodes to earn a rail. */
 export const SUBJECT_RAIL_MIN_EPISODES = 3;
@@ -73,17 +73,14 @@ export function pruneRailSubjectsToWeek(
 }
 
 /**
- * Build homepage subject rails: every pinned subject in curator order (like
- * curated heroes, pinning `railCount` or more gives full control and disables
- * autofill), then autofill from the popularity-sorted candidates up to
- * `railCount` when pins alone fall short.
+ * Build homepage subject rails from curator pins only — no popularity autofill.
+ * Order follows the pinned list; unknown / ineligible pins are skipped.
  */
 export function buildSubjectRails(
   pinnedSubjects: string[],
-  candidates: SubjectRailCandidate[],
-  railCount: number = SUBJECT_RAIL_COUNT
+  candidates: SubjectRailCandidate[]
 ): SubjectRailCandidate[] {
-  if (candidates.length === 0 || railCount <= 0) {
+  if (pinnedSubjects.length === 0 || candidates.length === 0) {
     return [];
   }
 
@@ -97,17 +94,6 @@ export function buildSubjectRails(
       continue;
     }
     used.add(subject);
-    rails.push(candidate);
-  }
-
-  for (const candidate of candidates) {
-    if (rails.length >= railCount) {
-      break;
-    }
-    if (used.has(candidate.subject)) {
-      continue;
-    }
-    used.add(candidate.subject);
     rails.push(candidate);
   }
 

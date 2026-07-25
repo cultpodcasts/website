@@ -2,9 +2,7 @@
 
 <mat-dialog-content class="rails-manage">
   <p class="rails-manage__lede">
-    Pin subjects to keep them on the homepage. Drag to reorder.
-    Fewer than {{ railCount }} pins autofill from this week's busiest subjects;
-    pin {{ railCount }} or more and only your picks show.
+    Pin subjects to show them as homepage rails. Drag to reorder. Only pinned subjects appear — nothing is autofilled.
   </p>
 
   @if (pinned().length === 0) {
@@ -29,27 +27,10 @@
   </ul>
   }
 
-  @if (autofilled().length > 0) {
-  <h3 class="rails-manage__section">Autofilled this week</h3>
-  <ul class="rails-manage__list rails-manage__list--autofill">
-    @for (subject of autofilled(); track subject) {
-    <li class="rails-manage__item rails-manage__item--autofill">
-      <app-subject-chip [subject]="subject" />
-      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
-      <button type="button" mat-stroked-button class="rails-manage__pin"
-        (click)="pin(subject)">
-        <mat-icon>push_pin</mat-icon>
-        Pin
-      </button>
-    </li>
-    }
-  </ul>
-  }
-
-  @if (moreAvailable().length > 0) {
-  <h3 class="rails-manage__section">More subjects this week</h3>
+  @if (available().length > 0) {
+  <h3 class="rails-manage__section">Subjects this week</h3>
   <ul class="rails-manage__list">
-    @for (subject of moreAvailable(); track subject) {
+    @for (subject of available(); track subject) {
     <li class="rails-manage__item">
       <app-subject-chip [subject]="subject" />
       <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>

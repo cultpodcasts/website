@@ -39,7 +39,6 @@ import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
 import { buildHeroSlides, HERO_POOL_SIZE, pruneCuratedIdsToWeek } from '../hero-slides';
 import {
-  SUBJECT_RAIL_COUNT,
   SUBJECT_RAIL_MIN_EPISODES,
   buildSubjectRails,
   collectSubjectRailCandidates,
@@ -84,7 +83,6 @@ export class HomepageApiComponent {
   private static readonly heroImageFallbackMs = 2500;
   private static readonly heroTransitionMs = 1200;
   private static readonly heroContentDelayMs = 180;
-  private static readonly subjectRailCount = SUBJECT_RAIL_COUNT;
   private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
   private static readonly obscureCultCount = 12;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
@@ -213,12 +211,11 @@ export class HomepageApiComponent {
     )
   );
 
-  /** Full-week subject playlists: curator pins first, then popularity autofill. */
+  /** Full-week subject playlists from curator pins only (no popularity autofill). */
   protected readonly subjectRails = computed((): EpisodeRail[] =>
     buildSubjectRails(
       this.curatedRailSubjects(),
-      this.subjectRailCandidates(),
-      HomepageApiComponent.subjectRailCount
+      this.subjectRailCandidates()
     ).map((rail) => ({
       id: `subject:${rail.subject}`,
       title: rail.subject,
@@ -524,13 +521,10 @@ export class HomepageApiComponent {
     if (!this.isCurator()) {
       return;
     }
-    const pinnedSet = this.curatedRailSubjectSet();
-    const shown = this.subjectRails().map((rail) => rail.subject!);
     const candidates = this.subjectRailCandidates();
     const pinned = this.curatedRailSubjects().filter((subject) =>
       candidates.some((c) => c.subject === subject)
     );
-    const autofilled = shown.filter((subject) => !pinnedSet.has(subject));
     const eligible = candidates.map((c) => c.subject);
     const episodeCounts = Object.fromEntries(
       candidates.map((c) => [c.subject, c.episodes.length])
@@ -539,10 +533,8 @@ export class HomepageApiComponent {
     const ref = this.dialog.open(RailsManageDialogComponent, {
       data: {
         pinned,
-        autofilled,
         eligible,
         episodeCounts,
-        railCount: HomepageApiComponent.subjectRailCount,
       },
       width: '520px',
       maxWidth: '94vw',

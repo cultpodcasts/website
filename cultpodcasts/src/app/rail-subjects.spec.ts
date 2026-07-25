@@ -1,6 +1,5 @@
 import { HomepageEpisode } from './homepage-episode.interface';
 import {
-  SUBJECT_RAIL_COUNT,
   buildSubjectRails,
   collectSubjectRailCandidates,
   pruneRailSubjectsToWeek,
@@ -90,49 +89,21 @@ describe('rail-subjects', () => {
     });
   });
 
-  it('puts pinned subjects first then autofills by popularity', () => {
+  it('builds rails from pinned subjects only with no autofill', () => {
     const candidates = collectSubjectRailCandidates(episodes);
-    const rails = buildSubjectRails(
-      ['NXIVM', 'missing'],
-      candidates,
-      SUBJECT_RAIL_COUNT
-    );
-    expect(rails.map((r) => r.subject)).toEqual([
-      'NXIVM',
-      'Scientology',
-      'Cult Recovery',
-      'FLDS Church',
-    ]);
+    expect(
+      buildSubjectRails(['NXIVM', 'missing', 'Cult Recovery'], candidates).map(
+        (r) => r.subject
+      )
+    ).toEqual(['NXIVM', 'Cult Recovery']);
   });
 
-  it('uses only pinned subjects when they fill the rail count', () => {
+  it('returns empty when nothing is pinned', () => {
     const candidates = collectSubjectRailCandidates(episodes);
-    const rails = buildSubjectRails(
-      ['FLDS Church', 'NXIVM'],
-      candidates,
-      2
-    );
-    expect(rails.map((r) => r.subject)).toEqual([
-      'FLDS Church',
-      'NXIVM',
-    ]);
-  });
-
-  it('shows every pinned subject when pins exceed the rail count', () => {
-    const candidates = collectSubjectRailCandidates(episodes);
-    const rails = buildSubjectRails(
-      ['FLDS Church', 'NXIVM', 'Scientology'],
-      candidates,
-      2
-    );
-    expect(rails.map((r) => r.subject)).toEqual([
-      'FLDS Church',
-      'NXIVM',
-      'Scientology',
-    ]);
+    expect(buildSubjectRails([], candidates)).toEqual([]);
   });
 
   it('returns empty when there are no candidates', () => {
-    expect(buildSubjectRails(['Scientology'], [], 6)).toEqual([]);
+    expect(buildSubjectRails(['Scientology'], [])).toEqual([]);
   });
 });

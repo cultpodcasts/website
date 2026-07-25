@@ -48,7 +48,7 @@ Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation` (preview or
 | `episodeIds` | Star on any rail card; **Manage hero** panel (reorder / remove) |
 | `railSubjects` | Pin on subject rail headings; **Manage rails** panel (reorder / pin more) |
 
-Pinned rails that drop below the week's episode threshold autofill out; empty rail slots fill from this week's busiest subjects. Hero picks that leave the current week prune the same way.
+Pinned rails that drop below the week's episode threshold fall out. Only pinned subjects appear as rails — there is no popularity autofill. Hero picks that leave the current week prune the same way.
 
 ## DNS
 

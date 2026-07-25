@@ -10,14 +10,10 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 
 export interface RailsManageDialogData {
   pinned: string[];
-  /** Subjects currently shown via autofill (not pinned). */
-  autofilled: string[];
   /** Eligible subjects this week, popularity-sorted. */
   eligible: string[];
   /** Episode count this week, keyed by subject name. */
   episodeCounts: Record<string, number>;
-  /** Homepage rail slot count — pinning this many disables autofill. */
-  railCount: number;
 }
 
 export interface RailsManageDialogResult {
@@ -46,43 +42,22 @@ export class RailsManageDialogComponent {
   );
 
   protected readonly pinned = signal<string[]>([]);
-  private readonly initialAutofilled: string[];
   private readonly eligible: string[];
   private readonly episodeCounts: Record<string, number>;
   protected readonly saving = signal(false);
   protected readonly error = signal(false);
   protected readonly displayCatalogName = displayCatalogName;
 
-  /** Autofill only tops up when pins are below the rail slot count. */
-  protected readonly autofillActive = computed(
-    () => this.pinned().length < this.railCount
-  );
-
-  protected readonly autofilled = computed(() => {
-    if (!this.autofillActive()) {
-      return [];
-    }
+  /** Eligible subjects not currently pinned. */
+  protected readonly available = computed(() => {
     const pinned = new Set(this.pinned());
-    return this.initialAutofilled.filter((subject) => !pinned.has(subject));
+    return this.eligible.filter((subject) => !pinned.has(subject));
   });
-
-  /** Eligible subjects neither pinned nor shown in the autofill list. */
-  protected readonly moreAvailable = computed(() => {
-    const pinned = new Set(this.pinned());
-    const autofilled = new Set(this.autofilled());
-    return this.eligible.filter(
-      (subject) => !pinned.has(subject) && !autofilled.has(subject)
-    );
-  });
-
-  protected readonly railCount: number;
 
   constructor(@Inject(MAT_DIALOG_DATA) data: RailsManageDialogData) {
     this.pinned.set([...data.pinned]);
-    this.initialAutofilled = data.autofilled;
     this.eligible = data.eligible;
     this.episodeCounts = data.episodeCounts ?? {};
-    this.railCount = data.railCount;
   }
 
   episodeCount(subject: string): number {
