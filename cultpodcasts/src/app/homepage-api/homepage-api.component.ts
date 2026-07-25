@@ -82,7 +82,7 @@ export interface EpisodeRail {
 export class HomepageApiComponent {
   private static readonly heroIntervalMs = 7500;
   private static readonly heroImageFallbackMs = 2500;
-  private static readonly heroTransitionMs = 1100;
+  private static readonly heroTransitionMs = 1200;
   private static readonly heroContentDelayMs = 180;
   private static readonly subjectRailCount = SUBJECT_RAIL_COUNT;
   private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
@@ -142,6 +142,12 @@ export class HomepageApiComponent {
   protected readonly heroFrontLayer = signal<'a' | 'b'>('a');
   protected readonly heroLayerA = signal<string | undefined>(undefined);
   protected readonly heroLayerB = signal<string | undefined>(undefined);
+  /**
+   * Per-layer Ken Burns. Kept on the outgoing layer through the crossfade so
+   * removing the animation class cannot snap scale 1.18 → 1.08 mid-fade.
+   */
+  protected readonly heroKenBurnsA = signal(false);
+  protected readonly heroKenBurnsB = signal(false);
   /** Ordered episode IDs from the hero-curation API (may include stale ids). */
   protected readonly curatedEpisodeIds = signal<string[]>([]);
   /** Ordered subject names pinned as homepage rails (may include stale names). */
@@ -266,6 +272,7 @@ export class HomepageApiComponent {
   private heroAnimTimer: ReturnType<typeof setTimeout> | undefined;
   private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
   private heroImageFallbackTimer: ReturnType<typeof setTimeout> | undefined;
+  private heroKenBurnsClearTimer: ReturnType<typeof setTimeout> | undefined;
   private heroImageToken = 0;
   private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
   private lastBackgroundFetchAt = 0;
@@ -316,6 +323,9 @@ export class HomepageApiComponent {
         this.clearHeroImageWait();
         if (this.heroDotsOverflowTimer) {
           clearTimeout(this.heroDotsOverflowTimer);
+        }
+        if (this.heroKenBurnsClearTimer) {
+          clearTimeout(this.heroKenBurnsClearTimer);
         }
       });
     }
@@ -892,24 +902,63 @@ export class HomepageApiComponent {
   private syncHeroLayers(immediate: boolean): void {
     const url = this.featuredImage();
     if (immediate || this.reduceMotion) {
+      if (this.heroKenBurnsClearTimer) {
+        clearTimeout(this.heroKenBurnsClearTimer);
+        this.heroKenBurnsClearTimer = undefined;
+      }
       this.heroLayerA.set(url);
       this.heroLayerB.set(undefined);
       this.heroFrontLayer.set('a');
+      this.heroKenBurnsA.set(!!url && !this.reduceMotion);
+      this.heroKenBurnsB.set(false);
       return;
     }
     const front = this.heroFrontLayer();
     if (front === 'a') {
+      // Incoming B starts without Ken Burns so the 1.08→1.18 run can restart.
+      this.heroKenBurnsB.set(false);
       this.heroLayerB.set(url);
       // Flip after paint so the incoming layer starts at opacity 0.
+      // Keep Ken Burns on A through the fade — dropping it snaps scale to 1.08.
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => this.heroFrontLayer.set('b'));
+        requestAnimationFrame(() => {
+          this.heroFrontLayer.set('b');
+          this.scheduleOutgoingKenBurnsClear('a');
+        });
       });
     } else {
+      this.heroKenBurnsA.set(false);
       this.heroLayerA.set(url);
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => this.heroFrontLayer.set('a'));
+        requestAnimationFrame(() => {
+          this.heroFrontLayer.set('a');
+          this.scheduleOutgoingKenBurnsClear('b');
+        });
       });
     }
+  }
+
+  /**
+   * After the opacity crossfade finishes, drop Ken Burns on the hidden layer
+   * (and clear its image) so the next recycle can restart the zoom cleanly.
+   */
+  private scheduleOutgoingKenBurnsClear(outgoing: 'a' | 'b'): void {
+    if (this.heroKenBurnsClearTimer) {
+      clearTimeout(this.heroKenBurnsClearTimer);
+    }
+    this.heroKenBurnsClearTimer = setTimeout(() => {
+      this.heroKenBurnsClearTimer = undefined;
+      if (this.heroFrontLayer() === outgoing) {
+        return;
+      }
+      if (outgoing === 'a') {
+        this.heroKenBurnsA.set(false);
+        this.heroLayerA.set(undefined);
+      } else {
+        this.heroKenBurnsB.set(false);
+        this.heroLayerB.set(undefined);
+      }
+    }, HomepageApiComponent.heroTransitionMs);
   }
 
   private beginHeroImageGate(): void {
@@ -917,18 +966,21 @@ export class HomepageApiComponent {
     this.heroImageReady.set(false);
     if (!isPlatformBrowser(this.platformId)) {
       this.heroImageReady.set(true);
+      this.enableKenBurnsOnFront();
       return;
     }
     const url = this.featuredImage();
     const token = ++this.heroImageToken;
     if (!url) {
       this.heroImageReady.set(true);
+      this.enableKenBurnsOnFront();
       return;
     }
 
     this.heroImageFallbackTimer = setTimeout(() => {
       if (token === this.heroImageToken) {
         this.heroImageReady.set(true);
+        this.enableKenBurnsOnFront();
       }
     }, HomepageApiComponent.heroImageFallbackMs);
 
@@ -939,6 +991,7 @@ export class HomepageApiComponent {
       }
       this.clearHeroImageWait();
       this.heroImageReady.set(true);
+      this.enableKenBurnsOnFront();
     };
     img.onload = () => {
       if (typeof img.decode === 'function') {
@@ -951,6 +1004,18 @@ export class HomepageApiComponent {
     img.src = url;
     if (img.complete) {
       markReady();
+    }
+  }
+
+  /** Start (or restart) Ken Burns only on the visible front layer. */
+  private enableKenBurnsOnFront(): void {
+    if (this.reduceMotion) {
+      return;
+    }
+    if (this.heroFrontLayer() === 'a') {
+      this.heroKenBurnsA.set(true);
+    } else {
+      this.heroKenBurnsB.set(true);
     }
   }
 

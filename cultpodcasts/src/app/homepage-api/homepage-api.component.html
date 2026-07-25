@@ -22,11 +22,11 @@
 
     <div class="billboard__stages" aria-hidden="true">
       <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
-        [class.is-kenburns]="heroFrontLayer() === 'a' && heroImageReady()"
+        [class.is-kenburns]="heroKenBurnsA()"
         [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null">
       </div>
       <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'b'"
-        [class.is-kenburns]="heroFrontLayer() === 'b' && heroImageReady()"
+        [class.is-kenburns]="heroKenBurnsB()"
         [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null">
       </div>
     </div>

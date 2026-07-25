@@ -70,6 +70,8 @@
     background-size: cover
     background-position: center 20%
     opacity: 0
+    // Match Ken Burns `from` so the incoming layer doesn't jump when animation starts.
+    // Outgoing layers keep `.is-kenburns` (fill-mode forwards at 1.18) through the fade.
     transform: scale(1.08)
     filter: saturate(1.08) contrast(1.05)
     will-change: opacity, transform
@@ -78,6 +80,8 @@
         opacity: 1
     &.is-kenburns
         animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+        // Avoid transitioning transform while Ken Burns owns it (prevents fights with opacity fade).
+        transition: opacity 1.15s cubic-bezier(0.33, 0.1, 0.25, 1)
 
 .billboard__content
     position: relative
