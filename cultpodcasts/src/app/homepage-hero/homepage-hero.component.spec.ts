@@ -69,6 +69,42 @@ describe('HomepageHeroComponent', () => {
     expect(component['featured']()?.id).toBe('c');
   });
 
+  it('advances when the next chevron is clicked without cancelling the content transition', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+    fixture.detectChanges();
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.click();
+
+    // Bug regression: restartHeroCycle used to clear heroContentTimer and leave index at 0.
+    expect(component['heroIndex']()).toBe(0);
+    vi.advanceTimersByTime(320);
+    expect(component['heroIndex']()).toBe(1);
+    expect(component['featured']()?.id).toBe('b');
+  });
+
+  it('goes to the previous slide when the prev chevron is clicked', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(1);
+    component['lastFeaturedId'] = 'b';
+    fixture.detectChanges();
+
+    const prev = fixture.nativeElement.querySelector(
+      'button.billboard__nav--prev'
+    ) as HTMLButtonElement;
+    prev.click();
+    vi.advanceTimersByTime(320);
+
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['featured']()?.id).toBe('a');
+  });
+
   it('keeps the featured episode when slides refresh with the same id', () => {
     component['heroIndex'].set(2);
     component['lastFeaturedId'] = 'c';

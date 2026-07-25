@@ -208,6 +208,7 @@ export class HomepageHeroComponent {
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
+        this.clearHeroContentTransition();
         this.clearHeroImageWait();
         window.removeEventListener('resize', this.onResizeEvent);
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
@@ -506,6 +507,23 @@ export class HomepageHeroComponent {
       return;
     }
     this.beginHeroImageGate();
+    this.scheduleHeroAdvance();
+  }
+
+  /**
+   * Reset the dwell clock after a manual prev/next/dash jump.
+   * Must not cancel `heroContentTimer` or re-run the image gate — `transitionTo`
+   * owns both, and clearing them here made the chevrons appear dead.
+   */
+  private restartHeroCycle(): void {
+    this.stopHeroCycle();
+    if (!isPlatformBrowser(this.platformId) || this.reduceMotion || this.slides().length < 2) {
+      return;
+    }
+    this.scheduleHeroAdvance();
+  }
+
+  private scheduleHeroAdvance(): void {
     let elapsed = 0;
     const tickMs = 250;
     this.heroTimer = setInterval(() => {
@@ -525,15 +543,14 @@ export class HomepageHeroComponent {
     }, tickMs);
   }
 
-  private restartHeroCycle(): void {
-    this.startHeroCycle();
-  }
-
   private stopHeroCycle(): void {
     if (this.heroTimer) {
       clearInterval(this.heroTimer);
       this.heroTimer = undefined;
     }
+  }
+
+  private clearHeroContentTransition(): void {
     if (this.heroContentTimer) {
       clearTimeout(this.heroContentTimer);
       this.heroContentTimer = undefined;
