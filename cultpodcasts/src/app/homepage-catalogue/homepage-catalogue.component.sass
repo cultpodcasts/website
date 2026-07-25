@@ -1,0 +1,75 @@
+:host
+    display: block
+
+.catalogue
+    position: relative
+    z-index: 2
+    margin-top: -28px
+    padding: 8px 4vw
+    background: linear-gradient(to bottom, transparent, var(--nflx-bg, #0b0b0b) 36%)
+
+.catalogue__inner
+    display: grid
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+    gap: 12px 24px
+    max-width: 1100px
+    margin: 0 auto
+    padding: 28px 28px 32px
+    border-radius: 18px
+    background: linear-gradient(145deg, #1c1c1cf2, #0e0e0efa)
+    border: 1px solid #ffffff14
+    box-shadow: 0 24px 60px #00000073
+
+.catalogue__stat
+    text-align: center
+    min-width: 0
+
+.catalogue__stat--hero
+    padding: 0 8px
+    border-inline: 1px solid #ffffff14
+
+.catalogue__value
+    margin: 0 0 6px
+    font-family: var(--cp-font-display)
+    font-size: clamp(2.4rem, 5vw, 3.6rem)
+    font-weight: 400
+    line-height: 1
+    letter-spacing: -0.03em
+    color: #fff
+    font-variant-numeric: tabular-nums
+
+.catalogue__value--count
+    color: var(--nflx-accent)
+    app-slot-machine-counter
+        display: inline-flex
+        font: inherit
+        color: inherit
+        line-height: 1
+
+.catalogue__value--duration
+    color: #f0d2a0
+
+.catalogue__label
+    margin: 0
+    font-size: 0.92rem
+    font-weight: 600
+    letter-spacing: 0.04em
+    text-transform: uppercase
+    color: var(--nflx-muted)
+    a
+        color: inherit
+        text-decoration: underline dashed 1px
+        text-underline-offset: 3px
+        &:hover
+            color: #fff
+
+@media screen and (max-width: 700px)
+    .catalogue__inner
+        grid-template-columns: 1fr
+        gap: 22px
+        padding: 24px 20px
+    .catalogue__stat--hero
+        order: -1
+        padding: 0 0 18px
+        border-inline: 0
+        border-bottom: 1px solid #ffffff14

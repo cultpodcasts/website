@@ -76,41 +76,25 @@
   </div>
 
   @if (morePodcastEpisodes().length > 0) {
-  <section class="rail" aria-label="More from this podcast">
-    <div class="rail__heading">
-      <a class="rail__title rail__title--link" [routerLink]="['/podcast', podcastName()]">
-        <span>More from {{ displayCatalogName(podcastName()) }}</span>
-        <mat-icon aria-hidden="true">chevron_right</mat-icon>
-      </a>
-    </div>
-    <div class="rail__scroller" tabindex="0">
-      <div class="rail__track">
-        @for (item of morePodcastEpisodes(); track item.id) {
-        <app-episode-poster class="rail-poster" [episode]="item" [playing]="isPlayingId(item.id)"
-          [showShow]="false" (play)="playEpisode($event)" />
-        }
-      </div>
-    </div>
-  </section>
+  <app-episode-rail
+    [title]="'More from ' + displayCatalogName(podcastName())"
+    [episodes]="morePodcastEpisodes()"
+    [titleLink]="['/podcast', podcastName()]"
+    [ariaLabel]="'More from this podcast'"
+    [showShow]="false"
+    [playingEpisodeId]="playingEpisodeId()"
+    (play)="playEpisode($event)" />
   }
 
   @for (rail of subjectRails(); track rail.subject) {
-  <section class="rail rail--subject" [attr.aria-label]="'More on ' + displayCatalogName(rail.subject)">
-    <div class="rail__heading">
-      <a class="rail__title rail__title--link" [routerLink]="['/subject', rail.subject]">
-        <span>More on {{ displayCatalogName(rail.subject) }}</span>
-        <mat-icon aria-hidden="true">chevron_right</mat-icon>
-      </a>
-    </div>
-    <div class="rail__scroller" tabindex="0">
-      <div class="rail__track">
-        @for (item of rail.episodes; track item.id) {
-        <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="rail.subject"
-          [playing]="isPlayingId(item.id)" (play)="playEpisode($event)" />
-        }
-      </div>
-    </div>
-  </section>
+  <app-episode-rail
+    [title]="'More on ' + displayCatalogName(rail.subject)"
+    [episodes]="rail.episodes"
+    [subject]="rail.subject"
+    [titleLink]="['/subject', rail.subject]"
+    [ariaLabel]="'More on ' + displayCatalogName(rail.subject)"
+    [playingEpisodeId]="playingEpisodeId()"
+    (play)="playEpisode($event)" />
   }
 </section>
 } @else if (!isLoading()) {

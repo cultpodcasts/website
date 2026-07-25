@@ -1,0 +1,133 @@
+:host
+    display: block
+
+.rail
+    position: relative
+    z-index: 2
+    margin-bottom: 28px
+
+.rail__heading
+    display: flex
+    align-items: baseline
+    gap: 14px
+    margin: 0 4vw 10px
+
+.rail__heading-actions
+    margin-left: auto
+    display: inline-flex
+    align-items: center
+    gap: 10px
+
+.rail__title
+    margin: 0
+    font-size: 1.25rem
+    font-weight: 700
+    letter-spacing: 0.01em
+    color: #fff
+
+.rail__title--link
+    display: inline-flex
+    align-items: center
+    gap: 2px
+    text-decoration: none
+    transition: color 0.15s ease
+    mat-icon
+        font-size: 22px
+        width: 22px
+        height: 22px
+        opacity: 0.75
+        transition: transform 0.15s ease, opacity 0.15s ease
+    &:hover,
+    &:focus-visible
+        color: var(--nflx-accent)
+        outline: none
+        mat-icon
+            opacity: 1
+            transform: translateX(3px)
+
+.rail--subject .rail__title
+    font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif)
+    font-size: 1.45rem
+    font-weight: 400
+    letter-spacing: -0.01em
+
+.rail__pin
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    width: 32px
+    height: 32px
+    padding: 0
+    border-radius: 50%
+    border: 1px solid color-mix(in srgb, #fff 18%, transparent)
+    background: color-mix(in srgb, #000 45%, transparent)
+    color: color-mix(in srgb, #fff 55%, transparent)
+    cursor: pointer
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease
+    mat-icon
+        font-size: 18px
+        width: 18px
+        height: 18px
+        transform: rotate(45deg)
+    &:hover,
+    &:focus-visible
+        color: #fff
+        border-color: var(--nflx-accent)
+        outline: none
+    &.is-pinned
+        color: var(--nflx-accent)
+        border-color: var(--nflx-accent)
+        background: color-mix(in srgb, var(--nflx-accent) 18%, transparent)
+        mat-icon
+            transform: rotate(0deg)
+
+.rail__see-all
+    font-size: 0.85rem
+    font-weight: 600
+    color: var(--nflx-muted)
+    text-decoration: none
+    white-space: nowrap
+    &:hover,
+    &:focus-visible
+        color: #fff
+        outline: none
+
+.rail__scroller
+    overflow-x: auto
+    overflow-y: hidden
+    padding: 4px 0 12px
+    scroll-snap-type: x mandatory
+    scrollbar-width: thin
+    scrollbar-color: #444 transparent
+    &:focus-visible
+        outline: 2px solid var(--nflx-accent)
+        outline-offset: -2px
+
+.rail__track
+    display: flex
+    gap: 10px
+    padding: 0 4vw
+    width: max-content
+
+.rail-poster
+    width: var(--rail-poster-w, min(42vw, 220px))
+    flex: 0 0 var(--rail-poster-w, min(42vw, 220px))
+    &.episode-poster--square
+        width: var(--rail-poster-sq, min(32vw, 160px))
+        flex-basis: var(--rail-poster-sq, min(32vw, 160px))
+
+@media screen and (min-width: 900px)
+    .rail-poster
+        width: var(--rail-poster-w, 260px)
+        flex-basis: var(--rail-poster-w, 260px)
+        &.episode-poster--square
+            width: var(--rail-poster-sq, 180px)
+            flex-basis: var(--rail-poster-sq, 180px)
+
+@media screen and (max-width: 600px)
+    .rail-poster
+        width: var(--rail-poster-w, 68vw)
+        flex-basis: var(--rail-poster-w, 68vw)
+        &.episode-poster--square
+            width: var(--rail-poster-sq, 48vw)
+            flex-basis: var(--rail-poster-sq, 48vw)

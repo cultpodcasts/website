@@ -2,38 +2,30 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   HostListener,
   PLATFORM_ID,
-  afterRenderEffect,
   computed,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DecimalPipe, isPlatformBrowser, KeyValue } from '@angular/common';
+import { isPlatformBrowser, KeyValue } from '@angular/common';
 import { Homepage } from '../homepage.interface';
 import { SiteService } from '../site.service';
-import { ActivatedRoute, Params, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { HomepageService } from '../homepage.service';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { pickObscureCults } from '../obscure-cults';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
-import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
-import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
+import { episodeEmbedOptions } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
@@ -52,6 +44,10 @@ import {
   RailsManageDialogComponent,
   RailsManageDialogResult,
 } from '../rails-manage-dialog/rails-manage-dialog.component';
+import { HomepageHeroComponent } from '../homepage-hero/homepage-hero.component';
+import { HomepageCatalogueComponent } from '../homepage-catalogue/homepage-catalogue.component';
+import { HomepageDiscoverRailComponent } from '../homepage-discover-rail/homepage-discover-rail.component';
+import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 
 export interface EpisodeRail {
   id: string;
@@ -64,26 +60,19 @@ export interface EpisodeRail {
 @Component({
   selector: 'app-homepage-api',
   imports: [
-    DecimalPipe,
-    RouterLink,
     MatButtonModule,
-    MatIconModule,
-    SlotMachineCounterComponent,
     SearchBarComponent,
-    EpisodePosterComponent,
     SiteLoadingComponent,
-    SubjectChipComponent,
+    HomepageHeroComponent,
+    HomepageCatalogueComponent,
+    HomepageDiscoverRailComponent,
+    EpisodeRailComponent,
   ],
   templateUrl: './homepage-api.component.html',
   styleUrl: './homepage-api.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageApiComponent {
-  private static readonly heroIntervalMs = 7500;
-  private static readonly heroImageFallbackMs = 2500;
-  private static readonly heroTransitionMs = 1200;
-  /** Fade the current copy out before swapping so height/layout changes stay hidden. */
-  private static readonly heroContentOutMs = 320;
   private static readonly subjectRailMinEpisodes = SUBJECT_RAIL_MIN_EPISODES;
   private static readonly obscureCultCount = 12;
   /** Stable pool reshuffle cadence — changes every 3 hours without flicker on every CD cycle. */
@@ -132,32 +121,14 @@ export class HomepageApiComponent {
     nearEndThresholdPixels: 1200,
   };
 
-  protected readonly heroIndex = signal(0);
-  protected readonly heroPaused = signal(false);
-  /** False while hero copy is fading out/in around a slide change. */
-  protected readonly heroContentVisible = signal(true);
-  /** True once the active slide background has decoded (or fallback timer fired). */
-  protected readonly heroImageReady = signal(false);
-  /** Two-layer crossfade: which stage is currently visible. */
-  protected readonly heroFrontLayer = signal<'a' | 'b'>('a');
-  protected readonly heroLayerA = signal<string | undefined>(undefined);
-  protected readonly heroLayerB = signal<string | undefined>(undefined);
-  /**
-   * Per-layer Ken Burns. Kept on the outgoing layer through the crossfade so
-   * removing the animation class cannot snap scale 1.18 → 1.08 mid-fade.
-   */
-  protected readonly heroKenBurnsA = signal(false);
-  protected readonly heroKenBurnsB = signal(false);
   /** Ordered episode IDs from the hero-curation API (may include stale ids). */
   protected readonly curatedEpisodeIds = signal<string[]>([]);
   /** Ordered subject names pinned as homepage rails (may include stale names). */
   protected readonly curatedRailSubjects = signal<string[]>([]);
-  /** Fade cues when the hero dash strip overflows its viewport. */
-  protected readonly heroDotsOverflowStart = signal(false);
-  protected readonly heroDotsOverflowEnd = signal(false);
-  private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
 
   protected readonly displayCatalogName = displayCatalogName;
+
+  protected readonly heroTimeBucket = computed(() => HomepageApiComponent.heroTimeBucket());
 
   /**
    * Billboard slides: curated picks first (in order), autofilled from the week-wide
@@ -171,39 +142,13 @@ export class HomepageApiComponent {
     return buildHeroSlides(this.curatedEpisodeIds(), all, {
       subjectRails: this.subjectRails(),
       obscureCults: this.obscureCults(),
-      bucket: HomepageApiComponent.heroTimeBucket(),
+      bucket: this.heroTimeBucket(),
     });
   });
 
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
-  protected readonly featured = computed(() => {
-    const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return undefined;
-    }
-    return slides[this.heroIndex() % slides.length];
-  });
-
-  protected readonly featuredIsCurated = computed(() => {
-    const ep = this.featured();
-    return !!ep && this.curatedIdSet().has(ep.id);
-  });
-
-  protected readonly featuredImage = computed(() => {
-    const ep = this.featured();
-    return ep ? episodeImageUrl(ep)?.toString() : undefined;
-  });
-
-  protected readonly featuredDesc = computed(() => {
-    const text = this.featured()?.episodeDescription ?? '';
-    return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
-  });
-
-  protected readonly featuredSubjects = computed(() => {
-    const subjects = this.featured()?.subjects ?? [];
-    return subjects.filter((s) => !s.startsWith('_')).slice(0, 4);
-  });
+  protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   /** Eligible subject groups from this week's episodes (popularity-sorted). */
   protected readonly subjectRailCandidates = computed(() =>
@@ -267,34 +212,15 @@ export class HomepageApiComponent {
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private heroTimer: ReturnType<typeof setInterval> | undefined;
-  private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
-  private heroImageFallbackTimer: ReturnType<typeof setTimeout> | undefined;
-  private heroKenBurnsClearTimer: ReturnType<typeof setTimeout> | undefined;
-  private heroImageToken = 0;
   private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
   private lastBackgroundFetchAt = 0;
-  private reduceMotion = false;
   /** True when local curated list was pruned for the week but KV was not yet updated. */
   private pendingKvPrune = false;
-  private heroDotsOverflowTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly onDocumentVisibility = (): void => {
     if (!document.hidden) {
       this.maybeBackgroundRefresh();
     }
   };
-
-  constructor() {
-    // Keep the active dash centered in the strip when the hero rotates or the pool grows.
-    afterRenderEffect(() => {
-      const index = this.heroIndex();
-      const slideCount = this.heroSlides().length;
-      if (!isPlatformBrowser(this.platformId) || slideCount < 2) {
-        return;
-      }
-      this.scrollActiveHeroDotIntoView(index);
-    });
-  }
 
   ngOnInit() {
     this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -303,7 +229,6 @@ export class HomepageApiComponent {
     this.populatePage();
 
     if (isPlatformBrowser(this.platformId)) {
-      this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       this.startBackgroundRefresh();
       // If curation was pruned for display while anonymous, persist once a Curator signs in.
       this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
@@ -316,15 +241,7 @@ export class HomepageApiComponent {
         }
       });
       this.destroyRef.onDestroy(() => {
-        this.stopHeroCycle();
         this.stopBackgroundRefresh();
-        this.clearHeroImageWait();
-        if (this.heroDotsOverflowTimer) {
-          clearTimeout(this.heroDotsOverflowTimer);
-        }
-        if (this.heroKenBurnsClearTimer) {
-          clearTimeout(this.heroKenBurnsClearTimer);
-        }
       });
     }
   }
@@ -350,101 +267,17 @@ export class HomepageApiComponent {
     }
   }
 
-  posterImage(episode: HomepageEpisode): string | undefined {
-    return episodeImageUrl(episode)?.toString();
-  }
-
-  slideImage(episode: HomepageEpisode): string | undefined {
-    return episodeImageUrl(episode)?.toString();
-  }
-
-  isPromoted(episodeId: string): boolean {
-    return this.curatedIdSet().has(episodeId);
-  }
-
   isRailPinned(subject: string | undefined): boolean {
     return !!subject && this.curatedRailSubjectSet().has(subject);
-  }
-
-  durationLabel(duration: string): string {
-    return duration.startsWith('0') ? duration.substring(1) : duration;
-  }
-
-  canPlay(episode: HomepageEpisode | SearchDisplayEpisode): boolean {
-    return episodeEmbedOptions(episode).length > 0;
-  }
-
-  playLabel(episode: HomepageEpisode | SearchDisplayEpisode): 'Watch' | 'Listen' {
-    return playActionLabel(episode);
   }
 
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (!this.canPlay(episode)) {
+    if (episodeEmbedOptions(episode).length === 0) {
       return;
     }
     this.playerService.play(episode);
-    this.heroPaused.set(true);
-  }
-
-  isPlayingId(id: string): boolean {
-    return this.playerService.episode()?.id === id;
-  }
-
-  /** Non-English language flag badge; undefined when English/unknown. */
-  languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode);
-  }
-
-  pauseHero(): void {
-    this.heroPaused.set(true);
-  }
-
-  resumeHero(): void {
-    if (this.playerService.episode()) {
-      return;
-    }
-    this.heroPaused.set(false);
-  }
-
-  goHero(index: number): void {
-    const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return;
-    }
-    this.transitionTo(index % slides.length);
-    this.restartHeroCycle();
-  }
-
-  onHeroDotsScroll(): void {
-    this.syncHeroDotsOverflow();
-  }
-
-  @HostListener('window:resize')
-  onHeroDotsResize(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
-  }
-
-  nextHero(): void {
-    const n = this.heroSlides().length;
-    if (n === 0) {
-      return;
-    }
-    this.transitionTo((this.heroIndex() + 1) % n);
-    this.restartHeroCycle();
-  }
-
-  prevHero(): void {
-    const n = this.heroSlides().length;
-    if (n === 0) {
-      return;
-    }
-    this.transitionTo((this.heroIndex() - 1 + n) % n);
-    this.restartHeroCycle();
   }
 
   async togglePromote(episode: SearchDisplayEpisode): Promise<void> {
@@ -462,12 +295,11 @@ export class HomepageApiComponent {
     await this.persistCuration(ids);
   }
 
-  async removeFeaturedFromHero(): Promise<void> {
-    const feature = this.featured();
-    if (!feature || !this.isCurator()) {
+  async removeFeaturedFromHero(episodeId: string): Promise<void> {
+    if (!this.isCurator() || !episodeId) {
       return;
     }
-    const ids = this.curatedEpisodeIds().filter((id) => id !== feature.id);
+    const ids = this.curatedEpisodeIds().filter((id) => id !== episodeId);
     await this.persistCuration(ids);
   }
 
@@ -497,7 +329,6 @@ export class HomepageApiComponent {
     ref.afterClosed().subscribe((result: HeroManageDialogResult | undefined) => {
       if (result?.saved && result.episodeIds) {
         this.curatedEpisodeIds.set(result.episodeIds);
-        this.clampHeroIndex();
       }
     });
   }
@@ -565,17 +396,14 @@ export class HomepageApiComponent {
   private async persistCuration(ids: string[]): Promise<void> {
     const previous = this.curatedEpisodeIds();
     this.curatedEpisodeIds.set(ids);
-    this.clampHeroIndex();
     try {
       const saved = await this.heroCurationService.setHeroCuration(ids);
       this.curatedEpisodeIds.set(saved.episodeIds);
       if (saved.railSubjects) {
         this.curatedRailSubjects.set(saved.railSubjects);
       }
-      this.clampHeroIndex();
     } catch {
       this.curatedEpisodeIds.set(previous);
-      this.clampHeroIndex();
     }
   }
 
@@ -587,7 +415,6 @@ export class HomepageApiComponent {
       this.curatedRailSubjects.set(saved.railSubjects);
       if (saved.episodeIds) {
         this.curatedEpisodeIds.set(saved.episodeIds);
-        this.clampHeroIndex();
       }
     } catch {
       this.curatedRailSubjects.set(previous);
@@ -610,7 +437,6 @@ export class HomepageApiComponent {
     const episodePrune = pruneCuratedIdsToWeek(rawEpisodes, this.allEpisodes());
     if (episodePrune.pruned) {
       this.curatedEpisodeIds.set(episodePrune.ids);
-      this.clampHeroIndex();
     }
 
     const rawRails = this.curatedRailSubjects();
@@ -644,7 +470,6 @@ export class HomepageApiComponent {
       const saved = await this.heroCurationService.setHomepageCuration(update);
       this.curatedEpisodeIds.set(saved.episodeIds ?? this.curatedEpisodeIds());
       this.curatedRailSubjects.set(saved.railSubjects ?? this.curatedRailSubjects());
-      this.clampHeroIndex();
       this.pendingKvPrune = false;
     } catch (error) {
       console.warn('Homepage curation week prune failed to persist; local lists kept clean.', error);
@@ -655,9 +480,6 @@ export class HomepageApiComponent {
   private async loadHomepage(): Promise<void> {
     this.isLoading.set(true);
     this.isInError.set(false);
-    this.stopHeroCycle();
-    this.heroContentVisible.set(true);
-    this.heroIndex.set(0);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 });
     }
@@ -678,11 +500,9 @@ export class HomepageApiComponent {
     }
 
     if (homepageContent) {
-      this.applyHomepage(homepageContent, { resetScrollProgress: true, resetHeroIndex: true });
+      this.applyHomepage(homepageContent, { resetScrollProgress: true });
       this.isLoading.set(false);
       this.isInError.set(false);
-      this.syncHeroLayers(true);
-      this.startHeroCycle();
     } else {
       this.isLoading.set(false);
       this.isInError.set(true);
@@ -709,25 +529,12 @@ export class HomepageApiComponent {
     if (!homepageContent) {
       return;
     }
-    const prevFeaturedId = this.featured()?.id;
-    this.applyHomepage(homepageContent, { resetScrollProgress: false, resetHeroIndex: false });
-    const slides = this.heroSlides();
-    if (slides.length === 0) {
-      return;
-    }
-    const keepIndex = prevFeaturedId ? slides.findIndex((s) => s.id === prevFeaturedId) : -1;
-    if (keepIndex >= 0) {
-      this.heroIndex.set(keepIndex);
-    } else {
-      this.heroIndex.set(this.heroIndex() % slides.length);
-    }
-    this.syncHeroLayers(true);
-    this.startHeroCycle();
+    this.applyHomepage(homepageContent, { resetScrollProgress: false });
   }
 
   private applyHomepage(
     homepageContent: Homepage,
-    options: { resetScrollProgress: boolean; resetHeroIndex: boolean }
+    options: { resetScrollProgress: boolean }
   ): void {
     this.homepage.set(homepageContent);
     this.episodeCount.set(homepageContent.episodeCount);
@@ -754,12 +561,6 @@ export class HomepageApiComponent {
       this.loadMoreEpisodes(keep);
     } else {
       this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-    }
-    if (options.resetHeroIndex) {
-      const slides = this.heroSlides();
-      const start =
-        slides.length > 0 ? HomepageApiComponent.heroTimeBucket() % slides.length : 0;
-      this.heroIndex.set(start);
     }
   }
 
@@ -815,270 +616,6 @@ export class HomepageApiComponent {
         return group;
       }, {})
     );
-  }
-
-  private clampHeroIndex(): void {
-    const n = this.heroSlides().length;
-    if (n === 0) {
-      this.heroIndex.set(0);
-      return;
-    }
-    if (this.heroIndex() >= n) {
-      this.heroIndex.set(this.heroIndex() % n);
-    }
-  }
-
-  /** Smoothly keep the active dash in view when the strip is wider than its viewport. */
-  private scrollActiveHeroDotIntoView(
-    index: number,
-    behavior: ScrollBehavior = this.reduceMotion ? 'auto' : 'smooth'
-  ): void {
-    const viewport = this.heroDotsViewport()?.nativeElement;
-    if (!viewport) {
-      return;
-    }
-    const active = viewport.querySelector<HTMLElement>(`[data-hero-dot="${index}"]`);
-    if (!active) {
-      this.syncHeroDotsOverflow();
-      return;
-    }
-
-    const viewportWidth = viewport.clientWidth;
-    const targetLeft =
-      active.offsetLeft - (viewportWidth - active.offsetWidth) / 2;
-    const maxScroll = Math.max(0, viewport.scrollWidth - viewportWidth);
-    const nextLeft = Math.max(0, Math.min(targetLeft, maxScroll));
-
-    if (Math.abs(viewport.scrollLeft - nextLeft) > 1) {
-      viewport.scrollTo({ left: nextLeft, behavior });
-    }
-    // Overflow fades may lag smooth scroll; resync after the animation settles.
-    this.syncHeroDotsOverflow();
-    if (behavior === 'smooth') {
-      if (this.heroDotsOverflowTimer) {
-        clearTimeout(this.heroDotsOverflowTimer);
-      }
-      this.heroDotsOverflowTimer = setTimeout(() => this.syncHeroDotsOverflow(), 320);
-    }
-  }
-
-  private syncHeroDotsOverflow(): void {
-    const viewport = this.heroDotsViewport()?.nativeElement;
-    if (!viewport) {
-      this.heroDotsOverflowStart.set(false);
-      this.heroDotsOverflowEnd.set(false);
-      return;
-    }
-    const maxScroll = viewport.scrollWidth - viewport.clientWidth;
-    if (maxScroll <= 1) {
-      this.heroDotsOverflowStart.set(false);
-      this.heroDotsOverflowEnd.set(false);
-      return;
-    }
-    this.heroDotsOverflowStart.set(viewport.scrollLeft > 1);
-    this.heroDotsOverflowEnd.set(viewport.scrollLeft < maxScroll - 1);
-  }
-
-  private transitionTo(index: number): void {
-    if (index === this.heroIndex()) {
-      return;
-    }
-    if (this.reduceMotion) {
-      this.heroIndex.set(index);
-      this.syncHeroLayers(true);
-      this.heroContentVisible.set(true);
-      this.beginHeroImageGate();
-      return;
-    }
-
-    // 1) Fade current copy out while the old image is still fully visible.
-    this.heroContentVisible.set(false);
-    if (this.heroContentTimer) {
-      clearTimeout(this.heroContentTimer);
-    }
-    this.heroContentTimer = setTimeout(() => {
-      // 2) Swap copy + start image crossfade while text is invisible (no layout pop).
-      this.heroIndex.set(index);
-      this.syncHeroLayers(false);
-      this.beginHeroImageGate();
-      // 3) Fade the new copy in on the next frames, in step with the image bleed.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => this.heroContentVisible.set(true));
-      });
-    }, HomepageApiComponent.heroContentOutMs);
-  }
-
-  /** Seed or crossfade the two background layers for the active slide. */
-  private syncHeroLayers(immediate: boolean): void {
-    const url = this.featuredImage();
-    if (immediate || this.reduceMotion) {
-      if (this.heroKenBurnsClearTimer) {
-        clearTimeout(this.heroKenBurnsClearTimer);
-        this.heroKenBurnsClearTimer = undefined;
-      }
-      this.heroLayerA.set(url);
-      this.heroLayerB.set(undefined);
-      this.heroFrontLayer.set('a');
-      this.heroKenBurnsA.set(!!url && !this.reduceMotion);
-      this.heroKenBurnsB.set(false);
-      return;
-    }
-    const front = this.heroFrontLayer();
-    if (front === 'a') {
-      // Incoming B starts without Ken Burns so the 1.08→1.18 run can restart.
-      this.heroKenBurnsB.set(false);
-      this.heroLayerB.set(url);
-      // Flip after paint so the incoming layer starts at opacity 0.
-      // Keep Ken Burns on A through the fade — dropping it snaps scale to 1.08.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.heroFrontLayer.set('b');
-          this.scheduleOutgoingKenBurnsClear('a');
-        });
-      });
-    } else {
-      this.heroKenBurnsA.set(false);
-      this.heroLayerA.set(url);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.heroFrontLayer.set('a');
-          this.scheduleOutgoingKenBurnsClear('b');
-        });
-      });
-    }
-  }
-
-  /**
-   * After the opacity crossfade finishes, drop Ken Burns on the hidden layer
-   * (and clear its image) so the next recycle can restart the zoom cleanly.
-   */
-  private scheduleOutgoingKenBurnsClear(outgoing: 'a' | 'b'): void {
-    if (this.heroKenBurnsClearTimer) {
-      clearTimeout(this.heroKenBurnsClearTimer);
-    }
-    this.heroKenBurnsClearTimer = setTimeout(() => {
-      this.heroKenBurnsClearTimer = undefined;
-      if (this.heroFrontLayer() === outgoing) {
-        return;
-      }
-      if (outgoing === 'a') {
-        this.heroKenBurnsA.set(false);
-        this.heroLayerA.set(undefined);
-      } else {
-        this.heroKenBurnsB.set(false);
-        this.heroLayerB.set(undefined);
-      }
-    }, HomepageApiComponent.heroTransitionMs);
-  }
-
-  private beginHeroImageGate(): void {
-    this.clearHeroImageWait();
-    this.heroImageReady.set(false);
-    if (!isPlatformBrowser(this.platformId)) {
-      this.heroImageReady.set(true);
-      this.enableKenBurnsOnFront();
-      return;
-    }
-    const url = this.featuredImage();
-    const token = ++this.heroImageToken;
-    if (!url) {
-      this.heroImageReady.set(true);
-      this.enableKenBurnsOnFront();
-      return;
-    }
-
-    this.heroImageFallbackTimer = setTimeout(() => {
-      if (token === this.heroImageToken) {
-        this.heroImageReady.set(true);
-        this.enableKenBurnsOnFront();
-      }
-    }, HomepageApiComponent.heroImageFallbackMs);
-
-    const img = new Image();
-    const markReady = () => {
-      if (token !== this.heroImageToken) {
-        return;
-      }
-      this.clearHeroImageWait();
-      this.heroImageReady.set(true);
-      this.enableKenBurnsOnFront();
-    };
-    img.onload = () => {
-      if (typeof img.decode === 'function') {
-        img.decode().then(markReady, markReady);
-      } else {
-        markReady();
-      }
-    };
-    img.onerror = markReady;
-    img.src = url;
-    if (img.complete) {
-      markReady();
-    }
-  }
-
-  /** Start (or restart) Ken Burns only on the visible front layer. */
-  private enableKenBurnsOnFront(): void {
-    if (this.reduceMotion) {
-      return;
-    }
-    if (this.heroFrontLayer() === 'a') {
-      this.heroKenBurnsA.set(true);
-    } else {
-      this.heroKenBurnsB.set(true);
-    }
-  }
-
-  private clearHeroImageWait(): void {
-    if (this.heroImageFallbackTimer) {
-      clearTimeout(this.heroImageFallbackTimer);
-      this.heroImageFallbackTimer = undefined;
-    }
-  }
-
-  private startHeroCycle(): void {
-    this.stopHeroCycle();
-    if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
-      this.heroImageReady.set(true);
-      return;
-    }
-    if (this.heroSlides().length < 2) {
-      this.beginHeroImageGate();
-      return;
-    }
-    this.beginHeroImageGate();
-    let elapsed = 0;
-    const tickMs = 250;
-    this.heroTimer = setInterval(() => {
-      if (this.heroPaused() || !this.heroImageReady()) {
-        return;
-      }
-      elapsed += tickMs;
-      if (elapsed < HomepageApiComponent.heroIntervalMs) {
-        return;
-      }
-      elapsed = 0;
-      const n = this.heroSlides().length;
-      if (n < 2) {
-        return;
-      }
-      this.transitionTo((this.heroIndex() + 1) % n);
-    }, tickMs);
-  }
-
-  private restartHeroCycle(): void {
-    this.startHeroCycle();
-  }
-
-  private stopHeroCycle(): void {
-    if (this.heroTimer) {
-      clearInterval(this.heroTimer);
-      this.heroTimer = undefined;
-    }
-    if (this.heroContentTimer) {
-      clearTimeout(this.heroContentTimer);
-      this.heroContentTimer = undefined;
-    }
   }
 
   ToDate = (key: string) => dateFromKey(key);
