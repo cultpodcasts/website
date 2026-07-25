@@ -458,7 +458,8 @@ export class HomepageApiComponent {
     if (idx >= 0) {
       ids.splice(idx, 1);
     } else {
-      ids.push(episode.id);
+      // Newest star leads the hero rotation.
+      ids.unshift(episode.id);
     }
     await this.persistCuration(ids);
   }
