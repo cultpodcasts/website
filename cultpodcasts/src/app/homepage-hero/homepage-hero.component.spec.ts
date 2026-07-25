@@ -136,7 +136,10 @@ describe('HomepageHeroComponent', () => {
       component['heroImageReady'].set(false);
       component['beginHeroImageGate']();
       expect(component['heroImageReady']()).toBe(false);
-      vi.advanceTimersByTime(2500);
+      // A slow-but-working backdrop must still gate the dwell timer.
+      vi.advanceTimersByTime(7500);
+      expect(component['heroImageReady']()).toBe(false);
+      vi.advanceTimersByTime(4500);
       expect(component['heroImageReady']()).toBe(true);
     } finally {
       globalThis.Image = originalImage;

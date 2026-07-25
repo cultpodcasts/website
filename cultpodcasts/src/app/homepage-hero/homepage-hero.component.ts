@@ -34,7 +34,12 @@ import { displayCatalogName } from '../display-catalog-name';
 })
 export class HomepageHeroComponent {
   private static readonly heroIntervalMs = 7500;
-  private static readonly heroImageFallbackMs = 2500;
+  /**
+   * Safety net only: the dwell timer is meant to start once the backdrop has painted.
+   * Keep this long enough that a slow (but working) image still gates the countdown,
+   * so a slide is never swapped out before it has ever been seen.
+   */
+  private static readonly heroImageFallbackMs = 12000;
   private static readonly heroTransitionMs = 1200;
   private static readonly heroContentOutMs = 320;
 

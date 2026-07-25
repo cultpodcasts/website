@@ -258,25 +258,32 @@
     width: max-content
     padding: 4px 2px
 
+// The button is a transparent 36×31 hit area; ::before paints the visible 28×3 bar
+// so active / curated chrome never outlines the enlarged target.
 .billboard__dot
     position: relative
     flex-shrink: 0
-    // Visible bar is 28×3; expand the hit target so dashes are clickable.
     box-sizing: content-box
     width: 28px
     height: 3px
     padding: 14px 4px
     border: none
-    border-radius: 2px
-    background: #ffffff47
-    background-clip: content-box
+    background: none
     cursor: pointer
-    overflow: hidden
-    &.is-active
+    &::before
+        content: ''
+        position: absolute
+        left: 4px
+        top: 50%
+        width: 28px
+        height: 3px
+        margin-top: -1.5px
+        border-radius: 2px
+        background: #ffffff47
+    &.is-active::before
         background: #ffffff59
-        background-clip: content-box
-    &.is-curated
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nflx-accent) 55%, transparent)
+    &.is-curated::before
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--nflx-accent) 55%, transparent)
 
 .billboard__dot-fill
     position: absolute
