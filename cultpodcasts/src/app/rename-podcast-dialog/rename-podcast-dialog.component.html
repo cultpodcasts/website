@@ -12,21 +12,22 @@
         <p>An error occurred</p>
         }
         <p>Rename "{{podcastName}}" to</p>
-        <input matInput type="text" (keydown.enter)="onSubmit()" class="form-control" id="newPodcastName" required
-            [(ngModel)]="newPodcastName" name="newPodcastName" #newPodcastNameField="ngModel"
-            (keyup)="checkControl(newPodcastNameField)" (keyup.enter)="onSubmit()">
-
-        @if (newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)) {
-        <div class="alert">
-            @if (newPodcastNameField.hasError('required')) {
-            <div>New podcast-name is required. </div>
+        <mat-form-field class="full-width">
+            <mat-label>New podcast name</mat-label>
+            <input matInput type="text" (keydown.enter)="onSubmit()" id="newPodcastName" required
+                [(ngModel)]="newPodcastName" name="newPodcastName" #newPodcastNameField="ngModel"
+                (keyup)="checkControl(newPodcastNameField)" (keyup.enter)="onSubmit()">
+            @if (newPodcastNameField.invalid && (newPodcastNameField.dirty || newPodcastNameField.touched)) {
+            <mat-error>
+                @if (newPodcastNameField.hasError('required')) {
+                New podcast-name is required.
+                }
+                @if (newPodcastNameField.hasError('unsafe')) {
+                Invalid podcast name.
+                }
+            </mat-error>
             }
-            @if (newPodcastNameField.hasError('unsafe')) {
-            <div>Invalid podcast name.</div>
-            }
-        </div>
-
-        }
+        </mat-form-field>
         }
     </mat-dialog-content>
 
