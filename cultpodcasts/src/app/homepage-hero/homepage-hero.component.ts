@@ -41,9 +41,10 @@ export class HomepageHeroComponent {
    */
   private static readonly heroImageFallbackMs = 12000;
   private static readonly heroTransitionMs = 1200;
-  /** Linger on the current title before fading it out — fading immediately feels abrupt. */
-  private static readonly heroContentOutDelayMs = 280;
-  private static readonly heroContentOutMs = 320;
+  /** Hold the current title before text and image leave together. */
+  private static readonly heroContentHoldMs = 450;
+  /** Keep in sync with `.billboard__feature.is-hidden` transition-duration. */
+  private static readonly heroContentOutMs = 550;
 
   readonly slides = input.required<HomepageEpisode[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
@@ -413,9 +414,9 @@ export class HomepageHeroComponent {
       return;
     }
 
-    // Preload immediately, but keep the current title on screen briefly before
-    // fading it out. Do not swap title/desc until the next backdrop is decoded —
-    // revealing text first spoils the crossfade.
+    // Hold the current slide while the next backdrop preloads. Once both the
+    // hold and the image are ready, fade the copy out and crossfade the image
+    // together — text leaving ahead of the backdrop is what spoils the effect.
     this.heroImageReady.set(false);
     this.clearHeroContentTransition();
     this.clearHeroImageWait();
@@ -426,43 +427,47 @@ export class HomepageHeroComponent {
     const transitionToken = ++this.heroTransitionToken;
     const imageToken = ++this.heroImageToken;
 
-    let contentOutDone = false;
+    let holdDone = false;
     let imageReady = !nextUrl;
+    let crossfadeStarted = false;
 
-    const commit = (): void => {
+    const beginCrossfade = (): void => {
       if (transitionToken !== this.heroTransitionToken || imageToken !== this.heroImageToken) {
         return;
       }
-      if (!contentOutDone || !imageReady) {
+      if (!holdDone || !imageReady || crossfadeStarted) {
         return;
       }
+      crossfadeStarted = true;
 
-      this.heroIndex.set(index);
-      this.lastFeaturedId = nextSlide?.id;
-      this.syncHeroLayers(false);
+      // Image + text leave on the same beat.
+      this.syncHeroLayers(false, nextUrl);
+      this.heroContentVisible.set(false);
       this.clearHeroImageWait();
       this.heroImageReady.set(true);
-      this.enableKenBurnsOnFront();
-      requestAnimationFrame(() => {
+
+      this.heroContentTimer = setTimeout(() => {
+        if (transitionToken !== this.heroTransitionToken) {
+          return;
+        }
+        // Swap copy while hidden, then fade in alongside the incoming backdrop.
+        this.heroIndex.set(index);
+        this.lastFeaturedId = nextSlide?.id;
         requestAnimationFrame(() => {
-          if (transitionToken !== this.heroTransitionToken) {
-            return;
-          }
-          this.heroContentVisible.set(true);
+          requestAnimationFrame(() => {
+            if (transitionToken !== this.heroTransitionToken) {
+              return;
+            }
+            this.heroContentVisible.set(true);
+          });
         });
-      });
+      }, HomepageHeroComponent.heroContentOutMs);
     };
 
     this.heroContentTimer = setTimeout(() => {
-      if (transitionToken !== this.heroTransitionToken) {
-        return;
-      }
-      this.heroContentVisible.set(false);
-      this.heroContentTimer = setTimeout(() => {
-        contentOutDone = true;
-        commit();
-      }, HomepageHeroComponent.heroContentOutMs);
-    }, HomepageHeroComponent.heroContentOutDelayMs);
+      holdDone = true;
+      beginCrossfade();
+    }, HomepageHeroComponent.heroContentHoldMs);
 
     if (!nextUrl) {
       return;
@@ -473,18 +478,18 @@ export class HomepageHeroComponent {
         return;
       }
       imageReady = true;
-      commit();
+      beginCrossfade();
     }, HomepageHeroComponent.heroImageFallbackMs);
 
     this.preloadHeroImage(nextUrl, imageToken, () => {
       imageReady = true;
       this.clearHeroImageWait();
-      commit();
+      beginCrossfade();
     });
   }
 
-  private syncHeroLayers(immediate: boolean): void {
-    const url = this.featuredImage();
+  private syncHeroLayers(immediate: boolean, urlOverride?: string): void {
+    const url = urlOverride ?? this.featuredImage();
     if (immediate || this.reduceMotion) {
       if (this.heroKenBurnsClearTimer) {
         clearTimeout(this.heroKenBurnsClearTimer);
@@ -504,6 +509,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('b');
+          this.heroKenBurnsB.set(!!url && !this.reduceMotion);
           this.scheduleOutgoingKenBurnsClear('a');
         });
       });
@@ -513,6 +519,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('a');
+          this.heroKenBurnsA.set(!!url && !this.reduceMotion);
           this.scheduleOutgoingKenBurnsClear('b');
         });
       });

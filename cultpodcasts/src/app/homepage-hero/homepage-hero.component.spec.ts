@@ -101,7 +101,7 @@ describe('HomepageHeroComponent', () => {
 
     // Bug regression: restartHeroCycle used to clear heroContentTimer and leave index at 0.
     expect(component['heroIndex']()).toBe(0);
-    vi.advanceTimersByTime(280 + 320);
+    vi.advanceTimersByTime(450 + 550);
     expect(component['heroIndex']()).toBe(1);
     expect(component['featured']()?.id).toBe('b');
   });
@@ -117,7 +117,7 @@ describe('HomepageHeroComponent', () => {
       'button.billboard__nav--prev'
     ) as HTMLButtonElement;
     prev.click();
-    vi.advanceTimersByTime(280 + 320);
+    vi.advanceTimersByTime(450 + 550);
 
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');
@@ -255,12 +255,17 @@ describe('HomepageHeroComponent', () => {
     component['lastFeaturedId'] = 'a';
     component['transitionTo'](1);
 
-    vi.advanceTimersByTime(280 + 320);
-    expect(component['heroIndex']()).toBe(1);
+    // Hold finishes with a cached image: backdrop and copy leave together.
+    vi.advanceTimersByTime(450);
     expect(component['heroLayerB']()).toContain('/b/');
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['heroContentVisible']()).toBe(false);
+
+    vi.advanceTimersByTime(550);
+    expect(component['heroIndex']()).toBe(1);
   });
 
-  it('holds copy hidden until the next backdrop is ready', () => {
+  it('holds copy until the next backdrop is ready, then fades with the image', () => {
     vi.useFakeTimers();
     const deferred: { fire: (() => void) | null } = { fire: null };
     class DeferredImage {
@@ -285,19 +290,20 @@ describe('HomepageHeroComponent', () => {
     component['heroContentVisible'].set(true);
     component['transitionTo'](1);
 
-    // Linger on the current title briefly before fading it out.
+    // Hold elapsed but backdrop not ready yet — keep current title on screen.
+    vi.advanceTimersByTime(450);
     expect(component['heroContentVisible']()).toBe(true);
-    vi.advanceTimersByTime(280);
-    expect(component['heroContentVisible']()).toBe(false);
-    vi.advanceTimersByTime(320);
-    // Content-out finished, but the incoming image has not decoded yet —
-    // index and copy must not advance ahead of the backdrop.
     expect(component['heroIndex']()).toBe(0);
-    expect(component['heroContentVisible']()).toBe(false);
     expect(component['featured']()?.id).toBe('a');
 
     expect(deferred.fire).toBeTruthy();
     deferred.fire!();
+    // Image + text leave together; copy content swaps only after the out fade.
+    expect(component['heroContentVisible']()).toBe(false);
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['heroLayerB']() ?? component['heroLayerA']()).toContain('/b/');
+
+    vi.advanceTimersByTime(550);
     expect(component['heroIndex']()).toBe(1);
     expect(component['featured']()?.id).toBe('b');
     expect(component['heroImageReady']()).toBe(true);
@@ -322,7 +328,7 @@ describe('HomepageHeroComponent', () => {
     component['startHeroCycle']();
 
     vi.advanceTimersByTime(7500 + 250);
-    vi.advanceTimersByTime(280 + 320);
+    vi.advanceTimersByTime(450 + 550);
     expect(component['heroIndex']()).toBe(1);
   });
 
