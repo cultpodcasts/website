@@ -234,6 +234,10 @@
     line-height: 1.25
     color: #fff
 
+// Result grids have wider cards and no date heading — give titles room to finish.
+:host-context(.browse-grid) .episode-poster__episode
+    -webkit-line-clamp: 4
+
 // Podcast name only — sits outside .episode-poster__titles so it can be its own
 // link (anchors cannot nest). Publication date lives on the action row instead.
 .episode-poster__byline
