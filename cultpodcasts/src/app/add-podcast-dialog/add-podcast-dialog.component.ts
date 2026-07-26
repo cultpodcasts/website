@@ -207,6 +207,7 @@ export class AddPodcastDialogComponent {
         removed: form.controls.removed.value,
         indexAllEpisodes: form.controls.indexAllEpisodes.value,
         bypassShortEpisodeChecking: form.controls.bypassShortEpisodeChecking.value,
+        alwaysPromoteAsHero: form.controls.alwaysPromoteAsHero.value,
         releaseAuthority: form.controls.releaseAuthority.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : form.controls.releaseAuthority.value,
         primaryPostService: form.controls.primaryPostService.value == PodcastServiceType[PodcastServiceType.Unset] ? undefined : form.controls.primaryPostService.value,
         spotifyId: form.controls.spotifyId.value,

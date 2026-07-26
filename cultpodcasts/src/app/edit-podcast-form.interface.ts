@@ -12,6 +12,7 @@ export interface EditPodcastForm {
     removed: FormControl<boolean>;
     indexAllEpisodes: FormControl<boolean>;
     bypassShortEpisodeChecking: FormControl<boolean>;
+    alwaysPromoteAsHero: FormControl<boolean>;
     skipEnrichingFromYouTube: FormControl<boolean>;
     titleRegex: FormControl<string>;
     descriptionRegex: FormControl<string>;

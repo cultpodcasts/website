@@ -165,20 +165,18 @@ describe('HomepageApiComponent', () => {
     component['applyHomepage'](homepageWith(episodes), { resetScrollProgress: true });
   }
 
-  it('prunes stale curated episode ids for the current week', () => {
+  it('prunes stale curated episode ids for local display only', () => {
     apply([ep('keep'), ep('other')], { episodeIds: ['keep', 'stale-id'] });
     expect(component['curatedEpisodeIds']()).toEqual(['keep']);
     expect(heroCuration.setHomepageCuration).not.toHaveBeenCalled();
-    expect(component['pendingKvPrune']).toBe(true);
   });
 
-  it('quietly persists prune when a Curator is signed in', async () => {
+  it('does not persist week prune from the homepage (cron owns Durable Object writes)', async () => {
     roles$.next(['Curator']);
     apply([ep('keep')], { episodeIds: ['keep', 'gone'] });
     await Promise.resolve();
     expect(component['curatedEpisodeIds']()).toEqual(['keep']);
-    expect(heroCuration.setHomepageCuration).toHaveBeenCalled();
-    expect(component['pendingKvPrune']).toBe(false);
+    expect(heroCuration.setHomepageCuration).not.toHaveBeenCalled();
   });
 
   it('rolls back promote when persist fails', async () => {

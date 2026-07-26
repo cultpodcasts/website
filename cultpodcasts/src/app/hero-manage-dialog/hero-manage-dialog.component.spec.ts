@@ -36,11 +36,16 @@ describe('HeroManageDialogComponent', () => {
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
     heroCuration = {
-      setHeroCuration: vi.fn().mockResolvedValue({ episodeIds: ['b', 'a'], railSubjects: [] }),
+      setHeroCuration: vi.fn().mockResolvedValue({
+        episodeIds: ['b', 'a'],
+        railSubjects: [],
+        updatedAt: 't1',
+      }),
     };
     const data: HeroManageDialogData = {
       curated: [ep('a'), ep('b')],
       autofilled: [ep('x')],
+      updatedAt: 't0',
     };
 
     await TestBed.configureTestingModule({
@@ -73,8 +78,12 @@ describe('HeroManageDialogComponent', () => {
 
   it('saves curated ids and closes with the server response', async () => {
     await component.save();
-    expect(heroCuration.setHeroCuration).toHaveBeenCalledWith(['a', 'b']);
-    expect(dialogRef.close).toHaveBeenCalledWith({ saved: true, episodeIds: ['b', 'a'] });
+    expect(heroCuration.setHeroCuration).toHaveBeenCalledWith(['a', 'b'], 't0');
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      saved: true,
+      episodeIds: ['b', 'a'],
+      updatedAt: 't1',
+    });
   });
 
   it('surfaces an error and keeps the dialog open when save fails', async () => {

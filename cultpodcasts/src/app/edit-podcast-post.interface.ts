@@ -2,6 +2,7 @@ export interface EditPodcastPost {
     removed?: boolean;
     indexAllEpisodes?: boolean;
     bypassShortEpisodeChecking?: boolean;
+    alwaysPromoteAsHero?: boolean;
     releaseAuthority?: string;
     unsetReleaseAuthority?: boolean;
     primaryPostService?: string;

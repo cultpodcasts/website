@@ -1,17 +1,25 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE } from './auth.interceptor';
 import { HeroCuration } from './hero-curation.interface';
 
+export class HeroCurationConflictError extends Error {
+  constructor(readonly current: HeroCuration) {
+    super('Hero curation was updated elsewhere');
+    this.name = 'HeroCurationConflictError';
+  }
+}
+
 interface HeroCurationUpdate {
   episodeIds?: string[];
   railSubjects?: string[];
+  expectedUpdatedAt?: string | null;
 }
 
 /**
- * KV-backed homepage curation: hero episode picks and pinned subject rails.
+ * Homepage curation: hero episode picks and pinned subject rails (Durable Object).
  * GET is public; PUT requires curate scope. Failures return empty lists so the
  * homepage can still autofill when the worker endpoint is missing or down.
  */
@@ -34,12 +42,12 @@ export class HeroCurationService {
     }
   }
 
-  setHeroCuration(episodeIds: string[]): Promise<HeroCuration> {
-    return this.put({ episodeIds });
+  setHeroCuration(episodeIds: string[], expectedUpdatedAt?: string | null): Promise<HeroCuration> {
+    return this.put({ episodeIds, expectedUpdatedAt });
   }
 
-  setRailSubjects(railSubjects: string[]): Promise<HeroCuration> {
-    return this.put({ railSubjects });
+  setRailSubjects(railSubjects: string[], expectedUpdatedAt?: string | null): Promise<HeroCuration> {
+    return this.put({ railSubjects, expectedUpdatedAt });
   }
 
   /** Persist any combination of hero and rail picks in one PUT. */
@@ -62,6 +70,14 @@ export class HeroCurationService {
         updatedAt: saved.updatedAt ?? null,
       };
     } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        const body = error.error as Partial<HeroCuration> | null;
+        throw new HeroCurationConflictError({
+          episodeIds: body?.episodeIds ?? [],
+          railSubjects: body?.railSubjects ?? [],
+          updatedAt: body?.updatedAt ?? null,
+        });
+      }
       console.error('Failed to save hero curation.', error);
       throw error;
     }

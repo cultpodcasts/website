@@ -4,6 +4,7 @@ export interface Podcast {
     removed: boolean;
     indexAllEpisodes: boolean;
     bypassShortEpisodeChecking: boolean;
+    alwaysPromoteAsHero?: boolean;
     releaseAuthority?: string;
     primaryPostService?: string;
     spotifyId: string;
