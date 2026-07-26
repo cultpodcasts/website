@@ -23,11 +23,28 @@ function ep(id: string): HomepageEpisode {
   };
 }
 
+/** Image that is already decoded when `src` is assigned (cache hit). */
+class ImmediateImage {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  complete = false;
+  decode = undefined;
+  fetchPriority = '';
+  decoding = '';
+  set src(_value: string) {
+    this.complete = true;
+  }
+}
+
 describe('HomepageHeroComponent', () => {
   let fixture: ComponentFixture<HomepageHeroComponent>;
   let component: HomepageHeroComponent;
+  let originalImage: typeof Image;
 
   beforeEach(async () => {
+    originalImage = globalThis.Image;
+    globalThis.Image = ImmediateImage as unknown as typeof Image;
+
     await TestBed.configureTestingModule({
       imports: [HomepageHeroComponent],
       providers: [
@@ -46,6 +63,7 @@ describe('HomepageHeroComponent', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    globalThis.Image = originalImage;
     component['stopHeroCycle']();
   });
 
@@ -83,7 +101,7 @@ describe('HomepageHeroComponent', () => {
 
     // Bug regression: restartHeroCycle used to clear heroContentTimer and leave index at 0.
     expect(component['heroIndex']()).toBe(0);
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(450 + 550);
     expect(component['heroIndex']()).toBe(1);
     expect(component['featured']()?.id).toBe('b');
   });
@@ -99,7 +117,7 @@ describe('HomepageHeroComponent', () => {
       'button.billboard__nav--prev'
     ) as HTMLButtonElement;
     prev.click();
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(450 + 550);
 
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');
@@ -206,30 +224,27 @@ describe('HomepageHeroComponent', () => {
 
   it('image gate stays blocked until the fallback timeout when decode never completes', () => {
     vi.useFakeTimers();
-    const originalImage = globalThis.Image;
     class StuckImage {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
       complete = false;
       decode = undefined;
+      fetchPriority = '';
+      decoding = '';
       set src(_value: string) {
         /* never completes */
       }
     }
     globalThis.Image = StuckImage as unknown as typeof Image;
 
-    try {
-      component['heroImageReady'].set(false);
-      component['beginHeroImageGate']();
-      expect(component['heroImageReady']()).toBe(false);
-      // A slow-but-working backdrop must still gate the dwell timer.
-      vi.advanceTimersByTime(7500);
-      expect(component['heroImageReady']()).toBe(false);
-      vi.advanceTimersByTime(4500);
-      expect(component['heroImageReady']()).toBe(true);
-    } finally {
-      globalThis.Image = originalImage;
-    }
+    component['heroImageReady'].set(false);
+    component['beginHeroImageGate']();
+    expect(component['heroImageReady']()).toBe(false);
+    // A slow-but-working backdrop must still gate the dwell timer.
+    vi.advanceTimersByTime(7500);
+    expect(component['heroImageReady']()).toBe(false);
+    vi.advanceTimersByTime(4500);
+    expect(component['heroImageReady']()).toBe(true);
   });
 
   it('crossfade flips the front layer onto the incoming stage', () => {
@@ -240,9 +255,58 @@ describe('HomepageHeroComponent', () => {
     component['lastFeaturedId'] = 'a';
     component['transitionTo'](1);
 
-    vi.advanceTimersByTime(320);
+    // Hold finishes with a cached image: backdrop and copy leave together.
+    vi.advanceTimersByTime(450);
+    expect(component['heroLayerB']()).toContain('/b/');
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['heroContentVisible']()).toBe(false);
+
+    vi.advanceTimersByTime(550);
     expect(component['heroIndex']()).toBe(1);
-    expect(component['heroLayerB']()).toContain('b.jpg');
+  });
+
+  it('holds copy until the next backdrop is ready, then fades with the image', () => {
+    vi.useFakeTimers();
+    const deferred: { fire: (() => void) | null } = { fire: null };
+    class DeferredImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      complete = false;
+      decode = undefined;
+      fetchPriority = '';
+      decoding = '';
+      set src(_value: string) {
+        deferred.fire = () => {
+          this.complete = true;
+          this.onload?.();
+        };
+      }
+    }
+    globalThis.Image = DeferredImage as unknown as typeof Image;
+
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+    component['heroContentVisible'].set(true);
+    component['transitionTo'](1);
+
+    // Hold elapsed but backdrop not ready yet — keep current title on screen.
+    vi.advanceTimersByTime(450);
+    expect(component['heroContentVisible']()).toBe(true);
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['featured']()?.id).toBe('a');
+
+    expect(deferred.fire).toBeTruthy();
+    deferred.fire!();
+    // Image + text leave together; copy content swaps only after the out fade.
+    expect(component['heroContentVisible']()).toBe(false);
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['heroLayerB']() ?? component['heroLayerA']()).toContain('/b/');
+
+    vi.advanceTimersByTime(550);
+    expect(component['heroIndex']()).toBe(1);
+    expect(component['featured']()?.id).toBe('b');
+    expect(component['heroImageReady']()).toBe(true);
   });
 
   it('reduce-motion jumps index immediately without starting the cycle timer', () => {
@@ -264,7 +328,7 @@ describe('HomepageHeroComponent', () => {
     component['startHeroCycle']();
 
     vi.advanceTimersByTime(7500 + 250);
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(450 + 550);
     expect(component['heroIndex']()).toBe(1);
   });
 

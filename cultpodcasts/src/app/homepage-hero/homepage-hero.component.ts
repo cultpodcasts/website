@@ -41,7 +41,10 @@ export class HomepageHeroComponent {
    */
   private static readonly heroImageFallbackMs = 12000;
   private static readonly heroTransitionMs = 1200;
-  private static readonly heroContentOutMs = 320;
+  /** Hold the current title before text and image leave together. */
+  private static readonly heroContentHoldMs = 450;
+  /** Keep in sync with `.billboard__feature.is-hidden` transition-duration. */
+  private static readonly heroContentOutMs = 550;
 
   readonly slides = input.required<HomepageEpisode[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
@@ -118,6 +121,11 @@ export class HomepageHeroComponent {
   private pointerInside = false;
   /** Focus is inside the billboard (keyboard pause). */
   private focusInside = false;
+  /**
+   * Mid-transition latch: content stays faded out until the outgoing fade finishes
+   * AND the incoming backdrop has decoded (or hit the safety fallback).
+   */
+  private heroTransitionToken = 0;
 
   /**
    * Window resize and dots-strip scroll are bound outside Angular's event manager: in a
@@ -174,7 +182,11 @@ export class HomepageHeroComponent {
         this.lastFeaturedId = undefined;
         this.lastSlideSignature = undefined;
         this.heroIndex.set(0);
+        this.heroTransitionToken++;
+        this.heroImageToken++;
         this.stopHeroCycle();
+        this.clearHeroContentTransition();
+        this.clearHeroImageWait();
         return;
       }
 
@@ -402,23 +414,82 @@ export class HomepageHeroComponent {
       return;
     }
 
-    this.heroContentVisible.set(false);
-    if (this.heroContentTimer) {
-      clearTimeout(this.heroContentTimer);
-    }
+    // Hold the current slide while the next backdrop preloads. Once both the
+    // hold and the image are ready, fade the copy out and crossfade the image
+    // together — text leaving ahead of the backdrop is what spoils the effect.
+    this.heroImageReady.set(false);
+    this.clearHeroContentTransition();
+    this.clearHeroImageWait();
+
+    const slides = this.slides();
+    const nextSlide = slides[index];
+    const nextUrl = nextSlide ? episodeImageUrl(nextSlide)?.toString() : undefined;
+    const transitionToken = ++this.heroTransitionToken;
+    const imageToken = ++this.heroImageToken;
+
+    let holdDone = false;
+    let imageReady = !nextUrl;
+    let crossfadeStarted = false;
+
+    const beginCrossfade = (): void => {
+      if (transitionToken !== this.heroTransitionToken || imageToken !== this.heroImageToken) {
+        return;
+      }
+      if (!holdDone || !imageReady || crossfadeStarted) {
+        return;
+      }
+      crossfadeStarted = true;
+
+      // Image + text leave on the same beat.
+      this.syncHeroLayers(false, nextUrl);
+      this.heroContentVisible.set(false);
+      this.clearHeroImageWait();
+      this.heroImageReady.set(true);
+
+      this.heroContentTimer = setTimeout(() => {
+        if (transitionToken !== this.heroTransitionToken) {
+          return;
+        }
+        // Swap copy while hidden, then fade in alongside the incoming backdrop.
+        this.heroIndex.set(index);
+        this.lastFeaturedId = nextSlide?.id;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (transitionToken !== this.heroTransitionToken) {
+              return;
+            }
+            this.heroContentVisible.set(true);
+          });
+        });
+      }, HomepageHeroComponent.heroContentOutMs);
+    };
+
     this.heroContentTimer = setTimeout(() => {
-      this.heroIndex.set(index);
-      this.lastFeaturedId = this.slides()[index]?.id;
-      this.syncHeroLayers(false);
-      this.beginHeroImageGate();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => this.heroContentVisible.set(true));
-      });
-    }, HomepageHeroComponent.heroContentOutMs);
+      holdDone = true;
+      beginCrossfade();
+    }, HomepageHeroComponent.heroContentHoldMs);
+
+    if (!nextUrl) {
+      return;
+    }
+
+    this.heroImageFallbackTimer = setTimeout(() => {
+      if (imageToken !== this.heroImageToken) {
+        return;
+      }
+      imageReady = true;
+      beginCrossfade();
+    }, HomepageHeroComponent.heroImageFallbackMs);
+
+    this.preloadHeroImage(nextUrl, imageToken, () => {
+      imageReady = true;
+      this.clearHeroImageWait();
+      beginCrossfade();
+    });
   }
 
-  private syncHeroLayers(immediate: boolean): void {
-    const url = this.featuredImage();
+  private syncHeroLayers(immediate: boolean, urlOverride?: string): void {
+    const url = urlOverride ?? this.featuredImage();
     if (immediate || this.reduceMotion) {
       if (this.heroKenBurnsClearTimer) {
         clearTimeout(this.heroKenBurnsClearTimer);
@@ -438,6 +509,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('b');
+          this.heroKenBurnsB.set(!!url && !this.reduceMotion);
           this.scheduleOutgoingKenBurnsClear('a');
         });
       });
@@ -447,6 +519,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('a');
+          this.heroKenBurnsA.set(!!url && !this.reduceMotion);
           this.scheduleOutgoingKenBurnsClear('b');
         });
       });
@@ -495,6 +568,18 @@ export class HomepageHeroComponent {
       }
     }, HomepageHeroComponent.heroImageFallbackMs);
 
+    this.preloadHeroImage(url, token, () => {
+      this.clearHeroImageWait();
+      this.heroImageReady.set(true);
+      this.enableKenBurnsOnFront();
+    });
+  }
+
+  /**
+   * Warm + decode the next backdrop. Used both for the initial image gate and
+   * for slide transitions so copy never advances ahead of a painted image.
+   */
+  private preloadHeroImage(url: string, token: number, onReady: () => void): void {
     const img = new Image();
     // The billboard backdrop is the page's largest visual; a plain `new Image()`
     // (like the CSS background-image it warms the cache for) fetches at Low priority.
@@ -504,9 +589,7 @@ export class HomepageHeroComponent {
       if (token !== this.heroImageToken) {
         return;
       }
-      this.clearHeroImageWait();
-      this.heroImageReady.set(true);
-      this.enableKenBurnsOnFront();
+      onReady();
     };
     img.onload = () => {
       if (typeof img.decode === 'function') {
@@ -556,8 +639,8 @@ export class HomepageHeroComponent {
 
   /**
    * Reset the dwell clock after a manual prev/next/dash jump.
-   * Must not cancel `heroContentTimer` or re-run the image gate — `transitionTo`
-   * owns both, and clearing them here made the chevrons appear dead.
+   * Must not cancel `heroContentTimer` or the in-flight image preload —
+   * `transitionTo` owns both, and clearing them here made the chevrons appear dead.
    */
   private restartHeroCycle(): void {
     this.stopHeroCycle();
