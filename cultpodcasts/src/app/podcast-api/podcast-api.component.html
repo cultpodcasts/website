@@ -79,7 +79,7 @@
     @for (result of results(); track result.id) {
     <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)"
       [queued]="isQueuedId(result.id)" [showShow]="false" [titleAsHtml]="true"
-      (play)="playEpisode($event)" />
+      [showRelease]="true" (play)="playEpisode($event)" />
     }
   </div>
 

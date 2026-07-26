@@ -5,6 +5,7 @@ import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SearchDisplayEpisode, episodeArtAspect, episodeImageUrl } from '../search-result-links';
 import { displayCatalogName } from '../display-catalog-name';
+import { releaseDateLabel } from '../release-label';
 import { pickCardSubject } from '../card-subject';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { PlayerService } from '../player.service';
@@ -29,6 +30,11 @@ export class EpisodePosterComponent {
   readonly playing = input(false);
   /** Show podcast name under the title (hide on podcast pages). */
   readonly showShow = input(true);
+  /**
+   * Show the publication date on the action row (before duration). Off by default:
+   * date-grouped rails already state it in their heading.
+   */
+  readonly showRelease = input(false);
   /** Search hit titles may contain highlight markup. */
   readonly titleAsHtml = input(false);
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
@@ -67,6 +73,10 @@ export class EpisodePosterComponent {
 
   protected readonly languageBadge = computed((): LanguageFlagBadge | undefined =>
     languageFlagBadgeForEpisode(this.episode())
+  );
+
+  protected readonly releaseLabel = computed(() =>
+    releaseDateLabel(this.episode().release)
   );
 
   /** One subject per card so a title alone doesn't have to explain what the episode is about. */

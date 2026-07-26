@@ -49,8 +49,10 @@
 
 .obscure__card
     display: block
-    width: var(--obscure-card-w, min(42vw, 168px))
-    flex: 0 0 var(--obscure-card-w, min(42vw, 168px))
+    // Match YouTube card art height: wide is --obscure-yt-w at 16:9, so square
+    // width = that height while keeping aspect-ratio 1.
+    width: calc(var(--obscure-yt-w, min(55vw, 240px)) * 9 / 16)
+    flex: 0 0 calc(var(--obscure-yt-w, min(55vw, 240px)) * 9 / 16)
     text-decoration: none
     color: inherit
     scroll-snap-align: start

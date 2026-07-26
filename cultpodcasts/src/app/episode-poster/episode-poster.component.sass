@@ -49,6 +49,16 @@
 :host.episode-poster--wide .episode-poster__art
     aspect-ratio: 16 / 9
 
+// Browse grids only: one wide frame for every card. Square podcast art sits
+// centered (pillarboxed). Rails keep native square vs 16:9 and match height via width.
+:host-context(.browse-grid) .episode-poster__art,
+:host-context(.browse-grid).episode-poster--wide .episode-poster__art,
+:host-context(.browse-grid).episode-poster--square .episode-poster__art
+    aspect-ratio: 16 / 9
+
+:host-context(.browse-grid).episode-poster--square .episode-poster__art img
+    object-fit: contain
+
 .episode-poster__placeholder
     width: 100%
     height: 100%
@@ -120,7 +130,7 @@
     margin-top: 8px
     color: inherit
 
-// Lang then duration, flush right of Watch / queue on the action row.
+// Lang, release date, then duration — flush right of Watch / queue on the action row.
 .episode-poster__meta-badges
     display: inline-flex
     align-items: center
@@ -148,6 +158,12 @@
     font-weight: 400
     letter-spacing: 0
     background: transparent
+
+.episode-poster__badge--release
+    font-weight: 600
+    color: var(--nflx-muted, #b3b3b3)
+    background: transparent
+    padding: 3px 0
 
 .episode-poster__cta
     display: inline-flex
@@ -198,12 +214,18 @@
         color: var(--nflx-accent, #e8a23a)
 
 .episode-poster__titles
+    // Own row below the action buttons — flex-basis 100% forces the wrap;
+    // width alone is not enough when align-items/shrink fight the line break.
     order: 1
+    flex: 0 0 100%
     display: block
     text-decoration: none
     color: inherit
     min-width: 0
-    width: 100%
+    max-width: 100%
+    // Don't let an oversized hit box cover the podcast link below.
+    height: fit-content
+    overflow: hidden
     &:hover .episode-poster__episode,
     &:focus-visible .episode-poster__episode
         text-decoration: underline
@@ -220,16 +242,41 @@
     line-height: 1.25
     color: #fff
 
-.episode-poster__show
+// Result grids have wider cards and no date heading — give titles room to finish.
+:host-context(.browse-grid) .episode-poster__episode
+    -webkit-line-clamp: 4
+
+// Podcast name only — sits outside .episode-poster__titles so it can be its own
+// link (anchors cannot nest). Publication date lives on the action row instead.
+.episode-poster__byline
+    order: 2
+    flex: 0 0 100%
+    position: relative
+    z-index: 1
     display: block
-    margin-top: 2px
+    width: 100%
+    min-width: 0
+    margin: 2px 0 0
     font-size: 0.8rem
     color: var(--nflx-muted, #b3b3b3)
+
+.episode-poster__show
+    display: inline-block
+    max-width: 100%
+    min-width: 0
+    color: inherit
+    text-decoration: none
     white-space: nowrap
     overflow: hidden
     text-overflow: ellipsis
+    vertical-align: bottom
+    &:hover,
+    &:focus-visible
+        color: var(--nflx-text, #fff)
+        text-decoration: underline
+        outline: none
 
-// Sits on its own line below the title/show block, which takes the full meta row.
+// Sits on its own line below the title/show block.
 .episode-poster__subject
-    order: 2
+    order: 3
     margin-top: 2px

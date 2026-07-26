@@ -116,25 +116,27 @@
     min-height: calc(var(--rail-poster-w, min(42vw, 220px)) * 9 / 16 + 3.5rem)
     margin: 0 4vw
 
+// Wide posters use --rail-poster-w at 16:9. Square posters stay 1:1 but use the
+// wide poster's height as their width so every card in the rail is the same height.
 .rail-poster
     width: var(--rail-poster-w, min(42vw, 220px))
     flex: 0 0 var(--rail-poster-w, min(42vw, 220px))
     &.episode-poster--square
-        width: var(--rail-poster-sq, min(32vw, 160px))
-        flex-basis: var(--rail-poster-sq, min(32vw, 160px))
+        width: calc(var(--rail-poster-w, min(42vw, 220px)) * 9 / 16)
+        flex-basis: calc(var(--rail-poster-w, min(42vw, 220px)) * 9 / 16)
 
 @media screen and (min-width: 900px)
     .rail-poster
-        width: var(--rail-poster-w, 260px)
-        flex-basis: var(--rail-poster-w, 260px)
+        width: var(--rail-poster-w, 320px)
+        flex-basis: var(--rail-poster-w, 320px)
         &.episode-poster--square
-            width: var(--rail-poster-sq, 180px)
-            flex-basis: var(--rail-poster-sq, 180px)
+            width: calc(var(--rail-poster-w, 320px) * 9 / 16)
+            flex-basis: calc(var(--rail-poster-w, 320px) * 9 / 16)
 
 @media screen and (max-width: 600px)
     .rail-poster
         width: var(--rail-poster-w, 68vw)
         flex-basis: var(--rail-poster-w, 68vw)
         &.episode-poster--square
-            width: var(--rail-poster-sq, 48vw)
-            flex-basis: var(--rail-poster-sq, 48vw)
+            width: calc(var(--rail-poster-w, 68vw) * 9 / 16)
+            flex-basis: calc(var(--rail-poster-w, 68vw) * 9 / 16)

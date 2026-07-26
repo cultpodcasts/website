@@ -68,6 +68,42 @@ describe("search-result-links", () => {
     expect(episodeArtAspect(homepageYt)).toBe("wide");
   });
 
+  it("prefers a YouTube thumbnail when the index stored square cover but the episode is watchable", () => {
+    const watchWithSpotifyArt: SearchResult = {
+      ...searchResult,
+      image: "sab6765cover",
+      youtubeId: "ytWatchable1",
+    };
+    expect(episodeImageUrl(watchWithSpotifyArt)?.toString())
+      .toBe("https://i.ytimg.com/vi/ytWatchable1/hqdefault.jpg");
+    expect(episodeArtAspect(watchWithSpotifyArt)).toBe("wide");
+
+    const homepageWatch: HomepageEpisode = {
+      id: "id",
+      podcastName: "Podcast",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:01:02",
+      spotify: undefined,
+      apple: undefined,
+      youtube: new URL("https://www.youtube.com/watch?v=homeYt99"),
+      bbc: undefined,
+      internetArchive: undefined,
+      subjects: [],
+      image: new URL("https://i.scdn.co/image/opaque"),
+    };
+    expect(episodeImageUrl(homepageWatch)?.toString())
+      .toBe("https://i.ytimg.com/vi/homeYt99/hqdefault.jpg");
+    expect(episodeArtAspect(homepageWatch)).toBe("wide");
+  });
+
+  it("keeps indexed YouTube quality tokens instead of replacing with hqdefault", () => {
+    const probed: SearchResult = { ...searchResult, image: "ys", youtubeId: "probedVid" };
+    expect(episodeImageUrl(probed)?.toString())
+      .toBe("https://i.ytimg.com/vi/probedVid/sddefault.jpg");
+  });
+
   it("keeps opaque homepage URLs unchanged", () => {
     const homepage: HomepageEpisode = {
       id: "id",
