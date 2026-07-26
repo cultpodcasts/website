@@ -16,3 +16,27 @@
     :host.has-menu
         .mdc-icon-button
             margin-right: 36px
+
+:host.bookmark-overlay
+    .mdc-icon-button
+        position: static
+        top: auto
+        right: auto
+        margin: 0
+        width: 36px
+        height: 36px
+        padding: 0
+        border: 1px solid rgba(255, 255, 255, 0.35)
+        border-radius: 50%
+        background: rgba(26, 26, 26, 0.9)
+        color: #fff
+        mat-icon
+            color: inherit
+        &:hover,
+        &:focus-visible
+            background: rgba(255, 255, 255, 0.15)
+            border-color: var(--nflx-accent, #e8a23a)
+            outline: none
+:host.bookmark-overlay.has-menu
+    .mdc-icon-button
+        margin-right: 0

@@ -1,59 +1,52 @@
-#progresswrapper,.progresswrapper
-    height: 15px
-.result
-    margin-bottom: 14px
-    padding: 6px 10px 12px
-    h3
-        font-weight: bold
-        margin-bottom: 2px
-.resultdescription
-    padding-top: 5px
-    display: -webkit-box
-    -webkit-box-orient: vertical
-    -webkit-line-clamp: 15
-    overflow: hidden
-mat-card-title.hasMenu.hasBookmark
-    margin-right: 78px
-@media screen and (max-width: 400px)
-    mat-card-title.hasMenu.hasBookmark
-        margin-right: 64px
-mat-card-title.hasMenu,
-mat-card-title.hasBookmark 
-    margin-right: 30px
-#resultsheading
+.bookmarks-notice
+    margin: 0 0 12px
+    color: var(--nflx-muted, #b3b3b3)
+    font-size: 0.9rem
+
+.bookmarks-notice--error
+    color: #f4b4b4
+
+.bookmarks-cell
+    position: relative
+
+.bookmarks-cell__actions
+    position: absolute
+    top: 8px
+    right: 8px
+    z-index: 4
     display: flex
-    margin-bottom: 10px
-    h2
-        margin: 10px 8px 0 8px
-    #sort
-        margin-left: auto
-        display: flex
-        justify-content: flex-end
-        margin-bottom: 0px
-button.selected
-    span
-        font-weight: bold
-mat-card-header
-    .mdc-icon-button
-        position: absolute
-        top: 12px
-        right: 12px
-        margin-right: 0
-@media screen and (max-width: 400px)
-    mat-card-header
-        .mdc-icon-button
-            right: 0
-#error,#removed-episodes-notice
-    margin-left: 12px
-app-episode-podcast-links
-    display: flex
-mat-card-content img,mat-card-content span.img
-    max-height: 300px
-    max-width: 100%
-    margin: 0 auto 10px
-    display: block
-#results > p
-    margin-left: 8px
-    margin-right: 8px
+    align-items: center
+    gap: 4px
+    pointer-events: none
+    app-bookmark,
+    .bookmarks-cell__menu
+        pointer-events: auto
+
+.bookmarks-cell__menu
+    width: 36px
+    height: 36px
+    padding: 0
+    border: 1px solid rgba(255, 255, 255, 0.35)
+    border-radius: 50%
+    background: rgba(26, 26, 26, 0.9)
+    color: #fff
     mat-icon
-        vertical-align: bottom
+        color: inherit
+    &:hover,
+    &:focus-visible
+        background: rgba(255, 255, 255, 0.15)
+        border-color: var(--nflx-accent, #e8a23a)
+        outline: none
+
+.browse-empty
+    p
+        display: flex
+        align-items: center
+        justify-content: center
+        gap: 6px
+        margin: 12px 0 0
+        color: var(--nflx-muted, #b3b3b3)
+        mat-icon
+            font-size: 20px
+            width: 20px
+            height: 20px
