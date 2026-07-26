@@ -14,6 +14,13 @@
             height: 100%
             width: 100%
             object-fit: cover
+    // YouTube thumbs are 16:9 — keep them wide in tile rows instead of a square
+    // crop; letterboxed hqdefault stills use the standard crop offsets.
+    &.layout-tile.layout-tile--wide
+        aspect-ratio: 16/9
+        img.cropped
+            top: -16.65%
+            height: 133.3%
     img
         object-fit: cover
         height: 100%
