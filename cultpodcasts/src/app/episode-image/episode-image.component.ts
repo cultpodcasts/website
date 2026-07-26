@@ -61,6 +61,12 @@ export class EpisodeImageComponent {
     return false;
   }
 
+  /** YouTube thumbs are 16:9 — tile rows must not square-crop them. */
+  get isWideArt(): boolean {
+    const imageUrl = this.imageUrl;
+    return !!imageUrl && imageUrl.host.indexOf("i.ytimg.com") == 0;
+  }
+
   overlay($event: Event, show: boolean) {
     if (this.linksOverlay) {
       this.overlayVisible.set(show);
