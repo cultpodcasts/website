@@ -49,6 +49,16 @@
 :host.episode-poster--wide .episode-poster__art
     aspect-ratio: 16 / 9
 
+// Browse grids: one wide frame for every card. Square podcast art sits centered
+// (pillarboxed) so rows stay even without cropping covers; YouTube thumbs still fill.
+:host-context(.browse-grid) .episode-poster__art,
+:host-context(.browse-grid).episode-poster--wide .episode-poster__art,
+:host-context(.browse-grid).episode-poster--square .episode-poster__art
+    aspect-ratio: 16 / 9
+
+:host-context(.browse-grid).episode-poster--square .episode-poster__art img
+    object-fit: contain
+
 .episode-poster__placeholder
     width: 100%
     height: 100%
