@@ -95,6 +95,13 @@ describe("subject-language-filter", () => {
         .toEqual([ALL_LANGUAGES_VALUE]);
     });
 
+    it("widens to All when default English finds no episodes but Spanish facets exist", () => {
+      // Subject page: English preference, Spanish-only subject (e.g. Edelweiss).
+      expect(reconcileLanguageChipsForPodcasts({ mode: "english" }, ["es"]))
+        .toEqual([ALL_LANGUAGES_VALUE]);
+      expect(availableLanguageChipValues(12, [{ value: "es", count: 12 }])).toEqual(["es"]);
+    });
+
     it("does not switch to the show's specific language codes", () => {
       expect(reconcileLanguageChipsForPodcasts({ mode: "codes", codes: ["es"] }, ["fr"]))
         .toEqual([ALL_LANGUAGES_VALUE]);

@@ -107,9 +107,10 @@ export function languageSelectionIntersectsAvailable(
 }
 
 /**
- * After show selection changes: if the current language filter would match nothing
- * for the selected shows, widen to All — not the show's specific languages — so
- * later show picks are not stuck on a narrow auto-selected code.
+ * When a specific language filter would match nothing but other languages have
+ * episodes (initial subject load, or after show selection changes), widen to All
+ * — not a specific code — so the user is not stuck on an empty English/default
+ * filter and later show picks are not stuck on a narrow auto-selected code.
  * Returns chip values to apply, or null when the current selection should stay.
  */
 export function reconcileLanguageChipsForPodcasts(

@@ -163,10 +163,10 @@ export class SubjectApiComponent {
     }
 
     const baseFilter = this.filter + this.podcastFilter;
-    const resultFilter = baseFilter + this.langFilter();
     // Facets must omit the language filter so Azure returns non-null lang buckets.
-    const facetFilter = subsequent ? baseFilter : resultFilter;
+    // Result filter is read at request time so an All-language fallback can widen it first.
     const runResults = (facetsFromResponse?: SearchResultsFacets, facetCount?: number) => {
+      const resultFilter = baseFilter + this.langFilter();
       this.oDataService.getEntitiesWithFacets<SearchResult>(
         new URL("/search", environment.api).toString(),
         {
@@ -231,7 +231,7 @@ export class SubjectApiComponent {
         new URL("/search", environment.api).toString(),
         {
           search: this.query(),
-          filter: facetFilter,
+          filter: baseFilter,
           searchMode: 'any',
           queryType: 'simple',
           count: true,
@@ -244,7 +244,20 @@ export class SubjectApiComponent {
           ],
           orderby: sort
         }).subscribe({
-          next: facetData => runResults(facetData.facets, facetData.metadata.get("count")),
+          next: facetData => {
+            const langFacets = facetData.facets.lang ?? [];
+            const scopedTotal = facetData.metadata.get("count") ?? 0;
+            // Default English (or any specific language) with 0 hits while other
+            // language facets have episodes → widen to All before the results query.
+            const nextChips = reconcileLanguageChipsForPodcasts(
+              this.languageSelection(),
+              availableLanguageChipValues(scopedTotal, langFacets)
+            );
+            if (nextChips) {
+              this.setLanguageSelection(nextChips);
+            }
+            runResults(facetData.facets, scopedTotal);
+          },
           error: (e) => {
             console.error(e);
             this.errorMessage.set("Something went wrong. Please try again.");
@@ -356,7 +369,7 @@ export class SubjectApiComponent {
    * Re-fetch lang facets for the current subject (+ selected shows).
    * Podcast chips stay subject-wide; language chips shrink to the active show filter.
    * When the active language filter would exclude all episodes for the selected shows,
-   * widen language to All so later show picks are not stuck on a narrow code.
+   * widen language to All (same helper as initial subject load).
    */
   private refreshLanguageFacets(options?: {
     reconcileSelection?: boolean;
