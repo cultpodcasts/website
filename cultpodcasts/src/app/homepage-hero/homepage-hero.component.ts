@@ -41,6 +41,8 @@ export class HomepageHeroComponent {
    */
   private static readonly heroImageFallbackMs = 12000;
   private static readonly heroTransitionMs = 1200;
+  /** Linger on the current title before fading it out — fading immediately feels abrupt. */
+  private static readonly heroContentOutDelayMs = 280;
   private static readonly heroContentOutMs = 320;
 
   readonly slides = input.required<HomepageEpisode[]>();
@@ -411,9 +413,9 @@ export class HomepageHeroComponent {
       return;
     }
 
-    // Hide copy immediately. Do not swap title/desc until the next backdrop is
-    // decoded — revealing text first spoils the crossfade.
-    this.heroContentVisible.set(false);
+    // Preload immediately, but keep the current title on screen briefly before
+    // fading it out. Do not swap title/desc until the next backdrop is decoded —
+    // revealing text first spoils the crossfade.
     this.heroImageReady.set(false);
     this.clearHeroContentTransition();
     this.clearHeroImageWait();
@@ -452,9 +454,15 @@ export class HomepageHeroComponent {
     };
 
     this.heroContentTimer = setTimeout(() => {
-      contentOutDone = true;
-      commit();
-    }, HomepageHeroComponent.heroContentOutMs);
+      if (transitionToken !== this.heroTransitionToken) {
+        return;
+      }
+      this.heroContentVisible.set(false);
+      this.heroContentTimer = setTimeout(() => {
+        contentOutDone = true;
+        commit();
+      }, HomepageHeroComponent.heroContentOutMs);
+    }, HomepageHeroComponent.heroContentOutDelayMs);
 
     if (!nextUrl) {
       return;

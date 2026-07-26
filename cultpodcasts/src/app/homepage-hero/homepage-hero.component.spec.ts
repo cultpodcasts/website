@@ -101,7 +101,7 @@ describe('HomepageHeroComponent', () => {
 
     // Bug regression: restartHeroCycle used to clear heroContentTimer and leave index at 0.
     expect(component['heroIndex']()).toBe(0);
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(280 + 320);
     expect(component['heroIndex']()).toBe(1);
     expect(component['featured']()?.id).toBe('b');
   });
@@ -117,7 +117,7 @@ describe('HomepageHeroComponent', () => {
       'button.billboard__nav--prev'
     ) as HTMLButtonElement;
     prev.click();
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(280 + 320);
 
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');
@@ -255,7 +255,7 @@ describe('HomepageHeroComponent', () => {
     component['lastFeaturedId'] = 'a';
     component['transitionTo'](1);
 
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(280 + 320);
     expect(component['heroIndex']()).toBe(1);
     expect(component['heroLayerB']()).toContain('/b/');
   });
@@ -285,6 +285,9 @@ describe('HomepageHeroComponent', () => {
     component['heroContentVisible'].set(true);
     component['transitionTo'](1);
 
+    // Linger on the current title briefly before fading it out.
+    expect(component['heroContentVisible']()).toBe(true);
+    vi.advanceTimersByTime(280);
     expect(component['heroContentVisible']()).toBe(false);
     vi.advanceTimersByTime(320);
     // Content-out finished, but the incoming image has not decoded yet —
@@ -319,7 +322,7 @@ describe('HomepageHeroComponent', () => {
     component['startHeroCycle']();
 
     vi.advanceTimersByTime(7500 + 250);
-    vi.advanceTimersByTime(320);
+    vi.advanceTimersByTime(280 + 320);
     expect(component['heroIndex']()).toBe(1);
   });
 
