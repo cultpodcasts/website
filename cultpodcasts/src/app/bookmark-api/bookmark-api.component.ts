@@ -29,6 +29,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class BookmarkApiComponent implements OnInit {
   episodeId = input.required<string>();
   hasMenu = input<boolean>(false);
+  /** Circular dark control for flix poster overlays (bookmarks grid). */
+  overlay = input(false);
   protected readonly waitingCallback = signal(true);
   protected readonly bookmarkTimeout = signal(false);
   protected readonly isAuthenticated = toSignal(
@@ -48,6 +50,9 @@ export class BookmarkApiComponent implements OnInit {
 
   @HostBinding('class.has-menu')
   get hasMenuGet() { return this.hasMenu(); }
+
+  @HostBinding('class.bookmark-overlay')
+  get overlayGet() { return this.overlay(); }
 
   constructor() {
     setTimeout(() => this.bookmarkTimeout.set(true), 5000);

@@ -7,7 +7,9 @@ export class InfiniteScrollStrategy {
         if (page > 1) {
             return 100;
         }
-        return 10;
+        // First page must fill complete browse-grid rows (≈3–4 cols on desktop).
+        // 10 left a short last row and could fail to fill a tall viewport (no scroll → no load-more).
+        return 20;
     }
 
     public getSkip(page: number): number {

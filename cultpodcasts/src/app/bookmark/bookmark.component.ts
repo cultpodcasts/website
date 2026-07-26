@@ -11,4 +11,5 @@ import { BookmarkApiComponent } from '../bookmark-api/bookmark-api.component';
 export class BookmarkComponent {
   episodeId = input.required<string>();
   hasMenu = input<boolean>(false);
+  overlay = input(false);
 }

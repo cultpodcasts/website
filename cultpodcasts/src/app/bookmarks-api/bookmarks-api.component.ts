@@ -1,39 +1,36 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ProfileService } from '../profile.service';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
-import { DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { RouterLink } from '@angular/router';
-import { EpisodeImageComponent } from '../episode-image/episode-image.component';
-import { EpisodePodcastLinksComponent } from '../episode-podcast-links/episode-podcast-links.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
+import { BookmarkComponent } from '../bookmark/bookmark.component';
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { SiteService } from '../site.service';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
+import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { apiEpisodeToHomepageEpisode } from '../api-episode-display';
+import { SearchDisplayEpisode } from '../search-result-links';
+import { canPlayEpisode } from '../episode-embed';
+import { PlayerService } from '../player.service';
 
 export enum sortMode {
   addDatedAsc = 1,
   addDatedDesc
 }
-
-const pageSize = 10;
 
 const removedEpisodesMessage =
   'Cultpodcasts.com has removed episodes it finds unsuitable.';
@@ -47,18 +44,13 @@ interface BookmarkEpisodeLoadResult {
 @Component({
   selector: 'app-bookmarks-api',
   imports: [
-    MatProgressBarModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    EpisodePodcastLinksComponent,
-    EpisodeImageComponent,
     BookmarkComponent,
-    SubjectsComponent,
-    ScrollingModule
+    ScrollingModule,
+    EpisodePosterComponent,
+    SiteLoadingComponent,
   ],
   templateUrl: './bookmarks-api.component.html',
   styleUrl: './bookmarks-api.component.sass',
@@ -74,14 +66,31 @@ export class BookmarksApiComponent {
   protected sortMode = sortMode;
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
-  protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected noBookmarks = signal<boolean>(false);
   protected episodes = signal<ApiEpisode[]>([]);
+  protected displayEpisodes = computed(() =>
+    this.episodes().map(apiEpisodeToHomepageEpisode)
+  );
   protected sortDirection = signal<sortMode>(sortMode.addDatedDesc);
+  protected readonly playerService = inject(PlayerService);
+  protected bookmarkTotal = signal(0);
+  protected readonly resultsHeading = computed(() => {
+    const n = this.bookmarkTotal();
+    if (this.noBookmarks() || n === 0) {
+      return 'My Bookmarks';
+    }
+    return n === 1 ? '1 bookmark' : `${n} bookmarks`;
+  });
+  protected readonly sortLabel = computed(() =>
+    this.sortDirection() === sortMode.addDatedAsc
+      ? 'Oldest bookmarked'
+      : 'Newest bookmarked'
+  );
   private page: number = 0;
   private bookmarks: Set<string> | undefined;
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
+  private readonly pageSize: number;
 
   constructor(
     private profileService: ProfileService,
@@ -92,6 +101,7 @@ export class BookmarksApiComponent {
     private infiniteScrollStrategy: InfiniteScrollStrategy,
     private siteService: SiteService
   ) {
+    this.pageSize = this.infiniteScrollStrategy.getTake(1);
   }
 
   ngOnInit() {
@@ -109,6 +119,7 @@ export class BookmarksApiComponent {
     this.page = 0;
 
     if (this.bookmarks) {
+      this.bookmarkTotal.set(this.bookmarks.size);
       await this.batch(true);
       return;
     }
@@ -118,19 +129,21 @@ export class BookmarksApiComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(async bookmarks => {
       this.bookmarks = bookmarks;
+      this.bookmarkTotal.set(bookmarks.size);
       await this.batch(true);
     });
   }
 
   async batch(first: boolean = false) {
-    const start = this.page * pageSize;
-    const end = start + pageSize;
+    const start = this.page * this.pageSize;
+    const end = start + this.pageSize;
     if (start >= this.bookmarks!.size) {
       if (this.bookmarks!.size == 0) {
         this.zeroBookmarks();
       }
       return;
     }
+    this.bookmarkTotal.set(this.bookmarks!.size);
     if (!first) {
       this.isSubsequentLoading.set(true);
     }
@@ -175,7 +188,7 @@ export class BookmarksApiComponent {
             }
             this.isLoading.set(false);
             this.isSubsequentLoading.set(false);
-            if (!this.scrollSubscribed && first && this.bookmarks!.size > pageSize) {
+            if (!this.scrollSubscribed && first && this.bookmarks!.size > this.pageSize) {
               this.scrollSubscribed = true;
               this.scrollDispatcher.scrolled().pipe(
                 takeUntilDestroyed(this.destroyRef)
@@ -215,6 +228,7 @@ export class BookmarksApiComponent {
     this.isLoading.set(false);
     this.isSubsequentLoading.set(false);
     this.noBookmarks.set(true);
+    this.bookmarkTotal.set(0);
   }
 
   handleRequest() {
@@ -246,9 +260,9 @@ export class BookmarksApiComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result) {
         if (result.updated) {
-          let snackBarRef = this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
         } else if (result.noChange) {
-          let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
+          this.snackBar.open("No change", "Ok", { duration: 3000 });
         }
       }
     });
@@ -279,6 +293,21 @@ export class BookmarksApiComponent {
   async setSort(mode: sortMode) {
     this.sortDirection.set(mode);
     await this.reset();
+  }
+
+  playEpisode(episode: SearchDisplayEpisode): void {
+    if (!canPlayEpisode(episode)) {
+      return;
+    }
+    this.playerService.play(episode);
+  }
+
+  isPlayingId(id: string): boolean {
+    return this.playerService.episode()?.id === id;
+  }
+
+  isQueuedId(id: string): boolean {
+    return this.playerService.isQueuedId(id);
   }
 
   private isScrolledToBottom(): boolean {
