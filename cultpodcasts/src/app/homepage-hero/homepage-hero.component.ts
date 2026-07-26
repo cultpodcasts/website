@@ -34,15 +34,18 @@ import { displayCatalogName } from '../display-catalog-name';
 })
 export class HomepageHeroComponent {
   private static readonly heroIntervalMs = 7500;
-  private static readonly heroImageFallbackMs = 2500;
+  /**
+   * Safety net only: the dwell timer is meant to start once the backdrop has painted.
+   * Keep this long enough that a slow (but working) image still gates the countdown,
+   * so a slide is never swapped out before it has ever been seen.
+   */
+  private static readonly heroImageFallbackMs = 12000;
   private static readonly heroTransitionMs = 1200;
   private static readonly heroContentOutMs = 320;
 
   readonly slides = input.required<HomepageEpisode[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
   readonly isCurator = input(false);
-  /** Stable seed for initial slide index (e.g. 3-hour time bucket). */
-  readonly timeBucket = input(0);
 
   readonly manageHero = output<void>();
   readonly manageRails = output<void>();
@@ -111,6 +114,10 @@ export class HomepageHeroComponent {
   private resizeFrame = 0;
   private dotsScrollFrame = 0;
   private dotsScrollTarget: HTMLElement | undefined;
+  /** Pointer is over the billboard (hover pause). */
+  private pointerInside = false;
+  /** Focus is inside the billboard (keyboard pause). */
+  private focusInside = false;
 
   /**
    * Window resize and dots-strip scroll are bound outside Angular's event manager: in a
@@ -157,10 +164,10 @@ export class HomepageHeroComponent {
       element?.addEventListener('scroll', this.onDotsScrollEvent, { passive: true });
     });
 
-    // Full remount (loading shell) starts from timeBucket; quiet slide refreshes keep featured.
+    // Full remount (loading shell) starts on the first curated/featured slide;
+    // quiet slide refreshes keep the currently featured episode when possible.
     effect(() => {
       const slides = this.slides();
-      const bucket = this.timeBucket();
       const n = slides.length;
       if (n === 0) {
         this.hasInitializedIndex = false;
@@ -181,7 +188,7 @@ export class HomepageHeroComponent {
       this.lastSlideSignature = signature;
 
       if (!this.hasInitializedIndex) {
-        this.heroIndex.set(bucket % n);
+        this.heroIndex.set(0);
         this.hasInitializedIndex = true;
       } else {
         const keep = this.lastFeaturedId
@@ -205,6 +212,7 @@ export class HomepageHeroComponent {
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
+        this.clearHeroContentTransition();
         this.clearHeroImageWait();
         window.removeEventListener('resize', this.onResizeEvent);
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
@@ -255,42 +263,82 @@ export class HomepageHeroComponent {
     this.play.emit(episode);
   }
 
-  pauseHero(): void {
-    this.heroPaused.set(true);
+  onHeroPointerEnter(): void {
+    this.pointerInside = true;
+    this.syncHeroPaused();
   }
 
-  resumeHero(): void {
-    if (this.playerService.episode()) {
+  onHeroPointerLeave(): void {
+    this.pointerInside = false;
+    this.syncHeroPaused();
+  }
+
+  onHeroFocusIn(): void {
+    this.focusInside = true;
+    this.syncHeroPaused();
+  }
+
+  onHeroFocusOut(event: FocusEvent): void {
+    const root = event.currentTarget as HTMLElement | null;
+    const next = event.relatedTarget as Node | null;
+    // focusout bubbles for every child blur; only clear when focus leaves the billboard.
+    if (root && next && root.contains(next)) {
       return;
     }
-    this.heroPaused.set(false);
+    this.focusInside = false;
+    this.syncHeroPaused();
   }
 
-  goHero(index: number): void {
+  goHero(index: number, event?: Event): void {
     const slides = this.slides();
     if (slides.length === 0) {
       return;
     }
     this.transitionTo(index % slides.length);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
   }
 
-  nextHero(): void {
+  nextHero(event?: Event): void {
     const n = this.slides().length;
     if (n === 0) {
       return;
     }
     this.transitionTo((this.heroIndex() + 1) % n);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
   }
 
-  prevHero(): void {
+  prevHero(event?: Event): void {
     const n = this.slides().length;
     if (n === 0) {
       return;
     }
     this.transitionTo((this.heroIndex() - 1 + n) % n);
     this.restartHeroCycle();
+    this.releasePagerFocus(event);
+  }
+
+  /**
+   * Mouse clicks leave focus on the chevron/dash, which kept the hero paused forever
+   * via focusin. Blur and clear focus-pause so the dwell timer / dash fill can run
+   * again once the pointer leaves (hover pause still applies while the pointer is inside).
+   */
+  private releasePagerFocus(event?: Event): void {
+    const target = event?.currentTarget;
+    if (target instanceof HTMLElement) {
+      target.blur();
+    }
+    this.focusInside = false;
+    this.syncHeroPaused();
+  }
+
+  private syncHeroPaused(): void {
+    if (this.playerService.episode()) {
+      this.heroPaused.set(true);
+      return;
+    }
+    this.heroPaused.set(this.pointerInside || this.focusInside);
   }
 
   private scrollActiveHeroDotIntoView(
@@ -503,6 +551,23 @@ export class HomepageHeroComponent {
       return;
     }
     this.beginHeroImageGate();
+    this.scheduleHeroAdvance();
+  }
+
+  /**
+   * Reset the dwell clock after a manual prev/next/dash jump.
+   * Must not cancel `heroContentTimer` or re-run the image gate — `transitionTo`
+   * owns both, and clearing them here made the chevrons appear dead.
+   */
+  private restartHeroCycle(): void {
+    this.stopHeroCycle();
+    if (!isPlatformBrowser(this.platformId) || this.reduceMotion || this.slides().length < 2) {
+      return;
+    }
+    this.scheduleHeroAdvance();
+  }
+
+  private scheduleHeroAdvance(): void {
     let elapsed = 0;
     const tickMs = 250;
     this.heroTimer = setInterval(() => {
@@ -522,15 +587,14 @@ export class HomepageHeroComponent {
     }, tickMs);
   }
 
-  private restartHeroCycle(): void {
-    this.startHeroCycle();
-  }
-
   private stopHeroCycle(): void {
     if (this.heroTimer) {
       clearInterval(this.heroTimer);
       this.heroTimer = undefined;
     }
+  }
+
+  private clearHeroContentTransition(): void {
     if (this.heroContentTimer) {
       clearTimeout(this.heroContentTimer);
       this.heroContentTimer = undefined;

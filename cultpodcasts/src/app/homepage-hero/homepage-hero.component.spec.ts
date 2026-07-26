@@ -41,7 +41,6 @@ describe('HomepageHeroComponent', () => {
     fixture = TestBed.createComponent(HomepageHeroComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('slides', [ep('a'), ep('b'), ep('c')]);
-    fixture.componentRef.setInput('timeBucket', 1);
     fixture.detectChanges();
   });
 
@@ -50,9 +49,110 @@ describe('HomepageHeroComponent', () => {
     component['stopHeroCycle']();
   });
 
-  it('starts on timeBucket modulo slide count', () => {
+  it('starts on the first slide', () => {
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['featured']()?.id).toBe('a');
+  });
+
+  it('jumps to a slide when its hero dash is clicked', () => {
+    component['reduceMotion'] = true;
+    fixture.detectChanges();
+    const dots = fixture.nativeElement.querySelectorAll(
+      'button.billboard__dot'
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(dots.length).toBe(3);
+
+    dots[2].click();
+    fixture.detectChanges();
+
+    expect(component['heroIndex']()).toBe(2);
+    expect(component['featured']()?.id).toBe('c');
+  });
+
+  it('advances when the next chevron is clicked without cancelling the content transition', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+    fixture.detectChanges();
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.click();
+
+    // Bug regression: restartHeroCycle used to clear heroContentTimer and leave index at 0.
+    expect(component['heroIndex']()).toBe(0);
+    vi.advanceTimersByTime(320);
     expect(component['heroIndex']()).toBe(1);
     expect(component['featured']()?.id).toBe('b');
+  });
+
+  it('goes to the previous slide when the prev chevron is clicked', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(1);
+    component['lastFeaturedId'] = 'b';
+    fixture.detectChanges();
+
+    const prev = fixture.nativeElement.querySelector(
+      'button.billboard__nav--prev'
+    ) as HTMLButtonElement;
+    prev.click();
+    vi.advanceTimersByTime(320);
+
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['featured']()?.id).toBe('a');
+  });
+
+  it('releases chevron focus so the dash timer can run again after navigation', () => {
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['heroImageReady'].set(true);
+    component['pointerInside'] = false;
+    component['focusInside'] = false;
+    component['syncHeroPaused']();
+    fixture.detectChanges();
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.focus();
+    component.onHeroFocusIn();
+    expect(component['heroPaused']()).toBe(true);
+
+    next.click();
+    vi.advanceTimersByTime(320);
+    // Cached/missing image gate may still be open in tests; the dwell fill only
+    // requires ready + not paused once the slide has settled.
+    component['heroImageReady'].set(true);
+    fixture.detectChanges();
+
+    expect(document.activeElement === next).toBe(false);
+    expect(component['focusInside']).toBe(false);
+    expect(component['heroPaused']()).toBe(false);
+
+    const activeFill = fixture.nativeElement.querySelector(
+      'button.billboard__dot.is-active .billboard__dot-fill'
+    ) as HTMLElement;
+    expect(activeFill.classList.contains('is-running')).toBe(true);
+  });
+
+  it('keeps the dwell paused while the pointer remains over the billboard after a chevron click', () => {
+    component['pointerInside'] = true;
+    component['focusInside'] = false;
+    component['syncHeroPaused']();
+    expect(component['heroPaused']()).toBe(true);
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    next.focus();
+    component.onHeroFocusIn();
+    next.click();
+
+    expect(component['pointerInside']).toBe(true);
+    expect(component['heroPaused']()).toBe(true);
   });
 
   it('keeps the featured episode when slides refresh with the same id', () => {
@@ -73,7 +173,7 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('slides', [ep('a'), ep('b'), ep('c')]);
     fixture.detectChanges();
 
-    expect(component['heroIndex']()).toBe(1);
+    expect(component['heroIndex']()).toBe(0);
     expect(component['heroImageReady']()).toBe(true);
   });
 
@@ -81,14 +181,13 @@ describe('HomepageHeroComponent', () => {
     const removed: string[] = [];
     component.removeFeatured.subscribe((id) => removed.push(id));
     fixture.componentRef.setInput('isCurator', true);
-    fixture.componentRef.setInput('curatedEpisodeIds', ['b']);
-    fixture.componentRef.setInput('timeBucket', 1);
+    fixture.componentRef.setInput('curatedEpisodeIds', ['a']);
     fixture.detectChanges();
 
     const button = fixture.nativeElement.querySelector('button.billboard__curate') as HTMLButtonElement | null;
     expect(button).toBeTruthy();
     button?.click();
-    expect(removed).toEqual(['b']);
+    expect(removed).toEqual(['a']);
   });
 
   it('emits manageHero / manageRails from curator controls', () => {
@@ -123,7 +222,10 @@ describe('HomepageHeroComponent', () => {
       component['heroImageReady'].set(false);
       component['beginHeroImageGate']();
       expect(component['heroImageReady']()).toBe(false);
-      vi.advanceTimersByTime(2500);
+      // A slow-but-working backdrop must still gate the dwell timer.
+      vi.advanceTimersByTime(7500);
+      expect(component['heroImageReady']()).toBe(false);
+      vi.advanceTimersByTime(4500);
       expect(component['heroImageReady']()).toBe(true);
     } finally {
       globalThis.Image = originalImage;

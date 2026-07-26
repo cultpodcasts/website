@@ -18,9 +18,11 @@
 .billboard__vignette
     position: absolute
     inset: 0
+    // Full-bleed layers sit under content/controls; without this they steal
+    // clicks/drags from the hero dashes (transform on stages creates a stacking context).
+    pointer-events: none
 
 .billboard__grain
-    pointer-events: none
     opacity: 0.07
     mix-blend-mode: soft-light
     // Static noise tile — avoids animated SVG feTurbulence paint cost on every frame.
@@ -31,7 +33,6 @@
     background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, var(--nflx-bg, #0b0b0b) 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
 
 .billboard__vignette
-    pointer-events: none
     background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
 
 .billboard__stage
@@ -53,6 +54,7 @@
     z-index: 2
     width: min(640px, 100%)
     padding-top: 96px
+    pointer-events: auto
 
 .billboard__feature
     opacity: 1
@@ -177,6 +179,7 @@
     flex-wrap: wrap
     justify-content: flex-end
     max-width: calc(100% - 8vw)
+    pointer-events: auto
 
 .billboard__manage
     display: inline-flex
@@ -234,6 +237,8 @@
     min-width: 0
     overflow-x: auto
     overflow-y: hidden
+    // Prefer horizontal scrubbing on the dash strip over page scroll.
+    touch-action: pan-x
     scroll-behavior: smooth
     scrollbar-width: none
     -ms-overflow-style: none
@@ -251,35 +256,50 @@
     display: flex
     gap: 6px
     width: max-content
-    padding: 10px 2px
+    padding: 4px 2px
 
+// The button is a transparent 36×31 hit area; ::before paints the visible 28×3 bar
+// so active / curated chrome never outlines the enlarged target.
 .billboard__dot
     position: relative
     flex-shrink: 0
+    box-sizing: content-box
     width: 28px
     height: 3px
-    padding: 0
+    padding: 14px 4px
     border: none
-    border-radius: 2px
-    background: #ffffff47
+    background: none
     cursor: pointer
-    overflow: hidden
-    &.is-active
+    &::before
+        content: ''
+        position: absolute
+        left: 4px
+        top: 50%
+        width: 28px
+        height: 3px
+        margin-top: -1.5px
+        border-radius: 2px
+        background: #ffffff47
+    &.is-active::before
         background: #ffffff59
-    &.is-curated
+    &.is-curated::before
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--nflx-accent) 55%, transparent)
 
 .billboard__dot-fill
     position: absolute
-    inset: 0
+    left: 4px
+    top: 50%
+    height: 3px
+    margin-top: -1.5px
     width: 0
+    // Progress fill spans the visible 28px bar (button content width), not the padded hit box.
+    max-width: 28px
     background: var(--nflx-accent)
-    border-radius: inherit
+    border-radius: 2px
     &.is-running
         animation: nflx-dot-progress var(--hero-interval) linear forwards
 
-.billboard:hover .billboard__dot-fill.is-running,
-.billboard:focus-within .billboard__dot-fill.is-running
+.billboard.is-paused .billboard__dot-fill.is-running
     animation-play-state: paused
 
 @media (prefers-reduced-motion: reduce)
