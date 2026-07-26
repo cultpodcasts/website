@@ -79,10 +79,16 @@ describe('EpisodePosterComponent', () => {
     expect(show?.getAttribute('href')).toBe('/podcast/Show%20A');
   });
 
-  it('keeps the podcast link outside the episode link so neither anchor nests', () => {
+  it('keeps the podcast link after the title with its own flex order so title hover cannot cover it', () => {
+    const show = query('.episode-poster__show') as HTMLAnchorElement;
     const title = query('.episode-poster__titles') as HTMLAnchorElement;
+    const byline = query('.episode-poster__byline') as HTMLElement;
+
     expect(title.getAttribute('href')).toBe('/podcast/Show%20A/a');
     expect(title.querySelector('a')).toBeNull();
+    expect(title.contains(show)).toBe(false);
+    expect(getComputedStyle(title).order).toBe('1');
+    expect(getComputedStyle(byline).order).toBe('2');
   });
 
   it('omits the byline entirely when the show name is hidden', () => {
