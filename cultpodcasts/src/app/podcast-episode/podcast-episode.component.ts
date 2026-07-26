@@ -22,6 +22,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { SearchDescriptionPipe } from '../search-description.pipe';
 import { displayCatalogName } from '../display-catalog-name';
+import { releaseDateLabel } from '../release-label';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canPlayEpisode, playActionLabel } from '../episode-embed';
 import { PlayerService } from '../player.service';
@@ -116,21 +117,9 @@ export class PodcastEpisodeComponent {
   });
 
   /** Locale-safe release label (avoids DatePipe/locale hydration issues). */
-  protected readonly releaseLabel = computed(() => {
-    const release = this._episode()?.release;
-    if (!release) {
-      return undefined;
-    }
-    const date = release instanceof Date ? release : new Date(release);
-    if (Number.isNaN(date.getTime())) {
-      return undefined;
-    }
-    return date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  });
+  protected readonly releaseLabel = computed(() =>
+    releaseDateLabel(this._episode()?.release)
+  );
 
   protected readonly backdropUrl = computed(() => {
     const ep = this._episode();

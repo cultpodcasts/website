@@ -66,10 +66,22 @@
     } @else {
     <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
     }
-    @if (showShow()) {
-    <span class="episode-poster__show">{{ displayCatalogName(episode().podcastName) }}</span>
-    }
   </a>
+  @if (showShow() || (showRelease() && releaseLabel())) {
+  <p class="episode-poster__byline">
+    @if (showShow()) {
+    <a class="episode-poster__show" [routerLink]="['/podcast', episode().podcastName]">
+      {{ displayCatalogName(episode().podcastName) }}
+    </a>
+    }
+    @if (showRelease() && releaseLabel(); as release) {
+    @if (showShow()) {
+    <span class="episode-poster__byline-dot" aria-hidden="true">&middot;</span>
+    }
+    <span class="episode-poster__release">{{ release }}</span>
+    }
+  </p>
+  }
   @if (subject(); as subject) {
   <app-subject-chip class="episode-poster__subject" [subject]="subject" />
   }
