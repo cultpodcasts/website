@@ -1067,16 +1067,16 @@ option {
 }
 
 @media screen and (min-width: 900px) {
-  /* Match the desktop rail poster scale so cover art reads as artwork, not thumbnails. */
+  /* Larger than mobile, but not so large that a typical desktop collapses to 3 columns. */
   .browse-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 26px 18px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px 16px;
   }
 }
 
 @media screen and (min-width: 1500px) {
   .browse-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
 }
 

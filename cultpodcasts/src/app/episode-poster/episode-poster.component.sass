@@ -49,6 +49,14 @@
 :host.episode-poster--wide .episode-poster__art
     aspect-ratio: 16 / 9
 
+// Result grids mix square podcast art with 16:9 thumbs in the same row. A shared
+// frame keeps row rhythm even; rails keep native aspect (they size width per type).
+:host-context(.browse-grid)
+    .episode-poster__art
+        aspect-ratio: 4 / 3
+    &.episode-poster--wide .episode-poster__art
+        aspect-ratio: 4 / 3
+
 .episode-poster__placeholder
     width: 100%
     height: 100%
