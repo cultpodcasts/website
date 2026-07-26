@@ -21,12 +21,14 @@ describe('RailsManageDialogComponent', () => {
       setRailSubjects: vi.fn().mockResolvedValue({
         episodeIds: [],
         railSubjects: ['Scientology', 'NXIVM'],
+        updatedAt: 't1',
       }),
     };
     const data: RailsManageDialogData = {
       pinned: ['Scientology'],
       eligible: ['Scientology', 'NXIVM', 'Flat Earth'],
       episodeCounts: { Scientology: 5, NXIVM: 4, 'Flat Earth': 3 },
+      updatedAt: 't0',
     };
 
     await TestBed.configureTestingModule({
@@ -64,10 +66,11 @@ describe('RailsManageDialogComponent', () => {
   it('saves pinned subjects and closes with the server response', async () => {
     component.pin('NXIVM');
     await component.save();
-    expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(['Scientology', 'NXIVM']);
+    expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(['Scientology', 'NXIVM'], 't0');
     expect(dialogRef.close).toHaveBeenCalledWith({
       saved: true,
       railSubjects: ['Scientology', 'NXIVM'],
+      updatedAt: 't1',
     });
   });
 

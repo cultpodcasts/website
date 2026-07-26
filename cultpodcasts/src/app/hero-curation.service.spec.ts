@@ -82,18 +82,42 @@ describe('HeroCurationService', () => {
     });
   });
 
-  it('setHeroCuration / setRailSubjects send partial bodies', async () => {
-    const hero = service.setHeroCuration(['e1']);
+  it('setHeroCuration / setRailSubjects send partial bodies with expectedUpdatedAt', async () => {
+    const hero = service.setHeroCuration(['e1'], 't0');
     const heroReq = httpMock.expectOne(url);
-    expect(heroReq.request.body).toEqual({ episodeIds: ['e1'] });
+    expect(heroReq.request.body).toEqual({ episodeIds: ['e1'], expectedUpdatedAt: 't0' });
     heroReq.flush({ episodeIds: ['e1'], railSubjects: [] });
     await hero;
 
-    const rails = service.setRailSubjects(['Scientology']);
+    const rails = service.setRailSubjects(['Scientology'], 't1');
     const railsReq = httpMock.expectOne(url);
-    expect(railsReq.request.body).toEqual({ railSubjects: ['Scientology'] });
+    expect(railsReq.request.body).toEqual({
+      railSubjects: ['Scientology'],
+      expectedUpdatedAt: 't1',
+    });
     railsReq.flush({ episodeIds: [], railSubjects: ['Scientology'] });
     await rails;
+  });
+
+  it('throws HeroCurationConflictError on 409', async () => {
+    const pending = service.setHeroCuration(['e1'], 'stale');
+    httpMock.expectOne(url).flush(
+      {
+        error: 'Conflict',
+        episodeIds: ['other'],
+        railSubjects: [],
+        updatedAt: 'newer',
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await expect(pending).rejects.toMatchObject({
+      name: 'HeroCurationConflictError',
+      current: {
+        episodeIds: ['other'],
+        railSubjects: [],
+        updatedAt: 'newer',
+      },
+    });
   });
 
   it('rethrows when PUT fails', async () => {

@@ -22,6 +22,7 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     removed: new FormControl(podcast.removed, { nonNullable: true }),
     indexAllEpisodes: new FormControl(podcast.indexAllEpisodes, { nonNullable: true }),
     bypassShortEpisodeChecking: new FormControl(podcast.bypassShortEpisodeChecking, { nonNullable: true }),
+    alwaysPromoteAsHero: new FormControl(!!podcast.alwaysPromoteAsHero, { nonNullable: true }),
     releaseAuthority: new FormControl(podcast.releaseAuthority ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
     primaryPostService: new FormControl(podcast.primaryPostService ?? PodcastServiceType[PodcastServiceType.Unset], { nonNullable: true }),
     spotifyId: new FormControl(podcast.spotifyId, { nonNullable: true }),
@@ -102,6 +103,7 @@ export function getPodcastChanges(prev: Podcast, now: Podcast): EditPodcastPost 
   if (prev.removed != now.removed) changes.removed = now.removed;
   if (prev.indexAllEpisodes != now.indexAllEpisodes) changes.indexAllEpisodes = now.indexAllEpisodes;
   if (prev.bypassShortEpisodeChecking != now.bypassShortEpisodeChecking) changes.bypassShortEpisodeChecking = now.bypassShortEpisodeChecking;
+  if (!!prev.alwaysPromoteAsHero != !!now.alwaysPromoteAsHero) changes.alwaysPromoteAsHero = !!now.alwaysPromoteAsHero;
   if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority) changes.releaseAuthority = now.releaseAuthority;
   if (prev.releaseAuthority != now.releaseAuthority && now.releaseAuthority == undefined) changes.unsetReleaseAuthority = true;
   if (prev.primaryPostService != now.primaryPostService && now.primaryPostService) changes.primaryPostService = now.primaryPostService;

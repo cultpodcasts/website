@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { HeroCurationService } from '../hero-curation.service';
+import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { displayCatalogName } from '../display-catalog-name';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 
@@ -14,11 +14,14 @@ export interface RailsManageDialogData {
   eligible: string[];
   /** Episode count this week, keyed by subject name. */
   episodeCounts: Record<string, number>;
+  updatedAt: string | null;
 }
 
 export interface RailsManageDialogResult {
   saved: boolean;
   railSubjects?: string[];
+  updatedAt?: string | null;
+  conflict?: boolean;
 }
 
 @Component({
@@ -44,8 +47,10 @@ export class RailsManageDialogComponent {
   protected readonly pinned = signal<string[]>([]);
   private readonly eligible: string[];
   private readonly episodeCounts: Record<string, number>;
+  private readonly expectedUpdatedAt: string | null;
   protected readonly saving = signal(false);
   protected readonly error = signal(false);
+  protected readonly conflict = signal(false);
   protected readonly displayCatalogName = displayCatalogName;
 
   /** Eligible subjects not currently pinned. */
@@ -58,6 +63,7 @@ export class RailsManageDialogComponent {
     this.pinned.set([...data.pinned]);
     this.eligible = data.eligible;
     this.episodeCounts = data.episodeCounts ?? {};
+    this.expectedUpdatedAt = data.updatedAt;
   }
 
   episodeCount(subject: string): number {
@@ -88,10 +94,28 @@ export class RailsManageDialogComponent {
   async save(): Promise<void> {
     this.saving.set(true);
     this.error.set(false);
+    this.conflict.set(false);
     try {
-      const result = await this.heroCuration.setRailSubjects(this.pinned());
-      this.dialogRef.close({ saved: true, railSubjects: result.railSubjects });
-    } catch {
+      const result = await this.heroCuration.setRailSubjects(
+        this.pinned(),
+        this.expectedUpdatedAt
+      );
+      this.dialogRef.close({
+        saved: true,
+        railSubjects: result.railSubjects,
+        updatedAt: result.updatedAt,
+      });
+    } catch (error) {
+      if (error instanceof HeroCurationConflictError) {
+        this.conflict.set(true);
+        this.dialogRef.close({
+          saved: false,
+          conflict: true,
+          railSubjects: error.current.railSubjects,
+          updatedAt: error.current.updatedAt,
+        });
+        return;
+      }
       this.error.set(true);
       this.saving.set(false);
     }

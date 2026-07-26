@@ -126,6 +126,7 @@ export class HomepageApiComponent {
   protected readonly curatedEpisodeIds = signal<string[]>([]);
   /** Ordered subject names pinned as homepage rails (may include stale names). */
   protected readonly curatedRailSubjects = signal<string[]>([]);
+  protected readonly curatedUpdatedAt = signal<string | null>(null);
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -217,8 +218,6 @@ export class HomepageApiComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private backgroundRefreshTimer: ReturnType<typeof setInterval> | undefined;
   private lastBackgroundFetchAt = 0;
-  /** True when local curated list was pruned for the week but KV was not yet updated. */
-  private pendingKvPrune = false;
   private readonly onDocumentVisibility = (): void => {
     if (!document.hidden) {
       this.maybeBackgroundRefresh();
@@ -250,16 +249,6 @@ export class HomepageApiComponent {
     if (isPlatformBrowser(this.platformId)) {
       this.startBackgroundRefresh();
       this.startScrollWatch();
-      // If curation was pruned for display while anonymous, persist once a Curator signs in.
-      this.auth.roles.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((roles) => {
-        if (roles.includes('Curator') && this.pendingKvPrune) {
-          this.pendingKvPrune = false;
-          void this.quietPersistPrune({
-            episodeIds: this.curatedEpisodeIds(),
-            railSubjects: this.curatedRailSubjects(),
-          });
-        }
-      });
       this.destroyRef.onDestroy(() => {
         this.stopBackgroundRefresh();
         this.stopScrollWatch();
@@ -341,14 +330,18 @@ export class HomepageApiComponent {
       data: {
         curated: curatedOrdered.length > 0 ? curatedOrdered : curated,
         autofilled,
+        updatedAt: this.curatedUpdatedAt(),
       },
       width: '520px',
       maxWidth: '94vw',
       autoFocus: 'dialog',
     });
     ref.afterClosed().subscribe((result: HeroManageDialogResult | undefined) => {
-      if (result?.saved && result.episodeIds) {
+      if (result?.episodeIds) {
         this.curatedEpisodeIds.set(result.episodeIds);
+      }
+      if (result?.updatedAt !== undefined) {
+        this.curatedUpdatedAt.set(result.updatedAt ?? null);
       }
     });
   }
@@ -387,14 +380,18 @@ export class HomepageApiComponent {
         pinned,
         eligible,
         episodeCounts,
+        updatedAt: this.curatedUpdatedAt(),
       },
       width: '520px',
       maxWidth: '94vw',
       autoFocus: 'dialog',
     });
     ref.afterClosed().subscribe((result: RailsManageDialogResult | undefined) => {
-      if (result?.saved && result.railSubjects) {
+      if (result?.railSubjects) {
         this.curatedRailSubjects.set(result.railSubjects);
+      }
+      if (result?.updatedAt !== undefined) {
+        this.curatedUpdatedAt.set(result.updatedAt ?? null);
       }
     });
   }
@@ -415,29 +412,41 @@ export class HomepageApiComponent {
 
   private async persistCuration(ids: string[]): Promise<void> {
     const previous = this.curatedEpisodeIds();
+    const previousUpdatedAt = this.curatedUpdatedAt();
     this.curatedEpisodeIds.set(ids);
     try {
-      const saved = await this.heroCurationService.setHeroCuration(ids);
+      const saved = await this.heroCurationService.setHeroCuration(
+        ids,
+        previousUpdatedAt
+      );
       this.curatedEpisodeIds.set(saved.episodeIds);
+      this.curatedUpdatedAt.set(saved.updatedAt);
       if (saved.railSubjects) {
         this.curatedRailSubjects.set(saved.railSubjects);
       }
     } catch {
       this.curatedEpisodeIds.set(previous);
+      this.curatedUpdatedAt.set(previousUpdatedAt);
     }
   }
 
   private async persistRailSubjects(subjects: string[]): Promise<void> {
     const previous = this.curatedRailSubjects();
+    const previousUpdatedAt = this.curatedUpdatedAt();
     this.curatedRailSubjects.set(subjects);
     try {
-      const saved = await this.heroCurationService.setRailSubjects(subjects);
+      const saved = await this.heroCurationService.setRailSubjects(
+        subjects,
+        previousUpdatedAt
+      );
       this.curatedRailSubjects.set(saved.railSubjects);
+      this.curatedUpdatedAt.set(saved.updatedAt);
       if (saved.episodeIds) {
         this.curatedEpisodeIds.set(saved.episodeIds);
       }
     } catch {
       this.curatedRailSubjects.set(previous);
+      this.curatedUpdatedAt.set(previousUpdatedAt);
     }
   }
 
@@ -445,12 +454,12 @@ export class HomepageApiComponent {
     const curation = await this.heroCurationService.getHeroCuration();
     this.curatedEpisodeIds.set(curation.episodeIds ?? []);
     this.curatedRailSubjects.set(curation.railSubjects ?? []);
+    this.curatedUpdatedAt.set(curation.updatedAt ?? null);
   }
 
   /**
-   * Drop curated picks / pinned rails that left the current homepage week window.
-   * Always updates local display; when a Curator is signed in, quietly PUT
-   * the cleaned lists so KV stays in sync (week-window drop is intentional).
+   * Drop curated picks / pinned rails that left the current homepage week window
+   * for local display only. Server cron (every 6h) owns Durable Object prune writes.
    */
   private pruneCurationToCurrentWeek(): void {
     const rawEpisodes = this.curatedEpisodeIds();
@@ -466,34 +475,6 @@ export class HomepageApiComponent {
     );
     if (railPrune.pruned) {
       this.curatedRailSubjects.set(railPrune.subjects);
-    }
-
-    if (!episodePrune.pruned && !railPrune.pruned) {
-      return;
-    }
-    if (this.isCurator()) {
-      this.pendingKvPrune = false;
-      void this.quietPersistPrune({
-        episodeIds: episodePrune.pruned ? episodePrune.ids : undefined,
-        railSubjects: railPrune.pruned ? railPrune.subjects : undefined,
-      });
-    } else {
-      this.pendingKvPrune = true;
-    }
-  }
-
-  private async quietPersistPrune(update: {
-    episodeIds?: string[];
-    railSubjects?: string[];
-  }): Promise<void> {
-    try {
-      const saved = await this.heroCurationService.setHomepageCuration(update);
-      this.curatedEpisodeIds.set(saved.episodeIds ?? this.curatedEpisodeIds());
-      this.curatedRailSubjects.set(saved.railSubjects ?? this.curatedRailSubjects());
-      this.pendingKvPrune = false;
-    } catch (error) {
-      console.warn('Homepage curation week prune failed to persist; local lists kept clean.', error);
-      this.pendingKvPrune = true;
     }
   }
 
