@@ -120,7 +120,7 @@
     margin-top: 8px
     color: inherit
 
-// Lang then duration, flush right of Watch / queue on the action row.
+// Lang, release date, then duration — flush right of Watch / queue on the action row.
 .episode-poster__meta-badges
     display: inline-flex
     align-items: center
@@ -148,6 +148,12 @@
     font-weight: 400
     letter-spacing: 0
     background: transparent
+
+.episode-poster__badge--release
+    font-weight: 600
+    color: var(--nflx-muted, #b3b3b3)
+    background: transparent
+    padding: 3px 0
 
 .episode-poster__cta
     display: inline-flex
@@ -220,23 +226,19 @@
     line-height: 1.25
     color: #fff
 
-// Show link + publication date. Sits outside .episode-poster__titles so the
-// podcast name can be its own link (anchors cannot nest).
+// Podcast name only — sits outside .episode-poster__titles so it can be its own
+// link (anchors cannot nest). Publication date lives on the action row instead.
 .episode-poster__byline
     order: 1
-    display: flex
-    align-items: baseline
-    gap: 5px
+    display: block
     width: 100%
     min-width: 0
     margin: 2px 0 0
     font-size: 0.8rem
     color: var(--nflx-muted, #b3b3b3)
 
-.episode-poster__byline-dot
-    flex: 0 0 auto
-
 .episode-poster__show
+    display: block
     min-width: 0
     color: inherit
     text-decoration: none
@@ -248,10 +250,6 @@
         color: var(--nflx-text, #fff)
         text-decoration: underline
         outline: none
-
-.episode-poster__release
-    flex: 0 0 auto
-    font-variant-numeric: tabular-nums
 
 // Sits on its own line below the title/show block, which takes the full meta row.
 .episode-poster__subject

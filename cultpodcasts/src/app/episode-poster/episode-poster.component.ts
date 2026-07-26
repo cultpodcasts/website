@@ -31,8 +31,8 @@ export class EpisodePosterComponent {
   /** Show podcast name under the title (hide on podcast pages). */
   readonly showShow = input(true);
   /**
-   * Show the publication date under the title. Off by default: date-grouped rails
-   * already state it in their heading, where repeating it per card is noise.
+   * Show the publication date on the action row (before duration). Off by default:
+   * date-grouped rails already state it in their heading.
    */
   readonly showRelease = input(false);
   /** Search hit titles may contain highlight markup. */

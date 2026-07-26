@@ -49,11 +49,14 @@
     <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
   </button>
   }
-  @if (languageBadge() || duration()) {
+  @if (languageBadge() || duration() || (showRelease() && releaseLabel())) {
   <div class="episode-poster__meta-badges">
     @if (languageBadge(); as lang) {
     <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
       [attr.aria-label]="lang.label">{{ lang.flag }}</span>
+    }
+    @if (showRelease() && releaseLabel(); as release) {
+    <span class="episode-poster__badge episode-poster__badge--release">{{ release }}</span>
     }
     @if (duration()) {
     <span class="episode-poster__badge episode-poster__badge--duration">{{ duration() }}</span>
@@ -67,19 +70,11 @@
     <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
     }
   </a>
-  @if (showShow() || (showRelease() && releaseLabel())) {
+  @if (showShow()) {
   <p class="episode-poster__byline">
-    @if (showShow()) {
     <a class="episode-poster__show" [routerLink]="['/podcast', episode().podcastName]">
       {{ displayCatalogName(episode().podcastName) }}
     </a>
-    }
-    @if (showRelease() && releaseLabel(); as release) {
-    @if (showShow()) {
-    <span class="episode-poster__byline-dot" aria-hidden="true">&middot;</span>
-    }
-    <span class="episode-poster__release">{{ release }}</span>
-    }
   </p>
   }
   @if (subject(); as subject) {

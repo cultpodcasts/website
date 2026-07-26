@@ -42,12 +42,25 @@ describe('EpisodePosterComponent', () => {
   }
 
   it('hides the publication date unless showRelease is set', () => {
-    expect(query('.episode-poster__release')).toBeNull();
+    expect(query('.episode-poster__badge--release')).toBeNull();
 
     fixture.componentRef.setInput('showRelease', true);
     fixture.detectChanges();
 
-    expect(query('.episode-poster__release')?.textContent?.trim()).toBe('3 Nov 2019');
+    expect(query('.episode-poster__badge--release')?.textContent?.trim()).toBe('3 Nov 2019');
+  });
+
+  it('places the date on the action row before duration, not beside the podcast name', () => {
+    fixture.componentRef.setInput('showRelease', true);
+    fixture.detectChanges();
+
+    const badges = query('.episode-poster__meta-badges');
+    const release = badges?.querySelector('.episode-poster__badge--release');
+    const duration = badges?.querySelector('.episode-poster__badge--duration');
+    expect(release?.textContent?.trim()).toBe('3 Nov 2019');
+    expect(duration?.textContent?.trim()).toBe('1:00:00');
+    expect(release?.nextElementSibling).toBe(duration);
+    expect(query('.episode-poster__byline')?.textContent?.trim()).toBe('Show A');
   });
 
   it('still shows the date on podcast pages where the show name is hidden', () => {
@@ -56,8 +69,8 @@ describe('EpisodePosterComponent', () => {
     fixture.detectChanges();
 
     expect(query('.episode-poster__show')).toBeNull();
-    expect(query('.episode-poster__release')?.textContent?.trim()).toBe('3 Nov 2019');
-    expect(query('.episode-poster__byline-dot')).toBeNull();
+    expect(query('.episode-poster__byline')).toBeNull();
+    expect(query('.episode-poster__badge--release')?.textContent?.trim()).toBe('3 Nov 2019');
   });
 
   it('links the podcast name to that podcast page', () => {
@@ -72,8 +85,7 @@ describe('EpisodePosterComponent', () => {
     expect(title.querySelector('a')).toBeNull();
   });
 
-  it('omits the byline entirely when there is no show name and no usable date', () => {
-    fixture.componentRef.setInput('episode', ep({ release: undefined as unknown as Date }));
+  it('omits the byline entirely when the show name is hidden', () => {
     fixture.componentRef.setInput('showShow', false);
     fixture.componentRef.setInput('showRelease', true);
     fixture.detectChanges();
