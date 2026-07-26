@@ -49,8 +49,8 @@
 :host.episode-poster--wide .episode-poster__art
     aspect-ratio: 16 / 9
 
-// Browse grids: one wide frame for every card. Square podcast art sits centered
-// (pillarboxed) so rows stay even without cropping covers; YouTube thumbs still fill.
+// Browse grids only: one wide frame for every card. Square podcast art sits
+// centered (pillarboxed). Rails keep native square vs 16:9 and match height via width.
 :host-context(.browse-grid) .episode-poster__art,
 :host-context(.browse-grid).episode-poster--wide .episode-poster__art,
 :host-context(.browse-grid).episode-poster--square .episode-poster__art
