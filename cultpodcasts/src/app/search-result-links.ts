@@ -33,10 +33,51 @@ export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
   // Homepage episodes come from a feed that always carries full image URLs.
   if (isHomepageEpisode(episode)) {
-    return toUrl(episode.image);
+    const image = toUrl(episode.image);
+    if (isYoutubeThumbnailUrl(image)) {
+      return image;
+    }
+    // Prefer a YouTube frame when the episode is watchable — feed art is often square
+    // podcast cover even for video episodes.
+    const ytId = youtubeIdFromWatchUrl(toUrl(episode.youtube));
+    return ytId ? youtubeThumbnailUrl(ytId) : image;
   }
 
+  // Search index may store Spotify/Apple cover as `image` even when `youtubeId` is set
+  // (Watch CTA). Show the video frame so Watch cards don't look like audio squares.
+  if (isYoutubeThumbnailUrl(episode.image)) {
+    return expandImage(episode.image, episode.youtubeId);
+  }
+  if (episode.youtubeId) {
+    return youtubeThumbnailUrl(episode.youtubeId);
+  }
   return expandImage(episode.image, episode.youtubeId);
+}
+
+function youtubeThumbnailUrl(youtubeId: string): URL | undefined {
+  return toUrl(`https://i.ytimg.com/vi/${encodeURIComponent(youtubeId)}/hqdefault.jpg`);
+}
+
+function youtubeIdFromWatchUrl(url: URL | undefined): string | undefined {
+  if (!url) {
+    return undefined;
+  }
+  const host = url.hostname.replace(/^www\./, '');
+  if (host === 'youtu.be') {
+    const id = url.pathname.split('/').filter(Boolean)[0];
+    return id || undefined;
+  }
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+    const v = url.searchParams.get('v');
+    if (v) {
+      return v;
+    }
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') {
+      return parts[1] || undefined;
+    }
+  }
+  return undefined;
 }
 
 const youtubeQualityByCode: Record<string, string> = {
