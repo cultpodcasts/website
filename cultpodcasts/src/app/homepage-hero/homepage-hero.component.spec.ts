@@ -23,11 +23,28 @@ function ep(id: string): HomepageEpisode {
   };
 }
 
+/** Image that is already decoded when `src` is assigned (cache hit). */
+class ImmediateImage {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  complete = false;
+  decode = undefined;
+  fetchPriority = '';
+  decoding = '';
+  set src(_value: string) {
+    this.complete = true;
+  }
+}
+
 describe('HomepageHeroComponent', () => {
   let fixture: ComponentFixture<HomepageHeroComponent>;
   let component: HomepageHeroComponent;
+  let originalImage: typeof Image;
 
   beforeEach(async () => {
+    originalImage = globalThis.Image;
+    globalThis.Image = ImmediateImage as unknown as typeof Image;
+
     await TestBed.configureTestingModule({
       imports: [HomepageHeroComponent],
       providers: [
@@ -46,6 +63,7 @@ describe('HomepageHeroComponent', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    globalThis.Image = originalImage;
     component['stopHeroCycle']();
   });
 
@@ -206,30 +224,27 @@ describe('HomepageHeroComponent', () => {
 
   it('image gate stays blocked until the fallback timeout when decode never completes', () => {
     vi.useFakeTimers();
-    const originalImage = globalThis.Image;
     class StuckImage {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
       complete = false;
       decode = undefined;
+      fetchPriority = '';
+      decoding = '';
       set src(_value: string) {
         /* never completes */
       }
     }
     globalThis.Image = StuckImage as unknown as typeof Image;
 
-    try {
-      component['heroImageReady'].set(false);
-      component['beginHeroImageGate']();
-      expect(component['heroImageReady']()).toBe(false);
-      // A slow-but-working backdrop must still gate the dwell timer.
-      vi.advanceTimersByTime(7500);
-      expect(component['heroImageReady']()).toBe(false);
-      vi.advanceTimersByTime(4500);
-      expect(component['heroImageReady']()).toBe(true);
-    } finally {
-      globalThis.Image = originalImage;
-    }
+    component['heroImageReady'].set(false);
+    component['beginHeroImageGate']();
+    expect(component['heroImageReady']()).toBe(false);
+    // A slow-but-working backdrop must still gate the dwell timer.
+    vi.advanceTimersByTime(7500);
+    expect(component['heroImageReady']()).toBe(false);
+    vi.advanceTimersByTime(4500);
+    expect(component['heroImageReady']()).toBe(true);
   });
 
   it('crossfade flips the front layer onto the incoming stage', () => {
@@ -242,7 +257,47 @@ describe('HomepageHeroComponent', () => {
 
     vi.advanceTimersByTime(320);
     expect(component['heroIndex']()).toBe(1);
-    expect(component['heroLayerB']()).toContain('b.jpg');
+    expect(component['heroLayerB']()).toContain('/b/');
+  });
+
+  it('holds copy hidden until the next backdrop is ready', () => {
+    vi.useFakeTimers();
+    const deferred: { fire: (() => void) | null } = { fire: null };
+    class DeferredImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      complete = false;
+      decode = undefined;
+      fetchPriority = '';
+      decoding = '';
+      set src(_value: string) {
+        deferred.fire = () => {
+          this.complete = true;
+          this.onload?.();
+        };
+      }
+    }
+    globalThis.Image = DeferredImage as unknown as typeof Image;
+
+    component['reduceMotion'] = false;
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+    component['heroContentVisible'].set(true);
+    component['transitionTo'](1);
+
+    expect(component['heroContentVisible']()).toBe(false);
+    vi.advanceTimersByTime(320);
+    // Content-out finished, but the incoming image has not decoded yet —
+    // index and copy must not advance ahead of the backdrop.
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['heroContentVisible']()).toBe(false);
+    expect(component['featured']()?.id).toBe('a');
+
+    expect(deferred.fire).toBeTruthy();
+    deferred.fire!();
+    expect(component['heroIndex']()).toBe(1);
+    expect(component['featured']()?.id).toBe('b');
+    expect(component['heroImageReady']()).toBe(true);
   });
 
   it('reduce-motion jumps index immediately without starting the cycle timer', () => {
