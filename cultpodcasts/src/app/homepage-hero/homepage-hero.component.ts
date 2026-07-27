@@ -111,7 +111,10 @@ export class HomepageHeroComponent {
   private heroImageToken = 0;
   private heroDotsOverflowTimer: ReturnType<typeof setTimeout> | undefined;
   private reduceMotion = false;
+  /** Touch/narrow: skip Ken Burns only — auto-advance must keep running. */
+  private saveGpu = false;
   private motionQuery: MediaQueryList | undefined;
+  private gpuQuery: MediaQueryList | undefined;
   private hasInitializedIndex = false;
   private lastFeaturedId: string | undefined;
   private lastSlideSignature: string | undefined;
@@ -144,15 +147,24 @@ export class HomepageHeroComponent {
   };
 
   private readonly onMotionQueryChange = (): void => {
-    this.syncReduceMotion();
-    if (this.reduceMotion) {
+    this.syncMotionFlags();
+    if (this.reduceMotion || this.saveGpu) {
       this.heroKenBurnsA.set(false);
       this.heroKenBurnsB.set(false);
     }
+    // Restoring auto-advance when leaving reduced-motion (e.g. desktop resize).
+    if (!this.reduceMotion && this.slides().length > 1 && !this.heroTimer) {
+      this.startHeroCycle();
+    }
   };
 
-  private syncReduceMotion(): void {
+  private syncMotionFlags(): void {
     this.reduceMotion = !!this.motionQuery?.matches;
+    this.saveGpu = !!this.gpuQuery?.matches;
+  }
+
+  private kenBurnsAllowed(): boolean {
+    return !this.reduceMotion && !this.saveGpu;
   }
 
   private readonly onDotsScrollEvent = (): void => {
@@ -233,19 +245,22 @@ export class HomepageHeroComponent {
     });
 
     if (isPlatformBrowser(this.platformId)) {
-      // Phones/tablets: skip Ken Burns + crossfade GPU work (also avoids incomplete
-      // dialog compositing while a full-bleed transform is animating behind).
-      this.motionQuery = window.matchMedia(
-        '(prefers-reduced-motion: reduce), (max-width: 900px), (hover: none) and (pointer: coarse)'
+      // Accessibility only — disables auto-advance as well as Ken Burns.
+      this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      // Phones/tablets: skip Ken Burns GPU work; keep slide rotation.
+      this.gpuQuery = window.matchMedia(
+        '(max-width: 900px), (hover: none) and (pointer: coarse)'
       );
-      this.syncReduceMotion();
+      this.syncMotionFlags();
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
+      this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
         this.clearHeroContentTransition();
         this.clearHeroImageWait();
         this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
+        this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
         window.removeEventListener('resize', this.onResizeEvent);
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
         this.dotsScrollTarget = undefined;
@@ -518,7 +533,7 @@ export class HomepageHeroComponent {
       this.heroLayerA.set(url);
       this.heroLayerB.set(undefined);
       this.heroFrontLayer.set('a');
-      this.heroKenBurnsA.set(!!url && !this.reduceMotion);
+      this.heroKenBurnsA.set(!!url && this.kenBurnsAllowed());
       this.heroKenBurnsB.set(false);
       return;
     }
@@ -529,7 +544,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('b');
-          this.heroKenBurnsB.set(!!url && !this.reduceMotion);
+          this.heroKenBurnsB.set(!!url && this.kenBurnsAllowed());
           this.scheduleOutgoingKenBurnsClear('a');
         });
       });
@@ -539,7 +554,7 @@ export class HomepageHeroComponent {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('a');
-          this.heroKenBurnsA.set(!!url && !this.reduceMotion);
+          this.heroKenBurnsA.set(!!url && this.kenBurnsAllowed());
           this.scheduleOutgoingKenBurnsClear('b');
         });
       });
@@ -626,7 +641,7 @@ export class HomepageHeroComponent {
   }
 
   private enableKenBurnsOnFront(): void {
-    if (this.reduceMotion) {
+    if (!this.kenBurnsAllowed()) {
       return;
     }
     if (this.heroFrontLayer() === 'a') {

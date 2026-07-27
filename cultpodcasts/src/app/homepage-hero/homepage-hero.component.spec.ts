@@ -341,6 +341,27 @@ describe('HomepageHeroComponent', () => {
     expect(component['heroTimer']).toBeUndefined();
   });
 
+  it('still auto-advances on saveGpu mobile mode (Ken Burns off, timer on)', () => {
+    // Arrange — mobile GPU saver must not reuse reduceMotion's "no cycle" path.
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['saveGpu'] = true;
+    component['heroPaused'].set(false);
+    component['heroImageReady'].set(true);
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+
+    // Act
+    component['startHeroCycle']();
+    vi.advanceTimersByTime(7500 + 250);
+    vi.advanceTimersByTime(450 + 550);
+
+    // Assert
+    expect(component['heroTimer']).toBeTruthy();
+    expect(component['heroIndex']()).toBe(1);
+    expect(component['kenBurnsAllowed']()).toBe(false);
+  });
+
   it('auto-advances after the dwell interval when not paused and image-ready', () => {
     vi.useFakeTimers();
     component['reduceMotion'] = false;
