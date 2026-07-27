@@ -1121,3 +1121,51 @@ option {
   from { width: 0; }
   to { width: 100%; }
 }
+
+/* Flix manage dialogs on mobile: avoid transform enter animations fighting
+   full-bleed hero layers (incomplete title paint until zoom/reflow). */
+.flix-manage-dialog.mat-mdc-dialog-panel,
+.cdk-overlay-pane.flix-manage-dialog {
+  max-height: min(90dvh, 90vh);
+}
+
+.flix-manage-dialog .mat-mdc-dialog-surface,
+.cdk-overlay-pane.flix-manage-dialog .mat-mdc-dialog-surface {
+  max-height: min(90dvh, 90vh);
+  display: flex;
+  flex-direction: column;
+  /* Own compositor layer so the title band paints without a forced zoom. */
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.flix-manage-dialog .mat-mdc-dialog-title,
+.cdk-overlay-pane.flix-manage-dialog .mat-mdc-dialog-title {
+  flex-shrink: 0;
+}
+
+.flix-manage-dialog .mat-mdc-dialog-content,
+.cdk-overlay-pane.flix-manage-dialog .mat-mdc-dialog-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.flix-manage-dialog .mat-mdc-dialog-actions,
+.cdk-overlay-pane.flix-manage-dialog .mat-mdc-dialog-actions {
+  flex-shrink: 0;
+}
+
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .back-to-top {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .cdk-overlay-container {
+    transform: translateZ(0);
+  }
+}

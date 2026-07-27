@@ -111,6 +111,7 @@ export class HomepageHeroComponent {
   private heroImageToken = 0;
   private heroDotsOverflowTimer: ReturnType<typeof setTimeout> | undefined;
   private reduceMotion = false;
+  private motionQuery: MediaQueryList | undefined;
   private hasInitializedIndex = false;
   private lastFeaturedId: string | undefined;
   private lastSlideSignature: string | undefined;
@@ -141,6 +142,18 @@ export class HomepageHeroComponent {
       this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
     });
   };
+
+  private readonly onMotionQueryChange = (): void => {
+    this.syncReduceMotion();
+    if (this.reduceMotion) {
+      this.heroKenBurnsA.set(false);
+      this.heroKenBurnsB.set(false);
+    }
+  };
+
+  private syncReduceMotion(): void {
+    this.reduceMotion = !!this.motionQuery?.matches;
+  }
 
   private readonly onDotsScrollEvent = (): void => {
     if (this.dotsScrollFrame) {
@@ -220,12 +233,19 @@ export class HomepageHeroComponent {
     });
 
     if (isPlatformBrowser(this.platformId)) {
-      this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Phones/tablets: skip Ken Burns + crossfade GPU work (also avoids incomplete
+      // dialog compositing while a full-bleed transform is animating behind).
+      this.motionQuery = window.matchMedia(
+        '(prefers-reduced-motion: reduce), (max-width: 900px), (hover: none) and (pointer: coarse)'
+      );
+      this.syncReduceMotion();
+      this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
       this.destroyRef.onDestroy(() => {
         this.stopHeroCycle();
         this.clearHeroContentTransition();
         this.clearHeroImageWait();
+        this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
         window.removeEventListener('resize', this.onResizeEvent);
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
         this.dotsScrollTarget = undefined;

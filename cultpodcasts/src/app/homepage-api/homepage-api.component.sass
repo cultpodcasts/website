@@ -48,6 +48,16 @@
             background: var(--nflx-accent) !important
             color: #111 !important
 
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .nflx-search
+        ::ng-deep
+            #searchbox
+                .mat-mdc-text-field-wrapper,
+                .mdc-text-field,
+                .mdc-text-field--outlined,
+                .mdc-text-field--no-label
+                    backdrop-filter: none !important
+
 .nflx-error
     padding: 160px 16px
     text-align: center

@@ -325,6 +325,24 @@
     .billboard__dots-viewport
         scroll-behavior: auto
 
+// Touch / narrow: drop continuous GPU effects that fight dialog compositing.
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .billboard__grain
+        display: none
+    .billboard__stage.is-kenburns
+        animation: none
+        transform: scale(1.05)
+    .billboard__live
+        animation: none
+        box-shadow: none
+
+// While a Material dialog holds scroll-lock, freeze any leftover stage motion.
+:host-context(.cdk-global-scrollblock)
+    .billboard__stage.is-kenburns
+        animation-play-state: paused
+    .billboard__live
+        animation-play-state: paused
+
 @media screen and (min-width: 900px)
     .billboard__pager
         max-width: min(480px, 42vw)

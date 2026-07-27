@@ -332,9 +332,7 @@ export class HomepageApiComponent {
         autofilled,
         updatedAt: this.curatedUpdatedAt(),
       },
-      width: '520px',
-      maxWidth: '94vw',
-      autoFocus: 'dialog',
+      ...this.manageDialogOptions(),
     });
     ref.afterClosed().subscribe((result: HeroManageDialogResult | undefined) => {
       if (result?.episodeIds) {
@@ -382,9 +380,7 @@ export class HomepageApiComponent {
         episodeCounts,
         updatedAt: this.curatedUpdatedAt(),
       },
-      width: '520px',
-      maxWidth: '94vw',
-      autoFocus: 'dialog',
+      ...this.manageDialogOptions(),
     });
     ref.afterClosed().subscribe((result: RailsManageDialogResult | undefined) => {
       if (result?.railSubjects) {
@@ -394,6 +390,30 @@ export class HomepageApiComponent {
         this.curatedUpdatedAt.set(result.updatedAt ?? null);
       }
     });
+  }
+
+  private manageDialogOptions(): {
+    width: string;
+    maxWidth: string;
+    maxHeight: string;
+    autoFocus: 'dialog';
+    panelClass: string;
+    enterAnimationDuration?: number;
+    exitAnimationDuration?: number;
+  } {
+    const cheapMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 900px), (hover: none) and (pointer: coarse)').matches;
+    return {
+      width: '520px',
+      maxWidth: '94vw',
+      maxHeight: '90dvh',
+      autoFocus: 'dialog',
+      panelClass: 'flix-manage-dialog',
+      ...(cheapMotion
+        ? { enterAnimationDuration: 0, exitAnimationDuration: 0 }
+        : {}),
+    };
   }
 
   populatePage() {
