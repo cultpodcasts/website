@@ -5,6 +5,11 @@
     --rail-poster-sq: min(32vw, 160px)
     --obscure-card-w: min(42vw, 168px)
     --obscure-yt-w: min(55vw, 240px)
+    // Absolute .nflx-search overlays the hero; homepage-hero reads this to keep
+    // titles/actions below the search hit box (esp. short mobile viewports).
+    --nflx-search-top: 72px
+    --nflx-search-h: 48px
+    --nflx-hero-search-clearance: calc(var(--nflx-search-top) + var(--nflx-search-h) + 20px)
     position: relative
     color: var(--nflx-text)
     background: var(--nflx-bg)
@@ -15,12 +20,11 @@
     padding-bottom: min(52vh, 420px)
 
 .nflx-search
-    --nflx-search-h: 48px
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
     position: absolute
-    top: 72px
+    top: var(--nflx-search-top)
     left: 50%
     z-index: 15
     transform: translateX(-50%)
@@ -66,8 +70,8 @@
     .nflx
         --obscure-card-w: 42vw
         --obscure-yt-w: 55vw
+        --nflx-search-top: 64px
     .nflx-search
-        top: 64px
         width: min(640px, calc(100% - 1.5rem))
 
 @media screen and (max-width: 600px)
