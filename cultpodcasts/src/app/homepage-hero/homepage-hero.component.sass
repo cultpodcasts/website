@@ -8,7 +8,8 @@
     min-height: min(88vh, 720px)
     display: flex
     align-items: flex-end
-    padding: 0 4vw 48px
+    // Keep feature copy below the absolute homepage search overlay.
+    padding: var(--nflx-hero-search-clearance, 140px) 4vw 48px
     box-sizing: border-box
     overflow: hidden
 
@@ -53,7 +54,6 @@
     position: relative
     z-index: 2
     width: min(640px, 100%)
-    padding-top: 96px
     pointer-events: auto
 
 .billboard__feature
@@ -159,27 +159,24 @@
     background: #2a2a2acc !important
     font-weight: 600
 
-.billboard__curate
-    border-color: #e8a23a99 !important
-    color: var(--nflx-accent) !important
-    background: #1a140fcc !important
-    font-weight: 600
-    mat-icon
-        margin-right: 4px
-        color: var(--nflx-accent)
-
 .billboard__controls
     position: absolute
     right: 4vw
     bottom: 56px
     z-index: 3
     display: flex
-    align-items: center
+    flex-direction: column
+    align-items: flex-end
     gap: 10px
+    max-width: min(520px, calc(100% - 8vw))
+    pointer-events: auto
+
+.billboard__admin
+    display: flex
     flex-wrap: wrap
     justify-content: flex-end
-    max-width: calc(100% - 8vw)
-    pointer-events: auto
+    gap: 8px
+    max-width: 100%
 
 .billboard__manage
     display: inline-flex
@@ -195,23 +192,29 @@
     font-weight: 600
     cursor: pointer
     transition: background 0.2s ease, border-color 0.2s ease
+    white-space: nowrap
     mat-icon
         font-size: 18px
         width: 18px
         height: 18px
         color: var(--nflx-accent)
+        flex: 0 0 auto
     &:hover,
     &:focus-visible
         background: #2a2a2a
         border-color: var(--nflx-accent)
         outline: none
+    &--curate
+        border-color: #e8a23a99
+        color: var(--nflx-accent)
 
 .billboard__pager
     display: flex
     align-items: center
     gap: 8px
     min-width: 0
-    max-width: min(420px, calc(100vw - 8vw))
+    width: 100%
+    max-width: min(420px, 100%)
 
 .billboard__nav
     width: 44px
@@ -322,27 +325,81 @@
     .billboard__dots-viewport
         scroll-behavior: auto
 
+// Touch / narrow: drop continuous GPU effects that fight dialog compositing.
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .billboard__grain
+        display: none
+    .billboard__stage.is-kenburns
+        animation: none
+        transform: scale(1.05)
+    .billboard__live
+        animation: none
+        box-shadow: none
+
+// While a Material dialog holds scroll-lock, freeze any leftover stage motion.
+:host-context(.cdk-global-scrollblock)
+    .billboard__stage.is-kenburns
+        animation-play-state: paused
+    .billboard__live
+        animation-play-state: paused
+
 @media screen and (min-width: 900px)
     .billboard__pager
         max-width: min(480px, 42vw)
 
+// Below ~1280px the left feature actions and right admin/pager share the same
+// bottom band and collide; pull controls into flow under the copy.
+@media screen and (max-width: 1280px)
+    .billboard
+        flex-direction: column
+        // Spacer (not flex-end) keeps copy below the absolute search even when
+        // title + admin + pager nearly fill the viewport.
+        justify-content: flex-start
+        align-items: stretch
+        gap: 16px
+        padding-top: 0
+        padding-bottom: 24px
+        &::before
+            content: ''
+            flex: 1 0 var(--nflx-hero-search-clearance, 140px)
+            min-height: var(--nflx-hero-search-clearance, 140px)
+            width: 100%
+            pointer-events: none
+    .billboard__content
+        width: 100%
+        max-width: min(640px, 100%)
+        flex: 0 1 auto
+    .billboard__controls
+        position: relative
+        right: auto
+        bottom: auto
+        left: auto
+        width: 100%
+        max-width: none
+        align-items: stretch
+        flex: 0 0 auto
+    .billboard__admin
+        justify-content: flex-start
+    .billboard__pager
+        max-width: none
+        width: 100%
+
 @media screen and (max-width: 600px)
     .billboard
         min-height: 78vh
-        padding-bottom: 72px
+        padding-bottom: 20px
+        gap: 12px
     .billboard__actions
         flex-direction: column
         align-items: stretch
-    .billboard__controls
-        left: 4vw
-        right: 4vw
-        bottom: 20px
-        justify-content: space-between
-        max-width: none
-    .billboard__pager
-        flex: 1 1 auto
-        max-width: none
+    .billboard__admin
+        // Keep each control on its own hit target; wrapping pills must not stack.
+        display: grid
+        grid-template-columns: 1fr
+        gap: 8px
+    .billboard__manage
         width: 100%
+        justify-content: center
     .billboard__nav
         width: 40px
         height: 40px

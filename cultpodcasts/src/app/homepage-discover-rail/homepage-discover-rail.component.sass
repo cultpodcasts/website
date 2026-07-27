@@ -56,13 +56,19 @@
     text-decoration: none
     color: inherit
     scroll-snap-align: start
-    transition: transform 0.22s ease
-    &:hover,
+    @media (hover: hover) and (pointer: fine)
+        transition: transform 0.22s ease
+        &:hover,
+        &:focus-visible
+            transform: translateY(-4px) scale(1.03)
+            outline: none
+            .obscure__art
+                box-shadow: 0 0 0 2px var(--nflx-accent), 0 16px 32px #00000080
+            .obscure__name
+                color: var(--nflx-accent)
     &:focus-visible
-        transform: translateY(-4px) scale(1.03)
-        outline: none
-        .obscure__art
-            box-shadow: 0 0 0 2px var(--nflx-accent), 0 16px 32px #00000080
+        outline: 2px solid var(--nflx-accent)
+        outline-offset: 2px
         .obscure__name
             color: var(--nflx-accent)
 
@@ -86,7 +92,8 @@
         height: 100%
         object-fit: cover
         display: block
-        filter: saturate(1.05) contrast(1.04)
+        @media (hover: hover) and (pointer: fine)
+            filter: saturate(1.05) contrast(1.04)
 
 .obscure__placeholder
     width: 100%
@@ -107,6 +114,10 @@
     letter-spacing: 0.04em
     text-transform: uppercase
     backdrop-filter: blur(4px)
+
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .obscure__count
+        backdrop-filter: none
 
 .obscure__name
     display: -webkit-box

@@ -202,7 +202,9 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('curatedEpisodeIds', ['a']);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('button.billboard__curate') as HTMLButtonElement | null;
+    const button = fixture.nativeElement.querySelector(
+      'button.billboard__manage--curate'
+    ) as HTMLButtonElement | null;
     expect(button).toBeTruthy();
     button?.click();
     expect(removed).toEqual(['a']);
@@ -215,11 +217,32 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('isCurator', true);
     fixture.detectChanges();
 
-    const buttons = fixture.nativeElement.querySelectorAll('button.billboard__manage') as NodeListOf<HTMLButtonElement>;
+    const buttons = fixture.nativeElement.querySelectorAll(
+      '.billboard__admin > button.billboard__manage:not(.billboard__manage--curate)'
+    ) as NodeListOf<HTMLButtonElement>;
     expect(buttons.length).toBe(2);
     buttons[0].click();
     buttons[1].click();
     expect(managed).toEqual(['hero', 'rails']);
+  });
+
+  it('keeps remove-from-hero inside the curator admin toolbar', () => {
+    fixture.componentRef.setInput('isCurator', true);
+    fixture.componentRef.setInput('curatedEpisodeIds', ['a']);
+    fixture.detectChanges();
+
+    const admin = fixture.nativeElement.querySelector('.billboard__admin') as HTMLElement | null;
+    const remove = fixture.nativeElement.querySelector(
+      'button.billboard__manage--curate'
+    ) as HTMLButtonElement | null;
+    const actionsRemove = fixture.nativeElement.querySelector(
+      '.billboard__actions button.billboard__manage--curate'
+    );
+
+    expect(admin).toBeTruthy();
+    expect(remove).toBeTruthy();
+    expect(admin?.contains(remove!)).toBe(true);
+    expect(actionsRemove).toBeNull();
   });
 
   it('image gate stays blocked until the fallback timeout when decode never completes', () => {
@@ -316,6 +339,27 @@ describe('HomepageHeroComponent', () => {
     component['transitionTo'](2);
     expect(component['heroIndex']()).toBe(2);
     expect(component['heroTimer']).toBeUndefined();
+  });
+
+  it('still auto-advances on saveGpu mobile mode (Ken Burns off, timer on)', () => {
+    // Arrange — mobile GPU saver must not reuse reduceMotion's "no cycle" path.
+    vi.useFakeTimers();
+    component['reduceMotion'] = false;
+    component['saveGpu'] = true;
+    component['heroPaused'].set(false);
+    component['heroImageReady'].set(true);
+    component['heroIndex'].set(0);
+    component['lastFeaturedId'] = 'a';
+
+    // Act
+    component['startHeroCycle']();
+    vi.advanceTimersByTime(7500 + 250);
+    vi.advanceTimersByTime(450 + 550);
+
+    // Assert
+    expect(component['heroTimer']).toBeTruthy();
+    expect(component['heroIndex']()).toBe(1);
+    expect(component['kenBurnsAllowed']()).toBe(false);
   });
 
   it('auto-advances after the dwell interval when not paused and image-ready', () => {
