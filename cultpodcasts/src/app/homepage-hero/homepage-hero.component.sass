@@ -159,27 +159,24 @@
     background: #2a2a2acc !important
     font-weight: 600
 
-.billboard__curate
-    border-color: #e8a23a99 !important
-    color: var(--nflx-accent) !important
-    background: #1a140fcc !important
-    font-weight: 600
-    mat-icon
-        margin-right: 4px
-        color: var(--nflx-accent)
-
 .billboard__controls
     position: absolute
     right: 4vw
     bottom: 56px
     z-index: 3
     display: flex
-    align-items: center
+    flex-direction: column
+    align-items: flex-end
     gap: 10px
+    max-width: min(520px, calc(100% - 8vw))
+    pointer-events: auto
+
+.billboard__admin
+    display: flex
     flex-wrap: wrap
     justify-content: flex-end
-    max-width: calc(100% - 8vw)
-    pointer-events: auto
+    gap: 8px
+    max-width: 100%
 
 .billboard__manage
     display: inline-flex
@@ -195,23 +192,29 @@
     font-weight: 600
     cursor: pointer
     transition: background 0.2s ease, border-color 0.2s ease
+    white-space: nowrap
     mat-icon
         font-size: 18px
         width: 18px
         height: 18px
         color: var(--nflx-accent)
+        flex: 0 0 auto
     &:hover,
     &:focus-visible
         background: #2a2a2a
         border-color: var(--nflx-accent)
         outline: none
+    &--curate
+        border-color: #e8a23a99
+        color: var(--nflx-accent)
 
 .billboard__pager
     display: flex
     align-items: center
     gap: 8px
     min-width: 0
-    max-width: min(420px, calc(100vw - 8vw))
+    width: 100%
+    max-width: min(420px, 100%)
 
 .billboard__nav
     width: 44px
@@ -326,23 +329,48 @@
     .billboard__pager
         max-width: min(480px, 42vw)
 
+// Below ~1280px the left feature actions and right admin/pager share the same
+// bottom band and collide; pull controls into flow under the copy.
+@media screen and (max-width: 1280px)
+    .billboard
+        flex-direction: column
+        justify-content: flex-end
+        align-items: stretch
+        gap: 16px
+        padding-bottom: 24px
+    .billboard__content
+        width: 100%
+        max-width: min(640px, 100%)
+    .billboard__controls
+        position: relative
+        right: auto
+        bottom: auto
+        left: auto
+        width: 100%
+        max-width: none
+        align-items: stretch
+    .billboard__admin
+        justify-content: flex-start
+    .billboard__pager
+        max-width: none
+        width: 100%
+
 @media screen and (max-width: 600px)
     .billboard
         min-height: 78vh
-        padding-bottom: 72px
+        padding-bottom: 20px
+        gap: 12px
     .billboard__actions
         flex-direction: column
         align-items: stretch
-    .billboard__controls
-        left: 4vw
-        right: 4vw
-        bottom: 20px
-        justify-content: space-between
-        max-width: none
-    .billboard__pager
-        flex: 1 1 auto
-        max-width: none
+    .billboard__admin
+        // Keep each control on its own hit target; wrapping pills must not stack.
+        display: grid
+        grid-template-columns: 1fr
+        gap: 8px
+    .billboard__manage
         width: 100%
+        justify-content: center
     .billboard__nav
         width: 40px
         height: 40px

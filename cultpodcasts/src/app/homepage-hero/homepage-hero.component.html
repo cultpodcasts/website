@@ -60,29 +60,31 @@
           [routerLink]="['/podcast', feature.podcastName, feature.id]">
           More info
         </a>
-        @if (isCurator() && featuredIsCurated()) {
-        <button type="button" mat-stroked-button class="billboard__curate"
-          (click)="removeFeatured.emit(feature.id)" aria-label="Remove from hero">
-          <mat-icon>star</mat-icon>
-          Remove from hero
-        </button>
-        }
       </div>
     </div>
   </div>
 
   <div class="billboard__controls">
     @if (isCurator()) {
-    <button type="button" class="billboard__manage" (click)="manageHero.emit()"
-      aria-label="Manage hero curation">
-      <mat-icon>playlist_add_check</mat-icon>
-      <span>Manage hero</span>
-    </button>
-    <button type="button" class="billboard__manage" (click)="manageRails.emit()"
-      aria-label="Manage subject rails">
-      <mat-icon>view_week</mat-icon>
-      <span>Manage rails</span>
-    </button>
+    <div class="billboard__admin" role="toolbar" aria-label="Hero curation">
+      <button type="button" class="billboard__manage" (click)="manageHero.emit()"
+        aria-label="Manage hero curation">
+        <mat-icon>playlist_add_check</mat-icon>
+        <span>Manage hero</span>
+      </button>
+      @if (featuredIsCurated()) {
+      <button type="button" class="billboard__manage billboard__manage--curate"
+        (click)="removeFeatured.emit(feature.id)" aria-label="Remove from hero">
+        <mat-icon>star</mat-icon>
+        <span>Remove from hero</span>
+      </button>
+      }
+      <button type="button" class="billboard__manage" (click)="manageRails.emit()"
+        aria-label="Manage subject rails">
+        <mat-icon>view_week</mat-icon>
+        <span>Manage rails</span>
+      </button>
+    </div>
     }
     @if (slides().length > 1) {
     <div class="billboard__pager">
