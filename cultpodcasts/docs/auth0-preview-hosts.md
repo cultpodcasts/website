@@ -5,7 +5,7 @@ Preview hosts change every deploy (`https://<id-or-branch>.website-83e.pages.dev
 ## App behaviour
 
 - Login `redirect_uri` and logout `returnTo` use `window.location.origin` ([`auth-redirect-uri.ts`](../src/app/auth-redirect-uri.ts)).
-- Staging `bundleAssetHost` is empty so SVG icons load from `/assets/...` on the current host.
+- MatIcon SVGs are inlined via `addSvgIconLiteral` ([`register-svg-icons.ts`](../src/app/register-svg-icons.ts)); plain assets use same-origin `/assets/...`.
 - Auth0 SPA uses **refresh tokens** + `localstorage` (`useRefreshTokens`, `cacheLocation`) so `getAccessTokenSilently` does not rely on a cross-site iframe. Preview hosts (`*.pages.dev`) are third-party to `auth-staging.cultpodcasts.com`; Firefox blocks that iframe and surfaces `Error: Login required`.
 - After deploying this config, **log out and log in once** so Auth0 issues a refresh token covering `openid profile email offline_access curate admin submit`. Refresh tokens cannot add scopes later; a session minted without those API scopes will throw `Missing Refresh Token` on silent renew.
 - The Auth0 **API** (`https://api.cultpodcasts.com/`) must have **Allow Offline Access** enabled, or Auth0 never returns a refresh token even when the SPA requests `offline_access`.

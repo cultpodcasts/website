@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AuthServiceWrapper, HAS_LOGGED_IN_STORAGE_KEY } from '../auth-service-wrapper.class';
 import { FeatureSwitchService } from '../feature-switch-service';
-import { AsyncPipe } from '@angular/common';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { MatIconModule } from "@angular/material/icon";
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -36,7 +35,6 @@ import { environment } from '../../environments/environment';
     MatIconModule,
     MatMenuModule,
     RouterLink,
-    AsyncPipe,
     MatBadgeModule
   ],
   templateUrl: './toolbar.component.html',

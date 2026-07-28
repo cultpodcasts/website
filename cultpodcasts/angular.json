@@ -57,6 +57,9 @@
             }
           },
           "configurations": {
+            // Production + Cloudflare preview envs: do NOT add fileReplacements here.
+            // build.sh copies environment.production.ts / environment.staging.ts over
+            // environment.ts before ng build. See cultpodcasts/build.sh.
             "production": {
               "budgets": [
                 {
@@ -86,6 +89,7 @@
                 }
               ],
               "outputHashing": "all",
+              // Local `ng build --configuration=staging` only. Preview/prod: build.sh (above).
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

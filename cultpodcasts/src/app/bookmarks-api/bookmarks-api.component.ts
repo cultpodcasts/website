@@ -22,6 +22,7 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { apiEpisodeToHomepageEpisode } from '../api-episode-display';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
@@ -51,6 +52,7 @@ interface BookmarkEpisodeLoadResult {
     ScrollingModule,
     EpisodePosterComponent,
     SiteLoadingComponent,
+    BrowseLoadingSkeletonComponent,
   ],
   templateUrl: './bookmarks-api.component.html',
   styleUrl: './bookmarks-api.component.sass',

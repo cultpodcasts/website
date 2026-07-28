@@ -3,6 +3,9 @@
   <app-podcast-episode [episode]="ep" [parentLoaded]="true"></app-podcast-episode>
   } @else if (isLoading()) {
   <app-site-loading [active]="true" label="Loading episode" />
+  @if (showEpisodeSkeleton()) {
+  <app-episode-loading-skeleton />
+  }
   } @else {
   <section class="browse-empty">
     <h2>Episode not found.</h2>

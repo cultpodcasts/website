@@ -14,6 +14,7 @@ import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
@@ -37,6 +38,7 @@ const sortParamDateDesc: string = "date-desc";
     MatIconModule,
     EpisodePosterComponent,
     SiteLoadingComponent,
+    BrowseLoadingSkeletonComponent,
   ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass',

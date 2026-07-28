@@ -66,9 +66,11 @@
       </mat-menu>
       }
     </div>
-    <button id="menu" mat-icon-button [matMenuTriggerFor]="menu">
-      <mat-icon [matBadge]="$safeNavigationMigration(disoveryInfo()?.documentCount)"
-        [matBadgeHidden]="disoveryInfo()==undefined || disoveryInfo()!.documentCount==0">more_vert</mat-icon>
+    <button id="menu" mat-icon-button [matMenuTriggerFor]="menu"
+      [matBadge]="$safeNavigationMigration(disoveryInfo()?.documentCount)"
+      [matBadgeHidden]="disoveryInfo()==undefined || disoveryInfo()!.documentCount==0"
+      aria-label="Open menu">
+      <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu">
       @if (showSignedInChrome()) {

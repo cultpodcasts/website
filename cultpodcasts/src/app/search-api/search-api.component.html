@@ -1,6 +1,9 @@
 <app-site-loading [active]="isLoading() || isSubsequentLoading()"
   [label]="isSubsequentLoading() ? 'Loading more episodes' : 'Updating results'" />
 
+@if (isLoading() && results().length === 0) {
+<app-browse-loading-skeleton />
+} @else {
 <section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
@@ -80,3 +83,4 @@
   </div>
   }
 </section>
+}

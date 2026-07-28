@@ -13,6 +13,8 @@
   <h2>You have no bookmarks</h2>
   <p>Use the <mat-icon class="material-symbols-outlined">bookmark</mat-icon> icon to save your favourites.</p>
 </section>
+} @else if (isLoading() && displayEpisodes().length === 0) {
+<app-browse-loading-skeleton />
 } @else {
 <section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
   [class.is-updating]="isLoading() && displayEpisodes().length > 0" id="results">

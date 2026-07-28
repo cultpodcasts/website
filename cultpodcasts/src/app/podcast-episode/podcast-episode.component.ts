@@ -16,6 +16,7 @@ import { EpisodeLinksComponent } from "../episode-links/episode-links.component"
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
@@ -49,6 +50,7 @@ const MAX_SUBJECT_RAILS = 4;
     BookmarkComponent,
     EpisodeRailComponent,
     SiteLoadingComponent,
+    EpisodeLoadingSkeletonComponent,
     SubjectChipComponent,
     SearchDescriptionPipe
   ],
