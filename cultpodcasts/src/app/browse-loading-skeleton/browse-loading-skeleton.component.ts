@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'app-browse-loading-skeleton',
   templateUrl: './browse-loading-skeleton.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { ngSkipHydration: 'true' },
 })
 export class BrowseLoadingSkeletonComponent {
   protected readonly posters = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
