@@ -136,6 +136,7 @@ export class EditEpisodeDialogComponent {
 
       const podcast = await this.getPodcast(headers, this.podcastIdentifier);
       if (!podcast) {
+        this.isLoading.set(false);
         this.isInError.set(true);
         return;
       }
@@ -410,7 +411,12 @@ export class EditEpisodeDialogComponent {
       return null;
     }
     try {
-      const podcastEndpoint = new URL(`/podcast/${podcastIdentifier}`, environment.api).toString();
+      // encodeURIComponent so names ending in '?' (e.g. "Was I In A Cult?") are not
+      // treated as the start of a query string by `new URL(...)`.
+      const path = this.episodeId
+        ? `/podcast/${encodeURIComponent(podcastIdentifier)}/${this.episodeId}`
+        : `/podcast/${encodeURIComponent(podcastIdentifier)}`;
+      const podcastEndpoint = new URL(path, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
       return podcast;
     } catch {

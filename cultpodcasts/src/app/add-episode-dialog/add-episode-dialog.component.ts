@@ -137,6 +137,7 @@ export class AddEpisodeDialogComponent {
 
       const podcast = await this.getPodcast(headers, this.podcastId);
       if (!podcast) {
+        this.isLoading.set(false);
         this.isInError.set(true);
         return;
       }
