@@ -55,11 +55,17 @@
 .episode-hero
     position: relative
     z-index: 2
+    // Pull up over the backdrop, then sit on a full-bleed black band so
+    // light-mode cream --nflx-bg never shows behind on-media copy.
     margin-top: -140px
-    padding: 0 4vw
-    max-width: 900px
+    padding: 28px 4vw 48px
+    max-width: none
+    width: 100%
     box-sizing: border-box
     color: var(--nflx-on-media, #fff)
+    background: linear-gradient(180deg, transparent 0%, rgba(11, 11, 11, 0.88) 56px, #0b0b0b 130px)
+    > *
+        max-width: 900px
 
 .episode-hero__eyebrow
     margin: 0 0 8px
