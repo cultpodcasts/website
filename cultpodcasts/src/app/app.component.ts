@@ -17,7 +17,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
-import { environment } from 'src/environments/environment';
+import { registerSvgIcons } from './register-svg-icons';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
 import { EpisodePlayerComponent } from './episode-player/episode-player.component';
 import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
@@ -94,7 +94,7 @@ export class AppComponent implements OnDestroy {
   ) {
     seoService.AddRequiredMetaTags();
     this.isBrowser = isPlatformBrowser(platformId);
-    this.registerSvg(iconRegistry, domSanitizer);
+    registerSvgIcons(iconRegistry, domSanitizer);
   }
 
   async ngOnInit(): Promise<void> {
@@ -368,23 +368,5 @@ export class AppComponent implements OnDestroy {
     // Keep #top in the URL while avoiding a full document navigation.
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#top`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  private registerSvg(iconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
-    iconRegistry.addSvgIcon(`cultpodcasts`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/cultpodcasts.svg"));
-    iconRegistry.addSvgIcon(`add-podcast`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/add-podcast.svg"));
-    iconRegistry.addSvgIcon(`reddit`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/reddit.svg"));
-    iconRegistry.addSvgIcon(`twitter`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/twitter.svg"));
-    iconRegistry.addSvgIcon(`github`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/github.svg"));
-    iconRegistry.addSvgIcon(`spotify`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/spotify.svg"));
-    iconRegistry.addSvgIcon(`youtube`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/youtube.svg"));
-    iconRegistry.addSvgIcon(`bbc-iplayer`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/BBC_iPlayer_2021_(symbol).svg"));
-    iconRegistry.addSvgIcon(`bbc-sounds`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bbc_sounds.svg"));
-    iconRegistry.addSvgIcon(`internet-archive`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/Internet_Archive_logo_and_wordmark.svg"));
-    iconRegistry.addSvgIcon(`profile`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/profile.svg"));
-    iconRegistry.addSvgIcon(`bluesky`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/bluesky.svg"));
-    iconRegistry.addSvgIcon(`android`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/android.svg"));
-    iconRegistry.addSvgIcon(`visible`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/visible.svg"));
-    iconRegistry.addSvgIcon(`removed`, domSanitizer.bypassSecurityTrustResourceUrl(environment.bundleAssetHost + "/assets/removed.svg"));
   }
 }
