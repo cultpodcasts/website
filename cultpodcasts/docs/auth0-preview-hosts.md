@@ -19,11 +19,14 @@ Required allowlist entries (no trailing slash):
 
 - `https://*.website-83e.pages.dev`
 - `https://website-83e.pages.dev`
+- `https://local.cultpodcasts.com:8788`
+- `https://local.cultpodcasts.com:4200`
+
+Soak (Flix host redirects to apex; safe to remove after cutover soak):
+
 - `https://*.flix-ac4.pages.dev`
 - `https://flix-ac4.pages.dev`
 - `https://flix.cultpodcasts.com`
-- `https://local.cultpodcasts.com:8788`
-- `https://local.cultpodcasts.com:4200`
 
 Apply to: **Allowed Callback URLs**, **Allowed Logout URLs**, **Allowed Web Origins**, **Allowed Origins (CORS)**.
 

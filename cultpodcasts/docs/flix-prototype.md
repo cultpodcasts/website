@@ -1,47 +1,33 @@
-# Flix prototype (`flix.cultpodcasts.com`)
+# Flix UI (apex cutover)
 
-Standalone Netflix-style homepage prototype. **Not** for merge into `main`. **Does not** use the production Pages project (`website` / `cultpodcasts.com`).
+The Flix homepage UI is **production** on **`cultpodcasts.com`** via the Cloudflare Pages project **`website`** (`website-83e.pages.dev`), production branch **`main`**.
 
-| | |
-|--|--|
-| Pages project | `flix` (`flix-ac4.pages.dev`) |
-| Git repo | `cultpodcasts/website` |
-| Production branch | `design/visual-refresh-v1` |
-| Custom domain | `flix.cultpodcasts.com` |
-| Build config | `./build.sh` (`env` from Pages env vars) |
-| Production Auth / API | Production Auth0 + `api.cultpodcasts.com` |
-| Preview Auth / API | Staging Auth0 + `api-preview.jonbreen.workers.dev` (`environment.staging.ts`) |
-| Preview deploys | On (`preview_deployment_setting: all`); Preview Pages env `env=staging` |
+## Branch map (Jul 2026 cutover)
+
+| Branch | Role |
+|--------|------|
+| `main` | Flix UI (was `design/visual-refresh-v1`) |
+| `old-ui` | Former production UI (renamed from `main`; preserved, not deleted) |
+
+## `flix.cultpodcasts.com`
+
+Retired as a separate app host. It **301-redirects** to `https://cultpodcasts.com` with path and query preserved (Pages `_redirects` on the parked **`flix`** project; custom domain kept so the redirect origin remains attached).
+
+The **`flix`** Pages project is **parked**: git deployments and preview builds are disabled. Do not delete the project.
 
 ## Deploy
 
-Pushes to `design/visual-refresh-v1` build and deploy **flix production** (Pages env `env=production`).
-
-Other branches build **flix preview** URLs (`https://<branch>.flix-ac4.pages.dev` / `https://<id>.flix-ac4.pages.dev`) with Pages Preview env `env=staging` so `build.sh` copies staging Auth0 + api-preview.
-
-Manual fallback (direct upload to the same project — uses whatever you built locally; prefer Git builds for correct `env`):
-
 ```bash
-npm run deploy:flix
+npm run deploy
 ```
 
-Never run `npm run deploy` for this prototype (that targets production `website`).
+Targets the **`website`** Pages project (apex). There is no `deploy:flix`.
 
-### Keeping flix branches off the `website` project
-
-The production `website` Pages project builds previews for every branch (`preview_deployment_setting: custom`, includes `*`), so flix branches would build twice. Its `preview_branch_excludes` therefore lists:
-
-| Pattern | Why |
-|---------|-----|
-| `design/visual-refresh-v1` | flix production branch |
-| `flix/*` | convention for new flix work branches |
-| `feat/hero-curation-ux` | pre-convention flix branch |
-
-Name new flix branches `flix/<topic>` so they are excluded automatically; otherwise add the branch to that exclude list (Pages → website → Settings → Builds & deployments → Branch control).
+Feature / PR previews build on **`website`** (`*.website-83e.pages.dev`). `old-ui` remains previewable there for emergency comparison.
 
 ## Homepage curation (Curator role)
 
-Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation` (preview or production API, depending on build env):
+Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation`:
 
 | Field | UI |
 |-------|----|
@@ -50,19 +36,6 @@ Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation` (preview or
 
 Pinned rails that drop below the week's episode threshold fall out. Only pinned subjects appear as rails — there is no popularity autofill. Hero picks that leave the current week prune the same way.
 
-## DNS
+## Auth0 / API (soak)
 
-If `flix.cultpodcasts.com` is not live yet, in the Cloudflare zone for `cultpodcasts.com` add:
-
-| Type | Name | Target | Proxy |
-|------|------|--------|-------|
-| CNAME | `flix` | `flix-ac4.pages.dev` | Proxied |
-
-Confirm under Pages → **flix** → Custom domains that `flix.cultpodcasts.com` is Active.
-
-Do **not** change the `cultpodcasts.com` record (production `website` project).
-
-## Auth0 / API
-
-- Production SPA allowlists must include `https://flix.cultpodcasts.com` (and `*.flix-ac4.pages.dev`) on callbacks / logout / web origins / allowed origins.
-- Production API gateway `AllowedOrigins` must include `https://flix.cultpodcasts.com`. Redeploy the Api worker after that change.
+Keep `https://flix.cultpodcasts.com` (and `*.flix-ac4.pages.dev` if still used) on production Auth0 allowlists and API `AllowedOrigins` during soak; remove in a later cleanup once traffic has moved fully to the apex.
