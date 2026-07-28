@@ -15,10 +15,35 @@
     background: var(--nflx-bg, #0b0b0b)
     // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
     .chrome-search
-        display: none
+        display: none !important
 
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
+
+// Home toolbar: keep cinematic dark overlay (host-context can lose to light Material).
+.home-shell > app-toolbar
+    ::ng-deep
+        .app-toolbar
+            position: absolute
+            top: 0
+            left: 0
+            right: 0
+            z-index: 20
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important
+            border-bottom-color: transparent !important
+            backdrop-filter: none !important
+            -webkit-backdrop-filter: none !important
+            color: #fff !important
+        #site
+            color: #fff !important
+        #site span
+            position: absolute !important
+            width: 1px !important
+            height: 1px !important
+            overflow: hidden !important
+            clip: rect(0, 0, 0, 0) !important
+        button#menu
+            color: #fff !important
 
 .browse-chrome-search
     // Match the horizontal rhythm of .browse-filters / .browse-grid (both use

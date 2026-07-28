@@ -836,12 +836,12 @@ option {
     --nflx-text: #0b0d12;
     --nflx-muted: #5c564c;
     --nflx-accent: #b86a00;
-    --nflx-border: color-mix(in srgb, #0b0d12 14%, transparent);
-    --nflx-border-strong: color-mix(in srgb, #0b0d12 28%, transparent);
+    --nflx-border: color-mix(in srgb, #0b0d12 18%, transparent);
+    --nflx-border-strong: color-mix(in srgb, #0b0d12 36%, transparent);
     --nflx-hover: color-mix(in srgb, #0b0d12 8%, transparent);
-    --nflx-search-glass: color-mix(in srgb, #fffdf8 92%, transparent);
+    --nflx-search-glass: #fffdf8;
     --nflx-panel-solid: #fffdf8;
-    --nflx-panel-edge: color-mix(in srgb, #0b0d12 12%, transparent);
+    --nflx-panel-edge: color-mix(in srgb, #0b0d12 18%, transparent);
     --nflx-pill-active-bg: #0b0d12;
     --nflx-pill-active-fg: #f4f0e8;
   }
