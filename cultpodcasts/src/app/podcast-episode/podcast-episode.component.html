@@ -1,6 +1,8 @@
 <app-site-loading [active]="isLoading()" label="Loading episode" />
 
-@if (episode) {
+@if (isLoading()) {
+<app-episode-loading-skeleton />
+} @else if (episode) {
 <section id="results" class="episode"
   [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
 
@@ -98,7 +100,7 @@
     (play)="playEpisode($event)" />
   }
 </section>
-} @else if (!isLoading()) {
+} @else {
 <section class="browse-empty">
   <h2>Episode not found.</h2>
   <div id="cta-button">

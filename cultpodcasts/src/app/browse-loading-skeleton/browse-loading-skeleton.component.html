@@ -1,0 +1,26 @@
+<div class="nflx-loading nflx-loading--browse" aria-hidden="true">
+  <div class="nflx-loading__browse-filters">
+    <div class="nflx-loading__browse-toolbar">
+      <div class="nflx-loading__line nflx-loading__line--browse-title"></div>
+      <div class="nflx-loading__line nflx-loading__line--browse-sort"></div>
+    </div>
+    <div class="nflx-loading__browse-facet">
+      <div class="nflx-loading__line nflx-loading__line--facet-label"></div>
+      <div class="nflx-loading__chips">
+        @for (_ of pills; track $index) {
+        <span class="nflx-loading__chip"></span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="nflx-loading__browse-grid">
+    @for (_ of posters; track $index) {
+    <div class="nflx-loading__poster nflx-loading__poster--grid">
+      <div class="nflx-loading__poster-art"></div>
+      <div class="nflx-loading__line nflx-loading__line--poster-title"></div>
+      <div class="nflx-loading__line nflx-loading__line--poster-meta"></div>
+    </div>
+    }
+  </div>
+</div>

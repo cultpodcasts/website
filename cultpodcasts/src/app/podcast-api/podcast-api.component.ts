@@ -31,6 +31,7 @@ import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.i
 import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { canPlayEpisode } from '../episode-embed';
 import { PlayerService } from '../player.service';
@@ -50,6 +51,7 @@ const sortParamDateDesc: string = "date-desc";
     MatIconModule,
     EpisodePosterComponent,
     SiteLoadingComponent,
+    BrowseLoadingSkeletonComponent,
   ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass',

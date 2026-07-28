@@ -1,0 +1,36 @@
+<div class="nflx-loading nflx-loading--episode" aria-hidden="true">
+  <div class="nflx-loading__episode-backdrop">
+    <div class="nflx-loading__episode-hero">
+      <div class="nflx-loading__line nflx-loading__line--eyebrow"></div>
+      <div class="nflx-loading__line nflx-loading__line--title"></div>
+      <div class="nflx-loading__line nflx-loading__line--title nflx-loading__line--title-short"></div>
+      <div class="nflx-loading__line nflx-loading__line--meta"></div>
+      <div class="nflx-loading__line nflx-loading__line--desc"></div>
+      <div class="nflx-loading__line nflx-loading__line--desc nflx-loading__line--desc-short"></div>
+      <div class="nflx-loading__chips">
+        <span class="nflx-loading__chip"></span>
+        <span class="nflx-loading__chip"></span>
+        <span class="nflx-loading__chip"></span>
+      </div>
+      <div class="nflx-loading__actions">
+        <span class="nflx-loading__btn nflx-loading__btn--primary"></span>
+        <span class="nflx-loading__btn"></span>
+        <span class="nflx-loading__btn nflx-loading__btn--icon"></span>
+        <span class="nflx-loading__btn nflx-loading__btn--icon"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nflx-loading__rail">
+    <div class="nflx-loading__line nflx-loading__line--rail-title"></div>
+    <div class="nflx-loading__posters">
+      @for (_ of posters; track $index) {
+      <div class="nflx-loading__poster">
+        <div class="nflx-loading__poster-art"></div>
+        <div class="nflx-loading__line nflx-loading__line--poster-title"></div>
+        <div class="nflx-loading__line nflx-loading__line--poster-meta"></div>
+      </div>
+      }
+    </div>
+  </div>
+</div>

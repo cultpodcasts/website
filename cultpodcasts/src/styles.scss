@@ -1359,6 +1359,155 @@ option {
   }
 }
 
+/* Episode detail loading skeleton — mirrors backdrop hero + rail. */
+.nflx-loading--episode {
+  min-height: 60vh;
+  padding-bottom: 40px;
+  background: var(--nflx-bg);
+}
+
+.nflx-loading__episode-backdrop {
+  --nflx-skel: color-mix(in srgb, #fff 12%, transparent);
+  --nflx-skel-strong: color-mix(in srgb, var(--nflx-accent, #e8a23a) 30%, transparent);
+  position: relative;
+  width: 100%;
+  min-height: min(58vh, 480px);
+  box-sizing: border-box;
+  padding: 28px 4vw 48px;
+  display: flex;
+  align-items: flex-end;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 55%, #0b0b0b 98%),
+    linear-gradient(100deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 48%, transparent 78%),
+    linear-gradient(135deg, #1a1a1a 0%, #121212 50%, #181818 100%);
+}
+
+.nflx-loading__episode-hero {
+  width: min(900px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: min(28vh, 220px);
+}
+
+.nflx-loading__btn--icon {
+  width: 2.4rem;
+  border-radius: 50%;
+}
+
+.nflx-loading--episode .nflx-loading__rail {
+  --nflx-skel: color-mix(in srgb, var(--nflx-text, #fff) 12%, transparent);
+  --nflx-skel-strong: color-mix(in srgb, var(--nflx-accent, #e8a23a) 24%, var(--nflx-skel));
+  margin-top: 8px;
+}
+
+@media screen and (max-width: 600px) {
+  .nflx-loading__episode-backdrop {
+    min-height: 46vh;
+  }
+
+  .nflx-loading__episode-hero {
+    margin-top: min(18vh, 140px);
+  }
+}
+
+/* Browse grid loading skeleton — mirrors toolbar + facets + poster grid. */
+.nflx-loading--browse {
+  --nflx-skel: color-mix(in srgb, var(--nflx-text, #fff) 12%, transparent);
+  --nflx-skel-strong: color-mix(in srgb, var(--nflx-accent, #e8a23a) 24%, var(--nflx-skel));
+  color: var(--nflx-text);
+  background: var(--nflx-bg);
+  min-height: 50vh;
+  padding-bottom: min(52vh, 420px);
+}
+
+.nflx-loading__browse-filters {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 4vw;
+  box-sizing: border-box;
+}
+
+.nflx-loading__browse-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 18px;
+  flex-wrap: wrap;
+}
+
+.nflx-loading__line--browse-title {
+  flex: 1;
+  min-width: 12rem;
+  max-width: 28rem;
+  height: 2rem;
+  border-radius: 8px;
+}
+
+.nflx-loading__line--browse-sort {
+  width: 7.5rem;
+  height: 2rem;
+  flex: 0 0 auto;
+}
+
+.nflx-loading__browse-facet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+
+.nflx-loading__line--facet-label {
+  flex: 0 0 auto;
+  width: 4.5rem;
+  height: 0.7rem;
+}
+
+.nflx-loading__browse-facet .nflx-loading__chips {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+}
+
+.nflx-loading__browse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 20px 14px;
+  width: min(1400px, 100%);
+  margin: 12px auto 0;
+  padding: 8px 4vw 32px;
+  box-sizing: border-box;
+}
+
+.nflx-loading__poster--grid {
+  flex: none;
+  width: auto;
+}
+
+@media screen and (max-width: 600px) {
+  .nflx-loading__browse-facet {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+}
+
+@media screen and (min-width: 900px) {
+  .nflx-loading__browse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px 16px;
+  }
+}
+
+@media screen and (min-width: 1500px) {
+  .nflx-loading__browse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
 @keyframes nflx-loading-shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
