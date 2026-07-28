@@ -26,15 +26,15 @@
     width: 36px
     height: 36px
     padding: 0
-    border: 1px solid rgba(255, 255, 255, 0.35)
+    border: 1px solid var(--nflx-border-strong, rgba(255, 255, 255, 0.35))
     border-radius: 50%
-    background: rgba(26, 26, 26, 0.9)
-    color: #fff
+    background: color-mix(in srgb, var(--nflx-panel, #1a1a1a) 90%, transparent)
+    color: var(--nflx-on-media, #fff)
     mat-icon
         color: inherit
     &:hover,
     &:focus-visible
-        background: rgba(255, 255, 255, 0.15)
+        background: var(--nflx-hover, rgba(255, 255, 255, 0.15))
         border-color: var(--nflx-accent, #e8a23a)
         outline: none
 

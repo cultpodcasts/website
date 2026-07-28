@@ -79,7 +79,7 @@
         font-size: 40px
         width: 40px
         height: 40px
-        color: #fff
+        color: var(--nflx-on-media, #fff)
         // text-shadow instead of filter:drop-shadow — filter forces a layer on every poster.
         text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6)
 
@@ -88,7 +88,7 @@
     font-weight: 700
     letter-spacing: 0.04em
     text-transform: uppercase
-    color: #fff
+    color: var(--nflx-on-media, #fff)
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7)
 
 .episode-poster__promote
@@ -240,7 +240,7 @@
     font-size: 0.92rem
     font-weight: 600
     line-height: 1.25
-    color: #fff
+    color: var(--nflx-text)
 
 // Result grids have wider cards and no date heading — give titles room to finish.
 :host-context(.browse-grid) .episode-poster__episode

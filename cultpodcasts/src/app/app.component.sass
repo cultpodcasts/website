@@ -12,13 +12,38 @@
     padding-bottom: 4px
 
 .home-shell
-    background: #0b0b0b
+    background: var(--nflx-bg, #0b0b0b)
     // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
     .chrome-search
-        display: none
+        display: none !important
 
 .browse-shell
-    background: #0b0b0b
+    background: var(--nflx-bg, #0b0b0b)
+
+// Home toolbar: keep cinematic dark overlay (host-context can lose to light Material).
+.home-shell > app-toolbar
+    ::ng-deep
+        .app-toolbar
+            position: absolute
+            top: 0
+            left: 0
+            right: 0
+            z-index: 20
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important
+            border-bottom-color: transparent !important
+            backdrop-filter: none !important
+            -webkit-backdrop-filter: none !important
+            color: #fff !important
+        #site
+            color: #fff !important
+        #site span
+            position: absolute !important
+            width: 1px !important
+            height: 1px !important
+            overflow: hidden !important
+            clip: rect(0, 0, 0, 0) !important
+        button#menu
+            color: #fff !important
 
 .browse-chrome-search
     // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
@@ -47,13 +72,43 @@
             .mdc-text-field,
             .mdc-text-field--outlined,
             .mdc-text-field--no-label
-                background: rgba(20, 20, 20, 0.85) !important
+                background: var(--nflx-search-glass, rgba(20, 20, 20, 0.85)) !important
                 backdrop-filter: blur(10px)
+                color: var(--nflx-text, #fff) !important
+                box-shadow: 0 0 0 1px var(--nflx-border-strong), 0 1px 2px color-mix(in srgb, #000 12%, transparent)
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing
+                border-color: var(--nflx-border-strong) !important
             input.mat-mdc-chip-input,
             #searchtext
                 font-size: 1.05rem
+                color: var(--nflx-text, #0b0d12) !important
+                caret-color: var(--nflx-text, #0b0d12) !important
+                &::placeholder
+                    color: var(--nflx-muted, #5c564c) !important
+                    opacity: 1 !important
+                &::-webkit-input-placeholder
+                    color: var(--nflx-muted, #5c564c) !important
+                    opacity: 1 !important
+            .mat-mdc-chip,
+            .mdc-evolution-chip
+                --mdc-chip-label-text-color: var(--nflx-text, #0b0d12)
+                --mdc-chip-outline-color: var(--nflx-border-strong)
+                --mdc-chip-elevated-container-color: color-mix(in srgb, var(--nflx-text, #0b0d12) 8%, transparent)
+                --mdc-chip-flat-selected-container-color: color-mix(in srgb, var(--nflx-text, #0b0d12) 8%, transparent)
+                color: var(--nflx-text, #0b0d12) !important
+                background: color-mix(in srgb, var(--nflx-text, #0b0d12) 10%, transparent) !important
+                border-color: var(--nflx-border-strong) !important
+            .mat-mdc-chip .mdc-evolution-chip__text-label,
+            .mat-mdc-chip .chiptext
+                color: var(--nflx-text, #0b0d12) !important
+            .mat-mdc-chip-remove,
+            .mat-mdc-chip .mat-icon,
+            .mat-mdc-chip mat-icon
+                color: var(--nflx-muted, #5c564c) !important
         #searchcta
-            background: #e8a23a !important
+            background: var(--nflx-accent, #e8a23a) !important
             color: #111 !important
 
 .drop-overlay

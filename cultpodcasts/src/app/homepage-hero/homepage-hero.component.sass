@@ -31,7 +31,8 @@
     background-size: 160px 160px
 
 .billboard__scrim
-    background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, var(--nflx-bg, #0b0b0b) 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
+    // Always fade into near-black — never --nflx-bg (cream in light mode washes out on-media copy).
+    background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, #0b0b0b 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
 
 .billboard__vignette
     background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
@@ -55,6 +56,7 @@
     z-index: 2
     width: min(640px, 100%)
     pointer-events: auto
+    color: var(--nflx-on-media, #fff)
 
 .billboard__feature
     opacity: 1
@@ -90,14 +92,15 @@
     font-weight: 400
     line-height: 1.02
     letter-spacing: -0.025em
+    color: var(--nflx-on-media, #fff)
     text-shadow: 0 4px 40px #000000bf
 
 .billboard__meta
     margin: 0 0 12px
     font-size: 0.95rem
-    color: var(--nflx-muted)
+    color: var(--nflx-on-media-muted, #e8e8e8)
     a
-        color: var(--nflx-text, #fff)
+        color: var(--nflx-on-media, #fff)
         text-decoration: none
         font-weight: 600
         &:hover
@@ -112,7 +115,7 @@
     border-radius: 999px
     background: #ffffff1f
     border: 1px solid #ffffff38
-    color: #fff
+    color: var(--nflx-on-media, #fff)
     font-size: 0.78rem
     font-weight: 600
     vertical-align: middle
@@ -129,7 +132,7 @@
     margin: 0 0 22px
     font-size: 1.05rem
     line-height: 1.45
-    color: #e8e8e8
+    color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
     text-shadow: 0 1px 12px #0000008c
 

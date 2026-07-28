@@ -16,9 +16,9 @@
     margin: 0 auto
     padding: 28px 28px 32px
     border-radius: 18px
-    background: linear-gradient(145deg, #1c1c1cf2, #0e0e0efa)
-    border: 1px solid #ffffff14
-    box-shadow: 0 24px 60px #00000073
+    background: linear-gradient(145deg, var(--nflx-panel-solid, #1c1c1c), var(--nflx-panel, #0e0e0e))
+    border: 1px solid var(--nflx-panel-edge, #ffffff14)
+    box-shadow: 0 24px 60px color-mix(in srgb, #000 45%, transparent)
 
 .catalogue__stat
     text-align: center
@@ -26,7 +26,7 @@
 
 .catalogue__stat--hero
     padding: 0 8px
-    border-inline: 1px solid #ffffff14
+    border-inline: 1px solid var(--nflx-panel-edge, #ffffff14)
 
 .catalogue__value
     margin: 0 0 6px
@@ -35,7 +35,7 @@
     font-weight: 400
     line-height: 1
     letter-spacing: -0.03em
-    color: #fff
+    color: var(--nflx-text)
     font-variant-numeric: tabular-nums
 
 .catalogue__value--count
@@ -61,7 +61,7 @@
         text-decoration: underline dashed 1px
         text-underline-offset: 3px
         &:hover
-            color: #fff
+            color: var(--nflx-text)
 
 @media screen and (max-width: 700px)
     .catalogue__inner
@@ -72,4 +72,4 @@
         order: -1
         padding: 0 0 18px
         border-inline: 0
-        border-bottom: 1px solid #ffffff14
+        border-bottom: 1px solid var(--nflx-panel-edge, #ffffff14)
