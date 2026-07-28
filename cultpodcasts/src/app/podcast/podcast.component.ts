@@ -11,6 +11,8 @@ import { IPageDetails } from '../page-details.interface';
 import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
+import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
+import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 
 @Component({
   selector: 'app-podcast',
@@ -21,6 +23,8 @@ import { SiteLoadingComponent } from '../site-loading/site-loading.component';
     PodcastApiComponent,
     PodcastEpisodeComponent,
     SiteLoadingComponent,
+    EpisodeLoadingSkeletonComponent,
+    BrowseLoadingSkeletonComponent,
     MatButtonModule,
     RouterLink
   ]

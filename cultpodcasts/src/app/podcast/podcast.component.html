@@ -3,6 +3,7 @@
   <app-podcast-episode [episode]="ep" [parentLoaded]="true"></app-podcast-episode>
   } @else if (isLoading()) {
   <app-site-loading [active]="true" label="Loading episode" />
+  <app-episode-loading-skeleton />
   } @else {
   <section class="browse-empty">
     <h2>Episode not found.</h2>
@@ -16,6 +17,7 @@
     <app-podcast-api></app-podcast-api>
   } @placeholder {
     <app-site-loading [active]="true" label="Loading podcast" />
+    <app-browse-loading-skeleton />
   } @error {
     <section class="browse-empty">
       <h2>Failed to load this podcast.</h2>
