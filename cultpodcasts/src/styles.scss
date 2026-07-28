@@ -625,21 +625,6 @@ option {
     --cp-amber: #b86a00;
     --cp-amber-soft: color-mix(in srgb, #e8a23a 28%, transparent);
     --cp-mist: color-mix(in srgb, #2a6f8a 10%, transparent);
-    // Flix dual-theme trial — browse/homepage chrome follows OS light mode.
-    // --nflx-on-media* stay light for text over artwork scrims.
-    --nflx-bg: #f4f0e8;
-    --nflx-panel: #fffdf8;
-    --nflx-text: #0b0d12;
-    --nflx-muted: #5c564c;
-    --nflx-accent: #b86a00;
-    --nflx-border: color-mix(in srgb, #0b0d12 14%, transparent);
-    --nflx-border-strong: color-mix(in srgb, #0b0d12 28%, transparent);
-    --nflx-hover: color-mix(in srgb, #0b0d12 8%, transparent);
-    --nflx-search-glass: color-mix(in srgb, #fffdf8 82%, transparent);
-    --nflx-panel-solid: #fffdf8;
-    --nflx-panel-edge: color-mix(in srgb, #0b0d12 12%, transparent);
-    --nflx-pill-active-bg: #0b0d12;
-    --nflx-pill-active-fg: #f4f0e8;
   }
 
   body {
@@ -821,8 +806,7 @@ option {
   }
 }
 
-/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse).
-   Light overrides live in the prefers-color-scheme: light block above. */
+/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse). */
 :root {
   --nflx-bg: #0b0b0b;
   --nflx-panel: #141414;
@@ -842,6 +826,25 @@ option {
   /* Always-light ink for hero / poster overlays on dark media scrims. */
   --nflx-on-media: #fff;
   --nflx-on-media-muted: #e8e8e8;
+}
+
+/* Must follow :root dark defaults or light tokens lose the cascade. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --nflx-bg: #f4f0e8;
+    --nflx-panel: #fffdf8;
+    --nflx-text: #0b0d12;
+    --nflx-muted: #5c564c;
+    --nflx-accent: #b86a00;
+    --nflx-border: color-mix(in srgb, #0b0d12 14%, transparent);
+    --nflx-border-strong: color-mix(in srgb, #0b0d12 28%, transparent);
+    --nflx-hover: color-mix(in srgb, #0b0d12 8%, transparent);
+    --nflx-search-glass: color-mix(in srgb, #fffdf8 92%, transparent);
+    --nflx-panel-solid: #fffdf8;
+    --nflx-panel-edge: color-mix(in srgb, #0b0d12 12%, transparent);
+    --nflx-pill-active-bg: #0b0d12;
+    --nflx-pill-active-fg: #f4f0e8;
+  }
 }
 
 /* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
