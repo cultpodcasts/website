@@ -7,8 +7,6 @@ export const environment: IEnvironment = {
    },
    api: 'https://api.cultpodcasts.com',
    assetHost: 'https://cultpodcasts.com',
-  // Empty — MatIcon SVGs are inlined (see register-svg-icons.ts); keep for any absolute asset URLs.
-  bundleAssetHost: '',
    shortner: 'https://s.cultpodcasts.com',
    name: "prod",
    vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is"
