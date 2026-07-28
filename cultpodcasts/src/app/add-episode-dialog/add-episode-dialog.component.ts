@@ -445,7 +445,7 @@ export class AddEpisodeDialogComponent {
       return null;
     }
     try {
-      const podcastEndpoint = new URL(`/podcast/${podcastId}`, environment.api).toString();
+      const podcastEndpoint = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
       return podcast;
     } catch {
