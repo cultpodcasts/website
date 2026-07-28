@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
@@ -12,7 +12,6 @@ import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
-import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 
 @Component({
   selector: 'app-podcast',
@@ -24,7 +23,6 @@ import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/brows
     PodcastEpisodeComponent,
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
-    BrowseLoadingSkeletonComponent,
     MatButtonModule,
     RouterLink
   ]
@@ -39,6 +37,8 @@ export class PodcastComponent {
   protected episode = signal<SearchResult | undefined>(undefined);
   protected isEpisode = signal<boolean>(false);
   protected isLoading = signal<boolean>(true);
+  /** Client-only after hydration — keep SSR loading shell as site-loading alone. */
+  protected readonly showEpisodeSkeleton = signal(false);
 
   constructor(
     private seoService: SeoService,
@@ -50,6 +50,10 @@ export class PodcastComponent {
     // Starting at false made the client claim app-podcast-api against an SSR
     // loading shell and blew up AppComponent hydration (TypeError on 'd'/hasAttribute).
     this.applyRouteParams(this.route.snapshot.params);
+
+    if (!this.isServer) {
+      afterNextRender(() => this.showEpisodeSkeleton.set(true));
+    }
   }
 
   ngOnInit() {
