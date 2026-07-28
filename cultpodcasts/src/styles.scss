@@ -625,6 +625,21 @@ option {
     --cp-amber: #b86a00;
     --cp-amber-soft: color-mix(in srgb, #e8a23a 28%, transparent);
     --cp-mist: color-mix(in srgb, #2a6f8a 10%, transparent);
+    // Flix dual-theme trial — browse/homepage chrome follows OS light mode.
+    // --nflx-on-media* stay light for text over artwork scrims.
+    --nflx-bg: #f4f0e8;
+    --nflx-panel: #fffdf8;
+    --nflx-text: #0b0d12;
+    --nflx-muted: #5c564c;
+    --nflx-accent: #b86a00;
+    --nflx-border: color-mix(in srgb, #0b0d12 14%, transparent);
+    --nflx-border-strong: color-mix(in srgb, #0b0d12 28%, transparent);
+    --nflx-hover: color-mix(in srgb, #0b0d12 8%, transparent);
+    --nflx-search-glass: color-mix(in srgb, #fffdf8 82%, transparent);
+    --nflx-panel-solid: #fffdf8;
+    --nflx-panel-edge: color-mix(in srgb, #0b0d12 12%, transparent);
+    --nflx-pill-active-bg: #0b0d12;
+    --nflx-pill-active-fg: #f4f0e8;
   }
 
   body {
@@ -806,13 +821,27 @@ option {
   }
 }
 
-/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse). */
+/* Shared flix / browse chrome tokens (homepage .nflx, episode .episode, .browse).
+   Light overrides live in the prefers-color-scheme: light block above. */
 :root {
   --nflx-bg: #0b0b0b;
   --nflx-panel: #141414;
   --nflx-text: #fff;
   --nflx-muted: #b3b3b3;
   --nflx-accent: #e8a23a;
+  --nflx-border: color-mix(in srgb, #fff 18%, transparent);
+  --nflx-border-strong: color-mix(in srgb, #fff 35%, transparent);
+  --nflx-hover: color-mix(in srgb, #fff 10%, transparent);
+  --nflx-search-glass: rgba(20, 20, 20, 0.72);
+  /* Homepage search sits on the hero — always dark glass for contrast on artwork. */
+  --nflx-search-glass-on-media: rgba(20, 20, 20, 0.72);
+  --nflx-panel-solid: #1c1c1c;
+  --nflx-panel-edge: color-mix(in srgb, #fff 8%, transparent);
+  --nflx-pill-active-bg: #fff;
+  --nflx-pill-active-fg: #111;
+  /* Always-light ink for hero / poster overlays on dark media scrims. */
+  --nflx-on-media: #fff;
+  --nflx-on-media-muted: #e8e8e8;
 }
 
 /* ——— Browse shell (search / subject / podcast — matches nflx homepage) ——— */
@@ -852,7 +881,7 @@ option {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-weight: 400;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--nflx-text);
   line-height: 1.15;
 }
 
@@ -862,10 +891,10 @@ option {
   gap: 2px;
   margin: 0;
   padding: 6px 4px 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--nflx-border-strong);
   border-radius: 2px;
   background: transparent;
-  color: #fff;
+  color: var(--nflx-text);
   font: inherit;
   font-size: 0.9rem;
   font-weight: 500;
@@ -880,7 +909,7 @@ option {
   }
   &:hover,
   &:focus-visible {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--nflx-hover);
     outline: none;
   }
 }
@@ -923,10 +952,10 @@ option {
   scroll-snap-align: start;
   margin: 0;
   padding: 7px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--nflx-border-strong);
   border-radius: 999px;
   background: transparent;
-  color: #fff;
+  color: var(--nflx-text);
   font: inherit;
   font-size: 0.88rem;
   font-weight: 500;
@@ -936,13 +965,13 @@ option {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   &:hover,
   &:focus-visible {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--nflx-hover);
     outline: none;
   }
   &.is-active {
-    background: #fff;
-    border-color: #fff;
-    color: #111;
+    background: var(--nflx-pill-active-bg);
+    border-color: var(--nflx-pill-active-bg);
+    color: var(--nflx-pill-active-fg);
     font-weight: 700;
   }
 }
@@ -973,7 +1002,7 @@ option {
   text-underline-offset: 3px;
   &:hover,
   &:focus-visible {
-    color: #fff;
+    color: var(--nflx-text);
     outline: none;
   }
 }
@@ -1044,7 +1073,7 @@ option {
   color: var(--nflx-muted);
 
   h2 {
-    color: #fff;
+    color: var(--nflx-text);
     font-family: var(--cp-font-display, 'Instrument Serif', Georgia, serif);
     font-weight: 400;
   }

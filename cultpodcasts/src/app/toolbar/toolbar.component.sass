@@ -102,9 +102,9 @@ button#menu
         border-bottom-color: transparent
         backdrop-filter: none
         -webkit-backdrop-filter: none
-        color: #fff
+        color: var(--nflx-on-media, #fff)
     #site
-        color: #fff
+        color: var(--nflx-on-media, #fff)
     #site span
         position: absolute
         width: 1px
@@ -112,4 +112,16 @@ button#menu
         overflow: hidden
         clip: rect(0, 0, 0, 0)
     button#menu
-        color: #fff
+        color: var(--nflx-on-media, #fff)
+
+// Browse routes use the same frosted bar as Material chrome, but tinted with
+// Flix tokens so light OS theme does not sit cream-on-black.
+:host-context(.browse-shell)
+    .app-toolbar
+        background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent) !important
+        color: var(--nflx-text, var(--mat-sys-on-surface))
+        border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
+    #site
+        color: var(--nflx-text, var(--mat-sys-on-surface))
+    button#menu
+        color: var(--nflx-text, var(--mat-sys-on-surface))

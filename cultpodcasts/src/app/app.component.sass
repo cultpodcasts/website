@@ -12,13 +12,13 @@
     padding-bottom: 4px
 
 .home-shell
-    background: #0b0b0b
+    background: var(--nflx-bg, #0b0b0b)
     // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
     .chrome-search
         display: none
 
 .browse-shell
-    background: #0b0b0b
+    background: var(--nflx-bg, #0b0b0b)
 
 .browse-chrome-search
     // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
@@ -47,7 +47,7 @@
             .mdc-text-field,
             .mdc-text-field--outlined,
             .mdc-text-field--no-label
-                background: rgba(20, 20, 20, 0.85) !important
+                background: var(--nflx-search-glass, rgba(20, 20, 20, 0.85)) !important
                 backdrop-filter: blur(10px)
             input.mat-mdc-chip-input,
             #searchtext

@@ -13,7 +13,7 @@
     margin: 0 0 14px
     padding: 10px 12px
     border-radius: var(--cp-radius, 14px)
-    border: 1px solid color-mix(in srgb, #fff 10%, transparent)
+    border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent)
     background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 94%, transparent)
     backdrop-filter: blur(10px)
 
@@ -45,9 +45,9 @@
 .curator-card
     margin-bottom: 12px
     padding: 12px
-    border: 1px solid color-mix(in srgb, #fff 10%, transparent)
+    border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent)
     border-radius: var(--cp-radius, 14px)
-    background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433)
+    background: var(--mat-sys-surface-container, color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433))
 
 .curator-card__body
     display: flex

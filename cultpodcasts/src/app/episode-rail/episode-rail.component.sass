@@ -23,7 +23,7 @@
     font-size: 1.25rem
     font-weight: 700
     letter-spacing: 0.01em
-    color: #fff
+    color: var(--nflx-text)
 
 .rail__title--link
     display: inline-flex
@@ -59,9 +59,9 @@
     height: 32px
     padding: 0
     border-radius: 50%
-    border: 1px solid color-mix(in srgb, #fff 18%, transparent)
-    background: color-mix(in srgb, #000 45%, transparent)
-    color: color-mix(in srgb, #fff 55%, transparent)
+    border: 1px solid var(--nflx-border, color-mix(in srgb, #fff 18%, transparent))
+    background: color-mix(in srgb, var(--nflx-bg, #000) 45%, transparent)
+    color: color-mix(in srgb, var(--nflx-text, #fff) 55%, transparent)
     cursor: pointer
     transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease
     mat-icon
@@ -71,7 +71,7 @@
         transform: rotate(45deg)
     &:hover,
     &:focus-visible
-        color: #fff
+        color: var(--nflx-text)
         border-color: var(--nflx-accent)
         outline: none
     &.is-pinned
@@ -89,7 +89,7 @@
     white-space: nowrap
     &:hover,
     &:focus-visible
-        color: #fff
+        color: var(--nflx-text)
         outline: none
 
 .rail__scroller
