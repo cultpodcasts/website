@@ -1,6 +1,6 @@
 # Flix search typeahead (prototype)
 
-Lightweight, prototype-only intelligent search for `flix.cultpodcasts.com`. Adds typeahead/suggestions to `app-search-bar` while typing, sourced from a small **static JSON match index** checked into this repo (no new backend endpoint).
+Lightweight intelligent search for the production Flix UI on `cultpodcasts.com`. Adds typeahead/suggestions to `app-search-bar` while typing, sourced from a small **static JSON match index** checked into this repo (no new backend endpoint).
 
 ## Corpus
 
