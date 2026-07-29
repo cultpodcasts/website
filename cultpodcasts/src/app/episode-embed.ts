@@ -1,6 +1,8 @@
 import {
   SearchDisplayEpisode,
   appleUrl,
+  externalListenUrl,
+  externalPlaybackUrl,
   externalWatchUrl,
   spotifyUrl,
   youtubeUrl,
@@ -70,14 +72,17 @@ export function canEmbedEpisode(episode: SearchDisplayEpisode): boolean {
 }
 
 /**
- * Primary CTA visibility: in-app embed **or** outbound video Watch (BBC iPlayer /
- * Internet Archive). Embeddable audio/video still wins for the actual click handler.
+ * Primary CTA visibility: in-app embed **or** outbound Watch/Listen (BBC iPlayer /
+ * Internet Archive / BBC Sounds). Embeddable audio/video still wins for the click handler.
  */
 export function canPlayEpisode(episode: SearchDisplayEpisode): boolean {
-  return canEmbedEpisode(episode) || !!externalWatchUrl(episode);
+  return canEmbedEpisode(episode) || !!externalPlaybackUrl(episode);
 }
 
-/** Primary CTA label: Watch for YouTube or external video; Listen for Spotify/Apple. */
+/**
+ * Primary CTA label: Watch for YouTube or external video; Listen for Spotify/Apple
+ * or external audio (BBC Sounds).
+ */
 export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Listen' {
   const preferred = preferredEmbedService(episodeEmbedOptions(episode));
   if (preferred === 'youtube') {
@@ -89,12 +94,15 @@ export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Liste
   if (externalWatchUrl(episode)) {
     return 'Watch';
   }
+  if (externalListenUrl(episode)) {
+    return 'Listen';
+  }
   return 'Listen';
 }
 
 /**
- * Start in-app embed playback, or open BBC iPlayer / Internet Archive in a new tab.
- * Returns whether a playback action was taken.
+ * Start in-app embed playback, or open BBC iPlayer / Internet Archive / Sounds
+ * in a new tab. Returns whether a playback action was taken.
  */
 export function startEpisodePlayback(
   episode: SearchDisplayEpisode,
@@ -105,7 +113,7 @@ export function startEpisodePlayback(
     playEmbed(episode);
     return true;
   }
-  const external = externalWatchUrl(episode);
+  const external = externalPlaybackUrl(episode);
   if (external) {
     openExternal(external);
     return true;

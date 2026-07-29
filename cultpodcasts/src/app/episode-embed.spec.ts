@@ -92,7 +92,8 @@ describe('episode-embed', () => {
     expect(canPlayEpisode(archive)).toBe(true);
     expect(playActionLabel(archive)).toBe('Watch');
 
-    expect(canPlayEpisode(sounds)).toBe(false);
+    expect(canEmbedEpisode(sounds)).toBe(false);
+    expect(canPlayEpisode(sounds)).toBe(true);
     expect(playActionLabel(sounds)).toBe('Listen');
   });
 
@@ -105,12 +106,15 @@ describe('episode-embed', () => {
     expect(playActionLabel(both)).toBe('Listen');
   });
 
-  it('starts embed playback or opens external Watch', () => {
+  it('starts embed playback or opens external Watch / Listen', () => {
     const yt = episode({
       youtube: new URL('https://www.youtube.com/watch?v=abc123DEF45'),
     });
     const iplayer = episode({
       bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto'),
+    });
+    const sounds = episode({
+      bbc: new URL('https://www.bbc.co.uk/sounds/play/m001abcd'),
     });
     const played: SearchDisplayEpisode[] = [];
     const opened: string[] = [];
@@ -122,6 +126,13 @@ describe('episode-embed', () => {
     expect(startEpisodePlayback(iplayer, (ep) => played.push(ep), (url) => opened.push(url.toString()))).toBe(true);
     expect(played).toHaveLength(1);
     expect(opened).toEqual(['https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto']);
+
+    expect(startEpisodePlayback(sounds, (ep) => played.push(ep), (url) => opened.push(url.toString()))).toBe(true);
+    expect(played).toHaveLength(1);
+    expect(opened).toEqual([
+      'https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto',
+      'https://www.bbc.co.uk/sounds/play/m001abcd',
+    ]);
 
     expect(startEpisodePlayback(episode(), (ep) => played.push(ep), (url) => opened.push(url.toString()))).toBe(false);
   });
