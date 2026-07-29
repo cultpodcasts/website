@@ -36,3 +36,7 @@ Auth0 requires hostname **`local.cultpodcasts.com`** (hosts → `127.0.0.1`). De
 | `npm run dev` | `https://local.cultpodcasts.com:4200` |
 
 Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
+
+## Version bumps (HARD for PRs)
+
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.

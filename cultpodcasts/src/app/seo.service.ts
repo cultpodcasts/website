@@ -4,6 +4,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details.interface';
 
 const siteName: string = "Cult Podcasts";
+const defaultShareImagePath: string = "/assets/sq-image.png";
 
 @Injectable({
   providedIn: 'root'
@@ -54,6 +55,7 @@ export class SeoService {
         this.meta.updateTag({ property: "og:description", content: description });
       }
       this.meta.updateTag({ property: "og:title", content: htmlTItle });
+      this.applyShareImage(pageDetails);
     }
   }
 
@@ -74,10 +76,25 @@ export class SeoService {
       if (this.url) {
         const domain: string = this.url.hostname;
         const url: string = this.url.toString();
+        const shareImage = new URL(defaultShareImagePath, this.url).toString();
         this.meta.addTag({ property: "twitter:domain", content: domain });
         this.meta.addTag({ property: "og:url", content: url });
-        this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
+        this.meta.addTag({ property: "og:image", content: shareImage });
       };
     }
+  }
+
+  private applyShareImage(pageDetails: IPageDetails): void {
+    const image = pageDetails.image
+      ?? (this.url ? new URL(defaultShareImagePath, this.url).toString() : undefined);
+    if (!image) {
+      return;
+    }
+    this.meta.updateTag({ property: "og:image", content: image });
+    this.meta.updateTag({ name: "twitter:image", content: image });
+    const card = pageDetails.image && pageDetails.imageAspect === "wide"
+      ? "summary_large_image"
+      : "summary";
+    this.meta.updateTag({ name: "twitter:card", content: card });
   }
 }
