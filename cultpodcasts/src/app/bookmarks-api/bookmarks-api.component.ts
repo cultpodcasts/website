@@ -25,7 +25,7 @@ import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { apiEpisodeToHomepageEpisode } from '../api-episode-display';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { canPlayEpisode } from '../episode-embed';
+import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 
 export enum sortMode {
@@ -298,10 +298,7 @@ export class BookmarksApiComponent {
   }
 
   playEpisode(episode: SearchDisplayEpisode): void {
-    if (!canPlayEpisode(episode)) {
-      return;
-    }
-    this.playerService.play(episode);
+    startEpisodePlayback(episode, (playable) => this.playerService.play(playable));
   }
 
   isPlayingId(id: string): boolean {

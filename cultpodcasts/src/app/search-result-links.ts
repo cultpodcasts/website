@@ -1,5 +1,6 @@
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
+import { BBCServiceResolver } from "./service-resolver";
 
 export type SearchDisplayEpisode = HomepageEpisode | SearchResult;
 
@@ -28,6 +29,24 @@ export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
   return episode.appleId && episode.podcastAppleId
     ? toUrl(`https://podcasts.apple.com/podcast/id${encodeURIComponent(episode.podcastAppleId)}?i=${encodeURIComponent(episode.appleId)}`)
     : undefined;
+}
+
+/** BBC iPlayer (video) page — not embeddable; used for outbound Watch CTAs. */
+export function bbcIplayerUrl(episode: SearchDisplayEpisode): URL | undefined {
+  const bbc = toUrl(episode.bbc);
+  return bbc && BBCServiceResolver.isIplayer(bbc) ? bbc : undefined;
+}
+
+export function internetArchiveUrl(episode: SearchDisplayEpisode): URL | undefined {
+  return toUrl(episode.internetArchive);
+}
+
+/**
+ * Non-embeddable video destinations. Prefer iPlayer when both exist.
+ * BBC Sounds is audio and is intentionally excluded.
+ */
+export function externalWatchUrl(episode: SearchDisplayEpisode): URL | undefined {
+  return bbcIplayerUrl(episode) ?? internetArchiveUrl(episode);
 }
 
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
@@ -105,9 +124,18 @@ export function isYoutubeThumbnailUrl(image: URL | string | undefined): boolean 
 
 export type EpisodeArtAspect = "wide" | "square";
 
-/** Layout for cover art: YouTube thumbs → 16:9; Spotify/Apple/feed art → square. */
+/**
+ * Layout for cover art: YouTube thumbs → 16:9; BBC iPlayer / Internet Archive video
+ * episodes → 16:9 (feed art is often square and gets cover-cropped); else square.
+ */
 export function episodeArtAspect(episode: SearchDisplayEpisode): EpisodeArtAspect {
-  return isYoutubeThumbnailUrl(episodeImageUrl(episode)) ? "wide" : "square";
+  if (isYoutubeThumbnailUrl(episodeImageUrl(episode))) {
+    return "wide";
+  }
+  if (externalWatchUrl(episode)) {
+    return "wide";
+  }
+  return "square";
 }
 
 // Loss-less inverse of the search index's image compaction (RPP `SearchEpisodeImage`). `image` holds

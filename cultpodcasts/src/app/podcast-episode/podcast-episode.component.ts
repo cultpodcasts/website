@@ -25,7 +25,7 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
-import { canPlayEpisode, playActionLabel } from '../episode-embed';
+import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect } from '@angular/core';
@@ -98,6 +98,11 @@ export class PodcastEpisodeComponent {
   protected readonly playable = computed(() => {
     const ep = this._episode();
     return ep ? canPlayEpisode(ep) : false;
+  });
+
+  protected readonly queueable = computed(() => {
+    const ep = this._episode();
+    return ep ? canEmbedEpisode(ep) : false;
   });
 
   protected readonly playLabel = computed(() => {
@@ -253,14 +258,14 @@ export class PodcastEpisodeComponent {
 
   playEpisode(episode?: SearchDisplayEpisode): void {
     const ep = episode ?? this._episode();
-    if (ep && canPlayEpisode(ep)) {
-      this.playerService.play(ep);
+    if (ep) {
+      startEpisodePlayback(ep, (playable) => this.playerService.play(playable));
     }
   }
 
   toggleQueue(): void {
     const ep = this._episode();
-    if (ep && canPlayEpisode(ep)) {
+    if (ep && canEmbedEpisode(ep)) {
       this.playerService.toggleQueue(ep);
     }
   }

@@ -1,4 +1,10 @@
-import { SearchDisplayEpisode, appleUrl, spotifyUrl, youtubeUrl } from './search-result-links';
+import {
+  SearchDisplayEpisode,
+  appleUrl,
+  externalWatchUrl,
+  spotifyUrl,
+  youtubeUrl,
+} from './search-result-links';
 
 export type EmbedService = 'youtube' | 'spotify' | 'apple';
 
@@ -58,14 +64,57 @@ export function preferredEmbedService(options: EpisodeEmbedOption[]): EmbedServi
   return options[0]?.service;
 }
 
-/** Primary CTA label: Watch when YouTube is preferred, otherwise Listen. */
-export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Listen' {
-  const preferred = preferredEmbedService(episodeEmbedOptions(episode));
-  return preferred === 'youtube' ? 'Watch' : 'Listen';
+/** True when the episode can play in the in-app player (YouTube / Spotify / Apple embed). */
+export function canEmbedEpisode(episode: SearchDisplayEpisode): boolean {
+  return episodeEmbedOptions(episode).length > 0;
 }
 
+/**
+ * Primary CTA visibility: in-app embed **or** outbound video Watch (BBC iPlayer /
+ * Internet Archive). Embeddable audio/video still wins for the actual click handler.
+ */
 export function canPlayEpisode(episode: SearchDisplayEpisode): boolean {
-  return episodeEmbedOptions(episode).length > 0;
+  return canEmbedEpisode(episode) || !!externalWatchUrl(episode);
+}
+
+/** Primary CTA label: Watch for YouTube or external video; Listen for Spotify/Apple. */
+export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Listen' {
+  const preferred = preferredEmbedService(episodeEmbedOptions(episode));
+  if (preferred === 'youtube') {
+    return 'Watch';
+  }
+  if (preferred === 'spotify' || preferred === 'apple') {
+    return 'Listen';
+  }
+  if (externalWatchUrl(episode)) {
+    return 'Watch';
+  }
+  return 'Listen';
+}
+
+/**
+ * Start in-app embed playback, or open BBC iPlayer / Internet Archive in a new tab.
+ * Returns whether a playback action was taken.
+ */
+export function startEpisodePlayback(
+  episode: SearchDisplayEpisode,
+  playEmbed: (episode: SearchDisplayEpisode) => void,
+  openExternal: (url: URL) => void = defaultOpenExternal
+): boolean {
+  if (canEmbedEpisode(episode)) {
+    playEmbed(episode);
+    return true;
+  }
+  const external = externalWatchUrl(episode);
+  if (external) {
+    openExternal(external);
+    return true;
+  }
+  return false;
+}
+
+function defaultOpenExternal(url: URL): void {
+  window.open(url.toString(), '_blank', 'noopener,noreferrer');
 }
 
 export function youtubeEmbedUrl(watchUrl: URL): string | undefined {
