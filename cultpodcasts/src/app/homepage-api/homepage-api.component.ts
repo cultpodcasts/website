@@ -24,7 +24,7 @@ import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { pickObscureCults } from '../obscure-cults';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
-import { episodeEmbedOptions } from '../episode-embed';
+import { startEpisodePlayback } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationService } from '../hero-curation.service';
@@ -283,10 +283,7 @@ export class HomepageApiComponent {
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (episodeEmbedOptions(episode).length === 0) {
-      return;
-    }
-    this.playerService.play(episode);
+    startEpisodePlayback(episode, (playable) => this.playerService.play(playable));
   }
 
   async togglePromote(episode: SearchDisplayEpisode): Promise<void> {

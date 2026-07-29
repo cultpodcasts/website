@@ -67,11 +67,13 @@
         <mat-icon>play_arrow</mat-icon>
         {{ playLabel() }}
       </button>
+      @if (queueable()) {
       <button type="button" class="episode-hero__queue" [class.is-queued]="queued()"
         [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggleQueue()">
         <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
         {{ queued() ? 'Queued' : 'Add to Queue' }}
       </button>
+      }
       }
       <app-episode-links class="episode-hero__links" [episode]="episode"></app-episode-links>
     </div>

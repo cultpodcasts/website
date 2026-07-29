@@ -68,6 +68,33 @@ describe("search-result-links", () => {
     expect(episodeArtAspect(homepageYt)).toBe("wide");
   });
 
+  it("uses wide rail art for BBC iPlayer and Internet Archive even with square feed covers", () => {
+    const iplayer: HomepageEpisode = {
+      id: "id",
+      podcastName: "BBC Three",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:57:00",
+      spotify: undefined,
+      apple: undefined,
+      youtube: undefined,
+      bbc: new URL("https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto"),
+      internetArchive: undefined,
+      subjects: [],
+      image: new URL("https://ichef.bbci.co.uk/images/ic/640xn/p0square.jpg")
+    };
+    const archive: SearchResult = {
+      ...searchResult,
+      youtubeId: undefined,
+      image: "sab6765cover",
+      internetArchive: "https://archive.org/details/example-video"
+    };
+
+    expect(episodeArtAspect(iplayer)).toBe("wide");
+    expect(episodeArtAspect(archive)).toBe("wide");
+  });
+
   it("prefers a YouTube thumbnail when the index stored square cover but the episode is watchable", () => {
     const watchWithSpotifyArt: SearchResult = {
       ...searchResult,

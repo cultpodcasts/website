@@ -22,7 +22,7 @@ import { PlayerService } from '../player.service';
 import { episodeImageUrl, SearchDisplayEpisode } from '../search-result-links';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
-import { episodeEmbedOptions, playActionLabel } from '../episode-embed';
+import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 
 @Component({
@@ -289,7 +289,7 @@ export class HomepageHeroComponent {
   }
 
   protected canPlay(episode: HomepageEpisode | SearchDisplayEpisode): boolean {
-    return episodeEmbedOptions(episode).length > 0;
+    return canPlayEpisode(episode);
   }
 
   protected playLabel(episode: HomepageEpisode | SearchDisplayEpisode): 'Watch' | 'Listen' {
@@ -303,11 +303,10 @@ export class HomepageHeroComponent {
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (!this.canPlay(episode)) {
-      return;
-    }
-    this.heroPaused.set(true);
-    this.play.emit(episode);
+    startEpisodePlayback(episode, (playable) => {
+      this.heroPaused.set(true);
+      this.play.emit(playable);
+    });
   }
 
   onHeroPointerEnter(): void {

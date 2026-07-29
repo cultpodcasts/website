@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { canPlayEpisode, playActionLabel } from '../episode-embed';
+import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SearchDisplayEpisode, episodeArtAspect, episodeImageUrl } from '../search-result-links';
 import { displayCatalogName } from '../display-catalog-name';
@@ -58,10 +58,13 @@ export class EpisodePosterComponent {
     episodeImageUrl(this.episode())?.toString()
   );
 
-  /** YouTube thumbnail → wide 16:9; Spotify/Apple/feed art → square. */
+  /** YouTube / external video → wide 16:9; Spotify/Apple/feed art → square. */
   protected readonly artAspect = computed(() => episodeArtAspect(this.episode()));
 
   protected readonly playable = computed(() => canPlayEpisode(this.episode()));
+
+  /** In-app queue only when we can embed; outbound Watch has nothing to enqueue. */
+  protected readonly queueable = computed(() => canEmbedEpisode(this.episode()));
 
   protected readonly playLabel = computed(() => playActionLabel(this.episode()));
 
@@ -87,15 +90,13 @@ export class EpisodePosterComponent {
   onPlay(event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (this.playable()) {
-      this.play.emit(this.episode());
-    }
+    startEpisodePlayback(this.episode(), (ep) => this.play.emit(ep));
   }
 
   onToggleQueue(event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
-    if (this.playable()) {
+    if (this.queueable()) {
       this.playerService.toggleQueue(this.episode());
     }
   }

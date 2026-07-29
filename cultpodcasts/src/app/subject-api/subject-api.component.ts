@@ -35,7 +35,7 @@ import { EpisodePosterComponent } from '../episode-poster/episode-poster.compone
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { canPlayEpisode } from '../episode-embed';
+import { startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { PlayerService } from '../player.service';
 
@@ -471,10 +471,7 @@ export class SubjectApiComponent {
   }
 
   playEpisode(episode: SearchDisplayEpisode): void {
-    if (!canPlayEpisode(episode)) {
-      return;
-    }
-    this.playerService.play(episode);
+    startEpisodePlayback(episode, (playable) => this.playerService.play(playable));
   }
 
   isPlayingId(id: string): boolean {
