@@ -11,6 +11,8 @@
     background: var(--nflx-bg)
     min-height: 100vh
     padding-bottom: 48px
+    // Pull under sticky chrome so the billboard sits behind the transparent header/search.
+    margin-top: calc(-1 * var(--site-chrome-h, 130px))
 
 .nflx--playing
     padding-bottom: min(52vh, 420px)
