@@ -7,13 +7,14 @@ import {
   SuggestionsCorpus
 } from './search-suggestions.interface';
 import { displayCatalogName } from './display-catalog-name';
+import { environment } from './../environments/environment';
 
-const SUGGESTIONS_ASSET_PATH = 'assets/search-suggestions.json';
 const DEFAULT_LIMIT = 8;
 
 /**
- * Loads the flat, pre-normalized typeahead index (see docs/search-suggestions.md)
- * and ranks matches for a query. Loaded lazily and cached for the app lifetime.
+ * Loads the flat, pre-normalized typeahead index from GET /search-suggestions
+ * (R2 via the API worker; see docs/search-suggestions.md) and ranks matches.
+ * Loaded lazily and cached for the app lifetime.
  */
 @Injectable({ providedIn: 'root' })
 export class SearchSuggestionsService {
@@ -22,8 +23,9 @@ export class SearchSuggestionsService {
 
   private loadIndex(): Promise<SuggestionIndexEntry[]> {
     if (!this.corpusPromise) {
+      const url = new URL('/search-suggestions', environment.api).toString();
       this.corpusPromise = firstValueFrom(
-        this.http.get<SuggestionsCorpus>(SUGGESTIONS_ASSET_PATH)
+        this.http.get<SuggestionsCorpus>(url)
       )
         .then(corpus => Array.isArray(corpus?.entries) ? corpus.entries : [])
         .catch(e => {
