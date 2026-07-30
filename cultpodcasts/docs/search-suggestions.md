@@ -41,7 +41,7 @@ From the RPP repo:
 dotnet run --project Console-Apps/PublishR2 -- search-suggestions
 ```
 
-Index is built by `SearchSuggestionsIndexBuilder` and uploaded to the `content` bucket key `search-suggestions`. The Indexer function also refreshes it weekly (Sunday 07:00 UTC via `SearchSuggestionsPublish`).
+Index is built by `SearchSuggestionsIndexBuilder` and uploaded to the `content` bucket key `search-suggestions`. The Indexer function also refreshes it weekly (Sunday 07:07 UTC via `SearchSuggestionsPublish`).
 
 ### Local file export (debugging)
 
