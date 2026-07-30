@@ -75,6 +75,7 @@ export class AppComponent implements OnDestroy {
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
+  private static readonly DOCK_INLINE_GAP_PX = 12;
   protected readonly showBackToTop = signal(false);
   /** Search has scrolled up into the sticky logo bar (single-row chrome). */
   protected readonly chromeStuck = signal(false);
@@ -119,12 +120,14 @@ export class AppComponent implements OnDestroy {
     if (this.isBrowser) {
       this.removeDragListeners();
       this.removeScrollListener();
+      window.removeEventListener('resize', this.onWindowResize);
     }
   }
 
   initialiseBrowser() {
     this.addDragListeners();
     this.addScrollListener();
+    window.addEventListener('resize', this.onWindowResize, { passive: true });
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -258,6 +261,12 @@ export class AppComponent implements OnDestroy {
     });
   };
 
+  private readonly onWindowResize = () => {
+    if (this.chromeStuck()) {
+      this.layoutDockedSearch();
+    }
+  };
+
   private syncChromeFromScroll(): void {
     const y = window.scrollY;
     this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
@@ -272,6 +281,9 @@ export class AppComponent implements OnDestroy {
       // Release back to the dropped layout near the top of the page.
       if (y < Math.max(8, this.dockAtScrollY - 12)) {
         this.chromeStuck.set(false);
+        this.clearDockedSearchLayout(search);
+      } else {
+        this.layoutDockedSearch();
       }
       return;
     }
@@ -282,7 +294,50 @@ export class AppComponent implements OnDestroy {
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
       this.chromeStuck.set(true);
+      // Layout after the docked class applies.
+      requestAnimationFrame(() => this.layoutDockedSearch());
     }
+  }
+
+  /**
+   * Pin the search field between the logo (#site) and add/profile (#socialbuttons)
+   * — or the overflow menu on narrow viewports — inside the sticky header row.
+   */
+  private layoutDockedSearch(): void {
+    const bar = this.chromeBar?.nativeElement;
+    const search = this.chromeSearch?.nativeElement;
+    if (!bar || !search || !this.chromeStuck()) {
+      return;
+    }
+
+    const site = bar.querySelector('#site') as HTMLElement | null;
+    const end = (bar.querySelector('#socialbuttons') as HTMLElement | null)
+      ?? (bar.querySelector('button#menu') as HTMLElement | null);
+    if (!site || !end) {
+      return;
+    }
+
+    const gap = AppComponent.DOCK_INLINE_GAP_PX;
+    const siteRect = site.getBoundingClientRect();
+    const endRect = end.getBoundingClientRect();
+    const barRect = bar.getBoundingClientRect();
+    const left = Math.max(gap, siteRect.right + gap);
+    const right = Math.min(window.innerWidth - gap, endRect.left - gap);
+    const width = Math.max(140, right - left);
+    const searchHeight = search.getBoundingClientRect().height || 40;
+    const top = barRect.top + Math.max(0, (barRect.height - searchHeight) / 2);
+
+    search.style.left = `${left}px`;
+    search.style.width = `${width}px`;
+    search.style.top = `${top}px`;
+    search.style.transform = 'none';
+  }
+
+  private clearDockedSearchLayout(search: HTMLElement): void {
+    search.style.left = '';
+    search.style.width = '';
+    search.style.top = '';
+    search.style.transform = '';
   }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {

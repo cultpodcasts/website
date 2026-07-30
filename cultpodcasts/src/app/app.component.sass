@@ -106,20 +106,29 @@
     .chrome-search
         width: min(640px, calc(100% - 1.5rem))
 
-// Docked into the sticky header: single row, still centered, Search button kept.
+// Docked into the sticky header between logo (left) and add/profile (right).
+// Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
 .chrome-search--docked
     position: fixed
+    // Fallback before the first measure — wide header gap, not viewport-centred.
+    left: 72px
     top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
-    left: 50%
-    transform: translateX(-50%)
-    width: min(520px, calc(100vw - 11rem))
+    width: calc(100vw - 11rem)
+    max-width: none
     height: var(--nflx-search-h)
     margin: 0
     z-index: 110
+    transform: none
+    --nflx-search-h: 40px
 
 @media screen and (max-width: 599.9px)
     .chrome-search--docked
-        width: min(520px, calc(100vw - 7.5rem))
+        // Narrow: between logo and overflow menu; hide CTA so the field fits.
+        ::ng-deep
+            #searchcta
+                display: none
+            #searchbar
+                gap: 0
 
 // Homepage at top: dark glass over the billboard.
 .home-shell:not(.chrome-stuck) .chrome-search
