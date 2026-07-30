@@ -35,8 +35,8 @@
       <button matButton="tonal" (click)="selectLikelyMatches()">Select likely</button>
       }
       @if (displaySave()) {
-      <button matButton="tonal" (click)="close()" [disabled]="closeDisabled()">Close</button>
-      <button matButton="tonal" (click)="save()" [disabled]="saveDisabled()" [matBadge]="selectedIds().length"
+      <button matButton="tonal" class="curator-toolbar__close" (click)="close()" [disabled]="closeDisabled()">Close</button>
+      <button matButton="tonal" class="curator-toolbar__save" (click)="save()" [disabled]="saveDisabled()" [matBadge]="selectedIds().length"
         [matBadgeHidden]="saveDisabled()">Save</button>
       }
     </div>

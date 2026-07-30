@@ -48,6 +48,14 @@
     gap: 10px
     margin-left: auto
 
+// On phones the Close/Save pair wraps onto a second row; hide the disabled one
+// (they are mutually exclusive) so only the actionable control takes space.
+@media screen and (max-width: 600px)
+    .curator-toolbar__actions
+        .curator-toolbar__close[disabled],
+        .curator-toolbar__save[disabled]
+            display: none
+
 :host ::ng-deep .curator-toolbar__actions
     .mat-button-toggle-group
         overflow: hidden
