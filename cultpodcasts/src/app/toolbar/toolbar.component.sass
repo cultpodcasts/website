@@ -41,40 +41,6 @@
     .mat-toolbar-single-row
         overflow: visible
 
-.toolbar-search
-    display: flex
-    align-items: center
-    min-width: 0
-    // Default (expanded): drop below the bar, centered at homepage width.
-    position: absolute
-    left: 50%
-    top: calc(100% + 12px)
-    transform: translateX(-50%)
-    width: min(640px, calc(100vw - 2.5rem))
-    max-width: min(640px, calc(100% - 2.5rem))
-    z-index: 15
-    flex: none
-    margin: 0
-    pointer-events: auto
-
-@media screen and (max-width: 700px)
-    .toolbar-search
-        width: min(640px, calc(100vw - 1.5rem))
-        max-width: min(640px, calc(100% - 1.5rem))
-
-:host-context(.chrome-compact)
-    .toolbar-search
-        position: relative
-        left: auto
-        top: auto
-        transform: none
-        flex: 1 1 auto
-        min-width: 0
-        width: auto
-        max-width: min(480px, 100%)
-        margin: 0 10px
-        z-index: auto
-
 .beta
     color: #aaa
 
@@ -132,7 +98,7 @@ button#menu
     border: none
     background-color: transparent
 
-// Home overlay colors — absolute/sticky placement lives on .site-chrome in app.
+// Home overlay colors — sticky frosted placement lives on .site-chrome in app.
 :host-context(.home-shell)
     .app-toolbar
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent) !important

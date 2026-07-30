@@ -74,10 +74,10 @@ export class AppComponent implements OnDestroy {
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
-  /** Collapse the dropped search into the sticky header after a short scroll. */
-  private static readonly CHROME_COMPACT_THRESHOLD_PX = 48;
+  /** Frost the sticky chrome once it has left the page top (home overlay → solid bar). */
+  private static readonly CHROME_STUCK_THRESHOLD_PX = 8;
   protected readonly showBackToTop = signal(false);
-  protected readonly chromeCompact = signal(false);
+  protected readonly chromeStuck = signal(false);
   private scrollRaf = 0;
 
   @ViewChild(ToolbarComponent)
@@ -253,7 +253,7 @@ export class AppComponent implements OnDestroy {
   private syncChromeFromScroll(): void {
     const y = window.scrollY;
     this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
-    this.chromeCompact.set(y > AppComponent.CHROME_COMPACT_THRESHOLD_PX);
+    this.chromeStuck.set(y > AppComponent.CHROME_STUCK_THRESHOLD_PX);
   }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {

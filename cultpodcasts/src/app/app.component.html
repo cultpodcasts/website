@@ -34,18 +34,15 @@
 <section id="body"
   [class.home-shell]="isHomePage()"
   [class.browse-shell]="!isHomePage()"
-  [class.chrome-compact]="chromeCompact()"
+  [class.chrome-stuck]="chromeStuck()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
   <div class="site-chrome">
-    <app-toolbar>
-      <div chromeSearch class="chrome-search">
-        <app-search-bar></app-search-bar>
-      </div>
-    </app-toolbar>
+    <app-toolbar></app-toolbar>
+    <div class="chrome-search">
+      <app-search-bar></app-search-bar>
+    </div>
   </div>
-  <!-- Reserves vertical room for the dropped search on browse; collapsed when compact / home overlay. -->
-  <div class="chrome-search-spacer" aria-hidden="true"></div>
   <router-outlet></router-outlet>
 
   <footer class="site-footer">

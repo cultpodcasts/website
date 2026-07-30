@@ -6,50 +6,40 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
-    // Shared search geometry (homepage overlay + browse drop + compact bar).
-    // Clearance ≈ toolbar (~58px) + drop gap (12px) + search + breathing room.
+    // Toolbar + gap + search + chrome padding — used for home hero pull-under.
     --nflx-search-h: 48px
-    --nflx-hero-search-clearance: calc(58px + 12px + var(--nflx-search-h) + 20px)
+    --site-chrome-pad-bottom: 12px
+    --site-chrome-h: calc(58px + 12px + var(--nflx-search-h) + var(--site-chrome-pad-bottom))
+    --nflx-hero-search-clearance: calc(var(--site-chrome-h) + 8px)
     --search-bar-control-h: var(--nflx-search-h)
 
 @media screen and (max-width: 700px)
     #body
-        --nflx-hero-search-clearance: calc(52px + 12px + var(--nflx-search-h) + 16px)
+        --site-chrome-h: calc(52px + 10px + var(--nflx-search-h) + var(--site-chrome-pad-bottom))
 
-// Sticky site chrome: toolbar + projected search (collapsed into the bar when .chrome-compact).
+// Sticky band: logo row + centered search with CTA. Sticks when it reaches the viewport top.
 .site-chrome
     position: sticky
     top: 0
     z-index: 100
-    overflow: visible
-    transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease
-
-.chrome-search-spacer
-    height: calc(var(--nflx-search-h) + 24px)
-    transition: height 0.22s ease
-    pointer-events: none
-
-.chrome-compact .chrome-search-spacer
-    height: 0
+    display: flex
+    flex-direction: column
+    align-items: stretch
+    padding-bottom: var(--site-chrome-pad-bottom)
+    transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, backdrop-filter 0.22s ease
 
 .home-shell
     background: var(--nflx-bg, #0b0b0b)
-    // Overlay chrome on the hero when at the top (not in document flow).
-    &:not(.chrome-compact) > .site-chrome
-        position: absolute
-        top: 0
-        left: 0
-        right: 0
-        background: transparent
-        box-shadow: none
-    &:not(.chrome-compact) > .chrome-search-spacer
-        height: 0
 
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
 
-// Home toolbar: cinematic dark overlay at top; frosted sticky bar when compact.
+// Home at top: cinematic transparent overlay.
 .home-shell > .site-chrome
+    background: transparent
+    border-bottom: 1px solid transparent
+    backdrop-filter: none
+    -webkit-backdrop-filter: none
     ::ng-deep
         .app-toolbar
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important
@@ -68,11 +58,12 @@
         button#menu
             color: #fff !important
 
-.home-shell.chrome-compact > .site-chrome
+// Once the sticky chrome has left the page top, frost it so content doesn't show through.
+.home-shell.chrome-stuck > .site-chrome
     background: color-mix(in srgb, var(--nflx-panel, #141414) 88%, transparent)
     backdrop-filter: blur(14px)
     -webkit-backdrop-filter: blur(14px)
-    border-bottom: 1px solid color-mix(in srgb, #fff 18%, transparent)
+    border-bottom-color: color-mix(in srgb, #fff 18%, transparent)
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35)
     ::ng-deep
         .app-toolbar
@@ -85,16 +76,17 @@
     -webkit-backdrop-filter: blur(14px)
     border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
 
-.browse-shell.chrome-compact > .site-chrome
+.browse-shell.chrome-stuck > .site-chrome
     background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
 
-// Projected search field styling (geometry of .toolbar-search lives in toolbar.sass).
+// Always centered under the logo row, homepage width, with Search CTA.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
-    width: 100%
+    width: min(640px, calc(100% - 2.5rem))
+    margin: 12px auto 0
     box-sizing: border-box
     ::ng-deep
         #searchcontainer
@@ -105,31 +97,14 @@
         #searchcta
             background: var(--nflx-accent, #e8a23a) !important
             color: #111 !important
-            transition: opacity 0.18s ease, max-width 0.22s ease, padding 0.22s ease, margin 0.22s ease
 
-// Compact: hide the Search CTA so the field fits between logo and actions.
-.chrome-compact
-    --nflx-search-h: 40px
+@media screen and (max-width: 700px)
     .chrome-search
-        ::ng-deep
-            #searchcta
-                opacity: 0
-                max-width: 0
-                min-width: 0
-                padding-left: 0
-                padding-right: 0
-                margin: 0
-                overflow: hidden
-                pointer-events: none
-            #searchbar
-                gap: 0
-            #searchbox
-                input.mat-mdc-chip-input,
-                #searchtext
-                    font-size: 0.95rem
+        width: min(640px, calc(100% - 1.5rem))
+        margin-top: 10px
 
-// Homepage expanded search: always dark glass over the billboard.
-.home-shell:not(.chrome-compact) .chrome-search
+// Homepage at top: dark glass over the billboard.
+.home-shell:not(.chrome-stuck) .chrome-search
     ::ng-deep
         #searchbox
             .mat-mdc-text-field-wrapper,
@@ -169,7 +144,7 @@
                 color: rgba(255, 255, 255, 0.8) !important
 
 @media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
-    .home-shell:not(.chrome-compact) .chrome-search
+    .home-shell:not(.chrome-stuck) .chrome-search
         ::ng-deep
             #searchbox
                 .mat-mdc-text-field-wrapper,
@@ -178,9 +153,9 @@
                 .mdc-text-field--no-label
                     backdrop-filter: none !important
 
-// Browse + compact (any shell): tokenized glass matching browse chrome.
+// Browse + stuck home: tokenized glass.
 .browse-shell .chrome-search,
-.chrome-compact .chrome-search
+.home-shell.chrome-stuck .chrome-search
     ::ng-deep
         #searchbox
             .mat-mdc-text-field-wrapper,
