@@ -92,7 +92,7 @@
     background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
 
-// Dropped search (in flow) — scrolls with the page until it meets the sticky bar.
+// Dropped search (in flow) — scrolls with the page until it meets the fixed logo bar.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
@@ -111,6 +111,11 @@
         #searchcta
             background: var(--nflx-accent, #e8a23a) !important
             color: #111 !important
+
+// Home overlay: spacer is 0 so the billboard can sit under the bar — push search
+// down explicitly so it starts dropped (not already inside the fixed header).
+.home-shell:not(.chrome-stuck) .chrome-search
+    margin-top: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap))
 
 @media screen and (max-width: 700px)
     .chrome-search

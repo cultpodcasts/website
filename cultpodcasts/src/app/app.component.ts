@@ -76,6 +76,8 @@ export class AppComponent implements OnDestroy {
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
+  /** Don't dock at rest — homepage search must start dropped below the fixed bar. */
+  private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
   protected readonly showBackToTop = signal(false);
   /** Search has scrolled up into the sticky logo bar (single-row chrome). */
   protected readonly chromeStuck = signal(false);
