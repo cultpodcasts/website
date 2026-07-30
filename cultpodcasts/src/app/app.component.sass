@@ -137,20 +137,34 @@
     --nflx-search-h: 40px
     overflow: hidden
     ::ng-deep
-        // CTA does not fit in the header slot on narrow/mid widths; Enter still searches.
-        #searchcta
-            display: none !important
         #searchbar
-            gap: 0
+            gap: 8px
+            min-width: 0
+        #searchboxwrapper
+            flex: 1 1 auto
             min-width: 0
         #searchbox
             min-width: 0
+        #searchcta
+            display: inline-flex !important
+            flex: 0 0 auto
+            min-width: 0
+            height: var(--nflx-search-h)
+            min-height: var(--nflx-search-h)
+            padding-left: 14px
+            padding-right: 14px
+            font-size: 0.875rem
+            background: var(--nflx-accent, #e8a23a) !important
+            color: #111 !important
         .chiptext
             max-width: 5.5rem
 
 @media screen and (max-width: 700px)
     .chrome-search--docked
         ::ng-deep
+            #searchcta
+                padding-left: 12px
+                padding-right: 12px
             .chiptext
                 max-width: 3.5rem
 
@@ -159,6 +173,12 @@
         // Between logo icon and overflow menu.
         left: 58px
         width: calc(100vw - 7rem)
+        ::ng-deep
+            #searchcta
+                padding-left: 10px
+                padding-right: 10px
+            .chiptext
+                max-width: 2.75rem
 
 // Homepage at top: dark glass over the billboard.
 .home-shell:not(.chrome-stuck) .chrome-search
