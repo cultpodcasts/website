@@ -25,11 +25,12 @@ export const appConfig: ApplicationConfig = {
     provideAuth0({
       domain: environment.auth0.domain,
       clientId: environment.auth0.clientId,
-      // Firefox (and Safari) block Auth0 silent auth iframes when the app host
-      // (e.g. *.pages.dev) is cross-site to the Auth0 custom domain. Refresh
-      // tokens + localStorage avoid that path for getAccessTokenSilently.
+      // Prefer refresh tokens in localStorage. If the RT is missing, fall back to
+      // the Auth0 iframe when the custom domain session cookie is still valid
+      // (prod/staging apex). Preview hosts (*.pages.dev) often block that iframe;
+      // AuthServiceWrapper then loginWithRedirects once on missing_refresh_token.
       useRefreshTokens: true,
-      useRefreshTokensFallback: false,
+      useRefreshTokensFallback: true,
       cacheLocation: 'localstorage',
       authorizationParams: {
         redirect_uri: authRedirectUri(environment.assetHost),

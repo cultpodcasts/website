@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import {
   AUTH_AVATAR_STORAGE_KEY,
@@ -12,6 +12,8 @@ describe('AuthServiceWrapper avatar cache', () => {
   let isLoading$: BehaviorSubject<boolean>;
   let isAuthenticated$: BehaviorSubject<boolean>;
   let user$: BehaviorSubject<Record<string, unknown> | null>;
+  let error$: Subject<Error>;
+  let loginWithRedirect: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
@@ -19,6 +21,8 @@ describe('AuthServiceWrapper avatar cache', () => {
     isLoading$ = new BehaviorSubject(true);
     isAuthenticated$ = new BehaviorSubject(false);
     user$ = new BehaviorSubject<Record<string, unknown> | null>(null);
+    error$ = new Subject<Error>();
+    loginWithRedirect = vi.fn().mockName('loginWithRedirect').mockReturnValue(of(void 0));
 
     TestBed.configureTestingModule({
       providers: [
@@ -30,6 +34,8 @@ describe('AuthServiceWrapper avatar cache', () => {
             isLoading$,
             isAuthenticated$,
             user$,
+            error$,
+            loginWithRedirect,
           },
         },
         AuthServiceWrapper,
@@ -113,5 +119,33 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(wrapper.avatarUrl()).toBeNull();
     expect(localStorage.getItem(AUTH_AVATAR_STORAGE_KEY)).toBeNull();
     expect(document.documentElement.classList.contains('has-cached-avatar')).toBe(false);
+  });
+
+  it('loginWithRedirects once on missing_refresh_token', () => {
+    TestBed.inject(AuthServiceWrapper);
+
+    error$.next(
+      Object.assign(new Error("Missing Refresh Token (audience: 'https://api.cultpodcasts.com/')"), {
+        error: 'missing_refresh_token',
+      })
+    );
+    error$.next(
+      Object.assign(new Error("Missing Refresh Token (audience: 'https://api.cultpodcasts.com/')"), {
+        error: 'missing_refresh_token',
+      })
+    );
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+    expect(loginWithRedirect).toHaveBeenCalledWith({
+      appState: { target: expect.stringMatching(/^\//) },
+    });
+  });
+
+  it('does not loginWithRedirect for unrelated Auth0 errors', () => {
+    TestBed.inject(AuthServiceWrapper);
+
+    error$.next(Object.assign(new Error('Login required'), { error: 'login_required' }));
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
   });
 });

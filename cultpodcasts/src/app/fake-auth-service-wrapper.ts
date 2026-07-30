@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 
 @Injectable({ providedIn: 'root' })
@@ -13,7 +13,8 @@ export class FakeAuthServiceWrapper extends AuthServiceWrapper {
       getAccessTokenSilently: () => of(),
       isAuthenticated$: of(false),
       isLoading$: of(false),
-      user$: of(null)
+      user$: of(null),
+      error$: EMPTY
     } as any);
   }
 }
