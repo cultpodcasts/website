@@ -6,26 +6,28 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
-    // Toolbar + gap + search + chrome padding — used for home hero pull-under.
+    // Expanded chrome: sticky logo bar + dropped search (hero pull-under on home).
     --nflx-search-h: 48px
-    --site-chrome-pad-bottom: 12px
-    --site-chrome-h: calc(58px + 12px + var(--nflx-search-h) + var(--site-chrome-pad-bottom))
+    --site-chrome-bar-h: 58px
+    --site-chrome-search-gap: 12px
+    --site-chrome-h: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap) + var(--nflx-search-h) + 12px)
     --nflx-hero-search-clearance: calc(var(--site-chrome-h) + 8px)
     --search-bar-control-h: var(--nflx-search-h)
 
 @media screen and (max-width: 700px)
     #body
-        --site-chrome-h: calc(52px + 10px + var(--nflx-search-h) + var(--site-chrome-pad-bottom))
+        --site-chrome-bar-h: 52px
+        --site-chrome-search-gap: 10px
 
-// Sticky band: logo row + centered search with CTA. Sticks when it reaches the viewport top.
+// Logo / actions bar — sticky on its own. Search scrolls up into it, then docks.
 .site-chrome
+    position: relative
+    z-index: 100
+
+.site-chrome__bar
     position: sticky
     top: 0
-    z-index: 100
-    display: flex
-    flex-direction: column
-    align-items: stretch
-    padding-bottom: var(--site-chrome-pad-bottom)
+    z-index: 102
     transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, backdrop-filter 0.22s ease
 
 .home-shell
@@ -34,8 +36,8 @@
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
 
-// Home at top: cinematic transparent overlay.
-.home-shell > .site-chrome
+// Home at top: cinematic transparent overlay on the logo bar.
+.home-shell > .site-chrome > .site-chrome__bar
     background: transparent
     border-bottom: 1px solid transparent
     backdrop-filter: none
@@ -58,8 +60,8 @@
         button#menu
             color: #fff !important
 
-// Once the sticky chrome has left the page top, frost it so content doesn't show through.
-.home-shell.chrome-stuck > .site-chrome
+// After search docks into the bar, frost the single sticky row.
+.home-shell.chrome-stuck > .site-chrome > .site-chrome__bar
     background: color-mix(in srgb, var(--nflx-panel, #141414) 88%, transparent)
     backdrop-filter: blur(14px)
     -webkit-backdrop-filter: blur(14px)
@@ -70,23 +72,25 @@
             background: transparent !important
             border-bottom-color: transparent !important
 
-.browse-shell > .site-chrome
+.browse-shell > .site-chrome > .site-chrome__bar
     background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent)
     backdrop-filter: blur(14px)
     -webkit-backdrop-filter: blur(14px)
     border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
 
-.browse-shell.chrome-stuck > .site-chrome
+.browse-shell.chrome-stuck > .site-chrome > .site-chrome__bar
     background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
 
-// Always centered under the logo row, homepage width, with Search CTA.
+// Dropped search (in flow) — scrolls with the page until it meets the sticky bar.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
+    position: relative
+    z-index: 101
     width: min(640px, calc(100% - 2.5rem))
-    margin: 12px auto 0
+    margin: var(--site-chrome-search-gap) auto 12px
     box-sizing: border-box
     ::ng-deep
         #searchcontainer
@@ -101,7 +105,21 @@
 @media screen and (max-width: 700px)
     .chrome-search
         width: min(640px, calc(100% - 1.5rem))
-        margin-top: 10px
+
+// Docked into the sticky header: single row, still centered, Search button kept.
+.chrome-search--docked
+    position: fixed
+    top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
+    left: 50%
+    transform: translateX(-50%)
+    width: min(520px, calc(100vw - 11rem))
+    height: var(--nflx-search-h)
+    margin: 0
+    z-index: 110
+
+@media screen and (max-width: 599.9px)
+    .chrome-search--docked
+        width: min(520px, calc(100vw - 7.5rem))
 
 // Homepage at top: dark glass over the billboard.
 .home-shell:not(.chrome-stuck) .chrome-search

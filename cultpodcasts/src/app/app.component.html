@@ -38,8 +38,10 @@
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
   <div class="site-chrome">
-    <app-toolbar></app-toolbar>
-    <div class="chrome-search">
+    <div class="site-chrome__bar" #chromeBar>
+      <app-toolbar></app-toolbar>
+    </div>
+    <div class="chrome-search" #chromeSearch [class.chrome-search--docked]="chromeStuck()">
       <app-search-bar></app-search-bar>
     </div>
   </div>

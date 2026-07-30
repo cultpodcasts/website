@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   Inject,
   OnDestroy,
   PLATFORM_ID,
@@ -74,14 +75,21 @@ export class AppComponent implements OnDestroy {
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
-  /** Frost the sticky chrome once it has left the page top (home overlay → solid bar). */
-  private static readonly CHROME_STUCK_THRESHOLD_PX = 8;
   protected readonly showBackToTop = signal(false);
+  /** Search has scrolled up into the sticky logo bar (single-row chrome). */
   protected readonly chromeStuck = signal(false);
   private scrollRaf = 0;
+  /** scrollY when search last docked — used to undock without flicker. */
+  private dockAtScrollY = 0;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
+
+  @ViewChild('chromeBar')
+  private chromeBar?: ElementRef<HTMLElement>;
+
+  @ViewChild('chromeSearch')
+  private chromeSearch?: ElementRef<HTMLElement>;
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly webPushService = inject(WebPushService);
@@ -253,7 +261,28 @@ export class AppComponent implements OnDestroy {
   private syncChromeFromScroll(): void {
     const y = window.scrollY;
     this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
-    this.chromeStuck.set(y > AppComponent.CHROME_STUCK_THRESHOLD_PX);
+
+    const bar = this.chromeBar?.nativeElement;
+    const search = this.chromeSearch?.nativeElement;
+    if (!bar || !search) {
+      return;
+    }
+
+    if (this.chromeStuck()) {
+      // Release back to the dropped layout near the top of the page.
+      if (y < Math.max(8, this.dockAtScrollY - 12)) {
+        this.chromeStuck.set(false);
+      }
+      return;
+    }
+
+    // Dock when the scrolling search meets the sticky logo bar.
+    const barBottom = bar.getBoundingClientRect().bottom;
+    const searchTop = search.getBoundingClientRect().top;
+    if (searchTop <= barBottom + 2) {
+      this.dockAtScrollY = y;
+      this.chromeStuck.set(true);
+    }
   }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {
