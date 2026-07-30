@@ -125,8 +125,8 @@
 // Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
 .chrome-search--docked
     position: fixed
-    // Fallback before the first measure — wide header gap, not viewport-centred.
-    left: 72px
+    // Fallback before the first measure — icon-only logo + actions.
+    left: 70px
     top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
     width: calc(100vw - 11rem)
     max-width: none
@@ -135,15 +135,30 @@
     z-index: 110
     transform: none
     --nflx-search-h: 40px
+    overflow: hidden
+    ::ng-deep
+        // CTA does not fit in the header slot on narrow/mid widths; Enter still searches.
+        #searchcta
+            display: none !important
+        #searchbar
+            gap: 0
+            min-width: 0
+        #searchbox
+            min-width: 0
+        .chiptext
+            max-width: 5.5rem
+
+@media screen and (max-width: 700px)
+    .chrome-search--docked
+        ::ng-deep
+            .chiptext
+                max-width: 3.5rem
 
 @media screen and (max-width: 599.9px)
     .chrome-search--docked
-        // Narrow: between logo and overflow menu; hide CTA so the field fits.
-        ::ng-deep
-            #searchcta
-                display: none
-            #searchbar
-                gap: 0
+        // Between logo icon and overflow menu.
+        left: 58px
+        width: calc(100vw - 7rem)
 
 // Homepage at top: dark glass over the billboard.
 .home-shell:not(.chrome-stuck) .chrome-search

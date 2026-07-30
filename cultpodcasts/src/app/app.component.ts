@@ -281,12 +281,17 @@ export class AppComponent implements OnDestroy {
 
     if (this.chromeStuck()) {
       // Release back to the dropped layout near the top of the page.
-      if (y < Math.max(8, this.dockAtScrollY - 12)) {
+      if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
         this.chromeStuck.set(false);
         this.clearDockedSearchLayout(search);
       } else {
         this.layoutDockedSearch();
       }
+      return;
+    }
+
+    // Keep search dropped at the top of the page (esp. homepage overlay).
+    if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
       return;
     }
 
@@ -296,13 +301,13 @@ export class AppComponent implements OnDestroy {
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
       this.chromeStuck.set(true);
-      // Layout after the docked class applies.
-      requestAnimationFrame(() => this.layoutDockedSearch());
+      // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
+      requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
     }
   }
 
   /**
-   * Pin the search field between the logo (#site) and add/profile (#socialbuttons)
+   * Pin the search field between the logo mark and add/profile (#socialbuttons)
    * — or the overflow menu on narrow viewports — inside the sticky header row.
    */
   private layoutDockedSearch(): void {
@@ -313,21 +318,25 @@ export class AppComponent implements OnDestroy {
     }
 
     const site = bar.querySelector('#site') as HTMLElement | null;
-    const end = (bar.querySelector('#socialbuttons') as HTMLElement | null)
-      ?? (bar.querySelector('button#menu') as HTMLElement | null);
+    // Prefer the visible end control: social cluster when shown, else overflow menu.
+    const social = bar.querySelector('#socialbuttons') as HTMLElement | null;
+    const menu = bar.querySelector('button#menu') as HTMLElement | null;
+    const socialVisible = !!social && social.getClientRects().length > 0;
+    const end = socialVisible ? social : menu;
     if (!site || !end) {
       return;
     }
 
+    // Anchor to the logo image so a still-visible title span cannot steal the gap.
+    const siteAnchor = (site.querySelector('img') as HTMLElement | null) ?? site;
     const gap = AppComponent.DOCK_INLINE_GAP_PX;
-    const siteRect = site.getBoundingClientRect();
+    const siteRect = siteAnchor.getBoundingClientRect();
     const endRect = end.getBoundingClientRect();
-    // Logo bar is position:fixed at top:0 — never use a negative barRect.top for docking.
     const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    const left = Math.max(gap, siteRect.right + gap);
-    const right = Math.min(window.innerWidth - gap, endRect.left - gap);
-    const width = Math.max(140, right - left);
-    const searchHeight = search.offsetHeight || 40;
+    const left = Math.max(gap, Math.round(siteRect.right + gap));
+    const right = Math.min(window.innerWidth - gap, Math.round(endRect.left - gap));
+    const width = Math.max(120, right - left);
+    const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
     const top = Math.max(0, (barHeight - searchHeight) / 2);
 
     search.style.left = `${left}px`;

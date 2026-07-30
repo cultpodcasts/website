@@ -128,3 +128,15 @@ button#menu
         color: var(--nflx-text, var(--mat-sys-on-surface))
     button#menu
         color: var(--nflx-text, var(--mat-sys-on-surface))
+
+// When search is docked into the bar, keep logo icon-only so the field fits
+// between mark and add/profile (esp. browse + narrow widths).
+:host-context(.chrome-stuck)
+    #site span
+        position: absolute
+        width: 1px
+        height: 1px
+        overflow: hidden
+        clip: rect(0, 0, 0, 0)
+    #site
+        gap: 0
