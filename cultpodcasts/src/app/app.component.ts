@@ -288,7 +288,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    // Dock when the scrolling search meets the sticky logo bar.
+    // Dock when the scrolling search meets the fixed logo bar.
     const barBottom = bar.getBoundingClientRect().bottom;
     const searchTop = search.getBoundingClientRect().top;
     if (searchTop <= barBottom + 2) {

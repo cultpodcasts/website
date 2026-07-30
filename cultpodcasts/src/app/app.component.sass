@@ -19,19 +19,29 @@
         --site-chrome-bar-h: 52px
         --site-chrome-search-gap: 10px
 
-// Logo / actions bar — sticky on its own. Search scrolls up into it, then docks.
+// Logo / actions bar is fixed so it never leaves the viewport once the page scrolls.
+// (Sticky inside a short .site-chrome parent fails after search docks and leaves flow.)
 .site-chrome
     position: relative
     z-index: 100
 
 .site-chrome__bar
-    position: sticky
+    position: fixed
     top: 0
+    left: 0
+    right: 0
     z-index: 102
     transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, backdrop-filter 0.22s ease
 
+.site-chrome__bar-spacer
+    height: var(--site-chrome-bar-h)
+    pointer-events: none
+
 .home-shell
     background: var(--nflx-bg, #0b0b0b)
+    // Billboard pulls under the fixed transparent bar + dropped search.
+    .site-chrome__bar-spacer
+        height: 0
 
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
