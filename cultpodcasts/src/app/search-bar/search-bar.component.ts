@@ -108,8 +108,7 @@ export class SearchBarComponent {
     if (!el) {
       return;
     }
-    // Chrome search stays in DOM but is display:none on home; skip so the
-    // homepage instance (which is visible) can take the same focus request.
+    // Skip zero-rect instances so a visible search field can take focus.
     if (!el.getClientRects().length) {
       return;
     }

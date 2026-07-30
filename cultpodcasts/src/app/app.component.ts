@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   Inject,
   OnDestroy,
   PLATFORM_ID,
@@ -74,11 +75,24 @@ export class AppComponent implements OnDestroy {
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
+  private static readonly DOCK_INLINE_GAP_PX = 12;
+  /** Don't dock at rest — homepage search must start dropped below the fixed bar. */
+  private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
   protected readonly showBackToTop = signal(false);
+  /** Search has scrolled up into the sticky logo bar (single-row chrome). */
+  protected readonly chromeStuck = signal(false);
   private scrollRaf = 0;
+  /** scrollY when search last docked — used to undock without flicker. */
+  private dockAtScrollY = 0;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
+
+  @ViewChild('chromeBar')
+  private chromeBar?: ElementRef<HTMLElement>;
+
+  @ViewChild('chromeSearch')
+  private chromeSearch?: ElementRef<HTMLElement>;
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly webPushService = inject(WebPushService);
@@ -108,12 +122,23 @@ export class AppComponent implements OnDestroy {
     if (this.isBrowser) {
       this.removeDragListeners();
       this.removeScrollListener();
+      window.removeEventListener('resize', this.onWindowResize);
     }
   }
 
   initialiseBrowser() {
     this.addDragListeners();
     this.addScrollListener();
+    window.addEventListener('resize', this.onWindowResize, { passive: true });
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        // scrollPositionRestoration may settle after NavigationEnd; re-measure next frame.
+        requestAnimationFrame(() => this.syncChromeFromScroll());
+      });
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -234,9 +259,98 @@ export class AppComponent implements OnDestroy {
     }
     this.scrollRaf = window.requestAnimationFrame(() => {
       this.scrollRaf = 0;
-      this.showBackToTop.set(window.scrollY > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
+      this.syncChromeFromScroll();
     });
   };
+
+  private readonly onWindowResize = () => {
+    if (this.chromeStuck()) {
+      this.layoutDockedSearch();
+    }
+  };
+
+  private syncChromeFromScroll(): void {
+    const y = window.scrollY;
+    this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
+
+    const bar = this.chromeBar?.nativeElement;
+    const search = this.chromeSearch?.nativeElement;
+    if (!bar || !search) {
+      return;
+    }
+
+    if (this.chromeStuck()) {
+      // Release back to the dropped layout near the top of the page.
+      if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
+        this.chromeStuck.set(false);
+        this.clearDockedSearchLayout(search);
+      } else {
+        this.layoutDockedSearch();
+      }
+      return;
+    }
+
+    // Keep search dropped at the top of the page (esp. homepage overlay).
+    if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
+      return;
+    }
+
+    // Dock when the scrolling search meets the fixed logo bar.
+    const barBottom = bar.getBoundingClientRect().bottom;
+    const searchTop = search.getBoundingClientRect().top;
+    if (searchTop <= barBottom + 2) {
+      this.dockAtScrollY = y;
+      this.chromeStuck.set(true);
+      // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
+      requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
+    }
+  }
+
+  /**
+   * Pin the search field between the logo mark and add/profile (#socialbuttons)
+   * — or the overflow menu on narrow viewports — inside the sticky header row.
+   */
+  private layoutDockedSearch(): void {
+    const bar = this.chromeBar?.nativeElement;
+    const search = this.chromeSearch?.nativeElement;
+    if (!bar || !search || !this.chromeStuck()) {
+      return;
+    }
+
+    const site = bar.querySelector('#site') as HTMLElement | null;
+    // Prefer the visible end control: social cluster when shown, else overflow menu.
+    const social = bar.querySelector('#socialbuttons') as HTMLElement | null;
+    const menu = bar.querySelector('button#menu') as HTMLElement | null;
+    const socialVisible = !!social && social.getClientRects().length > 0;
+    const end = socialVisible ? social : menu;
+    if (!site || !end) {
+      return;
+    }
+
+    // Anchor to the logo image so a still-visible title span cannot steal the gap.
+    const siteAnchor = (site.querySelector('img') as HTMLElement | null) ?? site;
+    const gap = AppComponent.DOCK_INLINE_GAP_PX;
+    const siteRect = siteAnchor.getBoundingClientRect();
+    const endRect = end.getBoundingClientRect();
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
+    const left = Math.max(gap, Math.round(siteRect.right + gap));
+    const right = Math.min(window.innerWidth - gap, Math.round(endRect.left - gap));
+    const width = Math.max(120, right - left);
+    const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
+    const top = Math.max(0, (barHeight - searchHeight) / 2);
+
+    search.style.left = `${left}px`;
+    search.style.width = `${width}px`;
+    search.style.top = `${top}px`;
+    search.style.transform = 'none';
+  }
+
+  private clearDockedSearchLayout(search: HTMLElement): void {
+    search.style.left = '';
+    search.style.width = '';
+    search.style.top = '';
+    search.style.transform = '';
+  }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {
     if (this.ignoreDragUntilEnd || !this.hasDroppableUrl(event)) {

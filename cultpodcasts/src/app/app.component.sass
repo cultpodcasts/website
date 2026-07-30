@@ -6,29 +6,54 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
+    // Expanded chrome: sticky logo bar + dropped search (hero pull-under on home).
+    --nflx-search-h: 48px
+    --site-chrome-bar-h: 58px
+    --site-chrome-search-gap: 12px
+    --site-chrome-h: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap) + var(--nflx-search-h) + 12px)
+    --nflx-hero-search-clearance: calc(var(--site-chrome-h) + 8px)
+    --search-bar-control-h: var(--nflx-search-h)
 
-.chrome-search
-    padding-top: 8px
-    padding-bottom: 4px
+@media screen and (max-width: 700px)
+    #body
+        --site-chrome-bar-h: 52px
+        --site-chrome-search-gap: 10px
+
+// Logo / actions bar is fixed so it never leaves the viewport once the page scrolls.
+// (Sticky inside a short .site-chrome parent fails after search docks and leaves flow.)
+.site-chrome
+    position: relative
+    z-index: 100
+
+.site-chrome__bar
+    position: fixed
+    top: 0
+    left: 0
+    right: 0
+    z-index: 102
+    transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, backdrop-filter 0.22s ease
+
+.site-chrome__bar-spacer
+    height: var(--site-chrome-bar-h)
+    pointer-events: none
 
 .home-shell
     background: var(--nflx-bg, #0b0b0b)
-    // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
-    .chrome-search
-        display: none !important
+    // Billboard pulls under the fixed transparent bar + dropped search.
+    .site-chrome__bar-spacer
+        height: 0
 
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
 
-// Home toolbar: keep cinematic dark overlay (host-context can lose to light Material).
-.home-shell > app-toolbar
+// Home at top: cinematic transparent overlay on the logo bar.
+.home-shell > .site-chrome > .site-chrome__bar
+    background: transparent
+    border-bottom: 1px solid transparent
+    backdrop-filter: none
+    -webkit-backdrop-filter: none
     ::ng-deep
         .app-toolbar
-            position: absolute
-            top: 0
-            left: 0
-            right: 0
-            z-index: 20
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important
             border-bottom-color: transparent !important
             backdrop-filter: none !important
@@ -45,28 +70,150 @@
         button#menu
             color: #fff !important
 
-.browse-chrome-search
-    // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
-    // width: 100% + 4vw padding, uncapped) so the box lines up with the pill
-    // filters directly beneath it instead of the unrelated .page-rail (920px) grid.
-    --nflx-search-h: 48px
+// After search docks into the bar, frost the single sticky row.
+.home-shell.chrome-stuck > .site-chrome > .site-chrome__bar
+    background: color-mix(in srgb, var(--nflx-panel, #141414) 88%, transparent)
+    backdrop-filter: blur(14px)
+    -webkit-backdrop-filter: blur(14px)
+    border-bottom-color: color-mix(in srgb, #fff 18%, transparent)
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35)
+    ::ng-deep
+        .app-toolbar
+            background: transparent !important
+            border-bottom-color: transparent !important
+
+.browse-shell > .site-chrome > .site-chrome__bar
+    background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent)
+    backdrop-filter: blur(14px)
+    -webkit-backdrop-filter: blur(14px)
+    border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
+
+.browse-shell.chrome-stuck > .site-chrome > .site-chrome__bar
+    background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
+
+// Dropped search (in flow) — scrolls with the page until it meets the fixed logo bar.
+.chrome-search
     --search-bar-control-h: var(--nflx-search-h)
-    // Angular Material hardcodes `.mdc-text-field--outlined { height: 56px }`
-    // with the same specificity as a plain `.mdc-text-field` override, so the
-    // token below is belt-and-braces — the !important heights further down on
-    // the library's own selectors are what actually win the cascade.
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
-    width: 100%
-    margin: 0 auto
+    position: relative
+    z-index: 101
+    width: min(640px, calc(100% - 2.5rem))
+    margin: var(--site-chrome-search-gap) auto 12px
     box-sizing: border-box
-    padding-left: 4vw
-    padding-right: 4vw
     ::ng-deep
         #searchcontainer
+            --search-bar-control-h: var(--nflx-search-h)
             margin: 0
         #searchbar
             gap: 12px
+        #searchcta
+            background: var(--nflx-accent, #e8a23a) !important
+            color: #111 !important
+
+// Home overlay: spacer is 0 so the billboard can sit under the bar — push search
+// down explicitly so it starts dropped (not already inside the fixed header).
+.home-shell:not(.chrome-stuck) .chrome-search
+    margin-top: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap))
+
+@media screen and (max-width: 700px)
+    .chrome-search
+        width: min(640px, calc(100% - 1.5rem))
+
+// Docked into the sticky header between logo (left) and add/profile (right).
+// Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
+.chrome-search--docked
+    position: fixed
+    // Fallback before the first measure — icon-only logo + actions.
+    left: 70px
+    top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
+    width: calc(100vw - 11rem)
+    max-width: none
+    height: var(--nflx-search-h)
+    margin: 0
+    z-index: 110
+    transform: none
+    --nflx-search-h: 40px
+    overflow: hidden
+    ::ng-deep
+        // CTA does not fit in the header slot on narrow/mid widths; Enter still searches.
+        #searchcta
+            display: none !important
+        #searchbar
+            gap: 0
+            min-width: 0
+        #searchbox
+            min-width: 0
+        .chiptext
+            max-width: 5.5rem
+
+@media screen and (max-width: 700px)
+    .chrome-search--docked
+        ::ng-deep
+            .chiptext
+                max-width: 3.5rem
+
+@media screen and (max-width: 599.9px)
+    .chrome-search--docked
+        // Between logo icon and overflow menu.
+        left: 58px
+        width: calc(100vw - 7rem)
+
+// Homepage at top: dark glass over the billboard.
+.home-shell:not(.chrome-stuck) .chrome-search
+    ::ng-deep
+        #searchbox
+            .mat-mdc-text-field-wrapper,
+            .mdc-text-field,
+            .mdc-text-field--outlined,
+            .mdc-text-field--no-label
+                background: rgba(12, 12, 12, 0.88) !important
+                backdrop-filter: blur(10px)
+                color: #fff !important
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing
+                border-color: rgba(255, 255, 255, 0.45) !important
+            .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+            .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+            .mat-mdc-form-field:hover .mdc-notched-outline__trailing,
+            .mdc-text-field--focused .mdc-notched-outline__leading,
+            .mdc-text-field--focused .mdc-notched-outline__notch,
+            .mdc-text-field--focused .mdc-notched-outline__trailing
+                border-color: rgba(255, 255, 255, 0.7) !important
+            input.mat-mdc-chip-input,
+            #searchtext
+                font-size: 1.05rem
+                color: #fff !important
+                caret-color: #fff !important
+                &::placeholder
+                    color: rgba(255, 255, 255, 0.65) !important
+                    opacity: 1 !important
+            .mat-mdc-chip
+                --mdc-chip-label-text-color: #fff
+                --mdc-chip-outline-color: rgba(255, 255, 255, 0.4)
+                --mdc-chip-elevated-container-color: rgba(255, 255, 255, 0.12)
+                color: #fff !important
+                background: rgba(255, 255, 255, 0.12) !important
+            .mat-mdc-chip-remove,
+            .mat-icon
+                color: rgba(255, 255, 255, 0.8) !important
+
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .home-shell:not(.chrome-stuck) .chrome-search
+        ::ng-deep
+            #searchbox
+                .mat-mdc-text-field-wrapper,
+                .mdc-text-field,
+                .mdc-text-field--outlined,
+                .mdc-text-field--no-label
+                    backdrop-filter: none !important
+
+// Browse + stuck home: tokenized glass.
+.browse-shell .chrome-search,
+.home-shell.chrome-stuck .chrome-search
+    ::ng-deep
         #searchbox
             .mat-mdc-text-field-wrapper,
             .mdc-text-field,
@@ -107,9 +254,6 @@
             .mat-mdc-chip .mat-icon,
             .mat-mdc-chip mat-icon
                 color: var(--nflx-muted, #5c564c) !important
-        #searchcta
-            background: var(--nflx-accent, #e8a23a) !important
-            color: #111 !important
 
 .drop-overlay
     position: fixed

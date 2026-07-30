@@ -2,10 +2,6 @@
   [class.nflx--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
   <app-site-loading [active]="isLoading()" label="Loading homepage" />
 
-  <div class="nflx-search">
-    <app-search-bar></app-search-bar>
-  </div>
-
   @if (isLoading()) {
   <div class="nflx-loading" aria-hidden="true">
     <div class="nflx-loading__billboard">

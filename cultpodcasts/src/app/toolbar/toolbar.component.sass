@@ -8,6 +8,9 @@
     .mat-toolbar-single-row
         padding-right: 0
 
+#header
+    overflow: visible
+
 @media screen and (min-width: 600px)
     #menu
         display: none
@@ -23,6 +26,7 @@
         padding-right: 4px
 
 .app-toolbar
+    position: relative
     background: color-mix(in srgb, var(--cp-ink-elevated, var(--mat-sys-surface-container)) 72%, transparent) !important
     backdrop-filter: blur(14px)
     -webkit-backdrop-filter: blur(14px)
@@ -46,6 +50,7 @@
     display: inline-flex
     align-items: center
     gap: 12px
+    flex-shrink: 0
     img
         vertical-align: middle
         width: 42px
@@ -72,6 +77,7 @@
         opacity: 0
 
 #socialbuttons
+    flex-shrink: 0
     .button:hover
         cursor: pointer
     // Signed-in chrome wraps the avatar + matBadge. Do not overflow:hidden here —
@@ -88,16 +94,13 @@
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
 
 button#menu
+    flex-shrink: 0
     border: none
     background-color: transparent
 
+// Home overlay colors — sticky frosted placement lives on .site-chrome in app.
 :host-context(.home-shell)
     .app-toolbar
-        position: absolute
-        top: 0
-        left: 0
-        right: 0
-        z-index: 20
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent) !important
         border-bottom-color: transparent
         backdrop-filter: none
@@ -114,14 +117,26 @@ button#menu
     button#menu
         color: var(--nflx-on-media, #fff)
 
-// Browse routes use the same frosted bar as Material chrome, but tinted with
-// Flix tokens so light OS theme does not sit cream-on-black.
 :host-context(.browse-shell)
     .app-toolbar
-        background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent) !important
+        background: transparent !important
         color: var(--nflx-text, var(--mat-sys-on-surface))
-        border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
+        border-bottom: none
+        backdrop-filter: none
+        -webkit-backdrop-filter: none
     #site
         color: var(--nflx-text, var(--mat-sys-on-surface))
     button#menu
         color: var(--nflx-text, var(--mat-sys-on-surface))
+
+// When search is docked into the bar, keep logo icon-only so the field fits
+// between mark and add/profile (esp. browse + narrow widths).
+:host-context(.chrome-stuck)
+    #site span
+        position: absolute
+        width: 1px
+        height: 1px
+        overflow: hidden
+        clip: rect(0, 0, 0, 0)
+    #site
+        gap: 0

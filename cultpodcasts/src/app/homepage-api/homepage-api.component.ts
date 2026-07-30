@@ -18,7 +18,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { HomepageService } from '../homepage.service';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { PlayerService } from '../player.service';
 import { episodeImageUrl } from '../search-result-links';
 import { SearchDisplayEpisode } from '../search-result-links';
@@ -61,7 +60,6 @@ export interface EpisodeRail {
   selector: 'app-homepage-api',
   imports: [
     MatButtonModule,
-    SearchBarComponent,
     SiteLoadingComponent,
     HomepageHeroComponent,
     HomepageCatalogueComponent,

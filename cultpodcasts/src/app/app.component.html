@@ -34,12 +34,18 @@
 <section id="body"
   [class.home-shell]="isHomePage()"
   [class.browse-shell]="!isHomePage()"
+  [class.chrome-stuck]="chromeStuck()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
-  <app-toolbar></app-toolbar>
-  <!-- Always in DOM (CSS-hide on home) so browse-route hydration matches SSR. -->
-  <div class="chrome-search" [class.browse-chrome-search]="!isHomePage()">
-    <app-search-bar></app-search-bar>
+  <div class="site-chrome">
+    <div class="site-chrome__bar" #chromeBar>
+      <app-toolbar></app-toolbar>
+    </div>
+    <!-- Keeps document flow under the fixed logo bar (0 on home — hero pulls under). -->
+    <div class="site-chrome__bar-spacer" aria-hidden="true"></div>
+    <div class="chrome-search" #chromeSearch [class.chrome-search--docked]="chromeStuck()">
+      <app-search-bar></app-search-bar>
+    </div>
   </div>
   <router-outlet></router-outlet>
 
