@@ -3,10 +3,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { SearchSuggestionsService } from './search-suggestions.service';
 import { SuggestionsCorpus } from './search-suggestions.interface';
+import { environment } from './../environments/environment';
 
 describe('SearchSuggestionsService', () => {
     let service: SearchSuggestionsService;
     let httpMock: HttpTestingController;
+    const suggestionsUrl = new URL('/search-suggestions', environment.api).toString();
 
     const corpus: SuggestionsCorpus = {
         generatedAtUtc: '2026-07-24T00:00:00Z',
@@ -30,7 +32,7 @@ describe('SearchSuggestionsService', () => {
     afterEach(() => httpMock.verify());
 
     function flushCorpus(): void {
-        httpMock.expectOne('assets/search-suggestions.json').flush(corpus);
+        httpMock.expectOne(suggestionsUrl).flush(corpus);
     }
 
     it('matches against pre-lowercased searchText without re-scanning nested fields', async () => {
