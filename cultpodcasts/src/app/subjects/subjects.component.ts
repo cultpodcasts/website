@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 
 @Component({
@@ -8,6 +9,7 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
   imports: [
     MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
     SubjectChipComponent,
   ],
   templateUrl: './subjects.component.html',
@@ -30,6 +32,10 @@ export class SubjectsComponent {
   @Input()
   disabled: boolean = false;
 
+  /** Subject name currently being removed (in-flight). */
+  @Input()
+  loadingSubjectName: string | null = null;
+
   @Output()
   removeSubject = new EventEmitter<string>();
 
@@ -37,6 +43,10 @@ export class SubjectsComponent {
     if (this.stopPropagation) {
       $event.stopPropagation();
     }
+  }
+
+  isSubjectLoading(subject: string): boolean {
+    return !!this.loadingSubjectName && this.loadingSubjectName === subject;
   }
 
   onRemove(subject: string, $event: Event) {

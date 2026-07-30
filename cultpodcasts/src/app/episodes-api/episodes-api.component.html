@@ -92,8 +92,13 @@
                             {{result.podcastName}}
                         </a>
                     </mat-card-subtitle>
-                    <mat-card-subtitle class="curator-card__meta">{{result.release | date:'d MMM yyyy H:mm'}}
-                        [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]
+                    <mat-card-subtitle class="curator-card__meta">
+                        <span>{{result.release | date:'d MMM yyyy H:mm'}}
+                            [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</span>
+                        @if (languageBadge(result); as lang) {
+                        <span class="curator-card__lang" [attr.title]="lang.label"
+                            [attr.aria-label]="lang.label">{{lang.flag}}</span>
+                        }
                     </mat-card-subtitle>
                 </mat-card-header>
                 <mat-card-content class="resultdescription">
@@ -101,7 +106,8 @@
                     @if (result.subjects?.length) {
                     <div class="curator-card__subjects">
                         <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                            [disabled]="isUpdating(result.id)" (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                            [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
+                            (removeSubject)="removeSubject(result, $event)"></app-subjects>
                     </div>
                     }
                     @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {

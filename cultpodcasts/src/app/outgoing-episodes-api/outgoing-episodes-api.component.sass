@@ -71,23 +71,53 @@
 mat-card-title
     margin-right: 40px
 
+.curator-card__meta
+    display: flex
+    flex-wrap: wrap
+    align-items: center
+    gap: 6px 10px
+
+.curator-card__lang
+    display: inline-flex
+    align-items: center
+    font-size: 1.1rem
+    line-height: 1
+
 .curator-card__subjects,
 .curator-card__guests
     margin-top: 10px
 
+// Stack platforms above status so labeled pills never collide with service icons.
+// Override global public-card row-reverse on .mdc-card__actions.
 .curator-card__actions
-    display: flex
-    flex-wrap: wrap
-    align-items: flex-start
-    gap: 12px 16px
+    display: flex !important
+    flex-direction: column !important
+    flex-wrap: nowrap
+    align-items: stretch
+    gap: 10px
     padding-top: 8px
 
-.curator-card__status,
 .curator-card__platforms
     display: flex
     flex-wrap: wrap
     align-items: center
+    gap: 4px
+    order: -1
+    ::ng-deep app-episode-podcast-links
+        flex-wrap: wrap
+        height: auto
+        gap: 4px
+    a[mat-icon-button],
+    button[mat-icon-button]
+        margin: 0 !important
+        transform: none !important
+
+.curator-card__status
+    display: flex
+    flex-wrap: wrap
+    align-items: center
     gap: 8px
+    order: 0
 
 button.selected
     span

@@ -31,6 +31,7 @@ import { PodcastIndexComponent } from '../podcast-index/podcast-index.component'
 import { EpisodeUpdateService } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
+import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -65,7 +66,8 @@ export class EpisodesApiComponent {
   protected isLoading = signal<boolean>(true);
   protected sortDirection = signal<string>(sortParamDateDesc);
   protected updatingEpisodeId = signal<string | null>(null);
-  protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | null>(null);
+  protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | 'subject' | null>(null);
+  protected updatingSubjectName = signal<string | null>(null);
   protected addingGuest = signal<Record<string, string>>({});
 
   private destroyRef = inject(DestroyRef);
@@ -215,6 +217,17 @@ export class EpisodesApiComponent {
       || this.isLoadingBluesky(episodeId);
   }
 
+  languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
+    return languageFlagBadgeForEpisode(episode);
+  }
+
+  loadingSubjectName(episodeId: string): string | null {
+    if (!this.isUpdating(episodeId) || this.updatingFlag() !== 'subject') {
+      return null;
+    }
+    return this.updatingSubjectName();
+  }
+
   async refreshEpisode(episodeId: string) {
     try {
       const updated = await this.episodeUpdate.fetchEpisode(episodeId);
@@ -231,7 +244,7 @@ export class EpisodesApiComponent {
   private async runEpisodeUpdate(
     episode: ApiEpisode,
     action: () => Promise<ApiEpisode>,
-    flag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | null = null
+    flag: 'ignored' | 'removed' | 'tweeted' | 'bluesky' | 'subject' | null = null
   ) {
     if (this.isUpdating(episode.id)) {
       return;
@@ -248,11 +261,16 @@ export class EpisodesApiComponent {
     } finally {
       this.updatingEpisodeId.set(null);
       this.updatingFlag.set(null);
+      this.updatingSubjectName.set(null);
     }
   }
 
   removeSubject(episode: ApiEpisode, subject: string) {
-    this.runEpisodeUpdate(episode, () => this.episodeUpdate.removeSubject(episode, subject));
+    if (this.isUpdating(episode.id)) {
+      return;
+    }
+    this.updatingSubjectName.set(subject);
+    this.runEpisodeUpdate(episode, () => this.episodeUpdate.removeSubject(episode, subject), 'subject');
   }
 
   removeGuest(episode: ApiEpisode, guestName: string) {

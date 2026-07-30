@@ -87,12 +87,21 @@ mat-card-content
     margin-top: 10px
 
 .curator-card__actions
+    display: flex !important
+    flex-direction: row !important
+    flex-wrap: wrap
+    align-items: center
+    gap: 8px
     padding-top: 4px
     .discovery-service-links
         display: flex
         flex-wrap: wrap
         align-items: center
         gap: 4px
+        a[mat-icon-button],
+        button[mat-icon-button]
+            margin: 0 !important
+            transform: none !important
         .youtubemeta
             flex-direction: column
             margin-left: 6px
