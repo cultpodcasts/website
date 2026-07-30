@@ -487,18 +487,20 @@ mat-card.error {
   border-width: 2px !important;
 }
 
-mat-card-actions {
+// Public browse cards only — curator cards manage their own action spacing
+// (status pills + platform icons) and must not inherit the 25px/scale treatment.
+mat-card-actions:not(.curator-card__actions) {
   a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-  button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+  button[mat-icon-button]:not(.remove-btn):not(.add-btn):not(.flag-toggle) {
     margin-right: 25px;
     transform: scale(1.15);
   }
 }
 
 @media screen and (max-width: 600px) {
-  mat-card-actions {
+  mat-card-actions:not(.curator-card__actions) {
     a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn):not(.flag-toggle) {
       margin-right: 18px;
     }
   }
@@ -511,9 +513,9 @@ mat-card-actions {
 }
 
 @media screen and (max-width: 400px) {
-  mat-card-actions {
+  mat-card-actions:not(.curator-card__actions) {
     a[mat-icon-button]:not(.remove-btn):not(.add-btn),
-    button[mat-icon-button]:not(.remove-btn):not(.add-btn) {
+    button[mat-icon-button]:not(.remove-btn):not(.add-btn):not(.flag-toggle) {
       margin-right: 12px;
     }
   }

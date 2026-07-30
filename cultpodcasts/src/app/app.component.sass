@@ -130,12 +130,13 @@
     top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
     width: calc(100vw - 11rem)
     max-width: none
+    // Size the input row only — do not clip the typeahead listbox below.
     height: var(--nflx-search-h)
     margin: 0
     z-index: 110
     transform: none
     --nflx-search-h: 40px
-    overflow: hidden
+    overflow: visible
     ::ng-deep
         #searchbar
             gap: 8px
@@ -143,6 +144,9 @@
         #searchboxwrapper
             flex: 1 1 auto
             min-width: 0
+            // Listbox is position:absolute under the field; keep it above page content.
+            #search-suggestions-listbox
+                z-index: 120
         #searchbox
             min-width: 0
         #searchcta

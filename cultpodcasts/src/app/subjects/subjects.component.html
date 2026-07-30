@@ -1,12 +1,17 @@
 @for (subject of subjects; track subject) {
 @if (!subject.startsWith("_") || showHidden) {
-<div class="subject" (click)="stopPropagate($event)">
+<div class="subject" [class.loading]="isSubjectLoading(subject)" (click)="stopPropagate($event)">
     <app-subject-chip [subject]="subject" />
     @if (editable) {
-    <button mat-icon-button type="button" class="remove-btn" [disabled]="disabled"
+    <button mat-icon-button type="button" class="remove-btn"
+        [disabled]="disabled || isSubjectLoading(subject)"
+        [attr.aria-busy]="isSubjectLoading(subject)"
         (click)="onRemove(subject, $event)" [attr.aria-label]="'Remove subject ' + subject">
         <mat-icon>close</mat-icon>
     </button>
+    }
+    @if (isSubjectLoading(subject)) {
+    <mat-spinner diameter="16"></mat-spinner>
     }
 </div>
 }
