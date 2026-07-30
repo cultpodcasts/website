@@ -1,7 +1,8 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
-import { combineLatest, filter, of, ReplaySubject, take } from 'rxjs';
+import { combineLatest, EMPTY, filter, of, ReplaySubject, take } from 'rxjs';
+import { currentAppPath, isSessionRecoveryError } from './auth-session-recovery';
 
 /**
  * Playwright sets `globalThis.__E2E_CURATOR__` via addInitScript so curator
@@ -26,6 +27,9 @@ export class AuthServiceWrapper {
     private readonly _avatarUrl = signal<string | null>(null);
     readonly avatarUrl = this._avatarUrl.asReadonly();
 
+    /** One interactive re-login per page lifetime — avoids redirect storms from concurrent token calls. */
+    private sessionRecoveryStarted = false;
+
     constructor(public authService: AuthService) {
         // Re-seed on the browser only — SSR/prerender has no localStorage, and a null
         // server value must not stick around after client bootstrap.
@@ -47,7 +51,9 @@ export class AuthServiceWrapper {
                 user$: of(curatorUser),
                 isAuthenticated$: of(true),
                 isLoading$: of(false),
-                getAccessTokenSilently: () => of('e2e-test-token')
+                error$: EMPTY,
+                getAccessTokenSilently: () => of('e2e-test-token'),
+                loginWithRedirect: () => of(void 0)
             } as unknown as AuthService;
         }
 
@@ -94,7 +100,33 @@ export class AuthServiceWrapper {
                         }
                     });
             }
+
+            this.watchSessionRecovery();
         }
+    }
+
+    /**
+     * When the refresh token is missing or revoked, bounce through Auth0 login once.
+     * With an active Auth0 SSO cookie this is usually a silent round-trip (no password).
+     */
+    private watchSessionRecovery(): void {
+        if (!isPlatformBrowser(this.platformId) || !this.authService.error$) {
+            return;
+        }
+        this.authService.error$.subscribe(error => {
+            if (!isSessionRecoveryError(error) || this.sessionRecoveryStarted) {
+                return;
+            }
+            this.sessionRecoveryStarted = true;
+            this.authService.loginWithRedirect({
+                appState: { target: currentAppPath() }
+            }).subscribe({
+                error: () => {
+                    // Allow a later retry if the redirect itself failed to start.
+                    this.sessionRecoveryStarted = false;
+                }
+            });
+        });
     }
 
     /** Call on explicit logout so the toolbar flips immediately before Auth0 redirects. */
