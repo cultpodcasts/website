@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -13,10 +13,6 @@ import { PlayerService } from '../player.service';
 import { Homepage } from '../homepage.interface';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { RAIL_DISPLAY_SIZE, SUBJECT_RAIL_MIN_EPISODES } from '../rail-subjects';
-import { SearchBarComponent } from '../search-bar/search-bar.component';
-
-@Component({ selector: 'app-search-bar', template: '', standalone: true })
-class StubSearchBarComponent {}
 
 function dayOffset(daysAgo: number): Date {
   const d = new Date();
@@ -144,12 +140,7 @@ describe('HomepageApiComponent', () => {
           },
         },
       ],
-    })
-      .overrideComponent(HomepageApiComponent, {
-        remove: { imports: [SearchBarComponent] },
-        add: { imports: [StubSearchBarComponent] },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(HomepageApiComponent);
     component = fixture.componentInstance;

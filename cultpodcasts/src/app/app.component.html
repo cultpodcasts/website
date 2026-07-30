@@ -34,13 +34,18 @@
 <section id="body"
   [class.home-shell]="isHomePage()"
   [class.browse-shell]="!isHomePage()"
+  [class.chrome-compact]="chromeCompact()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
-  <app-toolbar></app-toolbar>
-  <!-- Always in DOM (CSS-hide on home) so browse-route hydration matches SSR. -->
-  <div class="chrome-search" [class.browse-chrome-search]="!isHomePage()">
-    <app-search-bar></app-search-bar>
+  <div class="site-chrome">
+    <app-toolbar>
+      <div chromeSearch class="chrome-search">
+        <app-search-bar></app-search-bar>
+      </div>
+    </app-toolbar>
   </div>
+  <!-- Reserves vertical room for the dropped search on browse; collapsed when compact / home overlay. -->
+  <div class="chrome-search-spacer" aria-hidden="true"></div>
   <router-outlet></router-outlet>
 
   <footer class="site-footer">

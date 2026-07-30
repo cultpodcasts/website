@@ -6,29 +6,52 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom))
     scroll-snap-align: start
     scroll-snap-stop: always
+    // Shared search geometry (homepage overlay + browse drop + compact bar).
+    // Clearance ≈ toolbar (~58px) + drop gap (12px) + search + breathing room.
+    --nflx-search-h: 48px
+    --nflx-hero-search-clearance: calc(58px + 12px + var(--nflx-search-h) + 20px)
+    --search-bar-control-h: var(--nflx-search-h)
 
-.chrome-search
-    padding-top: 8px
-    padding-bottom: 4px
+@media screen and (max-width: 700px)
+    #body
+        --nflx-hero-search-clearance: calc(52px + 12px + var(--nflx-search-h) + 16px)
+
+// Sticky site chrome: toolbar + projected search (collapsed into the bar when .chrome-compact).
+.site-chrome
+    position: sticky
+    top: 0
+    z-index: 100
+    overflow: visible
+    transition: background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease
+
+.chrome-search-spacer
+    height: calc(var(--nflx-search-h) + 24px)
+    transition: height 0.22s ease
+    pointer-events: none
+
+.chrome-compact .chrome-search-spacer
+    height: 0
 
 .home-shell
     background: var(--nflx-bg, #0b0b0b)
-    // Keep <app-search-bar> in the DOM for stable hydration; hide visually on home.
-    .chrome-search
-        display: none !important
+    // Overlay chrome on the hero when at the top (not in document flow).
+    &:not(.chrome-compact) > .site-chrome
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        background: transparent
+        box-shadow: none
+    &:not(.chrome-compact) > .chrome-search-spacer
+        height: 0
 
 .browse-shell
     background: var(--nflx-bg, #0b0b0b)
 
-// Home toolbar: keep cinematic dark overlay (host-context can lose to light Material).
-.home-shell > app-toolbar
+// Home toolbar: cinematic dark overlay at top; frosted sticky bar when compact.
+.home-shell > .site-chrome
     ::ng-deep
         .app-toolbar
-            position: absolute
-            top: 0
-            left: 0
-            right: 0
-            z-index: 20
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important
             border-bottom-color: transparent !important
             backdrop-filter: none !important
@@ -45,28 +68,120 @@
         button#menu
             color: #fff !important
 
-.browse-chrome-search
-    // Match the horizontal rhythm of .browse-filters / .browse-grid (both use
-    // width: 100% + 4vw padding, uncapped) so the box lines up with the pill
-    // filters directly beneath it instead of the unrelated .page-rail (920px) grid.
-    --nflx-search-h: 48px
+.home-shell.chrome-compact > .site-chrome
+    background: color-mix(in srgb, var(--nflx-panel, #141414) 88%, transparent)
+    backdrop-filter: blur(14px)
+    -webkit-backdrop-filter: blur(14px)
+    border-bottom: 1px solid color-mix(in srgb, #fff 18%, transparent)
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35)
+    ::ng-deep
+        .app-toolbar
+            background: transparent !important
+            border-bottom-color: transparent !important
+
+.browse-shell > .site-chrome
+    background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent)
+    backdrop-filter: blur(14px)
+    -webkit-backdrop-filter: blur(14px)
+    border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
+
+.browse-shell.chrome-compact > .site-chrome
+    background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
+
+// Projected search field styling (geometry of .toolbar-search lives in toolbar.sass).
+.chrome-search
     --search-bar-control-h: var(--nflx-search-h)
-    // Angular Material hardcodes `.mdc-text-field--outlined { height: 56px }`
-    // with the same specificity as a plain `.mdc-text-field` override, so the
-    // token below is belt-and-braces — the !important heights further down on
-    // the library's own selectors are what actually win the cascade.
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
     width: 100%
-    margin: 0 auto
     box-sizing: border-box
-    padding-left: 4vw
-    padding-right: 4vw
     ::ng-deep
         #searchcontainer
+            --search-bar-control-h: var(--nflx-search-h)
             margin: 0
         #searchbar
             gap: 12px
+        #searchcta
+            background: var(--nflx-accent, #e8a23a) !important
+            color: #111 !important
+            transition: opacity 0.18s ease, max-width 0.22s ease, padding 0.22s ease, margin 0.22s ease
+
+// Compact: hide the Search CTA so the field fits between logo and actions.
+.chrome-compact
+    --nflx-search-h: 40px
+    .chrome-search
+        ::ng-deep
+            #searchcta
+                opacity: 0
+                max-width: 0
+                min-width: 0
+                padding-left: 0
+                padding-right: 0
+                margin: 0
+                overflow: hidden
+                pointer-events: none
+            #searchbar
+                gap: 0
+            #searchbox
+                input.mat-mdc-chip-input,
+                #searchtext
+                    font-size: 0.95rem
+
+// Homepage expanded search: always dark glass over the billboard.
+.home-shell:not(.chrome-compact) .chrome-search
+    ::ng-deep
+        #searchbox
+            .mat-mdc-text-field-wrapper,
+            .mdc-text-field,
+            .mdc-text-field--outlined,
+            .mdc-text-field--no-label
+                background: rgba(12, 12, 12, 0.88) !important
+                backdrop-filter: blur(10px)
+                color: #fff !important
+            .mdc-notched-outline__leading,
+            .mdc-notched-outline__notch,
+            .mdc-notched-outline__trailing
+                border-color: rgba(255, 255, 255, 0.45) !important
+            .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+            .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+            .mat-mdc-form-field:hover .mdc-notched-outline__trailing,
+            .mdc-text-field--focused .mdc-notched-outline__leading,
+            .mdc-text-field--focused .mdc-notched-outline__notch,
+            .mdc-text-field--focused .mdc-notched-outline__trailing
+                border-color: rgba(255, 255, 255, 0.7) !important
+            input.mat-mdc-chip-input,
+            #searchtext
+                font-size: 1.05rem
+                color: #fff !important
+                caret-color: #fff !important
+                &::placeholder
+                    color: rgba(255, 255, 255, 0.65) !important
+                    opacity: 1 !important
+            .mat-mdc-chip
+                --mdc-chip-label-text-color: #fff
+                --mdc-chip-outline-color: rgba(255, 255, 255, 0.4)
+                --mdc-chip-elevated-container-color: rgba(255, 255, 255, 0.12)
+                color: #fff !important
+                background: rgba(255, 255, 255, 0.12) !important
+            .mat-mdc-chip-remove,
+            .mat-icon
+                color: rgba(255, 255, 255, 0.8) !important
+
+@media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    .home-shell:not(.chrome-compact) .chrome-search
+        ::ng-deep
+            #searchbox
+                .mat-mdc-text-field-wrapper,
+                .mdc-text-field,
+                .mdc-text-field--outlined,
+                .mdc-text-field--no-label
+                    backdrop-filter: none !important
+
+// Browse + compact (any shell): tokenized glass matching browse chrome.
+.browse-shell .chrome-search,
+.chrome-compact .chrome-search
+    ::ng-deep
         #searchbox
             .mat-mdc-text-field-wrapper,
             .mdc-text-field,
@@ -107,9 +222,6 @@
             .mat-mdc-chip .mat-icon,
             .mat-mdc-chip mat-icon
                 color: var(--nflx-muted, #5c564c) !important
-        #searchcta
-            background: var(--nflx-accent, #e8a23a) !important
-            color: #111 !important
 
 .drop-overlay
     position: fixed

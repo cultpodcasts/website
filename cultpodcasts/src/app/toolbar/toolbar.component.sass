@@ -8,6 +8,9 @@
     .mat-toolbar-single-row
         padding-right: 0
 
+#header
+    overflow: visible
+
 @media screen and (min-width: 600px)
     #menu
         display: none
@@ -23,6 +26,7 @@
         padding-right: 4px
 
 .app-toolbar
+    position: relative
     background: color-mix(in srgb, var(--cp-ink-elevated, var(--mat-sys-surface-container)) 72%, transparent) !important
     backdrop-filter: blur(14px)
     -webkit-backdrop-filter: blur(14px)
@@ -37,6 +41,40 @@
     .mat-toolbar-single-row
         overflow: visible
 
+.toolbar-search
+    display: flex
+    align-items: center
+    min-width: 0
+    // Default (expanded): drop below the bar, centered at homepage width.
+    position: absolute
+    left: 50%
+    top: calc(100% + 12px)
+    transform: translateX(-50%)
+    width: min(640px, calc(100vw - 2.5rem))
+    max-width: min(640px, calc(100% - 2.5rem))
+    z-index: 15
+    flex: none
+    margin: 0
+    pointer-events: auto
+
+@media screen and (max-width: 700px)
+    .toolbar-search
+        width: min(640px, calc(100vw - 1.5rem))
+        max-width: min(640px, calc(100% - 1.5rem))
+
+:host-context(.chrome-compact)
+    .toolbar-search
+        position: relative
+        left: auto
+        top: auto
+        transform: none
+        flex: 1 1 auto
+        min-width: 0
+        width: auto
+        max-width: min(480px, 100%)
+        margin: 0 10px
+        z-index: auto
+
 .beta
     color: #aaa
 
@@ -46,6 +84,7 @@
     display: inline-flex
     align-items: center
     gap: 12px
+    flex-shrink: 0
     img
         vertical-align: middle
         width: 42px
@@ -72,6 +111,7 @@
         opacity: 0
 
 #socialbuttons
+    flex-shrink: 0
     .button:hover
         cursor: pointer
     // Signed-in chrome wraps the avatar + matBadge. Do not overflow:hidden here —
@@ -88,16 +128,13 @@
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
 
 button#menu
+    flex-shrink: 0
     border: none
     background-color: transparent
 
+// Home overlay colors — absolute/sticky placement lives on .site-chrome in app.
 :host-context(.home-shell)
     .app-toolbar
-        position: absolute
-        top: 0
-        left: 0
-        right: 0
-        z-index: 20
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent) !important
         border-bottom-color: transparent
         backdrop-filter: none
@@ -114,13 +151,13 @@ button#menu
     button#menu
         color: var(--nflx-on-media, #fff)
 
-// Browse routes use the same frosted bar as Material chrome, but tinted with
-// Flix tokens so light OS theme does not sit cream-on-black.
 :host-context(.browse-shell)
     .app-toolbar
-        background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 78%, transparent) !important
+        background: transparent !important
         color: var(--nflx-text, var(--mat-sys-on-surface))
-        border-bottom: 1px solid var(--nflx-border, color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent))
+        border-bottom: none
+        backdrop-filter: none
+        -webkit-backdrop-filter: none
     #site
         color: var(--nflx-text, var(--mat-sys-on-surface))
     button#menu

@@ -74,7 +74,10 @@ export class AppComponent implements OnDestroy {
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
+  /** Collapse the dropped search into the sticky header after a short scroll. */
+  private static readonly CHROME_COMPACT_THRESHOLD_PX = 48;
   protected readonly showBackToTop = signal(false);
+  protected readonly chromeCompact = signal(false);
   private scrollRaf = 0;
 
   @ViewChild(ToolbarComponent)
@@ -114,6 +117,15 @@ export class AppComponent implements OnDestroy {
   initialiseBrowser() {
     this.addDragListeners();
     this.addScrollListener();
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        // scrollPositionRestoration may settle after NavigationEnd; re-measure next frame.
+        requestAnimationFrame(() => this.syncChromeFromScroll());
+      });
     navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
     this.profileService.roles
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -234,9 +246,15 @@ export class AppComponent implements OnDestroy {
     }
     this.scrollRaf = window.requestAnimationFrame(() => {
       this.scrollRaf = 0;
-      this.showBackToTop.set(window.scrollY > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
+      this.syncChromeFromScroll();
     });
   };
+
+  private syncChromeFromScroll(): void {
+    const y = window.scrollY;
+    this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
+    this.chromeCompact.set(y > AppComponent.CHROME_COMPACT_THRESHOLD_PX);
+  }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {
     if (this.ignoreDragUntilEnd || !this.hasDroppableUrl(event)) {
