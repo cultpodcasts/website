@@ -320,12 +320,13 @@ export class AppComponent implements OnDestroy {
     const gap = AppComponent.DOCK_INLINE_GAP_PX;
     const siteRect = site.getBoundingClientRect();
     const endRect = end.getBoundingClientRect();
-    const barRect = bar.getBoundingClientRect();
+    // Logo bar is position:fixed at top:0 — never use a negative barRect.top for docking.
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
     const left = Math.max(gap, siteRect.right + gap);
     const right = Math.min(window.innerWidth - gap, endRect.left - gap);
     const width = Math.max(140, right - left);
-    const searchHeight = search.getBoundingClientRect().height || 40;
-    const top = barRect.top + Math.max(0, (barRect.height - searchHeight) / 2);
+    const searchHeight = search.offsetHeight || 40;
+    const top = Math.max(0, (barHeight - searchHeight) / 2);
 
     search.style.left = `${left}px`;
     search.style.width = `${width}px`;
