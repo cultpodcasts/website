@@ -43,28 +43,57 @@
     background-color: #121212
     opacity: 0
     overflow: hidden
+    container-type: size
+    // Width/height ratio of the sharp art (set from naturalWidth/naturalHeight).
+    --hero-art-aspect: 1.777
     transition: opacity 1.15s cubic-bezier(0.33, 0.1, 0.25, 1)
     &.is-active
         opacity: 1
     &.is-kenburns
-        .billboard__stage-bleed
-            animation: nflx-ken-burns-bleed var(--hero-interval) ease-out forwards
         .billboard__stage-focus
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
 
-// Full-bleed atmosphere — fills side gaps when the sharp layer is height-fit.
-.billboard__stage-bleed
+// Side fills: stretch a thin strip of the image's true left/right edge outward
+// (not a blurred cover of the whole frame — that looks wrong on square art).
+.billboard__stage-edge
+    display: none
     position: absolute
-    inset: -8%
-    background-color: #121212
-    background-size: cover
-    background-position: center
-    background-repeat: no-repeat
-    filter: blur(48px) saturate(1.15) brightness(0.82)
-    transform: scale(1.12)
-    will-change: transform
+    top: 0
+    bottom: 0
+    overflow: hidden
+    pointer-events: none
 
-// Sharp art — cover on narrow; height-fit on wide so top/bottom are not cropped.
+.billboard__stage-edge-strip
+    position: absolute
+    top: -6%
+    bottom: -6%
+    width: 14px
+    background-color: #121212
+    background-size: auto 100%
+    background-repeat: no-repeat
+    filter: blur(32px) saturate(1.12) brightness(0.88)
+
+.billboard__stage-edge--left
+    left: 0
+    .billboard__stage-edge-strip
+        right: 0
+        background-position: left center
+        transform-origin: right center
+        transform: scaleX(70)
+
+.billboard__stage-edge--right
+    right: 0
+    .billboard__stage-edge-strip
+        left: 0
+        background-position: right center
+        transform-origin: left center
+        transform: scaleX(70)
+
+// Slot sizes/positions the sharp art; Ken Burns scales the inner focus only.
+.billboard__stage-focus-slot
+    position: absolute
+    inset: 0
+
 .billboard__stage-focus
     position: absolute
     inset: 0
@@ -76,10 +105,21 @@
     will-change: transform
 
 @media screen and (min-width: 1280px)
-    .billboard__stage-focus
-        // Fill height; letterbox sides → bleed shows through with matching edge colour.
-        background-size: auto 100%
-        background-position: center center
+    .billboard__stage.has-edge-extend
+        .billboard__stage-edge
+            display: block
+            // Gap between viewport edge and the height-fit art box.
+            width: max(0px, calc((100% - min(100%, 100cqh * var(--hero-art-aspect))) / 2))
+        .billboard__stage-focus-slot
+            top: 0
+            bottom: 0
+            left: 50%
+            width: min(100%, calc(100cqh * var(--hero-art-aspect)))
+            transform: translateX(-50%)
+        .billboard__stage-focus
+            // Fill the aspect-correct slot exactly (no further cover crop).
+            background-size: 100% 100%
+            background-position: center center
 
 .billboard__content
     position: relative
@@ -342,12 +382,8 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-bleed,
         .billboard__stage-focus
             animation: none
-    .billboard__stage-bleed
-        transform: scale(1.12)
-        filter: blur(48px) saturate(1.15) brightness(0.82)
     .billboard__stage-focus
         transform: scale(1.05)
     .billboard__stage
@@ -369,12 +405,8 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-bleed,
         .billboard__stage-focus
             animation: none
-    .billboard__stage-bleed
-        // Soft edge fill still helps; skip animated Ken Burns on touch.
-        transform: scale(1.12)
     .billboard__stage-focus
         transform: scale(1.05)
     .billboard__live
@@ -384,7 +416,6 @@
 // While a Material dialog holds scroll-lock, freeze any leftover stage motion.
 :host-context(.cdk-global-scrollblock)
     .billboard__stage.is-kenburns
-        .billboard__stage-bleed,
         .billboard__stage-focus
             animation-play-state: paused
     .billboard__live

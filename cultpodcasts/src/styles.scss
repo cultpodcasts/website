@@ -1519,12 +1519,6 @@ option {
   to { transform: scale(1.18); }
 }
 
-/* Subtler zoom on the blurred side-fill so it stays in sync with the sharp layer. */
-@keyframes nflx-ken-burns-bleed {
-  from { transform: scale(1.12); }
-  to { transform: scale(1.22); }
-}
-
 @keyframes nflx-pulse-live {
   0% { box-shadow: 0 0 0 0 rgba(232, 162, 58, 0.65); }
   70% { box-shadow: 0 0 0 10px rgba(232, 162, 58, 0); }

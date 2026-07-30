@@ -6,18 +6,38 @@
 
   <div class="billboard__stages" aria-hidden="true">
     <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
-      [class.is-kenburns]="heroKenBurnsA()">
-      <div class="billboard__stage-bleed"
-        [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-      <div class="billboard__stage-focus"
-        [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+      [class.is-kenburns]="heroKenBurnsA()"
+      [class.has-edge-extend]="heroAspectA() != null"
+      [style.--hero-art-aspect]="heroAspectA() ?? null">
+      <div class="billboard__stage-edge billboard__stage-edge--left">
+        <div class="billboard__stage-edge-strip"
+          [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+      </div>
+      <div class="billboard__stage-edge billboard__stage-edge--right">
+        <div class="billboard__stage-edge-strip"
+          [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+      </div>
+      <div class="billboard__stage-focus-slot">
+        <div class="billboard__stage-focus"
+          [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+      </div>
     </div>
     <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'b'"
-      [class.is-kenburns]="heroKenBurnsB()">
-      <div class="billboard__stage-bleed"
-        [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-      <div class="billboard__stage-focus"
-        [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+      [class.is-kenburns]="heroKenBurnsB()"
+      [class.has-edge-extend]="heroAspectB() != null"
+      [style.--hero-art-aspect]="heroAspectB() ?? null">
+      <div class="billboard__stage-edge billboard__stage-edge--left">
+        <div class="billboard__stage-edge-strip"
+          [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+      </div>
+      <div class="billboard__stage-edge billboard__stage-edge--right">
+        <div class="billboard__stage-edge-strip"
+          [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+      </div>
+      <div class="billboard__stage-focus-slot">
+        <div class="billboard__stage-focus"
+          [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+      </div>
     </div>
   </div>
   <div class="billboard__grain" aria-hidden="true"></div>

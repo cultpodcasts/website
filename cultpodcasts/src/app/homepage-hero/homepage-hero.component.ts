@@ -66,8 +66,13 @@ export class HomepageHeroComponent {
   protected readonly heroFrontLayer = signal<'a' | 'b'>('a');
   protected readonly heroLayerA = signal<string | undefined>(undefined);
   protected readonly heroLayerB = signal<string | undefined>(undefined);
+  /** naturalWidth/naturalHeight for edge-extend layout (no canvas / CORS). */
+  protected readonly heroAspectA = signal<number | undefined>(undefined);
+  protected readonly heroAspectB = signal<number | undefined>(undefined);
   protected readonly heroKenBurnsA = signal(false);
   protected readonly heroKenBurnsB = signal(false);
+  /** Aspect ratios keyed by image URL from preload (survives layer flips). */
+  private readonly heroAspectByUrl = new Map<string, number>();
   protected readonly heroDotsOverflowStart = signal(false);
   protected readonly heroDotsOverflowEnd = signal(false);
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
@@ -530,7 +535,9 @@ export class HomepageHeroComponent {
         this.heroKenBurnsClearTimer = undefined;
       }
       this.heroLayerA.set(url);
+      this.heroAspectA.set(this.aspectForUrl(url));
       this.heroLayerB.set(undefined);
+      this.heroAspectB.set(undefined);
       this.heroFrontLayer.set('a');
       this.heroKenBurnsA.set(!!url && this.kenBurnsAllowed());
       this.heroKenBurnsB.set(false);
@@ -540,6 +547,7 @@ export class HomepageHeroComponent {
     if (front === 'a') {
       this.heroKenBurnsB.set(false);
       this.heroLayerB.set(url);
+      this.heroAspectB.set(this.aspectForUrl(url));
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('b');
@@ -550,6 +558,7 @@ export class HomepageHeroComponent {
     } else {
       this.heroKenBurnsA.set(false);
       this.heroLayerA.set(url);
+      this.heroAspectA.set(this.aspectForUrl(url));
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           this.heroFrontLayer.set('a');
@@ -558,6 +567,13 @@ export class HomepageHeroComponent {
         });
       });
     }
+  }
+
+  private aspectForUrl(url: string | undefined): number | undefined {
+    if (!url) {
+      return undefined;
+    }
+    return this.heroAspectByUrl.get(url);
   }
 
   private scheduleOutgoingKenBurnsClear(outgoing: 'a' | 'b'): void {
@@ -572,9 +588,11 @@ export class HomepageHeroComponent {
       if (outgoing === 'a') {
         this.heroKenBurnsA.set(false);
         this.heroLayerA.set(undefined);
+        this.heroAspectA.set(undefined);
       } else {
         this.heroKenBurnsB.set(false);
         this.heroLayerB.set(undefined);
+        this.heroAspectB.set(undefined);
       }
     }, HomepageHeroComponent.heroTransitionMs);
   }
@@ -612,6 +630,7 @@ export class HomepageHeroComponent {
   /**
    * Warm + decode the next backdrop. Used both for the initial image gate and
    * for slide transitions so copy never advances ahead of a painted image.
+   * Also records natural aspect for ultrawide edge-strip extension (no CORS).
    */
   private preloadHeroImage(url: string, token: number, onReady: () => void): void {
     const img = new Image();
@@ -619,10 +638,23 @@ export class HomepageHeroComponent {
     // (like the CSS background-image it warms the cache for) fetches at Low priority.
     img.fetchPriority = 'high';
     img.decoding = 'async';
+    const rememberAspect = () => {
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        this.heroAspectByUrl.set(url, img.naturalWidth / img.naturalHeight);
+        // Layer may already be showing this URL (immediate sync / cache hit).
+        if (this.heroLayerA() === url) {
+          this.heroAspectA.set(this.heroAspectByUrl.get(url));
+        }
+        if (this.heroLayerB() === url) {
+          this.heroAspectB.set(this.heroAspectByUrl.get(url));
+        }
+      }
+    };
     const markReady = () => {
       if (token !== this.heroImageToken) {
         return;
       }
+      rememberAspect();
       onReady();
     };
     img.onload = () => {
