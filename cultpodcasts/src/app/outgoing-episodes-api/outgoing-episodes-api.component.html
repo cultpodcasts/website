@@ -123,6 +123,9 @@
                         }
                     </mat-card-subtitle>
                 </mat-card-header>
+                <div class="curator-card__platforms" aria-label="Podcast services">
+                    <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+                </div>
                 <mat-card-content class="resultdescription">
                     <div class="curator-card__desc">
                         <app-clampable-text [maxLines]="3" [html]="result.displayDescription"></app-clampable-text>
@@ -143,9 +146,6 @@
                     </div>
                     }
                 </mat-card-content>
-                <div class="curator-card__platforms">
-                    <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
-                </div>
                 <mat-card-actions class="curator-card__actions">
                     <div class="curator-card__status">
                         <app-episode-status [episode]="result" [editable]="true"

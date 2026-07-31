@@ -59,6 +59,33 @@
                     </span>
                 </mat-card-subtitle>
             </mat-card-header>
+            <div class="curator-card__platforms discovery-service-links" aria-label="Podcast services">
+                @if (item.urls.youtube!=null) {
+                <a href="{{item.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                    <mat-icon svgIcon="youtube"></mat-icon>
+                </a>
+                @if (item.youTubeViews || item.youTubeChannelMembers) {
+                <div class="youtubemeta">
+                    @if (item.youTubeViews) {
+                    <span>Views: {{item.youTubeViews}}</span>
+                    }
+                    @if (item.youTubeChannelMembers) {
+                    <span>Members: {{item.youTubeChannelMembers}}</span>
+                    }
+                </div>
+                }
+                }
+                @if (item.urls.spotify!=null) {
+                <a href="{{item.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                    <mat-icon svgIcon="spotify"></mat-icon>
+                </a>
+                }
+                @if (item.urls.apple) {
+                <a href="{{item.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
+                    <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+                </a>
+                }
+            </div>
             <mat-card-content>
                 <div class="curator-card__desc">
                     @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
@@ -79,35 +106,6 @@
                 </div>
                 }
             </mat-card-content>
-            <mat-card-actions class="curator-card__actions">
-                <div class="curator-card__platforms discovery-service-links">
-                    @if (item.urls.youtube!=null) {
-                    <a href="{{item.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-                        <mat-icon svgIcon="youtube"></mat-icon>
-                    </a>
-                    @if (item.youTubeViews || item.youTubeChannelMembers) {
-                    <div class="youtubemeta">
-                        @if (item.youTubeViews) {
-                        <span>Views: {{item.youTubeViews}}</span>
-                        }
-                        @if (item.youTubeChannelMembers) {
-                        <span>Members: {{item.youTubeChannelMembers}}</span>
-                        }
-                    </div>
-                    }
-                    }
-                    @if (item.urls.spotify!=null) {
-                    <a href="{{item.urls.spotify}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-                        <mat-icon svgIcon="spotify"></mat-icon>
-                    </a>
-                    }
-                    @if (item.urls.apple) {
-                    <a href="{{item.urls.apple}}" mat-icon-button target="_blank" (click)="allowLink($event)">
-                        <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
-                    </a>
-                    }
-                </div>
-            </mat-card-actions>
         </div>
     </div>
 </mat-card>

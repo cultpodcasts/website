@@ -96,7 +96,7 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
 /* Height budget: sticky site chrome + curator toolbar + one full card row
    must fit in the viewport together. Cap with max-height — do not use
    --curator-snap-offset (arm-after-scroll would resize cards).
-   Modest min-height avoids tiny stubs; dock platforms at the bottom. */
+   Modest min-height avoids tiny stubs; status CTAs dock at the bottom. */
 .curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   /* chrome-bar + sticky fudge + toolbar (~pad+title) + toolbar margin + gap */
@@ -144,22 +144,18 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
   min-height: 0;
 }
 
-/* Service links sit with content; CTAs dock to the card bottom. */
+/* Service links tuck under meta in the content cluster; CTAs dock at bottom. */
 .curator-card-grid > .curator-card .curator-card__platforms,
 .curator-card-grid > discovery-item > .curator-card .curator-card__platforms {
   flex: 0 0 auto;
-  margin-top: 10px;
+  margin-top: 6px;
+  margin-bottom: 0;
 }
 
 .curator-card-grid > .curator-card .curator-card__actions,
 .curator-card-grid > discovery-item > .curator-card .curator-card__actions {
   margin-top: auto;
   padding-top: 12px;
-}
-
-/* Discovery: platforms live in actions — keep them docked as the footer. */
-.curator-card-grid > discovery-item > .curator-card .curator-card__actions .curator-card__platforms {
-  margin-top: 0;
 }
 
 @media (min-width: 720px) {
@@ -293,16 +289,74 @@ mat-card.curator-card mat-card-title {
   width: 100%;
 }
 
+/* Compact service strip under title/meta — not competing with status CTAs. */
 .curator-card__platforms {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  gap: 2px;
+  padding: 2px 3px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 50%, transparent);
+  background: color-mix(in srgb, var(--mat-sys-on-surface, #fff) 5%, transparent);
+
+  app-episode-podcast-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    height: auto;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .youtubemeta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    margin: 0 4px 0 2px;
+    min-width: 0;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 58%, transparent);
+  }
 }
 
 .curator-card__platforms a[mat-icon-button],
 .curator-card__platforms button[mat-icon-button],
 .curator-card__platforms.discovery-service-links a[mat-icon-button],
 .curator-card__platforms.discovery-service-links button[mat-icon-button] {
+  --mdc-icon-button-state-layer-size: 30px;
+  --mdc-icon-button-icon-size: 18px;
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
   margin: 0 !important;
   transform: none !important;
+  line-height: 30px;
+  opacity: 0.88;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+  }
+
+  mat-icon svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &[disabled] {
+    opacity: 0.4;
+  }
 }
 
 @media screen and (max-width: 560px) {
