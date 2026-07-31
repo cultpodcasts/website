@@ -81,6 +81,12 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   scroll-snap-stop: always;
 }
 
+/* First row is under the sticky toolbar — snapping it fights chrome clearance. */
+html.discovery-snap-enabled .curator-card-grid > discovery-item:first-child {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
 .curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   height: 100%;
@@ -91,11 +97,21 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   .curator-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(-n + 2) {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
 }
 
 @media (min-width: 1100px) {
   .curator-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(-n + 3) {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
   }
 }
 
