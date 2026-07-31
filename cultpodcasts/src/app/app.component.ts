@@ -76,14 +76,17 @@ export class AppComponent implements OnDestroy {
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
-  /** Don't dock at rest — homepage search must start dropped below the fixed bar. */
+  /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
   private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
+  /** Match app.component.sass narrow chrome; search stays docked in the header row. */
+  private static readonly NARROW_CHROME_MQ = '(max-width: 700px)';
   protected readonly showBackToTop = signal(false);
   /** Search has scrolled up into the sticky logo bar (single-row chrome). */
   protected readonly chromeStuck = signal(false);
   private scrollRaf = 0;
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
+  private narrowChromeQuery: MediaQueryList | undefined;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -122,12 +125,15 @@ export class AppComponent implements OnDestroy {
     if (this.isBrowser) {
       this.removeDragListeners();
       this.removeScrollListener();
+      this.narrowChromeQuery?.removeEventListener('change', this.onNarrowChromeChange);
       window.removeEventListener('resize', this.onWindowResize);
     }
   }
 
   initialiseBrowser() {
     this.addDragListeners();
+    this.narrowChromeQuery = window.matchMedia(AppComponent.NARROW_CHROME_MQ);
+    this.narrowChromeQuery.addEventListener('change', this.onNarrowChromeChange);
     this.addScrollListener();
     window.addEventListener('resize', this.onWindowResize, { passive: true });
     this.router.events
@@ -269,6 +275,14 @@ export class AppComponent implements OnDestroy {
     }
   };
 
+  private readonly onNarrowChromeChange = () => {
+    this.syncChromeFromScroll();
+  };
+
+  private isNarrowChrome(): boolean {
+    return !!this.narrowChromeQuery?.matches;
+  }
+
   private syncChromeFromScroll(): void {
     const y = window.scrollY;
     this.showBackToTop.set(y > AppComponent.BACK_TO_TOP_THRESHOLD_PX);
@@ -276,6 +290,17 @@ export class AppComponent implements OnDestroy {
     const bar = this.chromeBar?.nativeElement;
     const search = this.chromeSearch?.nativeElement;
     if (!bar || !search) {
+      return;
+    }
+
+    // Narrow: keep search docked in the header row; hero starts beneath that row.
+    if (this.isNarrowChrome()) {
+      if (!this.chromeStuck()) {
+        this.chromeStuck.set(true);
+        requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
+      } else {
+        this.layoutDockedSearch();
+      }
       return;
     }
 
