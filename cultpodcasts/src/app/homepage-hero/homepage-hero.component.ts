@@ -71,6 +71,10 @@ export class HomepageHeroComponent {
   protected readonly heroAspectB = signal<number | undefined>(undefined);
   protected readonly heroKenBurnsA = signal(false);
   protected readonly heroKenBurnsB = signal(false);
+  /** Aspect of the visible front layer — drives narrow media-band height. */
+  protected readonly heroArtAspect = computed(() =>
+    this.heroFrontLayer() === 'a' ? this.heroAspectA() : this.heroAspectB()
+  );
   /** Aspect ratios keyed by image URL from preload (survives layer flips). */
   private readonly heroAspectByUrl = new Map<string, number>();
   protected readonly heroDotsOverflowStart = signal(false);

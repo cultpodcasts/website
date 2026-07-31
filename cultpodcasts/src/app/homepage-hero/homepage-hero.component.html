@@ -1,6 +1,8 @@
 @if (featured(); as feature) {
 <section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
   [class.is-paused]="heroPaused()"
+  [class.has-art-aspect]="heroArtAspect() != null"
+  [style.--hero-art-aspect]="heroArtAspect() ?? null"
   (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave()"
   (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)">
 

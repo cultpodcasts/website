@@ -12,6 +12,7 @@
     padding: var(--nflx-hero-search-clearance, 140px) 4vw 48px
     box-sizing: border-box
     overflow: hidden
+    background-color: #0b0b0b
 
 .billboard__stages,
 .billboard__grain,
@@ -509,12 +510,40 @@
         gap: 16px
         padding-top: 0
         padding-bottom: 24px
+        // Drop the tall viewport min-height — it forced letterboxing around
+        // the contain-sized art. Height comes from search clearance + copy.
+        min-height: 0
         &::before
             content: ''
             flex: 1 0 var(--nflx-hero-search-clearance, 140px)
             min-height: var(--nflx-hero-search-clearance, 140px)
             width: 100%
             pointer-events: none
+    // Media band matches art aspect so the image fills with no top/bottom bars.
+    .billboard.has-art-aspect
+        .billboard__stages,
+        .billboard__grain,
+        .billboard__scrim,
+        .billboard__vignette
+            inset: auto
+            top: 0
+            left: 0
+            right: 0
+            bottom: auto
+            width: 100%
+            height: auto
+            aspect-ratio: var(--hero-art-aspect)
+        .billboard__stage.has-edge-extend
+            .billboard__stage-edge--left,
+            .billboard__stage-edge--right
+                width: 0
+            .billboard__stage-focus-slot
+                inset: 0
+                top: 0
+                left: 0
+                width: 100%
+                height: 100%
+                transform: none
     .billboard__content
         width: 100%
         max-width: min(640px, 100%)
@@ -536,7 +565,7 @@
 
 @media screen and (max-width: 600px)
     .billboard
-        min-height: 78vh
+        min-height: 0
         padding-bottom: 20px
         gap: 12px
     .billboard__actions
