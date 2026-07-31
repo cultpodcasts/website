@@ -50,18 +50,6 @@ body {
   min-height: 100%;
 }
 
-html.discovery-snap-enabled {
-  /* Row stepping is JS-driven (CSS mandatory/proximity skipped rows on trackpad inertia). */
-  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
-}
-
-/* #body is also a snap target elsewhere; on Discovery it fights card snaps and
-   causes the scroll to jitter between two nearby positions. */
-html.discovery-snap-enabled #body {
-  scroll-snap-align: none;
-  scroll-snap-stop: normal;
-}
-
 /* Page grid of curator cards (Discovery / Episodes / Outgoing). */
 .curator-card-grid {
   display: grid;

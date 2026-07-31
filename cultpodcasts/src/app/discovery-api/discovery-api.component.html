@@ -1,4 +1,4 @@
-<section id="results" class="curator-page" #resultsContainer>
+<section id="results" class="curator-page">
 
   <div id="progresswrapper">
     @if (isLoading()) {
@@ -6,7 +6,7 @@
     }
   </div>
 
-  <div class="curator-toolbar" #curatorToolbar>
+  <div class="curator-toolbar">
     <div class="curator-toolbar__title">
       <h2>Discovery</h2>
       @if (!isLoading() && !isInError() && resultsFilter() !== 'hidden' && visibleResults().length > 0) {
