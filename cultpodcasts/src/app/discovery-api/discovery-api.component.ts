@@ -55,7 +55,6 @@ export class DiscoveryApiComponent {
   resultsFilter = signal<string>("all");
   isInError = signal<boolean>(false);
 
-  private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
   constructor(
