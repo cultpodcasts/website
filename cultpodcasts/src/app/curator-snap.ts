@@ -10,8 +10,8 @@ export function toggleCuratorSnapClass(enabled: boolean): void {
   }
 
   const method: 'add' | 'remove' = enabled ? 'add' : 'remove';
+  // CSS only keys off html.curator-snap-enabled (see styles.scss).
   document.documentElement.classList[method](CURATOR_SNAP_CLASS);
-  document.body.classList[method](CURATOR_SNAP_CLASS);
   if (!enabled) {
     document.documentElement.style.removeProperty(CURATOR_SNAP_OFFSET_VAR);
   }

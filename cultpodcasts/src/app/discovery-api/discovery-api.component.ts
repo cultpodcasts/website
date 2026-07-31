@@ -44,7 +44,6 @@ const autoHiddenThreshold = 0.05;
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DiscoveryApiComponent implements AfterViewInit {
-  @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
   @ViewChild('curatorToolbar', { static: false }) curatorToolbar: ElementRef<HTMLElement> | undefined;
 
   results = signal<DiscoveryResult[] | undefined>(undefined);
