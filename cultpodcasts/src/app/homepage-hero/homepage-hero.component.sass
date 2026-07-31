@@ -105,26 +105,44 @@
     transform-origin: center 40%
     will-change: transform
 
+// Full-image framing whenever art aspect is known: largest aspect-correct slot
+// that fits the stage (contain), with edge blur only in leftover side gutters.
+// Avoid cover-cropping which shows only the left/centre of wide collage art.
+.billboard__stage.has-edge-extend
+    .billboard__stage-edge
+        display: block
+    .billboard__stage-edge--left,
+    .billboard__stage-edge--right
+        width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    .billboard__stage-focus-slot
+        inset: auto
+        top: 50%
+        left: 50%
+        width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
+        height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
+        transform: translate(-50%, -50%)
+    .billboard__stage-focus
+        background-size: 100% 100%
+        background-position: center center
+        transform: none
+        transform-origin: center center
+    // Ken Burns zoom would crop the contain slot — keep the whole image visible.
+    &.is-kenburns .billboard__stage-focus
+        animation: none
+        transform: none
+
 @media screen and (min-width: 1280px)
     .billboard__stage.has-edge-extend
-        .billboard__stage-edge
-            display: block
         // Prefer a wide left fill under copy; pin sharp art to the right edge.
         .billboard__stage-edge--left
-            width: max(0px, calc(100% - min(100%, 100cqh * var(--hero-art-aspect))))
+            width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
         .billboard__stage-edge--right
             width: 0
         .billboard__stage-focus-slot
-            top: 0
-            bottom: 0
             left: auto
             right: 0
-            width: min(100%, calc(100cqh * var(--hero-art-aspect)))
-            transform: none
+            transform: translateY(-50%)
         .billboard__stage-focus
-            // Fill the aspect-correct slot exactly (no further cover crop).
-            background-size: 100% 100%
-            background-position: center center
             transform-origin: 70% 40%
     .billboard__scrim
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.97) 0%, rgba(0, 0, 0, 0.9) 22%, rgba(0, 0, 0, 0.55) 42%, rgba(0, 0, 0, 0.18) 58%, transparent 74%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, transparent 20%)
