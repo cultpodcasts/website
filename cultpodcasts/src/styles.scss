@@ -144,22 +144,10 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
   min-height: 0;
 }
 
-/* Service links sit with content; CTAs dock to the card bottom. */
-.curator-card-grid > .curator-card .curator-card__platforms,
-.curator-card-grid > discovery-item > .curator-card .curator-card__platforms {
-  flex: 0 0 auto;
-  margin-top: 10px;
-}
-
 .curator-card-grid > .curator-card .curator-card__actions,
 .curator-card-grid > discovery-item > .curator-card .curator-card__actions {
   margin-top: auto;
   padding-top: 12px;
-}
-
-/* Discovery: platforms live in actions — keep them docked as the footer. */
-.curator-card-grid > discovery-item > .curator-card .curator-card__actions .curator-card__platforms {
-  margin-top: 0;
 }
 
 @media (min-width: 720px) {
@@ -275,9 +263,9 @@ mat-card.curator-card mat-card-title {
 
 .curator-card__actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 16px;
   padding-top: 8px;
 }
 
@@ -287,14 +275,6 @@ mat-card.curator-card mat-card-title {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-
-.curator-card__status {
-  width: 100%;
-}
-
-.curator-card__platforms {
-  width: 100%;
 }
 
 .curator-card__platforms a[mat-icon-button],
