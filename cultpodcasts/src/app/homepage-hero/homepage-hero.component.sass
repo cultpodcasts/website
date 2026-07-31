@@ -50,8 +50,16 @@
     &.is-active
         opacity: 1
     &.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+
+// Sharp art + edge fills share one motion layer so Ken Burns zooms them together.
+.billboard__stage-motion
+    position: absolute
+    inset: 0
+    transform: scale(1.08)
+    transform-origin: center 40%
+    will-change: transform
 
 // Side fills: stretch a thin strip of the image's true left/right edge outward
 // (not a blurred cover of the whole frame — that looks wrong on square art).
@@ -89,7 +97,7 @@
         transform-origin: left center
         transform: scaleX(70)
 
-// Slot sizes/positions the sharp art; Ken Burns scales the inner focus only.
+// Slot sizes/positions the sharp art; Ken Burns scales the shared motion layer.
 .billboard__stage-focus-slot
     position: absolute
     inset: 0
@@ -101,14 +109,14 @@
     background-size: cover
     background-position: center 20%
     background-repeat: no-repeat
-    transform: scale(1.08)
-    transform-origin: center 40%
-    will-change: transform
 
 // Full-image framing whenever art aspect is known: largest aspect-correct slot
 // that fits the stage (contain), with edge blur only in leftover side gutters.
 // Avoid cover-cropping which shows only the left/centre of wide collage art.
 .billboard__stage.has-edge-extend
+    .billboard__stage-motion
+        transform: none
+        transform-origin: center center
     .billboard__stage-edge
         display: block
         z-index: 0
@@ -151,15 +159,15 @@
     .billboard__stage-focus
         background-size: 100% 100%
         background-position: center center
-        transform: none
-        transform-origin: center center
     // Narrow: Ken Burns zoom would crop the contain slot — keep the whole image.
-    &.is-kenburns .billboard__stage-focus
+    &.is-kenburns .billboard__stage-motion
         animation: none
         transform: none
 
 @media screen and (min-width: 1280px)
     .billboard__stage.has-edge-extend
+        .billboard__stage-motion
+            transform-origin: 70% 40%
         // Prefer a wide left fill under copy; pin sharp art to the right edge.
         .billboard__stage-edge--left
             width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
@@ -172,10 +180,8 @@
             // Soften the hard seam where sharp art meets the left fill.
             -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
             mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
-        .billboard__stage-focus
-            transform-origin: 70% 40%
-        // Wide: restore Ken Burns (slight edge crop is acceptable here).
-        &.is-kenburns .billboard__stage-focus
+        // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        &.is-kenburns .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
     // Let the left edge blur read through under copy — avoid a solid black slab.
     .billboard__scrim
@@ -444,10 +450,12 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: none
-    .billboard__stage-focus
+    .billboard__stage-motion
         transform: scale(1.05)
+    .billboard__stage.has-edge-extend .billboard__stage-motion
+        transform: none
     .billboard__stage
         transition: none
     .billboard__feature,
@@ -467,10 +475,12 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: none
-    .billboard__stage-focus
+    .billboard__stage-motion
         transform: scale(1.05)
+    .billboard__stage.has-edge-extend .billboard__stage-motion
+        transform: none
     .billboard__live
         animation: none
         box-shadow: none
@@ -478,7 +488,7 @@
 // While a Material dialog holds scroll-lock, freeze any leftover stage motion.
 :host-context(.cdk-global-scrollblock)
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation-play-state: paused
     .billboard__live
         animation-play-state: paused
