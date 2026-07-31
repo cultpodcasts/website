@@ -28,8 +28,9 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect } from '@angular/core';
+import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser } from '@angular/common';
 
 interface SubjectRail {
   subject: string;
@@ -133,6 +134,9 @@ export class PodcastEpisodeComponent {
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
 
+  /** naturalWidth/naturalHeight for edge-extend framing (same as homepage hero). */
+  protected readonly backdropAspect = signal<number | undefined>(undefined);
+
   protected readonly visibleSubjects = computed(() =>
     (this._episode()?.subjects ?? []).filter((s) => !s.startsWith('_'))
   );
@@ -148,8 +152,15 @@ export class PodcastEpisodeComponent {
   protected readonly relatedLoading = signal<boolean>(false);
 
   private lastRelatedKey: string | undefined;
+  private readonly platformId = inject(PLATFORM_ID);
+  private backdropAspectToken = 0;
 
   constructor() {
+    effect(() => {
+      const url = this.backdropUrl();
+      this.loadBackdropAspect(url);
+    });
+
     effect(() => {
       const ep = this._episode();
       const podcast = this.podcastName();
@@ -163,6 +174,34 @@ export class PodcastEpisodeComponent {
       this.lastRelatedKey = key;
       this.loadRelated(ep, podcast);
     });
+  }
+
+  private loadBackdropAspect(url: string | undefined): void {
+    const token = ++this.backdropAspectToken;
+    this.backdropAspect.set(undefined);
+    if (!url || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const img = new Image();
+    img.decoding = 'async';
+    const apply = () => {
+      if (token !== this.backdropAspectToken) {
+        return;
+      }
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        this.backdropAspect.set(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.onload = apply;
+    img.onerror = () => {
+      if (token === this.backdropAspectToken) {
+        this.backdropAspect.set(undefined);
+      }
+    };
+    img.src = url;
+    if (img.complete) {
+      apply();
+    }
   }
 
   async ngOnInit(): Promise<any> {

@@ -7,7 +7,22 @@
   [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
 
   <div class="episode-backdrop" aria-hidden="true"
-    [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null">
+    [class.has-edge-extend]="backdropAspect() != null"
+    [style.--hero-art-aspect]="backdropAspect() ?? null">
+    <div class="episode-backdrop__motion">
+      <div class="episode-backdrop__edge episode-backdrop__edge--left">
+        <div class="episode-backdrop__edge-strip"
+          [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+      </div>
+      <div class="episode-backdrop__edge episode-backdrop__edge--right">
+        <div class="episode-backdrop__edge-strip"
+          [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+      </div>
+      <div class="episode-backdrop__focus-slot">
+        <div class="episode-backdrop__focus"
+          [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+      </div>
+    </div>
     <div class="episode-backdrop__scrim"></div>
   </div>
 

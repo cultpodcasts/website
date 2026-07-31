@@ -17,15 +17,127 @@
     width: 100%
     min-height: min(58vh, 480px)
     background-color: #121212
+    overflow: hidden
+    container-type: size
+    --hero-art-aspect: 1.777
+
+.episode-backdrop__motion
+    position: absolute
+    inset: 0
+
+// Side fills: thin strip of the image's true left/right edge, stretched outward
+// (same technique as homepage billboard — not a full-frame blur).
+.episode-backdrop__edge
+    display: none
+    position: absolute
+    top: 0
+    bottom: 0
+    overflow: hidden
+    pointer-events: none
+    z-index: 0
+
+.episode-backdrop__edge-strip
+    position: absolute
+    top: -10%
+    bottom: -10%
+    width: 8px
+    background-color: #121212
+    background-size: auto 100%
+    background-repeat: no-repeat
+    filter: blur(28px) saturate(1.2) brightness(0.95)
+
+.episode-backdrop__edge--left
+    left: 0
+    .episode-backdrop__edge-strip
+        right: 0
+        left: auto
+        background-position: left center
+        transform-origin: right center
+        transform: scaleX(400)
+
+.episode-backdrop__edge--right
+    right: 0
+    .episode-backdrop__edge-strip
+        left: 0
+        right: auto
+        background-position: right center
+        transform-origin: left center
+        transform: scaleX(400)
+
+.episode-backdrop__focus-slot
+    position: absolute
+    inset: 0
+    z-index: 1
+
+.episode-backdrop__focus
+    position: absolute
+    inset: 0
+    background-color: transparent
     background-size: cover
     background-position: center 32%
+    background-repeat: no-repeat
     filter: saturate(1.05) contrast(1.03)
+
+.episode-backdrop.has-edge-extend
+    .episode-backdrop__edge
+        display: block
+    .episode-backdrop__edge--left,
+    .episode-backdrop__edge--right
+        width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    .episode-backdrop__focus-slot
+        inset: auto
+        top: 50%
+        left: 50%
+        width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
+        height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
+        transform: translate(-50%, -50%)
+    .episode-backdrop__focus
+        background-size: 100% 100%
+        background-position: center center
+        filter: none
 
 .episode-backdrop__scrim
     position: absolute
     inset: 0
+    z-index: 2
     // Always fade to near-black — cream --nflx-bg in light mode washes out hero copy.
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 55%, #0b0b0b 98%), linear-gradient(100deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 48%, transparent 78%)
+
+@media screen and (min-width: 1280px)
+    .episode-backdrop.has-edge-extend
+        // Prefer a wide left fill under copy; pin sharp art to the right edge.
+        .episode-backdrop__edge--left
+            width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
+        .episode-backdrop__edge--right
+            width: 0
+        .episode-backdrop__focus-slot
+            left: auto
+            right: 0
+            transform: translateY(-50%)
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+    // Let the left edge blur read through under copy — avoid a solid black slab.
+    .episode-backdrop__scrim
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 55%, #0b0b0b 98%)
+
+@media screen and (max-width: 1279.98px)
+    .episode-backdrop.has-edge-extend
+        min-height: 0
+        height: auto
+        aspect-ratio: var(--hero-art-aspect)
+        .episode-backdrop__edge--left,
+        .episode-backdrop__edge--right
+            width: 0
+        .episode-backdrop__focus-slot
+            inset: 0
+            top: 0
+            left: 0
+            width: 100%
+            height: 100%
+            transform: none
+        .episode-backdrop__focus
+            background-size: cover
+            background-position: center center
 
 .episode-toolbar
     position: absolute
@@ -208,7 +320,7 @@
         margin-top: -96px
 
 @media screen and (max-width: 600px)
-    .episode-backdrop
+    .episode-backdrop:not(.has-edge-extend)
         min-height: 46vh
     .episode-hero
         margin-top: -72px
