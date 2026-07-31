@@ -66,7 +66,7 @@
   </div>
   }
   @if (!isLoading() && results() && (resultsFilter() !== 'hidden' || includeHidden())) {
-  <div class="curator-card-grid">
+  <div class="curator-card-grid curator-card-grid--discovery">
     @for (result of displayedResults(); track result.id) {
     <discovery-item (changeState)="handleEvent($event)" [result]="result"
       [selectedEvent]="submittedSubject.asObservable()" [resultFilterEvent]="resultsFilterSubject.asObservable()"

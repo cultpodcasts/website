@@ -51,6 +51,7 @@ body {
 }
 
 html.discovery-snap-enabled {
+  scroll-snap-type: y mandatory;
   /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
   scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
 }
@@ -60,18 +61,6 @@ html.discovery-snap-enabled {
 html.discovery-snap-enabled #body {
   scroll-snap-align: none;
   scroll-snap-stop: normal;
-}
-
-/* Snap only in the single-column curator grid — multi-column rows fight mandatory snap. */
-@media (max-width: 719.98px) {
-  html.discovery-snap-enabled {
-    scroll-snap-type: y mandatory;
-  }
-
-  .curator-card-grid > discovery-item {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
 }
 
 /* Page grid of curator cards (Discovery / Episodes / Outgoing). */
@@ -87,6 +76,13 @@ html.discovery-snap-enabled #body {
   min-width: 0;
 }
 
+/* Discovery stays single-column so mandatory card snap works at all widths.
+   Episodes / Outgoing use the multi-column breakpoints below. */
+html.discovery-snap-enabled .curator-card-grid > discovery-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 .curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   height: 100%;
@@ -94,13 +90,13 @@ html.discovery-snap-enabled #body {
 }
 
 @media (min-width: 720px) {
-  .curator-card-grid {
+  .curator-card-grid:not(.curator-card-grid--discovery) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1100px) {
-  .curator-card-grid {
+  .curator-card-grid:not(.curator-card-grid--discovery) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
