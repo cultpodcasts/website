@@ -110,9 +110,9 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   /**
-   * Cards snap to the viewport top; the sticky Discovery toolbar covers that
-   * band. Keep scroll-padding-top equal to the live toolbar height (it grows
-   * when filter/actions wrap).
+   * Cards snap below the fixed site chrome + sticky Discovery toolbar.
+   * Keep scroll-padding-top equal to that stacked height (toolbar grows when
+   * filter/actions wrap).
    */
   private setupSnapOffsetObserver() {
     const toolbar = this.curatorToolbar?.nativeElement;
@@ -134,8 +134,12 @@ export class DiscoveryApiComponent implements AfterViewInit {
     if (!toolbar) {
       return;
     }
-    // Small gap so the card title isn't flush against the sticky chrome.
-    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + 8;
+    const chromeSource = document.getElementById('body') ?? document.documentElement;
+    const chromeH = parseFloat(
+      getComputedStyle(chromeSource).getPropertyValue('--site-chrome-bar-h')
+    ) || 58;
+    // Match sticky top: calc(var(--site-chrome-bar-h) + 4px) plus toolbar + gap.
+    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + Math.ceil(chromeH) + 4 + 8;
     document.documentElement.style.setProperty('--discovery-snap-offset', `${offset}px`);
   }
 

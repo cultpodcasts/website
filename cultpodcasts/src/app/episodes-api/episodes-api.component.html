@@ -101,21 +101,27 @@
                         }
                     </mat-card-subtitle>
                 </mat-card-header>
-                <mat-card-content class="resultdescription">
-                    <app-clampable-text [maxLines]="3" [html]="result.displayDescription"></app-clampable-text>
-                    @if (result.subjects?.length) {
-                    <div class="curator-card__subjects">
-                        <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                            [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
-                            (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                <mat-card-content class="curator-card__content resultdescription">
+                    <div class="curator-card__desc">
+                        <app-clampable-text [maxLines]="3" [html]="result.displayDescription"></app-clampable-text>
                     </div>
-                    }
-                    @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-                    <div class="curator-card__guests">
-                        <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                            [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
-                            (removeGuest)="removeGuest(result, $event)"
-                            (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
+                    @if (result.subjects?.length || (result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+                    <div class="curator-card__side">
+                        @if (result.subjects?.length) {
+                        <div class="curator-card__subjects">
+                            <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
+                                [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
+                                (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                        </div>
+                        }
+                        @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+                        <div class="curator-card__guests">
+                            <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
+                                [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
+                                (removeGuest)="removeGuest(result, $event)"
+                                (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
+                        </div>
+                        }
                     </div>
                     }
                 </mat-card-content>

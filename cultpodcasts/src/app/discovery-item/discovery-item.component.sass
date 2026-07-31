@@ -1,27 +1,11 @@
 mat-card.curator-card
-    margin-bottom: 12px
-    padding: 12px
-    border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent)
-    border-radius: var(--cp-radius, 14px)
-    background: var(--mat-sys-surface-container, color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433))
     h3
         font-weight: bold
         margin-bottom: 2px
 
-.curator-card__body
-    display: flex
-    gap: 14px
-    align-items: flex-start
-
 .curator-card__art
-    flex: 0 0 112px
-    width: 112px
     app-episode-image
         display: block
-
-.curator-card__main
-    flex: 1 1 auto
-    min-width: 0
 
 .score-row
     margin-top: 4px
@@ -74,41 +58,21 @@ mat-card-subtitle
         color: var(--cp-warn, #f44336)
         font-weight: 600
 
-mat-card-content
-    padding-top: 4px
-    overflow: hidden
+.curator-card__desc
     .showDescription,
     .resultdescription
         display: block
     .resultdescription
         padding-top: 4px
 
-.curator-card__subjects
-    margin-top: 10px
-
-.curator-card__actions
-    display: flex !important
-    flex-direction: row !important
-    flex-wrap: wrap
-    align-items: center
-    gap: 8px
-    padding-top: 4px
-    .discovery-service-links
+.curator-card__platforms.discovery-service-links
+    .youtubemeta
+        flex-direction: column
+        margin-left: 6px
         display: flex
-        flex-wrap: wrap
-        align-items: center
-        gap: 4px
-        a[mat-icon-button],
-        button[mat-icon-button]
-            margin: 0 !important
-            transform: none !important
-        .youtubemeta
-            flex-direction: column
-            margin-left: 6px
-            display: flex
-            min-width: 120px
-            font-size: 0.78rem
-            color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
+        min-width: 120px
+        font-size: 0.78rem
+        color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
 
 // State chrome (border / background) lives in styles.scss — global mat-card rules use
 // !important and would otherwise hide any local selected / warning treatment.
@@ -118,10 +82,3 @@ mat-card.selected
 
 mat-card.auto-hidden
     opacity: 0.78
-
-@media screen and (max-width: 560px)
-    .curator-card__body
-        gap: 10px
-    .curator-card__art
-        flex-basis: 88px
-        width: 88px
