@@ -37,8 +37,9 @@
 
 @media screen and (max-width: 700px)
     .nflx
-        // Tuck art under the docked header row (no black strip above the image).
-        margin-top: calc(-1 * var(--site-chrome-bar-h, 52px))
+        // Fixed chrome overlays the top of the document — do not pull further up
+        // (that stacked with copy clearance and hid "Now featuring").
+        margin-top: 0
         --obscure-card-w: 42vw
         --obscure-yt-w: 55vw
 

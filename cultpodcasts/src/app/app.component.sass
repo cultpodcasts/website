@@ -20,9 +20,8 @@
         --site-chrome-search-gap: 0px
         // Search is docked into the bar — chrome height is the single header row.
         --site-chrome-h: var(--site-chrome-bar-h)
-        // Copy clears the fixed header; media stays at top:0 (no black gap).
+        // Document already starts under the fixed bar; this clears copy only.
         --nflx-hero-search-clearance: calc(var(--site-chrome-bar-h) + env(safe-area-inset-top, 0px) + 12px)
-    // Pull the homepage under the fixed bar so hero art sits flush behind chrome.
     .home-shell .site-chrome__bar-spacer
         height: 0
     .home-shell > .site-chrome > .site-chrome__bar
