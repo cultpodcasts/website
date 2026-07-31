@@ -546,8 +546,9 @@ mat-card.curator-card {
   margin-right: 40px;
 }
 
-.curator-card__content {
-  display: grid;
+mat-card.curator-card mat-card-content.curator-card__content,
+mat-card.curator-card .curator-card__content {
+  display: grid !important;
   grid-template-columns: 1fr;
   gap: 16px;
   min-width: 0;
@@ -618,7 +619,8 @@ mat-card-actions.curator-card__actions {
 }
 
 @media screen and (min-width: 900px) {
-  .curator-card__content {
+  mat-card.curator-card mat-card-content.curator-card__content,
+  mat-card.curator-card .curator-card__content {
     grid-template-columns: 1fr minmax(220px, 0.9fr);
     column-gap: 24px;
     row-gap: 0;

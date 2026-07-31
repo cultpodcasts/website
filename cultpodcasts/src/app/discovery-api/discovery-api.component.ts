@@ -138,8 +138,8 @@ export class DiscoveryApiComponent implements AfterViewInit {
     const chromeH = parseFloat(
       getComputedStyle(chromeSource).getPropertyValue('--site-chrome-bar-h')
     ) || 58;
-    // Gap so the card title isn't flush against the sticky Discovery toolbar.
-    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + Math.ceil(chromeH) + 8;
+    // Match sticky top: calc(var(--site-chrome-bar-h) + 4px) plus toolbar + gap.
+    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + Math.ceil(chromeH) + 4 + 8;
     document.documentElement.style.setProperty('--discovery-snap-offset', `${offset}px`);
   }
 
