@@ -75,8 +75,54 @@ export function normalizePodcastSocialHandles(form: { controls: Pick<EditPodcast
   normalizeHandleControl(form.controls.blueskyHandle);
 }
 
+/**
+ * Trim and ensure a leading `#` on each space-delimited hash tag.
+ * Empty stays empty; lone `#` tokens are dropped (same pattern as handle `@`).
+ */
+export function ensureHashPrefix(value: string | null | undefined): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  return splitHandles(trimmed)
+    .map(part => (part.startsWith('#') ? part : `#${part}`))
+    .filter(part => part.length > 1)
+    .join(' ');
+}
+
+/**
+ * Empty is allowed. Non-empty values are space-delimited tags; each must start
+ * with `#` and include at least one character after it (bare `#` is invalid).
+ */
+export function hashPrefixedTagValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = (control.value ?? '').toString().trim();
+    if (!raw) {
+      return null;
+    }
+    const parts = splitHandles(raw);
+    if (parts.length === 0) {
+      return null;
+    }
+    const invalid = parts.some(part => !part.startsWith('#') || part.length < 2);
+    return invalid ? { hashPrefixedTag: true } : null;
+  };
+}
+
+export function normalizeHashTagControl(
+  control: FormControl<string | null | undefined> | FormControl<string | null> | FormControl<string>
+): void {
+  const current = control.value ?? '';
+  const next = ensureHashPrefix(current);
+  if (next !== current) {
+    control.setValue(next);
+  }
+  control.updateValueAndValidity({ emitEvent: false });
+}
+
 export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
   const handleValidators = [atPrefixedHandleValidator()];
+  const hashTagValidators = [hashPrefixedTagValidator()];
   return {
     removed: new FormControl(podcast.removed, { nonNullable: true }),
     indexAllEpisodes: new FormControl(podcast.indexAllEpisodes, { nonNullable: true }),
@@ -104,7 +150,7 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     knownTerms: new FormControl<string[]>(podcast.knownTerms ?? [], { nonNullable: true }),
     minimumDuration: new FormControl(podcast.minimumDuration, { nonNullable: true }),
     enrichmentHashTags: new FormControl(podcast.enrichmentHashTags, { nonNullable: false }),
-    hashTag: new FormControl(podcast.hashTag, { nonNullable: false }),
+    hashTag: new FormControl(ensureHashPrefix(podcast.hashTag), { nonNullable: false, validators: hashTagValidators }),
   };
 }
 

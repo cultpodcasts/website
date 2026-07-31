@@ -103,7 +103,11 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Hash Tags</mat-label>
-                    <input type="text" [formControl]="form()!.controls.hashTag" matInput>
+                    <input type="text" [formControl]="form()!.controls.hashTag" matInput
+                        placeholder="#tag1 #tag2" (blur)="normalizeHashTag()">
+                    @if (form()!.controls.hashTag.hasError('hashPrefixedTag')) {
+                    <mat-error>Each tag must start with #</mat-error>
+                    }
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Enrichment Hash Tags</mat-label>

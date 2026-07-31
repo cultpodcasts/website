@@ -34,6 +34,7 @@ import {
   asEmptyString,
   asStringArray,
   normalizeHandleControl,
+  normalizeHashTagControl,
   normalizePodcastSocialHandles
 } from '../podcast-form.util';
 
@@ -244,6 +245,13 @@ export class EditPodcastDialogComponent {
     const control = this.form()?.controls.blueskyHandle;
     if (control) {
       normalizeHandleControl(control);
+    }
+  }
+
+  normalizeHashTag() {
+    const control = this.form()?.controls.hashTag;
+    if (control) {
+      normalizeHashTagControl(control);
     }
   }
 

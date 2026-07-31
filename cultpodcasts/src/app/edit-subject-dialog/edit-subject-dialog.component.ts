@@ -19,6 +19,7 @@ import { SubjectType } from "../subject-type.enum";
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.util';
+import { ensureHashPrefix, hashPrefixedTagValidator, normalizeHashTagControl } from '../podcast-form.util';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -96,7 +97,7 @@ export class EditSubjectDialogComponent {
                         associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
                         subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
                         enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
-                        hashTag: new FormControl(resp.hashTag, { nonNullable: false }),
+                        hashTag: new FormControl(ensureHashPrefix(resp.hashTag), { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
                         redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
                         redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
                         knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
@@ -117,7 +118,7 @@ export class EditSubjectDialogComponent {
                 associatedSubjects: new FormControl([], { nonNullable: false }),
                 subjectType: new FormControl(SubjectType[SubjectType.Unset], { nonNullable: true }),
                 enrichmentHashTags: new FormControl([], { nonNullable: false }),
-                hashTag: new FormControl("", { nonNullable: false }),
+                hashTag: new FormControl("", { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
                 redditFlairTemplateId: new FormControl("", { nonNullable: false }),
                 redditFlareText: new FormControl("", { nonNullable: false }),
                 knownTerms: new FormControl<string[]>([], { nonNullable: true })
@@ -142,6 +143,13 @@ export class EditSubjectDialogComponent {
 
     } else {
       this.dialogRef.close({ closed: true });
+    }
+  }
+
+  normalizeHashTag() {
+    const control = this.form()?.controls.hashTag;
+    if (control) {
+      normalizeHashTagControl(control);
     }
   }
 

@@ -3,7 +3,10 @@ import {
   atPrefixedHandleValidator,
   buildPodcastFormControls,
   ensureAtPrefix,
+  ensureHashPrefix,
+  hashPrefixedTagValidator,
   normalizeHandleControl,
+  normalizeHashTagControl,
   normalizePodcastSocialHandles
 } from './podcast-form.util';
 import { Podcast } from './podcast.interface';
@@ -150,5 +153,96 @@ describe('buildPodcastFormControls handle prefix', () => {
     expect(form.blueskyHandle.value).toBe('@x.bsky.social @y.bsky.social');
     expect(form.twitterHandle.valid).toBe(true);
     expect(form.blueskyHandle.valid).toBe(true);
+  });
+});
+
+describe('ensureHashPrefix', () => {
+  it('leaves empty values empty', () => {
+    expect(ensureHashPrefix('')).toBe('');
+    expect(ensureHashPrefix('   ')).toBe('');
+    expect(ensureHashPrefix(null)).toBe('');
+    expect(ensureHashPrefix(undefined)).toBe('');
+  });
+
+  it('prefixes a bare tag', () => {
+    expect(ensureHashPrefix('cult')).toBe('#cult');
+    expect(ensureHashPrefix('  podcasts  ')).toBe('#podcasts');
+  });
+
+  it('keeps an existing # prefix', () => {
+    expect(ensureHashPrefix('#cult')).toBe('#cult');
+  });
+
+  it('prefixes each space-delimited tag', () => {
+    expect(ensureHashPrefix('#cult podcasts')).toBe('#cult #podcasts');
+    expect(ensureHashPrefix('cult podcasts')).toBe('#cult #podcasts');
+    expect(ensureHashPrefix('  #a   #b  ')).toBe('#a #b');
+  });
+
+  it('drops lone # tokens', () => {
+    expect(ensureHashPrefix('#')).toBe('');
+    expect(ensureHashPrefix('#foo #')).toBe('#foo');
+  });
+});
+
+describe('hashPrefixedTagValidator', () => {
+  const validate = hashPrefixedTagValidator();
+
+  it('allows empty', () => {
+    expect(validate(new FormControl(''))).toBeNull();
+    expect(validate(new FormControl('  '))).toBeNull();
+  });
+
+  it('rejects bare tags and lone #', () => {
+    expect(validate(new FormControl('cult'))).toEqual({ hashPrefixedTag: true });
+    expect(validate(new FormControl('#'))).toEqual({ hashPrefixedTag: true });
+  });
+
+  it('accepts #tag', () => {
+    expect(validate(new FormControl('#cult'))).toBeNull();
+  });
+
+  it('accepts multiple space-delimited #tags', () => {
+    expect(validate(new FormControl('#cult #podcasts'))).toBeNull();
+  });
+
+  it('rejects when any token lacks a leading #', () => {
+    expect(validate(new FormControl('#cult podcasts'))).toEqual({ hashPrefixedTag: true });
+    expect(validate(new FormControl('foo #bar'))).toEqual({ hashPrefixedTag: true });
+  });
+});
+
+describe('normalizeHashTagControl', () => {
+  it('auto-prefixes each space-delimited token on blur', () => {
+    const hashTag = new FormControl('#cult podcasts', {
+      nonNullable: false,
+      validators: [hashPrefixedTagValidator()]
+    });
+    expect(hashTag.valid).toBe(false);
+
+    normalizeHashTagControl(hashTag);
+
+    expect(hashTag.value).toBe('#cult #podcasts');
+    expect(hashTag.valid).toBe(true);
+  });
+});
+
+describe('buildPodcastFormControls hash tag prefix', () => {
+  it('normalizes loaded hash tags and validates', () => {
+    const form = buildPodcastFormControls(basePodcast({
+      hashTag: 'cult podcasts'
+    }));
+
+    expect(form.hashTag.value).toBe('#cult #podcasts');
+    expect(form.hashTag.valid).toBe(true);
+  });
+
+  it('leaves enrichmentHashTags without hash validators', () => {
+    const form = buildPodcastFormControls(basePodcast({
+      enrichmentHashTags: ['bare', 'tags']
+    }));
+
+    expect(form.enrichmentHashTags.validator).toBeNull();
+    expect(form.enrichmentHashTags.valid).toBe(true);
   });
 });
