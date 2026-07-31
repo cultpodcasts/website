@@ -118,8 +118,8 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
 }
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__art {
-  flex: 0 0 104px;
-  width: 104px;
+  flex: 0 0 128px;
+  width: 128px;
 }
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__main {
@@ -127,6 +127,7 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
 }
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__actions {
@@ -139,16 +140,23 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Multi-col Discovery: art leads on top, content below — capped so a
-     full-width square tile cannot blow past the viewport height budget. */
+  /* Multi-col Discovery: art leads full-width on top (16:9 band), content
+     below. Max-height keeps the band inside the chrome+toolbar row budget
+     without the tiny 7.5rem corner-thumb cap. */
   .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
     flex-direction: column;
   }
 
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
     flex: 0 0 auto;
-    width: min(100%, 7.5rem);
-    max-height: 7.5rem;
+    width: 100%;
+    max-height: 12rem;
+
+    .container.layout-tile {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 12rem;
+    }
   }
 
   html.discovery-snap-enabled .curator-card-grid > discovery-item {
@@ -260,10 +268,10 @@ mat-card.curator-card mat-card-title {
     width: 72px;
   }
 
-  /* Discovery keeps a slightly larger tile than shared Episodes/Outgoing. */
+  /* Discovery keeps a larger tile than shared Episodes/Outgoing on narrow. */
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
-    flex-basis: 88px;
-    width: 88px;
+    flex-basis: 104px;
+    width: 104px;
   }
 }
 
