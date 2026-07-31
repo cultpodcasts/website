@@ -544,8 +544,8 @@
             width: 100%
             pointer-events: none
     // Media band matches art aspect so the image fills with no top/bottom bars.
-    // Keep the band at top:0 (flush under the chrome). Header clearance is only
-    // for copy via ::before — otherwise a black strip appears between header and art.
+    // Mid-width: keep the band at top:0 under frosted/transparent chrome; clearance
+    // is for copy via ::before. Narrow (≤700) overrides top to sit below the sticky row.
     .billboard.has-art-aspect
         .billboard__stages,
         .billboard__grain,
@@ -597,10 +597,18 @@
         min-height: 0
         padding-bottom: 20px
         gap: 12px
-        // Explicit copy offset under the fixed docked header (media stays at top:0).
+        // Copy offset under the fixed docked header (media band is offset separately).
         &::before
             flex-basis: var(--nflx-hero-search-clearance, 64px)
             min-height: var(--nflx-hero-search-clearance, 64px)
+    // Narrow: art starts flush below the sticky chrome row — not tucked under it.
+    // (Mid/wide ≤1280 keep top:0 so art can sit under frosted/transparent chrome.)
+    .billboard.has-art-aspect
+        .billboard__stages,
+        .billboard__grain,
+        .billboard__scrim,
+        .billboard__vignette
+            top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
     .billboard__content
         padding-top: 0
     .billboard__eyebrow
