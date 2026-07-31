@@ -46,6 +46,18 @@ import { filter, map, startWith } from 'rxjs';
 })
 
 export class AppComponent implements OnDestroy {
+  private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
+  private static readonly DOCK_INLINE_GAP_PX = 12;
+  /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
+  private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
+  /** Match app.component.sass narrow chrome; search stays docked in the header row. */
+  private static readonly NARROW_CHROME_MQ = '(max-width: 700px)';
+
+  private static isHomePath(url: string): boolean {
+    const path = url.split('?')[0].split('#')[0];
+    return path === '/' || path === '';
+  }
+
   protected readonly isBrowser: boolean;
   protected FeatureSwitch = FeatureSwitch;
   protected readonly isDragOver = signal(false);
@@ -67,22 +79,16 @@ export class AppComponent implements OnDestroy {
     return match ? decodeURIComponent(match[1]) : undefined;
   });
   protected readonly isOnPodcastPage = computed(() => this.podcastPageName() !== undefined);
-  protected readonly isHomePage = computed(() => {
-    const path = this.routeUrl().split('?')[0].split('#')[0];
-    return path === '/' || path === '';
-  });
+  protected readonly isHomePage = computed(() => AppComponent.isHomePath(this.routeUrl()));
   private ignoreDragUntilEnd = false;
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
-  private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
-  private static readonly DOCK_INLINE_GAP_PX = 12;
-  /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
-  private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
-  /** Match app.component.sass narrow chrome; search stays docked in the header row. */
-  private static readonly NARROW_CHROME_MQ = '(max-width: 700px)';
   protected readonly showBackToTop = signal(false);
-  /** Search has scrolled up into the sticky logo bar (single-row chrome). */
-  protected readonly chromeStuck = signal(false);
+  /**
+   * Search docked into the sticky logo bar. Browse routes start docked so Discovery
+   * (etc.) never flash a dropped search row that then collapses into the header.
+   */
+  protected readonly chromeStuck = signal(!AppComponent.isHomePath(this.router.url));
   private scrollRaf = 0;
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
@@ -293,8 +299,8 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    // Narrow: keep search docked in the header row; hero starts beneath that row.
-    if (this.isNarrowChrome()) {
+    // Browse + narrow: search stays in the header — never the dropped homepage row.
+    if (!this.isHomePage() || this.isNarrowChrome()) {
       if (!this.chromeStuck()) {
         this.chromeStuck.set(true);
         requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
@@ -305,7 +311,7 @@ export class AppComponent implements OnDestroy {
     }
 
     if (this.chromeStuck()) {
-      // Release back to the dropped layout near the top of the page.
+      // Release back to the dropped layout near the top of the homepage.
       if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
         this.chromeStuck.set(false);
         this.clearDockedSearchLayout(search);
@@ -315,7 +321,7 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    // Keep search dropped at the top of the page (esp. homepage overlay).
+    // Keep search dropped at the top of the homepage (hero overlay).
     if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
       return;
     }

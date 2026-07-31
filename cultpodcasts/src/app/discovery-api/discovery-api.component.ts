@@ -77,8 +77,6 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   ngOnInit() {
-    this.toggleDiscoverySnapClass(true);
-
     this.siteService.setQuery(null);
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
@@ -94,6 +92,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
       return;
     }
     this.setupSnapOffsetObserver();
+    this.armDiscoverySnapAfterScroll();
   }
 
   private toggleDiscoverySnapClass(enabled: boolean) {
@@ -110,6 +109,32 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   /**
+   * Enabling snap + scroll-padding on first paint makes the browser nudge scroll
+   * (and can dock/undock chrome). Arm only after the user has scrolled a little.
+   */
+  private armDiscoverySnapAfterScroll() {
+    const arm = () => {
+      this.toggleDiscoverySnapClass(true);
+      this.syncSnapOffset();
+    };
+
+    if (window.scrollY > 8) {
+      arm();
+      return;
+    }
+
+    const onScroll = () => {
+      if (window.scrollY <= 8) {
+        return;
+      }
+      window.removeEventListener('scroll', onScroll);
+      arm();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    this.destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
+  }
+
+  /**
    * Cards snap below the fixed site chrome + sticky Discovery toolbar.
    * Keep scroll-padding-top equal to that stacked height (toolbar grows when
    * filter/actions wrap).
@@ -117,13 +142,15 @@ export class DiscoveryApiComponent implements AfterViewInit {
   private setupSnapOffsetObserver() {
     const toolbar = this.curatorToolbar?.nativeElement;
     if (!toolbar || typeof ResizeObserver === 'undefined') {
-      this.syncSnapOffset();
       return;
     }
 
-    this.snapOffsetObserver = new ResizeObserver(() => this.syncSnapOffset());
+    this.snapOffsetObserver = new ResizeObserver(() => {
+      if (document.documentElement.classList.contains('discovery-snap-enabled')) {
+        this.syncSnapOffset();
+      }
+    });
     this.snapOffsetObserver.observe(toolbar);
-    this.syncSnapOffset();
   }
 
   private syncSnapOffset() {
