@@ -76,8 +76,6 @@ html.discovery-snap-enabled #body {
   min-width: 0;
 }
 
-/* Discovery stays single-column so mandatory card snap works at all widths.
-   Episodes / Outgoing use the multi-column breakpoints below. */
 html.discovery-snap-enabled .curator-card-grid > discovery-item {
   scroll-snap-align: start;
   scroll-snap-stop: always;
@@ -90,13 +88,13 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
 }
 
 @media (min-width: 720px) {
-  .curator-card-grid:not(.curator-card-grid--discovery) {
+  .curator-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1100px) {
-  .curator-card-grid:not(.curator-card-grid--discovery) {
+  .curator-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
