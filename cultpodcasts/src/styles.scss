@@ -289,15 +289,14 @@ mat-card.curator-card mat-card-title {
   width: 100%;
 }
 
-/* Compact service strip under title/meta — not competing with status CTAs. */
+/* Service icons under title/meta — plain (no chip chrome), same inline inset
+   as mat-card-header / mat-card-content (Material default 16px). */
 .curator-card__platforms {
   width: auto;
   max-width: 100%;
+  box-sizing: border-box;
   gap: 2px;
-  padding: 2px 3px;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 50%, transparent);
-  background: color-mix(in srgb, var(--mat-sys-on-surface, #fff) 5%, transparent);
+  padding-inline: 16px;
 
   app-episode-podcast-links {
     display: flex;
@@ -848,7 +847,8 @@ mat-card-actions:not(.curator-card__actions) {
 
     .mat-mdc-card-header,
     .mdc-card__actions,
-    .mat-mdc-card-content {
+    .mat-mdc-card-content,
+    .curator-card__platforms {
       padding-left: 4px;
       padding-right: 4px;
     }
