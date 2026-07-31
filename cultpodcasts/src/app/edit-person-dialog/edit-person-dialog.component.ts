@@ -24,6 +24,7 @@ import {
   stripLeadingThe
 } from '../person-sort';
 import { asEmptyString, asStringArray } from '../form-value.util';
+import { atPrefixedHandleValidator, ensureAtPrefix, normalizeHandleControl } from '../podcast-form.util';
 
 @Component({
   selector: 'app-edit-person-dialog',
@@ -80,8 +81,8 @@ export class EditPersonDialogComponent {
         name: new FormControl(initialName, { nonNullable: true, validators: [Validators.required] }),
         sortName: new FormControl(initialGuess, { nonNullable: false }),
         aliases: new FormControl([], { nonNullable: false }),
-        twitterHandle: new FormControl('', { nonNullable: false }),
-        blueskyHandle: new FormControl('', { nonNullable: false })
+        twitterHandle: new FormControl('', { nonNullable: false, validators: [atPrefixedHandleValidator()] }),
+        blueskyHandle: new FormControl('', { nonNullable: false, validators: [atPrefixedHandleValidator()] })
       }));
       this.useFullNameForSorting.setValue(initialOrg, { emitEvent: false });
       this.sortNameManuallyEdited = false;
@@ -125,8 +126,8 @@ export class EditPersonDialogComponent {
               name: new FormControl(name, { nonNullable: true, validators: [Validators.required] }),
               sortName: new FormControl(displaySort, { nonNullable: false }),
               aliases: new FormControl(resp.aliases, { nonNullable: false }),
-              twitterHandle: new FormControl(resp.twitterHandle ?? '', { nonNullable: false }),
-              blueskyHandle: new FormControl(resp.blueskyHandle ?? '', { nonNullable: false })
+              twitterHandle: new FormControl(ensureAtPrefix(resp.twitterHandle), { nonNullable: false, validators: [atPrefixedHandleValidator()] }),
+              blueskyHandle: new FormControl(ensureAtPrefix(resp.blueskyHandle), { nonNullable: false, validators: [atPrefixedHandleValidator()] })
             }));
             this.useFullNameForSorting.setValue(isOrg, { emitEvent: false });
             this.wireSortControls();
@@ -255,6 +256,20 @@ export class EditPersonDialogComponent {
       return;
     }
     window.open(`https://bsky.app/search?q=${encodeURIComponent(q)}`, '_blank', 'noopener');
+  }
+
+  normalizeTwitterHandle() {
+    const control = this.form()?.controls.twitterHandle;
+    if (control) {
+      normalizeHandleControl(control);
+    }
+  }
+
+  normalizeBlueskyHandle() {
+    const control = this.form()?.controls.blueskyHandle;
+    if (control) {
+      normalizeHandleControl(control);
+    }
   }
 
   onSubmit() {

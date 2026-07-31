@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+import { AbstractControl, FormControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { EditPodcastForm } from './edit-podcast-form.interface';
 import { EditPodcastPost } from './edit-podcast-post.interface';
 import { Podcast } from './podcast.interface';
@@ -17,7 +17,112 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+/**
+ * Split a space-delimited handle field into non-empty tokens.
+ * Matches backend PersonFactory.NormalizeHandle (whitespace only).
+ */
+export function splitHandles(value: string): string[] {
+  return value.trim().split(/\s+/).filter(Boolean);
+}
+
+/**
+ * Trim and ensure a leading `@` on each space-delimited handle.
+ * Empty stays empty; lone `@` tokens are dropped (same as backend).
+ */
+export function ensureAtPrefix(value: string | null | undefined): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  return splitHandles(trimmed)
+    .map(part => (part.startsWith('@') ? part : `@${part}`))
+    .filter(part => part.length > 1)
+    .join(' ');
+}
+
+/**
+ * Empty is allowed. Non-empty values are space-delimited handles; each must start
+ * with `@` and include at least one character after it (bare `@` is invalid).
+ */
+export function atPrefixedHandleValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = (control.value ?? '').toString().trim();
+    if (!raw) {
+      return null;
+    }
+    const parts = splitHandles(raw);
+    if (parts.length === 0) {
+      return null;
+    }
+    const invalid = parts.some(part => !part.startsWith('@') || part.length < 2);
+    return invalid ? { atPrefixedHandle: true } : null;
+  };
+}
+
+export function normalizeHandleControl(
+  control: FormControl<string | null | undefined> | FormControl<string | null> | FormControl<string>
+): void {
+  const current = control.value ?? '';
+  const next = ensureAtPrefix(current);
+  if (next !== current) {
+    control.setValue(next);
+  }
+  control.updateValueAndValidity({ emitEvent: false });
+}
+
+export function normalizePodcastSocialHandles(form: { controls: Pick<EditPodcastForm, 'twitterHandle' | 'blueskyHandle'> }): void {
+  normalizeHandleControl(form.controls.twitterHandle);
+  normalizeHandleControl(form.controls.blueskyHandle);
+}
+
+/**
+ * Trim and ensure a leading `#` on each space-delimited hash tag.
+ * Empty stays empty; lone `#` tokens are dropped (same pattern as handle `@`).
+ */
+export function ensureHashPrefix(value: string | null | undefined): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  return splitHandles(trimmed)
+    .map(part => (part.startsWith('#') ? part : `#${part}`))
+    .filter(part => part.length > 1)
+    .join(' ');
+}
+
+/**
+ * Empty is allowed. Non-empty values are space-delimited tags; each must start
+ * with `#` and include at least one character after it (bare `#` is invalid).
+ */
+export function hashPrefixedTagValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = (control.value ?? '').toString().trim();
+    if (!raw) {
+      return null;
+    }
+    const parts = splitHandles(raw);
+    if (parts.length === 0) {
+      return null;
+    }
+    const invalid = parts.some(part => !part.startsWith('#') || part.length < 2);
+    return invalid ? { hashPrefixedTag: true } : null;
+  };
+}
+
+export function normalizeHashTagControl(
+  control: FormControl<string | null | undefined> | FormControl<string | null> | FormControl<string>
+): void {
+  const current = control.value ?? '';
+  const next = ensureHashPrefix(current);
+  if (next !== current) {
+    control.setValue(next);
+  }
+  control.updateValueAndValidity({ emitEvent: false });
+}
+
 export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
+  const handleValidators = [atPrefixedHandleValidator()];
+  const hashTagValidators = [hashPrefixedTagValidator()];
   return {
     removed: new FormControl(podcast.removed, { nonNullable: true }),
     indexAllEpisodes: new FormControl(podcast.indexAllEpisodes, { nonNullable: true }),
@@ -29,8 +134,8 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     appleId: new FormControl(podcast.appleId, { nonNullable: false }),
     youTubePublicationDelay: new FormControl(podcast.youTubePublicationDelay, { nonNullable: true }),
     skipEnrichingFromYouTube: new FormControl(podcast.skipEnrichingFromYouTube, { nonNullable: true }),
-    twitterHandle: new FormControl(podcast.twitterHandle, { nonNullable: true }),
-    blueskyHandle: new FormControl(podcast.blueskyHandle, { nonNullable: true }),
+    twitterHandle: new FormControl(ensureAtPrefix(podcast.twitterHandle), { nonNullable: true, validators: handleValidators }),
+    blueskyHandle: new FormControl(ensureAtPrefix(podcast.blueskyHandle), { nonNullable: true, validators: handleValidators }),
     titleRegex: new FormControl(podcast.titleRegex, { nonNullable: true }),
     descriptionRegex: new FormControl(podcast.descriptionRegex, { nonNullable: true }),
     episodeMatchRegex: new FormControl(podcast.episodeMatchRegex, { nonNullable: true }),
@@ -45,7 +150,7 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     knownTerms: new FormControl<string[]>(podcast.knownTerms ?? [], { nonNullable: true }),
     minimumDuration: new FormControl(podcast.minimumDuration, { nonNullable: true }),
     enrichmentHashTags: new FormControl(podcast.enrichmentHashTags, { nonNullable: false }),
-    hashTag: new FormControl(podcast.hashTag, { nonNullable: false }),
+    hashTag: new FormControl(ensureHashPrefix(podcast.hashTag), { nonNullable: false, validators: hashTagValidators }),
   };
 }
 

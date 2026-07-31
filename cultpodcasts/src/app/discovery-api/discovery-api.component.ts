@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
@@ -19,6 +19,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
+import {
+  armCuratorSnapAfterScroll,
+  observeCuratorSnapToolbar,
+  syncCuratorSnapOffset,
+  toggleCuratorSnapClass
+} from '../curator-snap';
 
 const likelyMatchThreshold = 0.5;
 const autoHiddenThreshold = 0.05;
@@ -38,7 +44,6 @@ const autoHiddenThreshold = 0.05;
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DiscoveryApiComponent implements AfterViewInit {
-  @ViewChild('resultsContainer', { static: false }) resultsContainer: ElementRef | undefined;
   @ViewChild('curatorToolbar', { static: false }) curatorToolbar: ElementRef<HTMLElement> | undefined;
 
   results = signal<DiscoveryResult[] | undefined>(undefined);
@@ -71,14 +76,13 @@ export class DiscoveryApiComponent implements AfterViewInit {
     private siteService: SiteService
   ) {
     this.destroyRef.onDestroy(() => {
-      this.teardownSnapOffsetObserver();
-      this.toggleDiscoverySnapClass(false);
+      this.snapOffsetObserver?.disconnect();
+      this.snapOffsetObserver = undefined;
+      toggleCuratorSnapClass(false);
     });
   }
 
   ngOnInit() {
-    this.toggleDiscoverySnapClass(true);
-
     this.siteService.setQuery(null);
     this.siteService.setPodcast(null);
     this.siteService.setSubject(null);
@@ -93,59 +97,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
-    this.setupSnapOffsetObserver();
-  }
-
-  private toggleDiscoverySnapClass(enabled: boolean) {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    const method: 'add' | 'remove' = enabled ? 'add' : 'remove';
-    document.documentElement.classList[method]('discovery-snap-enabled');
-    document.body.classList[method]('discovery-snap-enabled');
-    if (!enabled) {
-      document.documentElement.style.removeProperty('--discovery-snap-offset');
-    }
-  }
-
-  /**
-   * Cards snap below the fixed site chrome + sticky Discovery toolbar.
-   * Keep scroll-padding-top equal to that stacked height (toolbar grows when
-   * filter/actions wrap).
-   */
-  private setupSnapOffsetObserver() {
-    const toolbar = this.curatorToolbar?.nativeElement;
-    if (!toolbar || typeof ResizeObserver === 'undefined') {
-      this.syncSnapOffset();
-      return;
-    }
-
-    this.snapOffsetObserver = new ResizeObserver(() => this.syncSnapOffset());
-    this.snapOffsetObserver.observe(toolbar);
-    this.syncSnapOffset();
-  }
-
-  private syncSnapOffset() {
-    if (typeof document === 'undefined') {
-      return;
-    }
-    const toolbar = this.curatorToolbar?.nativeElement;
-    if (!toolbar) {
-      return;
-    }
-    const chromeSource = document.getElementById('body') ?? document.documentElement;
-    const chromeH = parseFloat(
-      getComputedStyle(chromeSource).getPropertyValue('--site-chrome-bar-h')
-    ) || 58;
-    // Match sticky top: calc(var(--site-chrome-bar-h) + 4px) plus toolbar + gap.
-    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + Math.ceil(chromeH) + 4 + 8;
-    document.documentElement.style.setProperty('--discovery-snap-offset', `${offset}px`);
-  }
-
-  private teardownSnapOffsetObserver() {
-    this.snapOffsetObserver?.disconnect();
-    this.snapOffsetObserver = undefined;
+    this.snapOffsetObserver = observeCuratorSnapToolbar(this.curatorToolbar?.nativeElement);
+    armCuratorSnapAfterScroll(this.destroyRef, () => {
+      syncCuratorSnapOffset(this.curatorToolbar?.nativeElement);
+    });
   }
 
   loadResults(includeHidden: boolean) {

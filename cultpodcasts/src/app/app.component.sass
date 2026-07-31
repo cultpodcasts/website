@@ -17,9 +17,31 @@
 @media screen and (max-width: 700px)
     #body
         --site-chrome-bar-h: 52px
-        --site-chrome-search-gap: 10px
+        --site-chrome-search-gap: 0px
+        // Search is docked into the bar — chrome height is the single header row.
+        --site-chrome-h: var(--site-chrome-bar-h)
+        // Document already starts under the fixed bar; this clears copy only.
+        --nflx-hero-search-clearance: calc(var(--site-chrome-bar-h) + env(safe-area-inset-top, 0px) + 12px)
+    .home-shell .site-chrome__bar-spacer
+        height: 0
+    .home-shell > .site-chrome > .site-chrome__bar
+        background: color-mix(in srgb, var(--nflx-panel, #141414) 88%, transparent)
+        backdrop-filter: blur(14px)
+        -webkit-backdrop-filter: blur(14px)
+        border-bottom-color: color-mix(in srgb, #fff 18%, transparent)
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35)
+        ::ng-deep
+            .app-toolbar
+                background: transparent !important
+                border-bottom-color: transparent !important
+    .chrome-search
+        width: min(640px, calc(100% - 1.5rem))
 
-// Logo / actions bar is fixed so it never leaves the viewport once the page scrolls.
+// Wide home after scroll-dock: restore flow under the fixed bar.
+@media screen and (min-width: 701px)
+    .home-shell.chrome-stuck .site-chrome__bar-spacer
+        height: var(--site-chrome-bar-h)
+
 // (Sticky inside a short .site-chrome parent fails after search docks and leaves flow.)
 .site-chrome
     position: relative

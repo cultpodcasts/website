@@ -6,76 +6,97 @@
 <section id="results" class="episode"
   [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
 
-  <div class="episode-backdrop" aria-hidden="true"
-    [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null">
-    <div class="episode-backdrop__scrim"></div>
-  </div>
+  <div class="episode-billboard"
+    [class.has-art-aspect]="backdropAspect() != null"
+    [style.--hero-art-aspect]="backdropAspect() ?? null">
 
-  <div class="episode-toolbar">
-    <app-bookmark [episodeId]="episode.id" [hasMenu]="authRoles().includes('Curator')" />
-    @if (authRoles().includes('Curator')) {
-    <button mat-icon-button class="episode-toolbar__btn" [matMenuTriggerFor]="menu" aria-label="Episode actions">
-      <mat-icon>more_vert</mat-icon>
-    </button>
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item (click)="edit(episode.podcastName, episode.id)">
-        <mat-icon>edit</mat-icon>
-        <span>Edit Episode</span>
+    <div class="episode-backdrop" aria-hidden="true"
+      [class.has-edge-extend]="backdropAspect() != null"
+      [class.is-kenburns]="backdropKenBurns()">
+      <div class="episode-backdrop__motion">
+        <div class="episode-backdrop__edge episode-backdrop__edge--left">
+          <div class="episode-backdrop__edge-strip"
+            [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+        </div>
+        <div class="episode-backdrop__edge episode-backdrop__edge--right">
+          <div class="episode-backdrop__edge-strip"
+            [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+        </div>
+        <div class="episode-backdrop__focus-slot">
+          <div class="episode-backdrop__focus"
+            [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+        </div>
+      </div>
+      <div class="episode-backdrop__scrim"></div>
+      <div class="episode-backdrop__vignette"></div>
+    </div>
+
+    <div class="episode-toolbar">
+      <app-bookmark [episodeId]="episode.id" [hasMenu]="authRoles().includes('Curator')" />
+      @if (authRoles().includes('Curator')) {
+      <button mat-icon-button class="episode-toolbar__btn" [matMenuTriggerFor]="menu" aria-label="Episode actions">
+        <mat-icon>more_vert</mat-icon>
       </button>
-      <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
-        <mat-icon>send</mat-icon>
-        <span>Post Episode</span>
-      </button>
-    </mat-menu>
-    }
-  </div>
-
-  <div class="episode-hero">
-    <p class="episode-hero__eyebrow">
-      <a class="episode-hero__podcast" [routerLink]="['/podcast', podcastName()]">
-        {{ displayCatalogName(podcastName()) }}
-      </a>
-    </p>
-    <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
-    <p class="episode-hero__meta">
-      @if (releaseLabel(); as release) {
-      <span>{{ release }}</span>
-      <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
-      }
-      <span>{{ duration() }}</span>
-      @if (languageFlag(); as lang) {
-      <span class="episode-hero__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
-        <span class="episode-hero__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
-        <span>{{ lang.label }}</span>
-      </span>
-      }
-    </p>
-
-    <p class="episode-hero__desc">{{ episode.episodeDescription | searchDescription }}</p>
-
-    @if (visibleSubjects().length > 0) {
-    <div class="episode-hero__subjects" aria-label="Subjects">
-      @for (subject of visibleSubjects(); track subject) {
-      <app-subject-chip [subject]="subject" size="hero" />
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="edit(episode.podcastName, episode.id)">
+          <mat-icon>edit</mat-icon>
+          <span>Edit Episode</span>
+        </button>
+        <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
+          <mat-icon>send</mat-icon>
+          <span>Post Episode</span>
+        </button>
+      </mat-menu>
       }
     </div>
-    }
 
-    <div class="episode-hero__actions">
-      @if (playable()) {
-      <button type="button" mat-flat-button class="episode-hero__play" (click)="playEpisode()">
-        <mat-icon>play_arrow</mat-icon>
-        {{ playLabel() }}
-      </button>
-      @if (queueable()) {
-      <button type="button" class="episode-hero__queue" [class.is-queued]="queued()"
-        [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggleQueue()">
-        <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
-        {{ queued() ? 'Queued' : 'Add to Queue' }}
-      </button>
+    <div class="episode-hero">
+      <p class="episode-hero__eyebrow">
+        <a class="episode-hero__podcast" [routerLink]="['/podcast', podcastName()]">
+          {{ displayCatalogName(podcastName()) }}
+        </a>
+      </p>
+      <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
+      <p class="episode-hero__meta">
+        @if (releaseLabel(); as release) {
+        <span>{{ release }}</span>
+        <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
+        }
+        <span>{{ duration() }}</span>
+        @if (languageFlag(); as lang) {
+        <span class="episode-hero__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
+          <span class="episode-hero__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+          <span>{{ lang.label }}</span>
+        </span>
+        }
+      </p>
+
+      <p class="episode-hero__desc">{{ episode.episodeDescription | searchDescription }}</p>
+
+      @if (visibleSubjects().length > 0) {
+      <div class="episode-hero__subjects" aria-label="Subjects">
+        @for (subject of visibleSubjects(); track subject) {
+        <app-subject-chip [subject]="subject" size="hero" />
+        }
+      </div>
       }
-      }
-      <app-episode-links class="episode-hero__links" [episode]="episode"></app-episode-links>
+
+      <div class="episode-hero__actions">
+        @if (playable()) {
+        <button type="button" mat-flat-button class="episode-hero__play" (click)="playEpisode()">
+          <mat-icon>play_arrow</mat-icon>
+          {{ playLabel() }}
+        </button>
+        @if (queueable()) {
+        <button type="button" class="episode-hero__queue" [class.is-queued]="queued()"
+          [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggleQueue()">
+          <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
+          {{ queued() ? 'Queued' : 'Add to Queue' }}
+        </button>
+        }
+        }
+        <app-episode-links class="episode-hero__links" [episode]="episode"></app-episode-links>
+      </div>
     </div>
   </div>
 

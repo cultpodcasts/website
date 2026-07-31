@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, PLATFORM_ID, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -36,6 +36,12 @@ import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
+import {
+  armCuratorSnapAfterScroll,
+  observeCuratorSnapToolbar,
+  syncCuratorSnapOffset,
+  toggleCuratorSnapClass
+} from '../curator-snap';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -65,7 +71,9 @@ const daysKey: string = "pref.outgoing-episodes.days";
   styleUrl: './outgoing-episodes-api.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OutgoingEpisodesApiComponent {
+export class OutgoingEpisodesApiComponent implements AfterViewInit {
+  @ViewChild('curatorToolbar', { static: false }) curatorToolbar: ElementRef<HTMLElement> | undefined;
+
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected FeatureSwitch = FeatureSwitch;
@@ -89,6 +97,8 @@ export class OutgoingEpisodesApiComponent {
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  private readonly platformId = inject(PLATFORM_ID);
+  private snapOffsetObserver: ResizeObserver | undefined;
 
   constructor(
     private http: HttpClient,
@@ -98,9 +108,12 @@ export class OutgoingEpisodesApiComponent {
     private episodeUpdate: EpisodeUpdateService,
     protected featureSwitchService: FeatureSwitchService
   ) {
+    this.destroyRef.onDestroy(() => {
+      this.snapOffsetObserver?.disconnect();
+      this.snapOffsetObserver = undefined;
+      toggleCuratorSnapClass(false);
+    });
   }
-
-  private readonly platformId = inject(PLATFORM_ID);
 
   ngOnInit() {
     this.siteService.setQuery(null);
@@ -138,6 +151,16 @@ export class OutgoingEpisodesApiComponent {
         console.error(x);
       });
     })
+  }
+
+  ngAfterViewInit() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.snapOffsetObserver = observeCuratorSnapToolbar(this.curatorToolbar?.nativeElement);
+    armCuratorSnapAfterScroll(this.destroyRef, () => {
+      syncCuratorSnapOffset(this.curatorToolbar?.nativeElement);
+    });
   }
 
   reset() {
@@ -459,6 +482,9 @@ export class OutgoingEpisodesApiComponent {
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
+      if (!result || result.closed) {
+        return;
+      }
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
         { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: podcastId, episodeId: episodeId } });
     });

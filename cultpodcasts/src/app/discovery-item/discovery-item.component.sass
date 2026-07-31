@@ -1,14 +1,9 @@
-mat-card.curator-card
-    h3
-        font-weight: bold
-        margin-bottom: 2px
-
-.curator-card__art
-    app-episode-image
-        display: block
-
 .score-row
     margin-top: 4px
+    display: flex
+    flex-wrap: wrap
+    gap: 6px
+    align-items: center
 
 .score-badge
     display: inline-block
@@ -19,6 +14,11 @@ mat-card.curator-card
     background: color-mix(in srgb, var(--mat-sys-on-surface, #fff) 8%, transparent)
     color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 85%, transparent)
     border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent)
+
+.synthetic-media-badge
+    background: color-mix(in srgb, #26a69a 18%, transparent)
+    border-color: color-mix(in srgb, #26a69a 40%, transparent)
+    color: #80cbc4
 
 .score-likely
     background: color-mix(in srgb, var(--cp-amber, #e8a23a) 22%, transparent)
@@ -59,20 +59,28 @@ mat-card-subtitle
         font-weight: 600
 
 .curator-card__desc
+    display: flex
+    flex-direction: column
+    gap: 14px
+
+mat-card-content
+    padding-top: 4px
+    overflow: hidden
     .showDescription,
     .resultdescription
         display: block
-    .resultdescription
-        padding-top: 4px
 
-.curator-card__platforms.discovery-service-links
-    .youtubemeta
-        flex-direction: column
-        margin-left: 6px
-        display: flex
-        min-width: 120px
+.curator-card__guests
+    display: flex
+    flex-wrap: wrap
+    gap: 6px
+    .guest-chip
+        display: inline-block
         font-size: 0.78rem
-        color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 60%, transparent)
+        padding: 2px 8px
+        border-radius: 999px
+        border: 1px dashed color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 70%, transparent)
+        color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 72%, transparent)
 
 // State chrome (border / background) lives in styles.scss — global mat-card rules use
 // !important and would otherwise hide any local selected / warning treatment.

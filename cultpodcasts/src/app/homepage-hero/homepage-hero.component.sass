@@ -12,6 +12,7 @@
     padding: var(--nflx-hero-search-clearance, 140px) 4vw 48px
     box-sizing: border-box
     overflow: hidden
+    background-color: #0b0b0b
 
 .billboard__stages,
 .billboard__grain,
@@ -50,8 +51,16 @@
     &.is-active
         opacity: 1
     &.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+
+// Sharp art + edge fills share one motion layer so Ken Burns zooms them together.
+.billboard__stage-motion
+    position: absolute
+    inset: 0
+    transform: scale(1.08)
+    transform-origin: center 40%
+    will-change: transform
 
 // Side fills: stretch a thin strip of the image's true left/right edge outward
 // (not a blurred cover of the whole frame — that looks wrong on square art).
@@ -89,7 +98,7 @@
         transform-origin: left center
         transform: scaleX(70)
 
-// Slot sizes/positions the sharp art; Ken Burns scales the inner focus only.
+// Slot sizes/positions the sharp art; Ken Burns scales the shared motion layer.
 .billboard__stage-focus-slot
     position: absolute
     inset: 0
@@ -101,25 +110,85 @@
     background-size: cover
     background-position: center 20%
     background-repeat: no-repeat
-    transform: scale(1.08)
-    will-change: transform
+
+// Full-image framing whenever art aspect is known: largest aspect-correct slot
+// that fits the stage (contain), with edge blur only in leftover side gutters.
+// Avoid cover-cropping which shows only the left/centre of wide collage art.
+.billboard__stage.has-edge-extend
+    .billboard__stage-motion
+        transform: none
+        transform-origin: center center
+    .billboard__stage-edge
+        display: block
+        z-index: 0
+    .billboard__stage-edge--left,
+    .billboard__stage-edge--right
+        width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    // Sample only a thin column at the art edge, then stretch it across the gutter.
+    // A full-gutter background-image shows most of the cover (static whole-frame blur).
+    .billboard__stage-edge--left .billboard__stage-edge-strip
+        top: -10%
+        bottom: -10%
+        left: auto
+        right: 0
+        width: 8px
+        background-size: auto 100%
+        background-position: left center
+        transform-origin: right center
+        // Large scale fills ultrawide gutters; overflow:hidden on the edge clips excess.
+        transform: scaleX(400)
+        filter: blur(28px) saturate(1.2) brightness(0.95)
+    .billboard__stage-edge--right .billboard__stage-edge-strip
+        top: -10%
+        bottom: -10%
+        right: auto
+        left: 0
+        width: 8px
+        background-size: auto 100%
+        background-position: right center
+        transform-origin: left center
+        transform: scaleX(400)
+        filter: blur(28px) saturate(1.2) brightness(0.95)
+    .billboard__stage-focus-slot
+        inset: auto
+        top: 50%
+        left: 50%
+        z-index: 1
+        width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
+        height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
+        transform: translate(-50%, -50%)
+    .billboard__stage-focus
+        background-size: 100% 100%
+        background-position: center center
+    // Narrow: Ken Burns zoom would crop the contain slot — keep the whole image.
+    &.is-kenburns .billboard__stage-motion
+        animation: none
+        transform: none
 
 @media screen and (min-width: 1280px)
     .billboard__stage.has-edge-extend
-        .billboard__stage-edge
-            display: block
-            // Gap between viewport edge and the height-fit art box.
-            width: max(0px, calc((100% - min(100%, 100cqh * var(--hero-art-aspect))) / 2))
+        .billboard__stage-motion
+            transform-origin: 70% 40%
+        // Prefer a wide left fill under copy; pin sharp art to the right edge.
+        .billboard__stage-edge--left
+            width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
+        .billboard__stage-edge--right
+            width: 0
         .billboard__stage-focus-slot
-            top: 0
-            bottom: 0
-            left: 50%
-            width: min(100%, calc(100cqh * var(--hero-art-aspect)))
-            transform: translateX(-50%)
-        .billboard__stage-focus
-            // Fill the aspect-correct slot exactly (no further cover crop).
-            background-size: 100% 100%
-            background-position: center center
+            left: auto
+            right: 0
+            transform: translateY(-50%)
+            // Soften the hard seam where sharp art meets the left fill.
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+        // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        &.is-kenburns .billboard__stage-motion
+            animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+    // Let the left edge blur read through under copy — avoid a solid black slab.
+    .billboard__scrim
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
+    .billboard__vignette
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
 
 .billboard__content
     position: relative
@@ -129,12 +198,25 @@
     color: var(--nflx-on-media, #fff)
 
 .billboard__feature
+    display: flex
+    flex-direction: column
+    gap: 0
     opacity: 1
     transition: opacity 0.55s cubic-bezier(0.33, 0.1, 0.25, 1)
     &.is-hidden
         opacity: 0
         pointer-events: none
         transition-duration: 0.55s
+
+.billboard__copy
+    min-width: 0
+
+.billboard__copy-body
+    // Reserve stable space for desc + chips so Watch/More info keep a steady Y.
+    display: flex
+    flex-direction: column
+    min-height: calc(1.45em * 3 + 44px)
+    margin-bottom: 4px
 
 .billboard__eyebrow
     margin: 0 0 10px
@@ -199,23 +281,34 @@
     line-height: 1.2
 
 .billboard__desc
-    margin: 0 0 22px
+    margin: 0 0 12px
     font-size: 1.05rem
     line-height: 1.45
     color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
     text-shadow: 0 1px 12px #0000008c
+    display: -webkit-box
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 3
+    line-clamp: 3
+    overflow: hidden
+    // Keep the reserved copy-body height honest even when text is short.
+    min-height: calc(1.45em * 3)
 
 .billboard__subjects
     display: flex
     flex-wrap: wrap
     gap: 8px
-    margin: -8px 0 20px
+    margin: 0 0 8px
+    max-height: 2.4rem
+    overflow: hidden
 
 .billboard__actions
     display: flex
     flex-wrap: wrap
     gap: 12px
+    margin-top: auto
+    flex: 0 0 auto
 
 .billboard__play
     background: #fff !important
@@ -382,10 +475,12 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: none
-    .billboard__stage-focus
+    .billboard__stage-motion
         transform: scale(1.05)
+    .billboard__stage.has-edge-extend .billboard__stage-motion
+        transform: none
     .billboard__stage
         transition: none
     .billboard__feature,
@@ -405,10 +500,12 @@
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation: none
-    .billboard__stage-focus
+    .billboard__stage-motion
         transform: scale(1.05)
+    .billboard__stage.has-edge-extend .billboard__stage-motion
+        transform: none
     .billboard__live
         animation: none
         box-shadow: none
@@ -416,7 +513,7 @@
 // While a Material dialog holds scroll-lock, freeze any leftover stage motion.
 :host-context(.cdk-global-scrollblock)
     .billboard__stage.is-kenburns
-        .billboard__stage-focus
+        .billboard__stage-motion
             animation-play-state: paused
     .billboard__live
         animation-play-state: paused
@@ -437,16 +534,49 @@
         gap: 16px
         padding-top: 0
         padding-bottom: 24px
+        // Drop the tall viewport min-height — it forced letterboxing around
+        // the contain-sized art. Height comes from search clearance + copy.
+        min-height: 0
         &::before
             content: ''
-            flex: 1 0 var(--nflx-hero-search-clearance, 140px)
+            flex: 0 0 var(--nflx-hero-search-clearance, 140px)
             min-height: var(--nflx-hero-search-clearance, 140px)
             width: 100%
             pointer-events: none
+    // Media band matches art aspect so the image fills with no top/bottom bars.
+    // Mid-width: keep the band at top:0 under frosted/transparent chrome; clearance
+    // is for copy via ::before. Narrow (≤700) overrides top to sit below the sticky row.
+    .billboard.has-art-aspect
+        .billboard__stages,
+        .billboard__grain,
+        .billboard__scrim,
+        .billboard__vignette
+            inset: auto
+            top: 0
+            left: 0
+            right: 0
+            bottom: auto
+            width: 100%
+            height: auto
+            aspect-ratio: var(--hero-art-aspect)
+        .billboard__stage.has-edge-extend
+            .billboard__stage-edge--left,
+            .billboard__stage-edge--right
+                width: 0
+            .billboard__stage-focus-slot
+                inset: 0
+                top: 0
+                left: 0
+                width: 100%
+                height: 100%
+                transform: none
     .billboard__content
         width: 100%
         max-width: min(640px, 100%)
         flex: 0 1 auto
+        padding-top: 8px
+        position: relative
+        z-index: 2
     .billboard__controls
         position: relative
         right: auto
@@ -462,14 +592,50 @@
         max-width: none
         width: 100%
 
-@media screen and (max-width: 600px)
+@media screen and (max-width: 700px)
     .billboard
-        min-height: 78vh
+        min-height: 0
         padding-bottom: 20px
         gap: 12px
+        // Copy offset under the fixed docked header (media band is offset separately).
+        &::before
+            flex-basis: var(--nflx-hero-search-clearance, 64px)
+            min-height: var(--nflx-hero-search-clearance, 64px)
+    // Narrow: art starts flush below the sticky chrome row — not tucked under it.
+    // (Mid/wide ≤1280 keep top:0 so art can sit under frosted/transparent chrome.)
+    .billboard.has-art-aspect
+        .billboard__stages,
+        .billboard__grain,
+        .billboard__scrim,
+        .billboard__vignette
+            top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
+    .billboard__content
+        padding-top: 0
+    .billboard__eyebrow
+        // Keep the label fully below the frosted chrome row.
+        position: relative
+        z-index: 2
+    .billboard__title
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: 3
+        line-clamp: 3
+        overflow: hidden
+        // Short titles still reserve 3 lines so actions don't jump.
+        min-height: calc(1.02em * 3)
+        font-size: clamp(1.85rem, 7vw, 2.6rem)
+        margin-bottom: 10px
+    .billboard__copy-body
+        min-height: calc(1.45em * 3 + 40px)
+    .billboard__desc
+        font-size: 0.98rem
+        -webkit-line-clamp: 3
+        line-clamp: 3
     .billboard__actions
         flex-direction: column
         align-items: stretch
+        width: 100%
+        margin-top: 12px
     .billboard__admin
         // Keep each control on its own hit target; wrapping pills must not stack.
         display: grid

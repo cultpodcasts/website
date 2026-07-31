@@ -1,6 +1,20 @@
-import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { DecimalPipe, isPlatformBrowser } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  PLATFORM_ID,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machine-counter.component';
+
+type CatalogueSlide =
+  | { kind: 'hero'; value: number; daysTitle?: string }
+  | { kind: 'week'; value: number }
+  | { kind: 'days'; value: string };
 
 @Component({
   selector: 'app-homepage-catalogue',
@@ -10,8 +24,212 @@ import { SlotMachineCounterComponent } from '../slot-machine-counter/slot-machin
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageCatalogueComponent {
+  private static readonly NARROW_MQ = '(max-width: 700px)';
+  private static readonly ROTATE_MS = 4200;
+  private static readonly SWIPE_THRESHOLD_PX = 48;
+
   readonly weekEpisodeCount = input<number | undefined>();
   readonly episodeCount = input<number | undefined>();
   readonly totalDurationDays = input<string>('');
   readonly episodeCountBaseline = input(80000);
+
+  protected readonly activeIndex = signal(0);
+  protected readonly carouselMode = signal(false);
+  protected readonly reduceMotion = signal(false);
+  protected readonly dragPx = signal(0);
+  protected readonly dragging = signal(false);
+
+  /** Desktop grid order: week | index | days. Carousel starts on the index slide. */
+  protected readonly slides = computed((): CatalogueSlide[] => {
+    const slides: CatalogueSlide[] = [];
+    const week = this.weekEpisodeCount();
+    if (week != null) {
+      slides.push({ kind: 'week', value: week });
+    }
+    const count = this.episodeCount();
+    if (count != null) {
+      const days = this.totalDurationDays();
+      slides.push({
+        kind: 'hero',
+        value: count,
+        daysTitle: days ? `${days} days` : undefined,
+      });
+    }
+    const days = this.totalDurationDays();
+    if (days) {
+      slides.push({ kind: 'days', value: days });
+    }
+    return slides;
+  });
+
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private narrowQuery: MediaQueryList | undefined;
+  private motionQuery: MediaQueryList | undefined;
+  private rotateTimer: ReturnType<typeof setInterval> | undefined;
+  private paused = false;
+  private pointerId: number | null = null;
+  private startX = 0;
+  private startY = 0;
+  private axisLocked: 'x' | 'y' | null = null;
+
+  constructor() {
+    if (!this.isBrowser) {
+      return;
+    }
+    this.narrowQuery = window.matchMedia(HomepageCatalogueComponent.NARROW_MQ);
+    this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.carouselMode.set(this.narrowQuery.matches);
+    this.reduceMotion.set(this.motionQuery.matches);
+    this.activeIndex.set(this.leadSlideIndex());
+    this.narrowQuery.addEventListener('change', this.onNarrowChange);
+    this.motionQuery.addEventListener('change', this.onMotionChange);
+    this.syncRotation();
+    this.destroyRef.onDestroy(() => {
+      this.stopRotation();
+      this.narrowQuery?.removeEventListener('change', this.onNarrowChange);
+      this.motionQuery?.removeEventListener('change', this.onMotionChange);
+    });
+  }
+
+  protected onCarouselPause(): void {
+    this.paused = true;
+    this.stopRotation();
+  }
+
+  protected onCarouselResume(event?: FocusEvent): void {
+    if (event) {
+      const next = event.relatedTarget as Node | null;
+      const host = event.currentTarget as Node | null;
+      if (next && host?.contains(next)) {
+        return;
+      }
+    }
+    if (this.dragging()) {
+      return;
+    }
+    this.paused = false;
+    this.syncRotation();
+  }
+
+  protected selectSlide(index: number): void {
+    const n = this.slides().length;
+    if (n === 0) {
+      return;
+    }
+    this.activeIndex.set(((index % n) + n) % n);
+    this.syncRotation();
+  }
+
+  protected onPointerDown(event: PointerEvent): void {
+    if (!this.carouselMode() || this.slides().length < 2) {
+      return;
+    }
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    this.pointerId = event.pointerId;
+    this.startX = event.clientX;
+    this.startY = event.clientY;
+    this.axisLocked = null;
+    this.dragging.set(true);
+    this.dragPx.set(0);
+    this.onCarouselPause();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    if (!this.dragging() || event.pointerId !== this.pointerId) {
+      return;
+    }
+    const dx = event.clientX - this.startX;
+    const dy = event.clientY - this.startY;
+    if (!this.axisLocked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+        return;
+      }
+      this.axisLocked = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+      if (this.axisLocked === 'y') {
+        this.endDrag(false);
+        return;
+      }
+    }
+    if (this.axisLocked !== 'x') {
+      return;
+    }
+    event.preventDefault();
+    this.dragPx.set(dx);
+  }
+
+  protected onPointerUp(event: PointerEvent): void {
+    if (event.pointerId !== this.pointerId) {
+      return;
+    }
+    const dx = this.dragPx();
+    const swiped = this.axisLocked === 'x' && Math.abs(dx) >= HomepageCatalogueComponent.SWIPE_THRESHOLD_PX;
+    this.endDrag(true);
+    if (!swiped) {
+      return;
+    }
+    if (dx < 0) {
+      this.selectSlide(this.activeIndex() + 1);
+    } else {
+      this.selectSlide(this.activeIndex() - 1);
+    }
+  }
+
+  protected onPointerCancel(event: PointerEvent): void {
+    if (event.pointerId !== this.pointerId) {
+      return;
+    }
+    this.endDrag(true);
+  }
+
+  private endDrag(resumeRotation: boolean): void {
+    this.pointerId = null;
+    this.axisLocked = null;
+    this.dragging.set(false);
+    this.dragPx.set(0);
+    if (resumeRotation) {
+      this.paused = false;
+      this.syncRotation();
+    }
+  }
+
+  private leadSlideIndex(): number {
+    const hero = this.slides().findIndex((s) => s.kind === 'hero');
+    return hero >= 0 ? hero : 0;
+  }
+
+  private readonly onNarrowChange = () => {
+    this.carouselMode.set(!!this.narrowQuery?.matches);
+    this.activeIndex.set(this.leadSlideIndex());
+    this.syncRotation();
+  };
+
+  private readonly onMotionChange = () => {
+    this.reduceMotion.set(!!this.motionQuery?.matches);
+    this.syncRotation();
+  };
+
+  private syncRotation(): void {
+    this.stopRotation();
+    if (!this.carouselMode() || this.reduceMotion() || this.paused || this.dragging() || this.slides().length < 2) {
+      return;
+    }
+    this.rotateTimer = setInterval(() => {
+      const n = this.slides().length;
+      if (n < 2) {
+        return;
+      }
+      this.activeIndex.update((i) => (i + 1) % n);
+    }, HomepageCatalogueComponent.ROTATE_MS);
+  }
+
+  private stopRotation(): void {
+    if (this.rotateTimer) {
+      clearInterval(this.rotateTimer);
+      this.rotateTimer = undefined;
+    }
+  }
 }

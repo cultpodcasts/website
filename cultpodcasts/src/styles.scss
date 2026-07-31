@@ -50,10 +50,332 @@ body {
   min-height: 100%;
 }
 
-html.discovery-snap-enabled {
+html.curator-snap-enabled {
+  /* mandatory + one target per row: proximity felt like free-scroll (barely
+     engaged). Card max-height below keeps one row under chrome+toolbar. */
   scroll-snap-type: y mandatory;
-  /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
-  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
+  /* Sticky .curator-toolbar height — kept in sync by curator pages. */
+  scroll-padding-top: var(--curator-snap-offset, 4.75rem);
+}
+
+/* #body is also a snap target elsewhere; on curator grids it fights card snaps
+   and causes the scroll to jitter between two nearby positions. */
+html.curator-snap-enabled #body {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
+/* Page grid of curator cards (Discovery / Episodes / Outgoing). */
+.curator-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.curator-card-grid > discovery-item {
+  display: block;
+  min-width: 0;
+}
+
+/* One snap target per visual row (1-col default).
+   Discovery wraps cards in discovery-item; Outgoing/Episodes put mat-card
+   directly in the grid. */
+html.curator-snap-enabled .curator-card-grid > discovery-item,
+html.curator-snap-enabled .curator-card-grid > .curator-card {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.curator-card-grid > .curator-card,
+.curator-card-grid > discovery-item > .curator-card {
+  height: 100%;
+  margin-bottom: 0;
+}
+
+/* Height budget: sticky site chrome + curator toolbar + one full card row
+   must fit in the viewport together. Cap with max-height — do not use
+   --curator-snap-offset (arm-after-scroll would resize cards).
+   Modest min-height avoids tiny stubs; status CTAs dock at the bottom. */
+.curator-card-grid > .curator-card,
+.curator-card-grid > discovery-item > .curator-card {
+  /* chrome-bar + sticky fudge + toolbar (~pad+title) + toolbar margin + gap */
+  max-height: calc(
+    100dvh
+    - var(--site-chrome-bar-h, 58px)
+    - 4px
+    - 3.75rem
+    - 14px
+    - 8px
+  );
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Expanded description: grow past the snap viewport budget so the toggle
+   (and rest of the card) stay reachable. Collapsed cards keep the cap. */
+.curator-card-grid > .curator-card:has(app-clampable-text.is-expanded),
+.curator-card-grid > discovery-item > .curator-card:has(app-clampable-text.is-expanded) {
+  max-height: none;
+  overflow: visible;
+}
+
+.curator-card-grid > .curator-card > .curator-card__body,
+.curator-card-grid > discovery-item > .curator-card > .curator-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.curator-card-grid > .curator-card .curator-card__art,
+.curator-card-grid > discovery-item > .curator-card .curator-card__art {
+  flex: 0 0 128px;
+  width: 128px;
+}
+
+.curator-card-grid > .curator-card .curator-card__main,
+.curator-card-grid > discovery-item > .curator-card .curator-card__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Service links sit below description/tags; CTAs dock at bottom. */
+.curator-card-grid > .curator-card .curator-card__platforms,
+.curator-card-grid > discovery-item > .curator-card .curator-card__platforms {
+  flex: 0 0 auto;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.curator-card-grid > .curator-card .curator-card__actions,
+.curator-card-grid > discovery-item > .curator-card .curator-card__actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+@media (min-width: 720px) {
+  .curator-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Multi-col: art leads full-width on top (16:9 band), content below.
+     Max-height keeps the band inside the chrome+toolbar row budget
+     without the tiny corner-thumb cap. */
+  .curator-card-grid > .curator-card > .curator-card__body,
+  .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
+    flex-direction: column;
+  }
+
+  .curator-card-grid > .curator-card .curator-card__art,
+  .curator-card-grid > discovery-item > .curator-card .curator-card__art {
+    flex: 0 0 auto;
+    width: 100%;
+    max-height: 12rem;
+
+    .container.layout-tile {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 12rem;
+    }
+  }
+
+  html.curator-snap-enabled .curator-card-grid > discovery-item,
+  html.curator-snap-enabled .curator-card-grid > .curator-card {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
+
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(2n + 1) {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+@media (min-width: 1100px) {
+  .curator-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(2n + 1) {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
+
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(3n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(3n + 1) {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+/* Shared curator card chrome (narrow multi-column stack). */
+mat-card.curator-card {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent);
+  border-radius: var(--cp-radius, 14px);
+  background: var(--mat-sys-surface-container, color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433));
+  box-sizing: border-box;
+}
+
+.curator-card__body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.curator-card__art {
+  flex: 0 0 88px;
+  width: 88px;
+  min-width: 0;
+}
+
+.curator-card__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Beat .mat-mdc-icon-button { position: relative; z-index: 0 } — equal
+   single-class specificity loses later in the cascade, leaving the kebab
+   in column-flex flow (top-left). Pin absolute top-right over stacked art. */
+mat-card.curator-card > button.curator-card__overflow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: auto;
+  inset-inline-start: auto;
+  inset-inline-end: 8px;
+  z-index: 3;
+}
+
+mat-card.curator-card mat-card-header {
+  padding-right: 40px;
+}
+
+mat-card.curator-card mat-card-title {
+  margin-right: 0;
+}
+
+.curator-card__subjects,
+.curator-card__guests {
+  margin-top: 10px;
+}
+
+.curator-card__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.curator-card__status,
+.curator-card__platforms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.curator-card__status {
+  width: 100%;
+}
+
+/* Service icons below description/tags — plain (no chip chrome), same inline
+   inset as mat-card-header / mat-card-content (Material default 16px). */
+.curator-card__platforms {
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+  gap: 2px;
+  padding-inline: 16px;
+
+  app-episode-podcast-links {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    height: auto;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .youtubemeta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    margin: 0 4px 0 2px;
+    min-width: 0;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 58%, transparent);
+  }
+}
+
+/* Match Material / public-card service icons (40px hit / 24px glyph).
+   Stay below labeled status CTA pills (wide chrome) without the undersized
+   30/18 compact restyle that made YouTube etc. look like raw micro-logos. */
+.curator-card__platforms a[mat-icon-button],
+.curator-card__platforms button[mat-icon-button],
+.curator-card__platforms.discovery-service-links a[mat-icon-button],
+.curator-card__platforms.discovery-service-links button[mat-icon-button] {
+  --mdc-icon-button-state-layer-size: 40px;
+  --mdc-icon-button-icon-size: 24px;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  line-height: 40px;
+  opacity: 0.88;
+
+  mat-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    line-height: 24px;
+  }
+
+  mat-icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &[disabled] {
+    opacity: 0.4;
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .curator-card__body {
+    gap: 10px;
+  }
+
+  .curator-card__art {
+    flex-basis: 72px;
+    width: 72px;
+  }
+
+  .curator-card-grid > .curator-card .curator-card__art,
+  .curator-card-grid > discovery-item > .curator-card .curator-card__art {
+    flex-basis: 104px;
+    width: 104px;
+  }
 }
 
 p {
@@ -489,165 +811,6 @@ mat-card.error {
   border-width: 2px !important;
 }
 
-/* Shared curator card layout (Discovery / Episodes / Outgoing). */
-mat-card.curator-card {
-  margin-bottom: 12px;
-  padding: 18px !important;
-  box-sizing: border-box;
-
-  .mat-mdc-card-header,
-  .mat-mdc-card-content,
-  .mdc-card__actions {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .mat-mdc-card-header {
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .mat-mdc-card-content {
-    padding-top: 8px;
-    padding-bottom: 0;
-  }
-
-  .mdc-card__actions {
-    padding-left: 0;
-    align-items: stretch;
-  }
-}
-
-.curator-card__body {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.curator-card__art {
-  flex: 0 0 112px;
-  width: 112px;
-}
-
-.curator-card__main {
-  flex: 1 1 auto;
-  min-width: 0;
-  position: relative;
-}
-
-.curator-card__overflow {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.curator-card__main > .mat-mdc-card-header mat-card-title,
-.curator-card__main > mat-card-header mat-card-title {
-  margin-right: 40px;
-}
-
-mat-card.curator-card mat-card-content.curator-card__content,
-mat-card.curator-card .curator-card__content {
-  display: grid !important;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  min-width: 0;
-}
-
-.curator-card__desc {
-  min-width: 0;
-}
-
-.curator-card__side {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 55%, transparent);
-}
-
-.curator-card__subjects,
-.curator-card__guests {
-  margin-top: 0;
-}
-
-/* Platforms above status; clear gap so icons never share a baseline with pills. */
-mat-card-actions.curator-card__actions {
-  display: flex !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 14px;
-  margin: 0;
-  padding-top: 16px !important;
-  padding-bottom: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-.curator-card__platforms,
-.curator-card__platforms.discovery-service-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  order: -1;
-
-  app-episode-podcast-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    height: auto;
-    gap: 4px;
-  }
-
-  a[mat-icon-button],
-  button[mat-icon-button] {
-    margin: 0 !important;
-    transform: none !important;
-  }
-}
-
-.curator-card__status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  order: 0;
-}
-
-@media screen and (min-width: 900px) {
-  mat-card.curator-card mat-card-content.curator-card__content,
-  mat-card.curator-card .curator-card__content {
-    grid-template-columns: 1fr minmax(220px, 0.9fr);
-    column-gap: 24px;
-    row-gap: 0;
-    align-items: start;
-  }
-
-  .curator-card__side {
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .curator-card__status {
-    justify-content: flex-end;
-  }
-}
-
-@media screen and (max-width: 560px) {
-  .curator-card__body {
-    gap: 10px;
-  }
-
-  .curator-card__art {
-    flex-basis: 88px;
-    width: 88px;
-  }
-}
-
 // Public browse cards only — curator cards manage their own action spacing
 // (status pills + platform icons) and must not inherit the 25px/scale treatment.
 mat-card-actions:not(.curator-card__actions) {
@@ -687,7 +850,8 @@ mat-card-actions:not(.curator-card__actions) {
 
     .mat-mdc-card-header,
     .mdc-card__actions,
-    .mat-mdc-card-content {
+    .mat-mdc-card-content,
+    .curator-card__platforms {
       padding-left: 4px;
       padding-right: 4px;
     }

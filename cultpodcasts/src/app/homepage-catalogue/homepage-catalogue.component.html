@@ -1,29 +1,52 @@
-<section class="catalogue" aria-label="Catalogue scale">
-  <div class="catalogue__inner">
-    @if (weekEpisodeCount(); as weekCount) {
-    <div class="catalogue__stat">
-      <p class="catalogue__value">{{ weekCount | number }}</p>
-      <p class="catalogue__label">New this week</p>
+<section class="catalogue" aria-label="Catalogue scale"
+  [class.catalogue--carousel]="carouselMode()"
+  (mouseenter)="onCarouselPause()" (mouseleave)="onCarouselResume()"
+  (focusin)="onCarouselPause()" (focusout)="onCarouselResume($event)">
+  <div class="catalogue__viewport"
+    [class.is-dragging]="dragging()"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp($event)"
+    (pointercancel)="onPointerCancel($event)">
+    <div class="catalogue__inner" aria-roledescription="carousel"
+      [style.--catalogue-index]="activeIndex()"
+      [style.--catalogue-drag]="dragPx() + 'px'">
+      @for (slide of slides(); track slide.kind; let i = $index) {
+      <div class="catalogue__stat" role="group"
+        [class.catalogue__stat--hero]="slide.kind === 'hero'"
+        [class.is-active]="!carouselMode() || activeIndex() === i"
+        [attr.aria-hidden]="carouselMode() && activeIndex() !== i ? true : null"
+        [attr.aria-label]="slide.kind === 'hero' ? 'Episodes in the index' : slide.kind === 'week' ? 'New this week' : 'Days of listening'">
+        @if (slide.kind === 'hero') {
+        <p class="catalogue__value catalogue__value--count">
+          <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline()"
+            [value]="slide.value"
+            [title]="slide.daysTitle"></app-slot-machine-counter>
+        </p>
+        <p class="catalogue__label">
+          Episodes in the
+          <a href="https://github.com/cultpodcasts/PublicDatabase">index</a>
+        </p>
+        } @else if (slide.kind === 'week') {
+        <p class="catalogue__value">{{ slide.value | number }}</p>
+        <p class="catalogue__label">New this week</p>
+        } @else {
+        <p class="catalogue__value catalogue__value--duration">{{ slide.value }}</p>
+        <p class="catalogue__label">Days of listening</p>
+        }
+      </div>
+      }
     </div>
-    }
-    @if (episodeCount(); as count) {
-    <div class="catalogue__stat catalogue__stat--hero">
-      <p class="catalogue__value catalogue__value--count">
-        <app-slot-machine-counter preset="classic" [baseline]="episodeCountBaseline()"
-          [value]="count"
-          [title]="totalDurationDays() ? totalDurationDays() + ' days' : undefined"></app-slot-machine-counter>
-      </p>
-      <p class="catalogue__label">
-        Episodes in the
-        <a href="https://github.com/cultpodcasts/PublicDatabase">index</a>
-      </p>
-    </div>
-    }
-    @if (totalDurationDays(); as days) {
-    <div class="catalogue__stat">
-      <p class="catalogue__value catalogue__value--duration">{{ days }}</p>
-      <p class="catalogue__label">Days of listening</p>
-    </div>
+  </div>
+  @if (carouselMode() && slides().length > 1) {
+  <div class="catalogue__dots" role="tablist" aria-label="Catalogue metrics">
+    @for (slide of slides(); track slide.kind; let i = $index) {
+    <button type="button" class="catalogue__dot" role="tab"
+      [class.is-active]="activeIndex() === i"
+      [attr.aria-selected]="activeIndex() === i"
+      [attr.aria-label]="'Show ' + (slide.kind === 'hero' ? 'episodes in the index' : slide.kind === 'week' ? 'new this week' : 'days of listening')"
+      (click)="selectSlide(i)"></button>
     }
   </div>
+  }
 </section>

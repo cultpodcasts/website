@@ -1,5 +1,5 @@
-// Netflix-style episode detail — backdrop hero + "more from"/"more on" rails,
-// matching the .browse / .nflx homepage visual language.
+// Netflix-style episode detail — billboard hero + "more from"/"more on" rails,
+// matching homepage .billboard / .nflx visual language.
 // --nflx-* tokens live on :root (styles.scss).
 .episode
     position: relative
@@ -8,24 +8,211 @@
     background: var(--nflx-bg)
     min-height: 60vh
     padding-bottom: 40px
+    // Same rail poster widths as homepage .nflx
+    --rail-poster-w: min(42vw, 220px)
 
 .episode--playing
     padding-bottom: min(52vh, 420px)
 
-.episode-backdrop
+// Billboard shell — mirrors homepage .billboard (media + copy in one band).
+.episode-billboard
     position: relative
     width: 100%
-    min-height: min(58vh, 480px)
-    background-color: #121212
-    background-size: cover
-    background-position: center 32%
-    filter: saturate(1.05) contrast(1.03)
+    min-height: min(88vh, 720px)
+    display: flex
+    align-items: flex-end
+    box-sizing: border-box
+    overflow: hidden
+    background-color: #0b0b0b
+    // Room for absolute toolbar over the media.
+    padding: 56px 0 0
+    --hero-art-aspect: 1.777
+    --episode-ken-burns: 22s
 
-.episode-backdrop__scrim
+.episode-backdrop
     position: absolute
     inset: 0
+    background-color: #121212
+    overflow: hidden
+    container-type: size
+    pointer-events: none
+
+.episode-backdrop__motion
+    position: absolute
+    inset: 0
+    will-change: transform
+
+.episode-backdrop.is-kenburns .episode-backdrop__motion
+    animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
+    transform-origin: center 40%
+
+// Side fills: thin strip of the image's true left/right edge, stretched outward
+// (same technique as homepage billboard — not a full-frame blur).
+.episode-backdrop__edge
+    display: none
+    position: absolute
+    top: 0
+    bottom: 0
+    overflow: hidden
+    pointer-events: none
+    z-index: 0
+
+.episode-backdrop__edge-strip
+    position: absolute
+    top: -10%
+    bottom: -10%
+    width: 8px
+    background-color: #121212
+    background-size: auto 100%
+    background-repeat: no-repeat
+    filter: blur(28px) saturate(1.2) brightness(0.95)
+
+.episode-backdrop__edge--left
+    left: 0
+    .episode-backdrop__edge-strip
+        right: 0
+        left: auto
+        background-position: left center
+        transform-origin: right center
+        transform: scaleX(400)
+
+.episode-backdrop__edge--right
+    right: 0
+    .episode-backdrop__edge-strip
+        left: 0
+        right: auto
+        background-position: right center
+        transform-origin: left center
+        transform: scaleX(400)
+
+.episode-backdrop__focus-slot
+    position: absolute
+    inset: 0
+    z-index: 1
+
+.episode-backdrop__focus
+    position: absolute
+    inset: 0
+    background-color: transparent
+    background-size: cover
+    background-position: center 32%
+    background-repeat: no-repeat
+    filter: saturate(1.05) contrast(1.03)
+
+.episode-backdrop.has-edge-extend
+    .episode-backdrop__edge
+        display: block
+    .episode-backdrop__edge--left,
+    .episode-backdrop__edge--right
+        width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    .episode-backdrop__focus-slot
+        inset: auto
+        top: 50%
+        left: 50%
+        width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
+        height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
+        transform: translate(-50%, -50%)
+    .episode-backdrop__focus
+        background-size: 100% 100%
+        background-position: center center
+        filter: none
+    // Narrow contain: Ken Burns would crop the slot — keep the whole image.
+    &.is-kenburns .episode-backdrop__motion
+        animation: none
+        transform: none
+
+.episode-backdrop__scrim,
+.episode-backdrop__vignette
+    position: absolute
+    inset: 0
+    z-index: 2
+
+.episode-backdrop__scrim
     // Always fade to near-black — cream --nflx-bg in light mode washes out hero copy.
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 55%, #0b0b0b 98%), linear-gradient(100deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 48%, transparent 78%)
+    background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, #0b0b0b 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
+
+.episode-backdrop__vignette
+    z-index: 3
+    background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
+
+@media screen and (min-width: 1280px)
+    .episode-backdrop.has-edge-extend
+        // Prefer a wide left fill under copy; pin sharp art to the right edge.
+        .episode-backdrop__edge--left
+            width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
+        .episode-backdrop__edge--right
+            width: 0
+        .episode-backdrop__focus-slot
+            left: auto
+            right: 0
+            transform: translateY(-50%)
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+        // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        &.is-kenburns .episode-backdrop__motion
+            animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
+            transform-origin: 70% 40%
+    // Let the left edge blur read through under copy — avoid a solid black slab.
+    .episode-backdrop__scrim
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
+    .episode-backdrop__vignette
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
+
+// Below ~1280: match homepage — aspect media band at top; copy in flow below.
+// In-flow ::before reserves the art height so the absolute backdrop does not
+// collapse the shell (and we never use negative-margin pull-up + aspect sibling,
+// which left a tall black void between actions and the rails).
+@media screen and (max-width: 1279.98px)
+    .episode-billboard
+        flex-direction: column
+        justify-content: flex-start
+        align-items: stretch
+        min-height: 0
+        padding: 0 0 20px
+        gap: 0
+    .episode-billboard.has-art-aspect
+        &::before
+            content: ''
+            flex: 0 0 auto
+            width: 100%
+            aspect-ratio: var(--hero-art-aspect)
+            pointer-events: none
+        .episode-backdrop
+            inset: auto
+            top: 0
+            left: 0
+            right: 0
+            bottom: auto
+            width: 100%
+            height: auto
+            aspect-ratio: var(--hero-art-aspect)
+            .episode-backdrop__edge--left,
+            .episode-backdrop__edge--right
+                width: 0
+            .episode-backdrop__focus-slot
+                inset: 0
+                top: 0
+                left: 0
+                width: 100%
+                height: 100%
+                transform: none
+            .episode-backdrop__focus
+                background-size: cover
+                background-position: center center
+    .episode-billboard:not(.has-art-aspect) .episode-backdrop
+        inset: auto
+        position: relative
+        width: 100%
+        min-height: min(46vh, 360px)
+    .episode-hero
+        position: relative
+        z-index: 2
+        width: 100%
+        max-width: none
+        // Sit on the black band under the art (scrim already fades the media bottom).
+        margin-top: -48px
+        padding-top: 12px
+        background: linear-gradient(180deg, transparent 0%, #0b0b0b 36px)
 
 .episode-toolbar
     position: absolute
@@ -54,16 +241,15 @@
 
 .episode-hero
     position: relative
-    z-index: 2
-    // Pull up over the backdrop, then sit on a full-bleed black band so
-    // light-mode cream --nflx-bg never shows behind on-media copy.
-    margin-top: -140px
-    padding: 28px 4vw 48px
+    z-index: 4
+    // Inside the billboard (homepage pattern) — no negative-margin pull-up.
+    margin: 0
+    padding: 28px 4vw 32px
     max-width: none
-    width: 100%
+    width: min(640px, 100%)
     box-sizing: border-box
     color: var(--nflx-on-media, #fff)
-    background: linear-gradient(180deg, transparent 0%, rgba(11, 11, 11, 0.88) 56px, #0b0b0b 130px)
+    background: transparent
     > *
         max-width: 900px
 
@@ -147,14 +333,14 @@
     display: flex
     flex-wrap: wrap
     gap: 8px
-    margin: 0 0 22px
+    margin: 0 0 18px
 
 .episode-hero__actions
     display: flex
     flex-wrap: wrap
     align-items: center
     gap: 12px
-    margin-bottom: 28px
+    margin-bottom: 0
 
 .episode-hero__play
     background: #fff !important
@@ -203,15 +389,24 @@
         .mat-mdc-icon-button
             color: #fff
 
+@media (prefers-reduced-motion: reduce)
+    .episode-backdrop.is-kenburns .episode-backdrop__motion
+        animation: none
+        transform: none
+
+@media screen and (min-width: 900px)
+    .episode
+        --rail-poster-w: 320px
+
 @media screen and (max-width: 700px)
     .episode-hero
-        margin-top: -96px
+        padding: 16px 4vw 20px
+    .episode-hero__title
+        font-size: clamp(1.85rem, 7vw, 2.6rem)
 
 @media screen and (max-width: 600px)
-    .episode-backdrop
-        min-height: 46vh
-    .episode-hero
-        margin-top: -72px
+    .episode
+        --rail-poster-w: 68vw
     .episode-hero__actions
         align-items: stretch
     .episode-hero__play,

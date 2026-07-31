@@ -28,8 +28,9 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect } from '@angular/core';
+import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser } from '@angular/common';
 
 interface SubjectRail {
   subject: string;
@@ -133,6 +134,11 @@ export class PodcastEpisodeComponent {
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
 
+  /** naturalWidth/naturalHeight for edge-extend framing (same as homepage hero). */
+  protected readonly backdropAspect = signal<number | undefined>(undefined);
+  /** Slow Ken Burns on the shared motion layer (wide only; skipped when reduced-motion / mobile GPU). */
+  protected readonly backdropKenBurns = signal(false);
+
   protected readonly visibleSubjects = computed(() =>
     (this._episode()?.subjects ?? []).filter((s) => !s.startsWith('_'))
   );
@@ -148,8 +154,33 @@ export class PodcastEpisodeComponent {
   protected readonly relatedLoading = signal<boolean>(false);
 
   private lastRelatedKey: string | undefined;
+  private readonly platformId = inject(PLATFORM_ID);
+  private backdropAspectToken = 0;
+  private motionQuery: MediaQueryList | undefined;
+  private gpuQuery: MediaQueryList | undefined;
+  private reduceMotion = false;
+  private saveGpu = false;
 
   constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.gpuQuery = window.matchMedia(
+        '(max-width: 900px), (hover: none) and (pointer: coarse)'
+      );
+      this.syncMotionFlags();
+      this.motionQuery.addEventListener('change', this.onMotionQueryChange);
+      this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
+      this.destroyRef.onDestroy(() => {
+        this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
+        this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
+      });
+    }
+
+    effect(() => {
+      const url = this.backdropUrl();
+      this.loadBackdropAspect(url);
+    });
+
     effect(() => {
       const ep = this._episode();
       const podcast = this.podcastName();
@@ -163,6 +194,51 @@ export class PodcastEpisodeComponent {
       this.lastRelatedKey = key;
       this.loadRelated(ep, podcast);
     });
+  }
+
+  private readonly onMotionQueryChange = () => {
+    this.syncMotionFlags();
+    this.backdropKenBurns.set(!!this.backdropUrl() && this.kenBurnsAllowed());
+  };
+
+  private syncMotionFlags(): void {
+    this.reduceMotion = !!this.motionQuery?.matches;
+    this.saveGpu = !!this.gpuQuery?.matches;
+  }
+
+  private kenBurnsAllowed(): boolean {
+    return !this.reduceMotion && !this.saveGpu;
+  }
+
+  private loadBackdropAspect(url: string | undefined): void {
+    const token = ++this.backdropAspectToken;
+    this.backdropAspect.set(undefined);
+    this.backdropKenBurns.set(false);
+    if (!url || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const img = new Image();
+    img.decoding = 'async';
+    const apply = () => {
+      if (token !== this.backdropAspectToken) {
+        return;
+      }
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        this.backdropAspect.set(img.naturalWidth / img.naturalHeight);
+      }
+      this.backdropKenBurns.set(this.kenBurnsAllowed());
+    };
+    img.onload = apply;
+    img.onerror = () => {
+      if (token === this.backdropAspectToken) {
+        this.backdropAspect.set(undefined);
+        this.backdropKenBurns.set(this.kenBurnsAllowed());
+      }
+    };
+    img.src = url;
+    if (img.complete) {
+      apply();
+    }
   }
 
   async ngOnInit(): Promise<any> {
@@ -310,6 +386,9 @@ export class PodcastEpisodeComponent {
         autoFocus: true
       });
     dialogRef.afterClosed().subscribe(async result => {
+      if (!result || result.closed) {
+        return;
+      }
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
         { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId: episodeId } });
     });

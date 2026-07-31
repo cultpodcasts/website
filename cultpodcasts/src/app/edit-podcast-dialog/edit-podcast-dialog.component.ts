@@ -32,7 +32,10 @@ import {
   getPodcastChanges,
   noCompareFunction,
   asEmptyString,
-  asStringArray
+  asStringArray,
+  normalizeHandleControl,
+  normalizeHashTagControl,
+  normalizePodcastSocialHandles
 } from '../podcast-form.util';
 
 @Component({
@@ -187,7 +190,11 @@ export class EditPodcastDialogComponent {
 
   onSubmit() {
     const form = this.form();
-    if (form?.valid) {
+    if (!form) {
+      return;
+    }
+    normalizePodcastSocialHandles(form);
+    if (form.valid) {
       const update: Podcast = {
         removed: form.controls.removed.value,
         indexAllEpisodes: form.controls.indexAllEpisodes.value,
@@ -224,6 +231,27 @@ export class EditPodcastDialogComponent {
       } else {
         this.send(this.podcastId!, changes);
       }
+    }
+  }
+
+  normalizeTwitterHandle() {
+    const control = this.form()?.controls.twitterHandle;
+    if (control) {
+      normalizeHandleControl(control);
+    }
+  }
+
+  normalizeBlueskyHandle() {
+    const control = this.form()?.controls.blueskyHandle;
+    if (control) {
+      normalizeHandleControl(control);
+    }
+  }
+
+  normalizeHashTag() {
+    const control = this.form()?.controls.hashTag;
+    if (control) {
+      normalizeHashTagControl(control);
     }
   }
 

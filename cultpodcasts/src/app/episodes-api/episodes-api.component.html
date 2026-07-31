@@ -5,7 +5,7 @@
         }
     </div>
 
-    <div class="curator-toolbar">
+    <div class="curator-toolbar" #curatorToolbar>
         <div class="curator-toolbar__title">
             <h2>Review Episodes</h2>
             @if (!isLoading() && !error() && episodes(); as list) {
@@ -44,45 +44,46 @@
     </ng-container>
     }
 
+    <div class="curator-card-grid">
     @for (result of episodes(); track result.id) {
     <mat-card class="result curator-card">
+        <button mat-icon-button type="button" class="curator-card__overflow" [matMenuTriggerFor]="menu"
+            aria-label="Episode actions">
+            <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit Episode</span>
+            </button>
+            <button mat-menu-item (click)="post(result.podcastId!, result.id)">
+                <mat-icon>send</mat-icon>
+                <span>Post Episode</span>
+            </button>
+            @if (authRoles().includes("Curator") && result.podcastName) {
+            <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName, result.id)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit Podcast</span>
+            </button>
+            <button mat-menu-item id="index" (click)="index(result.podcastName!)">
+                <mat-icon>refresh</mat-icon>
+                <span>Index Podcast</span>
+            </button>
+            }
+            @if (authRoles().includes("Admin")) {
+            <button [disabled]="result.tweeted||result.posted" mat-menu-item
+                (click)="delete(result.podcastId!, result.id)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete Episode</span>
+            </button>
+            }
+        </mat-menu>
         <div class="curator-card__body">
             <div class="curator-card__art">
                 <app-episode-image [apiEpisode]="result" layout="tile"></app-episode-image>
             </div>
             <div class="curator-card__main">
                 <mat-card-header>
-                    <button mat-icon-button class="curator-card__overflow" [matMenuTriggerFor]="menu"
-                        aria-label="Episode actions">
-                        <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #menu="matMenu">
-                        <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
-                            <mat-icon>edit</mat-icon>
-                            <span>Edit Episode</span>
-                        </button>
-                        <button mat-menu-item (click)="post(result.podcastId!, result.id)">
-                            <mat-icon>send</mat-icon>
-                            <span>Post Episode</span>
-                        </button>
-                        @if (authRoles().includes("Curator") && result.podcastName) {
-                        <button mat-menu-item id="edit" (click)="editPodcast(result.podcastName, result.id)">
-                            <mat-icon>edit</mat-icon>
-                            <span>Edit Podcast</span>
-                        </button>
-                        <button mat-menu-item id="index" (click)="index(result.podcastName!)">
-                            <mat-icon>refresh</mat-icon>
-                            <span>Index Podcast</span>
-                        </button>
-                        }
-                        @if (authRoles().includes("Admin")) {
-                        <button [disabled]="result.tweeted||result.posted" mat-menu-item
-                            (click)="delete(result.podcastId!, result.id)">
-                            <mat-icon>delete</mat-icon>
-                            <span>Delete Episode</span>
-                        </button>
-                        }
-                    </mat-menu>
                     <mat-card-title>
                         <a [routerLink]="['/podcast', result.podcastName, result.id]"
                             [innerHTML]="result.displayTitle"></a>
@@ -101,30 +102,29 @@
                         }
                     </mat-card-subtitle>
                 </mat-card-header>
-                <mat-card-content class="curator-card__content resultdescription">
+                <mat-card-content class="resultdescription">
                     <div class="curator-card__desc">
                         <app-clampable-text [maxLines]="3" [html]="result.displayDescription"></app-clampable-text>
                     </div>
-                    @if (result.subjects?.length || (result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-                    <div class="curator-card__side">
-                        @if (result.subjects?.length) {
-                        <div class="curator-card__subjects">
-                            <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                                [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
-                                (removeSubject)="removeSubject(result, $event)"></app-subjects>
-                        </div>
-                        }
-                        @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-                        <div class="curator-card__guests">
-                            <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                                [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
-                                (removeGuest)="removeGuest(result, $event)"
-                                (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
-                        </div>
-                        }
+                    @if (result.subjects?.length) {
+                    <div class="curator-card__subjects">
+                        <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
+                            [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
+                            (removeSubject)="removeSubject(result, $event)"></app-subjects>
+                    </div>
+                    }
+                    @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
+                    <div class="curator-card__guests">
+                        <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
+                            [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
+                            (removeGuest)="removeGuest(result, $event)"
+                            (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
                     </div>
                     }
                 </mat-card-content>
+                <div class="curator-card__platforms" aria-label="Podcast services">
+                    <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+                </div>
                 <mat-card-actions class="curator-card__actions">
                     <div class="curator-card__status">
                         <app-episode-status [episode]="result" [editable]="true"
@@ -134,12 +134,10 @@
                             (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
                             (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
                     </div>
-                    <div class="curator-card__platforms">
-                        <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
-                    </div>
                 </mat-card-actions>
             </div>
         </div>
     </mat-card>
     }
+    </div>
 </section>
