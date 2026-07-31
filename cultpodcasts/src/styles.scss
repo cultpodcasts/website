@@ -51,8 +51,8 @@ body {
 }
 
 html.discovery-snap-enabled {
-  /* proximity: settle when near a row; mandatory was yanking too hard on load. */
-  scroll-snap-type: y proximity;
+  /* mandatory + one target per row: proximity was skipping a whole row on flicks. */
+  scroll-snap-type: y mandatory;
   /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
   scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
 }
