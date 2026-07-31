@@ -544,14 +544,15 @@
             width: 100%
             pointer-events: none
     // Media band matches art aspect so the image fills with no top/bottom bars.
-    // Sit the band below the header clearance so "Now featuring" is not covered.
+    // Keep the band at top:0 (flush under the chrome). Header clearance is only
+    // for copy via ::before — otherwise a black strip appears between header and art.
     .billboard.has-art-aspect
         .billboard__stages,
         .billboard__grain,
         .billboard__scrim,
         .billboard__vignette
             inset: auto
-            top: var(--nflx-hero-search-clearance, 140px)
+            top: 0
             left: 0
             right: 0
             bottom: auto

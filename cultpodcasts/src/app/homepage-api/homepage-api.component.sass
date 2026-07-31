@@ -37,8 +37,8 @@
 
 @media screen and (max-width: 700px)
     .nflx
-        // Search is docked in the header; do not pull the hero under that row.
-        margin-top: 0
+        // Tuck art under the docked header row (no black strip above the image).
+        margin-top: calc(-1 * var(--site-chrome-bar-h, 52px))
         --obscure-card-w: 42vw
         --obscure-yt-w: 55vw
 
