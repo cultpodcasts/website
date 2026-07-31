@@ -20,10 +20,17 @@
     overflow: hidden
     container-type: size
     --hero-art-aspect: 1.777
+    // Slower than homepage carousel — episode hero stays on screen.
+    --episode-ken-burns: 22s
 
 .episode-backdrop__motion
     position: absolute
     inset: 0
+    will-change: transform
+
+.episode-backdrop.is-kenburns .episode-backdrop__motion
+    animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
+    transform-origin: center 40%
 
 // Side fills: thin strip of the image's true left/right edge, stretched outward
 // (same technique as homepage billboard — not a full-frame blur).
@@ -95,6 +102,10 @@
         background-size: 100% 100%
         background-position: center center
         filter: none
+    // Narrow contain: Ken Burns would crop the slot — keep the whole image.
+    &.is-kenburns .episode-backdrop__motion
+        animation: none
+        transform: none
 
 .episode-backdrop__scrim
     position: absolute
@@ -116,6 +127,10 @@
             transform: translateY(-50%)
             -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
             mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+        // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        &.is-kenburns .episode-backdrop__motion
+            animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
+            transform-origin: 70% 40%
     // Let the left edge blur read through under copy — avoid a solid black slab.
     .episode-backdrop__scrim
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.72) 55%, #0b0b0b 98%)

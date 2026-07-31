@@ -136,6 +136,8 @@ export class PodcastEpisodeComponent {
 
   /** naturalWidth/naturalHeight for edge-extend framing (same as homepage hero). */
   protected readonly backdropAspect = signal<number | undefined>(undefined);
+  /** Slow Ken Burns on the shared motion layer (wide only; skipped when reduced-motion / mobile GPU). */
+  protected readonly backdropKenBurns = signal(false);
 
   protected readonly visibleSubjects = computed(() =>
     (this._episode()?.subjects ?? []).filter((s) => !s.startsWith('_'))
@@ -154,8 +156,26 @@ export class PodcastEpisodeComponent {
   private lastRelatedKey: string | undefined;
   private readonly platformId = inject(PLATFORM_ID);
   private backdropAspectToken = 0;
+  private motionQuery: MediaQueryList | undefined;
+  private gpuQuery: MediaQueryList | undefined;
+  private reduceMotion = false;
+  private saveGpu = false;
 
   constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      this.gpuQuery = window.matchMedia(
+        '(max-width: 900px), (hover: none) and (pointer: coarse)'
+      );
+      this.syncMotionFlags();
+      this.motionQuery.addEventListener('change', this.onMotionQueryChange);
+      this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
+      this.destroyRef.onDestroy(() => {
+        this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
+        this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
+      });
+    }
+
     effect(() => {
       const url = this.backdropUrl();
       this.loadBackdropAspect(url);
@@ -176,9 +196,24 @@ export class PodcastEpisodeComponent {
     });
   }
 
+  private readonly onMotionQueryChange = () => {
+    this.syncMotionFlags();
+    this.backdropKenBurns.set(!!this.backdropUrl() && this.kenBurnsAllowed());
+  };
+
+  private syncMotionFlags(): void {
+    this.reduceMotion = !!this.motionQuery?.matches;
+    this.saveGpu = !!this.gpuQuery?.matches;
+  }
+
+  private kenBurnsAllowed(): boolean {
+    return !this.reduceMotion && !this.saveGpu;
+  }
+
   private loadBackdropAspect(url: string | undefined): void {
     const token = ++this.backdropAspectToken;
     this.backdropAspect.set(undefined);
+    this.backdropKenBurns.set(false);
     if (!url || !isPlatformBrowser(this.platformId)) {
       return;
     }
@@ -191,11 +226,13 @@ export class PodcastEpisodeComponent {
       if (img.naturalWidth > 0 && img.naturalHeight > 0) {
         this.backdropAspect.set(img.naturalWidth / img.naturalHeight);
       }
+      this.backdropKenBurns.set(this.kenBurnsAllowed());
     };
     img.onload = apply;
     img.onerror = () => {
       if (token === this.backdropAspectToken) {
         this.backdropAspect.set(undefined);
+        this.backdropKenBurns.set(this.kenBurnsAllowed());
       }
     };
     img.src = url;

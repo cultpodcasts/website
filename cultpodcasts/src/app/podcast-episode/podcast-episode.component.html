@@ -8,6 +8,7 @@
 
   <div class="episode-backdrop" aria-hidden="true"
     [class.has-edge-extend]="backdropAspect() != null"
+    [class.is-kenburns]="backdropKenBurns()"
     [style.--hero-art-aspect]="backdropAspect() ?? null">
     <div class="episode-backdrop__motion">
       <div class="episode-backdrop__edge episode-backdrop__edge--left">
