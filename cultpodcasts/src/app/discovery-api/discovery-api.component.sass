@@ -12,8 +12,9 @@
 
 .curator-toolbar
     position: sticky
-    top: 0
-    z-index: 8
+    // Sit under the fixed logo/search bar; top: 0 hides Save/Close under chrome.
+    top: var(--site-chrome-bar-h, 58px)
+    z-index: 90
     display: flex
     flex-wrap: wrap
     align-items: center
