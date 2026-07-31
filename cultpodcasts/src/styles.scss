@@ -50,17 +50,17 @@ body {
   min-height: 100%;
 }
 
-html.discovery-snap-enabled {
+html.curator-snap-enabled {
   /* mandatory + one target per row: proximity felt like free-scroll (barely
      engaged). Card max-height below keeps one row under chrome+toolbar. */
   scroll-snap-type: y mandatory;
-  /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
-  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
+  /* Sticky .curator-toolbar height — kept in sync by curator pages. */
+  scroll-padding-top: var(--curator-snap-offset, 4.75rem);
 }
 
-/* #body is also a snap target elsewhere; on Discovery it fights card snaps and
-   causes the scroll to jitter between two nearby positions. */
-html.discovery-snap-enabled #body {
+/* #body is also a snap target elsewhere; on curator grids it fights card snaps
+   and causes the scroll to jitter between two nearby positions. */
+html.curator-snap-enabled #body {
   scroll-snap-align: none;
   scroll-snap-stop: normal;
 }
@@ -78,8 +78,11 @@ html.discovery-snap-enabled #body {
   min-width: 0;
 }
 
-/* One snap target per visual row (1-col default). */
-html.discovery-snap-enabled .curator-card-grid > discovery-item {
+/* One snap target per visual row (1-col default).
+   Discovery wraps cards in discovery-item; Outgoing/Episodes put mat-card
+   directly in the grid. */
+html.curator-snap-enabled .curator-card-grid > discovery-item,
+html.curator-snap-enabled .curator-card-grid > .curator-card {
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
@@ -90,11 +93,11 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   margin-bottom: 0;
 }
 
-/* Discovery-only height budget: sticky site chrome + curator toolbar + one
-   full card row must fit in the viewport together. Cap with max-height — do
-   not use --discovery-snap-offset (arm-after-scroll would resize cards).
-   Episodes/Outgoing put mat-card in the grid directly — untouched.
+/* Height budget: sticky site chrome + curator toolbar + one full card row
+   must fit in the viewport together. Cap with max-height — do not use
+   --curator-snap-offset (arm-after-scroll would resize cards).
    Modest min-height avoids tiny stubs; dock platforms at the bottom. */
+.curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   /* chrome-bar + sticky fudge + toolbar (~pad+title) + toolbar margin + gap */
   max-height: calc(
@@ -110,6 +113,7 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   flex-direction: column;
 }
 
+.curator-card-grid > .curator-card > .curator-card__body,
 .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -117,11 +121,13 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   gap: 12px;
 }
 
+.curator-card-grid > .curator-card .curator-card__art,
 .curator-card-grid > discovery-item > .curator-card .curator-card__art {
   flex: 0 0 128px;
   width: 128px;
 }
 
+.curator-card-grid > .curator-card .curator-card__main,
 .curator-card-grid > discovery-item > .curator-card .curator-card__main {
   display: flex;
   flex-direction: column;
@@ -130,6 +136,7 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   min-height: 0;
 }
 
+.curator-card-grid > .curator-card .curator-card__actions,
 .curator-card-grid > discovery-item > .curator-card .curator-card__actions {
   margin-top: auto;
   padding-top: 12px;
@@ -140,13 +147,15 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Multi-col Discovery: art leads full-width on top (16:9 band), content
-     below. Max-height keeps the band inside the chrome+toolbar row budget
-     without the tiny 7.5rem corner-thumb cap. */
+  /* Multi-col: art leads full-width on top (16:9 band), content below.
+     Max-height keeps the band inside the chrome+toolbar row budget
+     without the tiny corner-thumb cap. */
+  .curator-card-grid > .curator-card > .curator-card__body,
   .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
     flex-direction: column;
   }
 
+  .curator-card-grid > .curator-card .curator-card__art,
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
     flex: 0 0 auto;
     width: 100%;
@@ -159,12 +168,14 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
     }
   }
 
-  html.discovery-snap-enabled .curator-card-grid > discovery-item {
+  html.curator-snap-enabled .curator-card-grid > discovery-item,
+  html.curator-snap-enabled .curator-card-grid > .curator-card {
     scroll-snap-align: none;
     scroll-snap-stop: normal;
   }
 
-  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1) {
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(2n + 1) {
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
@@ -175,12 +186,14 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1) {
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(2n + 1) {
     scroll-snap-align: none;
     scroll-snap-stop: normal;
   }
 
-  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(3n + 1) {
+  html.curator-snap-enabled .curator-card-grid > discovery-item:nth-child(3n + 1),
+  html.curator-snap-enabled .curator-card-grid > .curator-card:nth-child(3n + 1) {
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
@@ -268,7 +281,7 @@ mat-card.curator-card mat-card-title {
     width: 72px;
   }
 
-  /* Discovery keeps a larger tile than shared Episodes/Outgoing on narrow. */
+  .curator-card-grid > .curator-card .curator-card__art,
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
     flex-basis: 104px;
     width: 104px;

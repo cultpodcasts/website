@@ -19,6 +19,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
+import {
+  armCuratorSnapAfterScroll,
+  observeCuratorSnapToolbar,
+  syncCuratorSnapOffset,
+  toggleCuratorSnapClass
+} from '../curator-snap';
 
 const likelyMatchThreshold = 0.5;
 const autoHiddenThreshold = 0.05;
@@ -71,8 +77,9 @@ export class DiscoveryApiComponent implements AfterViewInit {
     private siteService: SiteService
   ) {
     this.destroyRef.onDestroy(() => {
-      this.teardownSnapOffsetObserver();
-      this.toggleDiscoverySnapClass(false);
+      this.snapOffsetObserver?.disconnect();
+      this.snapOffsetObserver = undefined;
+      toggleCuratorSnapClass(false);
     });
   }
 
@@ -91,88 +98,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
-    this.setupSnapOffsetObserver();
-    this.armDiscoverySnapAfterScroll();
-  }
-
-  private toggleDiscoverySnapClass(enabled: boolean) {
-    if (typeof document === 'undefined') {
-      return;
-    }
-
-    const method: 'add' | 'remove' = enabled ? 'add' : 'remove';
-    document.documentElement.classList[method]('discovery-snap-enabled');
-    document.body.classList[method]('discovery-snap-enabled');
-    if (!enabled) {
-      document.documentElement.style.removeProperty('--discovery-snap-offset');
-    }
-  }
-
-  /**
-   * Enabling snap + scroll-padding on first paint makes the browser nudge scroll
-   * (and can dock/undock chrome). Arm only after the user has scrolled a little.
-   */
-  private armDiscoverySnapAfterScroll() {
-    const arm = () => {
-      this.toggleDiscoverySnapClass(true);
-      this.syncSnapOffset();
-    };
-
-    if (window.scrollY > 8) {
-      arm();
-      return;
-    }
-
-    const onScroll = () => {
-      if (window.scrollY <= 8) {
-        return;
-      }
-      window.removeEventListener('scroll', onScroll);
-      arm();
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    this.destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
-  }
-
-  /**
-   * Cards snap below the fixed site chrome + sticky Discovery toolbar.
-   * Keep scroll-padding-top equal to that stacked height (toolbar grows when
-   * filter/actions wrap).
-   */
-  private setupSnapOffsetObserver() {
-    const toolbar = this.curatorToolbar?.nativeElement;
-    if (!toolbar || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    this.snapOffsetObserver = new ResizeObserver(() => {
-      if (document.documentElement.classList.contains('discovery-snap-enabled')) {
-        this.syncSnapOffset();
-      }
+    this.snapOffsetObserver = observeCuratorSnapToolbar(this.curatorToolbar?.nativeElement);
+    armCuratorSnapAfterScroll(this.destroyRef, () => {
+      syncCuratorSnapOffset(this.curatorToolbar?.nativeElement);
     });
-    this.snapOffsetObserver.observe(toolbar);
-  }
-
-  private syncSnapOffset() {
-    if (typeof document === 'undefined') {
-      return;
-    }
-    const toolbar = this.curatorToolbar?.nativeElement;
-    if (!toolbar) {
-      return;
-    }
-    const chromeSource = document.getElementById('body') ?? document.documentElement;
-    const chromeH = parseFloat(
-      getComputedStyle(chromeSource).getPropertyValue('--site-chrome-bar-h')
-    ) || 58;
-    // Match sticky top: calc(var(--site-chrome-bar-h) + 4px) plus toolbar + gap.
-    const offset = Math.ceil(toolbar.getBoundingClientRect().height) + Math.ceil(chromeH) + 4 + 8;
-    document.documentElement.style.setProperty('--discovery-snap-offset', `${offset}px`);
-  }
-
-  private teardownSnapOffsetObserver() {
-    this.snapOffsetObserver?.disconnect();
-    this.snapOffsetObserver = undefined;
   }
 
   loadResults(includeHidden: boolean) {

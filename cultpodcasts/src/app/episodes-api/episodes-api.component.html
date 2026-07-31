@@ -5,7 +5,7 @@
         }
     </div>
 
-    <div class="curator-toolbar">
+    <div class="curator-toolbar" #curatorToolbar>
         <div class="curator-toolbar__title">
             <h2>Review Episodes</h2>
             @if (!isLoading() && !error() && episodes(); as list) {
