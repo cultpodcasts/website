@@ -7,9 +7,9 @@
     top: calc(var(--site-chrome-bar-h, 58px) + 4px)
     z-index: 90
     display: flex
-    flex-wrap: wrap
+    flex-wrap: nowrap
     align-items: center
-    gap: 12px 16px
+    gap: 8px 12px
     margin: 0 0 14px
     padding: 10px 12px
     border-radius: var(--cp-radius, 14px)
@@ -21,12 +21,14 @@
     display: flex
     flex-wrap: wrap
     align-items: baseline
-    gap: 8px 12px
+    gap: 4px 10px
+    flex: 1 1 auto
     min-width: 0
     h2
         margin: 0
         font-size: 1.25rem
         font-weight: 700
+        line-height: 1.2
 
 .curator-toolbar__count
     font-size: 0.85rem
@@ -34,10 +36,20 @@
 
 .curator-toolbar__actions
     display: flex
-    flex-wrap: wrap
+    flex-wrap: nowrap
     align-items: center
-    gap: 10px
+    gap: 8px
+    flex: 0 0 auto
     margin-left: auto
+
+@media screen and (max-width: 600px)
+    .curator-toolbar
+        gap: 8px
+        padding: 8px 10px
+    .curator-toolbar__title h2
+        font-size: 1.05rem
+    .curator-toolbar__actions
+        gap: 6px
 
 .curator-card__meta
     display: flex
