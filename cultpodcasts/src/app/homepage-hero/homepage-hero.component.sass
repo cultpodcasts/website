@@ -111,13 +111,35 @@
 .billboard__stage.has-edge-extend
     .billboard__stage-edge
         display: block
+        z-index: 0
     .billboard__stage-edge--left,
     .billboard__stage-edge--right
         width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    // Fill the whole left gutter with left-edge art (blurred), not a 14px scaled strip
+    // that can leave a hard black panel under a heavy scrim.
+    .billboard__stage-edge--left .billboard__stage-edge-strip
+        inset: -12% -48px -12% 0
+        width: auto
+        right: -48px
+        left: 0
+        background-size: auto 115%
+        background-position: left center
+        transform: none
+        filter: blur(36px) saturate(1.18) brightness(0.92)
+    .billboard__stage-edge--right .billboard__stage-edge-strip
+        inset: -12% 0 -12% -48px
+        width: auto
+        left: -48px
+        right: 0
+        background-size: auto 115%
+        background-position: right center
+        transform: none
+        filter: blur(36px) saturate(1.18) brightness(0.92)
     .billboard__stage-focus-slot
         inset: auto
         top: 50%
         left: 50%
+        z-index: 1
         width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
         height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
         transform: translate(-50%, -50%)
@@ -142,15 +164,19 @@
             left: auto
             right: 0
             transform: translateY(-50%)
+            // Soften the hard seam where sharp art meets the left fill.
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
         .billboard__stage-focus
             transform-origin: 70% 40%
         // Wide: restore Ken Burns (slight edge crop is acceptable here).
         &.is-kenburns .billboard__stage-focus
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+    // Let the left edge blur read through under copy — avoid a solid black slab.
     .billboard__scrim
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.97) 0%, rgba(0, 0, 0, 0.9) 22%, rgba(0, 0, 0, 0.55) 42%, rgba(0, 0, 0, 0.18) 58%, transparent 74%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, transparent 20%)
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
     .billboard__vignette
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.22) 28%, transparent 52%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.32) 100%)
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
 
 .billboard__content
     position: relative
