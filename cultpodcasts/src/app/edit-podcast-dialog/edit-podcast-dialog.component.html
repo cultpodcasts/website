@@ -87,11 +87,19 @@
             <mat-tab label="Social">
                 <mat-form-field class="full-width">
                     <mat-label>Twitter Handle</mat-label>
-                    <input type="text" [formControl]="form()!.controls.twitterHandle" matInput>
+                    <input type="text" [formControl]="form()!.controls.twitterHandle" matInput
+                        placeholder="@handle" (blur)="normalizeTwitterHandle()">
+                    @if (form()!.controls.twitterHandle.hasError('atPrefixedHandle')) {
+                    <mat-error>Must start with @</mat-error>
+                    }
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Bluesky Handle</mat-label>
-                    <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput>
+                    <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput
+                        placeholder="@handle.bsky.social" (blur)="normalizeBlueskyHandle()">
+                    @if (form()!.controls.blueskyHandle.hasError('atPrefixedHandle')) {
+                    <mat-error>Must start with @</mat-error>
+                    }
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Hash Tags</mat-label>

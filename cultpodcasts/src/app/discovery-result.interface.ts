@@ -12,6 +12,8 @@ export interface DiscoveryResult {
     subjects: string[];
     youTubeViews: number | undefined;
     youTubeChannelMembers: number | undefined;
+    containsSyntheticMedia: boolean | null | undefined;
+    guests: string[] | undefined;
     imageUrl: URL | undefined;
     enrichedTimeFromApple: boolean;
     enrichedUrlFromSpotify: boolean;

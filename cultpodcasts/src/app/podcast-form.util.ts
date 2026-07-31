@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+import { AbstractControl, FormControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { EditPodcastForm } from './edit-podcast-form.interface';
 import { EditPodcastPost } from './edit-podcast-post.interface';
 import { Podcast } from './podcast.interface';
@@ -17,7 +17,47 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+/** Trim and ensure a leading `@` when the handle is non-empty. Empty stays empty. */
+export function ensureAtPrefix(value: string | null | undefined): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
+}
+
+/**
+ * Empty is allowed. Non-empty values must start with `@` and include at least one
+ * character after it (bare `@` is invalid).
+ */
+export function atPrefixedHandleValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const raw = (control.value ?? '').toString().trim();
+    if (!raw) {
+      return null;
+    }
+    if (!raw.startsWith('@') || raw.length < 2) {
+      return { atPrefixedHandle: true };
+    }
+    return null;
+  };
+}
+
+export function normalizeHandleControl(control: FormControl<string>): void {
+  const next = ensureAtPrefix(control.value);
+  if (next !== control.value) {
+    control.setValue(next);
+  }
+  control.updateValueAndValidity({ emitEvent: false });
+}
+
+export function normalizePodcastSocialHandles(form: { controls: Pick<EditPodcastForm, 'twitterHandle' | 'blueskyHandle'> }): void {
+  normalizeHandleControl(form.controls.twitterHandle);
+  normalizeHandleControl(form.controls.blueskyHandle);
+}
+
 export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
+  const handleValidators = [atPrefixedHandleValidator()];
   return {
     removed: new FormControl(podcast.removed, { nonNullable: true }),
     indexAllEpisodes: new FormControl(podcast.indexAllEpisodes, { nonNullable: true }),
@@ -29,8 +69,8 @@ export function buildPodcastFormControls(podcast: Podcast): EditPodcastForm {
     appleId: new FormControl(podcast.appleId, { nonNullable: false }),
     youTubePublicationDelay: new FormControl(podcast.youTubePublicationDelay, { nonNullable: true }),
     skipEnrichingFromYouTube: new FormControl(podcast.skipEnrichingFromYouTube, { nonNullable: true }),
-    twitterHandle: new FormControl(podcast.twitterHandle, { nonNullable: true }),
-    blueskyHandle: new FormControl(podcast.blueskyHandle, { nonNullable: true }),
+    twitterHandle: new FormControl(ensureAtPrefix(podcast.twitterHandle), { nonNullable: true, validators: handleValidators }),
+    blueskyHandle: new FormControl(ensureAtPrefix(podcast.blueskyHandle), { nonNullable: true, validators: handleValidators }),
     titleRegex: new FormControl(podcast.titleRegex, { nonNullable: true }),
     descriptionRegex: new FormControl(podcast.descriptionRegex, { nonNullable: true }),
     episodeMatchRegex: new FormControl(podcast.episodeMatchRegex, { nonNullable: true }),

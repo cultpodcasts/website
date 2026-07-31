@@ -51,9 +51,141 @@ body {
 }
 
 html.discovery-snap-enabled {
-  scroll-snap-type: y mandatory;
   /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
   scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
+}
+
+/* #body is also a snap target elsewhere; on Discovery it fights card snaps and
+   causes the scroll to jitter between two nearby positions. */
+html.discovery-snap-enabled #body {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
+/* Snap only in the single-column curator grid — multi-column rows fight mandatory snap. */
+@media (max-width: 719.98px) {
+  html.discovery-snap-enabled {
+    scroll-snap-type: y mandatory;
+  }
+
+  .curator-card-grid > discovery-item {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+/* Page grid of curator cards (Discovery / Episodes / Outgoing). */
+.curator-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.curator-card-grid > discovery-item {
+  display: block;
+  min-width: 0;
+}
+
+.curator-card-grid > .curator-card,
+.curator-card-grid > discovery-item > .curator-card {
+  height: 100%;
+  margin-bottom: 0;
+}
+
+@media (min-width: 720px) {
+  .curator-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .curator-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Shared curator card chrome (narrow multi-column stack). */
+mat-card.curator-card {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent);
+  border-radius: var(--cp-radius, 14px);
+  background: var(--mat-sys-surface-container, color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433));
+  box-sizing: border-box;
+}
+
+.curator-card__body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.curator-card__art {
+  flex: 0 0 88px;
+  width: 88px;
+  min-width: 0;
+}
+
+.curator-card__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.curator-card__overflow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+mat-card.curator-card mat-card-header {
+  padding-right: 40px;
+}
+
+mat-card.curator-card mat-card-title {
+  margin-right: 0;
+}
+
+.curator-card__subjects,
+.curator-card__guests {
+  margin-top: 10px;
+}
+
+.curator-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 16px;
+  padding-top: 8px;
+}
+
+.curator-card__status,
+.curator-card__platforms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.curator-card__platforms a[mat-icon-button],
+.curator-card__platforms button[mat-icon-button],
+.curator-card__platforms.discovery-service-links a[mat-icon-button],
+.curator-card__platforms.discovery-service-links button[mat-icon-button] {
+  margin: 0 !important;
+  transform: none !important;
+}
+
+@media screen and (max-width: 560px) {
+  .curator-card__body {
+    gap: 10px;
+  }
+
+  .curator-card__art {
+    flex-basis: 72px;
+    width: 72px;
+  }
 }
 
 p {
@@ -487,165 +619,6 @@ mat-card.unknownDuration {
 mat-card.error {
   border-color: var(--cp-warn) !important;
   border-width: 2px !important;
-}
-
-/* Shared curator card layout (Discovery / Episodes / Outgoing). */
-mat-card.curator-card {
-  margin-bottom: 12px;
-  padding: 18px !important;
-  box-sizing: border-box;
-
-  .mat-mdc-card-header,
-  .mat-mdc-card-content,
-  .mdc-card__actions {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .mat-mdc-card-header {
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .mat-mdc-card-content {
-    padding-top: 8px;
-    padding-bottom: 0;
-  }
-
-  .mdc-card__actions {
-    padding-left: 0;
-    align-items: stretch;
-  }
-}
-
-.curator-card__body {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.curator-card__art {
-  flex: 0 0 112px;
-  width: 112px;
-}
-
-.curator-card__main {
-  flex: 1 1 auto;
-  min-width: 0;
-  position: relative;
-}
-
-.curator-card__overflow {
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.curator-card__main > .mat-mdc-card-header mat-card-title,
-.curator-card__main > mat-card-header mat-card-title {
-  margin-right: 40px;
-}
-
-mat-card.curator-card mat-card-content.curator-card__content,
-mat-card.curator-card .curator-card__content {
-  display: grid !important;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  min-width: 0;
-}
-
-.curator-card__desc {
-  min-width: 0;
-}
-
-.curator-card__side {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 55%, transparent);
-}
-
-.curator-card__subjects,
-.curator-card__guests {
-  margin-top: 0;
-}
-
-/* Platforms above status; clear gap so icons never share a baseline with pills. */
-mat-card-actions.curator-card__actions {
-  display: flex !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 14px;
-  margin: 0;
-  padding-top: 16px !important;
-  padding-bottom: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-
-.curator-card__platforms,
-.curator-card__platforms.discovery-service-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  order: -1;
-
-  app-episode-podcast-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    height: auto;
-    gap: 4px;
-  }
-
-  a[mat-icon-button],
-  button[mat-icon-button] {
-    margin: 0 !important;
-    transform: none !important;
-  }
-}
-
-.curator-card__status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  order: 0;
-}
-
-@media screen and (min-width: 900px) {
-  mat-card.curator-card mat-card-content.curator-card__content,
-  mat-card.curator-card .curator-card__content {
-    grid-template-columns: 1fr minmax(220px, 0.9fr);
-    column-gap: 24px;
-    row-gap: 0;
-    align-items: start;
-  }
-
-  .curator-card__side {
-    padding-top: 0;
-    border-top: none;
-  }
-
-  .curator-card__status {
-    justify-content: flex-end;
-  }
-}
-
-@media screen and (max-width: 560px) {
-  .curator-card__body {
-    gap: 10px;
-  }
-
-  .curator-card__art {
-    flex-basis: 88px;
-    width: 88px;
-  }
 }
 
 // Public browse cards only — curator cards manage their own action spacing

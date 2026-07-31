@@ -23,6 +23,11 @@
                         }
                         {{score.label}}
                     </span>
+                    @if (item.containsSyntheticMedia) {
+                    <span class="score-badge synthetic-media-badge" title="YouTube marked this as altered or synthetic media">
+                        AI / synthetic
+                    </span>
+                    }
                 </mat-card-subtitle>
                 <mat-card-subtitle
                     [class.multipleMatchingPodcasts]="item.matchingPodcasts!= null && item.matchingPodcasts.length > 1"
@@ -54,7 +59,7 @@
                     </span>
                 </mat-card-subtitle>
             </mat-card-header>
-            <mat-card-content class="curator-card__content">
+            <mat-card-content>
                 <div class="curator-card__desc">
                     @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
                     <app-clampable-text class="showDescription" [maxLines]="3" [html]="item.showDescription"></app-clampable-text>
@@ -62,10 +67,15 @@
                     <app-clampable-text class="resultdescription" [maxLines]="3" [html]="item.episodeDescription"></app-clampable-text>
                 </div>
                 @if (item.subjects?.length) {
-                <div class="curator-card__side">
-                    <div class="curator-card__subjects">
-                        <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
-                    </div>
+                <div class="curator-card__subjects">
+                    <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
+                </div>
+                }
+                @if (item.guests?.length) {
+                <div class="curator-card__guests">
+                    @for (guest of item.guests; track guest) {
+                    <span class="guest-chip">{{guest}}</span>
+                    }
                 </div>
                 }
             </mat-card-content>
