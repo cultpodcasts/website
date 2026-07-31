@@ -18,7 +18,10 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [MatButtonModule, MatIconModule],
   templateUrl: './clampable-text.component.html',
   styleUrl: './clampable-text.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.is-expanded]': 'expanded()'
+  }
 })
 export class ClampableTextComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() maxLines: number = 6;

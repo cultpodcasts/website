@@ -113,6 +113,14 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
   flex-direction: column;
 }
 
+/* Expanded description: grow past the snap viewport budget so the toggle
+   (and rest of the card) stay reachable. Collapsed cards keep the cap. */
+.curator-card-grid > .curator-card:has(app-clampable-text.is-expanded),
+.curator-card-grid > discovery-item > .curator-card:has(app-clampable-text.is-expanded) {
+  max-height: none;
+  overflow: visible;
+}
+
 .curator-card-grid > .curator-card > .curator-card__body,
 .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
   flex: 1 1 auto;
@@ -227,11 +235,17 @@ mat-card.curator-card {
   min-width: 0;
 }
 
-.curator-card__overflow {
+/* Beat .mat-mdc-icon-button { position: relative; z-index: 0 } (same
+   single-class specificity, later in the cascade) so the kebab stays
+   absolute top-right over stacked full-width art. */
+mat-card.curator-card > .curator-card__overflow.mat-mdc-icon-button {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 2;
+  left: auto;
+  inset-inline-start: auto;
+  inset-inline-end: 8px;
+  z-index: 3;
 }
 
 mat-card.curator-card mat-card-header {
