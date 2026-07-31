@@ -52,7 +52,7 @@ body {
 
 html.discovery-snap-enabled {
   /* mandatory + one target per row: proximity felt like free-scroll (barely
-     engaged). Taller cards below keep mandatory from multi-row yanking. */
+     engaged). Card max-height below keeps one row under chrome+toolbar. */
   scroll-snap-type: y mandatory;
   /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
   scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
@@ -90,14 +90,22 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   margin-bottom: 0;
 }
 
-/* Discovery-only: taller than the 300px restore so mandatory snap has one
-   clear row target. Episodes/Outgoing put mat-card in the grid directly —
-   untouched. Fixed px (not --discovery-snap-offset) so arm-after-scroll
-   does not resize cards when the offset CSS var appears.
-   Fill the tall min-height: stretch body/main, dock platforms at the bottom,
-   and scale art up (stack full-width from 2-col). */
+/* Discovery-only height budget: sticky site chrome + curator toolbar + one
+   full card row must fit in the viewport together. Cap with max-height — do
+   not use --discovery-snap-offset (arm-after-scroll would resize cards).
+   Episodes/Outgoing put mat-card in the grid directly — untouched.
+   Modest min-height avoids tiny stubs; dock platforms at the bottom. */
 .curator-card-grid > discovery-item > .curator-card {
-  min-height: clamp(420px, calc(100dvh - 14rem), 560px);
+  /* chrome-bar + sticky fudge + toolbar (~pad+title) + toolbar margin + gap */
+  max-height: calc(
+    100dvh
+    - var(--site-chrome-bar-h, 58px)
+    - 4px
+    - 3.75rem
+    - 14px
+    - 8px
+  );
+  min-height: 260px;
   display: flex;
   flex-direction: column;
 }
@@ -106,12 +114,12 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   flex: 1 1 auto;
   min-height: 0;
   align-items: stretch;
-  gap: 14px;
+  gap: 12px;
 }
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__art {
-  flex: 0 0 128px;
-  width: 128px;
+  flex: 0 0 104px;
+  width: 104px;
 }
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__main {
@@ -123,7 +131,7 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
 
 .curator-card-grid > discovery-item > .curator-card .curator-card__actions {
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 12px;
 }
 
 @media (min-width: 720px) {
@@ -131,14 +139,16 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Multi-col Discovery: art leads on top (full card width), content below. */
+  /* Multi-col Discovery: art leads on top, content below — capped so a
+     full-width square tile cannot blow past the viewport height budget. */
   .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
     flex-direction: column;
   }
 
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
     flex: 0 0 auto;
-    width: 100%;
+    width: min(100%, 7.5rem);
+    max-height: 7.5rem;
   }
 
   html.discovery-snap-enabled .curator-card-grid > discovery-item {
@@ -250,10 +260,10 @@ mat-card.curator-card mat-card-title {
     width: 72px;
   }
 
-  /* Discovery keeps a larger tile than shared Episodes/Outgoing on narrow. */
+  /* Discovery keeps a slightly larger tile than shared Episodes/Outgoing. */
   .curator-card-grid > discovery-item > .curator-card .curator-card__art {
-    flex-basis: 104px;
-    width: 104px;
+    flex-basis: 88px;
+    width: 88px;
   }
 }
 
