@@ -93,14 +93,52 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
 /* Discovery-only: taller than the 300px restore so mandatory snap has one
    clear row target. Episodes/Outgoing put mat-card in the grid directly —
    untouched. Fixed px (not --discovery-snap-offset) so arm-after-scroll
-   does not resize cards when the offset CSS var appears. */
+   does not resize cards when the offset CSS var appears.
+   Fill the tall min-height: stretch body/main, dock platforms at the bottom,
+   and scale art up (stack full-width from 2-col). */
 .curator-card-grid > discovery-item > .curator-card {
   min-height: clamp(420px, calc(100dvh - 14rem), 560px);
+  display: flex;
+  flex-direction: column;
+}
+
+.curator-card-grid > discovery-item > .curator-card > .curator-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.curator-card-grid > discovery-item > .curator-card .curator-card__art {
+  flex: 0 0 128px;
+  width: 128px;
+}
+
+.curator-card-grid > discovery-item > .curator-card .curator-card__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.curator-card-grid > discovery-item > .curator-card .curator-card__actions {
+  margin-top: auto;
+  padding-top: 16px;
 }
 
 @media (min-width: 720px) {
   .curator-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Multi-col Discovery: art leads on top (full card width), content below. */
+  .curator-card-grid > discovery-item > .curator-card > .curator-card__body {
+    flex-direction: column;
+  }
+
+  .curator-card-grid > discovery-item > .curator-card .curator-card__art {
+    flex: 0 0 auto;
+    width: 100%;
   }
 
   html.discovery-snap-enabled .curator-card-grid > discovery-item {
@@ -210,6 +248,12 @@ mat-card.curator-card mat-card-title {
   .curator-card__art {
     flex-basis: 72px;
     width: 72px;
+  }
+
+  /* Discovery keeps a larger tile than shared Episodes/Outgoing on narrow. */
+  .curator-card-grid > discovery-item > .curator-card .curator-card__art {
+    flex-basis: 104px;
+    width: 104px;
   }
 }
 

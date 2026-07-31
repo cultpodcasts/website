@@ -62,9 +62,9 @@
             <mat-card-content>
                 <div class="curator-card__desc">
                     @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
-                    <app-clampable-text class="showDescription" [maxLines]="3" [html]="item.showDescription"></app-clampable-text>
+                    <app-clampable-text class="showDescription" [maxLines]="4" [html]="item.showDescription"></app-clampable-text>
                     }
-                    <app-clampable-text class="resultdescription" [maxLines]="3" [html]="item.episodeDescription"></app-clampable-text>
+                    <app-clampable-text class="resultdescription" [maxLines]="5" [html]="item.episodeDescription"></app-clampable-text>
                 </div>
                 @if (item.subjects?.length) {
                 <div class="curator-card__subjects">
