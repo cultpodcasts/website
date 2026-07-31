@@ -115,26 +115,31 @@
     .billboard__stage-edge--left,
     .billboard__stage-edge--right
         width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
-    // Fill the whole left gutter with left-edge art (blurred), not a 14px scaled strip
-    // that can leave a hard black panel under a heavy scrim.
+    // Sample only a thin column at the art edge, then stretch it across the gutter.
+    // A full-gutter background-image shows most of the cover (static whole-frame blur).
     .billboard__stage-edge--left .billboard__stage-edge-strip
-        inset: -12% -48px -12% 0
-        width: auto
-        right: -48px
-        left: 0
-        background-size: auto 115%
-        background-position: left center
-        transform: none
-        filter: blur(36px) saturate(1.18) brightness(0.92)
-    .billboard__stage-edge--right .billboard__stage-edge-strip
-        inset: -12% 0 -12% -48px
-        width: auto
-        left: -48px
+        top: -10%
+        bottom: -10%
+        left: auto
         right: 0
-        background-size: auto 115%
+        width: 8px
+        background-size: auto 100%
+        background-position: left center
+        transform-origin: right center
+        // Large scale fills ultrawide gutters; overflow:hidden on the edge clips excess.
+        transform: scaleX(400)
+        filter: blur(28px) saturate(1.2) brightness(0.95)
+    .billboard__stage-edge--right .billboard__stage-edge-strip
+        top: -10%
+        bottom: -10%
+        right: auto
+        left: 0
+        width: 8px
+        background-size: auto 100%
         background-position: right center
-        transform: none
-        filter: blur(36px) saturate(1.18) brightness(0.92)
+        transform-origin: left center
+        transform: scaleX(400)
+        filter: blur(28px) saturate(1.2) brightness(0.95)
     .billboard__stage-focus-slot
         inset: auto
         top: 50%
