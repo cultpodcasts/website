@@ -55,6 +55,17 @@ describe('ensureAtPrefix', () => {
   it('keeps an existing @ prefix', () => {
     expect(ensureAtPrefix('@cultpodcasts')).toBe('@cultpodcasts');
   });
+
+  it('prefixes each space-delimited handle', () => {
+    expect(ensureAtPrefix('@MarkBunker4U XENUTV')).toBe('@MarkBunker4U @XENUTV');
+    expect(ensureAtPrefix('MarkBunker4U XENUTV')).toBe('@MarkBunker4U @XENUTV');
+    expect(ensureAtPrefix('  @a   @b  ')).toBe('@a @b');
+  });
+
+  it('drops lone @ tokens', () => {
+    expect(ensureAtPrefix('@')).toBe('');
+    expect(ensureAtPrefix('@foo @')).toBe('@foo');
+  });
 });
 
 describe('atPrefixedHandleValidator', () => {
@@ -74,6 +85,17 @@ describe('atPrefixedHandleValidator', () => {
     expect(validate(new FormControl('@inthedetailspod'))).toBeNull();
     expect(validate(new FormControl('@handle.bsky.social'))).toBeNull();
   });
+
+  it('accepts multiple space-delimited @handles', () => {
+    expect(validate(new FormControl('@MarkBunker4U @XENUTV'))).toBeNull();
+    expect(validate(new FormControl('@a.bsky.social @b.bsky.social'))).toBeNull();
+  });
+
+  it('rejects when any token lacks a leading @', () => {
+    expect(validate(new FormControl('@josjojs koskoosoj'))).toEqual({ atPrefixedHandle: true });
+    expect(validate(new FormControl('@oiohoho jojjoj'))).toEqual({ atPrefixedHandle: true });
+    expect(validate(new FormControl('foo @bar'))).toEqual({ atPrefixedHandle: true });
+  });
 });
 
 describe('normalizeHandleControl / normalizePodcastSocialHandles', () => {
@@ -90,6 +112,19 @@ describe('normalizeHandleControl / normalizePodcastSocialHandles', () => {
     expect(twitterHandle.valid).toBe(true);
     expect(blueskyHandle.valid).toBe(true);
   });
+
+  it('auto-prefixes each space-delimited token on blur', () => {
+    const twitterHandle = new FormControl('@josjojs koskoosoj', {
+      nonNullable: true,
+      validators: [atPrefixedHandleValidator()]
+    });
+    expect(twitterHandle.valid).toBe(false);
+
+    normalizeHandleControl(twitterHandle);
+
+    expect(twitterHandle.value).toBe('@josjojs @koskoosoj');
+    expect(twitterHandle.valid).toBe(true);
+  });
 });
 
 describe('buildPodcastFormControls handle prefix', () => {
@@ -101,6 +136,18 @@ describe('buildPodcastFormControls handle prefix', () => {
 
     expect(form.twitterHandle.value).toBe('@inthedetailspod');
     expect(form.blueskyHandle.value).toBe('@already.bsky.social');
+    expect(form.twitterHandle.valid).toBe(true);
+    expect(form.blueskyHandle.valid).toBe(true);
+  });
+
+  it('normalizes loaded multi-handles', () => {
+    const form = buildPodcastFormControls(basePodcast({
+      twitterHandle: '@a b',
+      blueskyHandle: 'x.bsky.social y.bsky.social'
+    }));
+
+    expect(form.twitterHandle.value).toBe('@a @b');
+    expect(form.blueskyHandle.value).toBe('@x.bsky.social @y.bsky.social');
     expect(form.twitterHandle.valid).toBe(true);
     expect(form.blueskyHandle.valid).toBe(true);
   });

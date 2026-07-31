@@ -31,11 +31,19 @@
         </mat-form-field>
         <mat-form-field class="full-width">
             <mat-label>Twitter / X handle</mat-label>
-            <input type="text" [formControl]="form()!.controls.twitterHandle" matInput placeholder="@handle">
+            <input type="text" [formControl]="form()!.controls.twitterHandle" matInput
+                placeholder="@handle1 @handle2" (blur)="normalizeTwitterHandle()">
+            @if (form()!.controls.twitterHandle.hasError('atPrefixedHandle')) {
+            <mat-error>Each handle must start with @</mat-error>
+            }
         </mat-form-field>
         <mat-form-field class="full-width">
             <mat-label>Bluesky handle</mat-label>
-            <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput placeholder="handle.bsky.social">
+            <input type="text" [formControl]="form()!.controls.blueskyHandle" matInput
+                placeholder="@handle.bsky.social @other.bsky.social" (blur)="normalizeBlueskyHandle()">
+            @if (form()!.controls.blueskyHandle.hasError('atPrefixedHandle')) {
+            <mat-error>Each handle must start with @</mat-error>
+            }
         </mat-form-field>
     </form>
     }
