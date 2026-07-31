@@ -520,13 +520,14 @@
             width: 100%
             pointer-events: none
     // Media band matches art aspect so the image fills with no top/bottom bars.
+    // Sit the band below the header clearance so "Now featuring" is not covered.
     .billboard.has-art-aspect
         .billboard__stages,
         .billboard__grain,
         .billboard__scrim,
         .billboard__vignette
             inset: auto
-            top: 0
+            top: var(--nflx-hero-search-clearance, 140px)
             left: 0
             right: 0
             bottom: auto
@@ -548,7 +549,9 @@
         width: 100%
         max-width: min(640px, 100%)
         flex: 0 1 auto
-        padding-top: 6px
+        padding-top: 8px
+        position: relative
+        z-index: 2
     .billboard__controls
         position: relative
         right: auto
@@ -564,11 +567,13 @@
         max-width: none
         width: 100%
 
-@media screen and (max-width: 600px)
+@media screen and (max-width: 700px)
     .billboard
         min-height: 0
         padding-bottom: 20px
         gap: 12px
+    .billboard__content
+        padding-top: 4px
     .billboard__actions
         flex-direction: column
         align-items: stretch
