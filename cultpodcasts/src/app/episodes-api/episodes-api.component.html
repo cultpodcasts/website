@@ -122,6 +122,9 @@
                     </div>
                     }
                 </mat-card-content>
+                <div class="curator-card__platforms">
+                    <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
+                </div>
                 <mat-card-actions class="curator-card__actions">
                     <div class="curator-card__status">
                         <app-episode-status [episode]="result" [editable]="true"
@@ -130,9 +133,6 @@
                             [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
                             (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
                             (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
-                    </div>
-                    <div class="curator-card__platforms">
-                        <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
                     </div>
                 </mat-card-actions>
             </div>
