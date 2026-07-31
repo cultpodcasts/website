@@ -51,9 +51,9 @@ body {
 }
 
 html.discovery-snap-enabled {
-  /* proximity + snap-stop:always on row leaders: settle near a row without
-     mandatory yank; always stop reduces trackpad inertia skipping a whole row. */
-  scroll-snap-type: y proximity;
+  /* mandatory + one target per row: proximity felt like free-scroll (barely
+     engaged). Taller cards below keep mandatory from multi-row yanking. */
+  scroll-snap-type: y mandatory;
   /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
   scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
 }
@@ -90,10 +90,12 @@ html.discovery-snap-enabled .curator-card-grid > discovery-item {
   margin-bottom: 0;
 }
 
-/* Taller Discovery rows so proximity snap has a clearer target.
-   Episodes/Outgoing put mat-card directly in the grid — this only hits discovery-item. */
+/* Discovery-only: taller than the 300px restore so mandatory snap has one
+   clear row target. Episodes/Outgoing put mat-card in the grid directly —
+   untouched. Fixed px (not --discovery-snap-offset) so arm-after-scroll
+   does not resize cards when the offset CSS var appears. */
 .curator-card-grid > discovery-item > .curator-card {
-  min-height: 300px;
+  min-height: clamp(420px, calc(100dvh - 14rem), 560px);
 }
 
 @media (min-width: 720px) {
