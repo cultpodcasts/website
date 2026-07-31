@@ -21,7 +21,7 @@
         // Search is docked into the bar — chrome height is the single header row.
         --site-chrome-h: var(--site-chrome-bar-h)
         // Clear the fixed header inside the billboard (spacer stays 0 on home).
-        --nflx-hero-search-clearance: calc(var(--site-chrome-bar-h) + 14px)
+        --nflx-hero-search-clearance: calc(var(--site-chrome-bar-h) + env(safe-area-inset-top, 0px) + 20px)
     // Keep home spacer at 0; billboard ::before owns header clearance so
     // "Now featuring" and the media band share one offset under the chrome row.
     .home-shell .site-chrome__bar-spacer

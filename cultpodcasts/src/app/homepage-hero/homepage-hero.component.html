@@ -52,29 +52,33 @@
 
   <div class="billboard__content">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
-      <p class="billboard__eyebrow">
-        <span class="billboard__live" aria-hidden="true"></span>
-        Now featuring
-      </p>
-      <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
-      <p class="billboard__meta">
-        <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
-        <span> · {{ durationLabel(feature.duration) }}</span>
-        @if (languageFlag(feature); as lang) {
-        <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
-          <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
-          <span class="billboard__lang-name">{{ lang.label }}</span>
-        </span>
-        }
-      </p>
-      <p class="billboard__desc">{{ featuredDesc() }}</p>
-      @if (featuredSubjects().length > 0) {
-      <div class="billboard__subjects" aria-label="Subjects">
-        @for (subject of featuredSubjects(); track subject) {
-        <app-subject-chip [subject]="subject" size="hero" />
-        }
+      <div class="billboard__copy">
+        <p class="billboard__eyebrow">
+          <span class="billboard__live" aria-hidden="true"></span>
+          Now featuring
+        </p>
+        <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+        <p class="billboard__meta">
+          <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
+          <span> · {{ durationLabel(feature.duration) }}</span>
+          @if (languageFlag(feature); as lang) {
+          <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
+            <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+            <span class="billboard__lang-name">{{ lang.label }}</span>
+          </span>
+          }
+        </p>
+        <div class="billboard__copy-body">
+          <p class="billboard__desc">{{ featuredDesc() }}</p>
+          @if (featuredSubjects().length > 0) {
+          <div class="billboard__subjects" aria-label="Subjects">
+            @for (subject of featuredSubjects(); track subject) {
+            <app-subject-chip [subject]="subject" size="hero" />
+            }
+          </div>
+          }
+        </div>
       </div>
-      }
       <div class="billboard__actions">
         @if (canPlay(feature)) {
         <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">

@@ -198,12 +198,25 @@
     color: var(--nflx-on-media, #fff)
 
 .billboard__feature
+    display: flex
+    flex-direction: column
+    gap: 0
     opacity: 1
     transition: opacity 0.55s cubic-bezier(0.33, 0.1, 0.25, 1)
     &.is-hidden
         opacity: 0
         pointer-events: none
         transition-duration: 0.55s
+
+.billboard__copy
+    min-width: 0
+
+.billboard__copy-body
+    // Reserve stable space for desc + chips so Watch/More info keep a steady Y.
+    display: flex
+    flex-direction: column
+    min-height: calc(1.45em * 3 + 44px)
+    margin-bottom: 4px
 
 .billboard__eyebrow
     margin: 0 0 10px
@@ -268,23 +281,34 @@
     line-height: 1.2
 
 .billboard__desc
-    margin: 0 0 22px
+    margin: 0 0 12px
     font-size: 1.05rem
     line-height: 1.45
     color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
     text-shadow: 0 1px 12px #0000008c
+    display: -webkit-box
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 3
+    line-clamp: 3
+    overflow: hidden
+    // Keep the reserved copy-body height honest even when text is short.
+    min-height: calc(1.45em * 3)
 
 .billboard__subjects
     display: flex
     flex-wrap: wrap
     gap: 8px
-    margin: -8px 0 20px
+    margin: 0 0 8px
+    max-height: 2.4rem
+    overflow: hidden
 
 .billboard__actions
     display: flex
     flex-wrap: wrap
     gap: 12px
+    margin-top: auto
+    flex: 0 0 auto
 
 .billboard__play
     background: #fff !important
@@ -573,10 +597,28 @@
         padding-bottom: 20px
         gap: 12px
     .billboard__content
-        padding-top: 4px
+        padding-top: 2px
+    .billboard__title
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: 3
+        line-clamp: 3
+        overflow: hidden
+        // Short titles still reserve 3 lines so actions don't jump.
+        min-height: calc(1.02em * 3)
+        font-size: clamp(1.85rem, 7vw, 2.6rem)
+        margin-bottom: 10px
+    .billboard__copy-body
+        min-height: calc(1.45em * 3 + 40px)
+    .billboard__desc
+        font-size: 0.98rem
+        -webkit-line-clamp: 3
+        line-clamp: 3
     .billboard__actions
         flex-direction: column
         align-items: stretch
+        width: 100%
+        margin-top: 12px
     .billboard__admin
         // Keep each control on its own hit target; wrapping pills must not stack.
         display: grid
