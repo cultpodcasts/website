@@ -27,15 +27,20 @@ export class EpisodePublishResponseSnackbarComponent {
   }
 
   async ngOnInit(): Promise<any> {
-    if (this.data?.postEpisodeDialogResponse.response?.failedTweetContent) {
-      console.error(this.data.postEpisodeDialogResponse.response.failedTweetContent)
+    const response = this.data?.postEpisodeDialogResponse;
+    if (!response || response.closed) {
+      this.snackBarRef.dismiss();
+      return;
     }
-    if (this.data.postEpisodeDialogResponse.noChange) {
+    if (response.response?.failedTweetContent) {
+      console.error(response.response.failedTweetContent)
+    }
+    if (response.noChange) {
       this.message.set("No change made");
-    } else if (this.data.postEpisodeDialogResponse.response && this.data.postEpisodeDialogResponse.expectation) {
-      this.message.set(this.messageBuilder.createMessage(this.data.postEpisodeDialogResponse.response, this.data.postEpisodeDialogResponse.expectation));
-      if (this.data.postEpisodeDialogResponse.expectation.tweet && this.data.postEpisodeDialogResponse.response.failedTweetContent) {
-        if (!this.data.postEpisodeDialogResponse.response.tweeted) {
+    } else if (response.response && response.expectation) {
+      this.message.set(this.messageBuilder.createMessage(response.response, response.expectation));
+      if (response.expectation.tweet && response.response.failedTweetContent) {
+        if (!response.response.tweeted) {
           this.showManualTweet.set(true);
         }
       }
