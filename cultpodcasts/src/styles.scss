@@ -50,6 +50,21 @@ body {
   min-height: 100%;
 }
 
+html.discovery-snap-enabled {
+  /* proximity + snap-stop:always on row leaders: settle near a row without
+     mandatory yank; always stop reduces trackpad inertia skipping a whole row. */
+  scroll-snap-type: y proximity;
+  /* Sticky .curator-toolbar height — kept in sync by DiscoveryApiComponent. */
+  scroll-padding-top: var(--discovery-snap-offset, 4.75rem);
+}
+
+/* #body is also a snap target elsewhere; on Discovery it fights card snaps and
+   causes the scroll to jitter between two nearby positions. */
+html.discovery-snap-enabled #body {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
 /* Page grid of curator cards (Discovery / Episodes / Outgoing). */
 .curator-card-grid {
   display: grid;
@@ -63,21 +78,53 @@ body {
   min-width: 0;
 }
 
+/* One snap target per visual row (1-col default). */
+html.discovery-snap-enabled .curator-card-grid > discovery-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 .curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   height: 100%;
   margin-bottom: 0;
 }
 
+/* Taller Discovery rows so proximity snap has a clearer target.
+   Episodes/Outgoing put mat-card directly in the grid — this only hits discovery-item. */
+.curator-card-grid > discovery-item > .curator-card {
+  min-height: 300px;
+}
+
 @media (min-width: 720px) {
   .curator-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1) {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 }
 
 @media (min-width: 1100px) {
   .curator-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(2n + 1) {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
+  }
+
+  html.discovery-snap-enabled .curator-card-grid > discovery-item:nth-child(3n + 1) {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 }
 
