@@ -2,9 +2,15 @@
   [class.catalogue--carousel]="carouselMode()"
   (mouseenter)="onCarouselPause()" (mouseleave)="onCarouselResume()"
   (focusin)="onCarouselPause()" (focusout)="onCarouselResume($event)">
-  <div class="catalogue__viewport">
+  <div class="catalogue__viewport"
+    [class.is-dragging]="dragging()"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp($event)"
+    (pointercancel)="onPointerCancel($event)">
     <div class="catalogue__inner" aria-roledescription="carousel"
-      [style.--catalogue-index]="activeIndex()">
+      [style.--catalogue-index]="activeIndex()"
+      [style.--catalogue-drag]="dragPx() + 'px'">
       @for (slide of slides(); track slide.kind; let i = $index) {
       <div class="catalogue__stat" role="group"
         [class.catalogue__stat--hero]="slide.kind === 'hero'"

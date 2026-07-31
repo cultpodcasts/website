@@ -26,6 +26,7 @@ type CatalogueSlide =
 export class HomepageCatalogueComponent {
   private static readonly NARROW_MQ = '(max-width: 700px)';
   private static readonly ROTATE_MS = 4200;
+  private static readonly SWIPE_THRESHOLD_PX = 48;
 
   readonly weekEpisodeCount = input<number | undefined>();
   readonly episodeCount = input<number | undefined>();
@@ -35,6 +36,8 @@ export class HomepageCatalogueComponent {
   protected readonly activeIndex = signal(0);
   protected readonly carouselMode = signal(false);
   protected readonly reduceMotion = signal(false);
+  protected readonly dragPx = signal(0);
+  protected readonly dragging = signal(false);
 
   /** Desktop grid order: week | index | days. Carousel starts on the index slide. */
   protected readonly slides = computed((): CatalogueSlide[] => {
@@ -65,6 +68,10 @@ export class HomepageCatalogueComponent {
   private motionQuery: MediaQueryList | undefined;
   private rotateTimer: ReturnType<typeof setInterval> | undefined;
   private paused = false;
+  private pointerId: number | null = null;
+  private startX = 0;
+  private startY = 0;
+  private axisLocked: 'x' | 'y' | null = null;
 
   constructor() {
     if (!this.isBrowser) {
@@ -98,6 +105,9 @@ export class HomepageCatalogueComponent {
         return;
       }
     }
+    if (this.dragging()) {
+      return;
+    }
     this.paused = false;
     this.syncRotation();
   }
@@ -109,6 +119,81 @@ export class HomepageCatalogueComponent {
     }
     this.activeIndex.set(((index % n) + n) % n);
     this.syncRotation();
+  }
+
+  protected onPointerDown(event: PointerEvent): void {
+    if (!this.carouselMode() || this.slides().length < 2) {
+      return;
+    }
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    this.pointerId = event.pointerId;
+    this.startX = event.clientX;
+    this.startY = event.clientY;
+    this.axisLocked = null;
+    this.dragging.set(true);
+    this.dragPx.set(0);
+    this.onCarouselPause();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    if (!this.dragging() || event.pointerId !== this.pointerId) {
+      return;
+    }
+    const dx = event.clientX - this.startX;
+    const dy = event.clientY - this.startY;
+    if (!this.axisLocked) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+        return;
+      }
+      this.axisLocked = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+      if (this.axisLocked === 'y') {
+        this.endDrag(false);
+        return;
+      }
+    }
+    if (this.axisLocked !== 'x') {
+      return;
+    }
+    event.preventDefault();
+    this.dragPx.set(dx);
+  }
+
+  protected onPointerUp(event: PointerEvent): void {
+    if (event.pointerId !== this.pointerId) {
+      return;
+    }
+    const dx = this.dragPx();
+    const swiped = this.axisLocked === 'x' && Math.abs(dx) >= HomepageCatalogueComponent.SWIPE_THRESHOLD_PX;
+    this.endDrag(true);
+    if (!swiped) {
+      return;
+    }
+    if (dx < 0) {
+      this.selectSlide(this.activeIndex() + 1);
+    } else {
+      this.selectSlide(this.activeIndex() - 1);
+    }
+  }
+
+  protected onPointerCancel(event: PointerEvent): void {
+    if (event.pointerId !== this.pointerId) {
+      return;
+    }
+    this.endDrag(true);
+  }
+
+  private endDrag(resumeRotation: boolean): void {
+    this.pointerId = null;
+    this.axisLocked = null;
+    this.dragging.set(false);
+    this.dragPx.set(0);
+    if (resumeRotation) {
+      this.paused = false;
+      this.syncRotation();
+    }
   }
 
   private leadSlideIndex(): number {
@@ -129,7 +214,7 @@ export class HomepageCatalogueComponent {
 
   private syncRotation(): void {
     this.stopRotation();
-    if (!this.carouselMode() || this.reduceMotion() || this.paused || this.slides().length < 2) {
+    if (!this.carouselMode() || this.reduceMotion() || this.paused || this.dragging() || this.slides().length < 2) {
       return;
     }
     this.rotateTimer = setInterval(() => {
