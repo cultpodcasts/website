@@ -61,6 +61,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private snapOffsetObserver: ResizeObserver | undefined;
+  private snapArmed = false;
+  private snapLocked = false;
+  private snapUnlockTimer: ReturnType<typeof setTimeout> | undefined;
+  private touchStartY: number | null = null;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -71,6 +75,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
     private siteService: SiteService
   ) {
     this.destroyRef.onDestroy(() => {
+      this.teardownRowSnap();
       this.teardownSnapOffsetObserver();
       this.toggleDiscoverySnapClass(false);
     });
@@ -91,8 +96,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
+    this.toggleDiscoverySnapClass(true);
     this.setupSnapOffsetObserver();
-    this.armDiscoverySnapAfterScroll();
+    this.syncSnapOffset();
+    this.setupRowSnap();
   }
 
   private toggleDiscoverySnapClass(enabled: boolean) {
@@ -109,34 +116,8 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   /**
-   * Enabling snap + scroll-padding on first paint makes the browser nudge scroll
-   * (and can dock/undock chrome). Arm only after the user has scrolled a little.
-   */
-  private armDiscoverySnapAfterScroll() {
-    const arm = () => {
-      this.toggleDiscoverySnapClass(true);
-      this.syncSnapOffset();
-    };
-
-    if (window.scrollY > 8) {
-      arm();
-      return;
-    }
-
-    const onScroll = () => {
-      if (window.scrollY <= 8) {
-        return;
-      }
-      window.removeEventListener('scroll', onScroll);
-      arm();
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    this.destroyRef.onDestroy(() => window.removeEventListener('scroll', onScroll));
-  }
-
-  /**
-   * Cards snap below the fixed site chrome + sticky Discovery toolbar.
-   * Keep scroll-padding-top equal to that stacked height (toolbar grows when
+   * Cards align below the fixed site chrome + sticky Discovery toolbar.
+   * Keep --discovery-snap-offset equal to that stacked height (toolbar grows when
    * filter/actions wrap).
    */
   private setupSnapOffsetObserver() {
@@ -145,11 +126,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
       return;
     }
 
-    this.snapOffsetObserver = new ResizeObserver(() => {
-      if (document.documentElement.classList.contains('discovery-snap-enabled')) {
-        this.syncSnapOffset();
-      }
-    });
+    this.snapOffsetObserver = new ResizeObserver(() => this.syncSnapOffset());
     this.snapOffsetObserver.observe(toolbar);
   }
 
@@ -173,6 +150,147 @@ export class DiscoveryApiComponent implements AfterViewInit {
   private teardownSnapOffsetObserver() {
     this.snapOffsetObserver?.disconnect();
     this.snapOffsetObserver = undefined;
+  }
+
+  /**
+   * One row per wheel/swipe gesture. CSS scroll-snap advances multiple snap
+   * points under trackpad inertia even with mandatory + snap-stop:always.
+   */
+  private setupRowSnap() {
+    this.snapArmed = true;
+    window.addEventListener('wheel', this.onSnapWheel, { passive: false });
+    window.addEventListener('touchstart', this.onSnapTouchStart, { passive: true });
+    window.addEventListener('touchend', this.onSnapTouchEnd, { passive: true });
+  }
+
+  private teardownRowSnap() {
+    this.snapArmed = false;
+    window.removeEventListener('wheel', this.onSnapWheel);
+    window.removeEventListener('touchstart', this.onSnapTouchStart);
+    window.removeEventListener('touchend', this.onSnapTouchEnd);
+    if (this.snapUnlockTimer) {
+      clearTimeout(this.snapUnlockTimer);
+      this.snapUnlockTimer = undefined;
+    }
+  }
+
+  private readonly onSnapWheel = (event: WheelEvent) => {
+    if (!this.snapArmed || event.ctrlKey) {
+      return;
+    }
+    if (this.isSnapExemptTarget(event.target)) {
+      return;
+    }
+    if (this.snapLocked) {
+      event.preventDefault();
+      return;
+    }
+    if (Math.abs(event.deltaY) < 6) {
+      return;
+    }
+
+    event.preventDefault();
+    this.stepRow(event.deltaY > 0 ? 1 : -1);
+  };
+
+  private readonly onSnapTouchStart = (event: TouchEvent) => {
+    if (!this.snapArmed || event.touches.length !== 1) {
+      this.touchStartY = null;
+      return;
+    }
+    this.touchStartY = event.touches[0].clientY;
+  };
+
+  private readonly onSnapTouchEnd = (event: TouchEvent) => {
+    if (!this.snapArmed || this.touchStartY == null || this.snapLocked) {
+      this.touchStartY = null;
+      return;
+    }
+    if (this.isSnapExemptTarget(event.target)) {
+      this.touchStartY = null;
+      return;
+    }
+    const endY = event.changedTouches[0]?.clientY;
+    if (endY == null) {
+      this.touchStartY = null;
+      return;
+    }
+    const dy = this.touchStartY - endY;
+    this.touchStartY = null;
+    if (Math.abs(dy) < 48) {
+      return;
+    }
+    this.stepRow(dy > 0 ? 1 : -1);
+  };
+
+  private stepRow(direction: 1 | -1): void {
+    const leaders = this.rowLeaderElements();
+    if (leaders.length === 0) {
+      return;
+    }
+
+    const pad = this.snapPaddingPx();
+    const y = window.scrollY;
+    let index = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < leaders.length; i++) {
+      const top = leaders[i].getBoundingClientRect().top + y;
+      const dist = Math.abs(top - pad - y);
+      if (dist < bestDist) {
+        bestDist = dist;
+        index = i;
+      }
+    }
+
+    const next = Math.max(0, Math.min(leaders.length - 1, index + direction));
+    const targetTop = leaders[next].getBoundingClientRect().top + window.scrollY - pad;
+    if (Math.abs(targetTop - window.scrollY) < 2 && next === index) {
+      return;
+    }
+
+    this.snapLocked = true;
+    if (this.snapUnlockTimer) {
+      clearTimeout(this.snapUnlockTimer);
+    }
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: reduceMotion ? 'auto' : 'smooth' });
+    this.snapUnlockTimer = setTimeout(() => {
+      this.snapLocked = false;
+      this.snapUnlockTimer = undefined;
+    }, reduceMotion ? 120 : 520);
+  }
+
+  private rowLeaderElements(): HTMLElement[] {
+    const items = [...document.querySelectorAll<HTMLElement>('.curator-card-grid > discovery-item')];
+    const cols = window.matchMedia('(min-width: 1100px)').matches
+      ? 3
+      : window.matchMedia('(min-width: 720px)').matches
+        ? 2
+        : 1;
+    const leaders: HTMLElement[] = [];
+    for (let i = 0; i < items.length; i += cols) {
+      leaders.push(items[i]);
+    }
+    return leaders;
+  }
+
+  private snapPaddingPx(): number {
+    const fromVar = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--discovery-snap-offset')
+    );
+    if (!Number.isNaN(fromVar) && fromVar > 0) {
+      return fromVar;
+    }
+    return parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  }
+
+  private isSnapExemptTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+    return !!target.closest(
+      'input, textarea, select, option, [contenteditable="true"], .mat-mdc-menu-panel, .cdk-overlay-pane'
+    );
   }
 
   loadResults(includeHidden: boolean) {
