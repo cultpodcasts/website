@@ -39,35 +39,6 @@
     gap: 10px
     margin-left: auto
 
-.curator-card
-    margin-bottom: 12px
-    padding: 12px
-    border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 65%, transparent)
-    border-radius: var(--cp-radius, 14px)
-    background: var(--mat-sys-surface-container, color-mix(in srgb, var(--cp-ink-elevated, #141821) 92%, #1c2433))
-
-.curator-card__body
-    display: flex
-    gap: 14px
-    align-items: flex-start
-
-.curator-card__art
-    flex: 0 0 112px
-    width: 112px
-
-.curator-card__main
-    flex: 1 1 auto
-    min-width: 0
-    position: relative
-
-.curator-card__overflow
-    position: absolute
-    top: 0
-    right: 0
-
-mat-card-title
-    margin-right: 40px
-
 .curator-card__meta
     display: flex
     flex-wrap: wrap
@@ -80,42 +51,6 @@ mat-card-title
     font-size: 1.1rem
     line-height: 1
 
-.curator-card__subjects,
-.curator-card__guests
-    margin-top: 10px
-
-// Stack platforms above status so labeled pills never collide with service icons.
-// Override global public-card row-reverse on .mdc-card__actions.
-.curator-card__actions
-    display: flex !important
-    flex-direction: column !important
-    flex-wrap: nowrap
-    align-items: stretch
-    gap: 10px
-    padding-top: 8px
-
-.curator-card__platforms
-    display: flex
-    flex-wrap: wrap
-    align-items: center
-    gap: 4px
-    order: -1
-    ::ng-deep app-episode-podcast-links
-        flex-wrap: wrap
-        height: auto
-        gap: 4px
-    a[mat-icon-button],
-    button[mat-icon-button]
-        margin: 0 !important
-        transform: none !important
-
-.curator-card__status
-    display: flex
-    flex-wrap: wrap
-    align-items: center
-    gap: 8px
-    order: 0
-
 button.selected
     span
         font-weight: bold
@@ -125,8 +60,3 @@ button.selected
 
 #cta-button
     margin: 10px 8px
-
-@media screen and (max-width: 560px)
-    .curator-card__art
-        flex-basis: 88px
-        width: 88px
