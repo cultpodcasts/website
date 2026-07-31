@@ -321,31 +321,34 @@ mat-card.curator-card mat-card-title {
   }
 }
 
+/* Match Material / public-card service icons (40px hit / 24px glyph).
+   Stay below labeled status CTA pills (wide chrome) without the undersized
+   30/18 compact restyle that made YouTube etc. look like raw micro-logos. */
 .curator-card__platforms a[mat-icon-button],
 .curator-card__platforms button[mat-icon-button],
 .curator-card__platforms.discovery-service-links a[mat-icon-button],
 .curator-card__platforms.discovery-service-links button[mat-icon-button] {
-  --mdc-icon-button-state-layer-size: 30px;
-  --mdc-icon-button-icon-size: 18px;
-  width: 30px !important;
-  height: 30px !important;
+  --mdc-icon-button-state-layer-size: 40px;
+  --mdc-icon-button-icon-size: 24px;
+  width: 40px !important;
+  height: 40px !important;
   padding: 0 !important;
   margin: 0 !important;
   transform: none !important;
-  line-height: 30px;
+  line-height: 40px;
   opacity: 0.88;
 
   mat-icon {
-    width: 18px;
-    height: 18px;
-    font-size: 18px;
-    line-height: 18px;
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    line-height: 24px;
   }
 
   mat-icon svg {
     display: block;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
   }
 
   &:hover,
