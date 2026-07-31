@@ -144,11 +144,11 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
   min-height: 0;
 }
 
-/* Service links tuck under meta in the content cluster; CTAs dock at bottom. */
+/* Service links sit below description/tags; CTAs dock at bottom. */
 .curator-card-grid > .curator-card .curator-card__platforms,
 .curator-card-grid > discovery-item > .curator-card .curator-card__platforms {
   flex: 0 0 auto;
-  margin-top: 6px;
+  margin-top: 10px;
   margin-bottom: 0;
 }
 
@@ -289,8 +289,8 @@ mat-card.curator-card mat-card-title {
   width: 100%;
 }
 
-/* Service icons under title/meta — plain (no chip chrome), same inline inset
-   as mat-card-header / mat-card-content (Material default 16px). */
+/* Service icons below description/tags — plain (no chip chrome), same inline
+   inset as mat-card-header / mat-card-content (Material default 16px). */
 .curator-card__platforms {
   width: auto;
   max-width: 100%;

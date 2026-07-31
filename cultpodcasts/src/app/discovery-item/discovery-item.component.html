@@ -59,6 +59,26 @@
                     </span>
                 </mat-card-subtitle>
             </mat-card-header>
+            <mat-card-content>
+                <div class="curator-card__desc">
+                    @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
+                    <app-clampable-text class="showDescription" [maxLines]="2" [html]="item.showDescription"></app-clampable-text>
+                    }
+                    <app-clampable-text class="resultdescription" [maxLines]="3" [html]="item.episodeDescription"></app-clampable-text>
+                </div>
+                @if (item.subjects?.length) {
+                <div class="curator-card__subjects">
+                    <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
+                </div>
+                }
+                @if (item.guests?.length) {
+                <div class="curator-card__guests">
+                    @for (guest of item.guests; track guest) {
+                    <span class="guest-chip">{{guest}}</span>
+                    }
+                </div>
+                }
+            </mat-card-content>
             <div class="curator-card__platforms discovery-service-links" aria-label="Podcast services">
                 @if (item.urls.youtube!=null) {
                 <a href="{{item.urls.youtube}}" mat-icon-button target="_blank" (click)="allowLink($event)">
@@ -86,26 +106,6 @@
                 </a>
                 }
             </div>
-            <mat-card-content>
-                <div class="curator-card__desc">
-                    @if (item.showDescription && (item.matchingPodcasts === null || item.matchingPodcasts.length==0)) {
-                    <app-clampable-text class="showDescription" [maxLines]="2" [html]="item.showDescription"></app-clampable-text>
-                    }
-                    <app-clampable-text class="resultdescription" [maxLines]="3" [html]="item.episodeDescription"></app-clampable-text>
-                </div>
-                @if (item.subjects?.length) {
-                <div class="curator-card__subjects">
-                    <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
-                </div>
-                }
-                @if (item.guests?.length) {
-                <div class="curator-card__guests">
-                    @for (guest of item.guests; track guest) {
-                    <span class="guest-chip">{{guest}}</span>
-                    }
-                </div>
-                }
-            </mat-card-content>
         </div>
     </div>
 </mat-card>
