@@ -1,0 +1,6 @@
+<button type="button" class="hero-promote-button" [class.is-promoted]="promoted()"
+  [attr.aria-pressed]="promoted()"
+  [attr.aria-label]="promoted() ? 'Remove from hero' : 'Promote to hero'"
+  (click)="onClick($event)">
+  <mat-icon>{{ promoted() ? 'star' : 'star_border' }}</mat-icon>
+</button>

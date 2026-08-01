@@ -233,6 +233,7 @@ mat-card.curator-card {
 }
 
 .curator-card__art {
+  position: relative;
   flex: 0 0 88px;
   width: 88px;
   min-width: 0;

@@ -168,7 +168,8 @@
 @media screen and (min-width: 1280px)
     .billboard__stage.has-edge-extend
         .billboard__stage-motion
-            transform-origin: 70% 40%
+            // Zoom toward the right-anchored art edge so scale does not crop it off.
+            transform-origin: 90% 40%
         // Prefer a wide left fill under copy; pin sharp art to the right edge.
         .billboard__stage-edge--left
             width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))

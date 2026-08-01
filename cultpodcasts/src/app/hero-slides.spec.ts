@@ -3,6 +3,7 @@ import {
   HERO_POOL_SIZE,
   buildAutofillPool,
   buildHeroSlides,
+  isWithinHeroWeek,
   pruneCuratedIdsToWeek,
   resolveCuratedEpisodes,
 } from './hero-slides';
@@ -48,6 +49,14 @@ describe('hero-slides', () => {
       ids: ['e0', 'e1'],
       pruned: false,
     });
+  });
+
+  it('gates hero-week eligibility to the rolling past week', () => {
+    const now = new Date('2026-08-01T12:00:00Z');
+    expect(isWithinHeroWeek(new Date('2026-07-30T12:00:00Z'), now)).toBe(true);
+    expect(isWithinHeroWeek(new Date('2026-07-25T12:00:00Z'), now)).toBe(true);
+    expect(isWithinHeroWeek(new Date('2026-07-25T11:59:00Z'), now)).toBe(false);
+    expect(isWithinHeroWeek(null, now)).toBe(false);
   });
 
   it('uses curated list alone when resolved count is at least pool size', () => {

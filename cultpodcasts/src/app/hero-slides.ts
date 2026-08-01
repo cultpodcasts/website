@@ -9,6 +9,29 @@ export const HERO_DISCOVER_CONTRIBUTION = 6;
 /** Recency window to rotate through before capping contribution. */
 export const HERO_RECENT_WINDOW = 48;
 
+/** Approximate homepage week window for gating promote UI outside the homepage. */
+export const HERO_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Whether a release falls in the rolling past week (with a small future slack).
+ * Used to show the hero star on curator pages; the homepage still resolves
+ * against actual `recentEpisodes`.
+ */
+export function isWithinHeroWeek(
+  release: Date | string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  if (release == null) {
+    return false;
+  }
+  const time = release instanceof Date ? release.getTime() : new Date(release).getTime();
+  if (Number.isNaN(time)) {
+    return false;
+  }
+  const nowMs = now.getTime();
+  return time >= nowMs - HERO_WEEK_MS && time <= nowMs + 24 * 60 * 60 * 1000;
+}
+
 export interface HeroRailLike {
   episodes: HomepageEpisode[];
 }

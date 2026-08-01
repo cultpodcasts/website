@@ -103,6 +103,10 @@
         <div class="curator-card__body">
             <div class="curator-card__art">
                 <app-episode-image [apiEpisode]="result" layout="tile"></app-episode-image>
+                @if (showHeroPromote(result)) {
+                <app-hero-promote-button [promoted]="curatedIdSet().has(result.id)"
+                    (promoteToggle)="togglePromote(result)" />
+                }
             </div>
             <div class="curator-card__main">
                 <mat-card-header>

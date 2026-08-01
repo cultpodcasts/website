@@ -149,9 +149,10 @@
             -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
             mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
         // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        // Zoom toward the right-anchored art edge so scale does not crop it off.
         &.is-kenburns .episode-backdrop__motion
             animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
-            transform-origin: 70% 40%
+            transform-origin: 90% 40%
     // Let the left edge blur read through under copy — avoid a solid black slab.
     .episode-backdrop__scrim
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
