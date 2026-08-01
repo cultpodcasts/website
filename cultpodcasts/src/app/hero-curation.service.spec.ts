@@ -156,11 +156,11 @@ describe('HeroCurationService', () => {
     });
   });
 
-  it('toggleEpisode promotes via append and demotes via PUT', async () => {
-    const appendUrl = new URL('/hero-curation/episodes', environment.api).toString();
+  it('toggleEpisode promotes via append and demotes via DELETE', async () => {
+    const episodesUrl = new URL('/hero-curation/episodes', environment.api).toString();
 
     const promote = service.toggleEpisode('e2', ['e1'], 't0');
-    const appendReq = httpMock.expectOne(appendUrl);
+    const appendReq = httpMock.expectOne(episodesUrl);
     expect(appendReq.request.method).toBe('POST');
     expect(appendReq.request.body).toEqual({ episodeIds: ['e2'] });
     appendReq.flush({
@@ -175,13 +175,10 @@ describe('HeroCurationService', () => {
     });
 
     const demote = service.toggleEpisode('e2', ['e2', 'e1'], 't1');
-    const putReq = httpMock.expectOne(url);
-    expect(putReq.request.method).toBe('PUT');
-    expect(putReq.request.body).toEqual({
-      episodeIds: ['e1'],
-      expectedUpdatedAt: 't1',
-    });
-    putReq.flush({
+    const deleteReq = httpMock.expectOne(episodesUrl);
+    expect(deleteReq.request.method).toBe('DELETE');
+    expect(deleteReq.request.body).toEqual({ episodeIds: ['e2'] });
+    deleteReq.flush({
       episodeIds: ['e1'],
       railSubjects: [],
       updatedAt: 't2',
@@ -193,42 +190,21 @@ describe('HeroCurationService', () => {
     });
   });
 
-  it('toggleEpisode demote retries once after a CAS conflict', async () => {
-    const pending = service.toggleEpisode('e1', ['e2', 'e1'], 'stale');
-
-    const first = httpMock.expectOne(url);
-    expect(first.request.body).toEqual({
-      episodeIds: ['e2'],
-      expectedUpdatedAt: 'stale',
-    });
-    first.flush(
-      {
-        error: 'Conflict',
-        episodeIds: ['e2', 'e1', 'e0'],
-        railSubjects: ['day:0'],
-        updatedAt: 'fresh',
-      },
-      { status: 409, statusText: 'Conflict' }
-    );
-
-    await Promise.resolve();
-    await Promise.resolve();
-
-    const retry = httpMock.expectOne(url);
-    expect(retry.request.body).toEqual({
-      episodeIds: ['e2', 'e0'],
-      expectedUpdatedAt: 'fresh',
-    });
-    retry.flush({
-      episodeIds: ['e2', 'e0'],
+  it('removeEpisodes sends DELETE without expectedUpdatedAt', async () => {
+    const episodesUrl = new URL('/hero-curation/episodes', environment.api).toString();
+    const pending = service.removeEpisodes(['e1', 'e2']);
+    const req = httpMock.expectOne(episodesUrl);
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual({ episodeIds: ['e1', 'e2'] });
+    req.flush({
+      episodeIds: ['e0'],
       railSubjects: ['day:0'],
-      updatedAt: 'saved',
+      updatedAt: 't3',
     });
-
     await expect(pending).resolves.toEqual({
-      episodeIds: ['e2', 'e0'],
+      episodeIds: ['e0'],
       railSubjects: ['day:0'],
-      updatedAt: 'saved',
+      updatedAt: 't3',
     });
   });
 

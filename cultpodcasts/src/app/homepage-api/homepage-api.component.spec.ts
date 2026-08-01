@@ -59,6 +59,7 @@ describe('HomepageApiComponent', () => {
     setRailSubjects: ReturnType<typeof vi.fn>;
     setHomepageCuration: ReturnType<typeof vi.fn>;
     toggleEpisode: ReturnType<typeof vi.fn>;
+    removeEpisodes: ReturnType<typeof vi.fn>;
   };
   let roles$: ReplaySubject<string[]>;
 
@@ -97,6 +98,11 @@ describe('HomepageApiComponent', () => {
           return { episodeIds, railSubjects: [], updatedAt: null };
         }
       ),
+      removeEpisodes: vi.fn().mockImplementation(async (ids: string[]) => ({
+        episodeIds: [],
+        railSubjects: [],
+        updatedAt: null,
+      })),
     };
 
     await TestBed.configureTestingModule({

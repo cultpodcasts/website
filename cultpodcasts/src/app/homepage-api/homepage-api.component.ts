@@ -364,8 +364,20 @@ export class HomepageApiComponent {
     if (!this.isCurator() || !episodeId) {
       return;
     }
-    const ids = this.curatedEpisodeIds().filter((id) => id !== episodeId);
-    await this.persistCuration(ids);
+    const previous = this.curatedEpisodeIds();
+    const previousUpdatedAt = this.curatedUpdatedAt();
+    this.curatedEpisodeIds.set(previous.filter((id) => id !== episodeId));
+    try {
+      const saved = await this.heroCurationService.removeEpisodes([episodeId]);
+      this.curatedEpisodeIds.set(saved.episodeIds);
+      this.curatedUpdatedAt.set(saved.updatedAt);
+      if (saved.railSubjects) {
+        this.curatedRailSubjects.set(saved.railSubjects);
+      }
+    } catch {
+      this.curatedEpisodeIds.set(previous);
+      this.curatedUpdatedAt.set(previousUpdatedAt);
+    }
   }
 
   openManageHero(): void {
