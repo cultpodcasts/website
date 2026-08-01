@@ -219,7 +219,7 @@ describe('HomepageApiComponent', () => {
     expect(component['visibleCount']).toBe(visibleBefore);
   });
 
-  it('interleaves newest day, then pinned subject rails, then remaining days', () => {
+  it('interleaves newest day, then pinned subject rails, then remaining days by default', () => {
     roles$.next(['Curator']);
     const subject = 'TestSubject';
     const newest = Array.from({ length: SUBJECT_RAIL_MIN_EPISODES }, (_, i) =>
@@ -235,6 +235,30 @@ describe('HomepageApiComponent', () => {
     expect(rails[0].id.startsWith('day:')).toBe(true);
     expect(rails[1].id).toBe(`subject:${subject}`);
     expect(rails.slice(2).every((r) => r.id.startsWith('day:'))).toBe(true);
+  });
+
+  it('honours a curated mixed day/subject rail order', () => {
+    roles$.next(['Curator']);
+    const subject = 'OrderedSubject';
+    const newest = Array.from({ length: SUBJECT_RAIL_MIN_EPISODES }, (_, i) =>
+      ep(`n${i}`, { daysAgo: 0, subjects: [subject] })
+    );
+    const older = Array.from({ length: SUBJECT_RAIL_MIN_EPISODES }, (_, i) =>
+      ep(`o${i}`, { daysAgo: 2, subjects: [subject] })
+    );
+    apply([...newest, ...older], {
+      railSubjects: ['day:1', subject, 'day:0'],
+    });
+
+    const rails = component['rails']();
+    expect(rails).toHaveLength(3);
+    expect(rails[0].id.startsWith('day:')).toBe(true);
+    expect(rails[1].id).toBe(`subject:${subject}`);
+    expect(rails[2].id.startsWith('day:')).toBe(true);
+    expect(rails[0].id).not.toBe(rails[2].id);
+    // day:1 (older) before day:0 (newest)
+    expect(rails[0].episodes[0].id.startsWith('o')).toBe(true);
+    expect(rails[2].episodes[0].id.startsWith('n')).toBe(true);
   });
 
   it('caps subject rails to RAIL_DISPLAY_SIZE but leaves day rails uncapped', () => {

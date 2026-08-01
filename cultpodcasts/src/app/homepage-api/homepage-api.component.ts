@@ -36,6 +36,12 @@ import {
   pruneRailSubjectsToWeek,
 } from '../rail-subjects';
 import {
+  normalizeRailOrder,
+  parseDayRailOffset,
+  subjectEntries,
+  toggleSubjectInRailOrder,
+} from '../rail-order';
+import {
   HeroManageDialogComponent,
   HeroManageDialogResult,
 } from '../hero-manage-dialog/hero-manage-dialog.component';
@@ -122,7 +128,10 @@ export class HomepageApiComponent {
 
   /** Ordered episode IDs from the hero-curation API (may include stale ids). */
   protected readonly curatedEpisodeIds = signal<string[]>([]);
-  /** Ordered subject names pinned as homepage rails (may include stale names). */
+  /**
+   * Ordered homepage rails: relative day slots (`day:0` = n, `day:1` = n−1, …)
+   * mixed with pinned subject names (may include stale entries).
+   */
   protected readonly curatedRailSubjects = signal<string[]>([]);
   protected readonly curatedUpdatedAt = signal<string | null>(null);
 
@@ -173,7 +182,7 @@ export class HomepageApiComponent {
   );
 
   protected readonly curatedRailSubjectSet = computed(
-    () => new Set(this.curatedRailSubjects())
+    () => new Set(subjectEntries(this.curatedRailSubjects()))
   );
 
   /** Lesser-known named groups from this week's episodes. */
@@ -187,24 +196,62 @@ export class HomepageApiComponent {
 
   protected readonly rails = computed((): EpisodeRail[] => {
     const g = this.grouped();
-    const keys = Object.keys(g).sort((a, b) => this.descDateKey(a, b));
-    const dayRails = keys.map((key) => {
+    const weekKeys = this.weekDayKeysNewestFirst();
+    const dayRails = weekKeys.map((key) => {
+      const episodes = g[key];
+      if (!episodes?.length) {
+        return undefined;
+      }
       const d = this.ToDate(key);
       return {
         id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
         // Day rails have no "Browse all" destination — show the full progressive window.
-        episodes: g[key],
+        episodes,
       } satisfies EpisodeRail;
     });
 
-    const subjects = this.subjectRails();
-    if (subjects.length === 0 || dayRails.length === 0) {
-      return [...dayRails, ...subjects];
+    const subjectByName = new Map(
+      this.subjectRails().map((rail) => [rail.subject!, rail])
+    );
+    const eligible = this.subjectRailCandidates().map((c) => c.subject);
+    const { order } = normalizeRailOrder(
+      this.curatedRailSubjects(),
+      weekKeys.length,
+      eligible
+    );
+
+    const usedDays = new Set<number>();
+    const usedSubjects = new Set<string>();
+    const result: EpisodeRail[] = [];
+
+    for (const entry of order) {
+      const offset = parseDayRailOffset(entry);
+      if (offset !== null) {
+        const day = dayRails[offset];
+        if (!day || usedDays.has(offset)) {
+          continue;
+        }
+        usedDays.add(offset);
+        result.push(day);
+        continue;
+      }
+      const subject = subjectByName.get(entry);
+      if (!subject || usedSubjects.has(entry)) {
+        continue;
+      }
+      usedSubjects.add(entry);
+      result.push(subject);
     }
 
-    // Lead with the newest day, then subject playlists, then remaining days.
-    return [dayRails[0], ...subjects, ...dayRails.slice(1)];
+    for (let offset = 0; offset < dayRails.length; offset++) {
+      const day = dayRails[offset];
+      if (day && !usedDays.has(offset)) {
+        result.push(day);
+      }
+    }
+
+    return result;
   });
 
   private siteService = inject(SiteService);
@@ -345,14 +392,13 @@ export class HomepageApiComponent {
     if (!subject || !this.isCurator()) {
       return;
     }
-    const subjects = [...this.curatedRailSubjects()];
-    const idx = subjects.indexOf(subject);
-    if (idx >= 0) {
-      subjects.splice(idx, 1);
-    } else {
-      subjects.push(subject);
-    }
-    await this.persistRailSubjects(subjects);
+    const eligible = this.subjectRailCandidates().map((c) => c.subject);
+    const { order } = normalizeRailOrder(
+      this.curatedRailSubjects(),
+      this.weekDayCount(),
+      eligible
+    );
+    await this.persistRailSubjects(toggleSubjectInRailOrder(order, subject));
   }
 
   openManageRails(): void {
@@ -360,19 +406,29 @@ export class HomepageApiComponent {
       return;
     }
     const candidates = this.subjectRailCandidates();
-    const pinned = this.curatedRailSubjects().filter((subject) =>
-      candidates.some((c) => c.subject === subject)
-    );
     const eligible = candidates.map((c) => c.subject);
+    const dayKeys = this.weekDayKeysNewestFirst();
+    const { order } = normalizeRailOrder(
+      this.curatedRailSubjects(),
+      dayKeys.length,
+      eligible
+    );
     const episodeCounts = Object.fromEntries(
       candidates.map((c) => [c.subject, c.episodes.length])
     );
+    const byDay = new Map<string, number>();
+    for (const episode of this.allEpisodes()) {
+      const key = dateKey(episode.release as Date);
+      byDay.set(key, (byDay.get(key) ?? 0) + 1);
+    }
+    const dayEpisodeCounts = dayKeys.map((key) => byDay.get(key) ?? 0);
 
     const ref = this.dialog.open(RailsManageDialogComponent, {
       data: {
-        pinned,
+        order,
         eligible,
         episodeCounts,
+        dayEpisodeCounts,
         updatedAt: this.curatedUpdatedAt(),
       },
       ...this.manageDialogOptions(),
@@ -476,6 +532,22 @@ export class HomepageApiComponent {
    * Drop curated picks / pinned rails that left the current homepage week window
    * for local display only. Server cron (every 6h) owns Durable Object prune writes.
    */
+  private weekDayCount(): number {
+    const keys = new Set<string>();
+    for (const episode of this.allEpisodes()) {
+      keys.add(dateKey(episode.release as Date));
+    }
+    return keys.size;
+  }
+
+  private weekDayKeysNewestFirst(): string[] {
+    const keys = new Set<string>();
+    for (const episode of this.allEpisodes()) {
+      keys.add(dateKey(episode.release as Date));
+    }
+    return [...keys].sort((a, b) => this.descDateKey(a, b));
+  }
+
   private pruneCurationToCurrentWeek(): void {
     const rawEpisodes = this.curatedEpisodeIds();
     const episodePrune = pruneCuratedIdsToWeek(rawEpisodes, this.allEpisodes());
@@ -486,7 +558,8 @@ export class HomepageApiComponent {
     const rawRails = this.curatedRailSubjects();
     const railPrune = pruneRailSubjectsToWeek(
       rawRails,
-      this.subjectRailCandidates()
+      this.subjectRailCandidates(),
+      this.weekDayCount()
     );
     if (railPrune.pruned) {
       this.curatedRailSubjects.set(railPrune.subjects);
