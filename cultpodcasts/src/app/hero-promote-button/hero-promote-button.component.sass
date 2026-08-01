@@ -1,0 +1,28 @@
+:host
+    display: block
+
+.hero-promote-button
+    width: 32px
+    height: 32px
+    padding: 0
+    border: 1px solid #ffffff59
+    border-radius: 50%
+    background: #1a1a1ae6
+    color: #fff
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    cursor: pointer
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease
+    mat-icon
+        font-size: 18px
+        width: 18px
+        height: 18px
+    &:hover,
+    &:focus-visible
+        background: #ffffff26
+        border-color: var(--nflx-accent, #e8a23a)
+        outline: none
+    &.is-promoted
+        color: var(--nflx-accent, #e8a23a)
+        border-color: var(--nflx-accent, #e8a23a)

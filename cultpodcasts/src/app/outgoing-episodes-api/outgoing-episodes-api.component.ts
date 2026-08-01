@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -42,6 +42,9 @@ import {
   syncCuratorSnapOffset,
   toggleCuratorSnapClass
 } from '../curator-snap';
+import { HeroCurationService } from '../hero-curation.service';
+import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
+import { isWithinHeroWeek } from '../hero-slides';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -65,7 +68,8 @@ const daysKey: string = "pref.outgoing-episodes.days";
     EpisodeImageComponent,
     SubjectsComponent,
     EpisodeGuestsComponent,
-    ClampableTextComponent
+    ClampableTextComponent,
+    HeroPromoteButtonComponent
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass',
@@ -92,12 +96,16 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   protected updatingFlag = signal<'ignored' | 'removed' | 'tweeted' | 'bluesky' | 'subject' | null>(null);
   protected updatingSubjectName = signal<string | null>(null);
   protected addingGuest = signal<{ [episodeId: string]: string }>({});
+  protected readonly curatedEpisodeIds = signal<string[]>([]);
+  protected readonly curatedUpdatedAt = signal<string | null>(null);
+  protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly heroCuration = inject(HeroCurationService);
   private snapOffsetObserver: ResizeObserver | undefined;
 
   constructor(
@@ -123,6 +131,8 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
+
+    void this.fetchHeroCuration();
 
     const daysValue: string | null = localStorage.getItem(daysKey);
     if (daysValue && parseInt(daysValue)) {
@@ -236,6 +246,45 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
 
   languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
     return languageFlagBadgeForEpisode(episode);
+  }
+
+  showHeroPromote(episode: ApiEpisode): boolean {
+    return (
+      this.authRoles().includes('Curator') &&
+      (this.curatedIdSet().has(episode.id) || isWithinHeroWeek(episode.release))
+    );
+  }
+
+  async togglePromote(episode: ApiEpisode): Promise<void> {
+    if (!this.showHeroPromote(episode)) {
+      return;
+    }
+    const previous = this.curatedEpisodeIds();
+    const previousUpdatedAt = this.curatedUpdatedAt();
+    const wantPromoted = !previous.includes(episode.id);
+    this.curatedEpisodeIds.set(
+      wantPromoted
+        ? [episode.id, ...previous.filter((id) => id !== episode.id)]
+        : previous.filter((id) => id !== episode.id)
+    );
+    try {
+      const saved = await this.heroCuration.toggleEpisode(
+        episode.id,
+        previous,
+        previousUpdatedAt
+      );
+      this.curatedEpisodeIds.set(saved.episodeIds);
+      this.curatedUpdatedAt.set(saved.updatedAt);
+    } catch {
+      this.curatedEpisodeIds.set(previous);
+      this.curatedUpdatedAt.set(previousUpdatedAt);
+    }
+  }
+
+  private async fetchHeroCuration(): Promise<void> {
+    const curation = await this.heroCuration.getHeroCuration();
+    this.curatedEpisodeIds.set(curation.episodeIds ?? []);
+    this.curatedUpdatedAt.set(curation.updatedAt ?? null);
   }
 
   loadingSubjectName(episodeId: string): string | null {

@@ -1,27 +1,37 @@
-<h2 mat-dialog-title>Manage subject rails</h2>
+<h2 mat-dialog-title>Manage rails</h2>
 
 <mat-dialog-content class="rails-manage">
   <p class="rails-manage__lede">
-    Pin subjects to show them as homepage rails. Drag to reorder. Only pinned subjects appear — nothing is autofilled.
+    Pin subjects and drag to reorder homepage rails. Day rails (n, n−1, …) stay in the list — reorder them, but they cannot be removed.
   </p>
 
-  @if (pinned().length === 0) {
-  <p class="rails-manage__empty">No pinned subjects yet. Use the pin on a rail heading, or add one below.</p>
+  @if (rows().length === 0) {
+  <p class="rails-manage__empty">No rails yet. Use the pin on a rail heading, or add a subject below.</p>
   } @else {
   <ul class="rails-manage__list" cdkDropList (cdkDropListDropped)="drop($event)">
-    @for (subject of pinned(); track subject; let i = $index) {
-    <li class="rails-manage__item" cdkDrag>
+    @for (row of rows(); track row.id; let i = $index) {
+    <li class="rails-manage__item" [class.rails-manage__item--day]="row.kind === 'day'" cdkDrag>
       <button type="button" class="rails-manage__handle" cdkDragHandle aria-label="Drag to reorder">
         <mat-icon>drag_indicator</mat-icon>
       </button>
       <span class="rails-manage__index">{{ i + 1 }}</span>
-      <app-subject-chip [subject]="subject" />
-      <span class="rails-manage__count">{{ episodeCount(subject) }} new</span>
+      @if (row.kind === 'day') {
+      <span class="rails-manage__day" [attr.aria-label]="'Day rail ' + row.label">{{ row.label }}</span>
+      } @else {
+      <app-subject-chip [subject]="row.label" />
+      }
+      <span class="rails-manage__count">{{ row.episodeCount }} new</span>
+      @if (row.locked) {
+      <span class="rails-manage__locked" aria-hidden="true">
+        <mat-icon>lock</mat-icon>
+      </span>
+      } @else {
       <button type="button" mat-icon-button class="rails-manage__remove"
-        [attr.aria-label]="'Unpin ' + displayCatalogName(subject)"
-        (click)="remove(subject)">
+        [attr.aria-label]="'Unpin ' + displayCatalogName(row.label)"
+        (click)="remove(row.id)">
         <mat-icon>close</mat-icon>
       </button>
+      }
     </li>
     }
   </ul>

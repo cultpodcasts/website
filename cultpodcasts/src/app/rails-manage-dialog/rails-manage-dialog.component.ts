@@ -7,13 +7,22 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { displayCatalogName } from '../display-catalog-name';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
+import {
+  dayRailLabel,
+  isDayRailEntry,
+  parseDayRailOffset,
+  subjectEntries,
+} from '../rail-order';
 
 export interface RailsManageDialogData {
-  pinned: string[];
+  /** Mixed order: `day:{offset}` slots and subject names. */
+  order: string[];
   /** Eligible subjects this week, popularity-sorted. */
   eligible: string[];
   /** Episode count this week, keyed by subject name. */
   episodeCounts: Record<string, number>;
+  /** Episode count per relative day offset (0 = n). */
+  dayEpisodeCounts: number[];
   updatedAt: string | null;
 }
 
@@ -22,6 +31,15 @@ export interface RailsManageDialogResult {
   railSubjects?: string[];
   updatedAt?: string | null;
   conflict?: boolean;
+}
+
+export interface RailsManageRow {
+  id: string;
+  kind: 'day' | 'subject';
+  /** Subject name or day label (n, n−1, …). */
+  label: string;
+  episodeCount: number;
+  locked: boolean;
 }
 
 @Component({
@@ -44,25 +62,31 @@ export class RailsManageDialogComponent {
     MatDialogRef<RailsManageDialogComponent, RailsManageDialogResult>
   );
 
-  protected readonly pinned = signal<string[]>([]);
+  protected readonly order = signal<string[]>([]);
   private readonly eligible: string[];
   private readonly episodeCounts: Record<string, number>;
+  private readonly dayEpisodeCounts: number[];
   private readonly expectedUpdatedAt: string | null;
   protected readonly saving = signal(false);
   protected readonly error = signal(false);
   protected readonly conflict = signal(false);
   protected readonly displayCatalogName = displayCatalogName;
 
+  protected readonly rows = computed((): RailsManageRow[] =>
+    this.order().map((id) => this.toRow(id))
+  );
+
   /** Eligible subjects not currently pinned. */
   protected readonly available = computed(() => {
-    const pinned = new Set(this.pinned());
+    const pinned = new Set(subjectEntries(this.order()));
     return this.eligible.filter((subject) => !pinned.has(subject));
   });
 
   constructor(@Inject(MAT_DIALOG_DATA) data: RailsManageDialogData) {
-    this.pinned.set([...data.pinned]);
+    this.order.set([...data.order]);
     this.eligible = data.eligible;
     this.episodeCounts = data.episodeCounts ?? {};
+    this.dayEpisodeCounts = data.dayEpisodeCounts ?? [];
     this.expectedUpdatedAt = data.updatedAt;
   }
 
@@ -71,20 +95,23 @@ export class RailsManageDialogComponent {
   }
 
   drop(event: CdkDragDrop<string[]>): void {
-    const list = [...this.pinned()];
+    const list = [...this.order()];
     moveItemInArray(list, event.previousIndex, event.currentIndex);
-    this.pinned.set(list);
+    this.order.set(list);
   }
 
   remove(subject: string): void {
-    this.pinned.set(this.pinned().filter((s) => s !== subject));
+    if (isDayRailEntry(subject)) {
+      return;
+    }
+    this.order.set(this.order().filter((s) => s !== subject));
   }
 
   pin(subject: string): void {
-    if (this.pinned().includes(subject)) {
+    if (this.order().includes(subject)) {
       return;
     }
-    this.pinned.set([...this.pinned(), subject]);
+    this.order.set([...this.order(), subject]);
   }
 
   close(): void {
@@ -97,7 +124,7 @@ export class RailsManageDialogComponent {
     this.conflict.set(false);
     try {
       const result = await this.heroCuration.setRailSubjects(
-        this.pinned(),
+        this.order(),
         this.expectedUpdatedAt
       );
       this.dialogRef.close({
@@ -119,5 +146,25 @@ export class RailsManageDialogComponent {
       this.error.set(true);
       this.saving.set(false);
     }
+  }
+
+  private toRow(id: string): RailsManageRow {
+    const offset = parseDayRailOffset(id);
+    if (offset !== null) {
+      return {
+        id,
+        kind: 'day',
+        label: dayRailLabel(offset),
+        episodeCount: this.dayEpisodeCounts[offset] ?? 0,
+        locked: true,
+      };
+    }
+    return {
+      id,
+      kind: 'subject',
+      label: id,
+      episodeCount: this.episodeCounts[id] ?? 0,
+      locked: false,
+    };
   }
 }

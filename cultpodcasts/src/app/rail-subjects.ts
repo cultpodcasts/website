@@ -1,4 +1,5 @@
 import { HomepageEpisode } from './homepage-episode.interface';
+import { isDayRailEntry, normalizeRailOrder, subjectEntries } from './rail-order';
 
 /** A subject needs at least this many week episodes to earn a rail. */
 export const SUBJECT_RAIL_MIN_EPISODES = 3;
@@ -55,17 +56,24 @@ export function collectSubjectRailCandidates(
 }
 
 /**
- * Drop pinned subjects that no longer qualify for a rail this week.
- * Returns whether the list changed (caller should PUT when a curator is signed in).
+ * Drop pinned subjects (and out-of-range day slots) that no longer belong
+ * this week. Day slots use relative offsets (n, n−1, …). Returns whether the
+ * list changed (local display prune — server cron owns Durable Object writes).
  */
 export function pruneRailSubjectsToWeek(
-  pinnedSubjects: string[],
-  candidates: SubjectRailCandidate[]
+  railOrder: string[],
+  candidates: SubjectRailCandidate[],
+  dayCount: number = 0
 ): { subjects: string[]; pruned: boolean } {
   const eligible = new Set(candidates.map((c) => c.subject));
+  if (railOrder.some(isDayRailEntry) || dayCount > 0) {
+    const { order, changed } = normalizeRailOrder(railOrder, dayCount, eligible);
+    return { subjects: order, pruned: changed };
+  }
+
   const seen = new Set<string>();
   const subjects: string[] = [];
-  for (const subject of pinnedSubjects) {
+  for (const subject of subjectEntries(railOrder)) {
     if (!eligible.has(subject) || seen.has(subject)) {
       continue;
     }
@@ -73,19 +81,20 @@ export function pruneRailSubjectsToWeek(
     subjects.push(subject);
   }
   const pruned =
-    subjects.length !== pinnedSubjects.length ||
-    subjects.some((subject, i) => subject !== pinnedSubjects[i]);
+    subjects.length !== railOrder.length ||
+    subjects.some((subject, i) => subject !== railOrder[i]);
   return { subjects, pruned };
 }
 
 /**
  * Build homepage subject rails from curator pins only — no popularity autofill.
- * Order follows the pinned list; unknown / ineligible pins are skipped.
+ * Order follows the pinned list; day slots and unknown / ineligible pins are skipped.
  */
 export function buildSubjectRails(
-  pinnedSubjects: string[],
+  railOrder: string[],
   candidates: SubjectRailCandidate[]
 ): SubjectRailCandidate[] {
+  const pinnedSubjects = subjectEntries(railOrder);
   if (pinnedSubjects.length === 0 || candidates.length === 0) {
     return [];
   }

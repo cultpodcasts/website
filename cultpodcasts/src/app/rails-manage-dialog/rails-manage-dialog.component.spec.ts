@@ -20,14 +20,15 @@ describe('RailsManageDialogComponent', () => {
     heroCuration = {
       setRailSubjects: vi.fn().mockResolvedValue({
         episodeIds: [],
-        railSubjects: ['Scientology', 'NXIVM'],
+        railSubjects: ['day:0', 'Scientology', 'NXIVM', 'day:1'],
         updatedAt: 't1',
       }),
     };
     const data: RailsManageDialogData = {
-      pinned: ['Scientology'],
+      order: ['day:0', 'Scientology', 'day:1'],
       eligible: ['Scientology', 'NXIVM', 'Flat Earth'],
       episodeCounts: { Scientology: 5, NXIVM: 4, 'Flat Earth': 3 },
+      dayEpisodeCounts: [10, 8],
       updatedAt: 't0',
     };
 
@@ -51,25 +52,67 @@ describe('RailsManageDialogComponent', () => {
     expect(component['available']()).toEqual(['NXIVM', 'Flat Earth']);
   });
 
-  it('pins, removes, and reorders', () => {
-    component.pin('NXIVM');
-    expect(component['pinned']()).toEqual(['Scientology', 'NXIVM']);
-    expect(component['available']()).toEqual(['Flat Earth']);
-
-    component.drop({ previousIndex: 0, currentIndex: 1 } as CdkDragDrop<string[]>);
-    expect(component['pinned']()).toEqual(['NXIVM', 'Scientology']);
-
-    component.remove('NXIVM');
-    expect(component['pinned']()).toEqual(['Scientology']);
+  it('builds locked day rows labeled n / n−1', () => {
+    expect(component['rows']()).toEqual([
+      {
+        id: 'day:0',
+        kind: 'day',
+        label: 'n',
+        episodeCount: 10,
+        locked: true,
+      },
+      {
+        id: 'Scientology',
+        kind: 'subject',
+        label: 'Scientology',
+        episodeCount: 5,
+        locked: false,
+      },
+      {
+        id: 'day:1',
+        kind: 'day',
+        label: 'n−1',
+        episodeCount: 8,
+        locked: true,
+      },
+    ]);
   });
 
-  it('saves pinned subjects and closes with the server response', async () => {
+  it('pins, reorders, and refuses to remove day slots', () => {
+    component.pin('NXIVM');
+    expect(component['order']()).toEqual([
+      'day:0',
+      'Scientology',
+      'day:1',
+      'NXIVM',
+    ]);
+    expect(component['available']()).toEqual(['Flat Earth']);
+
+    component.drop({ previousIndex: 0, currentIndex: 2 } as CdkDragDrop<string[]>);
+    expect(component['order']()).toEqual([
+      'Scientology',
+      'day:1',
+      'day:0',
+      'NXIVM',
+    ]);
+
+    component.remove('day:0');
+    expect(component['order']()).toContain('day:0');
+
+    component.remove('Scientology');
+    expect(component['order']()).toEqual(['day:1', 'day:0', 'NXIVM']);
+  });
+
+  it('saves mixed order and closes with the server response', async () => {
     component.pin('NXIVM');
     await component.save();
-    expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(['Scientology', 'NXIVM'], 't0');
+    expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(
+      ['day:0', 'Scientology', 'day:1', 'NXIVM'],
+      't0'
+    );
     expect(dialogRef.close).toHaveBeenCalledWith({
       saved: true,
-      railSubjects: ['Scientology', 'NXIVM'],
+      railSubjects: ['day:0', 'Scientology', 'NXIVM', 'day:1'],
       updatedAt: 't1',
     });
   });

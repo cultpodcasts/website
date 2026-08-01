@@ -90,6 +90,17 @@ describe('rail-subjects', () => {
     });
   });
 
+  it('prunes mixed day/subject order against the current day count', () => {
+    const candidates = collectSubjectRailCandidates(episodes);
+    const result = pruneRailSubjectsToWeek(
+      ['day:1', 'Gone', 'day:0', 'Scientology', 'day:5'],
+      candidates,
+      2
+    );
+    expect(result.subjects).toEqual(['day:1', 'day:0', 'Scientology']);
+    expect(result.pruned).toBe(true);
+  });
+
   it('builds rails from pinned subjects only with no autofill', () => {
     const candidates = collectSubjectRailCandidates(episodes);
     expect(

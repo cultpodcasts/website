@@ -4,8 +4,12 @@
             <mat-form-field id="searchbox" subscriptSizing="dynamic">
                 <mat-chip-grid #chips>
                     @if (searchChip()) {
-                    <mat-chip (removed)="removeSearchChip()">
-                        <span class="chiptext">{{searchChip()}}</span>
+                    <mat-chip (removed)="removeSearchChip()"
+                        [class.search-chip--subject]="searchBoxMode() === SearchBoxMode.Subject"
+                        [style.--search-chip-bg]="subjectChipColor()?.background"
+                        [style.--search-chip-border]="subjectChipColor()?.border"
+                        [style.--search-chip-fg]="subjectChipColor()?.text">
+                        <span class="chiptext">{{chipLabel()}}</span>
                         <mat-icon matChipRemove>cancel</mat-icon>
                     </mat-chip>
                     }

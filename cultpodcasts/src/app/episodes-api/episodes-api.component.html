@@ -47,6 +47,12 @@
     <div class="curator-card-grid">
     @for (result of episodes(); track result.id) {
     <mat-card class="result curator-card">
+        @if (showHeroPromote(result)) {
+        <div class="curator-card__promote">
+            <app-hero-promote-button [promoted]="curatedIdSet().has(result.id)"
+                (promoteToggle)="togglePromote(result)" />
+        </div>
+        }
         <button mat-icon-button type="button" class="curator-card__overflow" [matMenuTriggerFor]="menu"
             aria-label="Episode actions">
             <mat-icon>more_vert</mat-icon>
