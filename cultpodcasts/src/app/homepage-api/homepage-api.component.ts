@@ -335,15 +335,29 @@ export class HomepageApiComponent {
     if (!this.isCurator()) {
       return;
     }
-    const ids = [...this.curatedEpisodeIds()];
-    const idx = ids.indexOf(episode.id);
-    if (idx >= 0) {
-      ids.splice(idx, 1);
-    } else {
-      // Newest star leads the hero rotation.
-      ids.unshift(episode.id);
+    const previous = this.curatedEpisodeIds();
+    const previousUpdatedAt = this.curatedUpdatedAt();
+    const wantPromoted = !previous.includes(episode.id);
+    this.curatedEpisodeIds.set(
+      wantPromoted
+        ? [episode.id, ...previous.filter((id) => id !== episode.id)]
+        : previous.filter((id) => id !== episode.id)
+    );
+    try {
+      const saved = await this.heroCurationService.toggleEpisode(
+        episode.id,
+        previous,
+        previousUpdatedAt
+      );
+      this.curatedEpisodeIds.set(saved.episodeIds);
+      this.curatedUpdatedAt.set(saved.updatedAt);
+      if (saved.railSubjects) {
+        this.curatedRailSubjects.set(saved.railSubjects);
+      }
+    } catch {
+      this.curatedEpisodeIds.set(previous);
+      this.curatedUpdatedAt.set(previousUpdatedAt);
     }
-    await this.persistCuration(ids);
   }
 
   async removeFeaturedFromHero(episodeId: string): Promise<void> {

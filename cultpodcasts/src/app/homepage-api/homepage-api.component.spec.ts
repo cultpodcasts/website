@@ -58,6 +58,7 @@ describe('HomepageApiComponent', () => {
     setHeroCuration: ReturnType<typeof vi.fn>;
     setRailSubjects: ReturnType<typeof vi.fn>;
     setHomepageCuration: ReturnType<typeof vi.fn>;
+    toggleEpisode: ReturnType<typeof vi.fn>;
   };
   let roles$: ReplaySubject<string[]>;
 
@@ -86,6 +87,15 @@ describe('HomepageApiComponent', () => {
           railSubjects: update.railSubjects ?? [],
           updatedAt: null,
         })
+      ),
+      toggleEpisode: vi.fn().mockImplementation(
+        async (episodeId: string, currentIds: string[]) => {
+          const wantPromoted = !currentIds.includes(episodeId);
+          const episodeIds = wantPromoted
+            ? [episodeId, ...currentIds.filter((id) => id !== episodeId)]
+            : currentIds.filter((id) => id !== episodeId);
+          return { episodeIds, railSubjects: [], updatedAt: null };
+        }
       ),
     };
 
@@ -173,7 +183,7 @@ describe('HomepageApiComponent', () => {
   it('rolls back promote when persist fails', async () => {
     roles$.next(['Curator']);
     apply([ep('a'), ep('b')], { episodeIds: [] });
-    heroCuration.setHeroCuration.mockRejectedValueOnce(new Error('fail'));
+    heroCuration.toggleEpisode.mockRejectedValueOnce(new Error('fail'));
     await component.togglePromote(ep('a'));
     expect(component['curatedEpisodeIds']()).toEqual([]);
   });

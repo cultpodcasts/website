@@ -120,6 +120,118 @@ describe('HeroCurationService', () => {
     });
   });
 
+  it('treats 400 Conflict bodies as CAS conflicts', async () => {
+    const pending = service.setHeroCuration(['e1'], 'stale');
+    httpMock.expectOne(url).flush(
+      {
+        error: 'Conflict',
+        episodeIds: ['other'],
+        railSubjects: [],
+        updatedAt: 'newer',
+      },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await expect(pending).rejects.toMatchObject({
+      name: 'HeroCurationConflictError',
+      current: { updatedAt: 'newer' },
+    });
+  });
+
+  it('appends episodes via POST without CAS', async () => {
+    const appendUrl = new URL('/hero-curation/episodes', environment.api).toString();
+    const pending = service.appendEpisodes(['e2']);
+    const req = httpMock.expectOne(appendUrl);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ episodeIds: ['e2'] });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({
+      episodeIds: ['e2', 'e1'],
+      railSubjects: ['day:0'],
+      updatedAt: 't1',
+    });
+    await expect(pending).resolves.toEqual({
+      episodeIds: ['e2', 'e1'],
+      railSubjects: ['day:0'],
+      updatedAt: 't1',
+    });
+  });
+
+  it('toggleEpisode promotes via append and demotes via PUT', async () => {
+    const appendUrl = new URL('/hero-curation/episodes', environment.api).toString();
+
+    const promote = service.toggleEpisode('e2', ['e1'], 't0');
+    const appendReq = httpMock.expectOne(appendUrl);
+    expect(appendReq.request.method).toBe('POST');
+    expect(appendReq.request.body).toEqual({ episodeIds: ['e2'] });
+    appendReq.flush({
+      episodeIds: ['e2', 'e1'],
+      railSubjects: [],
+      updatedAt: 't1',
+    });
+    await expect(promote).resolves.toEqual({
+      episodeIds: ['e2', 'e1'],
+      railSubjects: [],
+      updatedAt: 't1',
+    });
+
+    const demote = service.toggleEpisode('e2', ['e2', 'e1'], 't1');
+    const putReq = httpMock.expectOne(url);
+    expect(putReq.request.method).toBe('PUT');
+    expect(putReq.request.body).toEqual({
+      episodeIds: ['e1'],
+      expectedUpdatedAt: 't1',
+    });
+    putReq.flush({
+      episodeIds: ['e1'],
+      railSubjects: [],
+      updatedAt: 't2',
+    });
+    await expect(demote).resolves.toEqual({
+      episodeIds: ['e1'],
+      railSubjects: [],
+      updatedAt: 't2',
+    });
+  });
+
+  it('toggleEpisode demote retries once after a CAS conflict', async () => {
+    const pending = service.toggleEpisode('e1', ['e2', 'e1'], 'stale');
+
+    const first = httpMock.expectOne(url);
+    expect(first.request.body).toEqual({
+      episodeIds: ['e2'],
+      expectedUpdatedAt: 'stale',
+    });
+    first.flush(
+      {
+        error: 'Conflict',
+        episodeIds: ['e2', 'e1', 'e0'],
+        railSubjects: ['day:0'],
+        updatedAt: 'fresh',
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const retry = httpMock.expectOne(url);
+    expect(retry.request.body).toEqual({
+      episodeIds: ['e2', 'e0'],
+      expectedUpdatedAt: 'fresh',
+    });
+    retry.flush({
+      episodeIds: ['e2', 'e0'],
+      railSubjects: ['day:0'],
+      updatedAt: 'saved',
+    });
+
+    await expect(pending).resolves.toEqual({
+      episodeIds: ['e2', 'e0'],
+      railSubjects: ['day:0'],
+      updatedAt: 'saved',
+    });
+  });
+
   it('rethrows when PUT fails', async () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const pending = service.setHeroCuration(['e1']);

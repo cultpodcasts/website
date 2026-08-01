@@ -259,34 +259,32 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     if (!this.showHeroPromote(episode)) {
       return;
     }
-    const ids = [...this.curatedEpisodeIds()];
-    const idx = ids.indexOf(episode.id);
-    if (idx >= 0) {
-      ids.splice(idx, 1);
-    } else {
-      ids.unshift(episode.id);
-    }
-    await this.persistHeroCuration(ids);
-  }
-
-  private async fetchHeroCuration(): Promise<void> {
-    const curation = await this.heroCuration.getHeroCuration();
-    this.curatedEpisodeIds.set(curation.episodeIds ?? []);
-    this.curatedUpdatedAt.set(curation.updatedAt ?? null);
-  }
-
-  private async persistHeroCuration(ids: string[]): Promise<void> {
     const previous = this.curatedEpisodeIds();
     const previousUpdatedAt = this.curatedUpdatedAt();
-    this.curatedEpisodeIds.set(ids);
+    const wantPromoted = !previous.includes(episode.id);
+    this.curatedEpisodeIds.set(
+      wantPromoted
+        ? [episode.id, ...previous.filter((id) => id !== episode.id)]
+        : previous.filter((id) => id !== episode.id)
+    );
     try {
-      const saved = await this.heroCuration.setHeroCuration(ids, previousUpdatedAt);
+      const saved = await this.heroCuration.toggleEpisode(
+        episode.id,
+        previous,
+        previousUpdatedAt
+      );
       this.curatedEpisodeIds.set(saved.episodeIds);
       this.curatedUpdatedAt.set(saved.updatedAt);
     } catch {
       this.curatedEpisodeIds.set(previous);
       this.curatedUpdatedAt.set(previousUpdatedAt);
     }
+  }
+
+  private async fetchHeroCuration(): Promise<void> {
+    const curation = await this.heroCuration.getHeroCuration();
+    this.curatedEpisodeIds.set(curation.episodeIds ?? []);
+    this.curatedUpdatedAt.set(curation.updatedAt ?? null);
   }
 
   loadingSubjectName(episodeId: string): string | null {
