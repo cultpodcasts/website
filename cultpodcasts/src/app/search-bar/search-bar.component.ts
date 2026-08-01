@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   ViewChild,
+  computed,
   signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,6 +22,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { TextFieldModule } from '@angular/cdk/text-field';
+import { displayCatalogName } from '../display-catalog-name';
+import { subjectColor } from '../subject-color';
 
 const SUGGESTION_DEBOUNCE_MS = 150;
 
@@ -44,11 +47,26 @@ const SUGGESTION_DEBOUNCE_MS = 150;
 })
 
 export class SearchBarComponent {
+  protected readonly SearchBoxMode = SearchBoxMode;
   protected readonly searchChip = signal<string | null>(null);
   protected readonly searchBoxMode = signal(SearchBoxMode.Default);
   protected readonly suggestions = signal<Suggestion[]>([]);
   protected readonly suggestionsOpen = signal<boolean>(false);
   protected readonly activeSuggestionIndex = signal<number>(-1);
+
+  /** Subject-mode chip uses the same deterministic colour as app-subject-chip. */
+  protected readonly subjectChipColor = computed(() => {
+    if (this.searchBoxMode() !== SearchBoxMode.Subject) {
+      return null;
+    }
+    const chip = this.searchChip();
+    return chip ? subjectColor(chip) : null;
+  });
+
+  protected readonly chipLabel = computed(() => {
+    const chip = this.searchChip();
+    return chip ? displayCatalogName(chip) : '';
+  });
 
   @ViewChild('searchBox', { static: true })
   searchBox: ElementRef | undefined;

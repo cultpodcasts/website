@@ -54,6 +54,24 @@
                     display: block
                     overflow: hidden
                     text-overflow: ellipsis
+                &.search-chip--subject
+                    --mdc-chip-elevated-container-color: var(--search-chip-bg)
+                    --mdc-chip-outline-color: var(--search-chip-border)
+                    --mdc-chip-label-text-color: var(--search-chip-fg)
+                    --mdc-chip-with-trailing-icon-trailing-icon-color: var(--search-chip-fg)
+                    border: 1px solid var(--search-chip-border)
+                    background: var(--search-chip-bg) !important
+                    color: var(--search-chip-fg) !important
+                    .mdc-evolution-chip__action--primary,
+                    .mdc-evolution-chip__text-label,
+                    .mat-mdc-chip-action-label,
+                    .chiptext
+                        color: var(--search-chip-fg) !important
+                    .mat-mdc-chip-remove,
+                    button.mat-mdc-chip-remove,
+                    mat-icon
+                        color: var(--search-chip-fg) !important
+                        opacity: 0.85
             input.mat-mdc-chip-input
                 flex: 1 0 10px
         #search-suggestions-listbox
