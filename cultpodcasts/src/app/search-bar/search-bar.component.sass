@@ -9,9 +9,15 @@
         gap: 10px
         #searchboxwrapper
             position: relative
-            flex-grow: 1
+            flex: 1 1 auto
+            min-width: 0
+            // Chip width tracks the field so we only ellipsize when space is tight.
+            container-type: inline-size
+            container-name: searchbox
         #searchbox
             width: 100%
+            max-width: 100%
+            min-width: 0
             margin-bottom: 0
             height: var(--search-bar-control-h)
             ::ng-deep
@@ -27,33 +33,74 @@
                 .mdc-text-field--no-label
                     height: var(--search-bar-control-h) !important
                     min-height: var(--search-bar-control-h) !important
+                    max-width: 100%
+                    min-width: 0
                     align-items: center !important
                 .mat-mdc-form-field-flex
                     height: var(--search-bar-control-h) !important
+                    max-width: 100%
+                    min-width: 0
                     align-items: center !important
                 .mat-mdc-form-field-infix
                     min-height: var(--search-bar-control-h) !important
+                    // Kill Material's large default min-width so docked search can shrink,
+                    // but do not force width/overflow — that pulls content under the
+                    // outlined leading edge and crops the first glyph / chip.
+                    min-width: 0 !important
                     padding-top: 0 !important
                     padding-bottom: 0 !important
+                    // No left pad here — chips sit flush; input carries its own inset.
+                    padding-left: 0 !important
+                    padding-right: 8px !important
                     display: flex
                     align-items: center
+                    box-sizing: border-box
                 .mat-mdc-chip-grid,
+                .mat-mdc-chip-set,
                 .mdc-evolution-chip-set__chips
                     align-items: center
                     min-height: 0
+                    min-width: 0
+                    max-width: 100%
+                    flex-wrap: nowrap !important
+                    // Material uses margin-left:-8px + chip margin-left:8px; flatten both.
+                    margin-left: 0 !important
+                    margin-right: 0 !important
+                    padding-left: 0 !important
+                .mat-mdc-chip-set .mdc-evolution-chip,
+                .mat-mdc-chip-grid .mdc-evolution-chip
+                    // Override Material `margin: 4px 0 4px 8px` — that 8px is the gap.
+                    margin: 2px 6px 2px 2px !important
                 input.mat-mdc-chip-input,
                 #searchtext
                     margin: 0
+                    // Inset when there is no chip; after a chip this is the typing gap.
+                    margin-left: 0 !important
+                    padding-left: 10px
                     line-height: 1.25
             mat-chip
                 margin-top: -4px
                 margin-bottom: -4px
-                margin-left: 0
-                margin-right: 8px
+                // Keep in sync with ::ng-deep .mdc-evolution-chip override above.
+                margin-left: 2px !important
+                margin-right: 6px !important
+                // Cap the whole chip (label + remove), not just the text span — otherwise
+                // padding/icon still overflow the field and collide with Search.
+                // Reserve room for the placeholder / typing gap.
+                max-width: min(36rem, calc(100cqi - 5.5rem))
+                min-width: 0
+                overflow: hidden
+                .mdc-evolution-chip__action--primary,
+                .mdc-evolution-chip__text-label,
+                .mat-mdc-chip-action-label
+                    min-width: 0
+                    overflow: hidden
                 .chiptext
                     display: block
                     overflow: hidden
                     text-overflow: ellipsis
+                    white-space: nowrap
+                    max-width: 100%
                 &.search-chip--subject
                     --mdc-chip-elevated-container-color: var(--search-chip-bg)
                     --mdc-chip-outline-color: var(--search-chip-border)
@@ -73,7 +120,8 @@
                         color: var(--search-chip-fg) !important
                         opacity: 0.85
             input.mat-mdc-chip-input
-                flex: 1 0 10px
+                flex: 1 1 4.5rem
+                min-width: 4.5rem
         #search-suggestions-listbox
             position: absolute
             top: calc(100% + 6px)
@@ -118,6 +166,7 @@
             display: inline-flex
             align-items: center
             justify-content: center
+            flex: 0 0 auto
             height: var(--search-bar-control-h)
             min-height: var(--search-bar-control-h)
             margin: 0
@@ -127,12 +176,14 @@
             letter-spacing: 0.02em
             line-height: 1
 
-@media screen and (min-width: 400px)
-    .chiptext
-        max-width: 150px
-@media screen and (max-width: 400px)
-    .chiptext
-        max-width: 75px
-@media screen and (max-width: 300px)
-    .chiptext
-        max-width: 40px
+// Phone / docked: keep the chip under half the field so "Search" stays readable.
+@container searchbox (max-width: 420px)
+    mat-chip
+        max-width: min(10.5rem, 52cqi)
+    input.mat-mdc-chip-input
+        flex-basis: 4.5rem
+        min-width: 4.5rem
+
+@container searchbox (max-width: 280px)
+    mat-chip
+        max-width: min(8.5rem, 48cqi)
