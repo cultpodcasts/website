@@ -32,6 +32,7 @@ import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
+import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
@@ -52,6 +53,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodePosterComponent,
     SiteLoadingComponent,
     BrowseLoadingSkeletonComponent,
+    BrowseFacetScrollerDirective,
   ],
   templateUrl: './podcast-api.component.html',
   styleUrl: './podcast-api.component.sass',

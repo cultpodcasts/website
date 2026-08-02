@@ -15,6 +15,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
+import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
@@ -39,6 +40,7 @@ const sortParamDateDesc: string = "date-desc";
     EpisodePosterComponent,
     SiteLoadingComponent,
     BrowseLoadingSkeletonComponent,
+    BrowseFacetScrollerDirective,
   ],
   templateUrl: './search-api.component.html',
   styleUrl: './search-api.component.sass',

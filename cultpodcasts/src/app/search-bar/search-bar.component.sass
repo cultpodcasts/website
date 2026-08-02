@@ -10,6 +10,9 @@
         #searchboxwrapper
             position: relative
             flex-grow: 1
+            // Chip label width tracks the field so we only ellipsize when space is tight.
+            container-type: inline-size
+            container-name: searchbox
         #searchbox
             width: 100%
             margin-bottom: 0
@@ -54,6 +57,9 @@
                     display: block
                     overflow: hidden
                     text-overflow: ellipsis
+                    white-space: nowrap
+                    // Leave room for the remove icon + a short typing gap.
+                    max-width: min(36rem, calc(100cqi - 5.5rem))
                 &.search-chip--subject
                     --mdc-chip-elevated-container-color: var(--search-chip-bg)
                     --mdc-chip-outline-color: var(--search-chip-border)
@@ -127,12 +133,7 @@
             letter-spacing: 0.02em
             line-height: 1
 
-@media screen and (min-width: 400px)
+// Very narrow fields: keep a usable typing gap even if the label must shorten.
+@container searchbox (max-width: 220px)
     .chiptext
-        max-width: 150px
-@media screen and (max-width: 400px)
-    .chiptext
-        max-width: 75px
-@media screen and (max-width: 300px)
-    .chiptext
-        max-width: 40px
+        max-width: calc(100cqi - 3.25rem)
