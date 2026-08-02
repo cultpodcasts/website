@@ -14,7 +14,8 @@
 
     &.is-clamped
         overflow: hidden
-        max-height: calc(var(--clamp-lines) * 1.3em)
+        // lh tracks the element's line-height so N full lines fit (1.3em clipped the last).
+        max-height: calc(var(--clamp-lines) * 1lh)
 
 .clampable-text__toggle
     position: absolute
