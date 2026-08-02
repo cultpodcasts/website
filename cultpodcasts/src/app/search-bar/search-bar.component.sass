@@ -106,8 +106,8 @@
                         color: var(--search-chip-fg) !important
                         opacity: 0.85
             input.mat-mdc-chip-input
-                flex: 1 1 1.5rem
-                min-width: 1.5rem
+                flex: 1 1 4.5rem
+                min-width: 4.5rem
         #search-suggestions-listbox
             position: absolute
             top: calc(100% + 6px)
@@ -162,7 +162,14 @@
             letter-spacing: 0.02em
             line-height: 1
 
-// Very narrow fields: keep a usable typing gap; ellipsize harder.
+// Phone / docked: keep the chip under half the field so "Search" stays readable.
+@container searchbox (max-width: 420px)
+    mat-chip
+        max-width: min(10.5rem, 52cqi)
+    input.mat-mdc-chip-input
+        flex-basis: 4.5rem
+        min-width: 4.5rem
+
 @container searchbox (max-width: 280px)
     mat-chip
-        max-width: calc(100cqi - 4.5rem)
+        max-width: min(8.5rem, 48cqi)
