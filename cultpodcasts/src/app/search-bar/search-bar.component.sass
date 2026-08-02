@@ -49,7 +49,9 @@
                     min-width: 0 !important
                     padding-top: 0 !important
                     padding-bottom: 0 !important
-                    padding-left: 12px !important
+                    // Modest inset; Material outline already supplies the leading edge.
+                    // Narrow overrides reclaim the left gap for the chip.
+                    padding-left: 8px !important
                     padding-right: 12px !important
                     display: flex
                     align-items: center
@@ -61,6 +63,9 @@
                     min-width: 0
                     max-width: 100%
                     flex-wrap: nowrap !important
+                    // Material chip-set often adds leading padding we don't want.
+                    margin-left: 0 !important
+                    padding-left: 0 !important
                 input.mat-mdc-chip-input,
                 #searchtext
                     margin: 0
@@ -164,6 +169,11 @@
 
 // Phone / docked: keep the chip under half the field so "Search" stays readable.
 @container searchbox (max-width: 420px)
+    #searchbox
+        ::ng-deep
+            .mat-mdc-form-field-infix
+                padding-left: 2px !important
+                padding-right: 8px !important
     mat-chip
         max-width: min(10.5rem, 52cqi)
     input.mat-mdc-chip-input
