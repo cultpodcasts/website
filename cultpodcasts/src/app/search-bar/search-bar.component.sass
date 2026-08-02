@@ -9,12 +9,15 @@
         gap: 10px
         #searchboxwrapper
             position: relative
-            flex-grow: 1
-            // Chip label width tracks the field so we only ellipsize when space is tight.
+            flex: 1 1 auto
+            min-width: 0
+            // Chip width tracks the field so we only ellipsize when space is tight.
             container-type: inline-size
             container-name: searchbox
         #searchbox
             width: 100%
+            max-width: 100%
+            min-width: 0
             margin-bottom: 0
             height: var(--search-bar-control-h)
             ::ng-deep
@@ -30,20 +33,33 @@
                 .mdc-text-field--no-label
                     height: var(--search-bar-control-h) !important
                     min-height: var(--search-bar-control-h) !important
+                    max-width: 100%
+                    min-width: 0
                     align-items: center !important
                 .mat-mdc-form-field-flex
                     height: var(--search-bar-control-h) !important
+                    max-width: 100%
+                    min-width: 0
                     align-items: center !important
                 .mat-mdc-form-field-infix
                     min-height: var(--search-bar-control-h) !important
+                    // Material defaults a large min-width that blows out narrow docked search.
+                    min-width: 0 !important
+                    width: 100%
+                    max-width: 100%
                     padding-top: 0 !important
                     padding-bottom: 0 !important
                     display: flex
                     align-items: center
+                    overflow: hidden
                 .mat-mdc-chip-grid,
                 .mdc-evolution-chip-set__chips
                     align-items: center
                     min-height: 0
+                    min-width: 0
+                    max-width: 100%
+                    width: 100%
+                    flex-wrap: nowrap !important
                 input.mat-mdc-chip-input,
                 #searchtext
                     margin: 0
@@ -53,13 +69,22 @@
                 margin-bottom: -4px
                 margin-left: 0
                 margin-right: 8px
+                // Cap the whole chip (label + remove), not just the text span — otherwise
+                // padding/icon still overflow the field and collide with Search.
+                max-width: min(36rem, calc(100cqi - 2.75rem))
+                min-width: 0
+                overflow: hidden
+                .mdc-evolution-chip__action--primary,
+                .mdc-evolution-chip__text-label,
+                .mat-mdc-chip-action-label
+                    min-width: 0
+                    overflow: hidden
                 .chiptext
                     display: block
                     overflow: hidden
                     text-overflow: ellipsis
                     white-space: nowrap
-                    // Leave room for the remove icon + a short typing gap.
-                    max-width: min(36rem, calc(100cqi - 5.5rem))
+                    max-width: 100%
                 &.search-chip--subject
                     --mdc-chip-elevated-container-color: var(--search-chip-bg)
                     --mdc-chip-outline-color: var(--search-chip-border)
@@ -79,7 +104,8 @@
                         color: var(--search-chip-fg) !important
                         opacity: 0.85
             input.mat-mdc-chip-input
-                flex: 1 0 10px
+                flex: 1 1 1.5rem
+                min-width: 1.5rem
         #search-suggestions-listbox
             position: absolute
             top: calc(100% + 6px)
@@ -124,6 +150,7 @@
             display: inline-flex
             align-items: center
             justify-content: center
+            flex: 0 0 auto
             height: var(--search-bar-control-h)
             min-height: var(--search-bar-control-h)
             margin: 0
@@ -133,7 +160,7 @@
             letter-spacing: 0.02em
             line-height: 1
 
-// Very narrow fields: keep a usable typing gap even if the label must shorten.
-@container searchbox (max-width: 220px)
-    .chiptext
-        max-width: calc(100cqi - 3.25rem)
+// Very narrow fields: keep a usable typing gap; ellipsize harder.
+@container searchbox (max-width: 280px)
+    mat-chip
+        max-width: calc(100cqi - 2rem)
