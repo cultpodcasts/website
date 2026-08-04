@@ -54,18 +54,20 @@
         .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
 
-// Sharp art + edge fills share one motion layer so Ken Burns zooms them together.
+// Ken Burns zooms sharp art only. Edge fills stay outside this layer so
+// Firefox does not re-raster filters every animation frame.
 .billboard__stage-motion
     position: absolute
     inset: 0
     transform: scale(1.08)
     transform-origin: center 40%
     will-change: transform
+    z-index: 1
 
 // Side fills: sample a thin column at the art edge, blur that small bitmap,
 // then scaleX the already-blurred result across the gutter.
 // (CSS applies transform before filter on one element — scaleX(400)+blur(28)
-// forces a huge Gaussian every Ken Burns frame and is especially slow in Firefox.)
+// forces a huge Gaussian and is especially slow in Firefox.)
 .billboard__stage-edge
     display: none
     position: absolute
@@ -74,6 +76,7 @@
     overflow: hidden
     pointer-events: none
     contain: paint
+    z-index: 0
 
 .billboard__stage-edge-strip
     position: absolute
@@ -82,7 +85,6 @@
     // Wider sample → smaller scaleX → practical inner blur (≥1px) browsers handle well.
     width: 64px
     background-color: #121212
-    will-change: transform
 
 .billboard__stage-edge-sample
     position: absolute
@@ -93,7 +95,6 @@
     // Blur on the unscaled sample; parent scaleX multiplies the visual radius.
     // ~1.5px × scaleX(50) ≈ 75px soft wash (close to the old post-scale blur look).
     filter: blur(1.5px) saturate(1.2) brightness(0.95)
-    // Promote once so Ken Burns on the motion ancestor can composite the texture.
     transform: translateZ(0)
 
 .billboard__stage-edge--left
@@ -116,7 +117,7 @@
     .billboard__stage-edge-sample
         background-position: right center
 
-// Slot sizes/positions the sharp art; Ken Burns scales the shared motion layer.
+// Slot sizes/positions the sharp art; Ken Burns scales the motion wrapper.
 .billboard__stage-focus-slot
     position: absolute
     inset: 0
@@ -138,7 +139,6 @@
         transform-origin: center center
     .billboard__stage-edge
         display: block
-        z-index: 0
     .billboard__stage-edge--left,
     .billboard__stage-edge--right
         width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
@@ -146,7 +146,6 @@
         inset: auto
         top: 50%
         left: 50%
-        z-index: 1
         width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
         height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
         transform: translate(-50%, -50%)
@@ -175,7 +174,7 @@
             // Soften the hard seam where sharp art meets the left fill.
             -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
             mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
-        // Wide: Ken Burns on the shared motion layer (sharp art + left blur together).
+        // Wide: Ken Burns on sharp art only (edge fills stay static — cheaper in Firefox).
         &.is-kenburns .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
     // Let the left edge blur read through under copy — avoid a solid black slab.
@@ -183,14 +182,6 @@
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
     .billboard__vignette
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
-
-// Firefox re-rasters filtered descendants during ancestor transform animations.
-// Prefer a static fill over janky Ken Burns when the left edge blur is active.
-@supports (-moz-appearance: none)
-    @media screen and (min-width: 1280px)
-        .billboard__stage.has-edge-extend.is-kenburns .billboard__stage-motion
-            animation: none
-            transform: none
 
 .billboard__content
     position: relative

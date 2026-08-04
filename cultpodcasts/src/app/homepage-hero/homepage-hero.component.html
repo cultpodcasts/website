@@ -11,19 +11,19 @@
       [class.is-kenburns]="heroKenBurnsA()"
       [class.has-edge-extend]="heroAspectA() != null"
       [style.--hero-art-aspect]="heroAspectA() ?? null">
+      <div class="billboard__stage-edge billboard__stage-edge--left">
+        <div class="billboard__stage-edge-strip">
+          <div class="billboard__stage-edge-sample"
+            [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+        </div>
+      </div>
+      <div class="billboard__stage-edge billboard__stage-edge--right">
+        <div class="billboard__stage-edge-strip">
+          <div class="billboard__stage-edge-sample"
+            [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
+        </div>
+      </div>
       <div class="billboard__stage-motion">
-        <div class="billboard__stage-edge billboard__stage-edge--left">
-          <div class="billboard__stage-edge-strip">
-            <div class="billboard__stage-edge-sample"
-              [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-          </div>
-        </div>
-        <div class="billboard__stage-edge billboard__stage-edge--right">
-          <div class="billboard__stage-edge-strip">
-            <div class="billboard__stage-edge-sample"
-              [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-          </div>
-        </div>
         <div class="billboard__stage-focus-slot">
           <div class="billboard__stage-focus"
             [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
@@ -34,19 +34,19 @@
       [class.is-kenburns]="heroKenBurnsB()"
       [class.has-edge-extend]="heroAspectB() != null"
       [style.--hero-art-aspect]="heroAspectB() ?? null">
+      <div class="billboard__stage-edge billboard__stage-edge--left">
+        <div class="billboard__stage-edge-strip">
+          <div class="billboard__stage-edge-sample"
+            [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+        </div>
+      </div>
+      <div class="billboard__stage-edge billboard__stage-edge--right">
+        <div class="billboard__stage-edge-strip">
+          <div class="billboard__stage-edge-sample"
+            [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
+        </div>
+      </div>
       <div class="billboard__stage-motion">
-        <div class="billboard__stage-edge billboard__stage-edge--left">
-          <div class="billboard__stage-edge-strip">
-            <div class="billboard__stage-edge-sample"
-              [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-          </div>
-        </div>
-        <div class="billboard__stage-edge billboard__stage-edge--right">
-          <div class="billboard__stage-edge-strip">
-            <div class="billboard__stage-edge-sample"
-              [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-          </div>
-        </div>
         <div class="billboard__stage-focus-slot">
           <div class="billboard__stage-focus"
             [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
