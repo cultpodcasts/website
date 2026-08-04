@@ -15,12 +15,16 @@
       [class.is-kenburns]="backdropKenBurns()">
       <div class="episode-backdrop__motion">
         <div class="episode-backdrop__edge episode-backdrop__edge--left">
-          <div class="episode-backdrop__edge-strip"
-            [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+          <div class="episode-backdrop__edge-strip">
+            <div class="episode-backdrop__edge-sample"
+              [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+          </div>
         </div>
         <div class="episode-backdrop__edge episode-backdrop__edge--right">
-          <div class="episode-backdrop__edge-strip"
-            [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+          <div class="episode-backdrop__edge-strip">
+            <div class="episode-backdrop__edge-sample"
+              [style.background-image]="backdropUrl() ? 'url(' + backdropUrl() + ')' : null"></div>
+          </div>
         </div>
         <div class="episode-backdrop__focus-slot">
           <div class="episode-backdrop__focus"

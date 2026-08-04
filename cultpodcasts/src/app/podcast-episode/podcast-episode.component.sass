@@ -46,8 +46,8 @@
     animation: nflx-ken-burns var(--episode-ken-burns) ease-out forwards
     transform-origin: center 40%
 
-// Side fills: thin strip of the image's true left/right edge, stretched outward
-// (same technique as homepage billboard — not a full-frame blur).
+// Side fills: blur a small edge sample, then scaleX (same as homepage billboard).
+// Avoid scale-then-filter on one element — Firefox re-blurs a huge surface each frame.
 .episode-backdrop__edge
     display: none
     position: absolute
@@ -56,34 +56,44 @@
     overflow: hidden
     pointer-events: none
     z-index: 0
+    contain: paint
 
 .episode-backdrop__edge-strip
     position: absolute
     top: -10%
     bottom: -10%
-    width: 8px
+    width: 64px
+    background-color: #121212
+    will-change: transform
+
+.episode-backdrop__edge-sample
+    position: absolute
+    inset: 0
     background-color: #121212
     background-size: auto 100%
     background-repeat: no-repeat
-    filter: blur(28px) saturate(1.2) brightness(0.95)
+    filter: blur(1.5px) saturate(1.2) brightness(0.95)
+    transform: translateZ(0)
 
 .episode-backdrop__edge--left
     left: 0
     .episode-backdrop__edge-strip
         right: 0
         left: auto
-        background-position: left center
         transform-origin: right center
-        transform: scaleX(400)
+        transform: scaleX(50)
+    .episode-backdrop__edge-sample
+        background-position: left center
 
 .episode-backdrop__edge--right
     right: 0
     .episode-backdrop__edge-strip
         left: 0
         right: auto
-        background-position: right center
         transform-origin: left center
-        transform: scaleX(400)
+        transform: scaleX(50)
+    .episode-backdrop__edge-sample
+        background-position: right center
 
 .episode-backdrop__focus-slot
     position: absolute
@@ -158,6 +168,13 @@
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
     .episode-backdrop__vignette
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
+
+// Firefox: skip Ken Burns when edge blur is active (ancestor transform re-rasters filters).
+@supports (-moz-appearance: none)
+    @media screen and (min-width: 1280px)
+        .episode-backdrop.has-edge-extend.is-kenburns .episode-backdrop__motion
+            animation: none
+            transform: none
 
 // Below ~1280: match homepage — aspect media band at top; copy in flow below.
 // In-flow ::before reserves the art height so the absolute backdrop does not

@@ -62,8 +62,10 @@
     transform-origin: center 40%
     will-change: transform
 
-// Side fills: stretch a thin strip of the image's true left/right edge outward
-// (not a blurred cover of the whole frame — that looks wrong on square art).
+// Side fills: sample a thin column at the art edge, blur that small bitmap,
+// then scaleX the already-blurred result across the gutter.
+// (CSS applies transform before filter on one element — scaleX(400)+blur(28)
+// forces a huge Gaussian every Ken Burns frame and is especially slow in Firefox.)
 .billboard__stage-edge
     display: none
     position: absolute
@@ -71,32 +73,48 @@
     bottom: 0
     overflow: hidden
     pointer-events: none
+    contain: paint
 
 .billboard__stage-edge-strip
     position: absolute
-    top: -6%
-    bottom: -6%
-    width: 14px
+    top: -10%
+    bottom: -10%
+    // Wider sample → smaller scaleX → practical inner blur (≥1px) browsers handle well.
+    width: 64px
+    background-color: #121212
+    will-change: transform
+
+.billboard__stage-edge-sample
+    position: absolute
+    inset: 0
     background-color: #121212
     background-size: auto 100%
     background-repeat: no-repeat
-    filter: blur(32px) saturate(1.12) brightness(0.88)
+    // Blur on the unscaled sample; parent scaleX multiplies the visual radius.
+    // ~1.5px × scaleX(50) ≈ 75px soft wash (close to the old post-scale blur look).
+    filter: blur(1.5px) saturate(1.2) brightness(0.95)
+    // Promote once so Ken Burns on the motion ancestor can composite the texture.
+    transform: translateZ(0)
 
 .billboard__stage-edge--left
     left: 0
     .billboard__stage-edge-strip
         right: 0
-        background-position: left center
+        left: auto
         transform-origin: right center
-        transform: scaleX(70)
+        transform: scaleX(50)
+    .billboard__stage-edge-sample
+        background-position: left center
 
 .billboard__stage-edge--right
     right: 0
     .billboard__stage-edge-strip
         left: 0
-        background-position: right center
+        right: auto
         transform-origin: left center
-        transform: scaleX(70)
+        transform: scaleX(50)
+    .billboard__stage-edge-sample
+        background-position: right center
 
 // Slot sizes/positions the sharp art; Ken Burns scales the shared motion layer.
 .billboard__stage-focus-slot
@@ -124,31 +142,6 @@
     .billboard__stage-edge--left,
     .billboard__stage-edge--right
         width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
-    // Sample only a thin column at the art edge, then stretch it across the gutter.
-    // A full-gutter background-image shows most of the cover (static whole-frame blur).
-    .billboard__stage-edge--left .billboard__stage-edge-strip
-        top: -10%
-        bottom: -10%
-        left: auto
-        right: 0
-        width: 8px
-        background-size: auto 100%
-        background-position: left center
-        transform-origin: right center
-        // Large scale fills ultrawide gutters; overflow:hidden on the edge clips excess.
-        transform: scaleX(400)
-        filter: blur(28px) saturate(1.2) brightness(0.95)
-    .billboard__stage-edge--right .billboard__stage-edge-strip
-        top: -10%
-        bottom: -10%
-        right: auto
-        left: 0
-        width: 8px
-        background-size: auto 100%
-        background-position: right center
-        transform-origin: left center
-        transform: scaleX(400)
-        filter: blur(28px) saturate(1.2) brightness(0.95)
     .billboard__stage-focus-slot
         inset: auto
         top: 50%
@@ -190,6 +183,14 @@
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
     .billboard__vignette
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
+
+// Firefox re-rasters filtered descendants during ancestor transform animations.
+// Prefer a static fill over janky Ken Burns when the left edge blur is active.
+@supports (-moz-appearance: none)
+    @media screen and (min-width: 1280px)
+        .billboard__stage.has-edge-extend.is-kenburns .billboard__stage-motion
+            animation: none
+            transform: none
 
 .billboard__content
     position: relative
