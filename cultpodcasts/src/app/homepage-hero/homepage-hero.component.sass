@@ -618,8 +618,11 @@
             left: -4vw
             top: calc(-1 * var(--hero-copy-fade))
             width: 100vw
-            // Clipped by .billboard overflow; covers art of any aspect below the fade.
-            height: 100vh
+            // Clipped by .billboard overflow; covers art of any aspect below the
+            // fade. Includes the copy's own height so a short viewport with tall
+            // copy cannot leave a sliver of art below the panel; both background
+            // layers are sized off the element, so over-extending is free.
+            height: calc(100vh + 100%)
             z-index: -1
             pointer-events: none
             // Fade band on top, opaque fill for everything below it.
