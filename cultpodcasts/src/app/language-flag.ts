@@ -5,6 +5,10 @@ import { languageLabel } from './subject-language-filter';
  * exhaustive geopolitics). Used for non-English episode badges on flix.
  * Regional tags prefer a matching region when listed; otherwise the base
  * language's flag.
+ *
+ * These are Unicode regional-indicator sequences. Windows Chromium does not
+ * paint them as flags (shows "ES" etc.); `main.ts` loads a Twemoji polyfill
+ * font and `--cp-font-ui` prefers `"Twemoji Country Flags"` for those codepoints.
  */
 const LANGUAGE_FLAG_BY_CODE: Record<string, string> = {
   // Romance / Iberian
