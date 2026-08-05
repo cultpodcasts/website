@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.10.75",
+  "version": "1.10.76",
   "scripts": {
     "ng": "ng",
     "start": "ng build --configuration local && npm run process && wrangler pages dev dist/cloudflare --compatibility-date=2024-09-02 --local-protocol https --https-cert-path .cert/dev-cert.pem --https-key-path .cert/dev-key.pem --port 8788 --kv kv --r2 content",
@@ -16,8 +16,6 @@
     "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",
     "dev": "ng serve --configuration development",
     "deps:check": "node ./tools/check-dependency-updates.mjs",
-    "hero:legibility": "node ./tools/build-hero-legibility-harness.mjs",
-    "hero:legibility:check": "node ./tools/build-hero-legibility-harness.mjs --check",
     "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs"
   },
   "private": true,
