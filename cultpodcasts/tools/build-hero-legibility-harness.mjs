@@ -49,7 +49,11 @@ const meta = {
   command: COMMAND
 };
 
-const template = readFileSync(TEMPLATE_PATH, 'utf8');
+// Normalise to LF: git may check these files out as CRLF, and --check must not
+// fail over line endings.
+const lf = (s) => s.replace(/\r\n/g, '\n');
+
+const template = lf(readFileSync(TEMPLATE_PATH, 'utf8'));
 for (const token of ['/*__HERO_CSS__*/', '/*__HERO_META__*/']) {
   if (!template.includes(token)) {
     console.error(`Template is missing the ${token} placeholder.`);
@@ -57,9 +61,9 @@ for (const token of ['/*__HERO_CSS__*/', '/*__HERO_META__*/']) {
   }
 }
 
-const output = template
+const output = lf(template
   .replace('/*__HERO_CSS__*/', () => css)
-  .replace('/*__HERO_META__*/', () => JSON.stringify(meta, null, 2));
+  .replace('/*__HERO_META__*/', () => JSON.stringify(meta, null, 2)));
 
 if (process.argv.includes('--check')) {
   let existing = null;
@@ -69,7 +73,7 @@ if (process.argv.includes('--check')) {
     console.error(`${relative(appRoot, OUT_PATH)} is missing. Run ${COMMAND}.`);
     process.exit(1);
   }
-  if (existing !== output) {
+  if (lf(existing) !== output) {
     console.error(`${relative(appRoot, OUT_PATH)} is stale. Run ${COMMAND}.`);
     process.exit(1);
   }
