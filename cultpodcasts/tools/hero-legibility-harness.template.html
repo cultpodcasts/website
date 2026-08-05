@@ -373,11 +373,14 @@
 
   <h2>What this proves — and what it does not</h2>
   <ul class="notes">
-    <li><strong>Font independent.</strong> Copy is capped at <code>min(640px, 100%)</code>, so text can never be wider
-      than the copy column. The bound samples the <em>entire column</em>, not just where glyphs happen to land, so no
-      title length or font substitution can escape it. Measured ink is reported separately as a sanity check.</li>
-    <li><strong>The model is read from the live render</strong>, not re-declared here. Band edges, tint stops and mask
-      stops come from <code>getComputedStyle(el, '::before')</code> inside the rig, so it tracks the stylesheet.</li>
+    <li><strong>Font independent.</strong> Text cannot leave its own element box, so each text style is bounded over
+      <em>the whole of that box</em> rather than only where glyphs happen to land. Block copy fills the
+      <code>min(640px, 100%)</code> column, so no title length, locale or font substitution can escape the result.
+      Measured ink is reported alongside as a sanity check.</li>
+    <li><strong>The model is read from the live render</strong>, not re-declared here. Band edges, tint stops, mask stops
+      and <code>mask-composite</code> come from <code>getComputedStyle(el, '::before')</code> inside the rig, so it
+      tracks the stylesheet. Only axis-aligned gradients and <code>intersect</code> compositing are modelled; anything
+      else is reported as unmodelled and fails rather than being guessed at.</li>
     <li><strong>Deliberately pessimistic.</strong> <code>.billboard__scrim</code> and <code>.billboard__vignette</code>
       also darken the art but are excluded from the model, so the real background is always at least as dark as the
       number shown. <code>.billboard__grain</code> (7% soft-light noise) is disabled and excluded.</li>
@@ -565,17 +568,27 @@ body { font-family: var(--cp-font-ui); }
       return out;
     }
 
-    /* Returns { stops:[{pos,color}], horizontal:bool } or null.
-       Only left-to-right gradients are modelled; anything else is reported as
+    /* A CSS length that may be a percentage of the containing block. */
+    function lenOf(value, basis) {
+      const s = String(value).trim();
+      const f = parseFloat(s);
+      if (!isFinite(f)) return NaN;
+      return s.endsWith('%') ? (f / 100) * basis : f;
+    }
+
+    /* Only axis-aligned gradients are modelled. Anything else is reported as
        unmodelled rather than silently mis-measured. */
     function parseLinearGradient(value) {
       const m = /^linear-gradient\((.*)\)$/s.exec(String(value).trim());
       if (!m) return null;
       const parts = splitTopLevel(m[1]);
-      let horizontal = false;
-      if (/^(to\s|[-\d.]+deg|calc)/i.test(parts[0]) && !/^rgba?\(/i.test(parts[0])) {
+      // Omitted direction means `to bottom`.
+      let axis = 'v';
+      if (/^(to\s+[a-z\s]+|[-\d.]+(deg|rad|turn|grad))$/i.test(parts[0])) {
         const dir = parts.shift().trim().toLowerCase();
-        horizontal = dir === '90deg' || dir === 'to right';
+        if (dir === '90deg' || dir === 'to right') axis = 'h';
+        else if (dir === '180deg' || dir === 'to bottom') axis = 'v';
+        else return null;
       }
       const stops = [];
       for (const p of parts) {
@@ -583,16 +596,40 @@ body { font-family: var(--cp-font-ui); }
         if (!cm) return null;
         const color = parseColor(cm[1]) || (cm[1] === 'transparent' ? { r: 0, g: 0, b: 0, a: 0 } : null);
         if (!color) return null;
-        const pos = /([-\d.]+)%/.exec(cm[2]);
-        stops.push({ pos: pos ? parseFloat(pos[1]) / 100 : null, color });
+        stops.push({ posRaw: cm[2].trim() || null, color });
       }
-      if (!stops.length) return null;
+      return stops.length ? { axis, stops } : null;
+    }
+
+    /* Stop offsets can be %, px, or calc(100% - px); resolve against the axis. */
+    function resolveStopPos(raw, axisLen) {
+      if (raw == null) return null;
+      const s = raw.trim();
+      let m;
+      if ((m = /^([-\d.]+)%$/.exec(s))) return parseFloat(m[1]) / 100;
+      if ((m = /^([-\d.]+)px$/.exec(s))) return axisLen > 0 ? parseFloat(m[1]) / axisLen : NaN;
+      if ((m = /^calc\(\s*100%\s*-\s*([-\d.]+)px\s*\)$/.exec(s))) {
+        return axisLen > 0 ? (axisLen - parseFloat(m[1])) / axisLen : NaN;
+      }
+      if ((m = /^calc\(\s*([-\d.]+)px\s*\+\s*100%\s*\)$/.exec(s))) {
+        return axisLen > 0 ? (axisLen + parseFloat(m[1])) / axisLen : NaN;
+      }
+      return NaN;
+    }
+
+    function prepareGradient(value, bandW, bandH) {
+      const g = parseLinearGradient(value);
+      if (!g) return null;
+      const axisLen = g.axis === 'h' ? bandW : bandH;
+      const stops = g.stops.map((s) => ({ color: s.color, pos: resolveStopPos(s.posRaw, axisLen) }));
+      if (stops.some((s) => Number.isNaN(s.pos))) return null;
       if (stops[0].pos === null) stops[0].pos = 0;
       if (stops[stops.length - 1].pos === null) stops[stops.length - 1].pos = 1;
       for (let i = 1; i < stops.length - 1; i++) {
         if (stops[i].pos === null) stops[i].pos = i / (stops.length - 1);
       }
-      return { stops, horizontal };
+      for (let i = 1; i < stops.length; i++) stops[i].pos = Math.max(stops[i].pos, stops[i - 1].pos);
+      return { axis: g.axis, stops };
     }
 
     /* CSS interpolates gradients in premultiplied space. */
@@ -780,38 +817,73 @@ body { font-family: var(--cp-font-ui); }
           ok: safeCopy && (clear === null || clear >= 0)
         };
       } else {
-        const grad = parseLinearGradient(before.backgroundImage);
-        const maskRaw = before.maskImage && before.maskImage !== 'none' ? before.maskImage : before.webkitMaskImage;
-        const mask = parseLinearGradient(maskRaw);
-        if (!grad || !grad.horizontal) { unmodelled = true; notes.push('band tint not a left-to-right gradient'); }
-        if (!mask || !mask.horizontal) { unmodelled = true; notes.push('band mask not a left-to-right gradient'); }
-        const bandLeft = contentRect.left + parseFloat(before.left);
-        const bandRight = contentRect.right - parseFloat(before.right);
+        // The band is positioned off the copy box, so derive its rect from it.
+        const bandLeft = contentRect.left + lenOf(before.left, contentRect.width);
+        const bandRight = contentRect.right - lenOf(before.right, contentRect.width);
+        const bandTop = contentRect.top + lenOf(before.top, contentRect.height);
+        const bandBottom = contentRect.bottom - lenOf(before.bottom, contentRect.height);
         const bandW = bandRight - bandLeft;
-        bgAt = (x) => {
-          if (unmodelled || x < bandLeft || x > bandRight || bandW <= 0) return ART;
-          const t = (x - bandLeft) / bandW;
-          const tint = colorAtStop(grad.stops, t);
-          const m = colorAtStop(mask.stops, t).a;
-          return over({ r: tint.r, g: tint.g, b: tint.b, a: tint.a * m }, ART);
+        const bandH = bandBottom - bandTop;
+
+        const tint = prepareGradient(before.backgroundImage, bandW, bandH);
+        const maskRaw = before.maskImage && before.maskImage !== 'none' ? before.maskImage : before.webkitMaskImage;
+        const maskLayers = (maskRaw && maskRaw !== 'none' ? splitTopLevel(maskRaw) : [])
+          .map((v) => prepareGradient(v, bandW, bandH));
+        const ops = String(before.maskComposite || 'add').split(',').map((s) => s.trim());
+
+        if (!tint || tint.axis !== 'h') { unmodelled = true; notes.push('band tint is not a horizontal gradient'); }
+        if (!maskLayers.length || maskLayers.some((l) => !l)) { unmodelled = true; notes.push('band mask not modelled'); }
+        // Multi-layer masks are only separable when every layer intersects;
+        // other operators are order-dependent, so refuse rather than guess.
+        if (maskLayers.length > 1 && !ops.every((o) => o === 'intersect')) {
+          unmodelled = true;
+          notes.push('mask-composite "' + ops.join(',') + '" not modelled');
+        }
+        if (!(bandW > 0) || !(bandH > 0)) { unmodelled = true; notes.push('band has no area'); }
+
+        const layersOn = (axis) => (unmodelled ? [] : maskLayers.filter((l) => l.axis === axis));
+        const hLayers = layersOn('h');
+        const vLayers = layersOn('v');
+        const hAlpha = (x) => hLayers.reduce((a, l) => a * colorAtStop(l.stops, (x - bandLeft) / bandW).a, 1);
+        const vAlpha = (y) => vLayers.reduce((a, l) => a * colorAtStop(l.stops, (y - bandTop) / bandH).a, 1);
+        const inBand = (x, y) => x >= bandLeft && x <= bandRight && y >= bandTop && y <= bandBottom;
+
+        bgAt = (x, y) => {
+          if (unmodelled || !inBand(x, y)) return ART;
+          const c = colorAtStop(tint.stops, (x - bandLeft) / bandW);
+          return over({ r: c.r, g: c.g, b: c.b, a: c.a * hAlpha(x) * vAlpha(y) }, ART);
         };
-        // Tint is monotonic left-to-right, but sample rather than assume it.
+
+        // Tint depends on x only and the mask layers are axis-aligned, so the
+        // worst point in a box is the worst x combined with the worst y.
         boundOver = (rect) => {
+          if (unmodelled) return ART;
+          let worstV = 1;
+          for (let y = rect.top; y <= rect.bottom; y += 2) {
+            const v = y < bandTop || y > bandBottom ? 0 : vAlpha(y);
+            if (v < worstV) worstV = v;
+          }
           let worst = null;
           for (let x = rect.left; x <= rect.right; x += 2) {
-            const c = bgAt(x);
-            if (!worst || luminance(c) > luminance(worst)) worst = c;
+            const inX = x >= bandLeft && x <= bandRight;
+            const c = inX ? colorAtStop(tint.stops, (x - bandLeft) / bandW) : { r: 0, g: 0, b: 0, a: 0 };
+            const px = over({ r: c.r, g: c.g, b: c.b, a: inX ? c.a * hAlpha(x) * worstV : 0 }, ART);
+            if (!worst || luminance(px) > luminance(worst)) worst = px;
           }
           return worst || ART;
         };
-        const covers = bandLeft <= contentRect.left + 0.5 && bandRight >= contentRect.right - 0.5;
+
+        const spansX = bandLeft <= contentRect.left + 0.5 && bandRight >= contentRect.right - 0.5;
+        const spansY = bandTop <= contentRect.top + 0.5 && bandBottom >= contentRect.bottom - 0.5;
         geometry = {
-          label: covers
-            ? 'band spans column +' + Math.round(bandRight - contentRect.right) + 'px'
-            : 'BAND NARROWER THAN COLUMN',
-          ok: covers
+          label: spansX && spansY
+            ? 'band wraps copy +' + Math.round(bandRight - contentRect.right) + '/'
+              + Math.round(contentRect.top - bandTop) + '/' + Math.round(bandBottom - contentRect.bottom) + 'px'
+            : !spansX ? 'BAND NARROWER THAN COLUMN' : 'BAND SHORTER THAN COPY',
+          ok: spansX && spansY
         };
-        if (!covers) notes.push('band does not span the copy column');
+        if (!spansX) notes.push('band does not span the copy column');
+        if (!spansY) notes.push('band does not cover the copy height');
       }
 
       const worstBg = boundOver(contentRect);

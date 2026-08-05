@@ -201,13 +201,28 @@
         // Weighted left, where the ink is. The tint must hold contrast on its own:
         // blurring white artwork still leaves it white, so blur cannot substitute.
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 0.6) 100%)
-        // Full tint across the copy column, then feather. Masks the backdrop-filter
-        // too, so the blur fades out together with the tint.
-        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%)
-        mask-image: linear-gradient(90deg, #000 0%, #000 82%, transparent 100%)
+        // Opaque to the column's right edge, then feather across the overhang.
+        // Masks the backdrop-filter too, so blur fades out along with the tint.
+        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%)
+        mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%)
         // Blur only removes the artwork's own detail, so type is not read against edges.
         @supports (backdrop-filter: blur(2px))
             backdrop-filter: blur(22px) saturate(0.85)
+    // Wrap the treatment around the copy rather than running the hero's full
+    // height, which reads as a vertical wipe through the artwork. Intersecting a
+    // vertical ramp bounds it to the text block and feathers it above and below.
+    // Still fully opaque across the copy box, so the contrast floor is unchanged
+    // (proved for every width by docs/hero-legibility.html).
+    @supports (mask-composite: intersect)
+        .billboard__content::before
+            top: -80px
+            // Ramp ends exactly on the hero's bottom edge (48px of hero padding),
+            // so the feather completes rather than being clipped mid-fade.
+            bottom: -48px
+            -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%)
+            mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%)
+            -webkit-mask-composite: source-in
+            mask-composite: intersect
     // Ken Burns runs under this band; skip the per-frame blur where motion is opted out.
     @media (prefers-reduced-motion: reduce)
         .billboard__content::before
