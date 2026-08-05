@@ -55,16 +55,16 @@
     </div>
 
     <div class="episode-hero">
-      <p class="episode-hero__eyebrow">
-        <a class="episode-hero__podcast" [routerLink]="['/podcast', podcastName()]">
+      <p class="hero-show">
+        <a class="hero-pill" [routerLink]="['/podcast', podcastName()]">
           {{ displayCatalogName(podcastName()) }}
         </a>
       </p>
       <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
-      <p class="episode-hero__meta">
+      <p class="hero-meta">
         @if (releaseLabel(); as release) {
         <span>{{ release }}</span>
-        <span class="episode-hero__dot" aria-hidden="true">&middot;</span>
+        <span class="hero-meta__dot" aria-hidden="true">&middot;</span>
         }
         <span>{{ duration() }}</span>
         @if (languageFlag(); as lang) {
