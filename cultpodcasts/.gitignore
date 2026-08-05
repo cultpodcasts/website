@@ -5,6 +5,9 @@
 .env.*
 !.env.staging.example
 !.env.*.example
+# Playwright / local auth capture (Bearer tokens)
+.auth
+.auth/
 
 # Compiled output
 /dist

@@ -24,6 +24,7 @@ import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
+import { releaseDateLabel } from '../release-label';
 
 @Component({
   selector: 'app-homepage-hero',
@@ -295,6 +296,10 @@ export class HomepageHeroComponent {
 
   protected durationLabel(duration: string): string {
     return duration.startsWith('0') ? duration.substring(1) : duration;
+  }
+
+  protected releaseLabel(episode: HomepageEpisode): string | undefined {
+    return releaseDateLabel(episode.release);
   }
 
   protected canPlay(episode: HomepageEpisode | SearchDisplayEpisode): boolean {

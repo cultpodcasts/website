@@ -190,12 +190,10 @@
     // opaque surface with deliberate edges — the same separation the narrow layout
     // gets from its panel — so the artwork stays sharp and untouched everywhere
     // outside it, including its own lettering.
+    // Card sizing lives in the later min-width block: the base .billboard__content
+    // and copy rules are declared below this one, so overrides here would lose on
+    // source order.
     .billboard__content
-        // Hug the copy instead of the fixed column so short slides avoid a
-        // full-width slab. The column width stays the ceiling, so long titles
-        // wrap exactly where they did before.
-        width: fit-content
-        max-width: min(640px, 100%)
         &::before
             content: ''
             position: absolute
@@ -236,7 +234,8 @@
     margin-bottom: 4px
 
 .billboard__eyebrow
-    margin: 0 0 10px
+    // Sits directly above the podcast pill — the pill carries the gap to the title.
+    margin: 0 0 8px
     display: inline-flex
     align-items: center
     gap: 10px
@@ -264,22 +263,10 @@
     color: var(--nflx-on-media, #fff)
     text-shadow: 0 4px 40px #000000bf
 
-.billboard__meta
-    margin: 0 0 12px
-    font-size: 0.95rem
-    color: var(--nflx-on-media-muted, #e8e8e8)
-    a
-        color: var(--nflx-on-media, #fff)
-        text-decoration: none
-        font-weight: 600
-        &:hover
-            text-decoration: underline
-
 .billboard__lang
     display: inline-flex
     align-items: center
     gap: 6px
-    margin-left: 8px
     padding: 2px 10px 2px 8px
     border-radius: 999px
     background: #ffffff1f
@@ -539,6 +526,26 @@
 @media screen and (min-width: 900px)
     .billboard__pager
         max-width: min(480px, 42vw)
+
+// Wide-layout card sizing. Deliberately after the base copy rules: the earlier
+// min-width:1280 block is declared above them, so equal-specificity overrides
+// placed there lose on source order. Kept before the max-width:1280 block so
+// the stacked layout still wins at exactly 1280px.
+@media screen and (min-width: 1280px)
+    .billboard__content
+        // Hug the copy instead of the fixed column so short slides avoid a
+        // full-width slab. The column width stays the ceiling, so long titles
+        // wrap exactly where they did before.
+        width: fit-content
+        max-width: min(640px, 100%)
+    // Copy is bottom-aligned here, so the actions hold a steady Y on their own —
+    // the desc/chips reservations only pad the card out on slides with short or
+    // missing text. Measured: dropping them takes 102px off a card whose episode
+    // has no description, with the actions staying put. The stacked layout keeps
+    // its reservations, where the column really would move the buttons.
+    .billboard__copy-body,
+    .billboard__desc
+        min-height: 0
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.

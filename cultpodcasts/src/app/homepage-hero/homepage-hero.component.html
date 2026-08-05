@@ -65,10 +65,18 @@
           <span class="billboard__live" aria-hidden="true"></span>
           Now featuring
         </p>
+        <p class="hero-show">
+          <a class="hero-pill" [routerLink]="['/podcast', feature.podcastName]">
+            {{ displayCatalogName(feature.podcastName) }}
+          </a>
+        </p>
         <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
-        <p class="billboard__meta">
-          <a [routerLink]="['/podcast', feature.podcastName]">{{ displayCatalogName(feature.podcastName) }}</a>
-          <span> · {{ durationLabel(feature.duration) }}</span>
+        <p class="hero-meta">
+          @if (releaseLabel(feature); as release) {
+          <span>{{ release }}</span>
+          <span class="hero-meta__dot" aria-hidden="true">&middot;</span>
+          }
+          <span>{{ durationLabel(feature.duration) }}</span>
           @if (languageFlag(feature); as lang) {
           <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
             <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>

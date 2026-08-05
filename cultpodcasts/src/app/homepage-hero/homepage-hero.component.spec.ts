@@ -5,13 +5,13 @@ import { HomepageHeroComponent } from './homepage-hero.component';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
 
-function ep(id: string): HomepageEpisode {
+function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageEpisode {
   return {
     id,
     podcastName: `Show ${id}`,
     episodeTitle: `Episode ${id}`,
     episodeDescription: `Desc ${id}`,
-    release: new Date(),
+    release: new Date('2026-07-31T12:00:00Z'),
     duration: '01:00:00',
     spotify: undefined,
     apple: undefined,
@@ -20,6 +20,7 @@ function ep(id: string): HomepageEpisode {
     internetArchive: undefined,
     subjects: [`Subject ${id}`],
     image: new URL(`https://img.example/${id}.jpg`),
+    ...overrides,
   };
 }
 
@@ -70,6 +71,44 @@ describe('HomepageHeroComponent', () => {
   it('starts on the first slide', () => {
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');
+  });
+
+  it('keeps Now featuring above a podcast pill, then date and duration in the meta line', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const eyebrow = root.querySelector('.billboard__eyebrow');
+    const pill = root.querySelector('a.hero-pill') as HTMLAnchorElement | null;
+    const title = root.querySelector('h1.billboard__title');
+    const meta = root.querySelector('.hero-meta');
+    expect(eyebrow).toBeTruthy();
+    expect(pill).toBeTruthy();
+    expect(title).toBeTruthy();
+    expect(meta).toBeTruthy();
+
+    const metaText = meta!.textContent?.replace(/\s+/g, ' ').trim();
+
+    expect(eyebrow!.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
+    expect(pill!.textContent?.trim()).toBe('Show a');
+    expect(pill!.getAttribute('href')).toBe('/podcast/Show%20a');
+    expect(title!.textContent?.trim()).toBe('Episode a');
+    expect(metaText).toContain('31 Jul 2026');
+    expect(metaText).toContain('1:00:00');
+    expect(meta!.querySelector('a')).toBeNull();
+    expect(eyebrow!.compareDocumentPosition(pill!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(pill!.compareDocumentPosition(title!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(title!.compareDocumentPosition(meta!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('omits the release date from the meta line when the slide has no usable release', () => {
+    fixture.componentRef.setInput('slides', [
+      ep('a', { release: new Date('not-a-date') }),
+      ep('b'),
+      ep('c'),
+    ]);
+    fixture.detectChanges();
+
+    const meta = fixture.nativeElement.querySelector('.hero-meta') as HTMLElement;
+    expect(meta.querySelector('.hero-meta__dot')).toBeNull();
+    expect(meta.textContent?.replace(/\s+/g, ' ').trim()).toBe('1:00:00');
   });
 
   it('jumps to a slide when its hero dash is clicked', () => {
