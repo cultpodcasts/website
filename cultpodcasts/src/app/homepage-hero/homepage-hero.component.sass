@@ -531,9 +531,12 @@
         // Drop the tall viewport min-height — it forced letterboxing around
         // the contain-sized art. Height comes from search clearance + copy.
         min-height: 0
-        // Height of the 16:9 media frame. Must track the frame's own aspect-ratio
-        // so the copy starts at its lower edge.
-        --hero-band-h: 56.25vw
+        // Media frame height, preferring 56.25vw — 16:9 at full width, the aspect
+        // ~80% of hero art uses, so it fills the frame exactly. Short-and-wide
+        // windows (a non-maximised desktop window) instead reserve ~320px for the
+        // copy so title and description stay above the fold; the frame is then
+        // wider than 16:9 and art letterboxes inside it.
+        --hero-band-h: clamp(180px, calc(100vh - 320px), 56.25vw)
         // Framed art ends on a clean edge, so no dissolve is needed. Only the
         // pre-measure fallback (art still covering the whole billboard) needs one.
         --hero-copy-fade: 0px
@@ -559,11 +562,9 @@
             right: 0
             bottom: auto
             width: 100%
-            height: auto
-            // Constant, not per-art: ~80% of hero art is a 16:9 video frame and
-            // fills this exactly, and a frame that resized per slide moved the copy
-            // (and everything below the hero) on every rotation.
-            aspect-ratio: 16 / 9
+            // Fixed height, not the art's aspect: a frame that resized per slide
+            // moved the copy (and everything below the hero) on every rotation.
+            height: var(--hero-band-h)
         // Art is contained in the frame (base .has-edge-extend rules), so 4:3 and
         // square cover art letterbox instead of being cropped or stretched.
         // Plain gutters — the blurred edge fill is a wide-layout effect.
