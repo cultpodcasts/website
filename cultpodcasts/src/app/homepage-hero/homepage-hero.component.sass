@@ -531,15 +531,23 @@
         // Drop the tall viewport min-height — it forced letterboxing around
         // the contain-sized art. Height comes from search clearance + copy.
         min-height: 0
+        // Height of the 16:9 media frame. Must track the frame's own aspect-ratio
+        // so the copy starts at its lower edge.
+        --hero-band-h: 56.25vw
+        // Framed art ends on a clean edge, so no dissolve is needed. Only the
+        // pre-measure fallback (art still covering the whole billboard) needs one.
+        --hero-copy-fade: 0px
         &::before
             content: ''
-            flex: 0 0 var(--nflx-hero-search-clearance, 140px)
-            min-height: var(--nflx-hero-search-clearance, 140px)
+            flex: 0 0 max(var(--nflx-hero-search-clearance, 140px), var(--hero-band-h))
+            min-height: max(var(--nflx-hero-search-clearance, 140px), var(--hero-band-h))
             width: 100%
             pointer-events: none
-    // Media band matches art aspect so the image fills with no top/bottom bars.
-    // Mid-width: keep the band at top:0 under frosted/transparent chrome; clearance
-    // is for copy via ::before. Narrow (≤700) overrides top to sit below the sticky row.
+    .billboard:not(.has-art-aspect)
+        --hero-copy-fade: 96px
+    // Fixed 16:9 media frame at the top. Mid-width: keep it at top:0 under
+    // frosted/transparent chrome; clearance is for copy via ::before. Narrow (≤700)
+    // overrides top to sit below the sticky row.
     .billboard.has-art-aspect
         .billboard__stages,
         .billboard__grain,
@@ -552,18 +560,20 @@
             bottom: auto
             width: 100%
             height: auto
-            aspect-ratio: var(--hero-art-aspect)
-        .billboard__stage.has-edge-extend
-            .billboard__stage-edge--left,
-            .billboard__stage-edge--right
-                width: 0
-            .billboard__stage-focus-slot
-                inset: 0
-                top: 0
-                left: 0
-                width: 100%
-                height: 100%
-                transform: none
+            // Constant, not per-art: ~80% of hero art is a 16:9 video frame and
+            // fills this exactly, and a frame that resized per slide moved the copy
+            // (and everything below the hero) on every rotation.
+            aspect-ratio: 16 / 9
+        // Art is contained in the frame (base .has-edge-extend rules), so 4:3 and
+        // square cover art letterbox instead of being cropped or stretched.
+        // Plain gutters — the blurred edge fill is a wide-layout effect.
+        .billboard__stage
+            background-color: #0b0b0b
+        .billboard__stage.has-edge-extend .billboard__stage-edge
+            display: none
+    // Copy gets its own opaque full-bleed panel rather than sitting on the art:
+    // episode art routinely carries its own large burnt-in title, so no scrim makes
+    // overlaid type reliably legible.
     .billboard__content
         width: 100%
         max-width: min(640px, 100%)
@@ -571,6 +581,24 @@
         padding-top: 8px
         position: relative
         z-index: 2
+        &::before
+            content: ''
+            position: absolute
+            left: -4vw
+            top: calc(-1 * var(--hero-copy-fade))
+            width: 100vw
+            // Clipped by .billboard overflow; covers art of any aspect below the fade.
+            height: 100vh
+            z-index: -1
+            pointer-events: none
+            // Fade band on top, opaque fill for everything below it.
+            background: linear-gradient(to bottom, rgba(11, 11, 11, 0) 0%, rgba(11, 11, 11, 0.82) 72%, #0b0b0b 100%) no-repeat top / 100% var(--hero-copy-fade), linear-gradient(#0b0b0b, #0b0b0b) no-repeat bottom / 100% calc(100% - var(--hero-copy-fade))
+    // Copy no longer sits on the art, so the only job left is keeping the frosted
+    // chrome legible over the top of the frame.
+    .billboard__scrim
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 22%)
+    .billboard__vignette
+        background: none
     .billboard__controls
         position: relative
         right: auto
@@ -591,10 +619,10 @@
         min-height: 0
         padding-bottom: 20px
         gap: 12px
-        // Copy offset under the fixed docked header (media band is offset separately).
+        // The frame sits below the chrome here, so the copy clears both.
         &::before
-            flex-basis: var(--nflx-hero-search-clearance, 64px)
-            min-height: var(--nflx-hero-search-clearance, 64px)
+            flex-basis: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px) + var(--hero-band-h))
+            min-height: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px) + var(--hero-band-h))
     // Narrow: art starts flush below the sticky chrome row — not tucked under it.
     // (Mid/wide ≤1280 keep top:0 so art can sit under frosted/transparent chrome.)
     .billboard.has-art-aspect
@@ -603,6 +631,9 @@
         .billboard__scrim,
         .billboard__vignette
             top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
+    // Frame is clear of the chrome, so it needs no top scrim at all.
+    .billboard.has-art-aspect .billboard__scrim
+        background: none
     .billboard__content
         padding-top: 0
     .billboard__eyebrow
