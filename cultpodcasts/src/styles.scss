@@ -27,7 +27,8 @@ html {
   --cp-column: min(680px, 100%);
   --cp-radius: 14px;
   --cp-font-display: 'Instrument Serif', Georgia, serif;
-  --cp-font-ui: Figtree, 'Segoe UI', sans-serif;
+  // Twemoji first: unicode-range limits it to flag emoji; Windows Chrome needs it.
+  --cp-font-ui: 'Twemoji Country Flags', Figtree, 'Segoe UI', sans-serif;
 }
 
 html,
@@ -48,6 +49,15 @@ body {
     linear-gradient(180deg, var(--cp-ink) 0%, #0f1219 40%, var(--cp-ink) 100%);
   background-attachment: fixed;
   min-height: 100%;
+}
+
+/* Flag emoji surfaces (Windows Chromium polyfill — see main.ts). */
+.episode-poster__badge--lang,
+.billboard__lang-flag,
+.episode-hero__lang-flag,
+.stage__lang,
+.curator-card__lang {
+  font-family: 'Twemoji Country Flags', var(--cp-font-ui);
 }
 
 html.curator-snap-enabled {
