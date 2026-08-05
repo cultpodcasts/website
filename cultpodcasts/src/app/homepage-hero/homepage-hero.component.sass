@@ -190,6 +190,14 @@
     // opaque surface with deliberate edges — the same separation the narrow layout
     // gets from its panel — so the artwork stays sharp and untouched everywhere
     // outside it, including its own lettering.
+    // Copy is bottom-aligned here, so the actions hold a steady Y on their own —
+    // the desc/chips reservations only pad the card out on slides with short or
+    // missing text. Measured: dropping them takes 102px off a card whose episode
+    // has no description, with the actions staying put. The stacked layout keeps
+    // its reservations, where the column really would move the buttons.
+    .billboard__copy-body,
+    .billboard__desc
+        min-height: 0
     .billboard__content
         // Hug the copy instead of the fixed column so short slides avoid a
         // full-width slab. The column width stays the ceiling, so long titles
