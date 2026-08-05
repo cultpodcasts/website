@@ -588,38 +588,13 @@
   .billboard__vignette {
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%);
   }
-  .billboard__content::before {
-    content: "";
-    position: absolute;
-    top: -100%;
-    bottom: -100%;
-    left: -6vw;
-    right: -240px;
-    z-index: -1;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 0.6) 100%);
-    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%);
-    mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%);
+  .billboard__title {
+    text-shadow: 0 0 0.045em rgb(0, 0, 0), 0 0 0.11em rgba(0, 0, 0, 0.98), 0 0 0.22em rgba(0, 0, 0, 0.92), 0 0 0.42em rgba(0, 0, 0, 0.8), 0 0 0.85em rgba(0, 0, 0, 0.55);
   }
-  @supports (backdrop-filter: blur(2px)) {
-    .billboard__content::before {
-      backdrop-filter: blur(22px) saturate(0.85);
-    }
-  }
-  @supports (mask-composite: intersect) {
-    .billboard__content::before {
-      top: -80px;
-      bottom: -48px;
-      -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%);
-      mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%);
-      -webkit-mask-composite: source-in;
-      mask-composite: intersect;
-    }
-  }
-}
-@media screen and (min-width: 1280px) and (prefers-reduced-motion: reduce) {
-  .billboard__content::before {
-    backdrop-filter: none;
+  .billboard__eyebrow,
+  .billboard__meta,
+  .billboard__desc {
+    text-shadow: 0 0 1.5px rgb(0, 0, 0), 0 0 3px rgb(0, 0, 0), 0 0 6px rgba(0, 0, 0, 0.98), 0 0 12px rgba(0, 0, 0, 0.88), 0 0 22px rgba(0, 0, 0, 0.7), 0 0 38px rgba(0, 0, 0, 0.5);
   }
 }
 .billboard__content {
@@ -1155,7 +1130,7 @@
 }</script>
   <script id="hero-meta" type="application/json">{
   "source": "src/app/homepage-hero/homepage-hero.component.sass",
-  "sha256": "5fccd3f4f86a92a623476f54e1158b70898cd05fdb1ba4aa6e9be9465e8a3584",
+  "sha256": "afe8dbe4e72c3ae53f4b3b86f4bd1923f075c4f1d6ec316e33f0e5962463755e",
   "command": "npm run hero:legibility"
 }</script>
 

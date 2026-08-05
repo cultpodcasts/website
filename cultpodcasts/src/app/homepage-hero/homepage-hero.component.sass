@@ -184,49 +184,20 @@
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
     // Full-height art is ~1.78× the hero height, so the left edge fill only reaches
     // under the copy above ~1980px wide. Below that the sharp image sits behind the
-    // title and white type can land on white artwork. Give the copy its own frosted
-    // band, feathered on the right so it reads as glass rather than a slab.
-    // Darkening alone must carry legibility — the blur is progressive enhancement.
-    .billboard__content::before
-        content: ''
-        position: absolute
-        // Full-height band (clipped by .billboard) so it has no visible top/bottom edge.
-        top: -100%
-        bottom: -100%
-        left: -6vw
-        // Overhang gives the fade room to land clear of the text, not across it.
-        right: -240px
-        z-index: -1
-        pointer-events: none
-        // Weighted left, where the ink is. The tint must hold contrast on its own:
-        // blurring white artwork still leaves it white, so blur cannot substitute.
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 0.6) 100%)
-        // Opaque to the column's right edge, then feather across the overhang.
-        // Masks the backdrop-filter too, so blur fades out along with the tint.
-        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%)
-        mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%)
-        // Blur only removes the artwork's own detail, so type is not read against edges.
-        @supports (backdrop-filter: blur(2px))
-            backdrop-filter: blur(22px) saturate(0.85)
-    // Wrap the treatment around the copy rather than running the hero's full
-    // height, which reads as a vertical wipe through the artwork. Intersecting a
-    // vertical ramp bounds it to the text block and feathers it above and below.
-    // Still fully opaque across the copy box, so the contrast floor is unchanged
-    // (proved for every width by docs/hero-legibility.html).
-    @supports (mask-composite: intersect)
-        .billboard__content::before
-            top: -80px
-            // Ramp ends exactly on the hero's bottom edge (48px of hero padding),
-            // so the feather completes rather than being clipped mid-fade.
-            bottom: -48px
-            -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%)
-            mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 240px), transparent 100%), linear-gradient(180deg, transparent 0, #000 80px, #000 calc(100% - 48px), transparent 100%)
-            -webkit-mask-composite: source-in
-            mask-composite: intersect
-    // Ken Burns runs under this band; skip the per-frame blur where motion is opted out.
-    @media (prefers-reduced-motion: reduce)
-        .billboard__content::before
-            backdrop-filter: none
+    // title and white type can land on white artwork. Protect the copy with a halo
+    // that follows the glyphs rather than tinting a column of the hero: the artwork
+    // keeps its detail and its own lettering stays readable, and the darkening ends
+    // where each line of type ends instead of at a fixed x. Where the two compete,
+    // our copy wins locally and the artwork wins everywhere else.
+    // Radii are relative to font size on the display face so the contour stays
+    // proportionate across the clamped title, and fixed on the smaller UI text
+    // where em-scaled radii collapse to sub-pixel.
+    .billboard__title
+        text-shadow: 0 0 0.045em rgba(0, 0, 0, 1), 0 0 0.11em rgba(0, 0, 0, 0.98), 0 0 0.22em rgba(0, 0, 0, 0.92), 0 0 0.42em rgba(0, 0, 0, 0.8), 0 0 0.85em rgba(0, 0, 0, 0.55)
+    .billboard__eyebrow,
+    .billboard__meta,
+    .billboard__desc
+        text-shadow: 0 0 1.5px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 1), 0 0 6px rgba(0, 0, 0, 0.98), 0 0 12px rgba(0, 0, 0, 0.88), 0 0 22px rgba(0, 0, 0, 0.7), 0 0 38px rgba(0, 0, 0, 0.5)
 
 .billboard__content
     position: relative
