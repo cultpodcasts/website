@@ -184,20 +184,28 @@
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
     // Full-height art is ~1.78× the hero height, so the left edge fill only reaches
     // under the copy above ~1980px wide. Below that the sharp image sits behind the
-    // title and white type can land on white artwork. Protect the copy with a halo
-    // that follows the glyphs rather than tinting a column of the hero: the artwork
-    // keeps its detail and its own lettering stays readable, and the darkening ends
-    // where each line of type ends instead of at a fixed x. Where the two compete,
-    // our copy wins locally and the artwork wins everywhere else.
-    // Radii are relative to font size on the display face so the contour stays
-    // proportionate across the clamped title, and fixed on the smaller UI text
-    // where em-scaled radii collapse to sub-pixel.
-    .billboard__title
-        text-shadow: 0 0 0.045em rgba(0, 0, 0, 1), 0 0 0.11em rgba(0, 0, 0, 0.98), 0 0 0.22em rgba(0, 0, 0, 0.92), 0 0 0.42em rgba(0, 0, 0, 0.8), 0 0 0.85em rgba(0, 0, 0, 0.55)
-    .billboard__eyebrow,
-    .billboard__meta,
-    .billboard__desc
-        text-shadow: 0 0 1.5px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 1), 0 0 6px rgba(0, 0, 0, 0.98), 0 0 12px rgba(0, 0, 0, 0.88), 0 0 22px rgba(0, 0, 0, 0.7), 0 0 38px rgba(0, 0, 0, 0.5)
+    // copy, and type treatment alone cannot save it: artwork frequently carries its
+    // own burnt-in title or a white cover card exactly where our text lands, which
+    // is a collision of content rather than a contrast problem. Give the copy an
+    // opaque surface with deliberate edges — the same separation the narrow layout
+    // gets from its panel — so the artwork stays sharp and untouched everywhere
+    // outside it, including its own lettering.
+    .billboard__content
+        // Hug the copy instead of the fixed column so short slides avoid a
+        // full-width slab. The column width stays the ceiling, so long titles
+        // wrap exactly where they did before.
+        width: fit-content
+        max-width: min(640px, 100%)
+        &::before
+            content: ''
+            position: absolute
+            inset: -18px -24px -16px -24px
+            border-radius: 14px
+            // Short of opaque so a trace of artwork still reads through, while
+            // holding ~17:1 against white art — the worst case for white type.
+            background: rgba(11, 11, 11, 0.93)
+            z-index: -1
+            pointer-events: none
 
 .billboard__content
     position: relative
