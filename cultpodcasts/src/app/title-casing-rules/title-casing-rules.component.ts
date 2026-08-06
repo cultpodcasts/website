@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTabsModule } from '@angular/material/tabs';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -17,6 +18,7 @@ import {
   KnownTermDialogResult
 } from './known-term-dialog.component';
 import {
+  KnownTerm,
   LanguageTitleCasingRules,
   LanguageTitleCasingRulesResponse,
   LanguageTitleCasingRulesUpdate
@@ -37,6 +39,7 @@ interface LanguageOption {
     MatInputModule,
     MatSelectModule,
     MatIconModule,
+    MatTabsModule,
     FormsModule
   ],
   templateUrl: './title-casing-rules.component.html',
@@ -55,10 +58,38 @@ export class TitleCasingRulesComponent {
   newLowerCaseTerm = '';
   editingLowerCaseIndex = signal<number | null>(null);
   editingLowerCaseValue = '';
+  lowerCaseFilter = signal('');
+  knownTermFilter = signal('');
 
   readonly canSave = computed(() =>
     !this.isLoading() && !this.isSaving() && !!this.selectedLanguage() && !!this.currentRules()
   );
+
+  readonly filteredLowerCaseTerms = computed(() => {
+    const rules = this.currentRules();
+    if (!rules) {
+      return [] as { term: string; index: number }[];
+    }
+    const q = this.lowerCaseFilter().trim().toLowerCase();
+    return rules.lowerCaseTerms
+      .map((term, index) => ({ term, index }))
+      .filter(item => !q || item.term.toLowerCase().includes(q));
+  });
+
+  readonly filteredKnownTerms = computed(() => {
+    const rules = this.currentRules();
+    if (!rules) {
+      return [] as { term: KnownTerm; index: number }[];
+    }
+    const q = this.knownTermFilter().trim().toLowerCase();
+    return rules.knownTerms
+      .map((term, index) => ({ term, index }))
+      .filter(item =>
+        !q
+        || item.term.literal.toLowerCase().includes(q)
+        || item.term.pattern.toLowerCase().includes(q)
+      );
+  });
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -76,10 +107,23 @@ export class TitleCasingRulesComponent {
   }
 
   async onLanguageChange(code: string) {
+    if (code === this.selectedLanguage() && this.currentRules()) {
+      return;
+    }
+
     this.selectedLanguage.set(code);
     this.cancelEditLowerCaseTerm();
     this.newLowerCaseTerm = '';
-    await this.loadLanguageRules(code);
+    this.lowerCaseFilter.set('');
+    this.knownTermFilter.set('');
+    this.currentRules.set(undefined);
+    this.isDefault.set(false);
+    this.isLoading.set(true);
+    try {
+      await this.loadLanguageRules(code);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   addLowerCaseTerm() {
@@ -96,6 +140,7 @@ export class TitleCasingRulesComponent {
       lowerCaseTerms: [...rules.lowerCaseTerms, term].sort((a, b) => a.localeCompare(b))
     });
     this.newLowerCaseTerm = '';
+    this.lowerCaseFilter.set('');
   }
 
   startEditLowerCaseTerm(index: number) {
@@ -165,6 +210,7 @@ export class TitleCasingRulesComponent {
       const knownTerms = [...current.knownTerms];
       if (index == null) {
         knownTerms.push(result.term);
+        this.knownTermFilter.set('');
       } else {
         knownTerms[index] = result.term;
       }
@@ -271,7 +317,11 @@ export class TitleCasingRulesComponent {
         .sort((a, b) => a.name.localeCompare(b.name));
       this.languageOptions.set(options);
 
-      const initialLang = options[0]?.code ?? '';
+      // Prefer English; only fetch terms for the selected language (not every option).
+      const initialLang =
+        options.find(o => o.code === 'en')?.code
+        ?? options[0]?.code
+        ?? '';
       this.selectedLanguage.set(initialLang);
       if (initialLang) {
         await this.loadLanguageRules(initialLang, headers);

@@ -246,8 +246,9 @@ export class ToolbarComponent {
     const dialogRef = this.dialog.open(TitleCasingRulesComponent, {
       disableClose: true,
       autoFocus: true,
-      width: '40em',
-      maxWidth: '95vw'
+      width: '44em',
+      maxWidth: '95vw',
+      maxHeight: '90vh'
     });
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
