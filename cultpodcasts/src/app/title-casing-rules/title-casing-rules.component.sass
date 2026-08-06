@@ -7,10 +7,36 @@
   margin: 0 0 0.75em
   color: #6a4c00
 
+:host
+  // Outline mat-label sits on the field border; dialog content overflow clips it.
+  ::ng-deep .mat-mdc-dialog-content
+    overflow-x: hidden
+    overflow-y: auto
+    padding-top: 1em
+
+.language-row
+  display: flex
+  align-items: center
+  gap: 0.75em
+  flex-wrap: wrap
+  // Room for the floating outline label above the field border.
+  padding-top: 0.35em
+  margin-bottom: 0.25em
+
 .language-select
   width: 100%
   max-width: 24em
-  display: block
+  flex: 1 1 14em
+  // Keep the outline label inside the row’s box.
+  margin-top: 0.25em
+
+.universal-button
+  flex: 0 0 auto
+  align-self: center
+
+  &.active
+    background: rgba(128, 128, 128, 0.18)
+    font-weight: 600
 
 .rules-body
   position: relative
@@ -34,6 +60,9 @@
   margin: 0
 
 .rules-tabs
+  margin-top: 0.25em
+
+.universal-known-terms
   margin-top: 0.25em
 
 .tab-count
@@ -155,6 +184,10 @@
 
   th:nth-child(3), td:nth-child(3)
     width: 6.5em
+
+  &.with-promote
+    th:nth-child(3), td:nth-child(3)
+      width: 9.5em
 
   td.pattern
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace

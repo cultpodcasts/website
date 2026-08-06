@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -29,9 +31,12 @@ interface LanguageOption {
   name: string;
 }
 
+const UNIVERSAL_LANGUAGE = '*';
+
 @Component({
   selector: 'app-title-casing-rules',
   imports: [
+    NgTemplateOutlet,
     MatDialogModule,
     MatProgressSpinnerModule,
     MatButtonModule,
@@ -40,6 +45,7 @@ interface LanguageOption {
     MatSelectModule,
     MatIconModule,
     MatTabsModule,
+    MatSnackBarModule,
     FormsModule
   ],
   templateUrl: './title-casing-rules.component.html',
@@ -52,6 +58,7 @@ export class TitleCasingRulesComponent {
   isInError = signal(false);
   errorMessage = signal('');
   isDefault = signal(false);
+  isUniversalMode = signal(false);
   languageOptions = signal<LanguageOption[]>([]);
   selectedLanguage = signal('');
   currentRules = signal<LanguageTitleCasingRules | undefined>(undefined);
@@ -62,7 +69,14 @@ export class TitleCasingRulesComponent {
   knownTermFilter = signal('');
 
   readonly canSave = computed(() =>
-    !this.isLoading() && !this.isSaving() && !!this.selectedLanguage() && !!this.currentRules()
+    !this.isLoading()
+    && !this.isSaving()
+    && !!this.currentRules()
+    && (this.isUniversalMode() || !!this.selectedLanguage())
+  );
+
+  readonly showPromote = computed(() =>
+    !this.isUniversalMode() && this.selectedLanguage() === 'en'
   );
 
   readonly filteredLowerCaseTerms = computed(() => {
@@ -95,6 +109,7 @@ export class TitleCasingRulesComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialog: MatDialog,
+    private snackBar: MatSnackBar,
     private dialogRef: MatDialogRef<TitleCasingRulesComponent, { saved?: boolean }>
   ) { }
 
@@ -107,16 +122,16 @@ export class TitleCasingRulesComponent {
   }
 
   async onLanguageChange(code: string) {
-    if (code === this.selectedLanguage() && this.currentRules()) {
+    if (!this.isUniversalMode() && code === this.selectedLanguage() && this.currentRules()) {
       return;
     }
 
+    this.isUniversalMode.set(false);
     this.selectedLanguage.set(code);
     this.cancelEditLowerCaseTerm();
     this.newLowerCaseTerm = '';
     this.lowerCaseFilter.set('');
     this.knownTermFilter.set('');
-    // Keep previous rules mounted under the busy overlay so dialog size stays stable.
     this.isDefault.set(false);
     this.isLoading.set(true);
     try {
@@ -126,10 +141,29 @@ export class TitleCasingRulesComponent {
     }
   }
 
+  async onUniversalClick() {
+    if (this.isUniversalMode() && this.currentRules()) {
+      return;
+    }
+
+    this.isUniversalMode.set(true);
+    this.cancelEditLowerCaseTerm();
+    this.newLowerCaseTerm = '';
+    this.lowerCaseFilter.set('');
+    this.knownTermFilter.set('');
+    this.isDefault.set(false);
+    this.isLoading.set(true);
+    try {
+      await this.loadLanguageRules(UNIVERSAL_LANGUAGE);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
   addLowerCaseTerm() {
     const term = this.newLowerCaseTerm.trim();
     const rules = this.currentRules();
-    if (!term || !rules) {
+    if (!term || !rules || this.isUniversalMode()) {
       return;
     }
     if (rules.lowerCaseTerms.some(t => t.toLowerCase() === term.toLowerCase())) {
@@ -145,7 +179,7 @@ export class TitleCasingRulesComponent {
 
   startEditLowerCaseTerm(index: number) {
     const rules = this.currentRules();
-    if (!rules) {
+    if (!rules || this.isUniversalMode()) {
       return;
     }
     this.editingLowerCaseIndex.set(index);
@@ -155,7 +189,7 @@ export class TitleCasingRulesComponent {
   saveEditLowerCaseTerm() {
     const index = this.editingLowerCaseIndex();
     const rules = this.currentRules();
-    if (index == null || !rules) {
+    if (index == null || !rules || this.isUniversalMode()) {
       return;
     }
     const term = this.editingLowerCaseValue.trim();
@@ -178,7 +212,7 @@ export class TitleCasingRulesComponent {
 
   deleteLowerCaseTerm(index: number) {
     const rules = this.currentRules();
-    if (!rules) {
+    if (!rules || this.isUniversalMode()) {
       return;
     }
     this.currentRules.set({
@@ -229,12 +263,74 @@ export class TitleCasingRulesComponent {
     });
   }
 
+  async promoteKnownTerm(index: number) {
+    const rules = this.currentRules();
+    if (!rules || !this.showPromote()) {
+      return;
+    }
+
+    const term = rules.knownTerms[index];
+    if (!term) {
+      return;
+    }
+
+    if (!window.confirm(`Move “${term.literal}” to Universal and remove it from English?`)) {
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.isInError.set(false);
+    this.errorMessage.set('');
+
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        this.isInError.set(true);
+        this.errorMessage.set('Could not get admin token.');
+        this.isSaving.set(false);
+        return;
+      }
+
+      const universal = await this.fetchRules(UNIVERSAL_LANGUAGE, headers);
+      if (universal.knownTerms.some(t => t.literal === term.literal)) {
+        this.snackBar.open('That known term is already in Universal.', 'Dismiss', { duration: 4000 });
+        this.isSaving.set(false);
+        return;
+      }
+
+      const nextUniversal: LanguageTitleCasingRulesUpdate = {
+        lowerCaseTerms: [],
+        knownTerms: [...universal.knownTerms, { ...term }]
+      };
+      await this.putRules(UNIVERSAL_LANGUAGE, nextUniversal, headers);
+
+      const nextEnglish: LanguageTitleCasingRulesUpdate = {
+        lowerCaseTerms: rules.lowerCaseTerms,
+        knownTerms: rules.knownTerms.filter((_, i) => i !== index)
+      };
+      const englishResp = await this.putRules('en', nextEnglish, headers);
+      this.applyLanguageRules(englishResp);
+      this.snackBar.open(`Promoted “${term.literal}” to Universal.`, 'Dismiss', { duration: 3000 });
+    } catch (error: any) {
+      console.error(error);
+      this.isInError.set(true);
+      this.errorMessage.set(error?.error?.error ?? 'Promote failed.');
+      try {
+        await this.loadLanguageRules('en');
+      } catch {
+        // keep error from promote
+      }
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
   async onSave() {
     if (!this.canSave()) {
       return;
     }
 
-    const lang = this.selectedLanguage();
+    const lang = this.isUniversalMode() ? UNIVERSAL_LANGUAGE : this.selectedLanguage();
     const rules = this.currentRules();
     if (!lang || !rules) {
       return;
@@ -245,7 +341,7 @@ export class TitleCasingRulesComponent {
     this.errorMessage.set('');
 
     const body: LanguageTitleCasingRulesUpdate = {
-      lowerCaseTerms: rules.lowerCaseTerms,
+      lowerCaseTerms: this.isUniversalMode() ? [] : rules.lowerCaseTerms,
       knownTerms: rules.knownTerms
     };
 
@@ -258,24 +354,10 @@ export class TitleCasingRulesComponent {
         return;
       }
 
-      const resp = await firstValueFrom(
-        this.http.put<LanguageTitleCasingRulesResponse>(
-          new URL(`/title-casing-rules/${encodeURIComponent(lang)}`, environment.api).toString(),
-          body,
-          { headers, observe: 'response' }
-        )
-      );
-
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        this.isSaving.set(false);
-        this.dialogRef.close({ saved: true });
-        return;
-      }
-
-      this.isInError.set(true);
-      this.errorMessage.set('Save failed.');
+      const respBody = await this.putRules(lang, body, headers);
+      this.applyLanguageRules(respBody);
       this.isSaving.set(false);
+      this.dialogRef.close({ saved: true });
     } catch (error: any) {
       console.error(error);
       this.isInError.set(true);
@@ -317,7 +399,6 @@ export class TitleCasingRulesComponent {
         .sort((a, b) => a.name.localeCompare(b.name));
       this.languageOptions.set(options);
 
-      // Prefer English; only fetch terms for the selected language (not every option).
       const initialLang =
         options.find(o => o.code === 'en')?.code
         ?? options[0]?.code
@@ -346,26 +427,13 @@ export class TitleCasingRulesComponent {
         return;
       }
 
-      const resp = await firstValueFrom(
-        this.http.get<LanguageTitleCasingRulesResponse>(
-          new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api).toString(),
-          { headers: authHeaders, observe: 'response' }
-        )
-      );
-
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        return;
-      }
-
-      if (resp.status === 404) {
-        this.isDefault.set(false);
-        this.currentRules.set({ lowerCaseTerms: [], knownTerms: [] });
-        return;
-      }
-
-      this.isInError.set(true);
-      this.errorMessage.set('Failed to load title casing rules.');
+      const rules = await this.fetchRules(code, authHeaders);
+      this.applyLanguageRules({
+        language: code,
+        lowerCaseTerms: rules.lowerCaseTerms,
+        knownTerms: rules.knownTerms,
+        isDefault: rules.isDefault
+      });
     } catch (error: any) {
       if (error?.status === 404) {
         this.isDefault.set(false);
@@ -378,7 +446,64 @@ export class TitleCasingRulesComponent {
     }
   }
 
-  private applyLanguageRules(rules: LanguageTitleCasingRulesResponse) {
+  private async fetchRules(
+    code: string,
+    headers: HttpHeaders
+  ): Promise<LanguageTitleCasingRules & { isDefault: boolean }> {
+    try {
+      const resp = await firstValueFrom(
+        this.http.get<LanguageTitleCasingRulesResponse>(
+          this.rulesUrl(code),
+          { headers, observe: 'response' }
+        )
+      );
+
+      if (resp.status === 200 && resp.body) {
+        return {
+          lowerCaseTerms: [...(resp.body.lowerCaseTerms ?? [])],
+          knownTerms: (resp.body.knownTerms ?? []).map(t => ({ ...t })),
+          isDefault: resp.body.isDefault
+        };
+      }
+
+      if (resp.status === 404) {
+        return { lowerCaseTerms: [], knownTerms: [], isDefault: false };
+      }
+
+      throw new Error('Failed to load title casing rules.');
+    } catch (error: any) {
+      if (error?.status === 404) {
+        return { lowerCaseTerms: [], knownTerms: [], isDefault: false };
+      }
+      throw error;
+    }
+  }
+
+  private async putRules(
+    code: string,
+    body: LanguageTitleCasingRulesUpdate,
+    headers: HttpHeaders
+  ): Promise<LanguageTitleCasingRulesResponse> {
+    const resp = await firstValueFrom(
+      this.http.put<LanguageTitleCasingRulesResponse>(
+        this.rulesUrl(code),
+        body,
+        { headers, observe: 'response' }
+      )
+    );
+
+    if (resp.status === 200 && resp.body) {
+      return resp.body;
+    }
+
+    throw Object.assign(new Error('Save failed.'), { error: { error: 'Save failed.' } });
+  }
+
+  private rulesUrl(code: string): string {
+    return new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api).toString();
+  }
+
+  private applyLanguageRules(rules: LanguageTitleCasingRulesResponse | (LanguageTitleCasingRules & { isDefault: boolean; language?: string })) {
     this.isDefault.set(rules.isDefault);
     this.currentRules.set({
       lowerCaseTerms: [...(rules.lowerCaseTerms ?? [])],

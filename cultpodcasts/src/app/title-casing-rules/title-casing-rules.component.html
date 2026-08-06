@@ -10,14 +10,28 @@
   }
 
   @if (languageOptions().length > 0) {
-  <mat-form-field class="language-select">
-    <mat-label>Language</mat-label>
-    <mat-select [value]="selectedLanguage()" (valueChange)="onLanguageChange($event)" [disabled]="isLoading() || isSaving()">
-      @for (lang of languageOptions(); track lang.code) {
-      <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+  <div class="language-row">
+    <mat-form-field class="language-select" subscriptSizing="dynamic">
+      <mat-label>Language</mat-label>
+      <mat-select
+        [value]="selectedLanguage()"
+        (valueChange)="onLanguageChange($event)"
+        [disabled]="isLoading() || isSaving()">
+        @for (lang of languageOptions(); track lang.code) {
+        <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button
+      mat-stroked-button
+      type="button"
+      class="universal-button"
+      [class.active]="isUniversalMode()"
+      [disabled]="isLoading() || isSaving()"
+      (click)="onUniversalClick()">
+      Universal
+    </button>
+  </div>
   }
 
   <div class="rules-body" [class.is-busy]="isLoading() || isSaving()">
@@ -27,6 +41,36 @@
     </div>
     }
     @if (currentRules(); as rules) {
+    @if (isUniversalMode()) {
+    <section class="universal-known-terms">
+      <section class="add-panel">
+        <p class="add-hint">Add a literal / regex pair that applies to every episode language</p>
+        <button mat-flat-button color="primary" type="button" (click)="openKnownTermDialog()">
+          Add known term
+        </button>
+      </section>
+
+      <section class="existing-panel">
+        <div class="existing-header">
+          <h3>Known terms <span class="tab-count">{{ rules.knownTerms.length }}</span></h3>
+          @if (rules.knownTerms.length > 0) {
+          <mat-form-field class="filter-field" subscriptSizing="dynamic">
+            <mat-label>Find</mat-label>
+            <input matInput type="search" [ngModel]="knownTermFilter()" (ngModelChange)="knownTermFilter.set($event)" autocomplete="off">
+          </mat-form-field>
+          }
+        </div>
+
+        @if (rules.knownTerms.length === 0) {
+        <p class="empty">No universal known terms yet.</p>
+        } @else if (filteredKnownTerms().length === 0) {
+        <p class="empty">No matches for “{{ knownTermFilter() }}”.</p>
+        } @else {
+        <ng-container *ngTemplateOutlet="knownTermsTable; context: { $implicit: rules }"></ng-container>
+        }
+      </section>
+    </section>
+    } @else {
     <mat-tab-group animationDuration="0ms" class="rules-tabs">
       <mat-tab>
         <ng-template mat-tab-label>
@@ -119,35 +163,12 @@
           } @else if (filteredKnownTerms().length === 0) {
           <p class="empty">No matches for “{{ knownTermFilter() }}”.</p>
           } @else {
-          <table class="known-table">
-            <thead>
-              <tr>
-                <th>Literal</th>
-                <th>Pattern</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of filteredKnownTerms(); track item.term.literal + item.term.pattern + item.index) {
-              <tr>
-                <td>{{ item.term.literal }}</td>
-                <td class="pattern">{{ item.term.pattern }}</td>
-                <td class="actions">
-                  <button mat-icon-button type="button" aria-label="Edit known term" (click)="openKnownTermDialog(item.index)">
-                    <mat-icon class="material-symbols-outlined">edit</mat-icon>
-                  </button>
-                  <button mat-icon-button type="button" aria-label="Delete known term" (click)="deleteKnownTerm(item.index)">
-                    <mat-icon class="material-symbols-outlined">delete</mat-icon>
-                  </button>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
+          <ng-container *ngTemplateOutlet="knownTermsTable; context: { $implicit: rules }"></ng-container>
           }
         </section>
       </mat-tab>
     </mat-tab-group>
+    }
     } @else if (!isLoading() && !isSaving()) {
     <p class="empty">Select a language to load its rules.</p>
     }
@@ -158,3 +179,41 @@
   <button mat-raised-button (click)="close()" [disabled]="isSaving()">Close</button>
   <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="onSave()">Save</button>
 </mat-dialog-actions>
+
+<ng-template #knownTermsTable let-rules>
+  <table class="known-table" [class.with-promote]="showPromote()">
+    <thead>
+      <tr>
+        <th>Literal</th>
+        <th>Pattern</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of filteredKnownTerms(); track item.term.literal + item.term.pattern + item.index) {
+      <tr>
+        <td>{{ item.term.literal }}</td>
+        <td class="pattern">{{ item.term.pattern }}</td>
+        <td class="actions">
+          @if (showPromote()) {
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Promote to Universal"
+            title="Promote to Universal"
+            (click)="promoteKnownTerm(item.index)">
+            <mat-icon class="material-symbols-outlined">upgrade</mat-icon>
+          </button>
+          }
+          <button mat-icon-button type="button" aria-label="Edit known term" (click)="openKnownTermDialog(item.index)">
+            <mat-icon class="material-symbols-outlined">edit</mat-icon>
+          </button>
+          <button mat-icon-button type="button" aria-label="Delete known term" (click)="deleteKnownTerm(item.index)">
+            <mat-icon class="material-symbols-outlined">delete</mat-icon>
+          </button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</ng-template>
