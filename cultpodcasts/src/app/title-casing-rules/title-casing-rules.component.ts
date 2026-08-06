@@ -529,10 +529,7 @@ export class TitleCasingRulesComponent {
   }
 
   private rulesUrl(code: string): string {
-    const url = new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api);
-    // Bust any intermediary caches that ignore Cache-Control on admin GETs.
-    url.searchParams.set('_', Date.now().toString());
-    return url.toString();
+    return new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api).toString();
   }
 
   private applyLanguageRules(rules: LanguageTitleCasingRulesResponse | (LanguageTitleCasingRules & { isDefault: boolean; language?: string })) {
