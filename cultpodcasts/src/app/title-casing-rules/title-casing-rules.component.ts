@@ -116,7 +116,7 @@ export class TitleCasingRulesComponent {
     this.newLowerCaseTerm = '';
     this.lowerCaseFilter.set('');
     this.knownTermFilter.set('');
-    this.currentRules.set(undefined);
+    // Keep previous rules mounted under the busy overlay so dialog size stays stable.
     this.isDefault.set(false);
     this.isLoading.set(true);
     try {

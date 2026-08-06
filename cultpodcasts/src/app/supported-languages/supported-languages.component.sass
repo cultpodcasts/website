@@ -2,44 +2,74 @@
   font-size: 1em
   color: #b00020
 
-.default-note
-  font-size: 0.9em
-  margin: 0 0 0.75em
-  color: #6a4c00
+.dialog-spinner
+  display: block
+  margin: 2em auto
 
 .add-row
   display: flex
-  gap: 0.5em
-  align-items: center
+  gap: 0.75em
+  align-items: flex-start
   margin-bottom: 0.75em
-  flex-wrap: wrap
+
+.code-field
+  width: 6.5em
+  flex: 0 0 6.5em
 
 .grow
   flex: 1
-  min-width: 10em
+  min-width: 0
 
 .empty
   font-size: 0.9em
   margin: 0
-  color: #666
+  opacity: 0.7
+
+.table-scroll
+  max-height: 28em
+  overflow: auto
 
 .language-table
   width: 100%
   border-collapse: collapse
+  table-layout: fixed
   font-size: 0.95em
 
   th, td
-    border-bottom: 1px solid #ddd
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25)
     padding: 0.35em 0.5em
     text-align: left
     vertical-align: middle
 
   th
     font-weight: 600
+    position: sticky
+    top: 0
+    background: var(--mat-dialog-container-color, inherit)
+    z-index: 1
 
-  .actions
+  .col-code
+    width: 5.5em
+
+  .col-name
+    width: auto
+
+  .col-actions
+    width: 7.5em
     white-space: nowrap
     text-align: right
+    padding-right: 0.25em
+
+  tr.editing
+    td
+      padding-top: 0.45em
+      padding-bottom: 0.45em
 
 .inline-field
   width: 100%
+  // Keep inline edit height close to a normal table row
+  --mat-form-field-container-height: 2.5em
+  --mat-form-field-container-vertical-padding: 0.35em
+
+  .mat-mdc-text-field-wrapper
+    padding-inline: 0.5em
