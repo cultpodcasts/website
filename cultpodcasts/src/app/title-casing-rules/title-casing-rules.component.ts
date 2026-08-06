@@ -67,6 +67,8 @@ export class TitleCasingRulesComponent {
   editingLowerCaseValue = '';
   lowerCaseFilter = signal('');
   knownTermFilter = signal('');
+  /** In-session Universal known-terms after promote/save — avoids lost updates if GET is stale. */
+  private universalKnownTermsCache: KnownTerm[] | null = null;
 
   readonly canSave = computed(() =>
     !this.isLoading()
@@ -300,17 +302,20 @@ export class TitleCasingRulesComponent {
       }
 
       const universal = await this.fetchRules(UNIVERSAL_LANGUAGE, headers);
-      if (universal.knownTerms.some(t => t.literal === term.literal)) {
+      const universalTerms = this.universalKnownTermsCache ?? universal.knownTerms;
+      if (universalTerms.some(t => t.literal === term.literal)) {
         this.snackBar.open('That known term is already in Universal.', 'Dismiss', { duration: 4000 });
         this.isSaving.set(false);
         return;
       }
 
+      const nextUniversalTerms = [...universalTerms, { ...term }];
       const nextUniversal: LanguageTitleCasingRulesUpdate = {
         lowerCaseTerms: [],
-        knownTerms: [...universal.knownTerms, { ...term }]
+        knownTerms: nextUniversalTerms
       };
       await this.putRules(UNIVERSAL_LANGUAGE, nextUniversal, headers);
+      this.universalKnownTermsCache = nextUniversalTerms.map(t => ({ ...t }));
 
       const nextEnglish: LanguageTitleCasingRulesUpdate = {
         lowerCaseTerms: rules.lowerCaseTerms,
@@ -363,6 +368,9 @@ export class TitleCasingRulesComponent {
       }
 
       const respBody = await this.putRules(lang, body, headers);
+      if (lang === UNIVERSAL_LANGUAGE) {
+        this.universalKnownTermsCache = body.knownTerms.map(t => ({ ...t }));
+      }
       this.applyLanguageRules(respBody);
       this.isSaving.set(false);
       this.dialogRef.close({ saved: true });
@@ -458,29 +466,42 @@ export class TitleCasingRulesComponent {
     code: string,
     headers: HttpHeaders
   ): Promise<LanguageTitleCasingRules & { isDefault: boolean }> {
+    const noCacheHeaders = headers
+      .set('Cache-Control', 'no-cache')
+      .set('Pragma', 'no-cache');
     try {
       const resp = await firstValueFrom(
         this.http.get<LanguageTitleCasingRulesResponse>(
           this.rulesUrl(code),
-          { headers, observe: 'response' }
+          { headers: noCacheHeaders, observe: 'response' }
         )
       );
 
       if (resp.status === 200 && resp.body) {
+        const knownTerms = (resp.body.knownTerms ?? []).map(t => ({ ...t }));
+        if (code === UNIVERSAL_LANGUAGE) {
+          this.universalKnownTermsCache = knownTerms.map(t => ({ ...t }));
+        }
         return {
           lowerCaseTerms: [...(resp.body.lowerCaseTerms ?? [])],
-          knownTerms: (resp.body.knownTerms ?? []).map(t => ({ ...t })),
+          knownTerms,
           isDefault: resp.body.isDefault
         };
       }
 
       if (resp.status === 404) {
+        if (code === UNIVERSAL_LANGUAGE) {
+          this.universalKnownTermsCache = [];
+        }
         return { lowerCaseTerms: [], knownTerms: [], isDefault: false };
       }
 
       throw new Error('Failed to load title casing rules.');
     } catch (error: any) {
       if (error?.status === 404) {
+        if (code === UNIVERSAL_LANGUAGE) {
+          this.universalKnownTermsCache = [];
+        }
         return { lowerCaseTerms: [], knownTerms: [], isDefault: false };
       }
       throw error;
@@ -508,7 +529,10 @@ export class TitleCasingRulesComponent {
   }
 
   private rulesUrl(code: string): string {
-    return new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api).toString();
+    const url = new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api);
+    // Bust any intermediary caches that ignore Cache-Control on admin GETs.
+    url.searchParams.set('_', Date.now().toString());
+    return url.toString();
   }
 
   private applyLanguageRules(rules: LanguageTitleCasingRulesResponse | (LanguageTitleCasingRules & { isDefault: boolean; language?: string })) {
