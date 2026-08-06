@@ -72,6 +72,22 @@ const LANGUAGE_FLAG_BY_CODE: Record<string, string> = {
   id: '🇮🇩',
   ms: '🇲🇾',
 
+  // Southeast Asia / Pacific
+  fil: '🇵🇭',
+  tl: '🇵🇭',
+
+  // South Asia (India / Sri Lanka — no dedicated Punjab Unicode flag)
+  te: '🇮🇳',
+  mr: '🇮🇳',
+  si: '🇱🇰',
+
+  // Baltic / Balkans
+  lt: '🇱🇹',
+  lv: '🇱🇻',
+  et: '🇪🇪',
+  bs: '🇧🇦',
+  mk: '🇲🇰',
+
   // African
   af: '🇿🇦',
   sw: '🇰🇪',
@@ -80,10 +96,15 @@ const LANGUAGE_FLAG_BY_CODE: Record<string, string> = {
 export interface LanguageFlagBadge {
   /** IETF-ish code as stored on the episode. */
   code: string;
-  /** Flag emoji for a well-known country associated with the language. */
+  /**
+   * Flag emoji for a well-known country, or the uppercase ISO language code
+   * when no honest country flag exists (e.g. Punjabi, Yiddish).
+   */
   flag: string;
   /** Human-readable language name for tooltips / a11y. */
   label: string;
+  /** True when `flag` is a language-code fallback rather than a country flag. */
+  isCode: boolean;
 }
 
 export function isEnglishLanguageCode(code: string | null | undefined): boolean {
@@ -105,8 +126,8 @@ export function episodeLanguageCode(episode: {
 }
 
 /**
- * Non-English language badge with flag + label. Undefined when missing/English
- * or when no representative flag is known for the code.
+ * Non-English language badge with flag (or ISO code fallback) + label.
+ * Undefined when missing/English.
  */
 export function languageFlagBadge(
   code: string | null | undefined
@@ -114,17 +135,29 @@ export function languageFlagBadge(
   if (!code?.trim() || isEnglishLanguageCode(code)) {
     return undefined;
   }
-  const normalized = code.trim().toLowerCase().replace('_', '-');
+  const trimmed = code.trim();
+  const normalized = trimmed.toLowerCase().replace('_', '-');
+  const base = normalized.split('-')[0];
   const flag =
     LANGUAGE_FLAG_BY_CODE[normalized] ??
-    LANGUAGE_FLAG_BY_CODE[normalized.split('-')[0]];
-  if (!flag) {
+    LANGUAGE_FLAG_BY_CODE[base];
+  if (flag) {
+    return {
+      code: trimmed,
+      flag,
+      label: languageLabel(trimmed),
+      isCode: false
+    };
+  }
+  // No country flag (Punjabi, Yiddish, …): show the uppercase ISO base code.
+  if (!base) {
     return undefined;
   }
   return {
-    code: code.trim(),
-    flag,
-    label: languageLabel(code.trim())
+    code: trimmed,
+    flag: base.toUpperCase(),
+    label: languageLabel(trimmed),
+    isCode: true
   };
 }
 

@@ -38,7 +38,8 @@
       <p class="stage__show-row">
         <a class="stage__show" [routerLink]="['/podcast', ep.podcastName, ep.id]">{{ displayCatalogName(ep.podcastName) }}</a>
         @if (languageFlag(); as lang) {
-        <span class="stage__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">{{ lang.flag }}</span>
+        <span class="stage__lang" [class.stage__lang--code]="lang.isCode" [attr.title]="lang.label"
+          [attr.aria-label]="lang.label">{{ lang.flag }}</span>
         }
       </p>
     </div>

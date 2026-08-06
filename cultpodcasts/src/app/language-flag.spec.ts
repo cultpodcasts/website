@@ -12,6 +12,35 @@ describe('language-flag', () => {
     expect(languageFlagBadge('pt-BR')?.flag).toBe('🇧🇷');
   });
 
+  it('maps Filipino and Tagalog to the Philippines', () => {
+    expect(languageFlagBadge('fil')?.flag).toBe('🇵🇭');
+    expect(languageFlagBadge('tl')?.flag).toBe('🇵🇭');
+    expect(languageFlagBadge('fil')?.label).toContain('Filipino');
+  });
+
+  it('maps Baltic, Balkan, and South Asian codes that have a clear country', () => {
+    expect(languageFlagBadge('lt')?.flag).toBe('🇱🇹');
+    expect(languageFlagBadge('lv')?.flag).toBe('🇱🇻');
+    expect(languageFlagBadge('et')?.flag).toBe('🇪🇪');
+    expect(languageFlagBadge('bs')?.flag).toBe('🇧🇦');
+    expect(languageFlagBadge('mk')?.flag).toBe('🇲🇰');
+    expect(languageFlagBadge('si')?.flag).toBe('🇱🇰');
+    expect(languageFlagBadge('te')?.flag).toBe('🇮🇳');
+    expect(languageFlagBadge('mr')?.flag).toBe('🇮🇳');
+  });
+
+  it('shows uppercase ISO codes for Punjabi and Yiddish (no country flag)', () => {
+    const punjabi = languageFlagBadge('pa');
+    expect(punjabi?.flag).toBe('PA');
+    expect(punjabi?.isCode).toBe(true);
+    expect(punjabi?.label).toContain('Punjabi');
+
+    const yiddish = languageFlagBadge('yi');
+    expect(yiddish?.flag).toBe('YI');
+    expect(yiddish?.isCode).toBe(true);
+    expect(yiddish?.label).toContain('Yiddish');
+  });
+
   it('omits English and empty codes', () => {
     expect(languageFlagBadge('en')).toBeUndefined();
     expect(languageFlagBadge('en-GB')).toBeUndefined();

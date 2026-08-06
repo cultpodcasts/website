@@ -2,6 +2,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { ApiEpisode } from './api-episode.interface';
 import { EpisodeForm } from './episode-form.interface';
 import { EpisodePost } from './episode-post.interface';
+import { episodeLanguageFormValue } from './language-options.util';
 import { Person } from './person.interface';
 import { Subject } from './subject.interface';
 import { filterKeepingSelectedInOrder } from './subject-filter.util';
@@ -74,7 +75,7 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     internetArchive: new FormControl(episode.urls.internetArchive || null),
     subjects: new FormControl(episode.subjects, { nonNullable: true }),
     searchTerms: new FormControl(episode.searchTerms || null),
-    lang: new FormControl(episode.lang || 'unset'),
+    lang: new FormControl(episodeLanguageFormValue(episode.lang)),
     guests: new FormControl<string[]>(episode.guests ?? [], { nonNullable: true })
   });
 }
@@ -227,7 +228,10 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (!areEqualUrlValue(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? '';
   if (!areEqualUrlValue(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? '';
   if (!areEqualUrlValue(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? '';
-  if (!areEqualUrlValue(prev.lang ?? 'unset', now.lang ?? 'unset')) changes.lang = now.lang == 'unset' ? '' : now.lang ?? '';
+  if (!areEqualUrlValue(prev.lang ?? 'unset', now.lang ?? 'unset')) {
+    const next = episodeLanguageFormValue(now.lang);
+    changes.lang = next === 'unset' ? '' : next;
+  }
   if (!isSameStringArray(prev.guests, now.guests)) changes.guests = now.guests;
   return changes;
 }

@@ -54,7 +54,8 @@
   @if (languageBadge() || duration() || (showRelease() && releaseLabel())) {
   <div class="episode-poster__meta-badges">
     @if (languageBadge(); as lang) {
-    <span class="episode-poster__badge episode-poster__badge--lang" [attr.title]="lang.label"
+    <span class="episode-poster__badge episode-poster__badge--lang"
+      [class.episode-poster__badge--lang-code]="lang.isCode" [attr.title]="lang.label"
       [attr.aria-label]="lang.label">{{ lang.flag }}</span>
     }
     @if (showRelease() && releaseLabel(); as release) {

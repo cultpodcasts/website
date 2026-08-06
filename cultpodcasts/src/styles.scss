@@ -60,6 +60,17 @@ body {
   font-family: 'Twemoji Country Flags', var(--cp-font-ui);
 }
 
+.episode-poster__badge--lang-code,
+.billboard__lang-flag--code,
+.episode-hero__lang-flag--code,
+.stage__lang--code,
+.curator-card__lang--code {
+  font-family: var(--cp-font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 /* Hero copy shared by the homepage billboard and the episode page: a podcast
    pill above the title, then a date/duration meta line. Global rather than
    per-component so the two heroes cannot drift apart. */

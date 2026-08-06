@@ -79,7 +79,8 @@
           <span>{{ durationLabel(feature.duration) }}</span>
           @if (languageFlag(feature); as lang) {
           <span class="billboard__lang" [attr.title]="lang.label" [attr.aria-label]="lang.label">
-            <span class="billboard__lang-flag" aria-hidden="true">{{ lang.flag }}</span>
+            <span class="billboard__lang-flag" [class.billboard__lang-flag--code]="lang.isCode"
+              aria-hidden="true">{{ lang.flag }}</span>
             <span class="billboard__lang-name">{{ lang.label }}</span>
           </span>
           }

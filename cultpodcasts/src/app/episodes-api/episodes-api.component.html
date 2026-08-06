@@ -103,7 +103,8 @@
                         <span>{{result.release | date:'d MMM yyyy H:mm'}}
                             [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</span>
                         @if (languageBadge(result); as lang) {
-                        <span class="curator-card__lang" [attr.title]="lang.label"
+                        <span class="curator-card__lang" [class.curator-card__lang--code]="lang.isCode"
+                            [attr.title]="lang.label"
                             [attr.aria-label]="lang.label">{{lang.flag}}</span>
                         }
                     </mat-card-subtitle>

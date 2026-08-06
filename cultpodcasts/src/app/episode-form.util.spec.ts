@@ -115,7 +115,7 @@ describe('episode-form.util', () => {
     const form = buildEpisodeForm(episode);
     expect(form.controls.title.value).toBe('Title');
     expect(form.controls.blueskyPosted.value).toBe(true);
-    expect(form.controls.lang.value).toBe('en');
+    expect(form.controls.lang.value).toBe('unset');
     expect(form.controls.spotify.value?.toString()).toBe('https://open.spotify.com/episode/x');
     expect(form.controls.spotifyImage.value?.toString()).toBe('https://img.example/spotify.jpg');
     expect(form.controls.guests.value).toEqual(['Alice']);
@@ -124,6 +124,11 @@ describe('episode-form.util', () => {
   it('buildEpisodeForm defaults bluesky null to false and lang to unset', () => {
     const form = buildEpisodeForm(baseEpisode({ bluesky: null, lang: null }));
     expect(form.controls.blueskyPosted.value).toBe(false);
+    expect(form.controls.lang.value).toBe('unset');
+  });
+
+  it('buildEpisodeForm maps stored en to unset (English)', () => {
+    const form = buildEpisodeForm(baseEpisode({ lang: 'en-GB' }));
     expect(form.controls.lang.value).toBe('unset');
   });
 
