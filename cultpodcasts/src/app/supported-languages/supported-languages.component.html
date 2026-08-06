@@ -1,0 +1,75 @@
+<h2 mat-dialog-title>Supported languages</h2>
+
+<mat-dialog-content>
+  @if (isLoading() || isSaving()) {
+  <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+  } @else {
+  @if (isInError()) {
+  <p id="error">{{ errorMessage() || "An error occurred" }}</p>
+  }
+
+  <div class="add-row">
+    <mat-form-field>
+      <mat-label>Code</mat-label>
+      <input matInput type="text" [(ngModel)]="newCode" (keydown.enter)="addLanguage()">
+    </mat-form-field>
+    <mat-form-field class="grow">
+      <mat-label>Name</mat-label>
+      <input matInput type="text" [(ngModel)]="newName" (keydown.enter)="addLanguage()">
+    </mat-form-field>
+    <button mat-raised-button type="button" [disabled]="!newCode.trim() || !newName.trim()" (click)="addLanguage()">Add</button>
+  </div>
+
+  @if (languages().length === 0) {
+  <p class="empty">No languages configured.</p>
+  } @else {
+  <table class="language-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (lang of languages(); track lang.code; let i = $index) {
+      <tr>
+        @if (editingIndex() === i) {
+        <td>
+          <mat-form-field class="inline-field">
+            <input matInput type="text" [(ngModel)]="editingCode">
+          </mat-form-field>
+        </td>
+        <td>
+          <mat-form-field class="inline-field">
+            <input matInput type="text" [(ngModel)]="editingName">
+          </mat-form-field>
+        </td>
+        <td class="actions">
+          <button mat-button type="button" (click)="saveEdit()">Save</button>
+          <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+        </td>
+        } @else {
+        <td>{{ lang.code }}</td>
+        <td>{{ lang.name }}</td>
+        <td class="actions">
+          <button mat-icon-button type="button" aria-label="Edit language" (click)="startEdit(i)">
+            <mat-icon class="material-symbols-outlined">edit</mat-icon>
+          </button>
+          <button mat-icon-button type="button" aria-label="Delete language" (click)="deleteLanguage(i)">
+            <mat-icon class="material-symbols-outlined">delete</mat-icon>
+          </button>
+        </td>
+        }
+      </tr>
+      }
+    </tbody>
+  </table>
+  }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()" [disabled]="isSaving()">Close</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave()" (click)="onSave()">Save</button>
+</mat-dialog-actions>

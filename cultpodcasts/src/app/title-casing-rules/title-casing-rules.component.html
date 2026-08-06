@@ -1,0 +1,103 @@
+<h2 mat-dialog-title>Title casing rules</h2>
+
+<mat-dialog-content>
+  @if (isLoading() || isSaving()) {
+  <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+  } @else {
+  @if (isInError()) {
+  <p id="error">{{ errorMessage() || "An error occurred" }}</p>
+  }
+
+  @if (isDefault()) {
+  <p class="default-note">Showing code defaults — no Cosmos document yet. Save to persist.</p>
+  }
+
+  <mat-form-field class="language-select">
+    <mat-label>Language</mat-label>
+    <mat-select [value]="selectedLanguage()" (valueChange)="onLanguageChange($event)">
+      @for (lang of languageOptions(); track lang.code) {
+      <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (currentRules(); as rules) {
+  <section class="section">
+    <h3>Lower-case terms</h3>
+    <div class="add-row">
+      <mat-form-field class="grow">
+        <mat-label>Add term</mat-label>
+        <input matInput type="text" [(ngModel)]="newLowerCaseTerm" (keydown.enter)="addLowerCaseTerm()">
+      </mat-form-field>
+      <button mat-raised-button type="button" [disabled]="!newLowerCaseTerm.trim()" (click)="addLowerCaseTerm()">Add</button>
+    </div>
+    @if (rules.lowerCaseTerms.length === 0) {
+    <p class="empty">No lower-case terms for this language.</p>
+    } @else {
+    <ul class="term-list">
+      @for (term of rules.lowerCaseTerms; track term; let i = $index) {
+      <li>
+        @if (editingLowerCaseIndex() === i) {
+        <mat-form-field class="grow">
+          <input matInput type="text" [(ngModel)]="editingLowerCaseValue" (keydown.enter)="saveEditLowerCaseTerm()">
+        </mat-form-field>
+        <button mat-button type="button" (click)="saveEditLowerCaseTerm()">Save</button>
+        <button mat-button type="button" (click)="cancelEditLowerCaseTerm()">Cancel</button>
+        } @else {
+        <span class="term-text">{{ term }}</span>
+        <button mat-icon-button type="button" aria-label="Edit term" (click)="startEditLowerCaseTerm(i)">
+          <mat-icon class="material-symbols-outlined">edit</mat-icon>
+        </button>
+        <button mat-icon-button type="button" aria-label="Delete term" (click)="deleteLowerCaseTerm(i)">
+          <mat-icon class="material-symbols-outlined">delete</mat-icon>
+        </button>
+        }
+      </li>
+      }
+    </ul>
+    }
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h3>Known terms</h3>
+      <button mat-raised-button type="button" (click)="openKnownTermDialog()">Add</button>
+    </div>
+    @if (rules.knownTerms.length === 0) {
+    <p class="empty">No known terms for this language.</p>
+    } @else {
+    <table class="known-table">
+      <thead>
+        <tr>
+          <th>Literal</th>
+          <th>Pattern</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (term of rules.knownTerms; track term.literal + term.pattern; let i = $index) {
+        <tr>
+          <td>{{ term.literal }}</td>
+          <td>{{ term.pattern }}</td>
+          <td class="actions">
+            <button mat-icon-button type="button" aria-label="Edit known term" (click)="openKnownTermDialog(i)">
+              <mat-icon class="material-symbols-outlined">edit</mat-icon>
+            </button>
+            <button mat-icon-button type="button" aria-label="Delete known term" (click)="deleteKnownTerm(i)">
+              <mat-icon class="material-symbols-outlined">delete</mat-icon>
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
+  </section>
+  }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()" [disabled]="isSaving()">Close</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave()" (click)="onSave()">Save</button>
+</mat-dialog-actions>

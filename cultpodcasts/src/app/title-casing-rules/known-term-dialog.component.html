@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>{{ data.term ? 'Edit known term' : 'Add known term' }}</h2>
+<mat-dialog-content>
+  <mat-form-field class="full-width">
+    <mat-label>Literal</mat-label>
+    <input matInput type="text" [(ngModel)]="literal">
+  </mat-form-field>
+  <mat-form-field class="full-width">
+    <mat-label>Pattern</mat-label>
+    <input matInput type="text" [(ngModel)]="pattern">
+  </mat-form-field>
+  <mat-form-field class="full-width">
+    <mat-label>Options</mat-label>
+    <input matInput type="text" [(ngModel)]="options">
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="!canSave" (click)="save()">Save</button>
+</mat-dialog-actions>
