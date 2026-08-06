@@ -2,16 +2,23 @@
 <mat-dialog-content>
   <mat-form-field class="full-width">
     <mat-label>Literal</mat-label>
-    <input matInput type="text" [(ngModel)]="literal">
+    <input matInput type="text" [(ngModel)]="literal" autocomplete="off">
   </mat-form-field>
   <mat-form-field class="full-width">
     <mat-label>Pattern</mat-label>
-    <input matInput type="text" [(ngModel)]="pattern">
+    <input matInput type="text" [(ngModel)]="pattern" autocomplete="off">
   </mat-form-field>
-  <mat-form-field class="full-width">
-    <mat-label>Options</mat-label>
-    <input matInput type="text" [(ngModel)]="options">
-  </mat-form-field>
+
+  <fieldset class="options-fieldset">
+    <legend>Options</legend>
+    <div class="options-grid">
+      @for (flag of regexOptionFlags; track flag.name) {
+      <mat-checkbox [(ngModel)]="selectedOptions[flag.name]" [name]="flag.name">
+        {{ flag.label }}
+      </mat-checkbox>
+      }
+    </div>
+  </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-raised-button (click)="close()">Cancel</button>
