@@ -28,6 +28,8 @@
       class="universal-button"
       [class.active]="isUniversalMode()"
       [disabled]="isLoading() || isSaving()"
+      [attr.aria-pressed]="isUniversalMode()"
+      title="{{ isUniversalMode() ? 'Back to selected language' : 'Edit universal known terms' }}"
       (click)="onUniversalClick()">
       Universal
     </button>

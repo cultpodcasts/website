@@ -142,11 +142,6 @@ export class TitleCasingRulesComponent {
   }
 
   async onUniversalClick() {
-    if (this.isUniversalMode() && this.currentRules()) {
-      return;
-    }
-
-    this.isUniversalMode.set(true);
     this.cancelEditLowerCaseTerm();
     this.newLowerCaseTerm = '';
     this.lowerCaseFilter.set('');
@@ -154,6 +149,19 @@ export class TitleCasingRulesComponent {
     this.isDefault.set(false);
     this.isLoading.set(true);
     try {
+      if (this.isUniversalMode()) {
+        // Toggle off — restore the language still shown in the dropdown.
+        this.isUniversalMode.set(false);
+        const lang = this.selectedLanguage();
+        if (lang) {
+          await this.loadLanguageRules(lang);
+        } else {
+          this.currentRules.set(undefined);
+        }
+        return;
+      }
+
+      this.isUniversalMode.set(true);
       await this.loadLanguageRules(UNIVERSAL_LANGUAGE);
     } finally {
       this.isLoading.set(false);
