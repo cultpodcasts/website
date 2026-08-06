@@ -19,16 +19,19 @@
   max-width: 36em
 
 .slot
-  border: 1px solid #888
+  border: 1px solid rgba(128, 128, 128, 0.55)
   background: transparent
+  color: inherit
   padding: 0.35em 0.2em
   font: inherit
   cursor: pointer
+  border-radius: 4px
 
   &.selected
-    background: #333
-    color: #fff
-    border-color: #333
+    background: var(--nflx-accent, #e8a23a)
+    border-color: var(--nflx-accent, #e8a23a)
+    color: #1a1208
+    font-weight: 600
 
 .preview
   margin-top: 1em
