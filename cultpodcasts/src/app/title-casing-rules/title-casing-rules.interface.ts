@@ -9,11 +9,6 @@ export interface LanguageTitleCasingRules {
   knownTerms: KnownTerm[];
 }
 
-/** GET /title-casing-rules */
-export interface TitleCasingRulesListResponse {
-  languages: LanguageTitleCasingRulesResponse[];
-}
-
 /** GET/PUT /title-casing-rules/{lang} */
 export interface LanguageTitleCasingRulesResponse {
   language: string;
