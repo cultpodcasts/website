@@ -13,9 +13,9 @@ import {
 } from "./subject-language-filter";
 
 describe("subject-language-filter", () => {
-  it("defaults English to null plus legacy en codes", () => {
+  it("defaults English to null plus exact legacy en (no startswith — Azure Search OData)", () => {
     expect(buildSubjectLangFilter({ mode: "english" }))
-      .toBe(" and (lang eq null or lang eq 'en' or startswith(lang, 'en-'))");
+      .toBe(" and (lang eq null or lang eq 'en')");
     expect(selectionFromChipValues([])).toEqual({ mode: "english" });
     expect(selectionFromChipValues([ENGLISH_LANGUAGE_VALUE])).toEqual({ mode: "english" });
   });
@@ -28,7 +28,7 @@ describe("subject-language-filter", () => {
 
   it("supports English plus other codes and all-languages", () => {
     expect(buildSubjectLangFilter({ mode: "englishAndCodes", codes: ["es"] }))
-      .toBe(" and ((lang eq null or lang eq 'en' or startswith(lang, 'en-')) or search.in(lang, 'es', ','))");
+      .toBe(" and ((lang eq null or lang eq 'en') or search.in(lang, 'es', ','))");
     expect(buildSubjectLangFilter({ mode: "all" })).toBe("");
     expect(selectionFromChipValues([ALL_LANGUAGES_VALUE])).toEqual({ mode: "all" });
   });

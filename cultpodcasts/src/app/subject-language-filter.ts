@@ -19,9 +19,12 @@ export function isEnglishLanguageFacetCode(code: string | null | undefined): boo
   return lower === "en" || lower.startsWith("en-");
 }
 
-/** OData clause matching product English: null plus any legacy explicit English codes. */
-const ENGLISH_LANG_ODATA =
-  "(lang eq null or lang eq 'en' or startswith(lang, 'en-'))";
+/**
+ * OData clause matching product English: null (default) plus exact legacy `en`.
+ * Azure AI Search does not support OData `startswith`; do not use prefix matching here.
+ * Facet UI still folds any `en-*` buckets into the English chip via isEnglishLanguageFacetCode.
+ */
+const ENGLISH_LANG_ODATA = "(lang eq null or lang eq 'en')";
 
 export function buildSubjectLangFilter(selection: SubjectLanguageSelection): string {
   if (selection.mode === "all") {
