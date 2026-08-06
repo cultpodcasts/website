@@ -10,24 +10,40 @@ export type SubjectLanguageSelection =
   | { mode: "codes"; codes: string[] }
   | { mode: "englishAndCodes"; codes: string[] };
 
+/** Explicit `en` / `en-*` facets are English (legacy); fold into the synthetic English chip. */
+export function isEnglishLanguageFacetCode(code: string | null | undefined): boolean {
+  if (!code?.trim()) {
+    return false;
+  }
+  const lower = code.trim().toLowerCase().replace("_", "-");
+  return lower === "en" || lower.startsWith("en-");
+}
+
+/**
+ * OData clause matching product English: null (default) plus exact legacy `en`.
+ * Azure AI Search does not support OData `startswith`; do not use prefix matching here.
+ * Facet UI still folds any `en-*` buckets into the English chip via isEnglishLanguageFacetCode.
+ */
+const ENGLISH_LANG_ODATA = "(lang eq null or lang eq 'en')";
+
 export function buildSubjectLangFilter(selection: SubjectLanguageSelection): string {
   if (selection.mode === "all") {
     return "";
   }
   if (selection.mode === "english") {
-    return " and lang eq null";
+    return ` and ${ENGLISH_LANG_ODATA}`;
   }
 
-  const codes = uniqueCodes(selection.codes);
+  const codes = uniqueCodes(selection.codes).filter(code => !isEnglishLanguageFacetCode(code));
   if (!codes.length) {
-    return " and lang eq null";
+    return ` and ${ENGLISH_LANG_ODATA}`;
   }
 
   const delimiter = ",";
   const list = codes.map(escapeODataString).join(delimiter);
   const codesFilter = `search.in(lang, '${list}', '${delimiter}')`;
   if (selection.mode === "englishAndCodes") {
-    return ` and (lang eq null or ${codesFilter})`;
+    return ` and (${ENGLISH_LANG_ODATA} or ${codesFilter})`;
   }
   if (codes.length === 1) {
     return ` and lang eq '${escapeODataString(codes[0])}'`;
@@ -46,7 +62,8 @@ export function selectionFromChipValues(values: string[]): SubjectLanguageSelect
 
   const includeEnglish = selected.has(ENGLISH_LANGUAGE_VALUE);
   const codes = [...selected]
-    .filter(value => value !== ENGLISH_LANGUAGE_VALUE && value !== ALL_LANGUAGES_VALUE);
+    .filter(value => value !== ENGLISH_LANGUAGE_VALUE && value !== ALL_LANGUAGES_VALUE)
+    .filter(value => !isEnglishLanguageFacetCode(value));
 
   if (includeEnglish && codes.length) {
     return { mode: "englishAndCodes", codes };
@@ -64,8 +81,10 @@ export function englishFacetCount(
   subjectTotal: number,
   langFacets: SearchResultFacet[] | undefined
 ): number {
-  const nonNull = (langFacets ?? []).reduce((sum, facet) => sum + (facet.count ?? 0), 0);
-  return Math.max(0, subjectTotal - nonNull);
+  const nonEnglish = (langFacets ?? [])
+    .filter(facet => facet.value && !isEnglishLanguageFacetCode(facet.value))
+    .reduce((sum, facet) => sum + (facet.count ?? 0), 0);
+  return Math.max(0, subjectTotal - nonEnglish);
 }
 
 /** Chip values that have episodes under the current subject (+ optional show) filter. */
@@ -78,7 +97,7 @@ export function availableLanguageChipValues(
     chips.push(ENGLISH_LANGUAGE_VALUE);
   }
   for (const facet of langFacets ?? []) {
-    if (facet.value && (facet.count ?? 0) > 0) {
+    if (facet.value && (facet.count ?? 0) > 0 && !isEnglishLanguageFacetCode(facet.value)) {
       chips.push(facet.value);
     }
   }
@@ -127,7 +146,8 @@ export function reconcileLanguageChipsForPodcasts(
 }
 
 export function hasNonEnglishFacets(langFacets: SearchResultFacet[] | undefined): boolean {
-  return (langFacets ?? []).some(facet => !!facet.value && (facet.count ?? 0) > 0);
+  return (langFacets ?? []).some(
+    facet => !!facet.value && (facet.count ?? 0) > 0 && !isEnglishLanguageFacetCode(facet.value));
 }
 
 // The Languages panel is pointless when a subject only has English/default
@@ -146,9 +166,10 @@ export function displayedLanguageOptions(
   langFacets: SearchResultFacet[] | undefined,
   selection: SubjectLanguageSelection
 ): SearchResultFacet[] {
-  const facets = (langFacets ?? []).filter(facet => !!facet.value && (facet.count ?? 0) > 0);
+  const facets = (langFacets ?? []).filter(
+    facet => !!facet.value && (facet.count ?? 0) > 0 && !isEnglishLanguageFacetCode(facet.value));
   const selectedCodes = selection.mode === "codes" || selection.mode === "englishAndCodes"
-    ? selection.codes
+    ? selection.codes.filter(code => !isEnglishLanguageFacetCode(code))
     : [];
   const missing = uniqueCodes(selectedCodes)
     .filter(code => !facets.some(facet => facet.value === code))

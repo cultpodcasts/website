@@ -13,8 +13,9 @@ import {
 } from "./subject-language-filter";
 
 describe("subject-language-filter", () => {
-  it("defaults English to lang eq null", () => {
-    expect(buildSubjectLangFilter({ mode: "english" })).toBe(" and lang eq null");
+  it("defaults English to null plus exact legacy en (no startswith — Azure Search OData)", () => {
+    expect(buildSubjectLangFilter({ mode: "english" }))
+      .toBe(" and (lang eq null or lang eq 'en')");
     expect(selectionFromChipValues([])).toEqual({ mode: "english" });
     expect(selectionFromChipValues([ENGLISH_LANGUAGE_VALUE])).toEqual({ mode: "english" });
   });
@@ -27,7 +28,7 @@ describe("subject-language-filter", () => {
 
   it("supports English plus other codes and all-languages", () => {
     expect(buildSubjectLangFilter({ mode: "englishAndCodes", codes: ["es"] }))
-      .toBe(" and (lang eq null or search.in(lang, 'es', ','))");
+      .toBe(" and ((lang eq null or lang eq 'en') or search.in(lang, 'es', ','))");
     expect(buildSubjectLangFilter({ mode: "all" })).toBe("");
     expect(selectionFromChipValues([ALL_LANGUAGES_VALUE])).toEqual({ mode: "all" });
   });
@@ -44,6 +45,10 @@ describe("subject-language-filter", () => {
     expect(englishFacetCount(100, [{ value: "es", count: 30 }, { value: "fr", count: 20 }])).toBe(50);
   });
 
+  it("folds legacy en facet counts into the English bucket", () => {
+    expect(englishFacetCount(100, [{ value: "en", count: 10 }, { value: "fil", count: 40 }])).toBe(60);
+  });
+
   describe("availableLanguageChipValues", () => {
     it("includes English when null-lang episodes remain after non-English facets", () => {
       expect(availableLanguageChipValues(100, [{ value: "fr", count: 40 }]))
@@ -56,6 +61,11 @@ describe("subject-language-filter", () => {
 
     it("returns only English when there are no non-English facet buckets", () => {
       expect(availableLanguageChipValues(25, [])).toEqual([ENGLISH_LANGUAGE_VALUE]);
+    });
+
+    it("does not surface a second English chip for legacy en facets", () => {
+      expect(availableLanguageChipValues(20, [{ value: "en", count: 5 }, { value: "fil", count: 8 }]))
+        .toEqual([ENGLISH_LANGUAGE_VALUE, "fil"]);
     });
   });
 
@@ -155,6 +165,12 @@ describe("subject-language-filter", () => {
       expect(displayedLanguageOptions(
         [{ value: "es", count: 3 }, { value: "fr", count: 0 }],
         { mode: "english" })).toEqual([{ value: "es", count: 3 }]);
+    });
+
+    it("hides legacy en facet buckets so English is not duplicated", () => {
+      expect(displayedLanguageOptions(
+        [{ value: "en", count: 2 }, { value: "fil", count: 5 }],
+        { mode: "english" })).toEqual([{ value: "fil", count: 5 }]);
     });
 
     it("keeps actively selected codes visible when missing from facets", () => {
