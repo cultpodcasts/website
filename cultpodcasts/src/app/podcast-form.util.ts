@@ -200,7 +200,7 @@ function areEqualUrlValue(
 
 /**
  * Diffs two Podcast snapshots into an EditPodcastPost patch.
- * add-podcast-dialog additionally sets `podcastName` when the name changes (add-only field,
+ * add-podcast-dialog additionally sets `name` when the name changes (PUT-only field,
  * not present on EditPodcastPost), so it wraps this helper rather than duplicating the diff.
  */
 export function getPodcastChanges(prev: Podcast, now: Podcast): EditPodcastPost {

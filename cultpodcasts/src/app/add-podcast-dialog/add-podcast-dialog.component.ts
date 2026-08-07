@@ -272,7 +272,7 @@ export class AddPodcastDialogComponent {
 
   getChanges(prev: Podcast, now: Podcast): AddPodcastPost {
     const changes: AddPodcastPost = getPodcastChanges(prev, now);
-    if (prev.name != now.name) changes.podcastName = now.name;
+    if (prev.name != now.name) changes.name = now.name;
     return changes;
   }
 
