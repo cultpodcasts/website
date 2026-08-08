@@ -588,45 +588,18 @@
     .billboard__copy-body,
     .billboard__desc
         min-height: 0
-    .billboard__feature
-        // Keep Watch / More info visible when the viewport is short (e.g. DevTools
-        // open): shrink/clamp copy first; never let actions leave the card.
-        flex: 1 1 auto
-        min-height: 0
-        overflow: hidden
-    .billboard__copy
-        flex: 1 1 auto
-        min-height: 0
-        overflow: hidden
-        display: flex
-        flex-direction: column
+    // Short viewports (e.g. DevTools docked): shrink copy, keep CTAs in-card.
+    .billboard__feature,
+    .billboard__copy,
     .billboard__copy-body
         flex: 1 1 auto
         min-height: 0
         overflow: hidden
+    .billboard__copy
+        display: flex
+        flex-direction: column
     .billboard__actions
         flex: 0 0 auto
-        margin-top: 8px
-
-// Short wide windows (devtools docked, laptop lids) — lower the fixed band and
-// bottom offsets so the docked card + CTAs stay inside the hero.
-@media screen and (min-width: 1280px) and (max-height: 820px)
-    .billboard
-        height: min(88vh, 560px)
-    .billboard__content
-        bottom: calc(28px - 12px)
-        padding: 14px 20px 12px 20px
-        max-height: calc(100% - var(--nflx-hero-search-clearance, 120px) - 20px)
-    .billboard__controls
-        bottom: 28px
-    .billboard__title
-        font-size: clamp(1.85rem, 4.5vw, 3rem)
-        margin-bottom: 8px
-    .billboard__desc
-        -webkit-line-clamp: 2
-        line-clamp: 2
-    .billboard__subjects
-        display: none
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
