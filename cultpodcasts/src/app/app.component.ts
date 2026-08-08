@@ -81,6 +81,8 @@ export class AppComponent implements OnDestroy {
   protected readonly isOnPodcastPage = computed(() => this.podcastPageName() !== undefined);
   protected readonly isHomePage = computed(() => AppComponent.isHomePath(this.routeUrl()));
   private ignoreDragUntilEnd = false;
+  /** Cleared when Escape/blur cancel never gets a matching `dragend` (common for external URL drags). */
+  private ignoreDragClearTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   protected readonly showBackToTop = signal(false);
@@ -129,6 +131,7 @@ export class AppComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.isBrowser) {
+      this.clearIgnoreDragTimer();
       this.removeDragListeners();
       this.removeScrollListener();
       this.narrowChromeQuery?.removeEventListener('change', this.onNarrowChromeChange);
@@ -413,6 +416,7 @@ export class AppComponent implements OnDestroy {
   };
 
   private readonly onDocumentDragEnd = () => {
+    this.clearIgnoreDragTimer();
     this.ignoreDragUntilEnd = false;
     this.resetDragState();
   };
@@ -450,10 +454,29 @@ export class AppComponent implements OnDestroy {
     }, 0);
   };
 
+  private clearIgnoreDragTimer(): void {
+    if (this.ignoreDragClearTimer != null) {
+      clearTimeout(this.ignoreDragClearTimer);
+      this.ignoreDragClearTimer = null;
+    }
+  }
+
   private resetDragState(fromCancel = false): void {
     this.isDragOver.set(false);
     this.activeDropTarget.set(null);
-    this.ignoreDragUntilEnd = fromCancel;
+    this.clearIgnoreDragTimer();
+    if (fromCancel) {
+      // Suppress immediate re-show from the same gesture, but Escape on an
+      // external URL drag often never fires document `dragend`, so clear soon
+      // or the overlay stays dead until a full reload.
+      this.ignoreDragUntilEnd = true;
+      this.ignoreDragClearTimer = setTimeout(() => {
+        this.ignoreDragClearTimer = null;
+        this.ignoreDragUntilEnd = false;
+      }, 50);
+    } else {
+      this.ignoreDragUntilEnd = false;
+    }
   }
 
   private async handleDrop(event: DragEvent, forPodcast: boolean) {
