@@ -36,12 +36,9 @@ export class SupportedLanguagesComponent {
   isSaving = signal(false);
   isInError = signal(false);
   errorMessage = signal('');
+  addError = signal('');
   languages = signal<SupportedLanguage[]>([]);
-  newCode = '';
   newName = '';
-  editingIndex = signal<number | null>(null);
-  editingCode = '';
-  editingName = '';
 
   readonly canSave = computed(() =>
     !this.isLoading() && !this.isSaving() && this.languages().length > 0
@@ -61,59 +58,27 @@ export class SupportedLanguagesComponent {
     this.dialogRef.close({ saved: false });
   }
 
+  trackLanguage(lang: SupportedLanguage, index: number): string {
+    return lang.code ? `code:${lang.code}` : `new:${lang.name}:${index}`;
+  }
+
   addLanguage() {
-    const code = this.newCode.trim();
     const name = this.newName.trim();
-    if (!code || !name) {
+    this.addError.set('');
+    if (!name) {
       return;
     }
-    if (this.languages().some(l => l.code.toLowerCase() === code.toLowerCase())) {
+    if (this.languages().some(l => l.name.toLowerCase() === name.toLowerCase())) {
+      this.addError.set('That language is already in the list.');
       return;
     }
-    this.languages.update(list => [...list, { code, name }].sort((a, b) => a.name.localeCompare(b.name)));
-    this.newCode = '';
+    // Code is derived server-side from the .NET culture English name on Save.
+    this.languages.update(list => [...list, { code: '', name }].sort((a, b) => a.name.localeCompare(b.name)));
     this.newName = '';
-  }
-
-  startEdit(index: number) {
-    const row = this.languages()[index];
-    this.editingIndex.set(index);
-    this.editingCode = row.code;
-    this.editingName = row.name;
-  }
-
-  saveEdit() {
-    const index = this.editingIndex();
-    if (index == null) {
-      return;
-    }
-    const code = this.editingCode.trim();
-    const name = this.editingName.trim();
-    if (!code || !name) {
-      return;
-    }
-    if (this.languages().some((l, i) => i !== index && l.code.toLowerCase() === code.toLowerCase())) {
-      return;
-    }
-    this.languages.update(list => {
-      const next = [...list];
-      next[index] = { code, name };
-      return next.sort((a, b) => a.name.localeCompare(b.name));
-    });
-    this.cancelEdit();
-  }
-
-  cancelEdit() {
-    this.editingIndex.set(null);
-    this.editingCode = '';
-    this.editingName = '';
   }
 
   deleteLanguage(index: number) {
     this.languages.update(list => list.filter((_, i) => i !== index));
-    if (this.editingIndex() === index) {
-      this.cancelEdit();
-    }
   }
 
   async onSave() {
@@ -124,9 +89,13 @@ export class SupportedLanguagesComponent {
     this.isSaving.set(true);
     this.isInError.set(false);
     this.errorMessage.set('');
+    this.addError.set('');
 
     const body: SupportedLanguagesUpdate = {
-      languages: this.languages()
+      languages: this.languages().map(l => ({
+        name: l.name,
+        code: l.code ?? ''
+      }))
     };
 
     try {

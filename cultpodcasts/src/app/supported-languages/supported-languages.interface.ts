@@ -8,6 +8,12 @@ export interface SupportedLanguagesResponse {
   isDefault: boolean;
 }
 
+/** Code may be empty on add — the API derives it from the language name. */
+export interface SupportedLanguageUpdate {
+  code: string;
+  name: string;
+}
+
 export interface SupportedLanguagesUpdate {
-  languages: SupportedLanguage[];
+  languages: SupportedLanguageUpdate[];
 }

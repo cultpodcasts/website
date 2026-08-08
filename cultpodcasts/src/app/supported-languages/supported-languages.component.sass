@@ -12,13 +12,14 @@
   align-items: flex-start
   margin-bottom: 0.75em
 
-.code-field
-  width: 6.5em
-  flex: 0 0 6.5em
-
 .grow
   flex: 1
   min-width: 0
+
+.add-error
+  font-size: 0.9em
+  color: #b00020
+  margin: -0.25em 0 0.75em
 
 .empty
   font-size: 0.9em
@@ -55,21 +56,7 @@
     width: auto
 
   .col-actions
-    width: 7.5em
+    width: 3.5em
     white-space: nowrap
     text-align: right
     padding-right: 0.25em
-
-  tr.editing
-    td
-      padding-top: 0.45em
-      padding-bottom: 0.45em
-
-.inline-field
-  width: 100%
-  // Keep inline edit height close to a normal table row
-  --mat-form-field-container-height: 2.5em
-  --mat-form-field-container-vertical-padding: 0.35em
-
-  .mat-mdc-text-field-wrapper
-    padding-inline: 0.5em
