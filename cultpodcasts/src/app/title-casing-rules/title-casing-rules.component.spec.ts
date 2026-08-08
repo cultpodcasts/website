@@ -96,6 +96,7 @@ describe('TitleCasingRulesComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+    vi.unstubAllGlobals();
   });
 
   it('adds a lower-case term via POST and closes with saved when mutated', async () => {
@@ -118,6 +119,7 @@ describe('TitleCasingRulesComponent', () => {
   });
 
   it('deletes a lower-case term via DELETE', async () => {
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
     const pending = component.deleteLowerCaseTerm(0);
     const delUrl = new URL(
       '/title-casing-rules/en/lower-case-terms/of',

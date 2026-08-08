@@ -127,6 +127,7 @@
             <li [class.editing]="editingLowerCaseIndex() === item.index">
               @if (editingLowerCaseIndex() === item.index) {
               <mat-form-field class="grow inline-edit" subscriptSizing="dynamic">
+                <mat-label>Lower-case term</mat-label>
                 <input matInput type="text" [(ngModel)]="editingLowerCaseValue" (keydown.enter)="saveEditLowerCaseTerm()" autocomplete="off">
               </mat-form-field>
               <button mat-button type="button" (click)="saveEditLowerCaseTerm()">Save</button>

@@ -159,6 +159,10 @@ export class SupportedLanguagesComponent {
       return;
     }
 
+    if (!window.confirm(`Remove “${lang.name}” (${lang.code}) from supported languages?`)) {
+      return;
+    }
+
     this.isMutating.set(true);
     this.isInError.set(false);
     this.errorMessage.set('');

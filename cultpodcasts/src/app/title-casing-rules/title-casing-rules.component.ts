@@ -266,6 +266,10 @@ export class TitleCasingRulesComponent {
       return;
     }
 
+    if (!window.confirm(`Delete lower-case term “${term}”?`)) {
+      return;
+    }
+
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
         this.http.delete<LanguageTitleCasingRulesResponse>(
@@ -309,6 +313,10 @@ export class TitleCasingRulesComponent {
     }
     const term = rules.knownTerms[index];
     if (!term) {
+      return;
+    }
+
+    if (!window.confirm(`Delete known term “${term.literal}”?`)) {
       return;
     }
 
