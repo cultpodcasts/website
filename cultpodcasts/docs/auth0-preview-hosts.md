@@ -46,9 +46,15 @@ npm run auth0:sync-staging-urls
 
 Existing URLs are kept; required ones are merged in.
 
+## Preview API host
+
+Staging website builds call **`https://api-preview.cultpodcasts.com`** (custom domain on the `api-preview` Worker; `api-preview.*.workers.dev` remains a fallback).
+
+Committed [`ngsw-config.json`](../ngsw-config.json) and the `index.html` API preconnect default to **`api-preview.cultpodcasts.com`** (local/staging). `build.sh` rewrites those to **`api.cultpodcasts.com` only when `env=production`**, then restores the committed files. Auth0 **audience** stays `https://api.cultpodcasts.com/` (unchanged).
+
 ## API CORS
 
-Preview API (`api-preview.jonbreen.workers.dev`) must have secret/var:
+Preview API must have secret/var:
 
 `stagingHostSuffix=website-83e.pages.dev`
 

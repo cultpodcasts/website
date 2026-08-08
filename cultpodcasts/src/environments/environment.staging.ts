@@ -5,7 +5,7 @@ export const environment: IEnvironment = {
       clientId: "o1YtyIzzhBEQ7c7IEZzovb1TGov1AGSs",
       domain: "auth-staging.cultpodcasts.com"
    },
-   api: 'https://api-preview.jonbreen.workers.dev',
+   api: 'https://api-preview.cultpodcasts.com',
    // Auth redirect uses window.location.origin at runtime (see auth-redirect-uri.ts).
    // Keep a stable fallback for SSR only — not a specific preview hostname.
    assetHost: 'https://website-83e.pages.dev',
