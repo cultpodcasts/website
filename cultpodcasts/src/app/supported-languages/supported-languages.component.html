@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Supported languages</h2>
 
 <mat-dialog-content>
-  @if (isLoading() || isSaving()) {
+  @if (isLoading() || isMutating()) {
   <mat-spinner class="dialog-spinner" mode="indeterminate"></mat-spinner>
   } @else {
   @if (isInError()) {
@@ -58,6 +58,5 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-  <button mat-raised-button (click)="close()" [disabled]="isSaving()">Close</button>
-  <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="onSave()">Save</button>
+  <button mat-raised-button (click)="close()" [disabled]="isMutating()">Close</button>
 </mat-dialog-actions>

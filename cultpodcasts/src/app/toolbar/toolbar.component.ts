@@ -271,9 +271,9 @@ export class ToolbarComponent {
       .subscribe(result => {
         if (result?.saved) {
           this.snackBar.open(
-            'Supported languages saved. Run Publish languages from the toolbar so R2 updates.',
+            'Supported languages updated (saved to Cosmos and published to R2).',
             'Ok',
-            { duration: 10000 }
+            { duration: 5000 }
           );
         }
       });

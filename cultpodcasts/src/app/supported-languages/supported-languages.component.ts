@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, ViewChild, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,8 +16,7 @@ import {
   NeutralCulture,
   NeutralCulturesResponse,
   SupportedLanguage,
-  SupportedLanguagesResponse,
-  SupportedLanguagesUpdate
+  SupportedLanguagesResponse
 } from './supported-languages.interface';
 
 @Component({
@@ -41,7 +40,7 @@ export class SupportedLanguagesComponent {
   @ViewChild(MatAutocompleteTrigger) private nameAutoTrigger?: MatAutocompleteTrigger;
 
   isLoading = signal(true);
-  isSaving = signal(false);
+  isMutating = signal(false);
   isInError = signal(false);
   errorMessage = signal('');
   addError = signal('');
@@ -50,11 +49,8 @@ export class SupportedLanguagesComponent {
   /** English/native/alias spellings → culture code+display from GET /supported-languages/cultures */
   private culturesByName = new Map<string, NeutralCulture>();
   private culturesList: NeutralCulture[] = [];
+  private didMutate = false;
   newName = '';
-
-  readonly canSave = computed(() =>
-    !this.isLoading() && !this.isSaving() && this.languages().length > 0
-  );
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -67,7 +63,7 @@ export class SupportedLanguagesComponent {
   }
 
   close() {
-    this.dialogRef.close({ saved: false });
+    this.dialogRef.close({ saved: this.didMutate });
   }
 
   trackLanguage(lang: SupportedLanguage, index: number): string {
@@ -88,13 +84,13 @@ export class SupportedLanguagesComponent {
     }
     event.preventDefault();
     event.stopPropagation();
-    this.addLanguage();
+    void this.addLanguage();
   }
 
-  addLanguage() {
+  async addLanguage() {
     const name = this.newName.trim();
     this.addError.set('');
-    if (!name) {
+    if (!name || this.isMutating()) {
       return;
     }
 
@@ -113,68 +109,93 @@ export class SupportedLanguagesComponent {
       return;
     }
 
-    this.languages.update(list =>
-      [...list, { code: resolved.code, name: resolved.name }]
-        .sort((a, b) => a.name.localeCompare(b.name))
-    );
-    this.newName = '';
-    this.refreshFilteredCultures();
-  }
-
-  deleteLanguage(index: number) {
-    this.languages.update(list => list.filter((_, i) => i !== index));
-    this.refreshFilteredCultures();
-  }
-
-  async onSave() {
-    if (!this.canSave()) {
-      return;
-    }
-
-    this.isSaving.set(true);
+    this.isMutating.set(true);
     this.isInError.set(false);
     this.errorMessage.set('');
-    this.addError.set('');
-
-    const body: SupportedLanguagesUpdate = {
-      languages: this.languages().map(l => ({
-        name: l.name,
-        code: l.code ?? ''
-      }))
-    };
 
     try {
       const headers = await this.authHeaders();
       if (!headers) {
         this.isInError.set(true);
         this.errorMessage.set('Could not get admin token.');
-        this.isSaving.set(false);
+        this.isMutating.set(false);
         return;
       }
 
       const resp = await firstValueFrom(
-        this.http.put<SupportedLanguagesResponse>(
+        this.http.post<SupportedLanguagesResponse>(
           new URL('/supported-languages', environment.api).toString(),
-          body,
+          { name },
           { headers, observe: 'response' }
         )
       );
 
       if (resp.status === 200 && resp.body) {
         this.languages.set([...resp.body.languages]);
-        this.isSaving.set(false);
-        this.dialogRef.close({ saved: true });
+        this.newName = '';
+        this.didMutate = true;
+        this.refreshFilteredCultures();
+        this.isMutating.set(false);
         return;
       }
 
       this.isInError.set(true);
-      this.errorMessage.set('Save failed.');
-      this.isSaving.set(false);
+      this.errorMessage.set('Add failed.');
+      this.isMutating.set(false);
+    } catch (error: any) {
+      console.error(error);
+      this.addError.set(error?.error?.error ?? 'Add failed.');
+      this.isMutating.set(false);
+    }
+  }
+
+  async deleteLanguage(index: number) {
+    if (this.isMutating()) {
+      return;
+    }
+
+    const lang = this.languages()[index];
+    if (!lang?.code) {
+      return;
+    }
+
+    this.isMutating.set(true);
+    this.isInError.set(false);
+    this.errorMessage.set('');
+    this.addError.set('');
+
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        this.isInError.set(true);
+        this.errorMessage.set('Could not get admin token.');
+        this.isMutating.set(false);
+        return;
+      }
+
+      const resp = await firstValueFrom(
+        this.http.delete<SupportedLanguagesResponse>(
+          new URL(`/supported-languages/${encodeURIComponent(lang.code)}`, environment.api).toString(),
+          { headers, observe: 'response' }
+        )
+      );
+
+      if (resp.status === 200 && resp.body) {
+        this.languages.set([...resp.body.languages]);
+        this.didMutate = true;
+        this.refreshFilteredCultures();
+        this.isMutating.set(false);
+        return;
+      }
+
+      this.isInError.set(true);
+      this.errorMessage.set('Delete failed.');
+      this.isMutating.set(false);
     } catch (error: any) {
       console.error(error);
       this.isInError.set(true);
-      this.errorMessage.set(error?.error?.error ?? 'Save failed.');
-      this.isSaving.set(false);
+      this.errorMessage.set(error?.error?.error ?? 'Delete failed.');
+      this.isMutating.set(false);
     }
   }
 
@@ -228,10 +249,9 @@ export class SupportedLanguagesComponent {
       }
 
       const [languagesResp, culturesResp] = await Promise.all([
-        // Published R2 map — same names/codes currently registered (do not filter).
         firstValueFrom(
-          this.http.get<{ [key: string]: string }>(
-            new URL('/languages', environment.api).toString(),
+          this.http.get<SupportedLanguagesResponse>(
+            new URL('/supported-languages', environment.api).toString(),
             { headers, observe: 'response' }
           )
         ),
@@ -263,9 +283,7 @@ export class SupportedLanguagesComponent {
 
       if (languagesResp.status === 200 && languagesResp.body) {
         this.languages.set(
-          Object.entries(languagesResp.body)
-            .map(([code, name]) => ({ code, name }))
-            .sort((a, b) => a.name.localeCompare(b.name))
+          [...languagesResp.body.languages].sort((a, b) => a.name.localeCompare(b.name))
         );
         this.refreshFilteredCultures();
       } else {
