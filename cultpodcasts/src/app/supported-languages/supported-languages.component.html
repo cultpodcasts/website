@@ -11,8 +11,14 @@
   <div class="add-row">
     <mat-form-field class="grow" subscriptSizing="dynamic">
       <mat-label>Name</mat-label>
-      <input matInput type="text" [(ngModel)]="newName" (keydown.enter)="onAddKeydown($event)" autocomplete="off"
+      <input matInput type="text" [(ngModel)]="newName" (ngModelChange)="onNameModelChange($event)"
+        [matAutocomplete]="nameAuto" (keydown.enter)="onAddKeydown($event)" autocomplete="off"
         aria-label="Language name">
+      <mat-autocomplete #nameAuto="matAutocomplete">
+        @for (culture of filteredCultures(); track culture.code) {
+        <mat-option [value]="culture.name">{{ culture.name }} ({{ culture.code }})</mat-option>
+        }
+      </mat-autocomplete>
     </mat-form-field>
     <button mat-flat-button color="primary" type="button" [disabled]="!newName.trim()" (click)="addLanguage()">Add</button>
   </div>

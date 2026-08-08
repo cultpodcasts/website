@@ -1,7 +1,9 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatOptionModule } from '@angular/material/core';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +29,8 @@ import {
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    MatAutocompleteModule,
+    MatOptionModule,
     FormsModule
   ],
   templateUrl: './supported-languages.component.html',
@@ -34,14 +38,18 @@ import {
   styleUrl: './supported-languages.component.sass'
 })
 export class SupportedLanguagesComponent {
+  @ViewChild(MatAutocompleteTrigger) private nameAutoTrigger?: MatAutocompleteTrigger;
+
   isLoading = signal(true);
   isSaving = signal(false);
   isInError = signal(false);
   errorMessage = signal('');
   addError = signal('');
   languages = signal<SupportedLanguage[]>([]);
+  filteredCultures = signal<NeutralCulture[]>([]);
   /** English/native/alias spellings → culture code+display from GET /supported-languages/cultures */
   private culturesByName = new Map<string, NeutralCulture>();
+  private culturesList: NeutralCulture[] = [];
   newName = '';
 
   readonly canSave = computed(() =>
@@ -66,7 +74,18 @@ export class SupportedLanguagesComponent {
     return lang.code ? `code:${lang.code}` : `new:${lang.name}:${index}`;
   }
 
+  onNameModelChange(value: string) {
+    if (!value?.trim()) {
+      this.addError.set('');
+    }
+    this.refreshFilteredCultures();
+  }
+
   onAddKeydown(event: Event) {
+    // Let Material pick the highlighted option; Add/Enter after the panel closes.
+    if (this.nameAutoTrigger?.panelOpen) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     this.addLanguage();
@@ -99,10 +118,12 @@ export class SupportedLanguagesComponent {
         .sort((a, b) => a.name.localeCompare(b.name))
     );
     this.newName = '';
+    this.refreshFilteredCultures();
   }
 
   deleteLanguage(index: number) {
     this.languages.update(list => list.filter((_, i) => i !== index));
+    this.refreshFilteredCultures();
   }
 
   async onSave() {
@@ -170,6 +191,28 @@ export class SupportedLanguagesComponent {
     return name.trim().normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   }
 
+  private refreshFilteredCultures() {
+    const listedCodes = new Set(
+      this.languages().map(l => l.code.toLowerCase()).filter(Boolean)
+    );
+    const available = this.culturesList.filter(c => !listedCodes.has(c.code.toLowerCase()));
+    const q = this.newName.trim().toLowerCase();
+    const qFold = this.foldKey(this.newName);
+
+    if (!q) {
+      this.filteredCultures.set(available);
+      return;
+    }
+
+    this.filteredCultures.set(
+      available.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q) ||
+        this.foldKey(c.name).includes(qFold)
+      )
+    );
+  }
+
   private async load() {
     this.isLoading.set(true);
     this.isInError.set(false);
@@ -202,12 +245,15 @@ export class SupportedLanguagesComponent {
 
       if (culturesResp.status === 200 && culturesResp.body?.cultures) {
         const map = new Map<string, NeutralCulture>();
+        const byCode = new Map<string, NeutralCulture>();
         for (const culture of culturesResp.body.cultures) {
           const row = { code: culture.code, name: culture.name };
+          byCode.set(culture.code.toLowerCase(), row);
           map.set(this.lookupKey(culture.name), row);
           map.set(this.foldKey(culture.name), row);
         }
         this.culturesByName = map;
+        this.culturesList = [...byCode.values()].sort((a, b) => a.name.localeCompare(b.name));
       } else {
         this.isInError.set(true);
         this.errorMessage.set('Failed to load culture list for Add validation.');
@@ -221,6 +267,7 @@ export class SupportedLanguagesComponent {
             .map(([code, name]) => ({ code, name }))
             .sort((a, b) => a.name.localeCompare(b.name))
         );
+        this.refreshFilteredCultures();
       } else {
         this.isInError.set(true);
         this.errorMessage.set('Failed to load languages.');
