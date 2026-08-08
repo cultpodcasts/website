@@ -2,6 +2,7 @@
     display: flex
     flex-wrap: wrap
     gap: 8px
+    align-items: center
     .flags,
     .social
         display: flex
@@ -12,8 +13,16 @@
     mat-icon
         height: 18px
         width: 18px
+        font-size: 18px
+        line-height: 18px
         margin: 0
         flex-shrink: 0
+        overflow: visible
+        svg
+            display: block
+            width: 18px
+            height: 18px
+            overflow: visible
     mat-icon.not
         opacity: 0.45
     .flag-label
@@ -26,8 +35,9 @@
         display: inline-flex
         align-items: center
         gap: 6px
-        height: 28px
-        padding: 0 10px 0 8px
+        box-sizing: border-box
+        min-height: 30px
+        padding: 6px 10px 6px 8px
         border-radius: 999px
         border: 1px solid color-mix(in srgb, #fff 14%, transparent)
         background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 80%, transparent)
@@ -39,20 +49,30 @@
         &.is-off
             opacity: 0.7
     .flag-toggle
+        // Plain button — not mat-icon-button. MDC icon-button uses overflow:hidden
+        // and a fixed touch target that clips these labelled SVG pills.
+        appearance: none
         position: relative
         width: auto
         min-width: 0
-        height: 28px
-        line-height: 28px
+        min-height: 30px
         margin: 0
-        padding: 0 10px 0 8px
+        padding: 6px 10px 6px 8px
         border-radius: 999px
         border: 1px solid color-mix(in srgb, #fff 14%, transparent)
         background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 80%, transparent)
         color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 70%, transparent)
+        font: inherit
+        cursor: pointer
         display: inline-flex
         align-items: center
         gap: 6px
+        box-sizing: border-box
+        overflow: visible
+        line-height: 1
+        &:disabled
+            cursor: not-allowed
+            opacity: 0.55
         &.is-on
             border-color: color-mix(in srgb, var(--cp-amber, #e8a23a) 45%, transparent)
             color: var(--cp-amber, #e8a23a)
@@ -61,7 +81,7 @@
             margin-right: 0
         mat-spinner
             position: absolute
-            top: 4px
+            top: 5px
             left: 6px
             margin: 0
     .flag-toggle.loading

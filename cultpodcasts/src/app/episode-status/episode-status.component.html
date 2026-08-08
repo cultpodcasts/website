@@ -2,7 +2,7 @@
 <div id="status" class="episode-status" [class.episode-status--editable]="editable">
     @if (editable) {
     <div class="flags">
-        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
+        <button type="button" class="flag-toggle" [class.loading]="loadingIgnored"
             [class.is-on]="_episode.ignored"
             [disabled]="anyActionBusy" (click)="onToggleIgnored($event)"
             [attr.aria-pressed]="_episode.ignored"
@@ -14,7 +14,7 @@
             <mat-spinner diameter="20"></mat-spinner>
             }
         </button>
-        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingRemoved"
+        <button type="button" class="flag-toggle" [class.loading]="loadingRemoved"
             [class.is-on]="_episode.removed"
             [disabled]="anyActionBusy" (click)="onToggleRemoved($event)"
             [attr.aria-pressed]="_episode.removed"
@@ -51,7 +51,7 @@
         </span>
         }
         @if (editable) {
-        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingTweeted"
+        <button type="button" class="flag-toggle" [class.loading]="loadingTweeted"
             [class.is-on]="_episode.tweeted"
             [disabled]="anyActionBusy" (click)="onToggleTweeted($event)"
             [attr.aria-pressed]="_episode.tweeted"
@@ -63,7 +63,7 @@
             <mat-spinner diameter="20"></mat-spinner>
             }
         </button>
-        <button mat-icon-button type="button" class="flag-toggle" [class.loading]="loadingBluesky"
+        <button type="button" class="flag-toggle" [class.loading]="loadingBluesky"
             [class.is-on]="_episode.bluesky == true"
             [disabled]="anyActionBusy" (click)="onToggleBluesky($event)"
             [attr.aria-pressed]="_episode.bluesky == true"

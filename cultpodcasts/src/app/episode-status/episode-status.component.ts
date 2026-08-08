@@ -10,7 +10,6 @@ import { FeatureSwitchService } from '../feature-switch-service';
   selector: 'app-episode-status',
   imports: [
     MatIconModule,
-    MatButtonModule,
     MatProgressSpinnerModule
   ],
   templateUrl: './episode-status.component.html',
