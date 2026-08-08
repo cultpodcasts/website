@@ -118,7 +118,9 @@
 
 .term-list
   margin: 0
-  padding: 0
+  // Top padding keeps the first row’s floated outline label inside the scroll
+  // box (overflow:auto otherwise clips mat-label on the field border).
+  padding: 0.85em 0 0
   list-style: none
   max-height: 22em
   overflow: auto
@@ -130,6 +132,13 @@
     min-height: 2.5em
     padding: 0 0.25em
     border-bottom: 1px solid rgba(128, 128, 128, 0.2)
+
+    &.editing
+      align-items: flex-start
+      // Extra room so the outline label is not flush with the previous row /
+      // list top when mid-list items enter edit mode.
+      padding-top: 0.65em
+      padding-bottom: 0.35em
 
     &:hover .term-actions,
     &.editing .term-actions,
@@ -147,6 +156,10 @@
     flex: 0 0 auto
     opacity: 0.35
     transition: opacity 0.12s ease
+
+  .inline-edit
+    // Avoid the denser field height crowding the floated label in the list.
+    margin-top: 0.15em
 
 .known-table
   width: 100%
