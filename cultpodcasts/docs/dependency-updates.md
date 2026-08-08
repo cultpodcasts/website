@@ -74,6 +74,16 @@ npm test
 
 Prefer `ng update` over hand-editing `@angular/*` versions so schematics run. After `ng update`, if caret ranges (`^22.1.0`) would pull patches newer than your ≥5-day policy, **pin exact versions** in `package.json` until those patches age in.
 
+## npm audit
+
+```bash
+npm audit
+```
+
+Prefer **targeted `overrides`** in `package.json` for transitive CVEs (e.g. `@hono/node-server` under `@angular/cli` → MCP SDK, `undici` under `wrangler` → miniflare) over `npm audit fix --force`, which often downgrades `@angular/cli` or jumps `wrangler` outside the ≥5-day pin.
+
+After changing overrides: `npm install`, then `npm audit` (aim for **0**), then a quick `npm test` / `ng build`.
+
 ## TypeScript only
 
 ```bash
