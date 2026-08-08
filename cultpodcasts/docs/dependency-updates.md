@@ -32,28 +32,47 @@ Exit codes:
 
 Requires Node per `package.json` `engines` (Angular 22 → Node `>=22.22.3`). Cloudflare Pages reads [`cultpodcasts/.nvmrc`](../.nvmrc) (default image is still 22.16.0).
 
-From `website/cultpodcasts`:
+### Install the project CLI first (avoid the temporary CLI)
+
+If local `@angular/cli` is behind the target, `ng update` prints:
+
+> The installed Angular CLI version is outdated.  
+> Installing a temporary Angular CLI versioned …
+
+That temporary CLI works, but it is easy to end up resolving **newer patches than you intended** (caret ranges + npm latest). Prefer:
 
 ```bash
-# 1. Framework + CLI (applies migrations)
-npx ng update @angular/core@<major> @angular/cli@<major>
+# 0. Pick a target that has been on npm ≥5 days, then install that CLI into the project
+npm install -D @angular/cli@<target>
 
-# 2. Material / CDK (same major as Angular)
-npx ng update @angular/material@<major>
+# Confirm the project CLI (not a temp one) is what npx will run:
+npx ng version
+# → "Angular CLI : <target>"
+```
 
-# 3. Related runtime deps (peers permitting)
+Then update with the **same** target for core / CLI / Material so they stay in lockstep:
+
+```bash
+# 1. Framework + CLI (applies migrations) — same <target> as step 0
+npx ng update @angular/core@<target> @angular/cli@<target>
+
+# 2. Material / CDK (same version as Angular)
+npx ng update @angular/material@<target>
+
+# 3. Related runtime deps (peers permitting; prefer ≥5-day-old versions)
 npm install @auth0/auth0-angular@latest
-npm install -D wrangler@latest @cloudflare/workers-types@latest
+npm install -D wrangler@<eligible> @cloudflare/workers-types@<eligible>
 
 # 4. Verify
 npm run deps:check
+npx ng version   # CLI / Angular / Material versions agree
 npx ng build --configuration local
 npx ng build --configuration production
 npm run process
-npx ng test --no-watch --browsers=ChromeHeadless
+npm test
 ```
 
-Prefer `ng update` over hand-editing `@angular/*` versions so schematics run.
+Prefer `ng update` over hand-editing `@angular/*` versions so schematics run. After `ng update`, if caret ranges (`^22.1.0`) would pull patches newer than your ≥5-day policy, **pin exact versions** in `package.json` until those patches age in.
 
 ## TypeScript only
 
