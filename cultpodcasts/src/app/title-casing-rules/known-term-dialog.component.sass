@@ -1,9 +1,10 @@
 :host
   ::ng-deep .mat-mdc-dialog-content
-    overflow-x: hidden
-    overflow-y: auto
+    // Short form — visible overflow lets outline labels sit on the field border
+    // without being clipped (same pattern as supported-languages Name field).
+    overflow: visible
     // Outline mat-labels sit on the field border; default dialog padding clips them.
-    padding-top: 1em
+    padding-top: 1.25em
 
 .full-width
   width: 100%
@@ -13,6 +14,9 @@ mat-dialog-content
   flex-direction: column
   gap: 0.75em
   min-width: 22em
+  // Extra room so the first floated outline label is not flush with the content top.
+  > .full-width:first-child
+    padding-top: 0.35em
 
 .options-fieldset
   margin: 0.25em 0 0
