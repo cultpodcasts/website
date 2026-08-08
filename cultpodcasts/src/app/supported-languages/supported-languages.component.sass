@@ -38,7 +38,12 @@
 
 .table-scroll
   max-height: 28em
-  overflow: auto
+  // Vertical only — overflow:auto was painting a horizontal bar through the
+  // last visible row / delete icons when the vertical scrollbar narrowed the box.
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
+  padding-bottom: 0.5em
 
 .language-table
   width: 100%
