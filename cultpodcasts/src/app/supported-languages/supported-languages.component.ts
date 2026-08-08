@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatOptionModule } from '@angular/material/core';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   NeutralCulture,
   NeutralCulturesResponse,
@@ -55,6 +56,7 @@ export class SupportedLanguagesComponent {
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
+    private dialog: MatDialog,
     private dialogRef: MatDialogRef<SupportedLanguagesComponent, { saved?: boolean }>
   ) { }
 
@@ -159,7 +161,10 @@ export class SupportedLanguagesComponent {
       return;
     }
 
-    if (!window.confirm(`Remove “${lang.name}” (${lang.code}) from supported languages?`)) {
+    if (!(await this.confirm(
+      'Remove language',
+      `Remove “${lang.name}” (${lang.code}) from supported languages?`
+    ))) {
       return;
     }
 
@@ -301,6 +306,16 @@ export class SupportedLanguagesComponent {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private async confirm(title: string, question: string): Promise<boolean> {
+    const ref = this.dialog.open(ConfirmComponent, {
+      data: { title, question },
+      disableClose: true,
+      autoFocus: true
+    });
+    const result = await firstValueFrom(ref.afterClosed());
+    return result?.result === true;
   }
 
   private async authHeaders(): Promise<HttpHeaders | undefined> {

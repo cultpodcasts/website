@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -13,6 +13,8 @@ describe('SupportedLanguagesComponent', () => {
   let component: SupportedLanguagesComponent;
   let httpMock: HttpTestingController;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
+  let confirmResult: { result: boolean };
+  let dialogOpen: ReturnType<typeof vi.fn>;
 
   const languagesUrl = new URL('/supported-languages', environment.api).toString();
   const culturesUrl = new URL('/supported-languages/cultures', environment.api).toString();
@@ -64,6 +66,10 @@ describe('SupportedLanguagesComponent', () => {
 
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
+    confirmResult = { result: true };
+    dialogOpen = vi.fn().mockImplementation(() => ({
+      afterClosed: () => of(confirmResult),
+    }));
 
     await TestBed.configureTestingModule({
       imports: [SupportedLanguagesComponent],
@@ -83,6 +89,8 @@ describe('SupportedLanguagesComponent', () => {
       ],
     }).compileComponents();
 
+    TestBed.overrideProvider(MatDialog, { useValue: { open: dialogOpen } });
+
     fixture = TestBed.createComponent(SupportedLanguagesComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
@@ -94,7 +102,6 @@ describe('SupportedLanguagesComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
-    vi.unstubAllGlobals();
   });
 
   it('adds a language via POST and closes with saved when mutated', async () => {
@@ -128,8 +135,6 @@ describe('SupportedLanguagesComponent', () => {
   });
 
   it('deletes a language via DELETE after confirm', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
-
     const pending = component.deleteLanguage(0);
     const delUrl = new URL('/supported-languages/en', environment.api).toString();
 
@@ -141,10 +146,11 @@ describe('SupportedLanguagesComponent', () => {
 
     await pending;
     expect(component.languages().map(l => l.code)).toEqual(['fr']);
+    expect(dialogOpen).toHaveBeenCalled();
   });
 
   it('does not DELETE when confirm is cancelled', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
+    confirmResult = { result: false };
 
     await component.deleteLanguage(0);
 

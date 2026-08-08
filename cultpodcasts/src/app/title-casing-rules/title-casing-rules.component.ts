@@ -14,6 +14,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   KnownTermDialogComponent,
   KnownTermDialogData,
@@ -266,7 +267,7 @@ export class TitleCasingRulesComponent {
       return;
     }
 
-    if (!window.confirm(`Delete lower-case term “${term}”?`)) {
+    if (!(await this.confirm('Delete lower-case term', `Delete lower-case term “${term}”?`))) {
       return;
     }
 
@@ -316,7 +317,7 @@ export class TitleCasingRulesComponent {
       return;
     }
 
-    if (!window.confirm(`Delete known term “${term.literal}”?`)) {
+    if (!(await this.confirm('Delete known term', `Delete known term “${term.literal}”?`))) {
       return;
     }
 
@@ -346,7 +347,10 @@ export class TitleCasingRulesComponent {
       return;
     }
 
-    if (!window.confirm(`Move “${term.literal}” to Universal and remove it from English?`)) {
+    if (!(await this.confirm(
+      'Promote to Universal',
+      `Move “${term.literal}” to Universal and remove it from English?`
+    ))) {
       return;
     }
 
@@ -630,6 +634,16 @@ export class TitleCasingRulesComponent {
       lowerCaseTerms: [...(rules.lowerCaseTerms ?? [])],
       knownTerms: (rules.knownTerms ?? []).map(t => ({ ...t }))
     });
+  }
+
+  private async confirm(title: string, question: string): Promise<boolean> {
+    const ref = this.dialog.open(ConfirmComponent, {
+      data: { title, question },
+      disableClose: true,
+      autoFocus: true
+    });
+    const result = await firstValueFrom(ref.afterClosed());
+    return result?.result === true;
   }
 
   private async authHeaders(): Promise<HttpHeaders | undefined> {

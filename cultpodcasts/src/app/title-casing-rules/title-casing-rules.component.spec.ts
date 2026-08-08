@@ -16,6 +16,8 @@ describe('TitleCasingRulesComponent', () => {
   let httpMock: HttpTestingController;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let snackBar: { open: ReturnType<typeof vi.fn> };
+  let confirmResult: { result: boolean };
+  let dialogOpen: ReturnType<typeof vi.fn>;
 
   const languagesUrl = new URL('/languages', environment.api).toString();
   const enRulesUrl = new URL('/title-casing-rules/en', environment.api).toString();
@@ -61,6 +63,10 @@ describe('TitleCasingRulesComponent', () => {
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
     snackBar = { open: vi.fn() };
+    confirmResult = { result: true };
+    dialogOpen = vi.fn().mockImplementation(() => ({
+      afterClosed: () => of(confirmResult),
+    }));
 
     await TestBed.configureTestingModule({
       imports: [TitleCasingRulesComponent],
@@ -69,7 +75,6 @@ describe('TitleCasingRulesComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: MatDialogRef, useValue: dialogRef },
-        { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: MatSnackBar, useValue: snackBar },
         {
           provide: AuthServiceWrapper,
@@ -83,6 +88,7 @@ describe('TitleCasingRulesComponent', () => {
     }).compileComponents();
 
     TestBed.overrideProvider(MatSnackBar, { useValue: snackBar });
+    TestBed.overrideProvider(MatDialog, { useValue: { open: dialogOpen } });
 
     fixture = TestBed.createComponent(TitleCasingRulesComponent);
     component = fixture.componentInstance;
@@ -96,7 +102,6 @@ describe('TitleCasingRulesComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
-    vi.unstubAllGlobals();
   });
 
   it('adds a lower-case term via POST and closes with saved when mutated', async () => {
@@ -119,7 +124,6 @@ describe('TitleCasingRulesComponent', () => {
   });
 
   it('deletes a lower-case term via DELETE', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
     const pending = component.deleteLowerCaseTerm(0);
     const delUrl = new URL(
       '/title-casing-rules/en/lower-case-terms/of',
@@ -138,8 +142,6 @@ describe('TitleCasingRulesComponent', () => {
   });
 
   it('does not set didMutate when promote aborts because term is already in Universal', async () => {
-    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
-
     const pending = component.promoteKnownTerm(0);
 
     const universalGet = await expectOneSoon(universalRulesUrl);
