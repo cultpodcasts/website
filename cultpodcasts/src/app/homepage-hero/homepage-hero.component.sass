@@ -265,15 +265,13 @@
     letter-spacing: -0.025em
     color: var(--nflx-on-media, #fff)
     text-shadow: 0 4px 40px #000000bf
-    // Clamp + reserve 3 lines on every layout. Wide used to hug 1-line titles,
-    // so autoplay into a long title grew the in-flow card (~70px+) and shifted
-    // document height / scrollY without the user scrolling.
+    // Cap overflow; stacked layout reserves 3 lines so the in-flow panel does not
+    // jump. Wide docks the card absolutely so height can hug without moving scroll.
     display: -webkit-box
     -webkit-box-orient: vertical
     -webkit-line-clamp: 3
     line-clamp: 3
     overflow: hidden
-    min-height: calc(1.02em * 3)
 
 .billboard__lang
     display: inline-flex
@@ -553,15 +551,28 @@
 // placed there lose on source order. Kept before the max-width:1280 block so
 // the stacked layout still wins at exactly 1280px.
 @media screen and (min-width: 1280px)
+    .billboard
+        // Fixed band — not min-height alone. An in-flow card used to grow the
+        // flex container past min(88vh, 720px) when slide copy got taller.
+        height: min(88vh, 720px)
     .billboard__content
+        // Out of document flow, pinned to the bottom of the hero. Taller slides
+        // grow upward into the art; document height / scrollY stay put.
+        position: absolute
+        left: 4vw
+        bottom: 48px
         // Hug the copy instead of the fixed column so short slides avoid a
         // full-width slab. The column width stays the ceiling, so long titles
         // wrap exactly where they did before.
         width: fit-content
         max-width: min(640px, 100%)
-    // Keep base .billboard__copy-body / .billboard__desc min-heights. Zeroing
-    // them made short-desc slides shrink the in-flow card; autoplay into a
-    // fuller slide then grew the billboard and moved window scroll.
+        max-height: calc(100% - var(--nflx-hero-search-clearance, 140px) - 48px)
+        overflow: hidden
+    // Card is absolutely docked; copy min-heights only padded empty space into
+    // the art. Drop them so short slides stay compact.
+    .billboard__copy-body,
+    .billboard__desc
+        min-height: 0
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
@@ -578,6 +589,8 @@
         // Drop the tall viewport min-height — it forced letterboxing around
         // the contain-sized art. Height comes from search clearance + copy.
         min-height: 0
+        // Undo wide fixed band at the shared 1280px breakpoint.
+        height: auto
         // Media frame height, preferring 56.25vw — 16:9 at full width, the aspect
         // ~80% of hero art uses, so it fills the frame exactly. Short-and-wide
         // windows (a non-maximised desktop window) instead reserve ~320px for the
@@ -627,7 +640,12 @@
         max-width: min(640px, 100%)
         flex: 0 1 auto
         padding-top: 8px
+        // Undo wide absolute docking at the shared 1280px breakpoint.
         position: relative
+        left: auto
+        bottom: auto
+        max-height: none
+        overflow: visible
         z-index: 2
         &::before
             content: ''
@@ -648,7 +666,10 @@
             backdrop-filter: none
             -webkit-mask-image: none
             mask-image: none
-    // Title clamp/min-height lives on base .billboard__title (wide + stacked).
+    // Stacked: details panel is in document flow under a fixed art frame. Title
+    // line-count used to resize the panel (~125px between 1- and 3-line titles).
+    .billboard__title
+        min-height: calc(1.02em * 3)
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim

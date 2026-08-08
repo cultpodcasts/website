@@ -1582,6 +1582,13 @@ option {
     linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 50%, #181818 100%);
 }
 
+@media screen and (min-width: 1280px) {
+  .nflx-loading__billboard {
+    /* Match live wide .billboard fixed band so skeleton ↔ hero does not reflow. */
+    height: min(88vh, 720px);
+  }
+}
+
 .nflx-loading__catalogue,
 .nflx-loading__rail {
   --nflx-skel: color-mix(in srgb, var(--nflx-text, #fff) 12%, transparent);
