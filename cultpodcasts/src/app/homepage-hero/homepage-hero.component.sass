@@ -200,13 +200,19 @@
         &::before
             content: ''
             position: absolute
-            inset: -18px -24px -16px -24px
+            // Fills the padded content box (wide dock uses real padding; negative
+            // inset + overflow:hidden hid this surface entirely via z-index:-1).
+            inset: 0
             border-radius: 14px
             // Short of opaque so a trace of artwork still reads through, while
             // holding ~17:1 against white art — the worst case for white type.
             background: rgba(11, 11, 11, 0.93)
-            z-index: -1
+            z-index: 0
             pointer-events: none
+    // Keep copy above the card surface once ::before is no longer z-index:-1.
+    .billboard__feature
+        position: relative
+        z-index: 1
 
 .billboard__content
     position: relative
@@ -559,14 +565,20 @@
         // Out of document flow, pinned to the bottom of the hero. Taller slides
         // grow upward into the art; document height / scrollY stay put.
         position: absolute
-        left: 4vw
-        bottom: 48px
+        // Match the old negative-inset card: text still starts at 4vw / 48px
+        // padding, while the opaque surface extends 24px / 16px beyond it.
+        left: calc(4vw - 24px)
+        bottom: calc(48px - 16px)
+        box-sizing: border-box
+        padding: 18px 24px 16px 24px
         // Hug the copy instead of the fixed column so short slides avoid a
-        // full-width slab. The column width stays the ceiling, so long titles
-        // wrap exactly where they did before.
+        // full-width slab. 640px text column + horizontal padding; long titles
+        // wrap where they did before the dock change.
         width: fit-content
-        max-width: min(640px, 100%)
-        max-height: calc(100% - var(--nflx-hero-search-clearance, 140px) - 48px)
+        max-width: min(688px, calc(100% - 8vw + 48px))
+        max-height: calc(100% - var(--nflx-hero-search-clearance, 140px) - 32px)
+        // Clip tall copy inside the card; surface lives in-box (inset:0) so this
+        // no longer eats the ::before chrome the way z-index:-1 + overflow did.
         overflow: hidden
     // Card is absolutely docked; copy min-heights only padded empty space into
     // the art. Drop them so short slides stay compact.
@@ -639,17 +651,21 @@
         width: 100%
         max-width: min(640px, 100%)
         flex: 0 1 auto
-        padding-top: 8px
-        // Undo wide absolute docking at the shared 1280px breakpoint.
+        // Undo wide absolute docking + in-box card padding at the shared 1280px breakpoint.
         position: relative
         left: auto
         bottom: auto
+        padding: 8px 0 0
+        box-sizing: border-box
         max-height: none
         overflow: visible
         z-index: 2
         &::before
             content: ''
             position: absolute
+            // Clear wide-layout inset:0 (both queries match at exactly 1280px),
+            // then pin the stacked full-bleed panel.
+            inset: auto
             left: -4vw
             top: calc(-1 * var(--hero-copy-fade))
             width: 100vw
@@ -658,6 +674,7 @@
             // copy cannot leave a sliver of art below the panel; both background
             // layers are sized off the element, so over-extending is free.
             height: calc(100vh + 100%)
+            border-radius: 0
             z-index: -1
             pointer-events: none
             // Fade band on top, opaque fill for everything below it.
