@@ -558,48 +558,24 @@
 // the stacked layout still wins at exactly 1280px.
 @media screen and (min-width: 1280px)
     .billboard
-        // Fixed band — not min-height alone. An in-flow card used to grow the
-        // flex container past min(88vh, 720px) when slide copy got taller.
-        height: min(88vh, 720px)
+        // Floor at the old fixed band; grow when the details card needs more
+        // height (ultrawide / short windows) so title + desc + CTAs never clip.
+        height: auto
+        min-height: min(88vh, 720px)
     .billboard__content
-        // Out of document flow, pinned to the bottom of the hero. Taller slides
-        // grow upward into the art; document height / scrollY stay put.
-        position: absolute
-        // Match the old negative-inset card: text still starts at 4vw / 48px
-        // padding, while the opaque surface extends 24px / 16px beyond it.
-        left: calc(4vw - 24px)
-        bottom: calc(48px - 16px)
+        // In flow at the flex-end of the hero so card height drives the band.
+        // Negative margins recreate the docked surface overhang past 4vw / 48px.
+        position: relative
+        margin-left: -24px
+        margin-bottom: -16px
         box-sizing: border-box
         padding: 18px 24px 16px 24px
-        // Hug the copy instead of the fixed column so short slides avoid a
-        // full-width slab. 640px text column + horizontal padding; long titles
-        // wrap where they did before the dock change.
         width: fit-content
         max-width: min(688px, calc(100% - 8vw + 48px))
-        max-height: calc(100% - var(--nflx-hero-search-clearance, 140px) - 32px)
-        // Clip tall copy inside the card; surface lives in-box (inset:0) so this
-        // no longer eats the ::before chrome the way z-index:-1 + overflow did.
-        overflow: hidden
-        display: flex
-        flex-direction: column
-        min-height: 0
-    // Card is absolutely docked; copy min-heights only padded empty space into
-    // the art. Drop them so short slides stay compact.
+    // Absolute docking used to zero these; keep hug-height for short slides.
     .billboard__copy-body,
     .billboard__desc
         min-height: 0
-    // Short viewports (e.g. DevTools docked): shrink copy, keep CTAs in-card.
-    .billboard__feature,
-    .billboard__copy,
-    .billboard__copy-body
-        flex: 1 1 auto
-        min-height: 0
-        overflow: hidden
-    .billboard__copy
-        display: flex
-        flex-direction: column
-    .billboard__actions
-        flex: 0 0 auto
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
