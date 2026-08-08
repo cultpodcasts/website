@@ -10,19 +10,31 @@
         align-items: center
         gap: 6px
         margin: 0
-    mat-icon
+    // Beat MatIcon host styles (`.mat-icon[_nghost] { overflow: hidden }`).
+    // Edge-filling SVGs (visible/removed circles) were clipped at the top.
+    .flag-badge mat-icon.mat-icon,
+    .flag-toggle mat-icon.mat-icon
+        display: inline-flex
+        align-items: center
+        justify-content: center
+        box-sizing: border-box
         height: 18px
         width: 18px
         font-size: 18px
-        line-height: 18px
+        line-height: 0
         margin: 0
         flex-shrink: 0
         overflow: visible
         svg
             display: block
-            width: 18px
-            height: 18px
+            // Inset so edge-to-edge glyphs stay inside the paint box even if a
+            // higher-specificity overflow:hidden wins in some browsers.
+            width: 16px
+            height: 16px
+            max-width: 16px
+            max-height: 16px
             overflow: visible
+            flex-shrink: 0
     mat-icon.not
         opacity: 0.45
     .flag-label
@@ -36,10 +48,10 @@
         align-items: center
         gap: 6px
         box-sizing: border-box
-        min-height: 30px
-        padding: 6px 10px 6px 8px
+        min-height: 32px
+        padding: 7px 10px 7px 8px
         border-radius: 999px
-        border: 1px solid color-mix(in srgb, #fff 14%, transparent)
+        border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 35%, transparent)
         background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 80%, transparent)
         color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 70%, transparent)
         &.is-on
@@ -55,11 +67,11 @@
         position: relative
         width: auto
         min-width: 0
-        min-height: 30px
+        min-height: 32px
         margin: 0
-        padding: 6px 10px 6px 8px
+        padding: 7px 10px 7px 8px
         border-radius: 999px
-        border: 1px solid color-mix(in srgb, #fff 14%, transparent)
+        border: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant, #fff) 35%, transparent)
         background: color-mix(in srgb, var(--cp-ink-elevated, #141821) 80%, transparent)
         color: color-mix(in srgb, var(--mat-sys-on-surface, #e8e8e8) 70%, transparent)
         font: inherit
@@ -81,7 +93,7 @@
             margin-right: 0
         mat-spinner
             position: absolute
-            top: 5px
+            top: 6px
             left: 6px
             margin: 0
     .flag-toggle.loading
