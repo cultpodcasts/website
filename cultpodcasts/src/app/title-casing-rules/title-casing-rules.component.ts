@@ -552,8 +552,7 @@ export class TitleCasingRulesComponent {
       const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
-          // Azure TitleCasingRules requires curate; Worker gate accepts admin.
-          scope: 'admin curate'
+          scope: 'admin'
         }
       }));
       if (!token) {

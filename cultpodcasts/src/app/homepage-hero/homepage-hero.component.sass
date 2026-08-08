@@ -638,6 +638,16 @@
             backdrop-filter: none
             -webkit-mask-image: none
             mask-image: none
+    // Stacked layout: art frame is fixed, but the details panel is in document
+    // flow. Title line-count used to resize the panel (~125px between 1- and
+    // 3-line titles), which yanked scroll when autoplay advanced mid-scroll.
+    .billboard__title
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: 3
+        line-clamp: 3
+        overflow: hidden
+        min-height: calc(1.02em * 3)
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
@@ -686,13 +696,6 @@
         position: relative
         z-index: 2
     .billboard__title
-        display: -webkit-box
-        -webkit-box-orient: vertical
-        -webkit-line-clamp: 3
-        line-clamp: 3
-        overflow: hidden
-        // Short titles still reserve 3 lines so actions don't jump.
-        min-height: calc(1.02em * 3)
         font-size: clamp(1.85rem, 7vw, 2.6rem)
         margin-bottom: 10px
     .billboard__copy-body
