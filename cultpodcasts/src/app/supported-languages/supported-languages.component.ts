@@ -11,6 +11,8 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import {
+  NeutralCulture,
+  NeutralCulturesResponse,
   SupportedLanguage,
   SupportedLanguagesResponse,
   SupportedLanguagesUpdate
@@ -38,6 +40,8 @@ export class SupportedLanguagesComponent {
   errorMessage = signal('');
   addError = signal('');
   languages = signal<SupportedLanguage[]>([]);
+  /** English/native/alias spellings → culture code+display from GET /supported-languages/cultures */
+  private culturesByName = new Map<string, NeutralCulture>();
   newName = '';
 
   readonly canSave = computed(() =>
@@ -62,18 +66,38 @@ export class SupportedLanguagesComponent {
     return lang.code ? `code:${lang.code}` : `new:${lang.name}:${index}`;
   }
 
+  onAddKeydown(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.addLanguage();
+  }
+
   addLanguage() {
     const name = this.newName.trim();
     this.addError.set('');
     if (!name) {
       return;
     }
-    if (this.languages().some(l => l.name.toLowerCase() === name.toLowerCase())) {
+
+    const resolved = this.resolveCulture(name);
+    if (!resolved?.code) {
+      this.addError.set('Language not recognised. Use a .NET culture English or native name.');
+      return;
+    }
+
+    const alreadyListed = this.languages().some(l =>
+      l.code.toLowerCase() === resolved.code.toLowerCase() ||
+      l.name.toLowerCase() === name.toLowerCase() ||
+      l.name.toLowerCase() === resolved.name.toLowerCase());
+    if (alreadyListed) {
       this.addError.set('That language is already in the list.');
       return;
     }
-    // Code is derived server-side from the .NET culture English name on Save.
-    this.languages.update(list => [...list, { code: '', name }].sort((a, b) => a.name.localeCompare(b.name)));
+
+    this.languages.update(list =>
+      [...list, { code: resolved.code, name: resolved.name }]
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
     this.newName = '';
   }
 
@@ -133,6 +157,19 @@ export class SupportedLanguagesComponent {
     }
   }
 
+  private resolveCulture(name: string): NeutralCulture | undefined {
+    return this.culturesByName.get(this.lookupKey(name))
+      ?? this.culturesByName.get(this.foldKey(name));
+  }
+
+  private lookupKey(name: string): string {
+    return name.trim().toLowerCase();
+  }
+
+  private foldKey(name: string): string {
+    return name.trim().normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  }
+
   private async load() {
     this.isLoading.set(true);
     this.isInError.set(false);
@@ -147,17 +184,40 @@ export class SupportedLanguagesComponent {
         return;
       }
 
-      // Read published R2 map via existing CF API (same as podcast/episode dialogs).
-      const resp = await firstValueFrom(
-        this.http.get<{ [key: string]: string }>(
-          new URL('/languages', environment.api).toString(),
-          { headers, observe: 'response' }
+      const [languagesResp, culturesResp] = await Promise.all([
+        // Published R2 map — same names/codes currently registered (do not filter).
+        firstValueFrom(
+          this.http.get<{ [key: string]: string }>(
+            new URL('/languages', environment.api).toString(),
+            { headers, observe: 'response' }
+          )
+        ),
+        firstValueFrom(
+          this.http.get<NeutralCulturesResponse>(
+            new URL('/supported-languages/cultures', environment.api).toString(),
+            { headers, observe: 'response' }
+          )
         )
-      );
+      ]);
 
-      if (resp.status === 200 && resp.body) {
+      if (culturesResp.status === 200 && culturesResp.body?.cultures) {
+        const map = new Map<string, NeutralCulture>();
+        for (const culture of culturesResp.body.cultures) {
+          const row = { code: culture.code, name: culture.name };
+          map.set(this.lookupKey(culture.name), row);
+          map.set(this.foldKey(culture.name), row);
+        }
+        this.culturesByName = map;
+      } else {
+        this.isInError.set(true);
+        this.errorMessage.set('Failed to load culture list for Add validation.');
+        this.isLoading.set(false);
+        return;
+      }
+
+      if (languagesResp.status === 200 && languagesResp.body) {
         this.languages.set(
-          Object.entries(resp.body)
+          Object.entries(languagesResp.body)
             .map(([code, name]) => ({ code, name }))
             .sort((a, b) => a.name.localeCompare(b.name))
         );

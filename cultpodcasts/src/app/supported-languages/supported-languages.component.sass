@@ -1,3 +1,10 @@
+:host
+  ::ng-deep .mat-mdc-dialog-content
+    overflow-x: hidden
+    overflow-y: auto
+    // Outline mat-labels sit on the field border; default dialog padding clips them.
+    padding-top: 1em
+
 #error
   font-size: 1em
   color: #b00020
@@ -46,8 +53,10 @@
     font-weight: 600
     position: sticky
     top: 0
-    background: var(--mat-dialog-container-color, inherit)
-    z-index: 1
+    // Opaque surface so scrolling rows cannot show through the sticky header.
+    background: var(--mat-sys-surface-container, var(--mat-dialog-container-color, #fff))
+    z-index: 2
+    box-shadow: 0 1px 0 rgba(128, 128, 128, 0.25)
 
   .col-code
     width: 5.5em

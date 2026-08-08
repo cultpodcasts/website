@@ -11,7 +11,7 @@
   <div class="add-row">
     <mat-form-field class="grow" subscriptSizing="dynamic">
       <mat-label>Name</mat-label>
-      <input matInput type="text" [(ngModel)]="newName" (keydown.enter)="addLanguage()" autocomplete="off"
+      <input matInput type="text" [(ngModel)]="newName" (keydown.enter)="onAddKeydown($event)" autocomplete="off"
         aria-label="Language name">
     </mat-form-field>
     <button mat-flat-button color="primary" type="button" [disabled]="!newName.trim()" (click)="addLanguage()">Add</button>

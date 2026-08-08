@@ -17,3 +17,12 @@ export interface SupportedLanguageUpdate {
 export interface SupportedLanguagesUpdate {
   languages: SupportedLanguageUpdate[];
 }
+
+export interface NeutralCulture {
+  code: string;
+  name: string;
+}
+
+export interface NeutralCulturesResponse {
+  cultures: NeutralCulture[];
+}
