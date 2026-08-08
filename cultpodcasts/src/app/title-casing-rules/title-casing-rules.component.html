@@ -14,25 +14,38 @@
     <mat-form-field class="language-select" subscriptSizing="dynamic">
       <mat-label>Language</mat-label>
       <mat-select
-        [value]="selectedLanguage()"
+        [value]="isUniversalMode() ? null : selectedLanguage()"
         (valueChange)="onLanguageChange($event)"
-        [disabled]="isLoading() || isMutating()">
+        [disabled]="isLoading() || isMutating() || isUniversalMode()">
         @for (lang of languageOptions(); track lang.code) {
         <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
         }
       </mat-select>
     </mat-form-field>
+    @if (isUniversalMode()) {
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="universal-button"
+      [disabled]="isLoading() || isMutating()"
+      aria-pressed="true"
+      title="Back to selected language"
+      (click)="onUniversalClick()">
+      Universal
+    </button>
+    } @else {
     <button
       mat-stroked-button
       type="button"
       class="universal-button"
-      [class.active]="isUniversalMode()"
       [disabled]="isLoading() || isMutating()"
-      [attr.aria-pressed]="isUniversalMode()"
-      title="{{ isUniversalMode() ? 'Back to selected language' : 'Edit universal known terms' }}"
+      aria-pressed="false"
+      title="Edit universal known terms"
       (click)="onUniversalClick()">
       Universal
     </button>
+    }
   </div>
   }
 
