@@ -6,7 +6,7 @@
   }
 
   @if (isDefault() && !isLoading()) {
-  <p class="default-note">Showing code defaults — no Cosmos document yet. Save to persist.</p>
+  <p class="default-note">Showing code defaults — no Cosmos document yet. The first add/delete will persist them.</p>
   }
 
   @if (languageOptions().length > 0) {
@@ -16,7 +16,7 @@
       <mat-select
         [value]="selectedLanguage()"
         (valueChange)="onLanguageChange($event)"
-        [disabled]="isLoading() || isSaving()">
+        [disabled]="isLoading() || isMutating()">
         @for (lang of languageOptions(); track lang.code) {
         <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
         }
@@ -27,7 +27,7 @@
       type="button"
       class="universal-button"
       [class.active]="isUniversalMode()"
-      [disabled]="isLoading() || isSaving()"
+      [disabled]="isLoading() || isMutating()"
       [attr.aria-pressed]="isUniversalMode()"
       title="{{ isUniversalMode() ? 'Back to selected language' : 'Edit universal known terms' }}"
       (click)="onUniversalClick()">
@@ -36,8 +36,8 @@
   </div>
   }
 
-  <div class="rules-body" [class.is-busy]="isLoading() || isSaving()">
-    @if (isLoading() || isSaving()) {
+  <div class="rules-body" [class.is-busy]="isLoading() || isMutating()">
+    @if (isLoading() || isMutating()) {
     <div class="busy-overlay" aria-busy="true">
       <mat-spinner class="dialog-spinner" mode="indeterminate"></mat-spinner>
     </div>
@@ -171,15 +171,14 @@
       </mat-tab>
     </mat-tab-group>
     }
-    } @else if (!isLoading() && !isSaving()) {
+    } @else if (!isLoading() && !isMutating()) {
     <p class="empty">Select a language to load its rules.</p>
     }
   </div>
 </mat-dialog-content>
 
 <mat-dialog-actions>
-  <button mat-raised-button (click)="close()" [disabled]="isSaving()">Close</button>
-  <button mat-flat-button color="primary" [disabled]="!canSave()" (click)="onSave()">Save</button>
+  <button mat-raised-button (click)="close()" [disabled]="isMutating()">Close</button>
 </mat-dialog-actions>
 
 <ng-template #knownTermsTable let-rules>

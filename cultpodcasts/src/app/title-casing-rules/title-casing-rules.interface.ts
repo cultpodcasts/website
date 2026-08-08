@@ -9,15 +9,10 @@ export interface LanguageTitleCasingRules {
   knownTerms: KnownTerm[];
 }
 
-/** GET/PUT /title-casing-rules/{lang} */
+/** GET /title-casing-rules/{lang} and delta mutation responses */
 export interface LanguageTitleCasingRulesResponse {
   language: string;
   lowerCaseTerms: string[];
   knownTerms: KnownTerm[];
   isDefault: boolean;
-}
-
-export interface LanguageTitleCasingRulesUpdate {
-  lowerCaseTerms: string[];
-  knownTerms: KnownTerm[];
 }
