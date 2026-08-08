@@ -217,25 +217,30 @@ export class TitleCasingRulesComponent {
     }
 
     await this.mutate(async headers => {
-      await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.lowerCaseTermUrl(lang, oldTerm),
-          { headers, observe: 'response' }
-        )
-      );
-      const resp = await firstValueFrom(
+      // POST replacement first so a failed add cannot leave the old term deleted.
+      const postResp = await firstValueFrom(
         this.http.post<LanguageTitleCasingRulesResponse>(
           this.lowerCaseTermsUrl(lang),
           { term },
           { headers, observe: 'response' }
         )
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        this.cancelEditLowerCaseTerm();
-        return;
+      if (postResp.status !== 200 || !postResp.body) {
+        throw Object.assign(new Error('Edit failed.'), { error: { error: 'Edit failed.' } });
       }
-      throw Object.assign(new Error('Edit failed.'), { error: { error: 'Edit failed.' } });
+
+      const deleteResp = await firstValueFrom(
+        this.http.delete<LanguageTitleCasingRulesResponse>(
+          this.lowerCaseTermUrl(lang, oldTerm),
+          { headers, observe: 'response' }
+        )
+      );
+      if (deleteResp.status === 200 && deleteResp.body) {
+        this.applyLanguageRules(deleteResp.body);
+      } else {
+        this.applyLanguageRules(postResp.body);
+      }
+      this.cancelEditLowerCaseTerm();
     }, async () => {
       try {
         await this.loadLanguageRules(lang);
@@ -341,16 +346,20 @@ export class TitleCasingRulesComponent {
       const universal = await this.fetchRules(UNIVERSAL_LANGUAGE, headers);
       if (universal.knownTerms.some(t => t.literal.toLowerCase() === term.literal.toLowerCase())) {
         this.snackBar.open('That known term is already in Universal.', 'Dismiss', { duration: 4000 });
-        return;
+        return false;
       }
 
-      await firstValueFrom(
+      const postResp = await firstValueFrom(
         this.http.post<LanguageTitleCasingRulesResponse>(
           this.knownTermsUrl(UNIVERSAL_LANGUAGE),
           term,
           { headers, observe: 'response' }
         )
       );
+      if (postResp.status !== 200 || !postResp.body) {
+        throw Object.assign(new Error('Promote failed.'), { error: { error: 'Promote failed.' } });
+      }
+
       const englishResp = await firstValueFrom(
         this.http.delete<LanguageTitleCasingRulesResponse>(
           this.knownTermUrl('en', term.literal),
@@ -360,7 +369,7 @@ export class TitleCasingRulesComponent {
       if (englishResp.status === 200 && englishResp.body) {
         this.applyLanguageRules(englishResp.body);
         this.snackBar.open(`Promoted “${term.literal}” to Universal.`, 'Dismiss', { duration: 3000 });
-        return;
+        return true;
       }
       throw Object.assign(new Error('Promote failed.'), { error: { error: 'Promote failed.' } });
     }, async () => {
@@ -379,16 +388,10 @@ export class TitleCasingRulesComponent {
     }
 
     await this.mutate(async headers => {
-      if (previous
-        && previous.literal.toLowerCase() !== term.literal.toLowerCase()) {
-        await firstValueFrom(
-          this.http.delete<LanguageTitleCasingRulesResponse>(
-            this.knownTermUrl(lang, previous.literal),
-            { headers, observe: 'response' }
-          )
-        );
-      }
+      const literalChanged = !!previous
+        && previous.literal.toLowerCase() !== term.literal.toLowerCase();
 
+      // When renaming, POST the new literal first so a failed add cannot drop the old term.
       const resp = await firstValueFrom(
         this.http.post<LanguageTitleCasingRulesResponse>(
           this.knownTermsUrl(lang),
@@ -396,14 +399,29 @@ export class TitleCasingRulesComponent {
           { headers, observe: 'response' }
         )
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        if (!previous) {
-          this.knownTermFilter.set('');
-        }
-        return;
+      if (resp.status !== 200 || !resp.body) {
+        throw Object.assign(new Error('Save known term failed.'), { error: { error: 'Save known term failed.' } });
       }
-      throw Object.assign(new Error('Save known term failed.'), { error: { error: 'Save known term failed.' } });
+
+      if (literalChanged && previous) {
+        const deleteResp = await firstValueFrom(
+          this.http.delete<LanguageTitleCasingRulesResponse>(
+            this.knownTermUrl(lang, previous.literal),
+            { headers, observe: 'response' }
+          )
+        );
+        if (deleteResp.status === 200 && deleteResp.body) {
+          this.applyLanguageRules(deleteResp.body);
+        } else {
+          this.applyLanguageRules(resp.body);
+        }
+      } else {
+        this.applyLanguageRules(resp.body);
+      }
+
+      if (!previous) {
+        this.knownTermFilter.set('');
+      }
     }, async () => {
       try {
         await this.loadLanguageRules(lang);
@@ -414,7 +432,7 @@ export class TitleCasingRulesComponent {
   }
 
   private async mutate(
-    action: (headers: HttpHeaders) => Promise<void>,
+    action: (headers: HttpHeaders) => Promise<boolean | void>,
     onError?: () => Promise<void>
   ) {
     this.isMutating.set(true);
@@ -429,8 +447,11 @@ export class TitleCasingRulesComponent {
         return;
       }
 
-      await action(headers);
-      this.didMutate = true;
+      const mutated = await action(headers);
+      // Explicit false = aborted without a persistence write (e.g. promote already in Universal).
+      if (mutated !== false) {
+        this.didMutate = true;
+      }
     } catch (error: any) {
       console.error(error);
       this.isInError.set(true);
