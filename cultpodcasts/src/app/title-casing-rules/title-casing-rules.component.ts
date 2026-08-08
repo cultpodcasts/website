@@ -466,14 +466,15 @@ export class TitleCasingRulesComponent {
     code: string,
     headers: HttpHeaders
   ): Promise<LanguageTitleCasingRules & { isDefault: boolean }> {
-    const noCacheHeaders = headers
-      .set('Cache-Control', 'no-cache')
-      .set('Pragma', 'no-cache');
+    // Do not send Cache-Control / Pragma / ngsw-bypass as request headers:
+    // api-preview CORS only allows authorization + content-type, so extra
+    // headers make the browser abort the GET after OPTIONS (looks like a 504).
+    // Worker already returns Cache-Control: no-store; ngsw bypass is a query param.
     try {
       const resp = await firstValueFrom(
         this.http.get<LanguageTitleCasingRulesResponse>(
           this.rulesUrl(code),
-          { headers: noCacheHeaders, observe: 'response' }
+          { headers, observe: 'response' }
         )
       );
 
@@ -529,7 +530,13 @@ export class TitleCasingRulesComponent {
   }
 
   private rulesUrl(code: string): string {
-    return new URL(`/title-casing-rules/${encodeURIComponent(code)}`, environment.api).toString();
+    const url = new URL(
+      `/title-casing-rules/${encodeURIComponent(code)}`,
+      environment.api
+    );
+    // Query form avoids a custom header that CORS would reject.
+    url.searchParams.set('ngsw-bypass', 'true');
+    return url.toString();
   }
 
   private applyLanguageRules(rules: LanguageTitleCasingRulesResponse | (LanguageTitleCasingRules & { isDefault: boolean; language?: string })) {
@@ -545,13 +552,15 @@ export class TitleCasingRulesComponent {
       const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
-          scope: 'admin'
+          // Azure TitleCasingRules requires curate; Worker gate accepts admin.
+          scope: 'admin curate'
         }
       }));
       if (!token) {
         return undefined;
       }
-      return new HttpHeaders().set('Authorization', 'Bearer ' + token);
+      return new HttpHeaders()
+        .set('Authorization', 'Bearer ' + token);
     } catch (e) {
       console.error(e);
       return undefined;
