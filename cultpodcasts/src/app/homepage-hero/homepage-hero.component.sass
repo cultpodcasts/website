@@ -580,11 +580,26 @@
         // Clip tall copy inside the card; surface lives in-box (inset:0) so this
         // no longer eats the ::before chrome the way z-index:-1 + overflow did.
         overflow: hidden
+        display: flex
+        flex-direction: column
+        min-height: 0
     // Card is absolutely docked; copy min-heights only padded empty space into
     // the art. Drop them so short slides stay compact.
     .billboard__copy-body,
     .billboard__desc
         min-height: 0
+    // Short viewports (e.g. DevTools docked): shrink copy, keep CTAs in-card.
+    .billboard__feature,
+    .billboard__copy,
+    .billboard__copy-body
+        flex: 1 1 auto
+        min-height: 0
+        overflow: hidden
+    .billboard__copy
+        display: flex
+        flex-direction: column
+    .billboard__actions
+        flex: 0 0 auto
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
