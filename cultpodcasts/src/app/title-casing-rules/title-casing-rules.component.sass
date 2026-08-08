@@ -1,0 +1,232 @@
+#error
+  font-size: 1em
+  color: #b00020
+
+.default-note
+  font-size: 0.9em
+  margin: 0 0 0.75em
+  color: #6a4c00
+
+:host
+  // Outline mat-label sits on the field border; dialog content overflow clips it.
+  ::ng-deep .mat-mdc-dialog-content
+    overflow-x: hidden
+    overflow-y: auto
+    padding-top: 1em
+
+.language-row
+  display: flex
+  align-items: center
+  gap: 0.75em
+  flex-wrap: wrap
+  // Room for the floating outline label above the field border.
+  padding-top: 0.35em
+  margin-bottom: 0.25em
+
+.language-select
+  width: 100%
+  max-width: 24em
+  flex: 1 1 14em
+  // Keep the outline label inside the row’s box.
+  margin-top: 0.25em
+
+.universal-button
+  flex: 0 0 auto
+  align-self: center
+
+.rules-body
+  position: relative
+  min-height: 18em
+
+  &.is-busy > :not(.busy-overlay)
+    opacity: 0.45
+    pointer-events: none
+
+.busy-overlay
+  position: absolute
+  inset: 0
+  z-index: 2
+  display: flex
+  align-items: center
+  justify-content: center
+  background: rgba(0, 0, 0, 0.12)
+
+.dialog-spinner
+  display: block
+  margin: 0
+
+.rules-tabs
+  margin-top: 0.25em
+
+.universal-known-terms
+  margin-top: 0.25em
+
+.tab-count
+  margin-left: 0.4em
+  opacity: 0.65
+  font-size: 0.85em
+
+.add-panel
+  margin: 1em 0 1.25em
+  padding: 0.85em 1em
+  border: 1px solid rgba(128, 128, 128, 0.35)
+  border-radius: 6px
+  background: rgba(128, 128, 128, 0.08)
+
+  .add-hint
+    margin: 0 0 0.75em
+    font-size: 0.9em
+    opacity: 0.85
+
+.add-row
+  display: flex
+  gap: 0.75em
+  align-items: flex-start
+
+.grow
+  flex: 1
+  min-width: 0
+
+.inline-edit
+  --mat-form-field-container-height: 2.5em
+  --mat-form-field-container-vertical-padding: 0.35em
+
+.existing-panel
+  margin-top: 0.25em
+
+.existing-header
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 0.75em
+  margin-bottom: 0.5em
+
+  h3
+    margin: 0
+    font-size: 0.95em
+    font-weight: 600
+    opacity: 0.8
+
+.filter-field
+  width: 12em
+  max-width: 45%
+
+.empty
+  font-size: 0.9em
+  margin: 0.5em 0 0
+  opacity: 0.7
+
+.term-list
+  margin: 0
+  // Top padding keeps the first row’s floated outline label inside the scroll
+  // box; bottom padding keeps the last row clear of the vertical scrollbar.
+  padding: 0.85em 0.35em 0.75em 0
+  list-style: none
+  max-height: 22em
+  // Vertical only — overflow:auto was painting a horizontal bar through the
+  // last row / edit+delete icons when the vertical scrollbar narrowed the box.
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
+
+  li
+    display: flex
+    align-items: center
+    gap: 0.25em
+    min-height: 2.5em
+    min-width: 0
+    max-width: 100%
+    box-sizing: border-box
+    padding: 0 0.25em
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2)
+
+    &.editing
+      align-items: flex-start
+      // Extra room so the outline label is not flush with the previous row /
+      // list top when mid-list items enter edit mode.
+      padding-top: 0.65em
+      padding-bottom: 0.35em
+
+    &:hover .term-actions,
+    &.editing .term-actions,
+    &:focus-within .term-actions
+      opacity: 1
+
+  .term-text
+    flex: 1
+    min-width: 0
+    overflow: hidden
+    text-overflow: ellipsis
+
+  .term-actions
+    display: flex
+    flex: 0 0 auto
+    opacity: 0.35
+    transition: opacity 0.12s ease
+
+  .inline-edit
+    // Avoid the denser field height crowding the floated label in the list.
+    margin-top: 0.15em
+
+.known-table
+  width: 100%
+  border-collapse: collapse
+  table-layout: fixed
+  font-size: 0.95em
+  max-height: 22em
+  display: block
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
+  padding-bottom: 0.5em
+
+  thead, tbody, tr
+    display: table
+    width: 100%
+    table-layout: fixed
+
+  th, td
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25)
+    padding: 0.4em 0.5em
+    text-align: left
+    vertical-align: middle
+
+  th
+    font-weight: 600
+    position: sticky
+    top: 0
+    background: var(--mat-dialog-container-color, inherit)
+    z-index: 1
+
+  th:nth-child(1), td:nth-child(1)
+    width: 30%
+
+  th:nth-child(3), td:nth-child(3)
+    width: 6.5em
+
+  &.with-promote
+    th:nth-child(3), td:nth-child(3)
+      width: 9.5em
+
+  td.pattern
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+    font-size: 0.85em
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+  .actions
+    white-space: nowrap
+    text-align: right
+
+  tbody tr:hover .actions button
+    opacity: 1
+
+  .actions button
+    opacity: 0.35
+    transition: opacity 0.12s ease
+
+// Keep Close clear of the rules list and the dialog bottom edge.
+mat-dialog-actions
+  padding-top: 1em
+  padding-bottom: 1em

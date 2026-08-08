@@ -1,0 +1,84 @@
+:host
+  ::ng-deep .mat-mdc-dialog-content
+    // Keep list scroll on .table-scroll; visible overflow lets outline labels
+    // and the autocomplete panel sit above the field without being clipped.
+    overflow: visible
+    // Outline mat-labels sit on the field border; default dialog padding clips them.
+    padding-top: 1.25em
+
+#error
+  font-size: 1em
+  color: #b00020
+
+.dialog-spinner
+  display: block
+  margin: 2em auto
+
+.add-row
+  display: flex
+  gap: 0.75em
+  align-items: flex-start
+  margin-bottom: 0.75em
+  // Extra room so the floated outline label is not flush with the content top.
+  padding-top: 0.35em
+
+.grow
+  flex: 1
+  min-width: 0
+
+.add-error
+  font-size: 0.9em
+  color: #b00020
+  margin: -0.25em 0 0.75em
+
+.empty
+  font-size: 0.9em
+  margin: 0
+  opacity: 0.7
+
+.table-scroll
+  max-height: 28em
+  // Vertical only — overflow:auto was painting a horizontal bar through the
+  // last visible row / delete icons when the vertical scrollbar narrowed the box.
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
+  padding-bottom: 0.5em
+
+.language-table
+  width: 100%
+  border-collapse: collapse
+  table-layout: fixed
+  font-size: 0.95em
+
+  th, td
+    border-bottom: 1px solid rgba(128, 128, 128, 0.25)
+    padding: 0.35em 0.5em
+    text-align: left
+    vertical-align: middle
+
+  th
+    font-weight: 600
+    position: sticky
+    top: 0
+    // Opaque surface so scrolling rows cannot show through the sticky header.
+    background: var(--mat-sys-surface-container, var(--mat-dialog-container-color, #fff))
+    z-index: 2
+    box-shadow: 0 1px 0 rgba(128, 128, 128, 0.25)
+
+  .col-code
+    width: 5.5em
+
+  .col-name
+    width: auto
+
+  .col-actions
+    width: 3.5em
+    white-space: nowrap
+    text-align: right
+    padding-right: 0.25em
+
+// Keep Close clear of the language list and the dialog bottom edge.
+mat-dialog-actions
+  padding-top: 1em
+  padding-bottom: 1em

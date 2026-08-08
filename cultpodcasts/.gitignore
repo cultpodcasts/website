@@ -39,6 +39,7 @@ yarn-error.log
 
 # Miscellaneous
 /.angular/cache
+.wrangler/
 .cert/
 .sass-cache/
 /connect.lock

@@ -60,6 +60,14 @@ body {
   font-family: 'Twemoji Country Flags', var(--cp-font-ui);
 }
 
+.curator-card__meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.45em;
+  row-gap: 4px;
+}
+
 .episode-poster__badge--lang-code,
 .billboard__lang-flag--code,
 .episode-hero__lang-flag--code,
@@ -163,7 +171,9 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
 /* Height budget: sticky site chrome + curator toolbar + one full card row
    must fit in the viewport together. Cap with max-height — do not use
    --curator-snap-offset (arm-after-scroll would resize cards).
-   Modest min-height avoids tiny stubs; status CTAs dock at the bottom. */
+   Modest min-height avoids tiny stubs; status CTAs dock at the bottom.
+   Short viewports (@media max-height: 780px below) lift this cap so cards
+   are not clipped under the wide art band. */
 .curator-card-grid > .curator-card,
 .curator-card-grid > discovery-item > .curator-card {
   /* chrome-bar + sticky fudge + toolbar (~pad+title) + toolbar margin + gap */
@@ -225,6 +235,16 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
   padding-top: 12px;
 }
 
+/* Short windows: the snap height budget clips status/subjects under the
+   wide 16:9 art band. Prefer page scroll over truncating the card. */
+@media (max-height: 780px) {
+  .curator-card-grid > .curator-card,
+  .curator-card-grid > discovery-item > .curator-card {
+    max-height: none;
+    min-height: 0;
+  }
+}
+
 @media (min-width: 720px) {
   .curator-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -248,6 +268,17 @@ html.curator-snap-enabled .curator-card-grid > .curator-card {
       width: 100%;
       aspect-ratio: 16 / 9;
       max-height: 12rem;
+    }
+  }
+
+  @media (max-height: 780px) {
+    .curator-card-grid > .curator-card .curator-card__art,
+    .curator-card-grid > discovery-item > .curator-card .curator-card__art {
+      max-height: 8rem;
+
+      .container.layout-tile {
+        max-height: 8rem;
+      }
     }
   }
 
@@ -1549,6 +1580,13 @@ option {
     linear-gradient(85deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.45) 42%, transparent 78%),
     linear-gradient(to top, #0b0b0b 0%, transparent 40%),
     linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 50%, #181818 100%);
+}
+
+@media screen and (min-width: 1280px) {
+  .nflx-loading__billboard {
+    /* Match live wide .billboard fixed band so skeleton ↔ hero does not reflow. */
+    height: min(88vh, 720px);
+  }
 }
 
 .nflx-loading__catalogue,

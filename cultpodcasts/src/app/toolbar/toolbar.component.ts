@@ -18,8 +18,9 @@ import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
 import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
-import { AddTermComponent } from '../add-term/add-term.component';
 import { DiscoveryScheduleComponent } from '../discovery-schedule/discovery-schedule.component';
+import { SupportedLanguagesComponent } from '../supported-languages/supported-languages.component';
+import { TitleCasingRulesComponent } from '../title-casing-rules/title-casing-rules.component';
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -241,16 +242,39 @@ export class ToolbarComponent {
       });
   }
 
-  addTerm() {
-    const dialogRef = this.dialog.open(AddTermComponent, {
+  openTitleCasingRules() {
+    const dialogRef = this.dialog.open(TitleCasingRulesComponent, {
       disableClose: true,
-      autoFocus: true
+      autoFocus: true,
+      width: '44em',
+      maxWidth: '95vw',
+      maxHeight: '90vh'
     });
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async result => {
-        if (result.updated) {
-          this.snackBar.open(`Term '${result.term}' added`, "Ok", { duration: 10000 });
+      .subscribe(result => {
+        if (result?.saved) {
+          this.snackBar.open('Title casing rules saved', 'Ok', { duration: 5000 });
+        }
+      });
+  }
+
+  openSupportedLanguages() {
+    const dialogRef = this.dialog.open(SupportedLanguagesComponent, {
+      disableClose: true,
+      autoFocus: true,
+      width: '36em',
+      maxWidth: '95vw'
+    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result?.saved) {
+          this.snackBar.open(
+            'Supported languages updated (saved to Cosmos and published to R2).',
+            'Ok',
+            { duration: 5000 }
+          );
         }
       });
   }

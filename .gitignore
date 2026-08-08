@@ -1,3 +1,4 @@
+.wrangler/
 cultpodcasts/.vs/
 cultpodcasts/.vscode/
 cultpodcasts/src/environments/version.prod.ts

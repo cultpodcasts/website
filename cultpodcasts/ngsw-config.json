@@ -33,7 +33,7 @@
     {
       "name": "homepage",
       "urls": [
-        "https://api.cultpodcasts.com/homepage",
+        "https://api-preview.cultpodcasts.com/homepage",
         "https://local.cultpodcasts.com:8787/homepage"
       ],
       "cacheConfig": {
@@ -47,8 +47,16 @@
     {
       "name": "api",
       "urls": [
-        "https://api.cultpodcasts.com/**",
-        "https://local.cultpodcasts.com:8787/**"
+        "https://api-preview.cultpodcasts.com/**",
+        "https://local.cultpodcasts.com:8787/**",
+        "!https://api-preview.cultpodcasts.com/title-casing-rules",
+        "!https://api-preview.cultpodcasts.com/title-casing-rules/**",
+        "!https://local.cultpodcasts.com:8787/title-casing-rules",
+        "!https://local.cultpodcasts.com:8787/title-casing-rules/**",
+        "!https://api-preview.cultpodcasts.com/supported-languages",
+        "!https://api-preview.cultpodcasts.com/supported-languages/**",
+        "!https://local.cultpodcasts.com:8787/supported-languages",
+        "!https://local.cultpodcasts.com:8787/supported-languages/**"
       ],
       "cacheConfig": {
         "maxSize": 100,

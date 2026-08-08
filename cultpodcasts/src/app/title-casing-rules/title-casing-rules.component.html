@@ -1,0 +1,234 @@
+<h2 mat-dialog-title>Title casing rules</h2>
+
+<mat-dialog-content>
+  @if (isInError()) {
+  <p id="error">{{ errorMessage() || "An error occurred" }}</p>
+  }
+
+  @if (isDefault() && !isLoading()) {
+  <p class="default-note">Showing code defaults — no Cosmos document yet. The first add/delete will persist them.</p>
+  }
+
+  @if (languageOptions().length > 0) {
+  <div class="language-row">
+    <mat-form-field class="language-select" subscriptSizing="dynamic">
+      <mat-label>Language</mat-label>
+      <mat-select
+        [value]="isUniversalMode() ? null : selectedLanguage()"
+        (valueChange)="onLanguageChange($event)"
+        [disabled]="isLoading() || isMutating() || isUniversalMode()">
+        @for (lang of languageOptions(); track lang.code) {
+        <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (isUniversalMode()) {
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="universal-button"
+      [disabled]="isLoading() || isMutating()"
+      aria-pressed="true"
+      title="Back to selected language"
+      (click)="onUniversalClick()">
+      Universal
+    </button>
+    } @else {
+    <button
+      mat-stroked-button
+      type="button"
+      class="universal-button"
+      [disabled]="isLoading() || isMutating()"
+      aria-pressed="false"
+      title="Edit universal known terms"
+      (click)="onUniversalClick()">
+      Universal
+    </button>
+    }
+  </div>
+  }
+
+  <div class="rules-body" [class.is-busy]="isLoading() || isMutating()">
+    @if (isLoading() || isMutating()) {
+    <div class="busy-overlay" aria-busy="true">
+      <mat-spinner class="dialog-spinner" mode="indeterminate"></mat-spinner>
+    </div>
+    }
+    @if (currentRules(); as rules) {
+    @if (isUniversalMode()) {
+    <section class="universal-known-terms">
+      <section class="add-panel">
+        <p class="add-hint">Add a literal / regex pair that applies to every episode language</p>
+        <button mat-flat-button color="primary" type="button" (click)="openKnownTermDialog()">
+          Add known term
+        </button>
+      </section>
+
+      <section class="existing-panel">
+        <div class="existing-header">
+          <h3>Known terms <span class="tab-count">{{ rules.knownTerms.length }}</span></h3>
+          @if (rules.knownTerms.length > 0) {
+          <mat-form-field class="filter-field" subscriptSizing="dynamic">
+            <mat-label>Find</mat-label>
+            <input matInput type="search" [ngModel]="knownTermFilter()" (ngModelChange)="knownTermFilter.set($event)" autocomplete="off">
+          </mat-form-field>
+          }
+        </div>
+
+        @if (rules.knownTerms.length === 0) {
+        <p class="empty">No universal known terms yet.</p>
+        } @else if (filteredKnownTerms().length === 0) {
+        <p class="empty">No matches for “{{ knownTermFilter() }}”.</p>
+        } @else {
+        <ng-container *ngTemplateOutlet="knownTermsTable; context: { $implicit: rules }"></ng-container>
+        }
+      </section>
+    </section>
+    } @else {
+    <mat-tab-group animationDuration="0ms" class="rules-tabs">
+      <mat-tab>
+        <ng-template mat-tab-label>
+          Lower-case
+          <span class="tab-count">{{ rules.lowerCaseTerms.length }}</span>
+        </ng-template>
+
+        <section class="add-panel">
+          <p class="add-hint">Add a word that should stay lower-case in titles</p>
+          <div class="add-row">
+            <mat-form-field class="grow" subscriptSizing="dynamic">
+              <mat-label>New lower-case term</mat-label>
+              <input matInput type="text" [(ngModel)]="newLowerCaseTerm" (keydown.enter)="addLowerCaseTerm()" autocomplete="off">
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="button" [disabled]="!newLowerCaseTerm.trim()" (click)="addLowerCaseTerm()">
+              Add
+            </button>
+          </div>
+        </section>
+
+        <section class="existing-panel">
+          <div class="existing-header">
+            <h3>Existing</h3>
+            @if (rules.lowerCaseTerms.length > 0) {
+            <mat-form-field class="filter-field" subscriptSizing="dynamic">
+              <mat-label>Find</mat-label>
+              <input matInput type="search" [ngModel]="lowerCaseFilter()" (ngModelChange)="lowerCaseFilter.set($event)" autocomplete="off">
+            </mat-form-field>
+            }
+          </div>
+
+          @if (rules.lowerCaseTerms.length === 0) {
+          <p class="empty">No lower-case terms for this language yet.</p>
+          } @else if (filteredLowerCaseTerms().length === 0) {
+          <p class="empty">No matches for “{{ lowerCaseFilter() }}”.</p>
+          } @else {
+          <ul class="term-list">
+            @for (item of filteredLowerCaseTerms(); track item.term) {
+            <li [class.editing]="editingLowerCaseIndex() === item.index">
+              @if (editingLowerCaseIndex() === item.index) {
+              <mat-form-field class="grow inline-edit" subscriptSizing="dynamic">
+                <mat-label>Lower-case term</mat-label>
+                <input matInput type="text" [(ngModel)]="editingLowerCaseValue" (keydown.enter)="saveEditLowerCaseTerm()" autocomplete="off">
+              </mat-form-field>
+              <button mat-button type="button" (click)="saveEditLowerCaseTerm()">Save</button>
+              <button mat-button type="button" (click)="cancelEditLowerCaseTerm()">Cancel</button>
+              } @else {
+              <span class="term-text">{{ item.term }}</span>
+              <span class="term-actions">
+                <button mat-icon-button type="button" aria-label="Edit term" (click)="startEditLowerCaseTerm(item.index)">
+                  <mat-icon class="material-symbols-outlined">edit</mat-icon>
+                </button>
+                <button mat-icon-button type="button" aria-label="Delete term" (click)="deleteLowerCaseTerm(item.index)">
+                  <mat-icon class="material-symbols-outlined">delete</mat-icon>
+                </button>
+              </span>
+              }
+            </li>
+            }
+          </ul>
+          }
+        </section>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          Known terms
+          <span class="tab-count">{{ rules.knownTerms.length }}</span>
+        </ng-template>
+
+        <section class="add-panel">
+          <p class="add-hint">Add a literal / regex pair for special casing</p>
+          <button mat-flat-button color="primary" type="button" (click)="openKnownTermDialog()">
+            Add known term
+          </button>
+        </section>
+
+        <section class="existing-panel">
+          <div class="existing-header">
+            <h3>Existing</h3>
+            @if (rules.knownTerms.length > 0) {
+            <mat-form-field class="filter-field" subscriptSizing="dynamic">
+              <mat-label>Find</mat-label>
+              <input matInput type="search" [ngModel]="knownTermFilter()" (ngModelChange)="knownTermFilter.set($event)" autocomplete="off">
+            </mat-form-field>
+            }
+          </div>
+
+          @if (rules.knownTerms.length === 0) {
+          <p class="empty">No known terms for this language yet.</p>
+          } @else if (filteredKnownTerms().length === 0) {
+          <p class="empty">No matches for “{{ knownTermFilter() }}”.</p>
+          } @else {
+          <ng-container *ngTemplateOutlet="knownTermsTable; context: { $implicit: rules }"></ng-container>
+          }
+        </section>
+      </mat-tab>
+    </mat-tab-group>
+    }
+    } @else if (!isLoading() && !isMutating()) {
+    <p class="empty">Select a language to load its rules.</p>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()" [disabled]="isMutating()">Close</button>
+</mat-dialog-actions>
+
+<ng-template #knownTermsTable let-rules>
+  <table class="known-table" [class.with-promote]="showPromote()">
+    <thead>
+      <tr>
+        <th>Literal</th>
+        <th>Pattern</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of filteredKnownTerms(); track item.term.literal + item.term.pattern + item.index) {
+      <tr>
+        <td>{{ item.term.literal }}</td>
+        <td class="pattern">{{ item.term.pattern }}</td>
+        <td class="actions">
+          @if (showPromote()) {
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Promote to Universal"
+            title="Promote to Universal"
+            (click)="promoteKnownTerm(item.index)">
+            <mat-icon class="material-symbols-outlined">upgrade</mat-icon>
+          </button>
+          }
+          <button mat-icon-button type="button" aria-label="Edit known term" (click)="openKnownTermDialog(item.index)">
+            <mat-icon class="material-symbols-outlined">edit</mat-icon>
+          </button>
+          <button mat-icon-button type="button" aria-label="Delete known term" (click)="deleteKnownTerm(item.index)">
+            <mat-icon class="material-symbols-outlined">delete</mat-icon>
+          </button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</ng-template>

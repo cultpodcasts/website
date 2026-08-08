@@ -1,5 +1,6 @@
 import { EditPodcastPost } from "./edit-podcast-post.interface";
 
 export interface AddPodcastPost extends EditPodcastPost {
-    podcastName?: string;
+    /** Podcast display name; API PodcastChangeRequest binds this as `name`. */
+    name?: string;
 }
