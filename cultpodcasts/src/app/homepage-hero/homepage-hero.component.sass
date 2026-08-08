@@ -13,6 +13,9 @@
     box-sizing: border-box
     overflow: hidden
     background-color: #0b0b0b
+    // Slide copy height can still change mid-autoplay; block scroll anchoring
+    // from yanking window scrollY when the billboard reflows.
+    overflow-anchor: none
 
 .billboard__stages,
 .billboard__grain,
@@ -262,6 +265,15 @@
     letter-spacing: -0.025em
     color: var(--nflx-on-media, #fff)
     text-shadow: 0 4px 40px #000000bf
+    // Clamp + reserve 3 lines on every layout. Wide used to hug 1-line titles,
+    // so autoplay into a long title grew the in-flow card (~70px+) and shifted
+    // document height / scrollY without the user scrolling.
+    display: -webkit-box
+    -webkit-box-orient: vertical
+    -webkit-line-clamp: 3
+    line-clamp: 3
+    overflow: hidden
+    min-height: calc(1.02em * 3)
 
 .billboard__lang
     display: inline-flex
@@ -419,6 +431,9 @@
     overflow-y: hidden
     // Prefer horizontal scrubbing on the dash strip over page scroll.
     touch-action: pan-x
+    // Keep programmatic/user horizontal scrolls inside the strip.
+    overscroll-behavior-x: contain
+    overflow-anchor: none
     scroll-behavior: smooth
     scrollbar-width: none
     -ms-overflow-style: none
@@ -544,14 +559,9 @@
         // wrap exactly where they did before.
         width: fit-content
         max-width: min(640px, 100%)
-    // Copy is bottom-aligned here, so the actions hold a steady Y on their own —
-    // the desc/chips reservations only pad the card out on slides with short or
-    // missing text. Measured: dropping them takes 102px off a card whose episode
-    // has no description, with the actions staying put. The stacked layout keeps
-    // its reservations, where the column really would move the buttons.
-    .billboard__copy-body,
-    .billboard__desc
-        min-height: 0
+    // Keep base .billboard__copy-body / .billboard__desc min-heights. Zeroing
+    // them made short-desc slides shrink the in-flow card; autoplay into a
+    // fuller slide then grew the billboard and moved window scroll.
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
@@ -638,16 +648,7 @@
             backdrop-filter: none
             -webkit-mask-image: none
             mask-image: none
-    // Stacked layout: art frame is fixed, but the details panel is in document
-    // flow. Title line-count used to resize the panel (~125px between 1- and
-    // 3-line titles), which yanked scroll when autoplay advanced mid-scroll.
-    .billboard__title
-        display: -webkit-box
-        -webkit-box-orient: vertical
-        -webkit-line-clamp: 3
-        line-clamp: 3
-        overflow: hidden
-        min-height: calc(1.02em * 3)
+    // Title clamp/min-height lives on base .billboard__title (wide + stacked).
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
