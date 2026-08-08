@@ -21,6 +21,11 @@ Required allowlist entries (no trailing slash):
 - `https://website-83e.pages.dev`
 - `https://local.cultpodcasts.com:8788`
 - `https://local.cultpodcasts.com:4200`
+- `https://api-preview.cultpodcasts.com` (OpenAPI `/docs` on the preview Worker)
+
+**Allowed Callback URLs only** (path required — Worker builds `redirect_uri` from request origin):
+
+- `https://api-preview.cultpodcasts.com/docs/callback`
 
 Soak (Flix host redirects to apex; safe to remove after cutover soak):
 
@@ -28,7 +33,7 @@ Soak (Flix host redirects to apex; safe to remove after cutover soak):
 - `https://flix-ac4.pages.dev`
 - `https://flix.cultpodcasts.com`
 
-Apply to: **Allowed Callback URLs**, **Allowed Logout URLs**, **Allowed Web Origins**, **Allowed Origins (CORS)**.
+Apply origins to: **Allowed Callback URLs**, **Allowed Logout URLs**, **Allowed Web Origins**, **Allowed Origins (CORS)**. Add the `/docs/callback` URL to **Allowed Callback URLs** only.
 
 ### Automate with Management API
 

@@ -17,15 +17,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const envPath = join(root, '.env.staging');
 const dryRun = process.argv.includes('--dry-run');
 
-/** URLs we always want on the staging SPA (no trailing slash). */
-const REQUIRED = [
+/** Website / SPA origins (no trailing slash) — all allowlist fields. */
+const REQUIRED_ORIGINS = [
   'https://*.website-83e.pages.dev',
   'https://website-83e.pages.dev',
   'https://*.flix-ac4.pages.dev',
   'https://flix-ac4.pages.dev',
   'https://flix.cultpodcasts.com',
   'https://local.cultpodcasts.com:8788',
-  'https://local.cultpodcasts.com:4200'
+  'https://local.cultpodcasts.com:4200',
+  // Preview API OpenAPI UI (same staging SPA client as website).
+  'https://api-preview.cultpodcasts.com'
+];
+
+/** Extra Allowed Callback URLs only (path-specific OAuth redirects). */
+const REQUIRED_CALLBACKS = [
+  'https://api-preview.cultpodcasts.com/docs/callback'
 ];
 
 function loadEnv(path) {
@@ -96,10 +103,10 @@ async function main() {
   const client = await getRes.json();
 
   const next = {
-    callbacks: mergeUrls(client.callbacks, REQUIRED),
-    allowed_logout_urls: mergeUrls(client.allowed_logout_urls, REQUIRED),
-    web_origins: mergeUrls(client.web_origins, REQUIRED),
-    allowed_origins: mergeUrls(client.allowed_origins, REQUIRED)
+    callbacks: mergeUrls(client.callbacks, [...REQUIRED_ORIGINS, ...REQUIRED_CALLBACKS]),
+    allowed_logout_urls: mergeUrls(client.allowed_logout_urls, REQUIRED_ORIGINS),
+    web_origins: mergeUrls(client.web_origins, REQUIRED_ORIGINS),
+    allowed_origins: mergeUrls(client.allowed_origins, REQUIRED_ORIGINS)
   };
 
   const changed =
@@ -110,8 +117,10 @@ async function main() {
 
   console.log('Client:', client.name || clientId);
   console.log('Domain:', domain);
-  console.log('\nRequired URLs merged into callbacks / logout / web_origins / allowed_origins:');
-  for (const u of REQUIRED) console.log(' ', u);
+  console.log('\nRequired origins (callbacks / logout / web_origins / allowed_origins):');
+  for (const u of REQUIRED_ORIGINS) console.log(' ', u);
+  console.log('\nRequired callback paths (callbacks only):');
+  for (const u of REQUIRED_CALLBACKS) console.log(' ', u);
 
   if (!changed) {
     console.log('\nAlready up to date — no PATCH needed.');
