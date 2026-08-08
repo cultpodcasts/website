@@ -119,17 +119,24 @@
 .term-list
   margin: 0
   // Top padding keeps the first row’s floated outline label inside the scroll
-  // box (overflow:auto otherwise clips mat-label on the field border).
-  padding: 0.85em 0 0
+  // box; bottom padding keeps the last row clear of the vertical scrollbar.
+  padding: 0.85em 0.35em 0.75em 0
   list-style: none
   max-height: 22em
-  overflow: auto
+  // Vertical only — overflow:auto was painting a horizontal bar through the
+  // last row / edit+delete icons when the vertical scrollbar narrowed the box.
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
 
   li
     display: flex
     align-items: center
     gap: 0.25em
     min-height: 2.5em
+    min-width: 0
+    max-width: 100%
+    box-sizing: border-box
     padding: 0 0.25em
     border-bottom: 1px solid rgba(128, 128, 128, 0.2)
 
@@ -168,7 +175,10 @@
   font-size: 0.95em
   max-height: 22em
   display: block
-  overflow: auto
+  overflow-x: hidden
+  overflow-y: auto
+  scrollbar-gutter: stable
+  padding-bottom: 0.5em
 
   thead, tbody, tr
     display: table
