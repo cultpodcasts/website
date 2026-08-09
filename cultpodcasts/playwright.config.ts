@@ -4,6 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
  * Behavior-first e2e harness. Prefer route mocks over live Auth0.
  * Set PLAYWRIGHT_BASE_URL to exercise a running app (8788 or 4200).
  * Default fixtures run without a live Angular server.
+ *
+ * Hero layout geometry (`e2e/hero-layout.spec.ts`) compiles real billboard Sass
+ * into setContent documents — no Angular server required.
  */
 export default defineConfig({
 	testDir: "./e2e",

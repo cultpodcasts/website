@@ -151,13 +151,34 @@ When description and subjects are both absent, actions follow meta directly.
 | Scroll fights swipe | HERO-SWP-001 | `touch-action: pan-y` + swipe specs |
 | Ken Burns on phone | HERO-LIF-005 | saveGpu spec |
 
+## Layout geometry e2e (Playwright)
+
+Unit tests cannot apply real CSS media queries / box geometry the way a phone does. Use:
+
+```bash
+npm run test:e2e:hero-layout
+```
+
+(`npx playwright install chromium` once per machine.)
+
+| Piece | Role |
+|-------|------|
+| `e2e/hero-layout.spec.ts` | Viewports × fixtures; asserts title→meta / meta→actions gaps, `.has-desc` height, DOM omit rules |
+| `e2e/hero-layout/fixtures.ts` | Episode configurations (short title, empty desc, long title, subjects) |
+| `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` into a light-DOM page (`:host` → `.hero-layout-host`) |
+
+Tagged to **HERO-SCR-002 / 004 / 005** and **HERO-SUB-002**. Keep fixture HTML structure aligned with the billboard copy markup in `homepage-hero.component.html`.
+
 ## Soft guideline — style budget
 
 Prefer compiled hero styles under ~16 kB. Soft check — do not sacrifice an invariant for a few hundred bytes.
 
 ## Regression checklist
 
-**Automated** — `ng test` filter `HomepageHeroComponent` (all HERO-* with “Yes” above), including **HERO-SCR-004**.
+**Automated**
+
+- [ ] `ng test` filter `HomepageHeroComponent` (HERO-* unit / Sass contracts)
+- [ ] `npm run test:e2e:hero-layout` (geometry across mobile / tablet / stacked-desktop)
 
 **Manual**
 

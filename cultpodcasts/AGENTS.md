@@ -29,6 +29,7 @@ Before changing `src/app/homepage-hero/**`, `hero-slides.ts`, or homepage CSS th
 
 - Read [docs/homepage-hero.md](docs/homepage-hero.md) — `HERO-*` requirements, failure modes, regression checklist.
 - Keep `homepage-hero.component.spec.ts` green (specs are tagged with the same `HERO-*` ids).
+- For layout blank-space / viewport regressions, run `npm run test:e2e:hero-layout` (Playwright geometry harness).
 
 Curation KV deploy notes only: [docs/flix-prototype.md](docs/flix-prototype.md).
 
