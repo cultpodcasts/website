@@ -112,6 +112,7 @@ export class HomepageHeroComponent {
   protected readonly featuredSubjects = computed(() => {
     const subjects = this.featured()?.subjects ?? [];
     // Show every public subject — do not cap rows/count in the hero.
+    // Contract: docs/homepage-hero.md § Subjects
     return subjects.filter((s) => !s.startsWith('_'));
   });
 

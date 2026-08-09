@@ -15,6 +15,7 @@
     background-color: #0b0b0b
     // Slide copy height can still change mid-autoplay; block scroll anchoring
     // from yanking window scrollY when the billboard reflows.
+    // Contract: docs/homepage-hero.md § Scroll stability
     overflow-anchor: none
     // Allow vertical page scroll; horizontal swipe advances heroes on touch.
     touch-action: pan-y
@@ -329,6 +330,8 @@
     min-height: calc(1.45em * 3)
 
 .billboard__subjects
+    // Do not overflow-clip or max-height — all public chips must show.
+    // Contract: docs/homepage-hero.md § Subjects
     display: flex
     flex-wrap: wrap
     gap: 8px

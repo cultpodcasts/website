@@ -1,9 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { HomepageHeroComponent } from './homepage-hero.component';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
+
+const heroDir = dirname(fileURLToPath(import.meta.url));
+const heroSass = readFileSync(join(heroDir, 'homepage-hero.component.sass'), 'utf8');
 
 function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageEpisode {
   return {
@@ -35,6 +41,28 @@ class ImmediateImage {
   set src(_value: string) {
     this.complete = true;
   }
+}
+
+function pointerEvent(
+  type: string,
+  init: PointerEventInit & {
+    target?: EventTarget | null;
+    currentTarget?: EventTarget | null;
+  }
+): PointerEvent {
+  const { target, currentTarget, ...rest } = init;
+  const event = new PointerEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    ...rest,
+  });
+  if (target) {
+    Object.defineProperty(event, 'target', { configurable: true, value: target });
+  }
+  if (currentTarget) {
+    Object.defineProperty(event, 'currentTarget', { configurable: true, value: currentTarget });
+  }
+  return event;
 }
 
 describe('HomepageHeroComponent', () => {
@@ -111,7 +139,7 @@ describe('HomepageHeroComponent', () => {
     expect(meta.textContent?.replace(/\s+/g, ' ').trim()).toBe('1:00:00');
   });
 
-  it('shows every public subject chip without capping count', () => {
+  it('HERO-SUB-001: shows every public subject chip without capping count', () => {
     const many = Array.from({ length: 12 }, (_, i) => `Topic ${i + 1}`);
     fixture.componentRef.setInput('slides', [
       ep('a', { subjects: ['_internal', ...many] }),
@@ -125,6 +153,53 @@ describe('HomepageHeroComponent', () => {
       '.billboard__subjects app-subject-chip'
     );
     expect(chips.length).toBe(12);
+  });
+
+  it('HERO-SUB-002: keeps Watch/More info actions below the subject chips', () => {
+    const many = Array.from({ length: 8 }, (_, i) => `Topic ${i + 1}`);
+    fixture.componentRef.setInput('slides', [
+      ep('a', { subjects: many }),
+      ep('b'),
+      ep('c'),
+    ]);
+    fixture.detectChanges();
+
+    const subjects = fixture.nativeElement.querySelector('.billboard__subjects') as HTMLElement;
+    const actions = fixture.nativeElement.querySelector('.billboard__actions') as HTMLElement;
+    expect(subjects).toBeTruthy();
+    expect(actions).toBeTruthy();
+    expect(subjects.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('HERO-SCR-001/002 + HERO-CTL-001 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
+    // Layout bugs often land in CSS; assert the source contracts stay present.
+    expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
+    expect(heroSass).toMatch(/\.billboard__dots-viewport[\s\S]*?overflow-anchor:\s*none/);
+    expect(heroSass).toMatch(/\.billboard__title[\s\S]*?line-clamp:\s*3/);
+    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?line-clamp:\s*3/);
+    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3\)/);
+    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
+    expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
+    expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
+
+    const subjectsStart = heroSass.indexOf('.billboard__subjects');
+    expect(subjectsStart).toBeGreaterThanOrEqual(0);
+    const subjectsSlice = heroSass.slice(subjectsStart, subjectsStart + 400);
+    expect(subjectsSlice).toMatch(/flex-wrap:\s*wrap/);
+    expect(subjectsSlice).not.toMatch(/overflow:\s*hidden/);
+    expect(subjectsSlice).not.toMatch(/max-height:/);
+    expect(subjectsSlice).not.toMatch(/line-clamp:/);
+  });
+
+  it('truncates featured description for the hero copy panel', () => {
+    const long = 'x'.repeat(300);
+    fixture.componentRef.setInput('slides', [ep('a', { episodeDescription: long }), ep('b'), ep('c')]);
+    fixture.detectChanges();
+
+    const desc = component['featuredDesc']();
+    expect(desc.length).toBeLessThan(long.length);
+    expect(desc.endsWith('…')).toBe(true);
+    expect(desc.startsWith('x'.repeat(220).trim())).toBe(true);
   });
 
   it('jumps to a slide when its hero dash is clicked', () => {
@@ -142,7 +217,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['featured']()?.id).toBe('c');
   });
 
-  it('advances when the next chevron is clicked without cancelling the content transition', () => {
+  it('HERO-LIF-002: advances when the next chevron is clicked without cancelling the content transition', () => {
     vi.useFakeTimers();
     component['reduceMotion'] = false;
     component['heroIndex'].set(0);
@@ -176,6 +251,139 @@ describe('HomepageHeroComponent', () => {
 
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');
+  });
+
+  it('HERO-SWP-001: touch swipe left advances and swipe right goes previous', () => {
+    component['reduceMotion'] = true;
+    component['heroIndex'].set(1);
+    component['lastFeaturedId'] = 'b';
+    fixture.detectChanges();
+
+    const billboard = fixture.nativeElement.querySelector('.billboard') as HTMLElement;
+
+    component.onHeroSwipeDown(
+      pointerEvent('pointerdown', {
+        pointerId: 1,
+        pointerType: 'touch',
+        clientX: 200,
+        clientY: 100,
+        target: billboard,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeMove(
+      pointerEvent('pointermove', {
+        pointerId: 1,
+        pointerType: 'touch',
+        clientX: 140,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeUp(
+      pointerEvent('pointerup', {
+        pointerId: 1,
+        pointerType: 'touch',
+        clientX: 140,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+    expect(component['heroIndex']()).toBe(2);
+
+    component.onHeroSwipeDown(
+      pointerEvent('pointerdown', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 100,
+        clientY: 100,
+        target: billboard,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeMove(
+      pointerEvent('pointermove', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 160,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeUp(
+      pointerEvent('pointerup', {
+        pointerId: 2,
+        pointerType: 'touch',
+        clientX: 160,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+    expect(component['heroIndex']()).toBe(1);
+  });
+
+  it('HERO-CTL-002: touch swipe that starts on a control does not change the slide', () => {
+    component['reduceMotion'] = true;
+    component['heroIndex'].set(0);
+    fixture.detectChanges();
+
+    const next = fixture.nativeElement.querySelector(
+      'button.billboard__nav--next'
+    ) as HTMLButtonElement;
+    const billboard = fixture.nativeElement.querySelector('.billboard') as HTMLElement;
+
+    component.onHeroSwipeDown(
+      pointerEvent('pointerdown', {
+        pointerId: 3,
+        pointerType: 'touch',
+        clientX: 200,
+        clientY: 100,
+        target: next,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeMove(
+      pointerEvent('pointermove', {
+        pointerId: 3,
+        pointerType: 'touch',
+        clientX: 100,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+    component.onHeroSwipeUp(
+      pointerEvent('pointerup', {
+        pointerId: 3,
+        pointerType: 'touch',
+        clientX: 100,
+        clientY: 100,
+        currentTarget: billboard,
+      })
+    );
+
+    expect(component['heroIndex']()).toBe(0);
+    expect(component['swipePointerId']).toBeNull();
+  });
+
+  it('HERO-SWP-001: mouse pointer swipes do not change the slide', () => {
+    component['reduceMotion'] = true;
+    component['heroIndex'].set(0);
+    fixture.detectChanges();
+
+    const billboard = fixture.nativeElement.querySelector('.billboard') as HTMLElement;
+    component.onHeroSwipeDown(
+      pointerEvent('pointerdown', {
+        pointerId: 4,
+        pointerType: 'mouse',
+        button: 0,
+        clientX: 200,
+        clientY: 100,
+        target: billboard,
+        currentTarget: billboard,
+      })
+    );
+    expect(component['swipePointerId']).toBeNull();
+    expect(component['heroIndex']()).toBe(0);
   });
 
   it('releases chevron focus so the dash timer can run again after navigation', () => {
@@ -240,7 +448,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['featured']()?.id).toBe('c');
   });
 
-  it('does not rebuild image layers when slides refresh with an unchanged sequence', () => {
+  it('HERO-LIF-006: does not rebuild image layers when slides refresh with an unchanged sequence', () => {
     component['heroImageReady'].set(true);
 
     fixture.componentRef.setInput('slides', [ep('a'), ep('b'), ep('c')]);
@@ -250,7 +458,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['heroImageReady']()).toBe(true);
   });
 
-  it('emits removeFeatured with the active slide id', () => {
+  it('HERO-CUR-001: emits removeFeatured with the active slide id', () => {
     const removed: string[] = [];
     component.removeFeatured.subscribe((id) => removed.push(id));
     fixture.componentRef.setInput('isCurator', true);
@@ -265,7 +473,7 @@ describe('HomepageHeroComponent', () => {
     expect(removed).toEqual(['a']);
   });
 
-  it('emits manageHero / manageRails from curator controls', () => {
+  it('HERO-CUR-001: emits manageHero / manageRails from curator controls', () => {
     const managed: string[] = [];
     component.manageHero.subscribe(() => managed.push('hero'));
     component.manageRails.subscribe(() => managed.push('rails'));
@@ -300,7 +508,7 @@ describe('HomepageHeroComponent', () => {
     expect(actionsRemove).toBeNull();
   });
 
-  it('image gate stays blocked until the fallback timeout when decode never completes', () => {
+  it('HERO-LIF-001: image gate stays blocked until the fallback timeout when decode never completes', () => {
     vi.useFakeTimers();
     class StuckImage {
       onload: (() => void) | null = null;
@@ -343,7 +551,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['heroIndex']()).toBe(1);
   });
 
-  it('holds copy until the next backdrop is ready, then fades with the image', () => {
+  it('HERO-LIF-003: holds copy until the next backdrop is ready, then fades with the image', () => {
     vi.useFakeTimers();
     const deferred: { fire: (() => void) | null } = { fire: null };
     class DeferredImage {
@@ -387,7 +595,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['heroImageReady']()).toBe(true);
   });
 
-  it('reduce-motion jumps index immediately without starting the cycle timer', () => {
+  it('HERO-LIF-004: reduce-motion jumps index immediately without starting the cycle timer', () => {
     component['reduceMotion'] = true;
     component['stopHeroCycle']();
     component['heroIndex'].set(0);
@@ -396,7 +604,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['heroTimer']).toBeUndefined();
   });
 
-  it('still auto-advances on saveGpu mobile mode (Ken Burns off, timer on)', () => {
+  it('HERO-LIF-005: still auto-advances on saveGpu mobile mode (Ken Burns off, timer on)', () => {
     // Arrange — mobile GPU saver must not reuse reduceMotion's "no cycle" path.
     vi.useFakeTimers();
     component['reduceMotion'] = false;

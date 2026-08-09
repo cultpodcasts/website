@@ -23,6 +23,15 @@ Auth0 requires hostname **`local.cultpodcasts.com`** (hosts → `127.0.0.1`). De
 
 `environment.api` always points at **`https://local.cultpodcasts.com:8787`** (the API worker, not the website port).
 
+## Homepage hero (HARD for related changes)
+
+Before changing `src/app/homepage-hero/**`, `hero-slides.ts`, or homepage CSS that affects billboard copy height / scroll:
+
+- Read [docs/homepage-hero.md](docs/homepage-hero.md) — `HERO-*` requirements, failure modes, regression checklist.
+- Keep `homepage-hero.component.spec.ts` green (specs are tagged with the same `HERO-*` ids).
+
+Curation KV deploy notes only: [docs/flix-prototype.md](docs/flix-prototype.md).
+
 ## Discovery curation
 
 - **GET/POST** `/discovery-curation` on the API worker (8787) → proxies to `func` `DiscoveryCuration` on 7071.
