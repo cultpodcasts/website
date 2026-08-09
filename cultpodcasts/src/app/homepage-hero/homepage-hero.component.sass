@@ -686,10 +686,11 @@
             backdrop-filter: none
             -webkit-mask-image: none
             mask-image: none
-    // Stacked: details panel is in document flow under a fixed art frame. Title
-    // line-count used to resize the panel (~125px between 1- and 3-line titles).
-    .billboard__title
-        min-height: calc(1.12em * 3)
+    // Stacked: details panel is in document flow under a fixed art frame.
+    // Do NOT reserve 3 title lines with min-height — short titles left a large
+    // blank band above meta (HERO-SCR-005). Cap with line-clamp only; rely on
+    // overflow-anchor when 1-line vs 3-line titles change in-flow height.
+    // (Was: min-height: calc(1.12em * 3) — removed Aug 2026.)
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim

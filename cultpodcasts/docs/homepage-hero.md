@@ -10,27 +10,29 @@ Full-bleed featured-episode carousel: backdrop crossfade, Ken Burns (desktop), d
 
 ## Design tensions (read first)
 
-These two goals fight each other. **Both are required.** Fixes that only optimize one side regress the other.
+These goals fight each other. **All are required.** Fixes that only optimize one side regress the others.
 
 | Goal | Why | Wrong “fix” |
 |------|-----|----------------|
-| **Stable height when copy exists** (HERO-SCR-002) | Short vs long descriptions (1–3 lines) must not collapse the panel or yank scroll mid-autoplay | Always reserve 3 lines of desc height on every slide |
-| **No blank band when copy is absent** (HERO-SCR-004) | Clips / short episodes often have **empty** `episodeDescription` and no subjects — mobile then shows a large black gap between meta and Watch | Leave an empty `<p class="billboard__desc">` with `min-height`, or put `min-height` on `.billboard__copy-body` unconditionally |
+| **Stable height when description exists** (HERO-SCR-002) | Short vs long descriptions (1–3 lines) must not collapse the panel mid-autoplay | Always reserve 3 lines of desc height on every slide |
+| **No blank band when description is absent** (HERO-SCR-004) | Clips / short episodes often have **empty** `episodeDescription` — mobile shows a large black gap between meta and Watch | Empty `<p class="billboard__desc">` with `min-height`, or unconditional `min-height` on `.billboard__copy-body` |
+| **No blank band under short titles** (HERO-SCR-005) | Stacked layout (≤1280) puts the title in normal flow; a 1-line title with a 3-line `min-height` leaves a large gap above the date/meta | `.billboard__title { min-height: calc(1.12em * 3) }` (or similar) on stacked layouts |
 
 **Correct pattern**
 
 1. Render `.billboard__desc` **only** when `hasFeaturedDesc` (trimmed text length > 0).
 2. Render `.billboard__copy-body` **only** when there is a description **or** at least one public subject (`hasCopyBody`).
-3. Apply reserved min-height **only** under `.billboard__copy-body.has-desc` (and `.billboard__desc` itself) — never on a body with no description.
-4. Keep `overflow-anchor: none` on `.billboard` so slides that flip between “has desc” and “no desc” still do not yank `scrollY` (HERO-SCR-001 / 003).
+3. Apply reserved desc min-height **only** under `.billboard__copy-body.has-desc` (and `.billboard__desc` itself).
+4. Title: `line-clamp: 3` as a **ceiling** only — **never** set title `min-height` to N lines. Accept 1–3 line height variance; keep `overflow-anchor: none` (HERO-SCR-001 / 003).
+5. Keep `overflow-anchor: none` on `.billboard` when slides flip between short/long title or has-desc / no-desc.
 
-**How to notice HERO-SCR-004 in review / QA**
+**How to notice in review / QA**
 
-- Pick a hero slide with **no** description and **no** subject chips (common for short YouTube clips).
-- On a narrow viewport: meta (date · duration) should sit close above Watch / More info — **not** a multi-line empty band.
-- Automated: specs tagged `HERO-SCR-004` (omit empty desc/copy-body; `has-desc` only when text exists).
+- **HERO-SCR-004:** slide with no description and no subjects — meta should sit close above Watch (no multi-line empty band).
+- **HERO-SCR-005:** slide with a short title (e.g. “The Rulo Farm”) on mobile/stacked — date/meta should sit close under the title, not after ~2 empty title lines.
+- Automated: specs tagged `HERO-SCR-004` / `HERO-SCR-005` (DOM + Sass forbids title line-reservation `min-height`).
 
-If you “fix scroll jump” by re-adding unconditional `min-height` on `.billboard__copy-body` or always rendering an empty desc paragraph, you will recreate the mobile blank-space bug.
+If you “fix scroll jump” by re-adding unconditional copy-body `min-height` or title `min-height: calc(1.12em * 3)`, you will recreate the mobile blank-space bugs.
 
 ## Key files
 
@@ -55,6 +57,7 @@ Use these IDs in PR notes and test descriptions.
 | **HERO-SCR-002** | When a description exists: title/desc are 3-line clamped; `.billboard__desc` and `.billboard__copy-body.has-desc` reserve min-height so **short** copy does not collapse the panel | Yes (Sass contract) |
 | **HERO-SCR-003** | Changing slide while the page is scrolled must not yank `window.scrollY` | Manual |
 | **HERO-SCR-004** | No description: omit empty desc; omit copy-body when no desc and no subjects; **never** reserve desc `min-height` without `.has-desc` — mobile must not show a blank band above Watch | Yes |
+| **HERO-SCR-005** | Short titles must not reserve empty lines: stacked layout must **not** set `.billboard__title { min-height: N lines }` — meta follows the title tightly | Yes (Sass contract) |
 | **HERO-CTL-001** | Stage / grain / scrim / vignette use `pointer-events: none` so pager stays clickable | Yes (Sass contract) |
 | **HERO-CTL-002** | Touch swipe ignores links, buttons, pager, admin, actions | Yes |
 | **HERO-SWP-001** | Touch horizontal swipe ≥48px → `prevHero` / `nextHero` (existing transition; no drag animation); mouse ignored; `touch-action: pan-y` on billboard | Yes |
@@ -104,7 +107,7 @@ See **Design tensions** above. Summary:
 | Mechanism | Selector / rule |
 |-----------|-----------------|
 | `overflow-anchor: none` | `.billboard`, `.billboard__dots-viewport` |
-| Title clamp 3 | `.billboard__title` |
+| Title clamp 3 (ceiling only) | `.billboard__title` — **no** `min-height` reserving empty lines |
 | Desc clamp 3 + min-height | `.billboard__desc` — **only when rendered** |
 | Reserved copy-body | `.billboard__copy-body.has-desc` only — **not** bare `.billboard__copy-body` |
 | Empty slide | No `.billboard__desc`; no `.billboard__copy-body` if no subjects either |
@@ -113,7 +116,8 @@ See **Design tensions** above. Summary:
 **Forbidden regressions**
 
 - Unconditional `min-height` on `.billboard__copy-body` (breaks HERO-SCR-004).
-- Always rendering `<p class="billboard__desc">{{ featuredDesc() }}</p>` when the string is empty (empty paragraph still consumes reserved height if min-height is on the element or parent).
+- Always rendering `<p class="billboard__desc">{{ featuredDesc() }}</p>` when the string is empty.
+- `.billboard__title { min-height: calc(1.12em * 3) }` (or any N-line title reservation) on stacked layouts (breaks HERO-SCR-005 — short titles leave a blank band above meta).
 - “Fixing” blank space by removing `.has-desc` min-height while a description **is** present (breaks HERO-SCR-002 for short text).
 
 Unit tests assert Sass contracts + HERO-SCR-004 DOM behaviour. **HERO-SCR-003** remains a scrolled visual check.
@@ -138,6 +142,7 @@ When description and subjects are both absent, actions follow meta directly.
 | Actions above / mixed into chips | HERO-SUB-002 | DOM order: subjects before actions |
 | Page jumps on advance | HERO-SCR-001/003 | Sass `overflow-anchor` + manual scrolled advance |
 | Huge blank gap above Watch (esp. mobile, no description) | HERO-SCR-004 | Specs omit empty desc/copy-body; Sass reserves height only under `.has-desc` |
+| Huge blank gap under short title (above date/meta) | HERO-SCR-005 | Sass contract forbids title N-line `min-height` |
 | Short description collapses panel / jumpy actions | HERO-SCR-002 | Sass min-height on `.has-desc` / `.billboard__desc` |
 | Chevron dead | HERO-LIF-002 | Spec: next chevron does not cancel content transition |
 | Dwell stuck after pager | focus pause | Spec: releases chevron focus |
@@ -157,6 +162,7 @@ Prefer compiled hero styles under ~16 kB. Soft check — do not sacrifice an inv
 **Manual**
 
 - [ ] **HERO-SCR-004:** mobile / narrow — slide with empty description and no subjects: no large blank band between meta and Watch
+- [ ] **HERO-SCR-005:** mobile / stacked — short title (1 line): date/meta tight under title, not after empty title lines
 - [ ] **HERO-SCR-002:** slide with a 1-line description still keeps actions from jumping up relative to a 3-line description (reserved height when `.has-desc`)
 - [ ] HERO-SCR-003: scroll hero partly off-screen; advance; no jump
 - [ ] Long vs short title visually stable; descenders OK

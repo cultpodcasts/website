@@ -210,7 +210,7 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.nativeElement.querySelector('.billboard__subjects')).toBeTruthy();
   });
 
-  it('HERO-SCR-001/002 + HERO-CTL-001 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
+  it('HERO-SCR-001/002/005 + HERO-CTL-001 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
     // Layout bugs often land in CSS; assert the source contracts stay present.
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__dots-viewport[\s\S]*?overflow-anchor:\s*none/);
@@ -220,6 +220,10 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
     expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
+
+    // HERO-SCR-005: short titles must not reserve empty lines on stacked layouts.
+    expect(heroSass).not.toMatch(/\.billboard__title\s*\n[ \t]+min-height:\s*calc\(1\.12em \* 3\)/);
+    expect(heroSass).not.toMatch(/\.billboard__title[^\n]*\{[^}]*min-height:\s*calc\(1\.12em \* 3\)/);
 
     const subjectsStart = heroSass.indexOf('.billboard__subjects');
     expect(subjectsStart).toBeGreaterThanOrEqual(0);
