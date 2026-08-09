@@ -1,5 +1,5 @@
 /**
- * Episode/layout fixtures for homepage-hero geometry e2e (HERO-SCR-*).
+ * Episode/layout fixtures for homepage-hero geometry e2e (HERO-SCR-* / HERO-SUB-*).
  * HTML mirrors the billboard copy structure in homepage-hero.component.html.
  */
 
@@ -7,7 +7,9 @@ export type HeroLayoutCaseId =
   | "short-title-no-desc"
   | "short-title-with-desc"
   | "long-title-with-desc"
-  | "empty-desc-with-subjects";
+  | "empty-desc-with-subjects"
+  | "many-subjects-with-desc"
+  | "many-subjects-no-desc";
 
 export interface HeroLayoutCase {
   id: HeroLayoutCaseId;
@@ -20,6 +22,8 @@ export interface HeroLayoutCase {
   durationLabel: string;
   podcastName: string;
 }
+
+const MANY_SUBJECTS = Array.from({ length: 12 }, (_, i) => `Topic ${i + 1}`);
 
 export const heroLayoutCases: HeroLayoutCase[] = [
   {
@@ -48,7 +52,8 @@ export const heroLayoutCases: HeroLayoutCase[] = [
     reqs: ["HERO-SCR-002"],
     episodeTitle:
       "Anonymous ExMuslim YouTuber Apostate Aladdin Opens up on Sex in Islam and Related Topics That Span Multiple Lines",
-    episodeDescription: "A longer episode description that fills about two lines of the hero copy panel for clamp checks.",
+    episodeDescription:
+      "A longer episode description that fills about two lines of the hero copy panel for clamp checks.",
     subjects: [],
     releaseLabel: "8 Aug 2026",
     durationLabel: "0:00:48",
@@ -64,6 +69,26 @@ export const heroLayoutCases: HeroLayoutCase[] = [
     durationLabel: "0:01:00",
     podcastName: "Clip Show",
   },
+  {
+    id: "many-subjects-with-desc",
+    reqs: ["HERO-SUB-001", "HERO-SUB-002"],
+    episodeTitle: "Crowded Subject Episode",
+    episodeDescription: "Description present with a full subject chip wrap.",
+    subjects: MANY_SUBJECTS,
+    releaseLabel: "8 Aug 2026",
+    durationLabel: "1:05:00",
+    podcastName: "Crowded Show",
+  },
+  {
+    id: "many-subjects-no-desc",
+    reqs: ["HERO-SUB-001", "HERO-SUB-002", "HERO-SCR-004"],
+    episodeTitle: "Crowded Subjects No Desc",
+    episodeDescription: "",
+    subjects: MANY_SUBJECTS,
+    releaseLabel: "8 Aug 2026",
+    durationLabel: "0:45:00",
+    podcastName: "Crowded Show",
+  },
 ];
 
 export function renderBillboardHtml(c: HeroLayoutCase): string {
@@ -73,7 +98,10 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
 
   const subjectsHtml = hasSubjects
     ? `<div class="billboard__subjects" aria-label="Subjects">${c.subjects
-        .map((s) => `<span class="hero-layout-chip">${escapeHtml(s)}</span>`)
+        .map(
+          (s) =>
+            `<span class="hero-layout-chip" data-subject="${escapeHtml(s)}">${escapeHtml(s)}</span>`
+        )
         .join("")}</div>`
     : "";
 

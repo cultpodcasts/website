@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.10.91",
+  "version": "1.10.93",
   "scripts": {
     "ng": "ng",
     "start": "ng build --configuration local && npm run process && wrangler pages dev dist/cloudflare --compatibility-date=2024-09-02 --local-protocol https --https-cert-path .cert/dev-cert.pem --https-key-path .cert/dev-key.pem --port 8788 --kv kv --r2 content",
@@ -12,6 +12,8 @@
     "test:watch": "ng test --watch",
     "test:e2e": "playwright test",
     "test:e2e:hero-layout": "playwright test e2e/hero-layout.spec.ts",
+    "test:all": "npm run test && npm run test:e2e",
+    "prepare": "node ./tools/install-git-hooks.cjs",
     "serve:ssr:cultpodcasts": "node dist/server/server.mjs",
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
     "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",

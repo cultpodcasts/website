@@ -163,11 +163,15 @@ npm run test:e2e:hero-layout
 
 | Piece | Role |
 |-------|------|
-| `e2e/hero-layout.spec.ts` | Viewports × fixtures; asserts title→meta / meta→actions gaps, `.has-desc` height, DOM omit rules |
-| `e2e/hero-layout/fixtures.ts` | Episode configurations (short title, empty desc, long title, subjects) |
-| `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` into a light-DOM page (`:host` → `.hero-layout-host`) |
+| `e2e/hero-layout.spec.ts` | Viewport × fixture matrix; geometry + visibility asserts |
+| `e2e/hero-layout/fixtures.ts` | Episode configs (empty desc, many subjects, short/long title) |
+| `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` (`:host` → `.hero-layout-host`) |
 
-Tagged to **HERO-SCR-002 / 004 / 005** and **HERO-SUB-002**. Keep fixture HTML structure aligned with the billboard copy markup in `homepage-hero.component.html`.
+**Viewports:** mobile (390×844), mobile-landscape (844×390), tablet (768×1024), stacked-desktop (1100×800), wide (1440×900), **full-hd (1920×1080)**.
+
+**Fixtures include:** no description; many subjects (12) with and without description.
+
+Tagged to **HERO-SCR-002 / 004 / 005** and **HERO-SUB-001 / 002**. Keep fixture HTML aligned with `homepage-hero.component.html`.
 
 ## Soft guideline — style budget
 
@@ -178,7 +182,7 @@ Prefer compiled hero styles under ~16 kB. Soft check — do not sacrifice an inv
 **Automated**
 
 - [ ] `ng test` filter `HomepageHeroComponent` (HERO-* unit / Sass contracts)
-- [ ] `npm run test:e2e:hero-layout` (geometry across mobile / tablet / stacked-desktop)
+- [ ] `npm run test:e2e:hero-layout` (geometry: mobile / landscape / tablet / stacked / wide / full-hd × empty-desc & many-subjects)
 
 **Manual**
 
