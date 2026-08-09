@@ -5,7 +5,8 @@ export interface EpisodePost {
     description?: string;
     posted?: boolean;
     tweeted?: boolean;
-    bluesky?: boolean;
+    /** When true, clear Bluesky post state and delete the remote post. */
+    unBluesky?: boolean;
     ignored?: boolean;
     removed?: boolean;
     explicit?: boolean;

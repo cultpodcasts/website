@@ -29,7 +29,19 @@
                     <mat-checkbox [formControl]="form()!.controls.posted">Posted</mat-checkbox>
                     }
                     <mat-checkbox [formControl]="form()!.controls.tweeted">Tweeted</mat-checkbox>
-                    <mat-checkbox [formControl]="form()!.controls.blueskyPosted">Bluesky Post</mat-checkbox>
+                    @if (blueskyOriginallyPosted()) {
+                    <div class="bluesky-flag">
+                        <span>Bluesky post</span>
+                        @if (!pendingUnBluesky()) {
+                        <button type="button" matButton="text" (click)="markRemoveBlueskyPost()">Remove</button>
+                        } @else {
+                        <span class="bluesky-flag__pending">Will remove on save</span>
+                        <button type="button" matButton="text" (click)="cancelRemoveBlueskyPost()">Undo</button>
+                        }
+                    </div>
+                    } @else {
+                    <div class="bluesky-flag bluesky-flag--idle">Not posted to Bluesky</div>
+                    }
                     <mat-checkbox [formControl]="form()!.controls.ignored">Ignored</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.explicit">Explicit</mat-checkbox>
@@ -39,14 +51,44 @@
                 <mat-form-field class="full-width">
                     <mat-label>Spotify</mat-label>
                     <input type="text" [formControl]="form()!.controls.spotify" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open Spotify URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.spotify.value)"
+                        (click)="openExternalUrl(form()!.controls.spotify.value)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove Spotify URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.spotify.value)"
+                        (click)="clearField(form()!.controls.spotify)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Apple</mat-label>
                     <input type="text" [formControl]="form()!.controls.apple" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open Apple URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.apple.value)"
+                        (click)="openExternalUrl(form()!.controls.apple.value)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove Apple URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.apple.value)"
+                        (click)="clearField(form()!.controls.apple)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube</mat-label>
                     <input type="text" [formControl]="form()!.controls.youtube" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open YouTube URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.youtube.value)"
+                        (click)="openExternalUrl(form()!.controls.youtube.value)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove YouTube URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.youtube.value)"
+                        (click)="clearField(form()!.controls.youtube)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-accordion>
                     <mat-expansion-panel>
@@ -56,10 +98,30 @@
                         <mat-form-field class="full-width">
                     <mat-label>BBC</mat-label>
                     <input type="text" [formControl]="form()!.controls.bbc" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open BBC URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.bbc.value)"
+                        (click)="openExternalUrl(form()!.controls.bbc.value)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove BBC URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.bbc.value)"
+                        (click)="clearField(form()!.controls.bbc)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                         <mat-form-field class="full-width">
                     <mat-label>Internet Archive</mat-label>
                     <input type="text" [formControl]="form()!.controls.internetArchive" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open Internet Archive URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.internetArchive.value)"
+                        (click)="openExternalUrl(form()!.controls.internetArchive.value)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove Internet Archive URL"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.internetArchive.value)"
+                        (click)="clearField(form()!.controls.internetArchive)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                     </mat-expansion-panel>
                 </mat-accordion>
@@ -123,18 +185,58 @@
                 <mat-form-field class="full-width">
                     <mat-label>Spotify</mat-label>
                     <input type="text" [formControl]="form()!.controls.spotifyImage" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Preview Spotify image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.spotifyImage.value)"
+                        (click)="previewImage('spotify')">
+                        <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove Spotify image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.spotifyImage.value)"
+                        (click)="clearField(form()!.controls.spotifyImage)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Apple</mat-label>
                     <input type="text" [formControl]="form()!.controls.appleImage" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Preview Apple image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.appleImage.value)"
+                        (click)="previewImage('apple')">
+                        <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove Apple image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.appleImage.value)"
+                        (click)="clearField(form()!.controls.appleImage)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube</mat-label>
                     <input type="text" [formControl]="form()!.controls.youtubeImage" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Preview YouTube image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.youtubeImage.value)"
+                        (click)="previewImage('youtube')">
+                        <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove YouTube image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.youtubeImage.value)"
+                        (click)="clearField(form()!.controls.youtubeImage)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Other</mat-label>
                     <input type="text" [formControl]="form()!.controls.otherImage" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Preview other image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.otherImage.value)"
+                        (click)="previewImage('other')">
+                        <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove other image"
+                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.otherImage.value)"
+                        (click)="clearField(form()!.controls.otherImage)">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Guests">

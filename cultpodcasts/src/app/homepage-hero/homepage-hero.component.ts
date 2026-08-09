@@ -109,11 +109,18 @@ export class HomepageHeroComponent {
     return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
   });
 
+  protected readonly hasFeaturedDesc = computed(() => this.featuredDesc().trim().length > 0);
+
   protected readonly featuredSubjects = computed(() => {
     const subjects = this.featured()?.subjects ?? [];
     // Show every public subject — do not cap rows/count in the hero.
+    // Contract: docs/homepage-hero.md § Subjects
     return subjects.filter((s) => !s.startsWith('_'));
   });
+
+  protected readonly hasCopyBody = computed(
+    () => this.hasFeaturedDesc() || this.featuredSubjects().length > 0
+  );
 
   private heroTimer: ReturnType<typeof setInterval> | undefined;
   private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
@@ -141,6 +148,12 @@ export class HomepageHeroComponent {
    * AND the incoming backdrop has decoded (or hit the safety fallback).
    */
   private heroTransitionToken = 0;
+
+  private static readonly swipeThresholdPx = 48;
+  private swipePointerId: number | null = null;
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+  private swipeAxis: 'x' | 'y' | null = null;
 
   /**
    * Window resize and dots-strip scroll are bound outside Angular's event manager: in a
@@ -378,6 +391,79 @@ export class HomepageHeroComponent {
     this.transitionTo((this.heroIndex() - 1 + n) % n);
     this.restartHeroCycle();
     this.releasePagerFocus(event);
+  }
+
+  onHeroSwipeDown(event: PointerEvent): void {
+    if (this.slides().length < 2 || event.pointerType === 'mouse') {
+      return;
+    }
+    if (this.isSwipeIgnoredTarget(event.target)) {
+      return;
+    }
+    this.swipePointerId = event.pointerId;
+    this.swipeStartX = event.clientX;
+    this.swipeStartY = event.clientY;
+    this.swipeAxis = null;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  onHeroSwipeMove(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) {
+      return;
+    }
+    const dx = event.clientX - this.swipeStartX;
+    const dy = event.clientY - this.swipeStartY;
+    if (!this.swipeAxis) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+        return;
+      }
+      this.swipeAxis = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+      if (this.swipeAxis === 'y') {
+        this.endHeroSwipe();
+        return;
+      }
+    }
+    if (this.swipeAxis === 'x') {
+      event.preventDefault();
+    }
+  }
+
+  onHeroSwipeUp(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) {
+      return;
+    }
+    const dx = event.clientX - this.swipeStartX;
+    const swiped = this.swipeAxis === 'x' && Math.abs(dx) >= HomepageHeroComponent.swipeThresholdPx;
+    this.endHeroSwipe();
+    if (!swiped) {
+      return;
+    }
+    if (dx < 0) {
+      this.nextHero();
+    } else {
+      this.prevHero();
+    }
+  }
+
+  onHeroSwipeCancel(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) {
+      return;
+    }
+    this.endHeroSwipe();
+  }
+
+  private endHeroSwipe(): void {
+    this.swipePointerId = null;
+    this.swipeAxis = null;
+  }
+
+  private isSwipeIgnoredTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+    return !!target.closest(
+      'a, button, input, textarea, select, [role="tab"], .billboard__pager, .billboard__admin, .billboard__actions'
+    );
   }
 
   /**

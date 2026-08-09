@@ -1,0 +1,14 @@
+#!/bin/sh
+# Runs all cultpodcasts unit + Playwright e2e before push.
+# Emergency skip: SKIP_CLIENT_TESTS=1 git push
+
+if [ "${SKIP_CLIENT_TESTS:-}" = "1" ]; then
+  echo "SKIP_CLIENT_TESTS=1 — skipping cultpodcasts test:all"
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT/cultpodcasts" || exit 1
+
+echo "pre-push: npm run test:all (cultpodcasts)"
+npm run test:all

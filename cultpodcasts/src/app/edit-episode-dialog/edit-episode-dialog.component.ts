@@ -12,7 +12,7 @@ import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form.interface';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
@@ -31,14 +31,21 @@ import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dia
 import { comparePeopleBySortKey } from '../person-sort';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
+import { MatIconModule } from '@angular/material/icon';
+import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
 import {
   buildEpisodeForm,
+  clearFormControl,
+  collectEpisodeImagePreviews,
   getEpisodeChanges,
+  hasNonEmptyUrlValue,
   mergeEpisodeSubjects,
   noCompareFunction,
+  openExternalUrl,
   personLabel,
   regroupGuests as regroupGuestsPure,
-  regroupSubjects as regroupSubjectsPure
+  regroupSubjects as regroupSubjectsPure,
+  type EpisodeImageService
 } from '../episode-form.util';
 
 @Component({
@@ -57,7 +64,8 @@ import {
     MatInputModule,
     MatCheckboxModule,
     KeyValuePipe,
-    MatDividerModule
+    MatDividerModule,
+    MatIconModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +78,8 @@ export class EditEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   protected readonly personLabel = personLabel;
   protected readonly noCompareFunction = noCompareFunction;
+  protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
+  protected readonly openExternalUrl = openExternalUrl;
 
   episodeId: string;
   podcastIdentifier: string;
@@ -88,6 +98,8 @@ export class EditEpisodeDialogComponent {
   readonly guestsFilterTerm = signal<string>('');
   readonly guestSuggestions = signal<PersonMatch[]>([]);
   readonly languages = signal<{ [key: string]: string }>({});
+  readonly blueskyOriginallyPosted = signal(false);
+  readonly pendingUnBluesky = signal(false);
 
   readonly form = signal<FormGroup<EpisodeForm> | undefined>(undefined);
   originalEpisode: ApiEpisode | undefined;
@@ -145,6 +157,8 @@ export class EditEpisodeDialogComponent {
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));
+      this.blueskyOriginallyPosted.set(!!resp.episode.bluesky);
+      this.pendingUnBluesky.set(false);
       this.allPeople = resp.people.sort(comparePeopleBySortKey);
       this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
@@ -165,6 +179,37 @@ export class EditEpisodeDialogComponent {
     this.dialogRef.close({ closed: true });
   }
 
+  markRemoveBlueskyPost() {
+    if (!this.blueskyOriginallyPosted()) {
+      return;
+    }
+    this.pendingUnBluesky.set(true);
+  }
+
+  cancelRemoveBlueskyPost() {
+    this.pendingUnBluesky.set(false);
+  }
+
+  clearField(control: FormControl<string | URL | null>) {
+    clearFormControl(control);
+  }
+
+  previewImage(service: EpisodeImageService) {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+    const images = collectEpisodeImagePreviews(form);
+    if (images.length === 0) {
+      return;
+    }
+    this.dialog.open(ImagePreviewDialogComponent, {
+      data: { images, initialService: service },
+      maxWidth: 'min(920px, 95vw)',
+      width: 'min(920px, 95vw)'
+    });
+  }
+
   onSubmit() {
     const form = this.form();
     if (form?.valid) {
@@ -175,7 +220,6 @@ export class EditEpisodeDialogComponent {
         description: form.controls.description.value,
         posted: form.controls.posted.value,
         tweeted: form.controls.tweeted.value,
-        bluesky: form.controls.blueskyPosted.value,
         ignored: form.controls.ignored.value,
         removed: form.controls.removed.value,
         explicit: form.controls.explicit.value,
@@ -210,6 +254,9 @@ export class EditEpisodeDialogComponent {
         update.urls.internetArchive = new URL(form.controls.internetArchive.value);
       }
       var changes = getEpisodeChanges(this.originalEpisode!, update);
+      if (this.pendingUnBluesky()) {
+        changes.unBluesky = true;
+      }
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
       } else {

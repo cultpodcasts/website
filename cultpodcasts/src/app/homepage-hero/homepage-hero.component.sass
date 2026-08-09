@@ -15,7 +15,10 @@
     background-color: #0b0b0b
     // Slide copy height can still change mid-autoplay; block scroll anchoring
     // from yanking window scrollY when the billboard reflows.
+    // Contract: docs/homepage-hero.md § Scroll stability
     overflow-anchor: none
+    // Allow vertical page scroll; horizontal swipe advances heroes on touch.
+    touch-action: pan-y
 
 .billboard__stages,
 .billboard__grain,
@@ -237,11 +240,13 @@
     min-width: 0
 
 .billboard__copy-body
-    // Reserve stable space for desc + chips so Watch/More info keep a steady Y.
     display: flex
     flex-direction: column
-    min-height: calc(1.45em * 3 + 44px)
     margin-bottom: 4px
+    // Only reserve desc height when a description is present — empty slides must
+    // not leave a blank band (especially on mobile). Contract: docs/homepage-hero.md
+    &.has-desc
+        min-height: calc(1.45em * 3 + 44px)
 
 .billboard__eyebrow
     // Sits directly above the podcast pill — the pill carries the gap to the title.
@@ -323,10 +328,12 @@
     -webkit-line-clamp: 3
     line-clamp: 3
     overflow: hidden
-    // Keep the reserved copy-body height honest even when text is short.
+    // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * 3)
 
 .billboard__subjects
+    // Do not overflow-clip or max-height — all public chips must show.
+    // Contract: docs/homepage-hero.md § Subjects
     display: flex
     flex-wrap: wrap
     gap: 8px
@@ -679,10 +686,11 @@
             backdrop-filter: none
             -webkit-mask-image: none
             mask-image: none
-    // Stacked: details panel is in document flow under a fixed art frame. Title
-    // line-count used to resize the panel (~125px between 1- and 3-line titles).
-    .billboard__title
-        min-height: calc(1.12em * 3)
+    // Stacked: details panel is in document flow under a fixed art frame.
+    // Do NOT reserve 3 title lines with min-height — short titles left a large
+    // blank band above meta (HERO-SCR-005). Cap with line-clamp only; rely on
+    // overflow-anchor when 1-line vs 3-line titles change in-flow height.
+    // (Was: min-height: calc(1.12em * 3) — removed Aug 2026.)
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
@@ -733,7 +741,7 @@
     .billboard__title
         font-size: clamp(1.85rem, 7vw, 2.6rem)
         margin-bottom: 10px
-    .billboard__copy-body
+    .billboard__copy-body.has-desc
         min-height: calc(1.45em * 3 + 40px)
     .billboard__desc
         font-size: 0.98rem

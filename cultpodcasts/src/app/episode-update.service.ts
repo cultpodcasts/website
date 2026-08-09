@@ -122,7 +122,7 @@ export class EpisodeUpdateService {
   }
 
   async unpostBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
-    return this.applyAndRefresh(episode, { bluesky: false });
+    return this.applyAndRefresh(episode, { unBluesky: true });
   }
 
   async toggleBluesky(episode: ApiEpisode): Promise<ApiEpisode> {

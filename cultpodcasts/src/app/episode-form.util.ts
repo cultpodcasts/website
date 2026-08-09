@@ -26,6 +26,60 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+export function hasNonEmptyUrlValue(value: string | URL | null | undefined): boolean {
+  if (value instanceof URL) {
+    return true;
+  }
+  return !!value?.trim();
+}
+
+/** Opens a trimmed absolute URL in a new tab; no-ops on blank or invalid values. */
+export function openExternalUrl(value: string | URL | null | undefined): void {
+  if (value instanceof URL) {
+    window.open(value.toString(), '_blank', 'noopener,noreferrer');
+    return;
+  }
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return;
+  }
+  try {
+    const url = new URL(trimmed);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  } catch {
+    // Invalid URL — leave the field as-is for the curator to fix.
+  }
+}
+
+export function clearFormControl(control: FormControl<string | URL | null>): void {
+  control.setValue(null);
+  control.markAsDirty();
+}
+
+export type EpisodeImageService = 'spotify' | 'apple' | 'youtube' | 'other';
+
+export interface EpisodeImagePreviewItem {
+  service: EpisodeImageService;
+  label: string;
+  url: string;
+}
+
+/** Non-empty episode image fields in display order for the preview gallery. */
+export function collectEpisodeImagePreviews(form: FormGroup<EpisodeForm>): EpisodeImagePreviewItem[] {
+  const items: EpisodeImagePreviewItem[] = [];
+  const add = (service: EpisodeImageService, label: string, value: string | URL | null | undefined) => {
+    const url = value instanceof URL ? value.toString() : value?.trim();
+    if (url) {
+      items.push({ service, label, url });
+    }
+  };
+  add('spotify', 'Spotify', form.controls.spotifyImage.value);
+  add('apple', 'Apple', form.controls.appleImage.value);
+  add('youtube', 'YouTube', form.controls.youtubeImage.value);
+  add('other', 'Other', form.controls.otherImage.value);
+  return items;
+}
+
 export function personLabel(person: Person): string {
   const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
   return handles ? `${person.name} (${handles})` : person.name;
@@ -198,7 +252,6 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (prev.ignored != now.ignored) changes.ignored = now.ignored;
   if (prev.posted != now.posted) changes.posted = now.posted;
   if (prev.tweeted != now.tweeted) changes.tweeted = now.tweeted;
-  if ((prev.bluesky ?? false) != (now.bluesky ?? false)) changes.bluesky = now.bluesky ?? false;
   if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
   if (prev.removed != now.removed) changes.removed = now.removed;
   if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;

@@ -1,0 +1,36 @@
+name: Cultpodcasts tests
+
+on:
+  pull_request:
+    paths:
+      - "cultpodcasts/**"
+      - ".github/workflows/cultpodcasts-tests.yml"
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cultpodcasts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: cultpodcasts/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Unit + e2e
+        run: npm run test:all
