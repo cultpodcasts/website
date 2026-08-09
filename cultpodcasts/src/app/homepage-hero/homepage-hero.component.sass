@@ -224,7 +224,8 @@
 .billboard__feature
     display: flex
     flex-direction: column
-    gap: 0
+    // Keep Listen / More info below every subject chip row.
+    gap: 14px
     opacity: 1
     transition: opacity 0.55s cubic-bezier(0.33, 0.1, 0.25, 1)
     &.is-hidden
@@ -267,7 +268,8 @@
     font-family: var(--cp-font-display)
     font-size: clamp(2.3rem, 6.5vw, 3.85rem)
     font-weight: 400
-    line-height: 1.02
+    // >1 so display-serif descenders (g, y, p) survive line-clamp + overflow:hidden.
+    line-height: 1.12
     letter-spacing: -0.025em
     color: var(--nflx-on-media, #fff)
     text-shadow: 0 4px 40px #000000bf
@@ -278,6 +280,8 @@
     -webkit-line-clamp: 3
     line-clamp: 3
     overflow: hidden
+    // Extra room under the last clamped line — webkit otherwise shears descenders.
+    padding-bottom: 0.08em
 
 .billboard__lang
     display: inline-flex
@@ -327,15 +331,16 @@
     flex-wrap: wrap
     gap: 8px
     margin: 0 0 8px
-    max-height: 2.4rem
-    overflow: hidden
+    flex: 0 0 auto
 
 .billboard__actions
     display: flex
     flex-wrap: wrap
     gap: 12px
-    margin-top: auto
+    margin-top: 0
     flex: 0 0 auto
+    position: relative
+    z-index: 1
 
 .billboard__play
     background: #fff !important
@@ -677,7 +682,7 @@
     // Stacked: details panel is in document flow under a fixed art frame. Title
     // line-count used to resize the panel (~125px between 1- and 3-line titles).
     .billboard__title
-        min-height: calc(1.02em * 3)
+        min-height: calc(1.12em * 3)
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
@@ -738,7 +743,6 @@
         flex-direction: column
         align-items: stretch
         width: 100%
-        margin-top: 12px
     .billboard__admin
         // Keep each control on its own hit target; wrapping pills must not stack.
         display: grid
