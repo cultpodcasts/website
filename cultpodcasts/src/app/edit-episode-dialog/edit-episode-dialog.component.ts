@@ -145,6 +145,9 @@ export class EditEpisodeDialogComponent {
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));
+      // Bluesky state is set by a real network post (or cleared via un-post elsewhere),
+      // not by flipping this edit-form flag.
+      this.form()!.controls.blueskyPosted.disable({ emitEvent: false });
       this.allPeople = resp.people.sort(comparePeopleBySortKey);
       this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
