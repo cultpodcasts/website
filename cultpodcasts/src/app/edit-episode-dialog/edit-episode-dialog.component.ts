@@ -178,7 +178,6 @@ export class EditEpisodeDialogComponent {
         description: form.controls.description.value,
         posted: form.controls.posted.value,
         tweeted: form.controls.tweeted.value,
-        bluesky: form.controls.blueskyPosted.value,
         ignored: form.controls.ignored.value,
         removed: form.controls.removed.value,
         explicit: form.controls.explicit.value,
