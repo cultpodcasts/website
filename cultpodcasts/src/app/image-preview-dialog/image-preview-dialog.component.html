@@ -1,0 +1,10 @@
+<h2 mat-dialog-title>Image preview</h2>
+
+<mat-dialog-content>
+  <img class="preview" [src]="data.url" [alt]="'Preview of ' + data.url" />
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <a matButton [href]="data.url" target="_blank" rel="noopener noreferrer">Open</a>
+  <button matButton mat-dialog-close type="button">Close</button>
+</mat-dialog-actions>
