@@ -26,6 +26,36 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+export function hasNonEmptyUrlValue(value: string | URL | null | undefined): boolean {
+  if (value instanceof URL) {
+    return true;
+  }
+  return !!value?.trim();
+}
+
+/** Opens a trimmed absolute URL in a new tab; no-ops on blank or invalid values. */
+export function openExternalUrl(value: string | URL | null | undefined): void {
+  if (value instanceof URL) {
+    window.open(value.toString(), '_blank', 'noopener,noreferrer');
+    return;
+  }
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return;
+  }
+  try {
+    const url = new URL(trimmed);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  } catch {
+    // Invalid URL — leave the field as-is for the curator to fix.
+  }
+}
+
+export function clearFormControl(control: FormControl<string | URL | null>): void {
+  control.setValue(null);
+  control.markAsDirty();
+}
+
 export function personLabel(person: Person): string {
   const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
   return handles ? `${person.name} (${handles})` : person.name;

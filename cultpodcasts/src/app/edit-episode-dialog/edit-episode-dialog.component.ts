@@ -12,7 +12,7 @@ import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EpisodeForm } from '../episode-form.interface';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
@@ -31,11 +31,16 @@ import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dia
 import { comparePeopleBySortKey } from '../person-sort';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
+import { MatIconModule } from '@angular/material/icon';
+import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
 import {
   buildEpisodeForm,
+  clearFormControl,
   getEpisodeChanges,
+  hasNonEmptyUrlValue,
   mergeEpisodeSubjects,
   noCompareFunction,
+  openExternalUrl,
   personLabel,
   regroupGuests as regroupGuestsPure,
   regroupSubjects as regroupSubjectsPure
@@ -57,7 +62,8 @@ import {
     MatInputModule,
     MatCheckboxModule,
     KeyValuePipe,
-    MatDividerModule
+    MatDividerModule,
+    MatIconModule
   ],
   templateUrl: './edit-episode-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +76,8 @@ export class EditEpisodeDialogComponent {
     && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   protected readonly personLabel = personLabel;
   protected readonly noCompareFunction = noCompareFunction;
+  protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
+  protected readonly openExternalUrl = openExternalUrl;
 
   episodeId: string;
   podcastIdentifier: string;
@@ -178,6 +186,21 @@ export class EditEpisodeDialogComponent {
 
   cancelRemoveBlueskyPost() {
     this.pendingUnBluesky.set(false);
+  }
+
+  clearField(control: FormControl<string | URL | null>) {
+    clearFormControl(control);
+  }
+
+  previewImage(value: string | URL | null | undefined) {
+    const url = value instanceof URL ? value.toString() : value?.trim();
+    if (!url) {
+      return;
+    }
+    this.dialog.open(ImagePreviewDialogComponent, {
+      data: { url },
+      maxWidth: '90vw'
+    });
   }
 
   onSubmit() {
