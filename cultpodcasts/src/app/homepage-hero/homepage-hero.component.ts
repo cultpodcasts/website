@@ -111,7 +111,8 @@ export class HomepageHeroComponent {
 
   protected readonly featuredSubjects = computed(() => {
     const subjects = this.featured()?.subjects ?? [];
-    return subjects.filter((s) => !s.startsWith('_')).slice(0, 4);
+    // Show every public subject — do not cap rows/count in the hero.
+    return subjects.filter((s) => !s.startsWith('_'));
   });
 
   private heroTimer: ReturnType<typeof setInterval> | undefined;

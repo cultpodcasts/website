@@ -111,6 +111,22 @@ describe('HomepageHeroComponent', () => {
     expect(meta.textContent?.replace(/\s+/g, ' ').trim()).toBe('1:00:00');
   });
 
+  it('shows every public subject chip without capping count', () => {
+    const many = Array.from({ length: 12 }, (_, i) => `Topic ${i + 1}`);
+    fixture.componentRef.setInput('slides', [
+      ep('a', { subjects: ['_internal', ...many] }),
+      ep('b'),
+      ep('c'),
+    ]);
+    fixture.detectChanges();
+
+    expect(component['featuredSubjects']()).toEqual(many);
+    const chips = fixture.nativeElement.querySelectorAll(
+      '.billboard__subjects app-subject-chip'
+    );
+    expect(chips.length).toBe(12);
+  });
+
   it('jumps to a slide when its hero dash is clicked', () => {
     component['reduceMotion'] = true;
     fixture.detectChanges();

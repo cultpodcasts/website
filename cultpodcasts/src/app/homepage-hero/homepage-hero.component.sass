@@ -224,7 +224,8 @@
 .billboard__feature
     display: flex
     flex-direction: column
-    gap: 0
+    // Keep Listen / More info below every subject chip row.
+    gap: 14px
     opacity: 1
     transition: opacity 0.55s cubic-bezier(0.33, 0.1, 0.25, 1)
     &.is-hidden
@@ -327,15 +328,16 @@
     flex-wrap: wrap
     gap: 8px
     margin: 0 0 8px
-    max-height: 2.4rem
-    overflow: hidden
+    flex: 0 0 auto
 
 .billboard__actions
     display: flex
     flex-wrap: wrap
     gap: 12px
-    margin-top: auto
+    margin-top: 0
     flex: 0 0 auto
+    position: relative
+    z-index: 1
 
 .billboard__play
     background: #fff !important
@@ -738,7 +740,6 @@
         flex-direction: column
         align-items: stretch
         width: 100%
-        margin-top: 12px
     .billboard__admin
         // Keep each control on its own hit target; wrapping pills must not stack.
         display: grid
