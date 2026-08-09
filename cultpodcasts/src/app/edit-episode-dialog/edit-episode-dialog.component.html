@@ -29,7 +29,19 @@
                     <mat-checkbox [formControl]="form()!.controls.posted">Posted</mat-checkbox>
                     }
                     <mat-checkbox [formControl]="form()!.controls.tweeted">Tweeted</mat-checkbox>
-                    <mat-checkbox [formControl]="form()!.controls.blueskyPosted">Bluesky Post</mat-checkbox>
+                    @if (blueskyOriginallyPosted()) {
+                    <div class="bluesky-flag">
+                        <span>Bluesky post</span>
+                        @if (!pendingUnBluesky()) {
+                        <button type="button" matButton="text" (click)="markRemoveBlueskyPost()">Remove</button>
+                        } @else {
+                        <span class="bluesky-flag__pending">Will remove on save</span>
+                        <button type="button" matButton="text" (click)="cancelRemoveBlueskyPost()">Undo</button>
+                        }
+                    </div>
+                    } @else {
+                    <div class="bluesky-flag bluesky-flag--idle">Not posted to Bluesky</div>
+                    }
                     <mat-checkbox [formControl]="form()!.controls.ignored">Ignored</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.explicit">Explicit</mat-checkbox>

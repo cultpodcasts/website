@@ -88,6 +88,8 @@ export class EditEpisodeDialogComponent {
   readonly guestsFilterTerm = signal<string>('');
   readonly guestSuggestions = signal<PersonMatch[]>([]);
   readonly languages = signal<{ [key: string]: string }>({});
+  readonly blueskyOriginallyPosted = signal(false);
+  readonly pendingUnBluesky = signal(false);
 
   readonly form = signal<FormGroup<EpisodeForm> | undefined>(undefined);
   originalEpisode: ApiEpisode | undefined;
@@ -145,9 +147,8 @@ export class EditEpisodeDialogComponent {
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));
-      // Bluesky state is set by a real network post (or cleared via un-post elsewhere),
-      // not by flipping this edit-form flag.
-      this.form()!.controls.blueskyPosted.disable({ emitEvent: false });
+      this.blueskyOriginallyPosted.set(!!resp.episode.bluesky);
+      this.pendingUnBluesky.set(false);
       this.allPeople = resp.people.sort(comparePeopleBySortKey);
       this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
@@ -166,6 +167,17 @@ export class EditEpisodeDialogComponent {
 
   close() {
     this.dialogRef.close({ closed: true });
+  }
+
+  markRemoveBlueskyPost() {
+    if (!this.blueskyOriginallyPosted()) {
+      return;
+    }
+    this.pendingUnBluesky.set(true);
+  }
+
+  cancelRemoveBlueskyPost() {
+    this.pendingUnBluesky.set(false);
   }
 
   onSubmit() {
@@ -212,6 +224,9 @@ export class EditEpisodeDialogComponent {
         update.urls.internetArchive = new URL(form.controls.internetArchive.value);
       }
       var changes = getEpisodeChanges(this.originalEpisode!, update);
+      if (this.pendingUnBluesky()) {
+        changes.unBluesky = true;
+      }
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
       } else {
