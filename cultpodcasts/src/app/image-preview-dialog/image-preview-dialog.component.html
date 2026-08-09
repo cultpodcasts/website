@@ -1,25 +1,59 @@
+@let image = current();
+
 <h2 mat-dialog-title>Episode images</h2>
 
-<mat-dialog-content #scrollHost class="gallery">
-  @for (image of data.images; track image.service) {
-  <section class="gallery__item" [id]="'preview-' + image.service">
-    <header class="gallery__header">
-      @if (image.service === 'apple') {
-      <mat-icon class="gallery__logo" aria-hidden="true">
-        <app-apple-podcasts-svg></app-apple-podcasts-svg>
-      </mat-icon>
-      } @else if (image.service === 'spotify') {
-      <mat-icon class="gallery__logo" svgIcon="spotify" aria-hidden="true"></mat-icon>
-      } @else if (image.service === 'youtube') {
-      <mat-icon class="gallery__logo" svgIcon="youtube" aria-hidden="true"></mat-icon>
-      } @else {
-      <mat-icon class="gallery__logo" svgIcon="cultpodcasts" aria-hidden="true"></mat-icon>
-      }
-      <span class="gallery__label">{{ image.label }}</span>
-      <a matButton class="gallery__open" [href]="image.url" target="_blank" rel="noopener noreferrer">Open</a>
-    </header>
-    <img class="gallery__image" [src]="image.url" [alt]="image.label + ' episode image'" />
-  </section>
+<mat-dialog-content class="carousel" aria-roledescription="carousel" [attr.aria-label]="image.label + ' episode image'">
+  <header class="carousel__header">
+    @if (image.service === 'apple') {
+    <mat-icon class="carousel__logo" aria-hidden="true">
+      <app-apple-podcasts-svg></app-apple-podcasts-svg>
+    </mat-icon>
+    } @else if (image.service === 'spotify') {
+    <mat-icon class="carousel__logo" svgIcon="spotify" aria-hidden="true"></mat-icon>
+    } @else if (image.service === 'youtube') {
+    <mat-icon class="carousel__logo" svgIcon="youtube" aria-hidden="true"></mat-icon>
+    } @else {
+    <mat-icon class="carousel__logo" svgIcon="cultpodcasts" aria-hidden="true"></mat-icon>
+    }
+    <span class="carousel__label">{{ image.label }}</span>
+    <a matButton class="carousel__open" [href]="image.url" target="_blank" rel="noopener noreferrer">Open</a>
+  </header>
+
+  <div class="carousel__stage">
+    @if (hasMultiple()) {
+    <button matIconButton type="button" class="carousel__nav carousel__nav--prev" aria-label="Previous image"
+      (click)="previous()">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    }
+    <div class="carousel__frame"
+      [class.carousel__frame--swipeable]="hasMultiple()"
+      [class.is-dragging]="dragging()"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerCancel($event)">
+      <img class="carousel__image" draggable="false" [src]="image.url" [alt]="image.label + ' episode image'"
+        [style.transform]="dragPx() ? 'translateX(' + dragPx() + 'px)' : null" />
+    </div>
+    @if (hasMultiple()) {
+    <button matIconButton type="button" class="carousel__nav carousel__nav--next" aria-label="Next image"
+      (click)="next()">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+    }
+  </div>
+
+  @if (hasMultiple()) {
+  <div class="carousel__dots" role="tablist" aria-label="Episode images">
+    @for (item of data.images; track item.service; let i = $index) {
+    <button type="button" class="carousel__dot" role="tab"
+      [class.is-active]="index() === i"
+      [attr.aria-selected]="index() === i"
+      [attr.aria-label]="'Show ' + item.label + ' image'"
+      (click)="select(i)"></button>
+    }
+  </div>
   }
 </mat-dialog-content>
 

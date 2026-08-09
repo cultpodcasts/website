@@ -4,7 +4,11 @@
   [class.has-art-aspect]="heroArtAspect() != null"
   [style.--hero-art-aspect]="heroArtAspect() ?? null"
   (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave()"
-  (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)">
+  (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)"
+  (pointerdown)="onHeroSwipeDown($event)"
+  (pointermove)="onHeroSwipeMove($event)"
+  (pointerup)="onHeroSwipeUp($event)"
+  (pointercancel)="onHeroSwipeCancel($event)">
 
   <div class="billboard__stages" aria-hidden="true">
     <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"

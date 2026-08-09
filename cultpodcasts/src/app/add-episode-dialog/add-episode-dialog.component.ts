@@ -200,7 +200,8 @@ export class AddEpisodeDialogComponent {
     }
     this.dialog.open(ImagePreviewDialogComponent, {
       data: { images, initialService: service },
-      maxWidth: '90vw'
+      maxWidth: 'min(920px, 95vw)',
+      width: 'min(920px, 95vw)'
     });
   }
 
