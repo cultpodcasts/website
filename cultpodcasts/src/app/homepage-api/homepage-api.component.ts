@@ -87,10 +87,19 @@ export class HomepageApiComponent {
   /** Floor between any two fetches (interval or visibility-triggered) so a tab-switch flurry can't spam the API. */
   private static readonly minBackgroundRefreshGapMs = 5 * 60 * 1000;
 
-  protected grouped = signal<{ [key: string]: HomepageEpisode[] }>({});
   private allEpisodes = signal<HomepageEpisode[]>([]);
-  private visibleCount: number = 0;
-  private hasStartedScrolling: boolean = false;
+  /** Full week grouped by date key — day rails read this so every day appears on first paint. */
+  protected readonly grouped = computed(() => {
+    const group: { [key: string]: HomepageEpisode[] } = {};
+    for (const item of this.allEpisodes()) {
+      const releaseDateKey = dateKey(item.release as Date);
+      if (!group[releaseDateKey]) {
+        group[releaseDateKey] = [];
+      }
+      group[releaseDateKey].push(item);
+    }
+    return group;
+  });
   protected weekEpisodeCount = signal<number | undefined>(undefined);
   protected isLoading = signal<boolean>(true);
   protected isInError = signal<boolean>(false);
@@ -119,12 +128,6 @@ export class HomepageApiComponent {
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => this.authRoles().includes('Curator'));
-  readonly renderConfig = {
-    initialBlockSize: 40,
-    firstScrollBlockSize: 80,
-    nearEndBlockSize: 80,
-    nearEndThresholdPixels: 1200,
-  };
 
   /** Ordered episode IDs from the hero-curation API (may include stale ids). */
   protected readonly curatedEpisodeIds = signal<string[]>([]);
@@ -195,6 +198,8 @@ export class HomepageApiComponent {
   );
 
   protected readonly rails = computed((): EpisodeRail[] => {
+    // Day rails use the full week so every date slot appears on first paint.
+    // Poster DOM cost is deferred per-rail via episode-rail [deferPosters].
     const g = this.grouped();
     const weekKeys = this.weekDayKeysNewestFirst();
     const dayRails = weekKeys.map((key) => {
@@ -206,7 +211,7 @@ export class HomepageApiComponent {
       return {
         id: `day:${key}`,
         title: `${this.Weekday[d.getDay()]} ${d.getDate()} ${this.Month[d.getMonth()]}`,
-        // Day rails have no "Browse all" destination — show the full progressive window.
+        // Day rails have no "Browse all" destination — show the full day.
         episodes,
       } satisfies EpisodeRail;
     });
@@ -268,22 +273,6 @@ export class HomepageApiComponent {
       this.maybeBackgroundRefresh();
     }
   };
-  private scrollFrame = 0;
-  /**
-   * Bound outside Angular's event manager on purpose: in a zoneless app every listener
-   * invocation schedules a change-detection pass, so a `@HostListener` here would run one
-   * per scroll event. Only `loadMoreEpisodes` writes signals, so CD now runs when the
-   * visible set actually grows.
-   */
-  private readonly onScrollEvent = (): void => {
-    if (this.scrollFrame) {
-      return;
-    }
-    this.scrollFrame = requestAnimationFrame(() => {
-      this.scrollFrame = 0;
-      this.onWindowScroll();
-    });
-  };
 
   ngOnInit() {
     this.siteService.homepageRefresh$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -293,31 +282,9 @@ export class HomepageApiComponent {
 
     if (isPlatformBrowser(this.platformId)) {
       this.startBackgroundRefresh();
-      this.startScrollWatch();
       this.destroyRef.onDestroy(() => {
         this.stopBackgroundRefresh();
-        this.stopScrollWatch();
       });
-    }
-  }
-
-  onWindowScroll(): void {
-    if (!this.homepage() || this.isLoading() || this.isInError() || this.allEpisodes().length === 0) {
-      return;
-    }
-
-    if (!this.hasStartedScrolling && window.scrollY > 0) {
-      this.hasStartedScrolling = true;
-      this.loadMoreEpisodes(this.renderConfig.firstScrollBlockSize);
-      return;
-    }
-
-    const currentBottom = window.innerHeight + window.scrollY;
-    const documentHeight = document.documentElement.scrollHeight;
-    const isNearEnd = currentBottom >= documentHeight - this.renderConfig.nearEndThresholdPixels;
-
-    if (isNearEnd) {
-      this.loadMoreEpisodes(this.renderConfig.nearEndBlockSize);
     }
   }
 
@@ -615,7 +582,7 @@ export class HomepageApiComponent {
     }
 
     if (homepageContent) {
-      this.applyHomepage(homepageContent, { resetScrollProgress: true });
+      this.applyHomepage(homepageContent);
       this.isLoading.set(false);
       this.isInError.set(false);
     } else {
@@ -644,21 +611,14 @@ export class HomepageApiComponent {
     if (!homepageContent) {
       return;
     }
-    this.applyHomepage(homepageContent, { resetScrollProgress: false });
+    this.applyHomepage(homepageContent);
   }
 
-  private applyHomepage(
-    homepageContent: Homepage,
-    options: { resetScrollProgress: boolean }
-  ): void {
+  private applyHomepage(homepageContent: Homepage): void {
     this.homepage.set(homepageContent);
     this.episodeCount.set(homepageContent.episodeCount);
     this.totalDurationDays.set(homepageContent.totalDuration.split('.')[0]);
     this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
-    if (options.resetScrollProgress) {
-      this.hasStartedScrolling = false;
-      this.visibleCount = 0;
-    }
     this.allEpisodes.set(
       homepageContent.recentEpisodes.map((item) => ({
         ...item,
@@ -668,27 +628,6 @@ export class HomepageApiComponent {
     // Week-window drop: curated picks that left recentEpisodes fall out locally
     // (and persist when a Curator is signed in).
     this.pruneCurationToCurrentWeek();
-    if (options.resetScrollProgress) {
-      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-    } else if (this.visibleCount > 0) {
-      const keep = this.visibleCount;
-      this.visibleCount = 0;
-      this.loadMoreEpisodes(keep);
-    } else {
-      this.loadMoreEpisodes(this.renderConfig.initialBlockSize);
-    }
-  }
-
-  private startScrollWatch(): void {
-    window.addEventListener('scroll', this.onScrollEvent, { passive: true });
-  }
-
-  private stopScrollWatch(): void {
-    window.removeEventListener('scroll', this.onScrollEvent);
-    if (this.scrollFrame) {
-      cancelAnimationFrame(this.scrollFrame);
-      this.scrollFrame = 0;
-    }
   }
 
   private startBackgroundRefresh(): void {
@@ -721,28 +660,6 @@ export class HomepageApiComponent {
 
   private static heroTimeBucket(now: Date = new Date()): number {
     return Math.floor(now.getTime() / HomepageApiComponent.heroBucketMs);
-  }
-
-  private loadMoreEpisodes(count: number): void {
-    const episodes = this.allEpisodes();
-    const nextVisibleCount = Math.min(this.visibleCount + count, episodes.length);
-    if (nextVisibleCount === this.visibleCount) {
-      return;
-    }
-
-    this.visibleCount = nextVisibleCount;
-    const visibleEpisodes = episodes.slice(0, this.visibleCount);
-    this.grouped.set(
-      visibleEpisodes.reduce((group: { [key: string]: HomepageEpisode[] }, item) => {
-        const releaseDate = item.release as Date;
-        const releaseDateKey = dateKey(releaseDate);
-        if (!group[releaseDateKey]) {
-          group[releaseDateKey] = [];
-        }
-        group[releaseDateKey].push(item);
-        return group;
-      }, {})
-    );
   }
 
   ToDate = (key: string) => dateFromKey(key);

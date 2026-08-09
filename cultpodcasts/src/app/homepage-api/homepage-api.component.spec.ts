@@ -169,7 +169,7 @@ describe('HomepageApiComponent', () => {
   }): void {
     component['curatedEpisodeIds'].set(curation?.episodeIds ?? []);
     component['curatedRailSubjects'].set(curation?.railSubjects ?? []);
-    component['applyHomepage'](homepageWith(episodes), { resetScrollProgress: true });
+    component['applyHomepage'](homepageWith(episodes));
   }
 
   it('prunes stale curated episode ids for local display only', () => {
@@ -203,24 +203,22 @@ describe('HomepageApiComponent', () => {
     expect(component['curatedEpisodeIds']()).toEqual([]);
   });
 
-  it('loads the initial progressive block then grows on loadMoreEpisodes', () => {
-    const episodes = Array.from({ length: 120 }, (_, i) => ep(`e${i}`, { daysAgo: i % 6 }));
-    apply(episodes);
-    const initial = Object.values(component['grouped']()).flat().length;
-    expect(initial).toBe(component.renderConfig.initialBlockSize);
+  it('shows every week day rail on first paint without scrolling', () => {
+    // Enough episodes that a progressive 40-episode window would omit older days.
+    const newest = Array.from({ length: 35 }, (_, i) => ep(`n${i}`, { daysAgo: 0 }));
+    const mid = Array.from({ length: 35 }, (_, i) => ep(`m${i}`, { daysAgo: 1 }));
+    const older = Array.from({ length: 35 }, (_, i) => ep(`o${i}`, { daysAgo: 3 }));
+    apply([...newest, ...mid, ...older]);
 
-    component['loadMoreEpisodes'](component.renderConfig.firstScrollBlockSize);
-    const after = Object.values(component['grouped']()).flat().length;
-    expect(after).toBe(
-      component.renderConfig.initialBlockSize + component.renderConfig.firstScrollBlockSize
-    );
+    const dayRails = component['rails']().filter((r) => r.id.startsWith('day:'));
+    expect(dayRails).toHaveLength(3);
+    expect(dayRails.map((r) => r.episodes.length)).toEqual([35, 35, 35]);
   });
 
-  it('background refresh keeps the current visible count', async () => {
+  it('background refresh replaces the week without progressive scroll state', async () => {
     const episodes = Array.from({ length: 100 }, (_, i) => ep(`e${i}`, { daysAgo: i % 5 }));
     apply(episodes);
-    component['loadMoreEpisodes'](component.renderConfig.firstScrollBlockSize);
-    const visibleBefore = component['visibleCount'];
+    const dayCountBefore = component['rails']().filter((r) => r.id.startsWith('day:')).length;
 
     const homepageService = TestBed.inject(HomepageService) as unknown as {
       getHomepageFromApi: ReturnType<typeof vi.fn>;
@@ -232,7 +230,9 @@ describe('HomepageApiComponent', () => {
       updatedAt: null,
     });
     await component['refreshHomepageInBackground']();
-    expect(component['visibleCount']).toBe(visibleBefore);
+    const dayCountAfter = component['rails']().filter((r) => r.id.startsWith('day:')).length;
+    expect(dayCountAfter).toBe(dayCountBefore);
+    expect(dayCountAfter).toBe(5);
   });
 
   it('interleaves newest day, then pinned subject rails, then remaining days by default', () => {
