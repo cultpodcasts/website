@@ -171,6 +171,45 @@ describe('HomepageHeroComponent', () => {
     expect(subjects.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('HERO-SCR-004: omits description and reserved copy-body height when there is no description', () => {
+    fixture.componentRef.setInput('slides', [
+      ep('a', { episodeDescription: '', subjects: [] }),
+      ep('b'),
+      ep('c'),
+    ]);
+    fixture.detectChanges();
+
+    expect(component['hasFeaturedDesc']()).toBe(false);
+    expect(component['hasCopyBody']()).toBe(false);
+    expect(fixture.nativeElement.querySelector('.billboard__desc')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.billboard__copy-body')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.billboard__actions')).toBeTruthy();
+  });
+
+  it('HERO-SCR-004: marks copy-body has-desc only when description text is present', () => {
+    fixture.componentRef.setInput('slides', [
+      ep('a', { episodeDescription: 'Hello world', subjects: [] }),
+      ep('b', { episodeDescription: '', subjects: ['Topic'] }),
+      ep('c'),
+    ]);
+    fixture.detectChanges();
+
+    const withDesc = fixture.nativeElement.querySelector(
+      '.billboard__copy-body.has-desc .billboard__desc'
+    ) as HTMLElement | null;
+    expect(withDesc?.textContent?.trim()).toBe('Hello world');
+
+    component['reduceMotion'] = true;
+    component['transitionTo'](1);
+    fixture.detectChanges();
+
+    const body = fixture.nativeElement.querySelector('.billboard__copy-body') as HTMLElement;
+    expect(body).toBeTruthy();
+    expect(body.classList.contains('has-desc')).toBe(false);
+    expect(fixture.nativeElement.querySelector('.billboard__desc')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.billboard__subjects')).toBeTruthy();
+  });
+
   it('HERO-SCR-001/002 + HERO-CTL-001 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
     // Layout bugs often land in CSS; assert the source contracts stay present.
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
@@ -178,7 +217,7 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(/\.billboard__title[\s\S]*?line-clamp:\s*3/);
     expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?line-clamp:\s*3/);
     expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3\)/);
-    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
+    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
     expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
 

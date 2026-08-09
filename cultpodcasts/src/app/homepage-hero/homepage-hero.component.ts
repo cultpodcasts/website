@@ -109,12 +109,18 @@ export class HomepageHeroComponent {
     return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
   });
 
+  protected readonly hasFeaturedDesc = computed(() => this.featuredDesc().trim().length > 0);
+
   protected readonly featuredSubjects = computed(() => {
     const subjects = this.featured()?.subjects ?? [];
     // Show every public subject — do not cap rows/count in the hero.
     // Contract: docs/homepage-hero.md § Subjects
     return subjects.filter((s) => !s.startsWith('_'));
   });
+
+  protected readonly hasCopyBody = computed(
+    () => this.hasFeaturedDesc() || this.featuredSubjects().length > 0
+  );
 
   private heroTimer: ReturnType<typeof setInterval> | undefined;
   private heroContentTimer: ReturnType<typeof setTimeout> | undefined;
