@@ -56,6 +56,30 @@ export function clearFormControl(control: FormControl<string | URL | null>): voi
   control.markAsDirty();
 }
 
+export type EpisodeImageService = 'spotify' | 'apple' | 'youtube' | 'other';
+
+export interface EpisodeImagePreviewItem {
+  service: EpisodeImageService;
+  label: string;
+  url: string;
+}
+
+/** Non-empty episode image fields in display order for the preview gallery. */
+export function collectEpisodeImagePreviews(form: FormGroup<EpisodeForm>): EpisodeImagePreviewItem[] {
+  const items: EpisodeImagePreviewItem[] = [];
+  const add = (service: EpisodeImageService, label: string, value: string | URL | null | undefined) => {
+    const url = value instanceof URL ? value.toString() : value?.trim();
+    if (url) {
+      items.push({ service, label, url });
+    }
+  };
+  add('spotify', 'Spotify', form.controls.spotifyImage.value);
+  add('apple', 'Apple', form.controls.appleImage.value);
+  add('youtube', 'YouTube', form.controls.youtubeImage.value);
+  add('other', 'Other', form.controls.otherImage.value);
+  return items;
+}
+
 export function personLabel(person: Person): string {
   const handles = [person.twitterHandle, person.blueskyHandle].filter(x => !!x).join(' ');
   return handles ? `${person.name} (${handles})` : person.name;

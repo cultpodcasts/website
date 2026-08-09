@@ -1,10 +1,28 @@
-<h2 mat-dialog-title>Image preview</h2>
+<h2 mat-dialog-title>Episode images</h2>
 
-<mat-dialog-content>
-  <img class="preview" [src]="data.url" [alt]="'Preview of ' + data.url" />
+<mat-dialog-content #scrollHost class="gallery">
+  @for (image of data.images; track image.service) {
+  <section class="gallery__item" [id]="'preview-' + image.service">
+    <header class="gallery__header">
+      @if (image.service === 'apple') {
+      <mat-icon class="gallery__logo" aria-hidden="true">
+        <app-apple-podcasts-svg></app-apple-podcasts-svg>
+      </mat-icon>
+      } @else if (image.service === 'spotify') {
+      <mat-icon class="gallery__logo" svgIcon="spotify" aria-hidden="true"></mat-icon>
+      } @else if (image.service === 'youtube') {
+      <mat-icon class="gallery__logo" svgIcon="youtube" aria-hidden="true"></mat-icon>
+      } @else {
+      <mat-icon class="gallery__logo" svgIcon="cultpodcasts" aria-hidden="true"></mat-icon>
+      }
+      <span class="gallery__label">{{ image.label }}</span>
+      <a matButton class="gallery__open" [href]="image.url" target="_blank" rel="noopener noreferrer">Open</a>
+    </header>
+    <img class="gallery__image" [src]="image.url" [alt]="image.label + ' episode image'" />
+  </section>
+  }
 </mat-dialog-content>
 
 <mat-dialog-actions>
-  <a matButton [href]="data.url" target="_blank" rel="noopener noreferrer">Open</a>
   <button matButton mat-dialog-close type="button">Close</button>
 </mat-dialog-actions>

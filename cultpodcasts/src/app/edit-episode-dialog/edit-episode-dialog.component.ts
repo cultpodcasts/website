@@ -36,6 +36,7 @@ import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-previ
 import {
   buildEpisodeForm,
   clearFormControl,
+  collectEpisodeImagePreviews,
   getEpisodeChanges,
   hasNonEmptyUrlValue,
   mergeEpisodeSubjects,
@@ -43,7 +44,8 @@ import {
   openExternalUrl,
   personLabel,
   regroupGuests as regroupGuestsPure,
-  regroupSubjects as regroupSubjectsPure
+  regroupSubjects as regroupSubjectsPure,
+  type EpisodeImageService
 } from '../episode-form.util';
 
 @Component({
@@ -192,13 +194,17 @@ export class EditEpisodeDialogComponent {
     clearFormControl(control);
   }
 
-  previewImage(value: string | URL | null | undefined) {
-    const url = value instanceof URL ? value.toString() : value?.trim();
-    if (!url) {
+  previewImage(service: EpisodeImageService) {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+    const images = collectEpisodeImagePreviews(form);
+    if (images.length === 0) {
       return;
     }
     this.dialog.open(ImagePreviewDialogComponent, {
-      data: { url },
+      data: { images, initialService: service },
       maxWidth: '90vw'
     });
   }

@@ -187,7 +187,7 @@
                     <input type="text" [formControl]="form()!.controls.spotifyImage" matInput>
                     <button type="button" matIconButton matSuffix aria-label="Preview Spotify image"
                         [disabled]="!hasNonEmptyUrlValue(form()!.controls.spotifyImage.value)"
-                        (click)="previewImage(form()!.controls.spotifyImage.value)">
+                        (click)="previewImage('spotify')">
                         <mat-icon>visibility</mat-icon>
                     </button>
                     <button type="button" matIconButton matSuffix aria-label="Remove Spotify image"
@@ -201,7 +201,7 @@
                     <input type="text" [formControl]="form()!.controls.appleImage" matInput>
                     <button type="button" matIconButton matSuffix aria-label="Preview Apple image"
                         [disabled]="!hasNonEmptyUrlValue(form()!.controls.appleImage.value)"
-                        (click)="previewImage(form()!.controls.appleImage.value)">
+                        (click)="previewImage('apple')">
                         <mat-icon>visibility</mat-icon>
                     </button>
                     <button type="button" matIconButton matSuffix aria-label="Remove Apple image"
@@ -215,7 +215,7 @@
                     <input type="text" [formControl]="form()!.controls.youtubeImage" matInput>
                     <button type="button" matIconButton matSuffix aria-label="Preview YouTube image"
                         [disabled]="!hasNonEmptyUrlValue(form()!.controls.youtubeImage.value)"
-                        (click)="previewImage(form()!.controls.youtubeImage.value)">
+                        (click)="previewImage('youtube')">
                         <mat-icon>visibility</mat-icon>
                     </button>
                     <button type="button" matIconButton matSuffix aria-label="Remove YouTube image"
@@ -229,7 +229,7 @@
                     <input type="text" [formControl]="form()!.controls.otherImage" matInput>
                     <button type="button" matIconButton matSuffix aria-label="Preview other image"
                         [disabled]="!hasNonEmptyUrlValue(form()!.controls.otherImage.value)"
-                        (click)="previewImage(form()!.controls.otherImage.value)">
+                        (click)="previewImage('other')">
                         <mat-icon>visibility</mat-icon>
                     </button>
                     <button type="button" matIconButton matSuffix aria-label="Remove other image"
