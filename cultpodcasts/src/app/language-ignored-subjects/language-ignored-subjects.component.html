@@ -1,0 +1,112 @@
+<h2 mat-dialog-title>Language ignored subjects</h2>
+
+<mat-dialog-content>
+  @if (isInError()) {
+  <p id="error">{{ errorMessage() || "An error occurred" }}</p>
+  }
+
+  @if (isDefault() && !isLoading()) {
+  <p class="default-note">Showing code defaults — no Cosmos document yet. The first add will persist them.</p>
+  }
+
+  @if (languageOptions().length > 0) {
+  <div class="language-row">
+    <mat-form-field class="language-select" subscriptSizing="dynamic">
+      <mat-label>Language</mat-label>
+      <mat-select
+        [value]="selectedLanguage()"
+        (valueChange)="onLanguageChange($event)"
+        [disabled]="isLoading() || isMutating()">
+        @for (lang of languageOptions(); track lang.code) {
+        <mat-option [value]="lang.code">{{ lang.name }} ({{ lang.code }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  } @else if (!isLoading()) {
+  <p class="empty">No non-English supported languages.</p>
+  }
+
+  <div class="rules-body" [class.is-busy]="isLoading() || isMutating()">
+    @if (isLoading() || isMutating()) {
+    <div class="busy-overlay" aria-busy="true">
+      <mat-spinner class="dialog-spinner" mode="indeterminate"></mat-spinner>
+    </div>
+    }
+
+    @if (selectedLanguage()) {
+    <section class="add-panel">
+      <p class="add-hint">Subjects to skip during enrichment for this language</p>
+      @if (addError()) {
+      <p class="add-error">{{ addError() }}</p>
+      }
+      <div class="add-row">
+        <mat-form-field class="grow" subscriptSizing="dynamic">
+          <mat-label>Subject</mat-label>
+          <input
+            matInput
+            type="text"
+            [ngModel]="newSubject()"
+            (ngModelChange)="newSubject.set($event)"
+            [matAutocomplete]="subjectAuto"
+            (keydown.enter)="addIgnoredSubject()"
+            autocomplete="off">
+          <mat-autocomplete #subjectAuto="matAutocomplete" (optionSelected)="newSubject.set($event.option.value)">
+            @for (name of pickerSubjects(); track name) {
+            <mat-option [value]="name">{{ name }}</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="!newSubject().trim() || isMutating()"
+          (click)="addIgnoredSubject()">
+          Add
+        </button>
+      </div>
+    </section>
+
+    <section class="existing-panel">
+      <div class="existing-header">
+        <h3>Ignored <span class="tab-count">{{ ignoredSubjects().length }}</span></h3>
+        @if (ignoredSubjects().length > 0) {
+        <mat-form-field class="filter-field" subscriptSizing="dynamic">
+          <mat-label>Find</mat-label>
+          <input matInput type="search" [ngModel]="subjectFilter()" (ngModelChange)="subjectFilter.set($event)" autocomplete="off">
+        </mat-form-field>
+        }
+      </div>
+
+      @if (ignoredSubjects().length === 0) {
+      <p class="empty">None yet — first add creates the language rules document for {{ selectedLanguage() }}.</p>
+      } @else if (filteredIgnoredSubjects().length === 0) {
+      <p class="empty">No matches for “{{ subjectFilter() }}”.</p>
+      } @else {
+      <ul class="term-list">
+        @for (item of filteredIgnoredSubjects(); track item.term) {
+        <li>
+          <span class="term-text">{{ item.term }}</span>
+          <span class="term-actions">
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remove ignored subject"
+              [disabled]="isMutating()"
+              (click)="deleteIgnoredSubject(item.index)">
+              <mat-icon class="material-symbols-outlined">delete</mat-icon>
+            </button>
+          </span>
+        </li>
+        }
+      </ul>
+      }
+    </section>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()" [disabled]="isMutating()">Close</button>
+</mat-dialog-actions>

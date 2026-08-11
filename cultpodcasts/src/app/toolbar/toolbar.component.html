@@ -54,6 +54,10 @@
           <mat-icon class="material-symbols-outlined">title</mat-icon>
           <span>Title casing</span>
         </a>
+        <a (click)="openLanguageIgnoredSubjects()" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">block</mat-icon>
+          <span>Ignored subjects</span>
+        </a>
         <a (click)="openSupportedLanguages()" mat-menu-item>
           <mat-icon class="material-symbols-outlined">translate</mat-icon>
           <span>Supported languages</span>
@@ -115,6 +119,10 @@
       <a (click)="openTitleCasingRules()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">title</mat-icon>
         <span>Title casing</span>
+      </a>
+      <a (click)="openLanguageIgnoredSubjects()" mat-menu-item>
+        <mat-icon class="material-symbols-outlined">block</mat-icon>
+        <span>Ignored subjects</span>
       </a>
       <a (click)="openSupportedLanguages()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">translate</mat-icon>
