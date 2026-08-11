@@ -32,6 +32,23 @@
             <span> ({{disoveryInfo()!.numberOfResults}})</span>
             }</span>
         </a>
+        <button type="button" mat-menu-item [matMenuTriggerFor]="profileCurate">
+          <mat-icon class="material-symbols-outlined">tune</mat-icon>
+          <span>Curate</span>
+        </button>
+        }
+        @if (authRoles().includes("Admin")) {
+        <button type="button" mat-menu-item [matMenuTriggerFor]="profileAdmin">
+          <mat-icon class="material-symbols-outlined">admin_panel_settings</mat-icon>
+          <span>Admin</span>
+        </button>
+        }
+        <a (click)="logout()" mat-menu-item>
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </a>
+      </mat-menu>
+      <mat-menu #profileCurate="matMenu">
         <a mat-menu-item (click)="openSubmitSubject()">
           <mat-icon class="material-symbols-outlined">add</mat-icon>
           <span>Create Subject</span>
@@ -40,8 +57,8 @@
           <mat-icon class="material-symbols-outlined">search_check</mat-icon>
           <span>Review Outgoing</span>
         </a>
-        }
-        @if (authRoles().includes("Admin")) {
+      </mat-menu>
+      <mat-menu #profileAdmin="matMenu">
         <a (click)="runSearchIndexer()" mat-menu-item>
           <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
           <span>Run Search Indexer</span>
@@ -65,11 +82,6 @@
         <a (click)="openDiscoverySchedule()" mat-menu-item>
           <mat-icon class="material-symbols-outlined">schedule</mat-icon>
           <span>Discovery Schedule</span>
-        </a>
-        }
-        <a (click)="logout()" mat-menu-item>
-          <mat-icon>logout</mat-icon>
-          <span>Logout</span>
         </a>
       </mat-menu>
       }
@@ -98,6 +110,33 @@
           <span> ({{disoveryInfo()!.numberOfResults}})</span>
           }</span>
       </a>
+      <button type="button" mat-menu-item [matMenuTriggerFor]="moreCurate">
+        <mat-icon class="material-symbols-outlined">tune</mat-icon>
+        <span>Curate</span>
+      </button>
+      }
+      @if (authRoles().includes("Admin")) {
+      <button type="button" mat-menu-item [matMenuTriggerFor]="moreAdmin">
+        <mat-icon class="material-symbols-outlined">admin_panel_settings</mat-icon>
+        <span>Admin</span>
+      </button>
+      }
+      @if (featureSwitchService.IsEnabled(FeatureSwitch.auth0)) {
+
+      @if (showSignedInChrome()) {
+      <a (click)="logout()" mat-menu-item>
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </a>
+      } @else {
+      <a (click)="login()" mat-menu-item>
+        <mat-icon>login</mat-icon>
+        <span mat-mdc-menu-item-text>Login</span>
+      </a>
+      }
+      }
+    </mat-menu>
+    <mat-menu #moreCurate="matMenu">
       <a mat-menu-item (click)="openSubmitSubject()">
         <mat-icon class="material-symbols-outlined">add</mat-icon>
         <span>Create Subject</span>
@@ -106,8 +145,8 @@
         <mat-icon class="material-symbols-outlined">search_check</mat-icon>
         <span>Review Outgoing</span>
       </a>
-      }
-      @if (authRoles().includes("Admin")) {
+    </mat-menu>
+    <mat-menu #moreAdmin="matMenu">
       <a (click)="runSearchIndexer()" mat-menu-item>
         <mat-icon class="material-symbols-outlined">find_replace</mat-icon>
         <span>Run Search Indexer</span>
@@ -132,21 +171,6 @@
         <mat-icon class="material-symbols-outlined">schedule</mat-icon>
         <span>Discovery Schedule</span>
       </a>
-      }
-      @if (featureSwitchService.IsEnabled(FeatureSwitch.auth0)) {
-
-      @if (showSignedInChrome()) {
-      <a (click)="logout()" mat-menu-item>
-        <mat-icon>logout</mat-icon>
-        <span>Logout</span>
-      </a>
-      } @else {
-      <a (click)="login()" mat-menu-item>
-        <mat-icon>login</mat-icon>
-        <span mat-mdc-menu-item-text>Login</span>
-      </a>
-      }
-      }
     </mat-menu>
   </mat-toolbar>
 </section>
