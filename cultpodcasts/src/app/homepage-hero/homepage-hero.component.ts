@@ -59,6 +59,7 @@ export class HomepageHeroComponent {
   private readonly playerService = inject(PlayerService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly host = inject(ElementRef<HTMLElement>);
 
   protected readonly heroIndex = signal(0);
   protected readonly heroPaused = signal(false);
@@ -139,7 +140,7 @@ export class HomepageHeroComponent {
   private resizeFrame = 0;
   private dotsScrollFrame = 0;
   private dotsScrollTarget: HTMLElement | undefined;
-  /** Pointer is over the billboard (hover pause). */
+  /** Pointer is over the art hit-target or pager/admin (hover pause). Not copy. */
   private pointerInside = false;
   /** Focus is inside the billboard (keyboard pause). */
   private focusInside = false;
@@ -342,9 +343,23 @@ export class HomepageHeroComponent {
     this.syncHeroPaused();
   }
 
-  onHeroPointerLeave(): void {
+  onHeroPointerLeave(event?: MouseEvent): void {
+    // Art hover + controls are siblings; moving between them must not clear pause.
+    const next = event?.relatedTarget as Node | null;
+    if (next && this.isHeroPointerPauseZone(next)) {
+      return;
+    }
     this.pointerInside = false;
     this.syncHeroPaused();
+  }
+
+  /** True when the node is inside the art hover layer, on-art CTAs, or pager/admin. */
+  private isHeroPointerPauseZone(node: Node): boolean {
+    const root = this.host.nativeElement as HTMLElement;
+    const art = root.querySelector('.billboard__art-hover');
+    const actions = root.querySelector('.billboard__actions');
+    const controls = root.querySelector('.billboard__controls');
+    return !!(art?.contains(node) || actions?.contains(node) || controls?.contains(node));
   }
 
   onHeroFocusIn(): void {

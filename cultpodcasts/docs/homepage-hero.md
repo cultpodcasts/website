@@ -52,7 +52,7 @@ Use these IDs in PR notes and test descriptions.
 | ID | Requirement | Automated? |
 |----|-------------|------------|
 | **HERO-SUB-001** | Every public subject (not `_`-prefixed) renders as a chip; no count/row cap in TS, template, or CSS | Yes |
-| **HERO-SUB-002** | Watch/Listen + More info stay **below** the subject chip block | Yes (DOM order) |
+| **HERO-SUB-002** | Watch/Listen + More info stay **after** the subject chip block in the DOM (stacked medium may show CTAs in a seam above copy via flex `order` — HERO-SCR-006) | Yes (DOM order; geometry when in-flow under chips) |
 | **HERO-SCR-001** | `.billboard` (and dots viewport) set `overflow-anchor: none` | Yes (Sass contract) |
 | **HERO-SCR-002** | When a description exists: title/desc are 3-line clamped; `.billboard__desc` and `.billboard__copy-body.has-desc` reserve min-height so **short** copy does not collapse the panel | Yes (Sass contract) |
 | **HERO-SCR-003** | Changing slide while the page is scrolled must not yank `window.scrollY` | Manual |
@@ -60,6 +60,9 @@ Use these IDs in PR notes and test descriptions.
 | **HERO-SCR-005** | Short titles must not reserve empty lines: stacked layout must **not** set `.billboard__title { min-height: N lines }` — meta follows the title tightly | Yes (Sass contract) |
 | **HERO-CTL-001** | Stage / grain / scrim / vignette use `pointer-events: none` so pager stays clickable | Yes (Sass contract) |
 | **HERO-CTL-002** | Touch swipe ignores links, buttons, pager, admin, actions | Yes |
+| **HERO-CTL-003** | Hover pause only while the pointer is over the art hit-target (`.billboard__art-hover`) or pager/admin — **not** while over title/description/copy | Yes |
+| **HERO-CTL-004** | Stacked medium (≤1280 and ≥701, tall): pager/admin on the framed art band. **Mobile (≤700):** pager/admin sit in-flow under the art frame (before title copy), not after Watch/description | Yes (e2e + Sass) |
+| **HERO-SCR-006** | Stacked medium (701–1280, tall viewports): title/description stay under the art; Watch/More info sit in an in-flow seam under the frame (not on the pager) so primary CTAs stay above the fold | Yes (e2e + Sass) |
 | **HERO-SWP-001** | Touch horizontal swipe ≥48px → `prevHero` / `nextHero` (existing transition; no drag animation); mouse ignored; `touch-action: pan-y` on billboard | Yes |
 | **HERO-LIF-001** | Image gate blocks dwell until decode or 12s fallback | Yes |
 | **HERO-LIF-002** | `restartHeroCycle` must not clear `heroContentTimer` / in-flight preload | Yes |
@@ -127,6 +130,9 @@ Unit tests assert Sass contracts + HERO-SCR-004 DOM behaviour. **HERO-SCR-003** 
 - Full-bleed layers: `pointer-events: none`.
 - Billboard: `touch-action: pan-y`.
 - Swipe: touch/pen only; axis lock; ignore interactive targets via `isSwipeIgnoredTarget`.
+- Hover pause (HERO-CTL-003): `.billboard__art-hover` + `.billboard__controls` only — not the whole `.billboard`.
+- Stacked medium pager (HERO-CTL-004): absolute over `--hero-band-h` for 701–1280px (and viewport height ≥600). Mobile (≤700): flex `order` places controls under the art frame before copy. Pager uses `left`/`right` without `width: 100%` on medium so the next chevron is not clipped.
+- Stacked medium CTAs (HERO-SCR-006): Watch/More info in an in-flow seam under the art (flex `order` before copy); title/description stay below; CTAs must not overlay the pager.
 
 ### Copy hierarchy
 
@@ -148,6 +154,11 @@ When description and subjects are both absent, actions follow meta directly.
 | Dwell stuck after pager | focus pause | Spec: releases chevron focus |
 | Blank / text ahead of art | HERO-LIF-001/003 | Image gate + hold-until-ready specs |
 | Can’t click dashes | HERO-CTL-001 | Sass `pointer-events: none` on stages |
+| Hover over title pauses carousel | HERO-CTL-003 | Spec: leave on copy does not keep pause; art hover does |
+| Pager below fold / after copy on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
+| Pager after title block on mobile | HERO-CTL-004 | e2e mobile: controls under art, before title |
+| Watch/More info below fold or clashing with pager | HERO-SCR-006 | e2e: play in seam under art; title under art; no overlap with pager |
+| Next chevron clipped on stacked medium | HERO-CTL-004 | e2e: next nav visible in viewport |
 | Scroll fights swipe | HERO-SWP-001 | `touch-action: pan-y` + swipe specs |
 | Ken Burns on phone | HERO-LIF-005 | saveGpu spec |
 
@@ -175,7 +186,7 @@ Tagged to **HERO-SCR-002 / 004 / 005** and **HERO-SUB-001 / 002**. Keep fixture 
 
 ## Soft guideline — style budget
 
-Prefer compiled hero styles under ~16 kB. Soft check — do not sacrifice an invariant for a few hundred bytes.
+Prefer compiled hero styles under ~16 kB; hard `anyComponentStyle` error budget is **17 kB** (`angular.json`). Do not sacrifice a layout invariant to shave a few hundred bytes.
 
 ## Regression checklist
 

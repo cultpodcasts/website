@@ -52,7 +52,12 @@ async function gapBelow(page: Page, upper: string, lower: string): Promise<numbe
   );
 }
 
-/** Every chip has a non-zero box and sits above the actions block (HERO-SUB-001/002). */
+/**
+ * Every chip has a non-zero box (HERO-SUB-001). When CTAs are in-flow under the
+ * copy, they stay below the subject block (HERO-SUB-002). Stacked medium puts
+ * Watch in a seam under the art via flex order (HERO-SCR-006) — then only DOM
+ * order is required, not geometry under chips.
+ */
 async function assertAllSubjectsVisibleAboveActions(
   page: Page,
   expectedCount: number
@@ -63,12 +68,38 @@ async function assertAllSubjectsVisibleAboveActions(
   const report = await page.evaluate(() => {
     const subjects = document.querySelector(".billboard__subjects");
     const actions = document.querySelector(".billboard__actions");
+    const stages = document.querySelector(".billboard__stages");
+    const feature = document.querySelector(".billboard__feature");
     const chipEls = [...document.querySelectorAll(".billboard__subjects .hero-layout-chip")];
-    if (!subjects || !actions) {
-      return { ok: false, reason: "missing subjects or actions" };
+    if (!subjects || !actions || !feature) {
+      return { ok: false, reason: "missing subjects, actions, or feature" };
+    }
+    // DOM order: subjects before actions (HERO-SUB-002).
+    const kids = [...feature.children];
+    const copy = feature.querySelector(".billboard__copy");
+    if (!copy || kids.indexOf(copy) < 0 || kids.indexOf(actions) < 0) {
+      return { ok: false, reason: "copy/actions not direct feature children" };
+    }
+    if (kids.indexOf(actions) < kids.indexOf(copy)) {
+      return { ok: false, reason: "actions precede copy in DOM" };
+    }
+    for (const el of chipEls) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) {
+        return { ok: false, reason: `chip not visible: ${el.textContent}` };
+      }
     }
     const subjectsBox = subjects.getBoundingClientRect();
     const actionsBox = actions.getBoundingClientRect();
+    const stagesBox = stages?.getBoundingClientRect();
+    // Seam: CTAs sit under the art frame and above the copy (flex order).
+    const actionsInSeam =
+      !!stagesBox &&
+      actionsBox.top >= stagesBox.bottom - 4 &&
+      actionsBox.bottom <= subjectsBox.top + 4;
+    if (actionsInSeam) {
+      return { ok: true, reason: "" };
+    }
     if (actionsBox.top + 0.5 < subjectsBox.bottom) {
       return {
         ok: false,
@@ -77,9 +108,6 @@ async function assertAllSubjectsVisibleAboveActions(
     }
     for (const el of chipEls) {
       const r = el.getBoundingClientRect();
-      if (r.width < 1 || r.height < 1) {
-        return { ok: false, reason: `chip not visible: ${el.textContent}` };
-      }
       if (r.bottom > actionsBox.top + 0.5) {
         return {
           ok: false,
@@ -164,5 +192,141 @@ for (const vp of viewports) {
       expect(gap).toBeGreaterThanOrEqual(0);
       expect(gap).toBeLessThanOrEqual(MAX_TITLE_TO_META_GAP_PX);
     });
+
+    if (vp.name === "mobile") {
+      test("HERO-CTL-004: pager sits under the art frame before the title", async ({ page }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const controls = document.querySelector(".billboard__controls")?.getBoundingClientRect();
+          const title = document.querySelector(".billboard__title")?.getBoundingClientRect();
+          if (!stages || !controls || !title) {
+            return { ok: false, reason: "missing stages, controls, or title" };
+          }
+          if (controls.top < stages.bottom - 4) {
+            return {
+              ok: false,
+              reason: `controls still on art (controls.top=${controls.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (controls.bottom > title.top + 4) {
+            return {
+              ok: false,
+              reason: `controls not before title (controls.bottom=${controls.bottom}, title.top=${title.top})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+    }
+
+    if (vp.name === "stacked-desktop") {
+      test("HERO-CTL-004: pager sits over the framed art band (not below the fold)", async ({
+        page,
+      }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const controls = document.querySelector(".billboard__controls")?.getBoundingClientRect();
+          if (!stages || !controls) {
+            return { ok: false, reason: "missing stages or controls" };
+          }
+          const overlapsArt =
+            controls.bottom > stages.top + 4 && controls.top < stages.bottom - 4;
+          const inViewport = controls.top >= 0 && controls.bottom <= window.innerHeight;
+          if (!overlapsArt) {
+            return {
+              ok: false,
+              reason: `controls not over art (controls.top=${controls.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (!inViewport) {
+            return {
+              ok: false,
+              reason: `controls off-screen (top=${controls.top}, bottom=${controls.bottom}, vh=${window.innerHeight})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+
+      test("HERO-SCR-006: Watch sits in the seam under art; title below; no pager clash", async ({
+        page,
+      }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const play = document.querySelector(".billboard__play")?.getBoundingClientRect();
+          const title = document.querySelector(".billboard__title")?.getBoundingClientRect();
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const pager = document.querySelector(".billboard__pager")?.getBoundingClientRect();
+          if (!play || !title || !stages) {
+            return { ok: false, reason: "missing play, title, or stages" };
+          }
+          if (play.bottom > window.innerHeight - 4) {
+            return {
+              ok: false,
+              reason: `Watch below fold (bottom=${play.bottom}, vh=${window.innerHeight})`,
+            };
+          }
+          // Seam: under the art frame, not overlaid on it.
+          if (play.top < stages.bottom - 4) {
+            return {
+              ok: false,
+              reason: `Watch still on art (play.top=${play.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (title.top < stages.bottom - 8) {
+            return {
+              ok: false,
+              reason: `title overlaid on art (title.top=${title.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (title.top + 0.5 < play.bottom) {
+            return {
+              ok: false,
+              reason: `title not below Watch seam (title.top=${title.top}, play.bottom=${play.bottom})`,
+            };
+          }
+          if (pager && play.bottom > pager.top + 0.5 && play.top < pager.bottom - 0.5) {
+            return {
+              ok: false,
+              reason: `Watch overlaps pager (play=${play.top}-${play.bottom}, pager=${pager.top}-${pager.bottom})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+
+      test("HERO-CTL-004: next chevron stays visible with the pager", async ({ page }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const next = document.querySelector(".billboard__nav--next")?.getBoundingClientRect();
+          const prev = document.querySelector(".billboard__nav--prev")?.getBoundingClientRect();
+          if (!next || !prev) {
+            return { ok: false, reason: "missing next or prev" };
+          }
+          if (next.width < 8 || next.height < 8) {
+            return { ok: false, reason: `next collapsed (${next.width}x${next.height})` };
+          }
+          if (next.right > window.innerWidth + 1 || next.left < -1) {
+            return {
+              ok: false,
+              reason: `next off-screen (left=${next.left}, right=${next.right}, vw=${window.innerWidth})`,
+            };
+          }
+          if (next.left <= prev.right) {
+            return {
+              ok: false,
+              reason: `next not after prev (prev.right=${prev.right}, next.left=${next.left})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+    }
   });
 }
