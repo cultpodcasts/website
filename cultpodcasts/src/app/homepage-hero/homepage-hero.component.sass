@@ -34,15 +34,15 @@
     opacity: 0.07
     mix-blend-mode: soft-light
     // Static noise tile — avoids animated SVG feTurbulence paint cost on every frame.
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")
+    background-image: url("/assets/hero-grain.svg")
     background-size: 160px 160px
 
 .billboard__scrim
     // Always fade into near-black — never --nflx-bg (cream in light mode washes out on-media copy).
-    background: linear-gradient(85deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.62) 38%, rgba(0, 0, 0, 0.15) 68%, transparent 82%), linear-gradient(to top, #0b0b0b 0%, transparent 45%), linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%)
+    background: linear-gradient(85deg, #000f, #000a 38%, #0003 68%, transparent 82%), linear-gradient(to top, #0b0b0b, transparent 45%), linear-gradient(#0009, transparent 22%)
 
 .billboard__vignette
-    background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
+    background: radial-gradient(ellipse at 70% 40%, transparent 20%, #0007)
 
 // Transparent hit target matching the art frame. Hover pause lives here (and on
 // .billboard__controls), not on the whole billboard — so title/copy does not
@@ -76,7 +76,6 @@
     inset: 0
     transform: scale(1.08)
     transform-origin: center 40%
-    will-change: transform
     z-index: 1
 
 // Side fills: sample a thin column at the art edge, blur that small bitmap,
@@ -187,16 +186,16 @@
             right: 0
             transform: translateY(-50%)
             // Soften the hard seam where sharp art meets the left fill.
-            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
-            mask-image: linear-gradient(90deg, transparent 0, #000 36px, #000)
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent, #000 36px, #000)
         // Wide: Ken Burns on sharp art only (edge fills stay static — cheaper in Firefox).
         &.is-kenburns .billboard__stage-motion
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
     // Let the left edge blur read through under copy — avoid a solid black slab.
     .billboard__scrim
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.55) 18%, rgba(0, 0, 0, 0.28) 36%, rgba(0, 0, 0, 0.1) 52%, transparent 68%), linear-gradient(to top, #0b0b0b 0%, transparent 42%), linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 20%)
+        background: linear-gradient(90deg, #000c, #0009 18%, #0005 36%, #0002 52%, transparent 68%), linear-gradient(to top, #0b0b0b, transparent 42%), linear-gradient(#0007, transparent 20%)
     .billboard__vignette
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
+        background: linear-gradient(90deg, #0005, #0002 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, #0005)
     // Full-height art is ~1.78× the hero height, so the left edge fill only reaches
     // under the copy above ~1980px wide. Below that the sharp image sits behind the
     // copy, and type treatment alone cannot save it: artwork frequently carries its
@@ -218,7 +217,7 @@
             border-radius: 14px
             // Short of opaque so a trace of artwork still reads through, while
             // holding ~17:1 against white art — the worst case for white type.
-            background: rgba(11, 11, 11, 0.93)
+            background: #0b0b0bed
             z-index: 0
             pointer-events: none
     // Keep copy above the card surface once ::before is no longer z-index:-1.
@@ -681,20 +680,15 @@
             left: -4vw
             top: calc(-1 * var(--hero-copy-fade))
             width: 100vw
-            // Clipped by .billboard overflow; covers art of any aspect below the
-            // fade. Includes the copy's own height so a short viewport with tall
-            // copy cannot leave a sliver of art below the panel; both background
-            // layers are sized off the element, so over-extending is free.
+            // Opaque panel under in-flow copy. Fade band only for pre-measure art
+            // (--hero-copy-fade > 0); framed art uses a solid fill.
             height: calc(100vh + 100%)
             border-radius: 0
             z-index: -1
             pointer-events: none
-            // Fade band on top, opaque fill for everything below it.
-            background: linear-gradient(to bottom, rgba(11, 11, 11, 0) 0%, rgba(11, 11, 11, 0.82) 72%, #0b0b0b 100%) no-repeat top / 100% var(--hero-copy-fade), linear-gradient(#0b0b0b, #0b0b0b) no-repeat bottom / 100% calc(100% - var(--hero-copy-fade))
-            // Both breakpoints match at exactly 1280px; drop the wide frosted band.
-            backdrop-filter: none
-            -webkit-mask-image: none
-            mask-image: none
+            background: #0b0b0b
+    .billboard:not(.has-art-aspect) .billboard__content::before
+        background: linear-gradient(to bottom, #0b0b0b00, #0b0b0bd1 72%, #0b0b0b) no-repeat top / 100% var(--hero-copy-fade), #0b0b0b no-repeat bottom / 100% calc(100% - var(--hero-copy-fade))
     // Stacked: details panel is in document flow under a fixed art frame.
     // Do NOT reserve 3 title lines with min-height — short titles left a large
     // blank band above meta (HERO-SCR-005). Cap with line-clamp only; rely on
@@ -703,7 +697,7 @@
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 22%)
+        background: linear-gradient(#0007, transparent 22%)
     .billboard__vignette
         background: none
     // Match the framed art band so hover-pause covers the image only.
@@ -730,45 +724,27 @@
         max-width: none
         width: 100%
 
-// Stacked medium/desktop (not phone): dock copy + CTAs onto the art so Watch /
-// More info stay above the fold (HERO-SCR-006). Pager stays on the art too
-// (HERO-CTL-004). Phone (≤700) keeps the in-flow panel under the frame.
-// min-height keeps short landscape windows on the in-flow panel (phone-landscape).
+// Stacked medium: dock copy+CTAs on art (HERO-SCR-006); pager on art (HERO-CTL-004).
+// min-height keeps short landscape on the in-flow panel.
 @media screen and (max-width: 1280px) and (min-width: 701px) and (min-height: 600px)
     .billboard
-        // No in-flow copy below the frame — only the art band needs viewport room.
         --hero-band-h: clamp(220px, min(56.25vw, calc(100vh - 72px)), 56.25vw)
         gap: 0
         padding-bottom: 16px
     .billboard.has-art-aspect
         .billboard__scrim
-            // Bottom weight so the docked card sits on a readable fade.
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, transparent 20%), linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 42%)
+            background: linear-gradient(to bottom, #0006, transparent 20%), linear-gradient(to top, #0009, transparent 42%)
         .billboard__content
             position: absolute
             left: 4vw
-            right: auto
-            width: auto
             max-width: min(520px, calc(100% - 8vw))
-            // Sit above the pager/admin row (~60px) at the bottom of the art.
             top: calc(var(--hero-band-h) - 64px)
             transform: translateY(-100%)
-            bottom: auto
             padding: 16px 18px 14px
-            box-sizing: border-box
-            z-index: 2
             &::before
-                // Opaque card (same idea as wide): burnt-in art titles stay readable.
                 inset: 0
-                left: 0
-                top: 0
-                width: 100%
-                height: 100%
                 border-radius: 14px
-                background: rgba(11, 11, 11, 0.93)
-                backdrop-filter: none
-                -webkit-mask-image: none
-                mask-image: none
+                background: #0b0b0bed
         .billboard__feature
             position: relative
             z-index: 1
@@ -776,16 +752,9 @@
             position: absolute
             left: 4vw
             right: 4vw
-            width: auto
-            max-width: none
-            // Sit just above the bottom edge of the framed art band.
             top: calc(var(--hero-band-h) - 12px)
             transform: translateY(-100%)
-            bottom: auto
-            flex: 0 0 auto
             z-index: 3
-            align-items: stretch
-            pointer-events: auto
 
 @media screen and (max-width: 700px)
     .billboard

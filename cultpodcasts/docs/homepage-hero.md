@@ -184,7 +184,7 @@ Tagged to **HERO-SCR-002 / 004 / 005** and **HERO-SUB-001 / 002**. Keep fixture 
 
 ## Soft guideline — style budget
 
-Prefer compiled hero styles under ~16 kB. Soft check — do not sacrifice an invariant for a few hundred bytes.
+Prefer compiled hero styles under ~16 kB; hard `anyComponentStyle` error budget is **17 kB** (`angular.json`). Do not sacrifice a layout invariant to shave a few hundred bytes.
 
 ## Regression checklist
 
