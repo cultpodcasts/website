@@ -724,19 +724,19 @@
         max-width: none
         width: 100%
 
-// Stacked medium: title/desc stay under the art; only Watch/More info + pager
-// sit on the framed band so primary CTAs stay above the fold (HERO-SCR-006 /
-// HERO-CTL-004). min-height keeps short landscape on the in-flow panel.
+// Stacked medium: pager stays on the art (HERO-CTL-004); Watch/More info sit in
+// an in-flow seam under the frame (HERO-SCR-006) so they never clash with dashes.
+// min-height keeps short landscape on the phone in-flow panel.
 @media screen and (max-width: 1280px) and (min-width: 701px) and (min-height: 600px)
     .billboard.has-art-aspect
-        .billboard__actions
-            // Pull CTAs up onto the art (containing block is .billboard__content).
-            position: absolute
-            left: 0
-            top: 0
-            transform: translateY(calc(-100% - 72px))
-            z-index: 4
-            margin: 0
+        .billboard__feature
+            // Visual order: CTAs first (seam), then copy. DOM stays copy→actions.
+            .billboard__copy
+                order: 2
+            .billboard__actions
+                order: 1
+                margin: 0 0 8px
+                padding-top: 4px
         .billboard__controls
             position: absolute
             // left+right size the box — do not also set width:100% or the next

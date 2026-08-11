@@ -53,9 +53,10 @@ async function gapBelow(page: Page, upper: string, lower: string): Promise<numbe
 }
 
 /**
- * Every chip has a non-zero box (HERO-SUB-001). When CTAs are in-flow, they stay
- * below the subject block (HERO-SUB-002). Stacked medium floats Watch onto the art
- * (HERO-SCR-006) — then only DOM order is required, not geometry under chips.
+ * Every chip has a non-zero box (HERO-SUB-001). When CTAs are in-flow under the
+ * copy, they stay below the subject block (HERO-SUB-002). Stacked medium puts
+ * Watch in a seam under the art via flex order (HERO-SCR-006) — then only DOM
+ * order is required, not geometry under chips.
  */
 async function assertAllSubjectsVisibleAboveActions(
   page: Page,
@@ -82,9 +83,6 @@ async function assertAllSubjectsVisibleAboveActions(
     if (kids.indexOf(actions) < kids.indexOf(copy)) {
       return { ok: false, reason: "actions precede copy in DOM" };
     }
-    if (copy.compareDocumentPosition(subjects) & Node.DOCUMENT_POSITION_CONTAINED_BY) {
-      /* subjects inside copy — ok */
-    }
     for (const el of chipEls) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) {
@@ -94,11 +92,12 @@ async function assertAllSubjectsVisibleAboveActions(
     const subjectsBox = subjects.getBoundingClientRect();
     const actionsBox = actions.getBoundingClientRect();
     const stagesBox = stages?.getBoundingClientRect();
-    const actionsOnArt =
+    // Seam: CTAs sit under the art frame and above the copy (flex order).
+    const actionsInSeam =
       !!stagesBox &&
-      actionsBox.top >= stagesBox.top - 1 &&
-      actionsBox.bottom <= stagesBox.bottom + 8;
-    if (actionsOnArt) {
+      actionsBox.top >= stagesBox.bottom - 4 &&
+      actionsBox.bottom <= subjectsBox.top + 4;
+    if (actionsInSeam) {
       return { ok: true, reason: "" };
     }
     if (actionsBox.top + 0.5 < subjectsBox.bottom) {
@@ -225,12 +224,15 @@ for (const vp of viewports) {
         expect(report.ok, report.reason).toBe(true);
       });
 
-      test("HERO-SCR-006: Watch sits on the art; title stays under the frame", async ({ page }) => {
+      test("HERO-SCR-006: Watch sits in the seam under art; title below; no pager clash", async ({
+        page,
+      }) => {
         await openCase(page, "short-title-with-desc");
         const report = await page.evaluate(() => {
           const play = document.querySelector(".billboard__play")?.getBoundingClientRect();
           const title = document.querySelector(".billboard__title")?.getBoundingClientRect();
           const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const pager = document.querySelector(".billboard__pager")?.getBoundingClientRect();
           if (!play || !title || !stages) {
             return { ok: false, reason: "missing play, title, or stages" };
           }
@@ -240,16 +242,29 @@ for (const vp of viewports) {
               reason: `Watch below fold (bottom=${play.bottom}, vh=${window.innerHeight})`,
             };
           }
-          if (play.top < stages.top || play.bottom > stages.bottom + 8) {
+          // Seam: under the art frame, not overlaid on it.
+          if (play.top < stages.bottom - 4) {
             return {
               ok: false,
-              reason: `Watch not on art (play.top=${play.top}, stages=${stages.top}-${stages.bottom})`,
+              reason: `Watch still on art (play.top=${play.top}, stages.bottom=${stages.bottom})`,
             };
           }
           if (title.top < stages.bottom - 8) {
             return {
               ok: false,
-              reason: `title still overlaid on art (title.top=${title.top}, stages.bottom=${stages.bottom})`,
+              reason: `title overlaid on art (title.top=${title.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (title.top + 0.5 < play.bottom) {
+            return {
+              ok: false,
+              reason: `title not below Watch seam (title.top=${title.top}, play.bottom=${play.bottom})`,
+            };
+          }
+          if (pager && play.bottom > pager.top + 0.5 && play.top < pager.bottom - 0.5) {
+            return {
+              ok: false,
+              reason: `Watch overlaps pager (play=${play.top}-${play.bottom}, pager=${pager.top}-${pager.bottom})`,
             };
           }
           return { ok: true, reason: "" };

@@ -222,9 +222,9 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
     // HERO-CTL-003: dedicated art hover layer (not whole-billboard mouseenter).
     expect(heroSass).toMatch(/\.billboard__art-hover[\s\S]*?pointer-events:\s*auto/);
-    // HERO-CTL-004 / HERO-SCR-006: stacked medium floats CTAs + pager on art (not the copy panel).
+    // HERO-CTL-004 / HERO-SCR-006: stacked medium — pager on art; CTAs in seam (order).
     expect(heroSass).toMatch(
-      /@media screen and \(max-width:\s*1280px\) and \(min-width:\s*701px\) and \(min-height:\s*600px\)[\s\S]*?\.billboard__actions[\s\S]*?position:\s*absolute/
+      /@media screen and \(max-width:\s*1280px\) and \(min-width:\s*701px\) and \(min-height:\s*600px\)[\s\S]*?\.billboard__actions[\s\S]*?order:\s*1/
     );
     expect(heroSass).toMatch(
       /@media screen and \(max-width:\s*1280px\) and \(min-width:\s*701px\) and \(min-height:\s*600px\)[\s\S]*?\.billboard__controls[\s\S]*?position:\s*absolute/
