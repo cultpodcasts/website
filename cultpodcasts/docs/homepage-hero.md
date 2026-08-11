@@ -62,6 +62,7 @@ Use these IDs in PR notes and test descriptions.
 | **HERO-CTL-002** | Touch swipe ignores links, buttons, pager, admin, actions | Yes |
 | **HERO-CTL-003** | Hover pause only while the pointer is over the art hit-target (`.billboard__art-hover`) or pager/admin — **not** while over title/description/copy | Yes |
 | **HERO-CTL-004** | Stacked medium layout (≤1280 and ≥701): pager/admin sit over the framed art band (not in-flow below copy where they fall off-screen) | Yes (e2e + Sass) |
+| **HERO-SCR-006** | Stacked medium (701–1280): feature copy + Watch/More info dock onto the art band so primary CTAs are above the fold without scrolling | Yes (e2e + Sass) |
 | **HERO-SWP-001** | Touch horizontal swipe ≥48px → `prevHero` / `nextHero` (existing transition; no drag animation); mouse ignored; `touch-action: pan-y` on billboard | Yes |
 | **HERO-LIF-001** | Image gate blocks dwell until decode or 12s fallback | Yes |
 | **HERO-LIF-002** | `restartHeroCycle` must not clear `heroContentTimer` / in-flight preload | Yes |
@@ -130,7 +131,8 @@ Unit tests assert Sass contracts + HERO-SCR-004 DOM behaviour. **HERO-SCR-003** 
 - Billboard: `touch-action: pan-y`.
 - Swipe: touch/pen only; axis lock; ignore interactive targets via `isSwipeIgnoredTarget`.
 - Hover pause (HERO-CTL-003): `.billboard__art-hover` + `.billboard__controls` only — not the whole `.billboard`.
-- Stacked medium pager (HERO-CTL-004): absolute over `--hero-band-h` for 701–1280px; phone (≤700) keeps controls in-flow under copy.
+- Stacked medium pager (HERO-CTL-004): absolute over `--hero-band-h` for 701–1280px (and viewport height ≥600); phone keeps controls in-flow under copy.
+- Stacked medium copy (HERO-SCR-006): dock `.billboard__content` onto the art (opaque card) so Watch/More info stay above the fold; phone / short landscape keep the in-flow panel under the frame.
 
 ### Copy hierarchy
 
@@ -154,6 +156,7 @@ When description and subjects are both absent, actions follow meta directly.
 | Can’t click dashes | HERO-CTL-001 | Sass `pointer-events: none` on stages |
 | Hover over title pauses carousel | HERO-CTL-003 | Spec: leave on copy does not keep pause; art hover does |
 | Pager below fold on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
+| Watch/More info below fold on stacked desktop | HERO-SCR-006 | e2e stacked-desktop: play button inside viewport on art |
 | Scroll fights swipe | HERO-SWP-001 | `touch-action: pan-y` + swipe specs |
 | Ken Burns on phone | HERO-LIF-005 | saveGpu spec |
 

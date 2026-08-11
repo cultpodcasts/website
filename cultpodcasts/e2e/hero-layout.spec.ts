@@ -195,6 +195,31 @@ for (const vp of viewports) {
         });
         expect(report.ok, report.reason).toBe(true);
       });
+
+      test("HERO-SCR-006: Watch stays above the fold on stacked medium", async ({ page }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const play = document.querySelector(".billboard__play")?.getBoundingClientRect();
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          if (!play || !stages) {
+            return { ok: false, reason: "missing play or stages" };
+          }
+          if (play.bottom > window.innerHeight - 4) {
+            return {
+              ok: false,
+              reason: `Watch below fold (bottom=${play.bottom}, vh=${window.innerHeight})`,
+            };
+          }
+          if (play.top < stages.top || play.bottom > stages.bottom + 8) {
+            return {
+              ok: false,
+              reason: `Watch not docked on art (play.top=${play.top}, stages=${stages.top}-${stages.bottom})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
     }
   });
 }

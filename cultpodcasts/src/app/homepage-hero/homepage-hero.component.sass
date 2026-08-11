@@ -730,23 +730,62 @@
         max-width: none
         width: 100%
 
-// Stacked medium/desktop (not phone chrome): keep the pager over the art so it
-// is not pushed below the fold by the in-flow title panel (HERO-CTL-004).
-@media screen and (max-width: 1280px) and (min-width: 701px)
-    .billboard.has-art-aspect .billboard__controls
-        position: absolute
-        left: 4vw
-        right: 4vw
-        width: auto
-        max-width: none
-        // Sit just above the bottom edge of the framed art band.
-        top: calc(var(--hero-band-h) - 12px)
-        transform: translateY(-100%)
-        bottom: auto
-        flex: 0 0 auto
-        z-index: 3
-        align-items: stretch
-        pointer-events: auto
+// Stacked medium/desktop (not phone): dock copy + CTAs onto the art so Watch /
+// More info stay above the fold (HERO-SCR-006). Pager stays on the art too
+// (HERO-CTL-004). Phone (≤700) keeps the in-flow panel under the frame.
+// min-height keeps short landscape windows on the in-flow panel (phone-landscape).
+@media screen and (max-width: 1280px) and (min-width: 701px) and (min-height: 600px)
+    .billboard
+        // No in-flow copy below the frame — only the art band needs viewport room.
+        --hero-band-h: clamp(220px, min(56.25vw, calc(100vh - 72px)), 56.25vw)
+        gap: 0
+        padding-bottom: 16px
+    .billboard.has-art-aspect
+        .billboard__scrim
+            // Bottom weight so the docked card sits on a readable fade.
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, transparent 20%), linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 42%)
+        .billboard__content
+            position: absolute
+            left: 4vw
+            right: auto
+            width: auto
+            max-width: min(520px, calc(100% - 8vw))
+            // Sit above the pager/admin row (~60px) at the bottom of the art.
+            top: calc(var(--hero-band-h) - 64px)
+            transform: translateY(-100%)
+            bottom: auto
+            padding: 16px 18px 14px
+            box-sizing: border-box
+            z-index: 2
+            &::before
+                // Opaque card (same idea as wide): burnt-in art titles stay readable.
+                inset: 0
+                left: 0
+                top: 0
+                width: 100%
+                height: 100%
+                border-radius: 14px
+                background: rgba(11, 11, 11, 0.93)
+                backdrop-filter: none
+                -webkit-mask-image: none
+                mask-image: none
+        .billboard__feature
+            position: relative
+            z-index: 1
+        .billboard__controls
+            position: absolute
+            left: 4vw
+            right: 4vw
+            width: auto
+            max-width: none
+            // Sit just above the bottom edge of the framed art band.
+            top: calc(var(--hero-band-h) - 12px)
+            transform: translateY(-100%)
+            bottom: auto
+            flex: 0 0 auto
+            z-index: 3
+            align-items: stretch
+            pointer-events: auto
 
 @media screen and (max-width: 700px)
     .billboard
