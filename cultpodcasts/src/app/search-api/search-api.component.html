@@ -16,14 +16,17 @@
       <mat-menu #sort="matMenu">
         <button mat-menu-item id="rank" (click)="setSort(sortParamRank)"
           [class.selected]="sortOrder()==sortParamRank">
+          <mat-icon>auto_awesome</mat-icon>
           <span>Suggestions</span>
         </button>
         <button mat-menu-item id="datedesc" (click)="setSort(sortParamDateDesc)"
           [class.selected]="sortOrder()==sortParamDateDesc">
+          <mat-icon>arrow_downward</mat-icon>
           <span>Newest first</span>
         </button>
         <button mat-menu-item id="dateasc" (click)="setSort(sortParamDateAsc)"
           [class.selected]="sortOrder()==sortParamDateAsc">
+          <mat-icon>arrow_upward</mat-icon>
           <span>Oldest first</span>
         </button>
       </mat-menu>
