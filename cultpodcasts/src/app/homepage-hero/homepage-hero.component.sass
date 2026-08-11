@@ -772,6 +772,11 @@
         .billboard__vignette,
         .billboard__art-hover
             top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
+        // Pager/admin sit under the framed art (before title copy), not after CTAs.
+        .billboard__controls
+            order: 1
+        .billboard__content
+            order: 2
     // Frame is clear of the chrome, so it needs no top scrim at all.
     .billboard.has-art-aspect .billboard__scrim
         background: none

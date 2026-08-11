@@ -61,7 +61,7 @@ Use these IDs in PR notes and test descriptions.
 | **HERO-CTL-001** | Stage / grain / scrim / vignette use `pointer-events: none` so pager stays clickable | Yes (Sass contract) |
 | **HERO-CTL-002** | Touch swipe ignores links, buttons, pager, admin, actions | Yes |
 | **HERO-CTL-003** | Hover pause only while the pointer is over the art hit-target (`.billboard__art-hover`) or pager/admin — **not** while over title/description/copy | Yes |
-| **HERO-CTL-004** | Stacked medium layout (≤1280 and ≥701): pager/admin sit over the framed art band (not in-flow below copy where they fall off-screen) | Yes (e2e + Sass) |
+| **HERO-CTL-004** | Stacked medium (≤1280 and ≥701, tall): pager/admin on the framed art band. **Mobile (≤700):** pager/admin sit in-flow under the art frame (before title copy), not after Watch/description | Yes (e2e + Sass) |
 | **HERO-SCR-006** | Stacked medium (701–1280, tall viewports): title/description stay under the art; Watch/More info sit in an in-flow seam under the frame (not on the pager) so primary CTAs stay above the fold | Yes (e2e + Sass) |
 | **HERO-SWP-001** | Touch horizontal swipe ≥48px → `prevHero` / `nextHero` (existing transition; no drag animation); mouse ignored; `touch-action: pan-y` on billboard | Yes |
 | **HERO-LIF-001** | Image gate blocks dwell until decode or 12s fallback | Yes |
@@ -131,7 +131,7 @@ Unit tests assert Sass contracts + HERO-SCR-004 DOM behaviour. **HERO-SCR-003** 
 - Billboard: `touch-action: pan-y`.
 - Swipe: touch/pen only; axis lock; ignore interactive targets via `isSwipeIgnoredTarget`.
 - Hover pause (HERO-CTL-003): `.billboard__art-hover` + `.billboard__controls` only — not the whole `.billboard`.
-- Stacked medium pager (HERO-CTL-004): absolute over `--hero-band-h` for 701–1280px (and viewport height ≥600); phone keeps controls in-flow under copy. Pager uses `left`/`right` without `width: 100%` so the next chevron is not clipped.
+- Stacked medium pager (HERO-CTL-004): absolute over `--hero-band-h` for 701–1280px (and viewport height ≥600). Mobile (≤700): flex `order` places controls under the art frame before copy. Pager uses `left`/`right` without `width: 100%` on medium so the next chevron is not clipped.
 - Stacked medium CTAs (HERO-SCR-006): Watch/More info in an in-flow seam under the art (flex `order` before copy); title/description stay below; CTAs must not overlay the pager.
 
 ### Copy hierarchy
@@ -155,7 +155,8 @@ When description and subjects are both absent, actions follow meta directly.
 | Blank / text ahead of art | HERO-LIF-001/003 | Image gate + hold-until-ready specs |
 | Can’t click dashes | HERO-CTL-001 | Sass `pointer-events: none` on stages |
 | Hover over title pauses carousel | HERO-CTL-003 | Spec: leave on copy does not keep pause; art hover does |
-| Pager below fold on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
+| Pager below fold / after copy on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
+| Pager after title block on mobile | HERO-CTL-004 | e2e mobile: controls under art, before title |
 | Watch/More info below fold or clashing with pager | HERO-SCR-006 | e2e: play in seam under art; title under art; no overlap with pager |
 | Next chevron clipped on stacked medium | HERO-CTL-004 | e2e: next nav visible in viewport |
 | Scroll fights swipe | HERO-SWP-001 | `touch-action: pan-y` + swipe specs |

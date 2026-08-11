@@ -232,6 +232,13 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(
       /@media screen and \(max-width:\s*1280px\) and \(min-width:\s*701px\) and \(min-height:\s*600px\)[\s\S]*?\.billboard__controls[\s\S]*?width:\s*auto/
     );
+    // HERO-CTL-004 mobile: controls under art via flex order.
+    expect(heroSass).toMatch(
+      /@media screen and \(max-width:\s*700px\)[\s\S]*?\.billboard__controls[\s\S]*?order:\s*1/
+    );
+    expect(heroSass).toMatch(
+      /@media screen and \(max-width:\s*700px\)[\s\S]*?\.billboard__content[\s\S]*?order:\s*2/
+    );
 
     // HERO-SCR-005: short titles must not reserve empty lines on stacked layouts.
     expect(heroSass).not.toMatch(/\.billboard__title\s*\n[ \t]+min-height:\s*calc\(1\.12em \* 3\)/);

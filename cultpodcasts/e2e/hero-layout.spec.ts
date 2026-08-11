@@ -193,6 +193,34 @@ for (const vp of viewports) {
       expect(gap).toBeLessThanOrEqual(MAX_TITLE_TO_META_GAP_PX);
     });
 
+    if (vp.name === "mobile") {
+      test("HERO-CTL-004: pager sits under the art frame before the title", async ({ page }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const controls = document.querySelector(".billboard__controls")?.getBoundingClientRect();
+          const title = document.querySelector(".billboard__title")?.getBoundingClientRect();
+          if (!stages || !controls || !title) {
+            return { ok: false, reason: "missing stages, controls, or title" };
+          }
+          if (controls.top < stages.bottom - 4) {
+            return {
+              ok: false,
+              reason: `controls still on art (controls.top=${controls.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (controls.bottom > title.top + 4) {
+            return {
+              ok: false,
+              reason: `controls not before title (controls.bottom=${controls.bottom}, title.top=${title.top})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+    }
+
     if (vp.name === "stacked-desktop") {
       test("HERO-CTL-004: pager sits over the framed art band (not below the fold)", async ({
         page,
