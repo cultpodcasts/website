@@ -724,37 +724,35 @@
         max-width: none
         width: 100%
 
-// Stacked medium: dock copy+CTAs on art (HERO-SCR-006); pager on art (HERO-CTL-004).
-// min-height keeps short landscape on the in-flow panel.
+// Stacked medium: title/desc stay under the art; only Watch/More info + pager
+// sit on the framed band so primary CTAs stay above the fold (HERO-SCR-006 /
+// HERO-CTL-004). min-height keeps short landscape on the in-flow panel.
 @media screen and (max-width: 1280px) and (min-width: 701px) and (min-height: 600px)
-    .billboard
-        --hero-band-h: clamp(220px, min(56.25vw, calc(100vh - 72px)), 56.25vw)
-        gap: 0
-        padding-bottom: 16px
     .billboard.has-art-aspect
-        .billboard__scrim
-            background: linear-gradient(to bottom, #0006, transparent 20%), linear-gradient(to top, #0009, transparent 42%)
-        .billboard__content
+        .billboard__actions
+            // Pull CTAs up onto the art (containing block is .billboard__content).
             position: absolute
-            left: 4vw
-            max-width: min(520px, calc(100% - 8vw))
-            top: calc(var(--hero-band-h) - 64px)
-            transform: translateY(-100%)
-            padding: 16px 18px 14px
-            &::before
-                inset: 0
-                border-radius: 14px
-                background: #0b0b0bed
-        .billboard__feature
-            position: relative
-            z-index: 1
+            left: 0
+            top: 0
+            transform: translateY(calc(-100% - 72px))
+            z-index: 4
+            margin: 0
         .billboard__controls
             position: absolute
+            // left+right size the box — do not also set width:100% or the next
+            // chevron is clipped by .billboard overflow:hidden (HERO-CTL-004).
             left: 4vw
             right: 4vw
+            width: auto
+            max-width: none
             top: calc(var(--hero-band-h) - 12px)
             transform: translateY(-100%)
             z-index: 3
+            align-items: stretch
+        .billboard__pager
+            max-width: none
+            width: 100%
+            min-width: 0
 
 @media screen and (max-width: 700px)
     .billboard

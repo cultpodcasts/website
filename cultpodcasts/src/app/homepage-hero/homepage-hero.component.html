@@ -106,7 +106,8 @@
         </div>
         }
       </div>
-      <div class="billboard__actions">
+      <div class="billboard__actions"
+        (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)">
         @if (canPlay(feature)) {
         <button type="button" mat-flat-button class="billboard__play" (click)="playEpisode(feature)">
           <mat-icon>play_arrow</mat-icon>

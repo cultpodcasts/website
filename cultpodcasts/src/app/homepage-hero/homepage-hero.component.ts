@@ -353,12 +353,13 @@ export class HomepageHeroComponent {
     this.syncHeroPaused();
   }
 
-  /** True when the node is inside the art hover layer or the pager/admin controls. */
+  /** True when the node is inside the art hover layer, on-art CTAs, or pager/admin. */
   private isHeroPointerPauseZone(node: Node): boolean {
     const root = this.host.nativeElement as HTMLElement;
     const art = root.querySelector('.billboard__art-hover');
+    const actions = root.querySelector('.billboard__actions');
     const controls = root.querySelector('.billboard__controls');
-    return !!(art?.contains(node) || controls?.contains(node));
+    return !!(art?.contains(node) || actions?.contains(node) || controls?.contains(node));
   }
 
   onHeroFocusIn(): void {
