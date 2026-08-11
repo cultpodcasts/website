@@ -127,6 +127,7 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
   <div class="billboard__grain" aria-hidden="true"></div>
   <div class="billboard__scrim" aria-hidden="true"></div>
   <div class="billboard__vignette" aria-hidden="true"></div>
+  <div class="billboard__art-hover" aria-hidden="true"></div>
   <div class="billboard__content">
     <div class="billboard__feature">
       <div class="billboard__copy">
@@ -144,6 +145,22 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
         <button type="button" class="billboard__play">Watch</button>
         <a class="billboard__more" href="#">More info</a>
       </div>
+    </div>
+  </div>
+  <div class="billboard__controls">
+    <div class="billboard__pager">
+      <button type="button" class="billboard__nav billboard__nav--prev" aria-label="Previous">‹</button>
+      <div class="billboard__dots-viewport">
+        <div class="billboard__dots" role="tablist" aria-label="Featured episodes">
+          <button type="button" class="billboard__dot is-active" role="tab" aria-selected="true">
+            <span class="billboard__dot-fill is-running"></span>
+          </button>
+          <button type="button" class="billboard__dot" role="tab" aria-selected="false">
+            <span class="billboard__dot-fill"></span>
+          </button>
+        </div>
+      </div>
+      <button type="button" class="billboard__nav billboard__nav--next" aria-label="Next">›</button>
     </div>
   </div>
 </section>`;

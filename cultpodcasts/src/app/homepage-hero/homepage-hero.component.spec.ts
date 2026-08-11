@@ -210,7 +210,7 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.nativeElement.querySelector('.billboard__subjects')).toBeTruthy();
   });
 
-  it('HERO-SCR-001/002/005 + HERO-CTL-001 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
+  it('HERO-SCR-001/002/005 + HERO-CTL-001/003/004 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
     // Layout bugs often land in CSS; assert the source contracts stay present.
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__dots-viewport[\s\S]*?overflow-anchor:\s*none/);
@@ -220,6 +220,12 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
     expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
+    // HERO-CTL-003: dedicated art hover layer (not whole-billboard mouseenter).
+    expect(heroSass).toMatch(/\.billboard__art-hover[\s\S]*?pointer-events:\s*auto/);
+    // HERO-CTL-004: stacked medium docks controls over the art band.
+    expect(heroSass).toMatch(
+      /@media screen and \(max-width:\s*1280px\) and \(min-width:\s*701px\)[\s\S]*?\.billboard__controls[\s\S]*?position:\s*absolute/
+    );
 
     // HERO-SCR-005: short titles must not reserve empty lines on stacked layouts.
     expect(heroSass).not.toMatch(/\.billboard__title\s*\n[ \t]+min-height:\s*calc\(1\.12em \* 3\)/);
@@ -462,7 +468,7 @@ describe('HomepageHeroComponent', () => {
     expect(activeFill.classList.contains('is-running')).toBe(true);
   });
 
-  it('keeps the dwell paused while the pointer remains over the billboard after a chevron click', () => {
+  it('keeps the dwell paused while the pointer remains over the art after a chevron click', () => {
     component['pointerInside'] = true;
     component['focusInside'] = false;
     component['syncHeroPaused']();
@@ -475,6 +481,37 @@ describe('HomepageHeroComponent', () => {
     component.onHeroFocusIn();
     next.click();
 
+    expect(component['pointerInside']).toBe(true);
+    expect(component['heroPaused']()).toBe(true);
+  });
+
+  it('HERO-CTL-003: pauses while the pointer is over the art hit-target', () => {
+    const art = fixture.nativeElement.querySelector('.billboard__art-hover') as HTMLElement;
+    expect(art).toBeTruthy();
+    art.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    component.onHeroPointerEnter();
+    expect(component['pointerInside']).toBe(true);
+    expect(component['heroPaused']()).toBe(true);
+  });
+
+  it('HERO-CTL-003: does not keep hover-pause when leaving art for the copy panel', () => {
+    component['pointerInside'] = true;
+    component['syncHeroPaused']();
+    const copy = fixture.nativeElement.querySelector('.billboard__content') as HTMLElement;
+    const leave = new MouseEvent('mouseleave', { bubbles: true, relatedTarget: copy });
+    Object.defineProperty(leave, 'relatedTarget', { value: copy });
+    component.onHeroPointerLeave(leave);
+    expect(component['pointerInside']).toBe(false);
+    expect(component['heroPaused']()).toBe(false);
+  });
+
+  it('HERO-CTL-003: keeps hover-pause when moving from art to pager controls', () => {
+    component['pointerInside'] = true;
+    component['syncHeroPaused']();
+    const controls = fixture.nativeElement.querySelector('.billboard__controls') as HTMLElement;
+    const leave = new MouseEvent('mouseleave', { bubbles: true });
+    Object.defineProperty(leave, 'relatedTarget', { value: controls });
+    component.onHeroPointerLeave(leave);
     expect(component['pointerInside']).toBe(true);
     expect(component['heroPaused']()).toBe(true);
   });

@@ -164,5 +164,37 @@ for (const vp of viewports) {
       expect(gap).toBeGreaterThanOrEqual(0);
       expect(gap).toBeLessThanOrEqual(MAX_TITLE_TO_META_GAP_PX);
     });
+
+    if (vp.name === "stacked-desktop") {
+      test("HERO-CTL-004: pager sits over the framed art band (not below the fold)", async ({
+        page,
+      }) => {
+        await openCase(page, "short-title-with-desc");
+        const report = await page.evaluate(() => {
+          const stages = document.querySelector(".billboard__stages")?.getBoundingClientRect();
+          const controls = document.querySelector(".billboard__controls")?.getBoundingClientRect();
+          if (!stages || !controls) {
+            return { ok: false, reason: "missing stages or controls" };
+          }
+          const overlapsArt =
+            controls.bottom > stages.top + 4 && controls.top < stages.bottom - 4;
+          const inViewport = controls.top >= 0 && controls.bottom <= window.innerHeight;
+          if (!overlapsArt) {
+            return {
+              ok: false,
+              reason: `controls not over art (controls.top=${controls.top}, stages.bottom=${stages.bottom})`,
+            };
+          }
+          if (!inViewport) {
+            return {
+              ok: false,
+              reason: `controls off-screen (top=${controls.top}, bottom=${controls.bottom}, vh=${window.innerHeight})`,
+            };
+          }
+          return { ok: true, reason: "" };
+        });
+        expect(report.ok, report.reason).toBe(true);
+      });
+    }
   });
 }

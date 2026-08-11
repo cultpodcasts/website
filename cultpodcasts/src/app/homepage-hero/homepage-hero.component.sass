@@ -44,6 +44,15 @@
 .billboard__vignette
     background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, 0.45) 100%)
 
+// Transparent hit target matching the art frame. Hover pause lives here (and on
+// .billboard__controls), not on the whole billboard — so title/copy does not
+// freeze autoplay (HERO-CTL-003). Stages stay pointer-events:none (HERO-CTL-001).
+.billboard__art-hover
+    position: absolute
+    inset: 0
+    z-index: 1
+    pointer-events: auto
+
 .billboard__stage
     position: absolute
     inset: 0
@@ -697,6 +706,15 @@
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 22%)
     .billboard__vignette
         background: none
+    // Match the framed art band so hover-pause covers the image only.
+    .billboard.has-art-aspect .billboard__art-hover
+        inset: auto
+        top: 0
+        left: 0
+        right: 0
+        bottom: auto
+        width: 100%
+        height: var(--hero-band-h)
     .billboard__controls
         position: relative
         right: auto
@@ -711,6 +729,24 @@
     .billboard__pager
         max-width: none
         width: 100%
+
+// Stacked medium/desktop (not phone chrome): keep the pager over the art so it
+// is not pushed below the fold by the in-flow title panel (HERO-CTL-004).
+@media screen and (max-width: 1280px) and (min-width: 701px)
+    .billboard.has-art-aspect .billboard__controls
+        position: absolute
+        left: 4vw
+        right: 4vw
+        width: auto
+        max-width: none
+        // Sit just above the bottom edge of the framed art band.
+        top: calc(var(--hero-band-h) - 12px)
+        transform: translateY(-100%)
+        bottom: auto
+        flex: 0 0 auto
+        z-index: 3
+        align-items: stretch
+        pointer-events: auto
 
 @media screen and (max-width: 700px)
     .billboard
@@ -727,7 +763,8 @@
         .billboard__stages,
         .billboard__grain,
         .billboard__scrim,
-        .billboard__vignette
+        .billboard__vignette,
+        .billboard__art-hover
             top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
     // Frame is clear of the chrome, so it needs no top scrim at all.
     .billboard.has-art-aspect .billboard__scrim

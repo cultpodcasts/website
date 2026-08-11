@@ -3,7 +3,6 @@
   [class.is-paused]="heroPaused()"
   [class.has-art-aspect]="heroArtAspect() != null"
   [style.--hero-art-aspect]="heroArtAspect() ?? null"
-  (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave()"
   (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)"
   (pointerdown)="onHeroSwipeDown($event)"
   (pointermove)="onHeroSwipeMove($event)"
@@ -61,6 +60,9 @@
   <div class="billboard__grain" aria-hidden="true"></div>
   <div class="billboard__scrim" aria-hidden="true"></div>
   <div class="billboard__vignette" aria-hidden="true"></div>
+  <!-- Hover pause only over art (and pager/admin when overlaid on art) — not title/copy. HERO-CTL-003 -->
+  <div class="billboard__art-hover" aria-hidden="true"
+    (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)"></div>
 
   <div class="billboard__content">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
@@ -125,7 +127,8 @@
     </div>
   </div>
 
-  <div class="billboard__controls">
+  <div class="billboard__controls"
+    (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)">
     @if (isCurator()) {
     <div class="billboard__admin" role="toolbar" aria-label="Hero curation">
       <button type="button" class="billboard__manage" (click)="manageHero.emit()"
