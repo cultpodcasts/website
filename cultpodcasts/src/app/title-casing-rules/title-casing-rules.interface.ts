@@ -15,4 +15,5 @@ export interface LanguageTitleCasingRulesResponse {
   lowerCaseTerms: string[];
   knownTerms: KnownTerm[];
   isDefault: boolean;
+  ignoredSubjects?: string[];
 }

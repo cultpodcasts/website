@@ -21,6 +21,7 @@ import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.c
 import { DiscoveryScheduleComponent } from '../discovery-schedule/discovery-schedule.component';
 import { SupportedLanguagesComponent } from '../supported-languages/supported-languages.component';
 import { TitleCasingRulesComponent } from '../title-casing-rules/title-casing-rules.component';
+import { LanguageIgnoredSubjectsComponent } from '../language-ignored-subjects/language-ignored-subjects.component';
 import { IndexerState } from '../indexer-state.interface';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -255,6 +256,23 @@ export class ToolbarComponent {
       .subscribe(result => {
         if (result?.saved) {
           this.snackBar.open('Title casing rules saved', 'Ok', { duration: 5000 });
+        }
+      });
+  }
+
+  openLanguageIgnoredSubjects() {
+    const dialogRef = this.dialog.open(LanguageIgnoredSubjectsComponent, {
+      disableClose: true,
+      autoFocus: true,
+      width: '40em',
+      maxWidth: '95vw',
+      maxHeight: '90vh'
+    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result?.saved) {
+          this.snackBar.open('Language ignored subjects saved', 'Ok', { duration: 5000 });
         }
       });
   }
