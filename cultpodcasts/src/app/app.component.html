@@ -1,10 +1,9 @@
 <div id="top"></div>
-@if (isDragOver()) {
-<div class="drop-overlay" aria-hidden="true"
+<div class="drop-overlay" [class.drop-overlay--active]="isDragOver()" [attr.aria-hidden]="!isDragOver()"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)">
-  @if (isOnPodcastPage() && canSubmitUrlForPodcast()) {
-  <div class="drop-targets">
+  @if (isDragOver()) {
+  <div class="drop-targets" [hidden]="!(isOnPodcastPage() && canSubmitUrlForPodcast())">
     <div class="drop-target"
       [class.drop-target-active]="activeDropTarget() === 'general'"
       (dragenter)="onTargetDragEnter('general', $event)"
@@ -26,11 +25,9 @@
       <p class="drop-target-desc">Link this episode to the podcast shown on this page.</p>
     </div>
   </div>
-  } @else {
-  <p class="drop-overlay-message">Drop episode link to submit</p>
+  <p class="drop-overlay-message" [hidden]="isOnPodcastPage() && canSubmitUrlForPodcast()">Drop episode link to submit</p>
   }
 </div>
-}
 <section id="body"
   [class.home-shell]="isHomePage()"
   [class.browse-shell]="!isHomePage()"

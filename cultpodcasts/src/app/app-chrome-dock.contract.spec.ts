@@ -7,6 +7,14 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     join(__dirname, 'app.component.sass'),
     'utf8'
   );
+  const appHtml = readFileSync(
+    join(__dirname, 'app.component.html'),
+    'utf8'
+  );
+  const appTs = readFileSync(
+    join(__dirname, 'app.component.ts'),
+    'utf8'
+  );
   const toolbarTs = readFileSync(
     join(__dirname, 'toolbar/toolbar.component.ts'),
     'utf8'
@@ -17,6 +25,14 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
   );
   const contentTs = readFileSync(
     join(__dirname, 'content/content.component.ts'),
+    'utf8'
+  );
+  const contentHtml = readFileSync(
+    join(__dirname, 'content/content.component.html'),
+    'utf8'
+  );
+  const routesTs = readFileSync(
+    join(__dirname, 'app.routes.ts'),
     'utf8'
   );
 
@@ -52,8 +68,31 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(searchBarTs).toMatch(/applyChipFromUrl/);
   });
 
-  it('CHROME-DOCK-005: content path seeds from route snapshot so privacy SSR hydrates (not @default Not Found)', () => {
-    expect(contentTs).toMatch(/snapshot\.params\[['"]path['"]\]/);
-    expect(contentTs).not.toMatch(/signal<\s*string\s*\|\s*undefined\s*>\(\s*undefined\s*\)/);
+  it('CHROME-DOCK-005: content pages use child routes (no @switch on :path)', () => {
+    expect(contentHtml).toMatch(/router-outlet/);
+    expect(contentHtml).not.toMatch(/@switch/);
+    expect(contentTs).not.toMatch(/ngSkipHydration/);
+    expect(routesTs).toMatch(/path:\s*['"]privacy-policy['"]/);
+    expect(routesTs).toMatch(/PrivacyPolicyComponent/);
+  });
+
+  it('CHROME-DOCK-006: drop overlay host stays mounted; idle body is structural @if inside', () => {
+    expect(appHtml).toMatch(/drop-overlay--active/);
+    expect(appHtml).toMatch(/@if\s*\(\s*isDragOver\(\)\s*\)/);
+    expect(sass).toMatch(/\.drop-overlay--active/);
+  });
+
+  it('CHROME-DOCK-008: no prerendered /content/*; server CSR-shells content paths', () => {
+    const serverTs = readFileSync(join(__dirname, '../../server.ts'), 'utf8');
+    const prerenderRoutes = readFileSync(join(__dirname, '../../prerender-routes'), 'utf8');
+    expect(serverTs).toMatch(/pathname\.startsWith\(['"]\/content\//);
+    expect(serverTs).toMatch(/isClientOnlyPath/);
+    expect(prerenderRoutes).not.toMatch(/\/content\//);
+  });
+
+  it('CHROME-DOCK-007: chromeStuck is computed from isHomePage so browse SSR emits chrome-stuck', () => {
+    expect(appTs).toMatch(/homeScrollDocked/);
+    expect(appTs).toMatch(/chromeStuck\s*=\s*computed/);
+    expect(appTs).not.toMatch(/chromeStuck\s*=\s*signal\(/);
   });
 });

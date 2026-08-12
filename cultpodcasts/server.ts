@@ -37,10 +37,11 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const document = await indexResponse.text();
 
 	// Auth-gated curator/user pages cannot SSR meaningfully (FakeAuth has no
-	// session). Rendering a shell and hydrating it crashes the client
-	// (nextSibling/hasAttribute on null) and leaves the page forever loading.
-	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
-	if (isAuthClientOnlyPath(url.pathname)) {
+	// session). Static /content/* legal pages also abort client hydration
+	// (NG0500 / hasAttribute) and leave toolbar/search dead despite a matching
+	// chrome shell — same nextSibling crash class as FakeAuth routes.
+	// Serve the empty app shell and let the browser do CSR.
+	if (isClientOnlyPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
 	}
@@ -57,13 +58,14 @@ async function workerFetchHandler(request: Request, env: Env) {
 	return new Response(content, indexResponse);
 }
 
-/** Routes that must boot on the client after Auth0 — never SSR with FakeAuth. */
-function isAuthClientOnlyPath(pathname: string): boolean {
+/** Routes that must boot on the client — never hydrate an SSR tree. */
+function isClientOnlyPath(pathname: string): boolean {
 	return pathname === "/discovery"
 		|| pathname === "/outgoingEpisodes"
 		|| pathname === "/bookmarks"
 		|| pathname === "/unauthorised"
-		|| pathname.startsWith("/episodes/");
+		|| pathname.startsWith("/episodes/")
+		|| pathname.startsWith("/content/");
 }
 
 export default {

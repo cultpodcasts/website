@@ -320,12 +320,16 @@
     position: fixed
     inset: 0
     z-index: 1000
-    display: flex
+    display: none
     align-items: center
     justify-content: center
     padding: 16px
     background: color-mix(in srgb, var(--cp-ink, #0b0d12) 72%, transparent)
     backdrop-filter: blur(8px)
+    pointer-events: none
+    &.drop-overlay--active
+        display: flex
+        pointer-events: auto
 
 .drop-overlay-message
     margin: 0

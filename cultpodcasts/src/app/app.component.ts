@@ -89,11 +89,15 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   protected readonly showBackToTop = signal(false);
   /**
-   * Search docked into the sticky logo bar. Browse routes start docked so Discovery
-   * (etc.) never flash a dropped search row that then collapses into the header.
+   * Search docked into the sticky logo bar. Browse routes must stay docked from
+   * the first paint (SSR + client) so hydration class bindings match — a one-shot
+   * signal seeded before NavigationEnd left content pages as browse-shell without
+   * chrome-stuck. Homepage scroll docking uses homeScrollDocked instead.
    */
-  protected readonly chromeStuck = signal(!AppComponent.isHomePath(this.router.url));
-  private scrollRaf = 0;
+  private readonly homeScrollDocked = signal(false);
+  protected readonly chromeStuck = computed(
+    () => !this.isHomePage() || this.homeScrollDocked()
+  );  private scrollRaf = 0;
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
@@ -314,10 +318,16 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    // Browse + narrow: search stays in the header — never the dropped homepage row.
-    if (!this.isHomePage() || this.isNarrowChrome()) {
-      if (!this.chromeStuck()) {
-        this.chromeStuck.set(true);
+    // Browse: always docked via chromeStuck computed — just measure the header gap.
+    if (!this.isHomePage()) {
+      this.layoutDockedSearch();
+      return;
+    }
+
+    // Narrow homepage: keep search in the header row (same as browse).
+    if (this.isNarrowChrome()) {
+      if (!this.homeScrollDocked()) {
+        this.homeScrollDocked.set(true);
         requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
       } else {
         this.layoutDockedSearch();
@@ -325,10 +335,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    if (this.chromeStuck()) {
+    if (this.homeScrollDocked()) {
       // Release back to the dropped layout near the top of the homepage.
       if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
-        this.chromeStuck.set(false);
+        this.homeScrollDocked.set(false);
         this.clearDockedSearchLayout(search);
       } else {
         this.layoutDockedSearch();
@@ -346,7 +356,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     const searchTop = search.getBoundingClientRect().top;
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
-      this.chromeStuck.set(true);
+      this.homeScrollDocked.set(true);
       // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
       requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
     }
