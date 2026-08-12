@@ -27,9 +27,6 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
-import { authRedirectUri } from '../auth-redirect-uri';
-import { environment } from '../../environments/environment';
-
 @Component({
   selector: 'app-toolbar',
   imports: [
@@ -103,12 +100,7 @@ export class ToolbarComponent {
   }
 
   logout() {
-    this.auth.clearCachedAvatar();
-    this.auth.authService.logout({
-      logoutParams: {
-        returnTo: authRedirectUri(environment.assetHost)
-      }
-    });
+    this.auth.logoutKeepingCurrentPage();
   }
 
   async openSubmitPodcast() {

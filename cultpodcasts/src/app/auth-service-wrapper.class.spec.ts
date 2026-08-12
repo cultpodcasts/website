@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject, Subject, of } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import {
@@ -7,6 +8,7 @@ import {
   AuthServiceWrapper,
   HAS_LOGGED_IN_STORAGE_KEY,
 } from './auth-service-wrapper.class';
+import { POST_LOGOUT_RETURN_PATH_KEY } from './auth-session-recovery';
 
 describe('AuthServiceWrapper avatar cache', () => {
   let isLoading$: BehaviorSubject<boolean>;
@@ -14,19 +16,23 @@ describe('AuthServiceWrapper avatar cache', () => {
   let user$: BehaviorSubject<Record<string, unknown> | null>;
   let error$: Subject<Error>;
   let loginWithRedirect: ReturnType<typeof vi.fn>;
+  let logout: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+    sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
     isLoading$ = new BehaviorSubject(true);
     isAuthenticated$ = new BehaviorSubject(false);
     user$ = new BehaviorSubject<Record<string, unknown> | null>(null);
     error$ = new Subject<Error>();
     loginWithRedirect = vi.fn().mockName('loginWithRedirect').mockReturnValue(of(void 0));
+    logout = vi.fn().mockName('logout').mockReturnValue(of(void 0));
 
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: PLATFORM_ID, useValue: 'browser' },
         {
           provide: AuthService,
@@ -36,6 +42,7 @@ describe('AuthServiceWrapper avatar cache', () => {
             user$,
             error$,
             loginWithRedirect,
+            logout,
           },
         },
         AuthServiceWrapper,
@@ -46,6 +53,7 @@ describe('AuthServiceWrapper avatar cache', () => {
   afterEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+    sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
     document.documentElement.classList.remove('has-cached-avatar');
   });
 
@@ -132,6 +140,18 @@ describe('AuthServiceWrapper avatar cache', () => {
     });
     const target = loginWithRedirect.mock.calls[0][0].appState.target as string;
     expect(target.startsWith('//')).toBe(false);
+  });
+
+  it('logoutKeepingCurrentPage clears avatar and calls Auth0 logout with origin returnTo', () => {
+    const wrapper = TestBed.inject(AuthServiceWrapper);
+    user$.next({ picture: 'https://cdn.example/me.png' });
+
+    wrapper.logoutKeepingCurrentPage();
+
+    expect(wrapper.avatarUrl()).toBeNull();
+    expect(logout).toHaveBeenCalledTimes(1);
+    const args = logout.mock.calls[0][0];
+    expect(args.logoutParams.returnTo).toBe(window.location.origin);
   });
 
   it('loginWithRedirects once on missing_refresh_token', () => {

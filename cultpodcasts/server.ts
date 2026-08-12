@@ -1,6 +1,7 @@
 import { renderApplication } from "@angular/platform-server";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
+import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -60,15 +61,6 @@ async function workerFetchHandler(request: Request, env: Env) {
 
 	console.log("rendered SSR");
 	return new Response(content, indexResponse);
-}
-
-/** Routes that must boot on the client after Auth0 — never SSR with FakeAuth. */
-function isAuthClientOnlyPath(pathname: string): boolean {
-	return pathname === "/discovery"
-		|| pathname === "/outgoingEpisodes"
-		|| pathname === "/bookmarks"
-		|| pathname === "/unauthorised"
-		|| pathname.startsWith("/episodes/");
 }
 
 export default {

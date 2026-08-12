@@ -2,7 +2,16 @@ import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
 import { combineLatest, EMPTY, filter, of, ReplaySubject, take } from 'rxjs';
-import { currentAppPath, isSessionRecoveryError } from './auth-session-recovery';
+import {
+    consumePostLogoutReturnPath,
+    currentAppPath,
+    isSessionRecoveryError,
+    stashPostLogoutReturnPath,
+} from './auth-session-recovery';
+import { authRedirectUri } from './auth-redirect-uri';
+import { environment } from '../environments/environment';
+import { Router } from '@angular/router';
+
 
 /**
  * Playwright sets `globalThis.__E2E_CURATOR__` via addInitScript so curator
@@ -19,6 +28,7 @@ export const HAS_LOGGED_IN_STORAGE_KEY = 'hasLoggedIn';
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
     private readonly platformId = inject(PLATFORM_ID);
+    private readonly router = inject(Router);
 
     roles: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
     isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
@@ -38,6 +48,14 @@ export class AuthServiceWrapper {
             if (stored) {
                 this._avatarUrl.set(stored);
                 AuthServiceWrapper.setCachedAvatarHtmlClass(true);
+            }
+            // Auth0 logout returnTo is origin-only (no path wildcards). Restore the
+            // public page stashed before federated logout.
+            const postLogoutPath = consumePostLogoutReturnPath();
+            if (postLogoutPath) {
+                queueMicrotask(() => {
+                    void this.router.navigateByUrl(postLogoutPath, { replaceUrl: true });
+                });
             }
         }
 
@@ -112,6 +130,21 @@ export class AuthServiceWrapper {
     loginWithRedirectToCurrentPage() {
         return this.authService.loginWithRedirect({
             appState: { target: currentAppPath() }
+        });
+    }
+
+    /**
+     * Federated Auth0 logout. Auth0 Allowed Logout URLs are origin-only, so
+     * `returnTo` is always the origin; public pages stash the path and restore
+     * after Auth0 redirects home. Auth-gated routes clear the stash and stay on `/`.
+     */
+    logoutKeepingCurrentPage() {
+        this.clearCachedAvatar();
+        stashPostLogoutReturnPath();
+        return this.authService.logout({
+            logoutParams: {
+                returnTo: authRedirectUri(environment.assetHost)
+            }
         });
     }
 
