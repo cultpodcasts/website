@@ -147,19 +147,31 @@
 // Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
 .chrome-search--docked
     position: fixed
-    // Fallback before the first measure — icon-only logo + actions.
+    // Fallback before the first measure — leave room for add/profile (JS tightens).
     left: 70px
+    right: 7rem
     top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
-    width: calc(100vw - 11rem)
+    width: auto
     max-width: none
     // Size the input row only — do not clip the typeahead listbox below.
     height: var(--nflx-search-h)
     margin: 0
+    // Above the frosted bar (102) so the field is visible in the logo↔actions gap.
+    // Must not steal clicks from add/profile: bar is a full-width sibling at z-index 102,
+    // so child z-index on #socialbuttons cannot win. Pass events through the wrapper.
     z-index: 110
+    pointer-events: none
     transform: none
     --nflx-search-h: 40px
     overflow: visible
     ::ng-deep
+        #searchcontainer,
+        #searchbar,
+        #searchboxwrapper,
+        #searchbox,
+        #searchcta,
+        #search-suggestions-listbox
+            pointer-events: auto
         #searchbar
             gap: 8px
             min-width: 0
@@ -197,7 +209,8 @@
     .chrome-search--docked
         // Between logo icon and overflow menu.
         left: 58px
-        width: calc(100vw - 7rem)
+        right: 3.5rem
+        width: auto
         ::ng-deep
             #searchbar
                 gap: 6px

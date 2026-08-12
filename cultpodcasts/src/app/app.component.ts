@@ -97,6 +97,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
+  /** Remeasure docked search when skip-hydration toolbar end controls settle. */
+  private chromeEndControlsObserver: ResizeObserver | undefined;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -134,6 +136,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     // Cold-load browse routes start docked; measure before fallback CSS covers toolbar actions.
     scheduleChromeSync(() => this.syncChromeFromScroll(), this.isBrowser);
+    this.observeChromeEndControls();
   }
 
   ngOnDestroy(): void {
@@ -143,6 +146,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       this.removeScrollListener();
       this.narrowChromeQuery?.removeEventListener('change', this.onNarrowChromeChange);
       window.removeEventListener('resize', this.onWindowResize);
+      this.chromeEndControlsObserver?.disconnect();
     }
   }
 
@@ -382,13 +386,40 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     const top = Math.max(0, (barHeight - searchHeight) / 2);
 
     search.style.left = `${left}px`;
+    search.style.right = 'auto';
     search.style.width = `${width}px`;
     search.style.top = `${top}px`;
     search.style.transform = 'none';
   }
 
+  /** Toolbar uses ngSkipHydration — remasure when add/profile/menu size changes. */
+  private observeChromeEndControls(): void {
+    if (!this.isBrowser || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const bar = this.chromeBar?.nativeElement;
+    if (!bar) {
+      return;
+    }
+    this.chromeEndControlsObserver?.disconnect();
+    this.chromeEndControlsObserver = new ResizeObserver(() => {
+      if (this.chromeStuck()) {
+        this.layoutDockedSearch();
+      }
+    });
+    const social = bar.querySelector('#socialbuttons');
+    const menu = bar.querySelector('button#menu');
+    if (social) {
+      this.chromeEndControlsObserver.observe(social);
+    }
+    if (menu) {
+      this.chromeEndControlsObserver.observe(menu);
+    }
+  }
+
   private clearDockedSearchLayout(search: HTMLElement): void {
     search.style.left = '';
+    search.style.right = '';
     search.style.width = '';
     search.style.top = '';
     search.style.transform = '';
