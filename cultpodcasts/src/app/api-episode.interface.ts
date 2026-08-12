@@ -23,6 +23,7 @@ export interface ApiEpisode {
     images?: EpisodeImageUrls;
     subjects: string[];
     searchTerms?: string | null;
+    hashTag?: string | null;
     youTubePodcast?: boolean;
     spotifyPodcast?: boolean;
     applePodcast?: boolean;

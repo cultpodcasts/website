@@ -219,6 +219,14 @@
                     <input type="text" [formControl]="form()!.controls.searchTerms" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
+                    <mat-label>Hash Tag</mat-label>
+                    <input type="text" [formControl]="form()!.controls.hashTag" matInput
+                        placeholder="#tag1 #tag2" (blur)="normalizeHashTag()">
+                    @if (form()!.controls.hashTag.hasError('hashPrefixedTag')) {
+                    <mat-error>Each tag must start with #</mat-error>
+                    }
+                </mat-form-field>
+                <mat-form-field class="full-width">
                     <mat-label>Language</mat-label>
                     <mat-select [formControl]="form()!.controls.lang">
                         @for (language of languages() | keyvalue:null; track language) {

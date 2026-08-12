@@ -48,6 +48,7 @@ import {
   withoutGuestSuggestion,
   type EpisodeImageService
 } from '../episode-form.util';
+import { normalizeHashTagControl } from '../podcast-form.util';
 
 @Component({
   selector: 'app-add-episode-dialog',
@@ -196,6 +197,13 @@ export class AddEpisodeDialogComponent {
     clearFormControl(control);
   }
 
+  normalizeHashTag() {
+    const control = this.form()?.controls.hashTag;
+    if (control) {
+      normalizeHashTagControl(control);
+    }
+  }
+
   previewImage(service: EpisodeImageService) {
     const form = this.form();
     if (!form) {
@@ -236,6 +244,7 @@ export class AddEpisodeDialogComponent {
         },
         subjects: form.controls.subjects.value,
         searchTerms: form.controls.searchTerms.value,
+        hashTag: form.controls.hashTag.value?.trim() || null,
         lang: form.controls.lang.value || "unset",
         guests: form.controls.guests.value,
       };

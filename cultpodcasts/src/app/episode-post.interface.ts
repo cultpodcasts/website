@@ -16,6 +16,7 @@ export interface EpisodePost {
     images?: EpisodeImageUrls;
     subjects?: string[];
     searchTerms?: string | null;
+    hashTag?: string | null;
     lang?: string;
     guests?: string[];
 }

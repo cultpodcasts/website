@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -45,7 +46,7 @@ import { filter, map, startWith } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnDestroy, AfterViewInit {
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
   /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
@@ -129,6 +130,14 @@ export class AppComponent implements OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    // Cold-load browse routes start docked; measure before fallback CSS covers toolbar actions.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.syncChromeFromScroll()));
+  }
+
   ngOnDestroy(): void {
     if (this.isBrowser) {
       this.clearIgnoreDragTimer();
@@ -148,6 +157,7 @@ export class AppComponent implements OnDestroy {
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => {

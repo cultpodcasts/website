@@ -7,6 +7,7 @@ import { Person } from './person.interface';
 import { comparePeopleBySortKey } from './person-sort';
 import { Subject } from './subject.interface';
 import { filterKeepingSelectedInOrder } from './subject-filter.util';
+import { ensureHashPrefix, hashPrefixedTagValidator } from './podcast-form.util';
 
 /**
  * Pure helpers shared by add-episode-dialog and edit-episode-dialog.
@@ -130,6 +131,9 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     internetArchive: new FormControl(episode.urls.internetArchive || null),
     subjects: new FormControl(episode.subjects, { nonNullable: true }),
     searchTerms: new FormControl(episode.searchTerms || null),
+    hashTag: new FormControl(ensureHashPrefix(episode.hashTag) || null, {
+      validators: [hashPrefixedTagValidator()]
+    }),
     lang: new FormControl(episodeLanguageFormValue(episode.lang)),
     guests: new FormControl<string[]>(episode.guests ?? [], { nonNullable: true })
   });
@@ -382,6 +386,7 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
   if (prev.removed != now.removed) changes.removed = now.removed;
   if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;
+  if (prev.hashTag != now.hashTag) changes.hashTag = now.hashTag;
   if (!isSameStringArray(prev.subjects, now.subjects)) changes.subjects = now.subjects;
   if (prev.title != now.title) changes.title = now.title;
 

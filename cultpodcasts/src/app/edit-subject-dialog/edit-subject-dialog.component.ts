@@ -20,6 +20,8 @@ import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.util';
 import { ensureHashPrefix, hashPrefixedTagValidator, normalizeHashTagControl } from '../podcast-form.util';
+import { FeatureSwitch } from '../feature-switch.enum';
+import { FeatureSwitchService } from '../feature-switch-service';
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -41,6 +43,7 @@ import { ensureHashPrefix, hashPrefixedTagValidator, normalizeHashTagControl } f
   styleUrl: './edit-subject-dialog.component.sass'
 })
 export class EditSubjectDialogComponent {
+  protected FeatureSwitch = FeatureSwitch;
   subjectName: string | undefined;
   isLoading = signal(true);
   isInError = signal(false);
@@ -62,6 +65,7 @@ export class EditSubjectDialogComponent {
     private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
     @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined },
     private dialog: MatDialog,
+    protected featureSwitchService: FeatureSwitchService,
   ) {
     this.subjectName = data.subjectName;
     this.create = data.create || false;

@@ -49,6 +49,7 @@ import {
   withoutGuestSuggestion,
   type EpisodeImageService
 } from '../episode-form.util';
+import { normalizeHashTagControl } from '../podcast-form.util';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -201,6 +202,13 @@ export class EditEpisodeDialogComponent {
     clearFormControl(control);
   }
 
+  normalizeHashTag() {
+    const control = this.form()?.controls.hashTag;
+    if (control) {
+      normalizeHashTagControl(control);
+    }
+  }
+
   previewImage(service: EpisodeImageService) {
     const form = this.form();
     if (!form) {
@@ -242,6 +250,7 @@ export class EditEpisodeDialogComponent {
         },
         subjects: form.controls.subjects.value,
         searchTerms: form.controls.searchTerms.value,
+        hashTag: form.controls.hashTag.value?.trim() || null,
         lang: form.controls.lang.value,
         guests: form.controls.guests.value,
       };
@@ -477,9 +486,12 @@ export class EditEpisodeDialogComponent {
     try {
       // encodeURIComponent so names ending in '?' (e.g. "Was I In A Cult?") are not
       // treated as the start of a query string by `new URL(...)`.
-      const path = this.episodeId
-        ? `/podcast/${encodeURIComponent(podcastIdentifier)}/${this.episodeId}`
-        : `/podcast/${encodeURIComponent(podcastIdentifier)}`;
+      // Only append episodeId for *name* lookups (disambiguation). Guid identifiers must
+      // hit GET /podcast/{id} — /podcast/{guid}/{episodeId} is treated as a name route and 404s.
+      const encoded = encodeURIComponent(podcastIdentifier);
+      const path = this.episodeId && !isPodcastGuid(podcastIdentifier)
+        ? `/podcast/${encoded}/${this.episodeId}`
+        : `/podcast/${encoded}`;
       const podcastEndpoint = new URL(path, environment.api).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
       return podcast;
@@ -487,4 +499,10 @@ export class EditEpisodeDialogComponent {
       return null;
     }
   }
+}
+
+const podcastGuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isPodcastGuid(identifier: string): boolean {
+  return podcastGuidPattern.test(identifier);
 }

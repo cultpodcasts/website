@@ -22,6 +22,7 @@ export interface EpisodeForm {
     internetArchive: FormControl<URL | null | string>,
     subjects: FormControl<string[]>,
     searchTerms: FormControl<string | null>,
+    hashTag: FormControl<string | null>,
     lang: FormControl<string | null>
     guests: FormControl<string[]>,
 }

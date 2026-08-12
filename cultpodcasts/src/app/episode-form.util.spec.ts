@@ -225,12 +225,14 @@ describe('episode-form.util', () => {
       bluesky: true,
       lang: 'en',
       searchTerms: 'foo',
+      hashTag: 'ScenarioTag',
       images: { spotify: new URL('https://img.example/spotify.jpg') }
     });
     const form = buildEpisodeForm(episode);
     expect(form.controls.title.value).toBe('Title');
     expect(form.controls.blueskyPosted.value).toBe(true);
     expect(form.controls.lang.value).toBe('unset');
+    expect(form.controls.hashTag.value).toBe('#ScenarioTag');
     expect(form.controls.spotify.value?.toString()).toBe('https://open.spotify.com/episode/x');
     expect(form.controls.spotifyImage.value?.toString()).toBe('https://img.example/spotify.jpg');
     expect(form.controls.guests.value).toEqual(['Alice']);
@@ -293,6 +295,12 @@ describe('episode-form.util', () => {
         title: 'New',
         description: 'New desc'
       });
+    });
+
+    it('includes hashTag when it changes', () => {
+      const prev = baseEpisode({ hashTag: '#Old' });
+      const now = baseEpisode({ hashTag: '#New' });
+      expect(getEpisodeChanges(prev, now)).toEqual({ hashTag: '#New' });
     });
 
     it('clears a URL with empty string when removed', () => {
