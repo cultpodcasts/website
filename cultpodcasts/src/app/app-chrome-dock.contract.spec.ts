@@ -82,12 +82,17 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(/\.drop-overlay--active/);
   });
 
-  it('CHROME-DOCK-008: no prerendered /content/*; server CSR-shells content paths', () => {
+  it('CHROME-DOCK-008: no prerendered /content/*; server SSRs content from index.csr.html', () => {
     const serverTs = readFileSync(join(__dirname, '../../server.ts'), 'utf8');
     const prerenderRoutes = readFileSync(join(__dirname, '../../prerender-routes'), 'utf8');
-    expect(serverTs).toMatch(/pathname\.startsWith\(['"]\/content\//);
-    expect(serverTs).toMatch(/isClientOnlyPath/);
     expect(prerenderRoutes).not.toMatch(/\/content\//);
+    // Must not CSR-shell legal pages — request-time SSR so view-source has body text.
+    expect(serverTs).not.toMatch(/pathname\.startsWith\(['"]\/content\//);
+    expect(serverTs).toMatch(/isAuthClientOnlyPath/);
+    expect(serverTs).toMatch(/renderApplication/);
+    // Empty CSR shell only — never bootstrap from prerendered `/` (duplicate ng-state / NG0500).
+    expect(serverTs).toMatch(/index\.csr\.html/);
+    expect(serverTs).toMatch(/new URL\(\s*['"]\/index\.csr\.html['"]/);
   });
 
   it('CHROME-DOCK-007: chromeStuck is computed from isHomePage so browse SSR emits chrome-stuck', () => {

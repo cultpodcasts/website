@@ -31,17 +31,21 @@ async function workerFetchHandler(request: Request, env: Env) {
 		}
 	}
 
-	// Get the root `index.html` content.
-	const indexUrl = new URL("/", url);
+	// Bootstrap SSR from the empty CSR shell — NOT prerendered `/` index.html.
+	// Fetching `/` returns SSG homepage HTML + ng-state; renderApplication would
+	// append a second ng-state and wrong ngh indices, aborting hydration on
+	// /content/* (NG0500: expected div, found section) and leaving chrome dead.
+	const indexUrl = new URL("/index.csr.html", url);
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
 	const document = await indexResponse.text();
 
 	// Auth-gated curator/user pages cannot SSR meaningfully (FakeAuth has no
-	// session). Static /content/* legal pages also abort client hydration
-	// (NG0500 / hasAttribute) and leave toolbar/search dead despite a matching
-	// chrome shell — same nextSibling crash class as FakeAuth routes.
-	// Serve the empty app shell and let the browser do CSR.
-	if (isClientOnlyPath(url.pathname)) {
+	// session). Rendering a shell and hydrating it crashes the client
+	// (nextSibling/hasAttribute on null) and leaves the page forever loading.
+	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
+	// Legal /content/* pages SSR at request time (not prerender/SSG) so
+	// view-source includes privacy/terms body; child routes keep hydration aligned.
+	if (isAuthClientOnlyPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
 	}
@@ -58,14 +62,13 @@ async function workerFetchHandler(request: Request, env: Env) {
 	return new Response(content, indexResponse);
 }
 
-/** Routes that must boot on the client — never hydrate an SSR tree. */
-function isClientOnlyPath(pathname: string): boolean {
+/** Routes that must boot on the client after Auth0 — never SSR with FakeAuth. */
+function isAuthClientOnlyPath(pathname: string): boolean {
 	return pathname === "/discovery"
 		|| pathname === "/outgoingEpisodes"
 		|| pathname === "/bookmarks"
 		|| pathname === "/unauthorised"
-		|| pathname.startsWith("/episodes/")
-		|| pathname.startsWith("/content/");
+		|| pathname.startsWith("/episodes/");
 }
 
 export default {
