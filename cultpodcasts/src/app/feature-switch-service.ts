@@ -14,7 +14,7 @@ export class FeatureSwitchService {
             case FeatureSwitch.redditPost:
                 return false;
             case FeatureSwitch.episodeOgShareImage:
-                return false;
+                return true;
             default:
                 return false;
         }
