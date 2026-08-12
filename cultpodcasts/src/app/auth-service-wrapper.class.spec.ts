@@ -121,6 +121,19 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(document.documentElement.classList.contains('has-cached-avatar')).toBe(false);
   });
 
+  it('loginWithRedirectToCurrentPage passes appState.target for post-login return', () => {
+    const wrapper = TestBed.inject(AuthServiceWrapper);
+
+    wrapper.loginWithRedirectToCurrentPage();
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+    expect(loginWithRedirect).toHaveBeenCalledWith({
+      appState: { target: expect.stringMatching(/^\//) },
+    });
+    const target = loginWithRedirect.mock.calls[0][0].appState.target as string;
+    expect(target.startsWith('//')).toBe(false);
+  });
+
   it('loginWithRedirects once on missing_refresh_token', () => {
     TestBed.inject(AuthServiceWrapper);
 

@@ -106,6 +106,16 @@ export class AuthServiceWrapper {
     }
 
     /**
+     * Interactive login that restores the current path after the Auth0 callback
+     * (`appState.target`). Without this, Auth0 Angular lands on `/`.
+     */
+    loginWithRedirectToCurrentPage() {
+        return this.authService.loginWithRedirect({
+            appState: { target: currentAppPath() }
+        });
+    }
+
+    /**
      * When the refresh token is missing or revoked, bounce through Auth0 login once.
      * With an active Auth0 SSO cookie this is usually a silent round-trip (no password).
      */
@@ -118,9 +128,7 @@ export class AuthServiceWrapper {
                 return;
             }
             this.sessionRecoveryStarted = true;
-            this.authService.loginWithRedirect({
-                appState: { target: currentAppPath() }
-            }).subscribe({
+            this.loginWithRedirectToCurrentPage().subscribe({
                 error: () => {
                     // Allow a later retry if the redirect itself failed to start.
                     this.sessionRecoveryStarted = false;

@@ -1,4 +1,4 @@
-import { currentAppPath, isSessionRecoveryError } from './auth-session-recovery';
+import { currentAppPath, isSafeAppReturnPath, isSessionRecoveryError } from './auth-session-recovery';
 
 describe('isSessionRecoveryError', () => {
   it('matches Auth0 missing_refresh_token errors', () => {
@@ -29,8 +29,22 @@ describe('isSessionRecoveryError', () => {
   });
 });
 
+describe('isSafeAppReturnPath', () => {
+  it('allows same-origin relative paths with query and hash', () => {
+    expect(isSafeAppReturnPath('/content/privacy-policy')).toBe(true);
+    expect(isSafeAppReturnPath('/podcast/foo?x=1#bar')).toBe(true);
+  });
+
+  it('rejects absolute and protocol-relative URLs', () => {
+    expect(isSafeAppReturnPath('https://evil.example/phish')).toBe(false);
+    expect(isSafeAppReturnPath('//evil.example/phish')).toBe(false);
+    expect(isSafeAppReturnPath('evil.example')).toBe(false);
+  });
+});
+
 describe('currentAppPath', () => {
   it('returns path, query, and hash from window.location', () => {
     expect(currentAppPath()).toMatch(/^\//);
+    expect(currentAppPath().startsWith('//')).toBe(false);
   });
 });

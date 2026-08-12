@@ -15,10 +15,20 @@ export function isSessionRecoveryError(error: unknown): boolean {
   );
 }
 
-/** Prefer returning the user to the page they were on after Auth0 callback. */
+/**
+ * Prefer returning the user to the page they were on after Auth0 callback.
+ * Only same-origin relative paths (leading `/`, not `//…`) — never absolute or
+ * protocol-relative URLs (open-redirect safe for `appState.target`).
+ */
 export function currentAppPath(): string {
   if (typeof window === 'undefined') {
     return '/';
   }
-  return `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
+  const path = `${window.location.pathname}${window.location.search}${window.location.hash}` || '/';
+  return isSafeAppReturnPath(path) ? path : '/';
+}
+
+/** True for in-app return targets safe to pass as Auth0 `appState.target`. */
+export function isSafeAppReturnPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//');
 }

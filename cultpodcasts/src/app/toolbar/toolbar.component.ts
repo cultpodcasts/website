@@ -80,7 +80,7 @@ export class ToolbarComponent {
 
   login() {
     if (localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)) {
-      this.auth.authService.loginWithRedirect();
+      this.auth.loginWithRedirectToCurrentPage();
     } else {
       this.dialog
         .open(FirstLoginNoticeComponent, { disableClose: true, autoFocus: true })
@@ -88,7 +88,7 @@ export class ToolbarComponent {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(async result => {
           if (result?.continue) {
-            this.auth.authService.loginWithRedirect();;
+            this.auth.loginWithRedirectToCurrentPage();
           }
         });
     }
