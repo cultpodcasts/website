@@ -4,6 +4,7 @@ import { EpisodeForm } from './episode-form.interface';
 import { EpisodePost } from './episode-post.interface';
 import { episodeLanguageFormValue } from './language-options.util';
 import { Person } from './person.interface';
+import { comparePeopleBySortKey } from './person-sort';
 import { Subject } from './subject.interface';
 import { filterKeepingSelectedInOrder } from './subject-filter.util';
 
@@ -191,6 +192,132 @@ export interface RegroupedGuests {
   otherPeople: Person[];
 }
 
+export function isPendingPersonId(id: string | undefined): boolean {
+  return !id || id.startsWith('pending:');
+}
+
+export function pendingPerson(name: string): Person {
+  return { id: `pending:${name}`, name };
+}
+
+/**
+ * Merge people lists by name. Existing locals are kept when a fetched snapshot
+ * is stale (GET /people is an R2 publish, often HTTP-cached). Pending stubs
+ * never overwrite a real person.
+ */
+export function mergePeopleCatalogue(
+  existing: Person[],
+  fetched: Person[] | undefined,
+  extras: Person[] = []
+): Person[] {
+  const byName = new Map<string, Person>();
+
+  const put = (person: Person | undefined, mode: 'replace' | 'fill') => {
+    const name = person?.name?.trim();
+    if (!name || !person) {
+      return;
+    }
+    const current = byName.get(name);
+    if (!current) {
+      byName.set(name, person);
+      return;
+    }
+    if (mode === 'fill') {
+      return;
+    }
+    byName.set(name, person);
+  };
+
+  for (const person of existing) {
+    put(person, 'replace');
+  }
+  for (const person of fetched ?? []) {
+    put(person, 'replace');
+  }
+  for (const person of extras) {
+    put(person, isPendingPersonId(person.id) ? 'fill' : 'replace');
+  }
+
+  return [...byName.values()].sort(comparePeopleBySortKey);
+}
+
+export function catalogueAfterPersonChange(
+  existing: Person[],
+  fetched: Person[] | undefined,
+  personName: string,
+  created?: Person
+): Person[] {
+  const extra = created?.name?.trim()
+    ? created
+    : pendingPerson(personName);
+  return mergePeopleCatalogue(existing, fetched, [extra]);
+}
+
+export function guestNamesWithPerson(
+  current: string[] | null | undefined,
+  personName: string
+): string[] {
+  const names = uniqueStrings(current ?? []);
+  return names.includes(personName) ? names : [...names, personName];
+}
+
+/** Published catalogue plus episode guests and title/description suggestions. */
+export function episodeCataloguePeople(
+  published: Person[],
+  guestPeople?: Person[],
+  suggestions?: { person: Person }[]
+): Person[] {
+  return mergePeopleCatalogue(published, undefined, [
+    ...(guestPeople ?? []),
+    ...(suggestions ?? []).map(x => x.person)
+  ]);
+}
+
+export interface ApplyGuestSelectionInput {
+  allPeople: Person[];
+  /** Optional GET /people snapshot (may be stale / cached). */
+  fetched?: Person[];
+  currentGuests: string[] | null | undefined;
+  personName: string;
+  person?: Person;
+  episodeGuestPeople?: Person[];
+  filterTerm?: string;
+}
+
+export interface ApplyGuestSelectionResult extends RegroupedGuests {
+  allPeople: Person[];
+  guests: string[];
+}
+
+/**
+ * Dialog contract for create-person / suggestion Add: merge into catalogue,
+ * append the guest name, then regroup so Material select has matching options
+ * before setValue.
+ */
+export function applyGuestSelection(input: ApplyGuestSelectionInput): ApplyGuestSelectionResult {
+  const allPeople = catalogueAfterPersonChange(
+    input.allPeople,
+    input.fetched,
+    input.personName,
+    input.person
+  );
+  const guests = guestNamesWithPerson(input.currentGuests, input.personName);
+  const { selectedGuests, otherPeople } = regroupGuests(
+    allPeople,
+    input.episodeGuestPeople,
+    guests,
+    input.filterTerm ?? ''
+  );
+  return { allPeople, guests, selectedGuests, otherPeople };
+}
+
+export function withoutGuestSuggestion<T extends { person: { name: string } }>(
+  suggestions: T[],
+  personName: string
+): T[] {
+  return suggestions.filter(x => x.person.name !== personName);
+}
+
 export function regroupGuests(
   allPeople: Person[],
   episodeGuestPeople: Person[] | undefined,
@@ -203,9 +330,9 @@ export function regroupGuests(
   for (const guest of episodeGuestPeople ?? []) {
     peopleByName.set(guest.name, guest);
   }
-  const selectedGuests = selectedNames
-    .map(name => peopleByName.get(name))
-    .filter((x): x is Person => !!x);
+  const selectedGuests = selectedNames.map(name =>
+    peopleByName.get(name) ?? pendingPerson(name)
+  );
 
   const otherPeople = allPeople
     .filter(person => !selectedSet.has(person.name))

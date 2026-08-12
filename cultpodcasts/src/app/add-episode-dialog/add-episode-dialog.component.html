@@ -273,7 +273,7 @@
                     @for (suggestion of guestSuggestions(); track suggestion.person.id) {
                     <div class="guest-row">
                         <span>{{personLabel(suggestion.person)}} ({{suggestion.matchResults[0]?.term}})</span>
-                        <button type="button" matButton="text" (click)="addSuggestedGuest(suggestion.person.name)">Add</button>
+                        <button type="button" matButton="text" (click)="addSuggestedGuest(suggestion.person)">Add</button>
                     </div>
                     }
                 </div>
