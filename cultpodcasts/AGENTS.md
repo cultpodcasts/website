@@ -2,6 +2,14 @@
 
 Angular PWA / Bubblewrap client for [cultpodcasts.com](https://cultpodcasts.com). It consumes the Cult Podcasts API (`api-infra`) via the Cloudflare API worker.
 
+## No Api / website deploys (HARD)
+
+**Never** run `npm run deploy` / `wrangler pages deploy` (or Api `wrangler deploy`) unless the user
+explicitly names that exact deploy in the current conversation. When the user asks to **push** a PR
+branch, push is OK — Pages **preview** may build from git; do not run deploy CLIs.
+
+- Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
+
 ## Preview ↔ production secrets (HARD)
 
 Any new Pages / Auth0 / build secret for preview/staging **must** also be planned for production. PR body **must** include `## Config / secrets` with **key names** (never values). At deploy, read that section and set both environments.
