@@ -70,8 +70,8 @@
     height: 40px
     vertical-align: middle
 
-// Hide the SSR logged-out profile glyph when a cached avatar exists, until the
-// skip-hydration toolbar re-renders with #avatar (avoids logged-out flash).
+// Hide the SSR logged-out profile glyph when a cached avatar exists, until
+// afterNextRender flips signed-in chrome to #avatar (avoids logged-out flash).
 :host-context(html.has-cached-avatar)
     img.socialbutton[alt="Profile"]:not(#avatar)
         opacity: 0

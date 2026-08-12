@@ -165,16 +165,18 @@
     --nflx-search-h: 40px
     overflow: visible
     ::ng-deep
-        #searchcontainer,
-        #searchbar,
+        // Do NOT enable pointer-events on #searchcontainer / #searchbar — they span the
+        // full docked width and would still cover add/profile when measure is late/wide.
         #searchboxwrapper,
-        #searchbox,
         #searchcta,
         #search-suggestions-listbox
             pointer-events: auto
         #searchbar
             gap: 8px
             min-width: 0
+            pointer-events: none
+        #searchcontainer
+            pointer-events: none
         #searchboxwrapper
             flex: 1 1 auto
             min-width: 0

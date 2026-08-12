@@ -97,7 +97,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
-  /** Remeasure docked search when skip-hydration toolbar end controls settle. */
+  /** Remeasure docked search when toolbar end controls settle (e.g. avatar after auth). */
   private chromeEndControlsObserver: ResizeObserver | undefined;
 
   @ViewChild(ToolbarComponent)
@@ -392,7 +392,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     search.style.transform = 'none';
   }
 
-  /** Toolbar uses ngSkipHydration — remasure when add/profile/menu size changes. */
+  /** Remeasure when add/profile/menu size changes (avatar swap after hydration). */
   private observeChromeEndControls(): void {
     if (!this.isBrowser || typeof ResizeObserver === 'undefined') {
       return;

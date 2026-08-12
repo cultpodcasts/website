@@ -37,8 +37,8 @@
   <!--
     Do not mutate toolbar DOM here — that breaks Angular hydration
     (nextSibling / hasAttribute on null) and leaves auth pages stuck loading.
-    AuthServiceWrapper seeds the avatar from localStorage; the toolbar skips
-    hydration so the first client paint can show the cached letter-avatar.
+    AuthServiceWrapper seeds the avatar from localStorage; the toolbar defers
+    signed-in chrome until after hydration, then shows the cached letter-avatar.
     Optional: hide the SSR logged-out icon until then (class only — safe).
   -->
   <script type="text/javascript">
