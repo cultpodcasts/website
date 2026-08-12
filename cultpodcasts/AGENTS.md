@@ -9,6 +9,14 @@ Any new Pages / Auth0 / build secret for preview/staging **must** also be planne
 - Rule: [`../.cursor/rules/preview-production-secrets-parity.mdc`](../.cursor/rules/preview-production-secrets-parity.mdc)
 - Docs: [`docs/preview-production-secrets.md`](docs/preview-production-secrets.md)
 
+## Episode OG share image
+
+Client SEO may use episode art from page-details when
+`FeatureSwitch.episodeOgShareImage` is enabled (default **OFF**).
+
+- Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
+- Preview: test with the switch ON and OFF before enabling in production.
+
 ## Repository layout
 
 - **Git root:** `~\source\repos\website` (parent of this folder). Run `git` commands from the parent repo or paths relative to it.
@@ -70,3 +78,7 @@ Curation KV deploy notes only: [docs/flix-prototype.md](docs/flix-prototype.md).
 | `npm run dev` | `https://local.cultpodcasts.com:4200` |
 
 Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
+
+## Version bumps (HARD for PRs)
+
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.

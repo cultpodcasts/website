@@ -12,6 +12,7 @@ import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
+import { bbcIplayerUrl, episodeImageUrl, isYoutubeThumbnailUrl } from '../search-result-links';
 
 @Component({
   selector: 'app-podcast',
@@ -97,11 +98,22 @@ export class PodcastComponent {
             .then(episode => {
               this.episode.set(episode);
               if (episode) {
+                const shareImage = episodeImageUrl(episode)?.toString();
                 pageDetails = {
                   description: this.podcastName,
                   title: `${episode.episodeTitle} | ${this.podcastName}`,
                   releaseDate: episode.release.toString(),
-                  duration: episode.duration
+                  duration: episode.duration,
+                  image: shareImage,
+                  // YouTube / BBC iPlayer / Internet Archive → wide; Spotify/Apple/BBC Sounds → square.
+                  imageAspect: shareImage
+                    ? (isYoutubeThumbnailUrl(shareImage)
+                      || !!episode.youtubeId
+                      || !!bbcIplayerUrl(episode)
+                      || !!episode.internetArchive
+                      ? "wide"
+                      : "square")
+                    : undefined
                 };
               }
             })
