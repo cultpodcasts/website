@@ -82,17 +82,27 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(/\.drop-overlay--active/);
   });
 
-  it('CHROME-DOCK-008: no prerendered /content/*; server SSRs content from index.csr.html', () => {
+  it('CHROME-DOCK-008: privacy/terms are prerendered SSG and excluded from the Pages Worker', () => {
     const serverTs = readFileSync(join(__dirname, '../../server.ts'), 'utf8');
+    const mainServer = readFileSync(join(__dirname, '../../src/main.server.ts'), 'utf8');
     const prerenderRoutes = readFileSync(join(__dirname, '../../prerender-routes'), 'utf8');
-    expect(prerenderRoutes).not.toMatch(/\/content\//);
-    // Must not CSR-shell legal pages — request-time SSR so view-source has body text.
+    const routesJson = readFileSync(join(__dirname, '../_routes.json'), 'utf8');
+    expect(prerenderRoutes).toMatch(/\/content\/privacy-policy/);
+    expect(prerenderRoutes).toMatch(/\/content\/terms-and-conditions/);
+    // Static asset serve — Worker must not re-SSR (would fight the SSG tree).
+    expect(routesJson).toMatch(/\/content\/privacy-policy/);
+    expect(routesJson).toMatch(/\/content\/terms-and-conditions/);
+    expect(routesJson).toMatch(/"exclude"/);
+    // Must not CSR-shell legal pages (body must be in the baked HTML).
     expect(serverTs).not.toMatch(/pathname\.startsWith\(['"]\/content\//);
     expect(serverTs).toMatch(/isAuthClientOnlyPath/);
     expect(serverTs).toMatch(/renderApplication/);
-    // Empty CSR shell only — never bootstrap from prerendered `/` (duplicate ng-state / NG0500).
+    // Other SSR routes still bootstrap from empty CSR shell (never homepage index.html).
     expect(serverTs).toMatch(/index\.csr\.html/);
     expect(serverTs).toMatch(/new URL\(\s*['"]\/index\.csr\.html['"]/);
+    // Local HTTPS uses .cert — no NODE_TLS_REJECT_UNAUTHORIZED / ssrIgnoresSsl.
+    expect(mainServer).not.toMatch(/NODE_TLS_REJECT_UNAUTHORIZED/);
+    expect(mainServer).not.toMatch(/ssrIgnoresSsl/);
   });
 
   it('CHROME-DOCK-007: chromeStuck is computed from isHomePage so browse SSR emits chrome-stuck', () => {

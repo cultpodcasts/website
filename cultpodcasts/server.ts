@@ -43,8 +43,8 @@ async function workerFetchHandler(request: Request, env: Env) {
 	// session). Rendering a shell and hydrating it crashes the client
 	// (nextSibling/hasAttribute on null) and leaves the page forever loading.
 	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
-	// Legal /content/* pages SSR at request time (not prerender/SSG) so
-	// view-source includes privacy/terms body; child routes keep hydration aligned.
+	// Privacy/terms are prerendered (SSG) and excluded in _routes.json so CF Pages
+	// serves static HTML — this Worker path must not re-render those URLs.
 	if (isAuthClientOnlyPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
