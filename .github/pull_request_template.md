@@ -13,7 +13,12 @@
   - Pages Production: `<!-- same names as needed -->`
   - Related Api Worker secrets (if any): `<!-- e.g. secureExampleEndpoint on api-preview + top-level api -->`
 
-At deploy time: read this section and set every named key on **both** environments before calling the release done.
+### Production switchover (before calling release done)
+
+1. Open this PR and read **Config / secrets** above.
+2. Set every named key on Pages **Preview** and **Production** (and Api Worker keys if listed).
+3. Confirm sibling Api / RPP PR `## Config / secrets` checklists are ticked before enabling compile-time FeatureSwitches or behaviour that depends on those keys.
+4. Do **not** treat “preview URL works” as production-ready until production config is confirmed.
 
 ## Test plan
 
