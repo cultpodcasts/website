@@ -37,6 +37,7 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { filter, map, startWith } from 'rxjs';
+import { scheduleChromeSync } from './episode-form.util';
 
 @Component({
   selector: 'app-root',
@@ -131,11 +132,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (!this.isBrowser) {
-      return;
-    }
     // Cold-load browse routes start docked; measure before fallback CSS covers toolbar actions.
-    requestAnimationFrame(() => requestAnimationFrame(() => this.syncChromeFromScroll()));
+    scheduleChromeSync(() => this.syncChromeFromScroll(), this.isBrowser);
   }
 
   ngOnDestroy(): void {

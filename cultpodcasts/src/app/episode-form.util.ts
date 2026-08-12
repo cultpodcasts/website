@@ -420,3 +420,21 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (!isSameStringArray(prev.guests, now.guests)) changes.guests = now.guests;
   return changes;
 }
+
+/** Delete menu is blocked only when the episode was tweeted (posted Reddit no longer blocks). */
+export function isEpisodeDeleteMenuDisabled(episode: { tweeted?: boolean | null }): boolean {
+  return !!episode.tweeted;
+}
+
+/** Subject dialog Reddit tab visibility — mirrors FeatureSwitch.reddit gate. */
+export function isSubjectRedditTabEnabled(isFeatureEnabled: (flag: string) => boolean): boolean {
+  return isFeatureEnabled('reddit');
+}
+
+/** Cold-load chrome: schedule a double-rAF measure (browser only). */
+export function scheduleChromeSync(sync: () => void, isBrowser: boolean): void {
+  if (!isBrowser) {
+    return;
+  }
+  requestAnimationFrame(() => requestAnimationFrame(() => sync()));
+}
