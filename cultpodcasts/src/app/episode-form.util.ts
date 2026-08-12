@@ -273,6 +273,51 @@ export function episodeCataloguePeople(
   ]);
 }
 
+export interface ApplyGuestSelectionInput {
+  allPeople: Person[];
+  /** Optional GET /people snapshot (may be stale / cached). */
+  fetched?: Person[];
+  currentGuests: string[] | null | undefined;
+  personName: string;
+  person?: Person;
+  episodeGuestPeople?: Person[];
+  filterTerm?: string;
+}
+
+export interface ApplyGuestSelectionResult extends RegroupedGuests {
+  allPeople: Person[];
+  guests: string[];
+}
+
+/**
+ * Dialog contract for create-person / suggestion Add: merge into catalogue,
+ * append the guest name, then regroup so Material select has matching options
+ * before setValue.
+ */
+export function applyGuestSelection(input: ApplyGuestSelectionInput): ApplyGuestSelectionResult {
+  const allPeople = catalogueAfterPersonChange(
+    input.allPeople,
+    input.fetched,
+    input.personName,
+    input.person
+  );
+  const guests = guestNamesWithPerson(input.currentGuests, input.personName);
+  const { selectedGuests, otherPeople } = regroupGuests(
+    allPeople,
+    input.episodeGuestPeople,
+    guests,
+    input.filterTerm ?? ''
+  );
+  return { allPeople, guests, selectedGuests, otherPeople };
+}
+
+export function withoutGuestSuggestion<T extends { person: { name: string } }>(
+  suggestions: T[],
+  personName: string
+): T[] {
+  return suggestions.filter(x => x.person.name !== personName);
+}
+
 export function regroupGuests(
   allPeople: Person[],
   episodeGuestPeople: Person[] | undefined,

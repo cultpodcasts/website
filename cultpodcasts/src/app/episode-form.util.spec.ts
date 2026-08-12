@@ -1,5 +1,6 @@
 import { ApiEpisode } from './api-episode.interface';
 import {
+  applyGuestSelection,
   buildEpisodeForm,
   catalogueAfterPersonChange,
   dateToLocalISO,
@@ -13,9 +14,11 @@ import {
   personMatchesFilter,
   regroupGuests,
   regroupSubjects,
-  uniqueStrings
+  uniqueStrings,
+  withoutGuestSuggestion
 } from './episode-form.util';
 import { Person } from './person.interface';
+import { PersonMatch } from './person-match.interface';
 
 function baseEpisode(overrides: Partial<ApiEpisode> = {}): ApiEpisode {
   return {
@@ -138,6 +141,67 @@ describe('episode-form.util', () => {
     const people = episodeCataloguePeople(published, undefined, suggestions);
     expect(people.map(p => p.name)).toEqual(expect.arrayContaining(['Host Show', 'Suggested Guest']));
     expect(people).toHaveLength(2);
+  });
+
+  describe('applyGuestSelection (add/edit episode dialog contract)', () => {
+    it('keeps the first created guest when a second create refreshes a stale people list', () => {
+      const first: Person = { id: 'c1', name: 'Dana Created', twitterHandle: '@dana' };
+      const afterFirst = applyGuestSelection({
+        allPeople: [{ id: '1', name: 'Host Show' }],
+        currentGuests: [],
+        personName: first.name,
+        person: first
+      });
+      expect(afterFirst.guests).toEqual(['Dana Created']);
+      expect(afterFirst.selectedGuests.map(p => p.name)).toEqual(['Dana Created']);
+
+      const second: Person = { id: 'c2', name: 'Evan Created' };
+      const staleFetch: Person[] = [{ id: '1', name: 'Host Show' }];
+      const afterSecond = applyGuestSelection({
+        allPeople: afterFirst.allPeople,
+        fetched: staleFetch,
+        currentGuests: afterFirst.guests,
+        personName: second.name,
+        person: second
+      });
+
+      expect(afterSecond.guests).toEqual(['Dana Created', 'Evan Created']);
+      expect(afterSecond.selectedGuests.map(p => p.name)).toEqual(['Dana Created', 'Evan Created']);
+      expect(afterSecond.allPeople.map(p => p.name)).toEqual(
+        expect.arrayContaining(['Host Show', 'Dana Created', 'Evan Created'])
+      );
+    });
+
+    it('adds a title/description suggestion missing from the published catalogue into Selected', () => {
+      const suggested: Person = {
+        id: 's1',
+        name: 'Suggested Guest',
+        twitterHandle: '@guest',
+        blueskyHandle: 'guest.bsky.social'
+      };
+      const result = applyGuestSelection({
+        allPeople: [{ id: '1', name: 'Host Show' }],
+        currentGuests: ['Host Show'],
+        personName: suggested.name,
+        person: suggested
+      });
+
+      expect(result.guests).toEqual(['Host Show', 'Suggested Guest']);
+      expect(result.selectedGuests).toEqual([
+        { id: '1', name: 'Host Show' },
+        suggested
+      ]);
+      expect(result.allPeople.some(p => p.name === 'Suggested Guest')).toBe(true);
+    });
+
+    it('removes only the accepted suggestion from the suggestion list', () => {
+      const suggestions: PersonMatch[] = [
+        { person: { id: 's1', name: 'Suggested Guest' }, matchResults: [{ term: 'Suggested Guest', matches: 1 }] },
+        { person: { id: 's2', name: 'Other Guest' }, matchResults: [{ term: 'Other', matches: 1 }] }
+      ];
+      expect(withoutGuestSuggestion(suggestions, 'Suggested Guest').map(x => x.person.name))
+        .toEqual(['Other Guest']);
+    });
   });
 
   it('regroupGuests filters other people by social handle as well as name', () => {

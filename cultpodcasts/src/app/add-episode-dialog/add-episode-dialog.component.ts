@@ -33,12 +33,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
 import {
   buildEpisodeForm,
-  catalogueAfterPersonChange,
   clearFormControl,
   collectEpisodeImagePreviews,
   episodeCataloguePeople,
+  applyGuestSelection,
   getEpisodeChanges,
-  guestNamesWithPerson,
   hasNonEmptyUrlValue,
   mergeEpisodeSubjects,
   noCompareFunction,
@@ -46,6 +45,7 @@ import {
   personLabel,
   regroupGuests as regroupGuestsPure,
   regroupSubjects as regroupSubjectsPure,
+  withoutGuestSuggestion,
   type EpisodeImageService
 } from '../episode-form.util';
 
@@ -360,7 +360,7 @@ export class AddEpisodeDialogComponent {
       return;
     }
     this.commitGuestSelection(person.name, person);
-    this.guestSuggestions.set(this.guestSuggestions().filter(x => x.person.name !== person.name));
+    this.guestSuggestions.set(withoutGuestSuggestion(this.guestSuggestions(), person.name));
   }
 
   openAddPerson() {
@@ -412,17 +412,29 @@ export class AddEpisodeDialogComponent {
       fetched = undefined;
     }
 
-    this.allPeople = catalogueAfterPersonChange(this.allPeople, fetched, personName, created);
-    this.commitGuestSelection(personName, created);
+    this.applyGuestSelectionState(personName, created, fetched);
   }
 
   private commitGuestSelection(personName: string, person?: Person) {
-    this.allPeople = catalogueAfterPersonChange(this.allPeople, undefined, personName, person);
+    this.applyGuestSelectionState(personName, person);
+  }
+
+  private applyGuestSelectionState(personName: string, person?: Person, fetched?: Person[]) {
+    const result = applyGuestSelection({
+      allPeople: this.allPeople,
+      fetched,
+      currentGuests: this.form()?.controls.guests.value,
+      personName,
+      person,
+      episodeGuestPeople: this.originalEpisode?.guestPeople,
+      filterTerm: ''
+    });
+    this.allPeople = result.allPeople;
     this.guestsFilterTerm.set('');
-    const next = guestNamesWithPerson(this.form()?.controls.guests.value, personName);
-    this.regroupGuests(next);
+    this.selectedGuests.set(result.selectedGuests);
+    this.otherPeople.set(result.otherPeople);
     this.cdr.detectChanges();
-    this.form()?.controls.guests.setValue(next);
+    this.form()?.controls.guests.setValue(result.guests);
   }
 
   onSubjectsDropdownOpenChange(opened: boolean) {
