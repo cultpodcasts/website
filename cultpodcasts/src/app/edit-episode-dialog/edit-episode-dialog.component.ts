@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal, ChangeDetectorRef } from '@angular/core';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { MatInputModule } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -28,16 +28,18 @@ import { Podcast } from '../podcast.interface';
 import { MatDividerModule } from '@angular/material/divider';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
-import { comparePeopleBySortKey } from '../person-sort';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { MatIconModule } from '@angular/material/icon';
 import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
 import {
   buildEpisodeForm,
+  catalogueAfterPersonChange,
   clearFormControl,
   collectEpisodeImagePreviews,
+  episodeCataloguePeople,
   getEpisodeChanges,
+  guestNamesWithPerson,
   hasNonEmptyUrlValue,
   mergeEpisodeSubjects,
   noCompareFunction,
@@ -113,6 +115,7 @@ export class EditEpisodeDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string },
     private dialog: MatDialog,
     protected featureSwitchService: FeatureSwitchService,
+    private cdr: ChangeDetectorRef,
   ) {
     this.episodeId = data.episodeId;
     this.podcastIdentifier = data.podcastIdentifier;
@@ -159,7 +162,11 @@ export class EditEpisodeDialogComponent {
       this.form.set(buildEpisodeForm(resp.episode));
       this.blueskyOriginallyPosted.set(!!resp.episode.bluesky);
       this.pendingUnBluesky.set(false);
-      this.allPeople = resp.people.sort(comparePeopleBySortKey);
+      this.allPeople = episodeCataloguePeople(
+        resp.people,
+        resp.episode.guestPeople,
+        resp.episode.guestSuggestions
+      );
       this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
       const { subjects, allSubjects } = mergeEpisodeSubjects(resp.episode.subjects, resp.subjects, this.podcastDefaultSubject);
@@ -329,14 +336,12 @@ export class EditEpisodeDialogComponent {
     this.otherPeople.set(otherPeople);
   }
 
-  addSuggestedGuest(personName: string) {
-    const current = this.form()?.controls.guests.value ?? [];
-    if (current.includes(personName)) {
+  addSuggestedGuest(person: Person) {
+    if (!person?.name) {
       return;
     }
-    this.form()?.controls.guests.setValue([...current, personName]);
-    this.guestSuggestions.set(this.guestSuggestions().filter(x => x.person.name !== personName));
-    this.regroupGuests(this.form()?.controls.guests.value);
+    this.commitGuestSelection(person.name, person);
+    this.guestSuggestions.set(this.guestSuggestions().filter(x => x.person.name !== person.name));
   }
 
   openAddPerson() {
@@ -368,6 +373,7 @@ export class EditEpisodeDialogComponent {
   }
 
   private async refreshPeopleAndSelect(personName: string, created?: Person) {
+    let fetched: Person[] | undefined;
     try {
       const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -378,27 +384,26 @@ export class EditEpisodeDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const peopleEndpoint = new URL("/people", environment.api).toString();
-      const people = await firstValueFrom(
+      fetched = await firstValueFrom(
         this.http.get<Person[]>(peopleEndpoint, { headers: headers }).pipe(
           catchError(err => err?.status === 404 ? of([] as Person[]) : throwError(() => err))
         )
       );
-      this.allPeople = people.sort(comparePeopleBySortKey);
-      if (created && !this.allPeople.some(x => x.name === created.name)) {
-        this.allPeople = [...this.allPeople, created].sort(comparePeopleBySortKey);
-      }
     } catch {
-      if (created) {
-        this.allPeople = [...this.allPeople.filter(x => x.name !== created.name), created]
-          .sort(comparePeopleBySortKey);
-      }
+      fetched = undefined;
     }
 
-    const current = this.form()?.controls.guests.value ?? [];
-    if (!current.includes(personName)) {
-      this.form()?.controls.guests.setValue([...current, personName]);
-    }
-    this.regroupGuests(this.form()?.controls.guests.value);
+    this.allPeople = catalogueAfterPersonChange(this.allPeople, fetched, personName, created);
+    this.commitGuestSelection(personName, created);
+  }
+
+  private commitGuestSelection(personName: string, person?: Person) {
+    this.allPeople = catalogueAfterPersonChange(this.allPeople, undefined, personName, person);
+    this.guestsFilterTerm.set('');
+    const next = guestNamesWithPerson(this.form()?.controls.guests.value, personName);
+    this.regroupGuests(next);
+    this.cdr.detectChanges();
+    this.form()?.controls.guests.setValue(next);
   }
 
   onSubjectsDropdownOpenChange(opened: boolean) {

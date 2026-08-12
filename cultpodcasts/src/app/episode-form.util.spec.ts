@@ -1,9 +1,14 @@
 import { ApiEpisode } from './api-episode.interface';
 import {
   buildEpisodeForm,
+  catalogueAfterPersonChange,
   dateToLocalISO,
+  episodeCataloguePeople,
   getEpisodeChanges,
+  guestNamesWithPerson,
   mergeEpisodeSubjects,
+  mergePeopleCatalogue,
+  pendingPerson,
   personLabel,
   personMatchesFilter,
   regroupGuests,
@@ -87,6 +92,52 @@ describe('episode-form.util', () => {
     const result = regroupGuests(people, undefined, ['Alice'], 'bo');
     expect(result.selectedGuests.map(p => p.name)).toEqual(['Alice']);
     expect(result.otherPeople.map(p => p.name)).toEqual(['Bob']);
+  });
+
+  it('regroupGuests keeps selected names that are missing from the catalogue as stubs', () => {
+    const people: Person[] = [{ id: '2', name: 'Bob' }];
+    const result = regroupGuests(people, undefined, ['Alice', 'Bob'], '');
+    expect(result.selectedGuests.map(p => p.name)).toEqual(['Alice', 'Bob']);
+    expect(result.selectedGuests[0]).toEqual(pendingPerson('Alice'));
+    expect(result.otherPeople.map(p => p.name)).toEqual([]);
+  });
+
+  it('mergePeopleCatalogue keeps locally created people missing from a stale fetch', () => {
+    const existing: Person[] = [
+      { id: '1', name: 'Alice' },
+      { id: 'created-1', name: 'Dana' }
+    ];
+    const fetched: Person[] = [{ id: '1', name: 'Alice' }];
+    const created: Person = { id: 'created-2', name: 'Evan' };
+    const merged = mergePeopleCatalogue(existing, fetched, [created]);
+    expect(merged.map(p => p.name)).toEqual(['Alice', 'Dana', 'Evan']);
+  });
+
+  it('mergePeopleCatalogue does not let a pending stub overwrite a real person', () => {
+    const existing: Person[] = [{ id: '1', name: 'Alice', twitterHandle: '@alice' }];
+    const merged = mergePeopleCatalogue(existing, undefined, [pendingPerson('Alice')]);
+    expect(merged).toEqual([{ id: '1', name: 'Alice', twitterHandle: '@alice' }]);
+  });
+
+  it('catalogueAfterPersonChange upserts a created person onto a stale snapshot', () => {
+    const existing: Person[] = [{ id: 'created-1', name: 'Dana' }];
+    const fetched: Person[] = [{ id: '1', name: 'Alice' }];
+    const created: Person = { id: 'created-2', name: 'Evan' };
+    const people = catalogueAfterPersonChange(existing, fetched, 'Evan', created);
+    expect(people.map(p => p.name)).toEqual(['Alice', 'Dana', 'Evan']);
+  });
+
+  it('guestNamesWithPerson appends a new guest without dropping existing names', () => {
+    expect(guestNamesWithPerson(['Dana'], 'Evan')).toEqual(['Dana', 'Evan']);
+    expect(guestNamesWithPerson(['Dana'], 'Dana')).toEqual(['Dana']);
+  });
+
+  it('episodeCataloguePeople adds suggestion people missing from the published list', () => {
+    const published: Person[] = [{ id: '1', name: 'Host Show' }];
+    const suggestions = [{ person: { id: '2', name: 'Suggested Guest', twitterHandle: '@guest' } }];
+    const people = episodeCataloguePeople(published, undefined, suggestions);
+    expect(people.map(p => p.name)).toEqual(expect.arrayContaining(['Host Show', 'Suggested Guest']));
+    expect(people).toHaveLength(2);
   });
 
   it('regroupGuests filters other people by social handle as well as name', () => {
