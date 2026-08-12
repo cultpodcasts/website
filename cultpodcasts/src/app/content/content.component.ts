@@ -16,7 +16,13 @@ import { PrivacyPolicyComponent } from '../privacy-policy/privacy-policy.compone
 export class ContentComponent {
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  protected content = signal<string | undefined>(undefined);
+  /**
+   * Seed from the route snapshot before the first template pass.
+   * Starting at `undefined` made the client hit `@default` ("Not Found!") against
+   * SSR privacy/terms DOM and aborted AppComponent hydration (`hasAttribute`),
+   * leaving dead toolbar/search chrome on cold-load content pages.
+   */
+  protected content = signal<string>(this.route.snapshot.params['path'] ?? 'unknown');
 
   ngOnInit() {
     combineLatest(
@@ -29,7 +35,7 @@ export class ContentComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params } = res;
-      this.content.set(params["path"] ?? "unknown");
+      this.content.set(params['path'] ?? 'unknown');
     });
   }
 }

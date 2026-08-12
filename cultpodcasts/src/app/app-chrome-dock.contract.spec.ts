@@ -11,6 +11,14 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     join(__dirname, 'toolbar/toolbar.component.ts'),
     'utf8'
   );
+  const searchBarTs = readFileSync(
+    join(__dirname, 'search-bar/search-bar.component.ts'),
+    'utf8'
+  );
+  const contentTs = readFileSync(
+    join(__dirname, 'content/content.component.ts'),
+    'utf8'
+  );
 
   it('CHROME-DOCK-001: docked search wrapper uses pointer-events none so add/profile stay clickable under z-index 110', () => {
     expect(sass).toMatch(
@@ -36,5 +44,16 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(toolbarTs).not.toMatch(/host:\s*\{\s*ngSkipHydration/);
     expect(toolbarTs).toMatch(/afterNextRender/);
     expect(toolbarTs).toMatch(/authChromeReady/);
+  });
+
+  it('CHROME-DOCK-004: search-bar hydrates (no ngSkipHydration) so typeahead listeners bind on cold load', () => {
+    expect(searchBarTs).not.toMatch(/ngSkipHydration:\s*['"]true['"]/);
+    expect(searchBarTs).not.toMatch(/host:\s*\{\s*ngSkipHydration/);
+    expect(searchBarTs).toMatch(/applyChipFromUrl/);
+  });
+
+  it('CHROME-DOCK-005: content path seeds from route snapshot so privacy SSR hydrates (not @default Not Found)', () => {
+    expect(contentTs).toMatch(/snapshot\.params\[['"]path['"]\]/);
+    expect(contentTs).not.toMatch(/signal<\s*string\s*\|\s*undefined\s*>\(\s*undefined\s*\)/);
   });
 });

@@ -15,10 +15,11 @@ export class PrivacyPolicyComponent {
 
   protected metadata = {
     version: version,
-    buildDate: new Date(buildDate),
+    // Keep the build-time ISO string — Date#toString() differs SSR vs browser TZ.
+    buildDate,
     commitHash: commitHash,
     environmentName: environment.name,
-    isDevMode: isDevMode()  
+    isDevMode: isDevMode()
   }
 
   constructor(
