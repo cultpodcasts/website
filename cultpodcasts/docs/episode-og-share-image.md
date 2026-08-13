@@ -13,7 +13,8 @@ When OFF, SEO keeps `/assets/sq-image.png` and `twitter:card=summary` even if
 page-details returns `image` / `imageAspect`.
 
 When ON, SSR uses page-details image (Api `/og-image` branded URL when present)
-and may set `summary_large_image` for wide art.
+and sets `twitter:card=summary_large_image` for both wide and square episode art
+(`summary` only for the site-icon fallback).
 
 ## Dependencies
 
@@ -41,7 +42,7 @@ page-details.
 2. Open an episode that has shortener KV art (or trigger page-details miss so
    Api creates KV from search).
 3. Expect `og:image` / `twitter:image` → episode art (often Api `/og-image?…`).
-4. Wide YouTube-style art → `twitter:card=summary_large_image`.
+4. Expect `twitter:card=summary_large_image` for wide and square episode art.
 5. Revert switch to `false` before production release unless intentionally
    enabling the feature.
 

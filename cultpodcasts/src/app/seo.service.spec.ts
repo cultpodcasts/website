@@ -54,7 +54,7 @@ describe('SeoService share images', () => {
     expect(meta.getTag('name="twitter:card"')?.content).toBe('summary');
   });
 
-  it('uses episode art with summary for square covers when switch is ON', () => {
+  it('uses summary_large_image for square covers when switch is ON', () => {
     episodeOgShareImageEnabled = true;
     seo.AddMetaTags({
       title: 'Ep | Show',
@@ -67,7 +67,7 @@ describe('SeoService share images', () => {
       .toBe('https://i.scdn.co/image/ab6765cover');
     expect(meta.getTag('name="twitter:image"')?.content)
       .toBe('https://i.scdn.co/image/ab6765cover');
-    expect(meta.getTag('name="twitter:card"')?.content).toBe('summary');
+    expect(meta.getTag('name="twitter:card"')?.content).toBe('summary_large_image');
   });
 
   it('uses summary_large_image for wide YouTube art when switch is ON', () => {

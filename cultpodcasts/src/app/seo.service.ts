@@ -99,9 +99,8 @@ export class SeoService {
     }
     this.meta.updateTag({ property: "og:image", content: image });
     this.meta.updateTag({ name: "twitter:image", content: image });
-    const card = useEpisodeImage && pageDetails.imageAspect === "wide"
-      ? "summary_large_image"
-      : "summary";
+    // Episode art (wide or square) → large card; site-icon fallback stays summary.
+    const card = useEpisodeImage ? "summary_large_image" : "summary";
     this.meta.updateTag({ name: "twitter:card", content: card });
   }
 }
