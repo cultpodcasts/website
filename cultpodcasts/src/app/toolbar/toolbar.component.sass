@@ -70,14 +70,16 @@
     height: 40px
     vertical-align: middle
 
-// Hide the SSR logged-out profile glyph when a cached avatar exists, until the
-// skip-hydration toolbar re-renders with #avatar (avoids logged-out flash).
+// Hide the SSR logged-out profile glyph when a cached avatar exists, until
+// afterNextRender flips signed-in chrome to #avatar (avoids logged-out flash).
 :host-context(html.has-cached-avatar)
     img.socialbutton[alt="Profile"]:not(#avatar)
         opacity: 0
 
 #socialbuttons
     flex-shrink: 0
+    position: relative
+    z-index: 120
     .button:hover
         cursor: pointer
     // Signed-in chrome wraps the avatar + matBadge. Do not overflow:hidden here —
@@ -92,6 +94,10 @@
         width: 40px
         height: 40px
         box-shadow: 0 0 0 2px color-mix(in srgb, var(--cp-amber, #e8a23a) 40%, transparent)
+
+#menu
+    position: relative
+    z-index: 120
 
 button#menu
     flex-shrink: 0

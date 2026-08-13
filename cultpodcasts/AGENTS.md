@@ -2,12 +2,28 @@
 
 Angular PWA / Bubblewrap client for [cultpodcasts.com](https://cultpodcasts.com). It consumes the Cult Podcasts API (`api-infra`) via the Cloudflare API worker.
 
+## No Api / website deploys (HARD)
+
+**Never** run `npm run deploy` / `wrangler pages deploy` (or Api `wrangler deploy`) unless the user
+explicitly names that exact deploy in the current conversation. When the user asks to **push** a PR
+branch, push is OK — Pages **preview** may build from git; do not run deploy CLIs.
+
+- Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
+
 ## Preview ↔ production secrets (HARD)
 
 Any new Pages / Auth0 / build secret for preview/staging **must** also be planned for production. PR body **must** include `## Config / secrets` with **key names** (never values). At deploy, read that section and set both environments.
 
 - Rule: [`../.cursor/rules/preview-production-secrets-parity.mdc`](../.cursor/rules/preview-production-secrets-parity.mdc)
 - Docs: [`docs/preview-production-secrets.md`](docs/preview-production-secrets.md)
+
+## Episode OG share image
+
+Client SEO may use episode art from page-details when
+`FeatureSwitch.episodeOgShareImage` is enabled (default **OFF**).
+
+- Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
+- Preview: test with the switch ON and OFF before enabling in production.
 
 ## Repository layout
 
@@ -70,3 +86,7 @@ Curation KV deploy notes only: [docs/flix-prototype.md](docs/flix-prototype.md).
 | `npm run dev` | `https://local.cultpodcasts.com:4200` |
 
 Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
+
+## Version bumps (HARD for PRs)
+
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.

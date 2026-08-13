@@ -1,6 +1,7 @@
 import { renderApplication } from "@angular/platform-server";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
+import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -31,8 +32,11 @@ async function workerFetchHandler(request: Request, env: Env) {
 		}
 	}
 
-	// Get the root `index.html` content.
-	const indexUrl = new URL("/", url);
+	// Bootstrap SSR from the empty CSR shell — NOT prerendered `/` index.html.
+	// Fetching `/` returns SSG homepage HTML + ng-state; renderApplication would
+	// append a second ng-state and wrong ngh indices, aborting hydration on
+	// /content/* (NG0500: expected div, found section) and leaving chrome dead.
+	const indexUrl = new URL("/index.csr.html", url);
 	const indexResponse = await env.ASSETS.fetch(new Request(indexUrl));
 	const document = await indexResponse.text();
 
@@ -40,6 +44,8 @@ async function workerFetchHandler(request: Request, env: Env) {
 	// session). Rendering a shell and hydrating it crashes the client
 	// (nextSibling/hasAttribute on null) and leaves the page forever loading.
 	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
+	// Privacy/terms are prerendered (SSG) and excluded in _routes.json so CF Pages
+	// serves static HTML — this Worker path must not re-render those URLs.
 	if (isAuthClientOnlyPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
@@ -55,15 +61,6 @@ async function workerFetchHandler(request: Request, env: Env) {
 
 	console.log("rendered SSR");
 	return new Response(content, indexResponse);
-}
-
-/** Routes that must boot on the client after Auth0 — never SSR with FakeAuth. */
-function isAuthClientOnlyPath(pathname: string): boolean {
-	return pathname === "/discovery"
-		|| pathname === "/outgoingEpisodes"
-		|| pathname === "/bookmarks"
-		|| pathname === "/unauthorised"
-		|| pathname.startsWith("/episodes/");
 }
 
 export default {

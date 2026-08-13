@@ -40,10 +40,10 @@ const SUGGESTION_DEBOUNCE_MS = 150;
   ],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  // Chip @if DOM is easy to desync across SSR/client (SiteService is not
-  // transferred). Skip hydrating the bar; URL/site data re-seeds on client.
-  host: { ngSkipHydration: 'true' }
+  // Chip @if is kept SSR/client-aligned via applyChipFromUrl (SiteService is not
+  // transferred). Do not skip hydration — that leaves a dead search DOM with no
+  // suggestion listeners on cold-load content pages.
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 
 export class SearchBarComponent {

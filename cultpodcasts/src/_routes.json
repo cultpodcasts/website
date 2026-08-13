@@ -11,5 +11,12 @@
 		"/episodes/*",
 		"/unauthorised"
 	],
-	"exclude": []
+	"exclude": [
+		"/content/privacy-policy",
+		"/content/privacy-policy/",
+		"/content/privacy-policy/index.html",
+		"/content/terms-and-conditions",
+		"/content/terms-and-conditions/",
+		"/content/terms-and-conditions/index.html"
+	]
 }

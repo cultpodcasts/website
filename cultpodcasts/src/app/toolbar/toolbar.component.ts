@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AuthServiceWrapper, HAS_LOGGED_IN_STORAGE_KEY } from '../auth-service-wrapper.class';
 import { FeatureSwitchService } from '../feature-switch-service';
@@ -27,9 +27,6 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
-import { authRedirectUri } from '../auth-redirect-uri';
-import { environment } from '../../environments/environment';
-
 @Component({
   selector: 'app-toolbar',
   imports: [
@@ -41,10 +38,7 @@ import { environment } from '../../environments/environment';
   ],
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.sass',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  // SSR always renders the logged-out chrome (FakeAuth); the client may render
-  // the cached avatar immediately. Skip hydration so those trees can't mismatch.
-  host: { ngSkipHydration: 'true' }
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ToolbarComponent {
   public FeatureSwitch = FeatureSwitch;
@@ -60,9 +54,21 @@ export class ToolbarComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
+  /**
+   * SSR (FakeAuth) always paints logged-out chrome. AuthServiceWrapper may seed a
+   * cached avatar during browser bootstrap — defer signed-in UI until after the
+   * first client render so hydration matches and (click)/menu triggers bind.
+   * Skipping hydration left dead SSR DOM with no listeners on cold loads.
+   */
+  private readonly authChromeReady = signal(false);
+
+  constructor() {
+    afterNextRender(() => this.authChromeReady.set(true));
+  }
+
   /** True while Auth0 has a user, or we still have a cached avatar during session restore. */
   protected showSignedInChrome(): boolean {
-    return !!this.auth.avatarUrl();
+    return this.authChromeReady() && !!this.auth.avatarUrl();
   }
 
   protected avatarSrc(): string {
@@ -71,7 +77,7 @@ export class ToolbarComponent {
 
   login() {
     if (localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)) {
-      this.auth.authService.loginWithRedirect();
+      this.auth.loginWithRedirectToCurrentPage();
     } else {
       this.dialog
         .open(FirstLoginNoticeComponent, { disableClose: true, autoFocus: true })
@@ -79,7 +85,7 @@ export class ToolbarComponent {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(async result => {
           if (result?.continue) {
-            this.auth.authService.loginWithRedirect();;
+            this.auth.loginWithRedirectToCurrentPage();
           }
         });
     }
@@ -94,12 +100,7 @@ export class ToolbarComponent {
   }
 
   logout() {
-    this.auth.clearCachedAvatar();
-    this.auth.authService.logout({
-      logoutParams: {
-        returnTo: authRedirectUri(environment.assetHost)
-      }
-    });
+    this.auth.logoutKeepingCurrentPage();
   }
 
   async openSubmitPodcast() {

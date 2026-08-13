@@ -77,7 +77,7 @@
             </button>
             }
             @if (authRoles().includes("Admin")) {
-            <button [disabled]="result.tweeted||result.posted" mat-menu-item
+            <button [disabled]="result.tweeted" mat-menu-item
                 (click)="delete(result.podcastId!, result.id)">
                 <mat-icon>delete</mat-icon>
                 <span>Delete Episode</span>

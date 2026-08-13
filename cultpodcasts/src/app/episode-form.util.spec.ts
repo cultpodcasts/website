@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { ApiEpisode } from './api-episode.interface';
 import {
   applyGuestSelection,
@@ -7,6 +8,8 @@ import {
   episodeCataloguePeople,
   getEpisodeChanges,
   guestNamesWithPerson,
+  isEpisodeDeleteMenuDisabled,
+  isSubjectRedditTabEnabled,
   mergeEpisodeSubjects,
   mergePeopleCatalogue,
   pendingPerson,
@@ -14,6 +17,7 @@ import {
   personMatchesFilter,
   regroupGuests,
   regroupSubjects,
+  scheduleChromeSync,
   uniqueStrings,
   withoutGuestSuggestion
 } from './episode-form.util';
@@ -225,12 +229,14 @@ describe('episode-form.util', () => {
       bluesky: true,
       lang: 'en',
       searchTerms: 'foo',
+      hashTag: 'ScenarioTag',
       images: { spotify: new URL('https://img.example/spotify.jpg') }
     });
     const form = buildEpisodeForm(episode);
     expect(form.controls.title.value).toBe('Title');
     expect(form.controls.blueskyPosted.value).toBe(true);
     expect(form.controls.lang.value).toBe('unset');
+    expect(form.controls.hashTag.value).toBe('#ScenarioTag');
     expect(form.controls.spotify.value?.toString()).toBe('https://open.spotify.com/episode/x');
     expect(form.controls.spotifyImage.value?.toString()).toBe('https://img.example/spotify.jpg');
     expect(form.controls.guests.value).toEqual(['Alice']);
@@ -295,6 +301,12 @@ describe('episode-form.util', () => {
       });
     });
 
+    it('includes hashTag when it changes', () => {
+      const prev = baseEpisode({ hashTag: '#Old' });
+      const now = baseEpisode({ hashTag: '#New' });
+      expect(getEpisodeChanges(prev, now)).toEqual({ hashTag: '#New' });
+    });
+
     it('clears a URL with empty string when removed', () => {
       const prev = baseEpisode();
       const now = baseEpisode({
@@ -322,6 +334,53 @@ describe('episode-form.util', () => {
       const prev = baseEpisode({ lang: 'en' });
       const now = baseEpisode({ lang: 'unset' });
       expect(getEpisodeChanges(prev, now).lang).toBe('');
+    });
+  });
+
+  it('buildEpisodeForm preserves multi-tag hashTag with hash prefix', () => {
+    const form = buildEpisodeForm(baseEpisode({ hashTag: 'ABC XYZ' }));
+    expect(form.controls.hashTag.value).toBe('#ABC #XYZ');
+  });
+
+  it('buildEpisodeForm leaves empty/null hashTag cleared', () => {
+    expect(buildEpisodeForm(baseEpisode({ hashTag: null })).controls.hashTag.value).toBeNull();
+    expect(buildEpisodeForm(baseEpisode({ hashTag: '' })).controls.hashTag.value).toBeNull();
+  });
+
+  describe('getEpisodeChanges hashTag', () => {
+    it('includes trimmed multi-tag hashTag changes', () => {
+      const prev = baseEpisode({ hashTag: '#ABC' });
+      const now = baseEpisode({ hashTag: '#ABC #XYZ' });
+      expect(getEpisodeChanges(prev, now)).toEqual({ hashTag: '#ABC #XYZ' });
+    });
+
+    it('clears hashTag when emptied', () => {
+      const prev = baseEpisode({ hashTag: '#ABC' });
+      const now = baseEpisode({ hashTag: null });
+      expect(getEpisodeChanges(prev, now)).toEqual({ hashTag: null });
+    });
+  });
+
+  describe('isEpisodeDeleteMenuDisabled', () => {
+    it('disables only when tweeted, even if posted', () => {
+      expect(isEpisodeDeleteMenuDisabled({ tweeted: false, posted: true } as any)).toBe(false);
+      expect(isEpisodeDeleteMenuDisabled({ tweeted: true, posted: false } as any)).toBe(true);
+      expect(isEpisodeDeleteMenuDisabled({ tweeted: false, posted: false } as any)).toBe(false);
+    });
+  });
+
+  describe('isSubjectRedditTabEnabled', () => {
+    it('follows the FeatureSwitch.reddit callback', () => {
+      expect(isSubjectRedditTabEnabled(() => false)).toBe(false);
+      expect(isSubjectRedditTabEnabled(flag => flag === 'reddit')).toBe(true);
+    });
+  });
+
+  describe('scheduleChromeSync', () => {
+    it('no-ops when not in browser', () => {
+      const sync = vi.fn();
+      scheduleChromeSync(sync, false);
+      expect(sync).not.toHaveBeenCalled();
     });
   });
 });

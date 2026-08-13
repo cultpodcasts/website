@@ -147,22 +147,36 @@
 // Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
 .chrome-search--docked
     position: fixed
-    // Fallback before the first measure — icon-only logo + actions.
+    // Fallback before the first measure — leave room for add/profile (JS tightens).
     left: 70px
+    right: 7rem
     top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
-    width: calc(100vw - 11rem)
+    width: auto
     max-width: none
     // Size the input row only — do not clip the typeahead listbox below.
     height: var(--nflx-search-h)
     margin: 0
+    // Above the frosted bar (102) so the field is visible in the logo↔actions gap.
+    // Must not steal clicks from add/profile: bar is a full-width sibling at z-index 102,
+    // so child z-index on #socialbuttons cannot win. Pass events through the wrapper.
     z-index: 110
+    pointer-events: none
     transform: none
     --nflx-search-h: 40px
     overflow: visible
     ::ng-deep
+        // Do NOT enable pointer-events on #searchcontainer / #searchbar — they span the
+        // full docked width and would still cover add/profile when measure is late/wide.
+        #searchboxwrapper,
+        #searchcta,
+        #search-suggestions-listbox
+            pointer-events: auto
         #searchbar
             gap: 8px
             min-width: 0
+            pointer-events: none
+        #searchcontainer
+            pointer-events: none
         #searchboxwrapper
             flex: 1 1 auto
             min-width: 0
@@ -197,7 +211,8 @@
     .chrome-search--docked
         // Between logo icon and overflow menu.
         left: 58px
-        width: calc(100vw - 7rem)
+        right: 3.5rem
+        width: auto
         ::ng-deep
             #searchbar
                 gap: 6px
@@ -305,12 +320,16 @@
     position: fixed
     inset: 0
     z-index: 1000
-    display: flex
+    display: none
     align-items: center
     justify-content: center
     padding: 16px
     background: color-mix(in srgb, var(--cp-ink, #0b0d12) 72%, transparent)
     backdrop-filter: blur(8px)
+    pointer-events: none
+    &.drop-overlay--active
+        display: flex
+        pointer-events: auto
 
 .drop-overlay-message
     margin: 0

@@ -2,8 +2,11 @@ import { isPlatformServer, formatDate } from '@angular/common';
 import { Inject, Injectable, Optional, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details.interface';
+import { FeatureSwitch } from './feature-switch.enum';
+import { FeatureSwitchService } from './feature-switch-service';
 
 const siteName: string = "Cult Podcasts";
+const defaultShareImagePath: string = "/assets/sq-image.png";
 
 @Injectable({
   providedIn: 'root'
@@ -14,6 +17,7 @@ export class SeoService {
   constructor(
     private meta: Meta,
     private title: Title,
+    private featureSwitchService: FeatureSwitchService,
     @Inject(PLATFORM_ID) platformId: any,
     @Optional() @Inject('url') private url: URL
   ) {
@@ -54,6 +58,7 @@ export class SeoService {
         this.meta.updateTag({ property: "og:description", content: description });
       }
       this.meta.updateTag({ property: "og:title", content: htmlTItle });
+      this.applyShareImage(pageDetails);
     }
   }
 
@@ -74,10 +79,28 @@ export class SeoService {
       if (this.url) {
         const domain: string = this.url.hostname;
         const url: string = this.url.toString();
+        const shareImage = new URL(defaultShareImagePath, this.url).toString();
         this.meta.addTag({ property: "twitter:domain", content: domain });
         this.meta.addTag({ property: "og:url", content: url });
-        this.meta.addTag({ property: "og:image", content: new URL("/assets/sq-image.png", this.url).toString() })
+        this.meta.addTag({ property: "og:image", content: shareImage });
       };
     }
+  }
+
+  private applyShareImage(pageDetails: IPageDetails): void {
+    const useEpisodeImage =
+      this.featureSwitchService.IsEnabled(FeatureSwitch.episodeOgShareImage) &&
+      !!pageDetails.image;
+    const image = useEpisodeImage
+      ? pageDetails.image
+      : (this.url ? new URL(defaultShareImagePath, this.url).toString() : undefined);
+    if (!image) {
+      return;
+    }
+    this.meta.updateTag({ property: "og:image", content: image });
+    this.meta.updateTag({ name: "twitter:image", content: image });
+    // Episode art (wide or square) → large card; site-icon fallback stays summary.
+    const card = useEpisodeImage ? "summary_large_image" : "summary";
+    this.meta.updateTag({ name: "twitter:card", content: card });
   }
 }

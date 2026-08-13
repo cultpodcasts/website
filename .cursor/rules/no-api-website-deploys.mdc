@@ -1,0 +1,33 @@
+---
+description: HARD — never deploy Cloudflare Api Worker or website Pages
+alwaysApply: true
+---
+
+# No Api / website deploys (HARD GUARDRAIL)
+
+**Incident (Aug 2026):** Agent ran `wrangler deploy` against top-level production Worker `api` during a preview-only SEO play. Website apex deploy was started and had to be aborted.
+
+## Forbidden always (unless the user explicitly names the exact deploy in this conversation)
+
+| NEVER | Why |
+|-------|-----|
+| `wrangler deploy` / `npm run deploy` in the **Api** repo | Deploys live Worker **`api`** (or wrong env if mistyped) |
+| `wrangler deploy --env preview` / preview Worker publish without explicit ask | Still an Api deploy |
+| `wrangler pages deploy` / `npm run deploy` in **website** / `cultpodcasts` | Deploys Pages (often **production** apex) |
+| Inferring “enable on production” / “ship it” / “flip the switch” as deploy approval | Config/code change ≠ deploy |
+
+## Allowed
+
+| OK | Notes |
+|----|--------|
+| `git push` to a PR/feature branch when the user asks to **push** / **commit and push** | Cloudflare Pages **preview** may build from the push — that is OK; do **not** run Pages/Worker deploy CLIs |
+| Local `wrangler pages dev` / `npm run start` / `npm run dev` | Local only |
+
+## Production vs preview
+
+- Default mindset for Api + website: **preview / PR only**.
+- Never run production Pages deploy without an explicit phrase like **“deploy website production”** or **“npm run deploy to production”**.
+
+## If unsure
+
+**Do not deploy.** Ask which target (preview vs production) and wait.

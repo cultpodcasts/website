@@ -49,6 +49,7 @@
                     <input type="text" [formControl]="form()!.controls.knownTerms" matInput>
                 </mat-form-field>
             </mat-tab>
+            @if (featureSwitchService.IsEnabled(FeatureSwitch.reddit)) {
             <mat-tab label="Reddit">
                 <mat-form-field class="full-width">
                     <mat-label>Flair Id</mat-label>
@@ -66,6 +67,7 @@
                     <input type="text" [formControl]="form()!.controls.redditFlareText" matInput>
                 </mat-form-field>
             </mat-tab>
+            }
         </mat-tab-group>
     </form>
     }

@@ -1,13 +1,3 @@
 <article id="content">
-  @switch (content()) {
-    @case ('privacy-policy') {
-      <privacy-policy/>
-    }
-    @case ('terms-and-conditions') {
-      <terms-and-conditions/>
-    }
-    @default {
-      <h1>Not Found!</h1>
-    }
-  }
+  <router-outlet />
 </article>

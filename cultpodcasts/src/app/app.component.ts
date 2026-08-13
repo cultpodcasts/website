@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -36,6 +37,7 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { filter, map, startWith } from 'rxjs';
+import { scheduleChromeSync } from './episode-form.util';
 
 @Component({
   selector: 'app-root',
@@ -45,7 +47,7 @@ import { filter, map, startWith } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 
-export class AppComponent implements OnDestroy {
+export class AppComponent implements OnDestroy, AfterViewInit {
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
   /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
@@ -87,14 +89,20 @@ export class AppComponent implements OnDestroy {
   /** Shows the floating "back to top" control once the user has scrolled well past the fold. */
   protected readonly showBackToTop = signal(false);
   /**
-   * Search docked into the sticky logo bar. Browse routes start docked so Discovery
-   * (etc.) never flash a dropped search row that then collapses into the header.
+   * Search docked into the sticky logo bar. Browse routes must stay docked from
+   * the first paint (SSR + client) so hydration class bindings match — a one-shot
+   * signal seeded before NavigationEnd left content pages as browse-shell without
+   * chrome-stuck. Homepage scroll docking uses homeScrollDocked instead.
    */
-  protected readonly chromeStuck = signal(!AppComponent.isHomePath(this.router.url));
-  private scrollRaf = 0;
+  private readonly homeScrollDocked = signal(false);
+  protected readonly chromeStuck = computed(
+    () => !this.isHomePage() || this.homeScrollDocked()
+  );  private scrollRaf = 0;
   /** scrollY when search last docked — used to undock without flicker. */
   private dockAtScrollY = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
+  /** Remeasure docked search when toolbar end controls settle (e.g. avatar after auth). */
+  private chromeEndControlsObserver: ResizeObserver | undefined;
 
   @ViewChild(ToolbarComponent)
   private toolbar!: ToolbarComponent;
@@ -129,6 +137,12 @@ export class AppComponent implements OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    // Cold-load browse routes start docked; measure before fallback CSS covers toolbar actions.
+    scheduleChromeSync(() => this.syncChromeFromScroll(), this.isBrowser);
+    this.observeChromeEndControls();
+  }
+
   ngOnDestroy(): void {
     if (this.isBrowser) {
       this.clearIgnoreDragTimer();
@@ -136,6 +150,7 @@ export class AppComponent implements OnDestroy {
       this.removeScrollListener();
       this.narrowChromeQuery?.removeEventListener('change', this.onNarrowChromeChange);
       window.removeEventListener('resize', this.onWindowResize);
+      this.chromeEndControlsObserver?.disconnect();
     }
   }
 
@@ -148,6 +163,7 @@ export class AppComponent implements OnDestroy {
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(null),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => {
@@ -302,10 +318,16 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    // Browse + narrow: search stays in the header — never the dropped homepage row.
-    if (!this.isHomePage() || this.isNarrowChrome()) {
-      if (!this.chromeStuck()) {
-        this.chromeStuck.set(true);
+    // Browse: always docked via chromeStuck computed — just measure the header gap.
+    if (!this.isHomePage()) {
+      this.layoutDockedSearch();
+      return;
+    }
+
+    // Narrow homepage: keep search in the header row (same as browse).
+    if (this.isNarrowChrome()) {
+      if (!this.homeScrollDocked()) {
+        this.homeScrollDocked.set(true);
         requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
       } else {
         this.layoutDockedSearch();
@@ -313,10 +335,10 @@ export class AppComponent implements OnDestroy {
       return;
     }
 
-    if (this.chromeStuck()) {
+    if (this.homeScrollDocked()) {
       // Release back to the dropped layout near the top of the homepage.
       if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
-        this.chromeStuck.set(false);
+        this.homeScrollDocked.set(false);
         this.clearDockedSearchLayout(search);
       } else {
         this.layoutDockedSearch();
@@ -334,7 +356,7 @@ export class AppComponent implements OnDestroy {
     const searchTop = search.getBoundingClientRect().top;
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
-      this.chromeStuck.set(true);
+      this.homeScrollDocked.set(true);
       // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
       requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
     }
@@ -374,13 +396,40 @@ export class AppComponent implements OnDestroy {
     const top = Math.max(0, (barHeight - searchHeight) / 2);
 
     search.style.left = `${left}px`;
+    search.style.right = 'auto';
     search.style.width = `${width}px`;
     search.style.top = `${top}px`;
     search.style.transform = 'none';
   }
 
+  /** Remeasure when add/profile/menu size changes (avatar swap after hydration). */
+  private observeChromeEndControls(): void {
+    if (!this.isBrowser || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const bar = this.chromeBar?.nativeElement;
+    if (!bar) {
+      return;
+    }
+    this.chromeEndControlsObserver?.disconnect();
+    this.chromeEndControlsObserver = new ResizeObserver(() => {
+      if (this.chromeStuck()) {
+        this.layoutDockedSearch();
+      }
+    });
+    const social = bar.querySelector('#socialbuttons');
+    const menu = bar.querySelector('button#menu');
+    if (social) {
+      this.chromeEndControlsObserver.observe(social);
+    }
+    if (menu) {
+      this.chromeEndControlsObserver.observe(menu);
+    }
+  }
+
   private clearDockedSearchLayout(search: HTMLElement): void {
     search.style.left = '';
+    search.style.right = '';
     search.style.width = '';
     search.style.top = '';
     search.style.transform = '';
