@@ -51,12 +51,6 @@ import { scheduleChromeSync } from './episode-form.util';
 export class AppComponent implements OnDestroy, AfterViewInit {
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
-  /**
-   * Release home search back to the dropped overlay near the top of the page.
-   * Dock itself is geometry (search top meets the logo bar) — do not wait for a
-   * large scroll threshold or the field overlaps the bar then snaps.
-   */
-  private static readonly HOME_UNDOCK_SCROLL_PX = 8;
   /** Match app.component.sass narrow chrome; search stays docked in the header row. */
   private static readonly NARROW_CHROME_MQ = '(max-width: 700px)';
 
@@ -100,11 +94,15 @@ export class AppComponent implements OnDestroy, AfterViewInit {
    * chrome-stuck. Homepage scroll docking uses homeScrollDocked instead.
    */
   private readonly homeScrollDocked = signal(false);
+  private readonly narrowChrome = signal(false);
   protected readonly chromeStuck = computed(
     () => !this.isHomePage() || this.homeScrollDocked()
-  );  private scrollRaf = 0;
-  /** scrollY when search last docked — used to undock without flicker. */
-  private dockAtScrollY = 0;
+  );
+  /** Browse (and narrow home) stretch search across the logo↔actions gap. Wide home stays 640px sticky. */
+  protected readonly fillHeaderSearchGap = computed(
+    () => !this.isHomePage() || this.narrowChrome()
+  );
+  private scrollRaf = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
   /** Remeasure docked search when toolbar end controls settle (e.g. avatar after auth). */
   private chromeEndControlsObserver: ResizeObserver | undefined;
@@ -163,6 +161,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   initialiseBrowser() {
     this.addDragListeners();
     this.narrowChromeQuery = window.matchMedia(AppComponent.NARROW_CHROME_MQ);
+    this.narrowChrome.set(this.narrowChromeQuery.matches);
     this.narrowChromeQuery.addEventListener('change', this.onNarrowChromeChange);
     this.addScrollListener();
     window.addEventListener('resize', this.onWindowResize, { passive: true });
@@ -305,11 +304,12 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   };
 
   private readonly onNarrowChromeChange = () => {
+    this.narrowChrome.set(!!this.narrowChromeQuery?.matches);
     this.syncChromeFromScroll();
   };
 
   private isNarrowChrome(): boolean {
-    return !!this.narrowChromeQuery?.matches;
+    return this.narrowChrome();
   }
 
   private syncChromeFromScroll(): void {
@@ -343,27 +343,23 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     }
 
     if (this.homeScrollDocked()) {
-      // Release when the page is back at the top so the field can sit on the hero.
-      if (y < AppComponent.HOME_UNDOCK_SCROLL_PX) {
+      // Release when in-flow overlay would sit below the stick line (same Y as
+      // the pin) — not at a tiny scroll threshold, which teleports the field.
+      if (y < this.homePinAtScrollY(bar, search) - 2) {
         this.homeScrollDocked.set(false);
         this.changeDetector.detectChanges();
         this.layoutDroppedSearch();
       } else {
-        this.layoutDockedSearch();
+        this.clearDockedSearchLayout(search);
       }
       return;
     }
 
-    // Dock when the in-flow search reaches the fixed logo bar (sticky, no jump).
-    const barBottom = bar.getBoundingClientRect().bottom;
-    const searchTop = search.getBoundingClientRect().top;
-    if (searchTop <= barBottom + 2) {
-      this.dockAtScrollY = y;
+    // Pin when sticky `top` has caught — field is already at in-bar Y.
+    if (search.getBoundingClientRect().top <= this.homeStickTop(bar, search) + 1) {
       this.homeScrollDocked.set(true);
-      // Apply --docked in this frame. Waiting 2 rAFs let the in-flow field
-      // scroll under the logo bar (the overlay "disappears").
       this.changeDetector.detectChanges();
-      this.layoutDockedSearch();
+      this.clearDockedSearchLayout(search);
     } else {
       this.layoutDroppedSearch();
     }
@@ -381,15 +377,15 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   /**
    * Pin the search field between the logo mark and add/profile (#socialbuttons)
    * — or the overflow menu on narrow viewports — inside the sticky header row.
-   * Wide home overlay stays 640px centered; browse uses the full header gap.
+   * Wide home overlay stays 640px sticky/fixed; browse uses the full header gap.
    */
   private layoutDockedSearch(): void {
     const search = this.chromeSearch?.nativeElement;
     if (!search || !this.chromeStuck()) {
       return;
     }
-    if (this.homeScrollDocked() && !this.isNarrowChrome()) {
-      this.layoutHomeDockedSearch();
+    if (this.isHomePage() && !this.isNarrowChrome()) {
+      this.clearDockedSearchLayout(search);
       return;
     }
     const gap = this.measureChromeSearchGap();
@@ -399,23 +395,22 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     this.applySearchGapStyles(search, gap);
   }
 
-  /** Pin the 640px overlay into the header without stretching to the logo↔actions gap. */
-  private layoutHomeDockedSearch(): void {
-    const bar = this.chromeBar?.nativeElement;
-    const search = this.chromeSearch?.nativeElement;
-    if (!bar || !search) {
-      return;
-    }
+  /** Viewport Y where the overlay becomes stuck in the logo row (matches Sass `top`). */
+  private homeStickTop(bar: HTMLElement, search: HTMLElement): number {
     const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
-    const top = Math.max(0, (barHeight - searchHeight) / 2);
-    search.style.left = '50%';
-    search.style.right = 'auto';
-    search.style.width = '';
-    search.style.marginLeft = '0';
-    search.style.marginRight = '0';
-    search.style.top = `${top}px`;
-    search.style.transform = 'translateX(-50%)';
+    const searchHeight = Math.min(search.offsetHeight || 48, barHeight - 8);
+    return Math.max(0, (barHeight - searchHeight) / 2);
+  }
+
+  /** scrollY at which in-flow overlay Y equals `homeStickTop` (no teleport). */
+  private homePinAtScrollY(bar: HTMLElement, search: HTMLElement): number {
+    const shell = bar.closest('#body');
+    const gapRaw = shell
+      ? getComputedStyle(shell).getPropertyValue('--site-chrome-search-gap')
+      : '';
+    const gap = Number.parseFloat(gapRaw) || 12;
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
+    return barHeight + gap - this.homeStickTop(bar, search);
   }
 
   /** Home at rest: drop docked inline left/width so CSS can center the overlay. */

@@ -82,59 +82,36 @@ export function buildChromeSearchLayoutDocument(): string {
 </section>
 <script>
 (function () {
-  const HOME_UNDOCK_SCROLL_PX = 8;
   const body = document.getElementById("body");
   const bar = document.getElementById("chromeBar");
   const search = document.getElementById("chromeSearch");
   let docked = false;
 
-  function clearLayout() {
-    search.style.left = "";
-    search.style.right = "";
-    search.style.width = "";
-    search.style.top = "";
-    search.style.transform = "";
-    search.style.marginLeft = "";
-    search.style.marginRight = "";
+  function stickTop() {
+    const barH = Math.max(bar.getBoundingClientRect().height, 52);
+    const searchH = Math.min(search.offsetHeight || 48, barH - 8);
+    return Math.max(0, (barH - searchH) / 2);
   }
 
-  function layoutHomeDocked() {
-    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
-    const top = Math.max(0, (barHeight - searchHeight) / 2);
-    search.style.left = "50%";
-    search.style.right = "auto";
-    search.style.width = "";
-    search.style.marginLeft = "0";
-    search.style.marginRight = "0";
-    search.style.top = top + "px";
-    search.style.transform = "translateX(-50%)";
+  function pinAtScrollY() {
+    const gap = parseFloat(getComputedStyle(body).getPropertyValue("--site-chrome-search-gap")) || 12;
+    return bar.getBoundingClientRect().height + gap - stickTop();
   }
 
   function setDocked(next) {
     docked = next;
     body.classList.toggle("chrome-stuck", next);
-    search.classList.toggle("chrome-search--docked", next);
-    if (next) {
-      layoutHomeDocked();
-    } else {
-      clearLayout();
-    }
   }
 
   function sync() {
     const y = window.scrollY;
     if (docked) {
-      if (y < HOME_UNDOCK_SCROLL_PX) {
+      if (y < pinAtScrollY() - 2) {
         setDocked(false);
-      } else {
-        layoutHomeDocked();
       }
       return;
     }
-    const barBottom = bar.getBoundingClientRect().bottom;
-    const searchTop = search.getBoundingClientRect().top;
-    if (searchTop <= barBottom + 2) {
+    if (search.getBoundingClientRect().top <= stickTop() + 1) {
       setDocked(true);
     }
   }
@@ -160,11 +137,10 @@ export function buildChromeSearchLayoutDocument(): string {
       ok,
       reason: ok ? "hit" : "covered",
       hit: hit ? (hit.id || hit.className || hit.tagName) : null,
-      // visibility/opacity stay "visible"/"1" when the toolbar paints over the
-      // field — they are diagnostic only and must not be treated as pass.
       visibility: cs.visibility,
       opacity: cs.opacity,
       slotZIndex: slot ? getComputedStyle(slot).zIndex : null,
+      position: getComputedStyle(search).position,
       width: Math.round(r.width),
       top: Math.round(r.top),
       stuck: body.classList.contains("chrome-stuck"),

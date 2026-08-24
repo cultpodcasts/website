@@ -136,15 +136,20 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     );
   });
 
-  it('CHROME-DOCK-011: dropped overlay is a centered 640px field; docked inline width is cleared at rest', () => {
+  it('CHROME-DOCK-011: dropped overlay is a centered 640px field; wide home pins via sticky not a layout swap', () => {
     expect(sass).toMatch(/width:\s*min\(640px,\s*calc\(100%\s*-\s*2\.5rem\)\)/);
     expect(sass).toMatch(/margin:\s*var\(--site-chrome-search-gap\)\s+auto\s+12px/);
-    expect(sass).toMatch(/\.home-shell\.chrome-stuck\s+\.chrome-search--docked[\s\S]*?translateX\(-50%\)/);
+    expect(sass).toMatch(/\.home-shell\s+\.chrome-search[\s\S]*?position:\s*sticky/);
+    expect(sass).toMatch(
+      /\.home-shell\.chrome-stuck\s+\.chrome-search:not\(\.chrome-search--docked\)[\s\S]*?position:\s*fixed/
+    );
+    expect(appHtml).toMatch(/fillHeaderSearchGap/);
     expect(appTs).toMatch(/layoutDroppedSearch/);
-    expect(appTs).toMatch(/changeDetector\.detectChanges\(\)/);
-    expect(appTs).toMatch(/layoutHomeDockedSearch/);
+    expect(appTs).toMatch(/homeStickTop/);
+    expect(appTs).toMatch(/homePinAtScrollY/);
     expect(appTs).toMatch(/clearDockedSearchLayout/);
-    expect(appTs).toMatch(/HOME_UNDOCK_SCROLL_PX/);
+    expect(appTs).not.toMatch(/HOME_UNDOCK_SCROLL_PX/);
+    expect(appTs).not.toMatch(/layoutHomeDockedSearch/);
     expect(appTs).not.toMatch(/MIN_SCROLL_TO_DOCK_PX/);
   });
 });

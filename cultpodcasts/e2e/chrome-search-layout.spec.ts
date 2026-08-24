@@ -17,6 +17,7 @@ type HitReport = {
   visibility?: string;
   opacity?: string;
   slotZIndex?: string | null;
+  position?: string;
   width: number;
   top: number;
   stuck: boolean;
@@ -40,18 +41,23 @@ test.describe("home chrome search overlay (CHROME-HIT-001)", () => {
     const rest = await hit(page);
     expect(rest.ok, `rest: ${JSON.stringify(rest)}`).toBe(true);
     expect(rest.stuck).toBe(false);
+    expect(rest.position).toBe("sticky");
     expect(rest.slotZIndex).toBe("auto");
     expect(rest.width).toBeLessThanOrEqual(660);
     expect(rest.width).toBeGreaterThanOrEqual(480);
 
     const failures: HitReport[] = [];
+    let prevTop = rest.top;
     for (let y = 0; y <= 240; y += 4) {
       await page.evaluate((sy) => window.scrollTo(0, sy), y);
       await page.evaluate(() => (window as unknown as { __chromeSearchSync: () => void }).__chromeSearchSync());
       const report = await hit(page);
-      if (!report.ok || report.width > 700) {
-        failures.push(report);
+      const jump = report.top - prevTop;
+      // 4px scroll steps: top should ease up or hold — not teleport into the bar.
+      if (!report.ok || report.width > 700 || jump > 3 || jump < -10) {
+        failures.push({ ...report, reason: `${report.reason} jump=${jump}` });
       }
+      prevTop = report.top;
     }
     expect(failures, failures.map((f) => JSON.stringify(f)).join("\n")).toEqual([]);
 
@@ -60,9 +66,11 @@ test.describe("home chrome search overlay (CHROME-HIT-001)", () => {
     const mid = await hit(page);
     expect(mid.ok, `mid: ${JSON.stringify(mid)}`).toBe(true);
     expect(mid.stuck).toBe(true);
+    expect(mid.position).toBe("fixed");
     expect(mid.hit).not.toBe("app-toolbar");
     expect(mid.slotZIndex).toBe("auto");
     expect(mid.width).toBeLessThanOrEqual(660);
+    expect(Math.abs(mid.width - rest.width)).toBeLessThanOrEqual(24);
 
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => (window as unknown as { __chromeSearchSync: () => void }).__chromeSearchSync());

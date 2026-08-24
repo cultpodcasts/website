@@ -129,8 +129,8 @@
     // collapse ~70px through the slot and yank the hero.
     display: flow-root
 
-// Dropped search (in flow) — centered overlay on the hero. Scrolls until it
-// meets the fixed logo bar, then --docked pins it into the header gap.
+// Dropped search (in flow) — centered overlay on the hero. Home uses position:
+// sticky so the field glides into the logo row; browse uses --docked + JS gap.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
@@ -153,10 +153,28 @@
 
 // Home overlay: spacer is 0 so the billboard can sit under the bar — push search
 // down explicitly so it starts dropped (not already inside the fixed header).
-// z-index above the logo bar so the field cannot tuck under it while scrolling.
-.home-shell:not(.chrome-stuck) .chrome-search
+// Sticky `top` is the in-bar Y so scrolling slides the field into the logo row
+// instead of swapping relative→fixed (bar-bottom teleport to bar-center).
+.home-shell .chrome-search
+    position: sticky
+    top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
     margin-top: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap))
     z-index: 110
+    max-width: min(640px, calc(100vw - 11rem))
+
+// Once sticky `top` has caught, pin with fixed so the short search slot cannot
+// unstick the field. Same 640px box and Y as the overlay — keep --nflx-search-h.
+.home-shell.chrome-stuck .chrome-search:not(.chrome-search--docked)
+    position: fixed
+    left: 0
+    right: 0
+    top: calc((var(--site-chrome-bar-h) - var(--nflx-search-h)) / 2)
+    width: min(640px, calc(100% - 2.5rem))
+    max-width: min(640px, calc(100vw - 11rem))
+    margin: 0 auto
+    transform: none
+    height: auto
+    pointer-events: auto
 
 @media screen and (max-width: 700px)
     .chrome-search
@@ -218,13 +236,6 @@
             letter-spacing: 0
             background: var(--nflx-accent, #e8a23a) !important
             color: #111 !important
-
-.home-shell.chrome-stuck .chrome-search--docked
-    left: 50%
-    right: auto
-    width: min(640px, calc(100% - 2.5rem))
-    max-width: min(640px, calc(100vw - 11rem))
-    transform: translateX(-50%)
 
 @media screen and (max-width: 700px)
     .chrome-search--docked
