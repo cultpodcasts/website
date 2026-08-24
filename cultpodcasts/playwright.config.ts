@@ -7,6 +7,8 @@ import { defineConfig, devices } from "@playwright/test";
  *
  * Hero layout geometry (`e2e/hero-layout.spec.ts`) compiles real billboard Sass
  * into setContent documents — no Angular server required.
+ * Chrome search overlay (`e2e/chrome-search-layout.spec.ts`) compiles
+ * app.component.sass and hit-tests the field while scrolling.
  */
 export default defineConfig({
 	testDir: "./e2e",

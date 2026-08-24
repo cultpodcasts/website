@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   ElementRef,
@@ -50,8 +51,6 @@ import { scheduleChromeSync } from './episode-form.util';
 export class AppComponent implements OnDestroy, AfterViewInit {
   private static readonly BACK_TO_TOP_THRESHOLD_PX = 480;
   private static readonly DOCK_INLINE_GAP_PX = 12;
-  /** Don't dock at rest on wide — homepage search must start dropped below the fixed bar. */
-  private static readonly MIN_SCROLL_TO_DOCK_PX = 40;
   /** Match app.component.sass narrow chrome; search stays docked in the header row. */
   private static readonly NARROW_CHROME_MQ = '(max-width: 700px)';
 
@@ -95,11 +94,13 @@ export class AppComponent implements OnDestroy, AfterViewInit {
    * chrome-stuck. Homepage scroll docking uses homeScrollDocked instead.
    */
   private readonly homeScrollDocked = signal(false);
+  private readonly narrowChrome = signal(false);
   protected readonly chromeStuck = computed(
     () => !this.isHomePage() || this.homeScrollDocked()
-  );  private scrollRaf = 0;
-  /** scrollY when search last docked — used to undock without flicker. */
-  private dockAtScrollY = 0;
+  );
+  /** Narrow chrome only: stretch search across the logo↔actions gap. Wide stays 640px. */
+  protected readonly fillHeaderSearchGap = computed(() => this.narrowChrome());
+  private scrollRaf = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
   /** Remeasure docked search when toolbar end controls settle (e.g. avatar after auth). */
   private chromeEndControlsObserver: ResizeObserver | undefined;
@@ -113,6 +114,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   @ViewChild('chromeSearch')
   private chromeSearch?: ElementRef<HTMLElement>;
 
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly webPushService = inject(WebPushService);
   private readonly dialog = inject(MatDialog);
@@ -157,6 +159,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   initialiseBrowser() {
     this.addDragListeners();
     this.narrowChromeQuery = window.matchMedia(AppComponent.NARROW_CHROME_MQ);
+    this.narrowChrome.set(this.narrowChromeQuery.matches);
     this.narrowChromeQuery.addEventListener('change', this.onNarrowChromeChange);
     this.addScrollListener();
     window.addEventListener('resize', this.onWindowResize, { passive: true });
@@ -295,17 +298,16 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   };
 
   private readonly onWindowResize = () => {
-    if (this.chromeStuck()) {
-      this.layoutDockedSearch();
-    }
+    this.layoutChromeSearch();
   };
 
   private readonly onNarrowChromeChange = () => {
+    this.narrowChrome.set(!!this.narrowChromeQuery?.matches);
     this.syncChromeFromScroll();
   };
 
   private isNarrowChrome(): boolean {
-    return !!this.narrowChromeQuery?.matches;
+    return this.narrowChrome();
   }
 
   private syncChromeFromScroll(): void {
@@ -318,8 +320,11 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    // Browse: always docked via chromeStuck computed — just measure the header gap.
+    // Browse: chrome-stuck from first paint. Wide uses the 640px pin; narrow fills the gap.
     if (!this.isHomePage()) {
+      if (this.homeScrollDocked()) {
+        this.homeScrollDocked.set(false);
+      }
       this.layoutDockedSearch();
       return;
     }
@@ -336,41 +341,89 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     }
 
     if (this.homeScrollDocked()) {
-      // Release back to the dropped layout near the top of the homepage.
-      if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
+      // Release when in-flow overlay would sit below the stick line (same Y as
+      // the pin) — not at a tiny scroll threshold, which teleports the field.
+      if (y < this.homePinAtScrollY(bar, search) - 2) {
         this.homeScrollDocked.set(false);
-        this.clearDockedSearchLayout(search);
+        this.changeDetector.detectChanges();
+        this.layoutDroppedSearch();
       } else {
-        this.layoutDockedSearch();
+        this.clearDockedSearchLayout(search);
       }
       return;
     }
 
-    // Keep search dropped at the top of the homepage (hero overlay).
-    if (y < AppComponent.MIN_SCROLL_TO_DOCK_PX) {
-      return;
-    }
-
-    // Dock when the scrolling search meets the fixed logo bar.
-    const barBottom = bar.getBoundingClientRect().bottom;
-    const searchTop = search.getBoundingClientRect().top;
-    if (searchTop <= barBottom + 2) {
-      this.dockAtScrollY = y;
+    // Pin when sticky `top` has caught — field is already at in-bar Y.
+    if (search.getBoundingClientRect().top <= this.homeStickTop(bar, search) + 1) {
       this.homeScrollDocked.set(true);
-      // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
-      requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
+      this.changeDetector.detectChanges();
+      this.clearDockedSearchLayout(search);
+    } else {
+      this.layoutDroppedSearch();
+    }
+  }
+
+  /** Docked (fixed in the bar) or dropped (centered overlay) — do not keep docked width on the overlay. */
+  private layoutChromeSearch(): void {
+    if (this.chromeStuck()) {
+      this.layoutDockedSearch();
+    } else {
+      this.layoutDroppedSearch();
     }
   }
 
   /**
-   * Pin the search field between the logo mark and add/profile (#socialbuttons)
-   * — or the overflow menu on narrow viewports — inside the sticky header row.
+   * Narrow chrome: pin search between the logo mark and add/profile (or overflow
+   * menu). Wide viewports keep the 640px centered field — do not stretch the gap.
    */
   private layoutDockedSearch(): void {
+    const search = this.chromeSearch?.nativeElement;
+    if (!search || !this.chromeStuck()) {
+      return;
+    }
+    if (!this.isNarrowChrome()) {
+      this.clearDockedSearchLayout(search);
+      return;
+    }
+    const gap = this.measureChromeSearchGap();
+    if (!gap) {
+      return;
+    }
+    this.applySearchGapStyles(search, gap);
+  }
+
+  /** Viewport Y where the overlay becomes stuck in the logo row (matches Sass `top`). */
+  private homeStickTop(bar: HTMLElement, search: HTMLElement): number {
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
+    const searchHeight = Math.min(search.offsetHeight || 48, barHeight - 8);
+    return Math.max(0, (barHeight - searchHeight) / 2);
+  }
+
+  /** scrollY at which in-flow overlay Y equals `homeStickTop` (no teleport). */
+  private homePinAtScrollY(bar: HTMLElement, search: HTMLElement): number {
+    const shell = bar.closest('#body');
+    const gapRaw = shell
+      ? getComputedStyle(shell).getPropertyValue('--site-chrome-search-gap')
+      : '';
+    const gap = Number.parseFloat(gapRaw) || 12;
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
+    return barHeight + gap - this.homeStickTop(bar, search);
+  }
+
+  /** Home at rest: drop docked inline left/width so CSS can center the overlay. */
+  private layoutDroppedSearch(): void {
+    const search = this.chromeSearch?.nativeElement;
+    if (!search || this.chromeStuck()) {
+      return;
+    }
+    this.clearDockedSearchLayout(search);
+  }
+
+  private measureChromeSearchGap(): { left: number; width: number; top: number } | null {
     const bar = this.chromeBar?.nativeElement;
     const search = this.chromeSearch?.nativeElement;
-    if (!bar || !search || !this.chromeStuck()) {
-      return;
+    if (!bar || !search) {
+      return null;
     }
 
     const site = bar.querySelector('#site') as HTMLElement | null;
@@ -380,25 +433,33 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     const socialVisible = !!social && social.getClientRects().length > 0;
     const end = socialVisible ? social : menu;
     if (!site || !end) {
-      return;
+      return null;
     }
 
     // Anchor to the logo image so a still-visible title span cannot steal the gap.
     const siteAnchor = (site.querySelector('img') as HTMLElement | null) ?? site;
-    const gap = AppComponent.DOCK_INLINE_GAP_PX;
+    const inset = AppComponent.DOCK_INLINE_GAP_PX;
     const siteRect = siteAnchor.getBoundingClientRect();
     const endRect = end.getBoundingClientRect();
     const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    const left = Math.max(gap, Math.round(siteRect.right + gap));
-    const right = Math.min(window.innerWidth - gap, Math.round(endRect.left - gap));
+    const left = Math.max(inset, Math.round(siteRect.right + inset));
+    const right = Math.min(window.innerWidth - inset, Math.round(endRect.left - inset));
     const width = Math.max(120, right - left);
     const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
     const top = Math.max(0, (barHeight - searchHeight) / 2);
+    return { left, width, top };
+  }
 
-    search.style.left = `${left}px`;
+  private applySearchGapStyles(
+    search: HTMLElement,
+    gap: { left: number; width: number; top: number }
+  ): void {
     search.style.right = 'auto';
-    search.style.width = `${width}px`;
-    search.style.top = `${top}px`;
+    search.style.width = `${gap.width}px`;
+    search.style.marginLeft = '0';
+    search.style.marginRight = '0';
+    search.style.left = `${gap.left}px`;
+    search.style.top = `${gap.top}px`;
     search.style.transform = 'none';
   }
 
@@ -413,9 +474,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     }
     this.chromeEndControlsObserver?.disconnect();
     this.chromeEndControlsObserver = new ResizeObserver(() => {
-      if (this.chromeStuck()) {
-        this.layoutDockedSearch();
-      }
+      this.layoutChromeSearch();
     });
     const social = bar.querySelector('#socialbuttons');
     const menu = bar.querySelector('button#menu');
@@ -433,6 +492,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     search.style.width = '';
     search.style.top = '';
     search.style.transform = '';
+    search.style.marginLeft = '';
+    search.style.marginRight = '';
   }
 
   private readonly onDocumentDragEnter = (event: DragEvent) => {

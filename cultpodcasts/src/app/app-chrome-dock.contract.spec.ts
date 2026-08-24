@@ -116,4 +116,45 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(appTs).toMatch(/chromeStuck\s*=\s*computed/);
     expect(appTs).not.toMatch(/chromeStuck\s*=\s*signal\(/);
   });
+
+  it('CHROME-DOCK-010: home search slot reserves --site-chrome-h so dock cannot collapse flow', () => {
+    expect(appHtml).toMatch(/chrome-search-slot/);
+    expect(sass).toMatch(
+      /\.home-shell\s+\.chrome-search-slot[\s\S]*?min-height:\s*var\(--site-chrome-h\)/
+    );
+    expect(sass).toMatch(
+      /\.home-shell\s+\.chrome-search-slot[\s\S]*?display:\s*flow-root/
+    );
+    // Slot must not create a stacking context. z-index here traps
+    // position:fixed .chrome-search below .site-chrome__bar (102).
+    const slotRule =
+      sass.match(/^\.chrome-search-slot\n(?:[ \t].*\n|\n)*/m)?.[0] ?? '';
+    expect(slotRule).toMatch(/pointer-events:\s*none/);
+    expect(slotRule).not.toMatch(/^[ \t]+z-index:/m);
+    expect(sass).not.toMatch(
+      /\.home-shell\.chrome-stuck\s+\.site-chrome__bar-spacer[\s\S]*?height:\s*var\(--site-chrome-bar-h\)/
+    );
+    expect(sass).toMatch(
+      /@media screen and \(max-width:\s*700px\)[\s\S]*?\.home-shell\s+\.chrome-search-slot[\s\S]*?min-height:\s*0/
+    );
+  });
+
+  it('CHROME-DOCK-011: dropped overlay is a centered 640px field; wide routes pin via sticky/fixed not a layout swap', () => {
+    expect(sass).toMatch(/width:\s*min\(640px,\s*calc\(100%\s*-\s*2\.5rem\)\)/);
+    expect(sass).toMatch(/margin:\s*var\(--site-chrome-search-gap\)\s+auto\s+12px/);
+    expect(sass).toMatch(/\.home-shell\s+\.chrome-search[\s\S]*?position:\s*sticky/);
+    expect(sass).toMatch(
+      /\.chrome-stuck\s+\.chrome-search[\s\S]*?position:\s*fixed/
+    );
+    expect(sass).toMatch(/\.chrome-stuck\s+\.chrome-search\.chrome-search--docked/);
+    expect(appHtml).toMatch(/fillHeaderSearchGap/);
+    expect(appTs).toMatch(/fillHeaderSearchGap\s*=\s*computed\(\(\)\s*=>\s*this\.narrowChrome\(\)\)/);
+    expect(appTs).toMatch(/layoutDroppedSearch/);
+    expect(appTs).toMatch(/homeStickTop/);
+    expect(appTs).toMatch(/homePinAtScrollY/);
+    expect(appTs).toMatch(/clearDockedSearchLayout/);
+    expect(appTs).not.toMatch(/HOME_UNDOCK_SCROLL_PX/);
+    expect(appTs).not.toMatch(/layoutHomeDockedSearch/);
+    expect(appTs).not.toMatch(/MIN_SCROLL_TO_DOCK_PX/);
+  });
 });
