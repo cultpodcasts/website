@@ -15,10 +15,9 @@ export class EpisodeService {
     private http: HttpClient
   ) { }
 
-  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string, ssr: boolean): Promise<IPageDetails | undefined> {
-    const ssrSuffix = ssr ? "?ssr=true" : "";
+  public async getEpisodeDetailsFromKvViaApi(episodeId: string, podcastName: string): Promise<IPageDetails | undefined> {
     let host: string = environment.api;
-    const url = new URL(`/pagedetails/${encodeURIComponent(podcastName.replaceAll("'", "%27"))}/${episodeId}${ssrSuffix}`, host).toString();
+    const url = new URL(`/pagedetails/${encodeURIComponent(podcastName.replaceAll("'", "%27"))}/${episodeId}`, host).toString();
     return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
