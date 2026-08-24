@@ -125,6 +125,12 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(
       /\.home-shell\s+\.chrome-search-slot[\s\S]*?display:\s*flow-root/
     );
+    // Slot must not create a stacking context. z-index here traps
+    // position:fixed .chrome-search below .site-chrome__bar (102).
+    const slotRule =
+      sass.match(/^\.chrome-search-slot\n(?:[ \t].*\n|\n)*/m)?.[0] ?? '';
+    expect(slotRule).toMatch(/pointer-events:\s*none/);
+    expect(slotRule).not.toMatch(/^[ \t]+z-index:/m);
     expect(sass).not.toMatch(
       /\.home-shell\.chrome-stuck\s+\.site-chrome__bar-spacer[\s\S]*?height:\s*var\(--site-chrome-bar-h\)/
     );
@@ -135,6 +141,7 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(/margin:\s*var\(--site-chrome-search-gap\)\s+auto\s+12px/);
     expect(sass).toMatch(/\.home-shell\.chrome-stuck\s+\.chrome-search--docked[\s\S]*?translateX\(-50%\)/);
     expect(appTs).toMatch(/layoutDroppedSearch/);
+    expect(appTs).toMatch(/changeDetector\.detectChanges\(\)/);
     expect(appTs).toMatch(/layoutHomeDockedSearch/);
     expect(appTs).toMatch(/clearDockedSearchLayout/);
     expect(appTs).toMatch(/HOME_UNDOCK_SCROLL_PX/);

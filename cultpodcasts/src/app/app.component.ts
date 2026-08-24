@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   ElementRef,
@@ -117,6 +118,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   @ViewChild('chromeSearch')
   private chromeSearch?: ElementRef<HTMLElement>;
 
+  private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly webPushService = inject(WebPushService);
   private readonly dialog = inject(MatDialog);
@@ -344,6 +346,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       // Release when the page is back at the top so the field can sit on the hero.
       if (y < AppComponent.HOME_UNDOCK_SCROLL_PX) {
         this.homeScrollDocked.set(false);
+        this.changeDetector.detectChanges();
         this.layoutDroppedSearch();
       } else {
         this.layoutDockedSearch();
@@ -357,10 +360,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
       this.homeScrollDocked.set(true);
-      // Overlay uses margin:auto; do not leave browse-dock inline width on the field.
-      this.clearDockedSearchLayout(search);
-      // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
-      requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
+      // Apply --docked in this frame. Waiting 2 rAFs let the in-flow field
+      // scroll under the logo bar (the overlay "disappears").
+      this.changeDetector.detectChanges();
+      this.layoutDockedSearch();
     } else {
       this.layoutDroppedSearch();
     }

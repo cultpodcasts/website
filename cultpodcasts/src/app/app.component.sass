@@ -117,7 +117,8 @@
 // collapse document flow and yank the billboard (hero negative-margin pull-up).
 .chrome-search-slot
     position: relative
-    z-index: 101
+    // Do not set z-index here — it would trap position:fixed search below
+    // .site-chrome__bar (z-index 102) so the field paints under the toolbar.
     // Empty after dock — do not intercept billboard clicks under the reserved height.
     pointer-events: none
 
