@@ -126,6 +126,9 @@
 .home-shell .chrome-search-slot
     min-height: var(--site-chrome-h)
     overflow-anchor: none
+    // Contain the dropped field's margin-top so docking (position:fixed) cannot
+    // collapse ~70px through the slot and yank the hero.
+    display: flow-root
 
 // Dropped search (in flow) — same logo↔actions width as the docked header field.
 // Scrolls with the page until it meets the fixed logo bar, then --docked pins it.

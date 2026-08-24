@@ -122,6 +122,9 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(
       /\.home-shell\s+\.chrome-search-slot[\s\S]*?min-height:\s*var\(--site-chrome-h\)/
     );
+    expect(sass).toMatch(
+      /\.home-shell\s+\.chrome-search-slot[\s\S]*?display:\s*flow-root/
+    );
     expect(sass).not.toMatch(
       /\.home-shell\.chrome-stuck\s+\.site-chrome__bar-spacer[\s\S]*?height:\s*var\(--site-chrome-bar-h\)/
     );

@@ -354,6 +354,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
       this.homeScrollDocked.set(true);
+      // Dropped layout used in-flow margin-left. Clear it before --docked
+      // (position:fixed) or leftover margin stacks on left and shifts the field.
+      search.style.marginLeft = '0';
+      search.style.marginRight = '0';
       // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
       requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
     } else {
