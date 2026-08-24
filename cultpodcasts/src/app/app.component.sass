@@ -162,6 +162,16 @@
     z-index: 110
     max-width: min(640px, calc(100vw - 11rem))
 
+@media screen and (max-width: 700px)
+    // Search lives in the header row — do not keep dropped-overlay slot height
+    // (that is the band between the bar and the hero).
+    .home-shell .chrome-search-slot
+        min-height: 0
+        height: 0
+        overflow: hidden
+    .home-shell .chrome-search
+        margin-top: 0
+
 // Once sticky `top` has caught (home) — and on every browse/content route —
 // pin with fixed so the field stays 640px in the logo row on wide viewports.
 .chrome-stuck .chrome-search

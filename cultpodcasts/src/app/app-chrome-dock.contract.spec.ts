@@ -134,6 +134,9 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).not.toMatch(
       /\.home-shell\.chrome-stuck\s+\.site-chrome__bar-spacer[\s\S]*?height:\s*var\(--site-chrome-bar-h\)/
     );
+    expect(sass).toMatch(
+      /@media screen and \(max-width:\s*700px\)[\s\S]*?\.home-shell\s+\.chrome-search-slot[\s\S]*?min-height:\s*0/
+    );
   });
 
   it('CHROME-DOCK-011: dropped overlay is a centered 640px field; wide routes pin via sticky/fixed not a layout swap', () => {

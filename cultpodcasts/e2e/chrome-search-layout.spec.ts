@@ -106,3 +106,27 @@ test.describe("browse chrome search (CHROME-HIT-002)", () => {
     expect(report.hit).not.toBe("app-toolbar");
   });
 });
+
+test.describe("narrow chrome search slot (CHROME-HIT-003)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("CHROME-HIT-003: narrow home slot collapses so the hero sits under the bar", async ({ page }) => {
+    await openHarness(page);
+    await page.evaluate(() => {
+      document.getElementById("body")?.classList.add("chrome-stuck");
+      document.getElementById("chromeSearch")?.classList.add("chrome-search--docked");
+    });
+    const geometry = await page.evaluate(() => {
+      const bar = document.getElementById("chromeBar")?.getBoundingClientRect();
+      const slot = document.querySelector(".chrome-search-slot")?.getBoundingClientRect();
+      const nflx = document.querySelector(".nflx")?.getBoundingClientRect();
+      return {
+        slotH: slot ? Math.round(slot.height) : -1,
+        nflxTop: nflx ? Math.round(nflx.top) : -1,
+        barBottom: bar ? Math.round(bar.bottom) : -1
+      };
+    });
+    expect(geometry.slotH, JSON.stringify(geometry)).toBeLessThanOrEqual(1);
+    expect(geometry.nflxTop, JSON.stringify(geometry)).toBeLessThanOrEqual(1);
+  });
+});
