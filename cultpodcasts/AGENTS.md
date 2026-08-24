@@ -90,3 +90,25 @@ Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
 ## Version bumps (HARD for PRs)
 
 Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.
+
+## Cursor Cloud specific instructions
+
+Multi-repo workspace: this app is at `/agent/repos/website/cultpodcasts` alongside `/agent/repos/api`
+and `/agent/repos/redditpodcastposter`. The startup update script runs `npm ci` here.
+
+- **Node**: needs Node 22.22.3 (`.nvmrc`, installed via nvm). Login shells (`bash -lc`, tmux) get it
+  from `~/.bashrc`. A sandbox `/exec-daemon/node` (22.14.0) shadows PATH in bare non-login shells —
+  prefer `bash -lc "…"` or prepend `$HOME/.nvm/versions/node/v22.22.3/bin`.
+- **Dev servers**: `npm run dev` (ng serve, `https://local.cultpodcasts.com:4200`) or `npm run start`
+  (wrangler pages, `:8788`) require `.cert/dev-cert.pem` + `.cert/dev-key.pem` (self-signed, gitignored,
+  persisted in the snapshot) and the hosts entry `127.0.0.1 local.cultpodcasts.com`.
+- **Browser cert**: the dev cert is trusted in the snapshot (system CA store + Chrome NSS db at
+  `~/.pki/nssdb`), so a fresh Chrome loads the site without warnings. Dev `environment.ts` points the
+  API at `https://127.0.0.1:8787`; for in-browser API calls run the api worker (accept its cert — it is
+  trusted; otherwise type `thisisunsafe` on the interstitial).
+- **Live data**: the catalogue/search DATA needs the api worker **and** the Azure Functions backend
+  (Cosmos DB + Azure AI Search) + secrets. With only the api worker running, seed its local R2
+  `content/homepage` object to render a working homepage (see api `AGENTS.md`); search/episode detail
+  still require the Azure backend.
+- **Tests**: `npm run test:all` (328 Vitest unit + 50 Playwright e2e). Playwright Chromium is
+  pre-installed in the snapshot; the pre-push hook runs `test:all`.
