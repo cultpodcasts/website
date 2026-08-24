@@ -98,10 +98,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   protected readonly chromeStuck = computed(
     () => !this.isHomePage() || this.homeScrollDocked()
   );
-  /** Browse (and narrow home) stretch search across the logo↔actions gap. Wide home stays 640px sticky. */
-  protected readonly fillHeaderSearchGap = computed(
-    () => !this.isHomePage() || this.narrowChrome()
-  );
+  /** Narrow chrome only: stretch search across the logo↔actions gap. Wide stays 640px. */
+  protected readonly fillHeaderSearchGap = computed(() => this.narrowChrome());
   private scrollRaf = 0;
   private narrowChromeQuery: MediaQueryList | undefined;
   /** Remeasure docked search when toolbar end controls settle (e.g. avatar after auth). */
@@ -322,7 +320,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    // Browse: always docked via chromeStuck computed — just measure the header gap.
+    // Browse: chrome-stuck from first paint. Wide uses the 640px pin; narrow fills the gap.
     if (!this.isHomePage()) {
       if (this.homeScrollDocked()) {
         this.homeScrollDocked.set(false);
@@ -375,16 +373,15 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   }
 
   /**
-   * Pin the search field between the logo mark and add/profile (#socialbuttons)
-   * — or the overflow menu on narrow viewports — inside the sticky header row.
-   * Wide home overlay stays 640px sticky/fixed; browse uses the full header gap.
+   * Narrow chrome: pin search between the logo mark and add/profile (or overflow
+   * menu). Wide viewports keep the 640px centered field — do not stretch the gap.
    */
   private layoutDockedSearch(): void {
     const search = this.chromeSearch?.nativeElement;
     if (!search || !this.chromeStuck()) {
       return;
     }
-    if (this.isHomePage() && !this.isNarrowChrome()) {
+    if (!this.isNarrowChrome()) {
       this.clearDockedSearchLayout(search);
       return;
     }

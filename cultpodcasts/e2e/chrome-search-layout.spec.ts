@@ -24,8 +24,8 @@ type HitReport = {
   scrollY: number;
 };
 
-async function openHarness(page: Page): Promise<void> {
-  await page.setContent(buildChromeSearchLayoutDocument(), { waitUntil: "domcontentloaded" });
+async function openHarness(page: Page, shell: "home" | "browse" = "home"): Promise<void> {
+  await page.setContent(buildChromeSearchLayoutDocument(shell), { waitUntil: "domcontentloaded" });
 }
 
 async function hit(page: Page): Promise<HitReport> {
@@ -88,5 +88,21 @@ test.describe("home chrome search overlay (CHROME-HIT-001)", () => {
     expect(report.ok, JSON.stringify(report)).toBe(true);
     expect(report.stuck).toBe(true);
     expect(report.width).toBeLessThanOrEqual(660);
+  });
+});
+
+test.describe("browse chrome search (CHROME-HIT-002)", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("CHROME-HIT-002: wide browse/podcast search is the same 640px pin, not the logo↔actions gap", async ({ page }) => {
+    await openHarness(page, "browse");
+    const report = await hit(page);
+    expect(report.ok, JSON.stringify(report)).toBe(true);
+    expect(report.stuck).toBe(true);
+    expect(report.position).toBe("fixed");
+    expect(report.width).toBeLessThanOrEqual(660);
+    expect(report.width).toBeGreaterThanOrEqual(480);
+    expect(report.top).toBeLessThan(40);
+    expect(report.hit).not.toBe("app-toolbar");
   });
 });

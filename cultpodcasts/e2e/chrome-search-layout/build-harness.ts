@@ -47,8 +47,11 @@ ${compiled}
 `;
 }
 
-export function buildChromeSearchLayoutDocument(): string {
+export type ChromeSearchShell = "home" | "browse";
+
+export function buildChromeSearchLayoutDocument(shell: ChromeSearchShell = "home"): string {
   const css = compileChromeSearchLayoutCss();
+  const bodyClass = shell === "browse" ? "browse-shell chrome-stuck" : "home-shell";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,7 +61,7 @@ export function buildChromeSearchLayoutDocument(): string {
   <style>${css}</style>
 </head>
 <body>
-<section id="body" class="home-shell">
+<section id="body" class="${bodyClass}">
   <div class="site-chrome">
     <div class="site-chrome__bar" id="chromeBar">
       <div class="app-toolbar">
@@ -85,7 +88,8 @@ export function buildChromeSearchLayoutDocument(): string {
   const body = document.getElementById("body");
   const bar = document.getElementById("chromeBar");
   const search = document.getElementById("chromeSearch");
-  let docked = false;
+  const isBrowse = body.classList.contains("browse-shell");
+  let docked = isBrowse;
 
   function stickTop() {
     const barH = Math.max(bar.getBoundingClientRect().height, 52);
@@ -104,6 +108,9 @@ export function buildChromeSearchLayoutDocument(): string {
   }
 
   function sync() {
+    if (isBrowse) {
+      return;
+    }
     const y = window.scrollY;
     if (docked) {
       if (y < pinAtScrollY() - 2) {
