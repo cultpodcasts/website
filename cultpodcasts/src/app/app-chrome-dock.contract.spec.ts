@@ -116,4 +116,22 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(appTs).toMatch(/chromeStuck\s*=\s*computed/);
     expect(appTs).not.toMatch(/chromeStuck\s*=\s*signal\(/);
   });
+
+  it('CHROME-DOCK-010: home search slot reserves --site-chrome-h so dock cannot collapse flow', () => {
+    expect(appHtml).toMatch(/chrome-search-slot/);
+    expect(sass).toMatch(
+      /\.home-shell\s+\.chrome-search-slot[\s\S]*?min-height:\s*var\(--site-chrome-h\)/
+    );
+    expect(sass).not.toMatch(
+      /\.home-shell\.chrome-stuck\s+\.site-chrome__bar-spacer[\s\S]*?height:\s*var\(--site-chrome-bar-h\)/
+    );
+  });
+
+  it('CHROME-DOCK-011: dropped home search spans the chrome gap (not a 640px centered pill)', () => {
+    expect(sass).toMatch(/\.chrome-search[\s\S]*?margin:\s*var\(--site-chrome-search-gap\)\s+7rem\s+12px\s+70px/);
+    expect(sass).not.toMatch(/width:\s*min\(640px,\s*calc\(100%\s*-\s*2\.5rem\)\)/);
+    expect(appTs).toMatch(/layoutDroppedSearch/);
+    expect(appTs).toMatch(/HOME_UNDOCK_SCROLL_PX/);
+    expect(appTs).not.toMatch(/MIN_SCROLL_TO_DOCK_PX/);
+  });
 });

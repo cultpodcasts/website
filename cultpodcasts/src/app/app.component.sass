@@ -35,12 +35,13 @@
                 background: transparent !important
                 border-bottom-color: transparent !important
     .chrome-search
-        width: min(640px, calc(100% - 1.5rem))
+        width: auto
+        margin-left: 58px
+        margin-right: 3.5rem
 
-// Wide home after scroll-dock: restore flow under the fixed bar.
-@media screen and (min-width: 701px)
-    .home-shell.chrome-stuck .site-chrome__bar-spacer
-        height: var(--site-chrome-bar-h)
+// Do not restore .site-chrome__bar-spacer on home dock — that plus position:fixed
+// on .chrome-search collapsed in-flow height and snapped the hero up. Home flow
+// is reserved by .chrome-search-slot (CHROME-DOCK-010).
 
 // (Sticky inside a short .site-chrome parent fails after search docks and leaves flow.)
 .site-chrome
@@ -114,16 +115,32 @@
     background: color-mix(in srgb, var(--nflx-panel, var(--cp-ink-elevated)) 92%, transparent)
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28)
 
-// Dropped search (in flow) — scrolls with the page until it meets the fixed logo bar.
+// Holds dropped-search block height on home so docking (position:fixed) cannot
+// collapse document flow and yank the billboard (hero negative-margin pull-up).
+.chrome-search-slot
+    position: relative
+    z-index: 101
+    // Empty after dock — do not intercept billboard clicks under the reserved height.
+    pointer-events: none
+
+.home-shell .chrome-search-slot
+    min-height: var(--site-chrome-h)
+    overflow-anchor: none
+
+// Dropped search (in flow) — same logo↔actions width as the docked header field.
+// Scrolls with the page until it meets the fixed logo bar, then --docked pins it.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
     --mat-form-field-container-vertical-padding: 0px
     position: relative
     z-index: 101
-    width: min(640px, calc(100% - 2.5rem))
-    margin: var(--site-chrome-search-gap) auto 12px
+    pointer-events: auto
+    width: auto
+    max-width: none
     box-sizing: border-box
+    // Fallback before JS measure — match .chrome-search--docked left/right insets.
+    margin: var(--site-chrome-search-gap) 7rem 12px 70px
     ::ng-deep
         #searchcontainer
             --search-bar-control-h: var(--nflx-search-h)
@@ -141,7 +158,9 @@
 
 @media screen and (max-width: 700px)
     .chrome-search
-        width: min(640px, calc(100% - 1.5rem))
+        width: auto
+        margin-left: 58px
+        margin-right: 3.5rem
 
 // Docked into the sticky header between logo (left) and add/profile (right).
 // Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
