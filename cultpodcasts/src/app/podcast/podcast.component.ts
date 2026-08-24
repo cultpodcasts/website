@@ -80,7 +80,7 @@ export class PodcastComponent {
       if (isEpisode) {
         if (this.isServer) {
           // SSR: SEO tags only — do not SSR episode body (avoids hydration mismatch with client).
-          this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName, this.isServer)
+          this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName) // pragma: allowlist secret
             .then(episodePageDetails => {
               if (episodePageDetails) {
                 pageDetails = episodePageDetails;
