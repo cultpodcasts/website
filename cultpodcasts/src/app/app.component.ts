@@ -322,6 +322,9 @@ export class AppComponent implements OnDestroy, AfterViewInit {
 
     // Browse: always docked via chromeStuck computed — just measure the header gap.
     if (!this.isHomePage()) {
+      if (this.homeScrollDocked()) {
+        this.homeScrollDocked.set(false);
+      }
       this.layoutDockedSearch();
       return;
     }
@@ -354,10 +357,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     if (searchTop <= barBottom + 2) {
       this.dockAtScrollY = y;
       this.homeScrollDocked.set(true);
-      // Dropped layout used in-flow margin-left. Clear it before --docked
-      // (position:fixed) or leftover margin stacks on left and shifts the field.
-      search.style.marginLeft = '0';
-      search.style.marginRight = '0';
+      // Overlay uses margin:auto; do not leave browse-dock inline width on the field.
+      this.clearDockedSearchLayout(search);
       // Wait for chrome-stuck styles (icon-only logo) before measuring the header gap.
       requestAnimationFrame(() => requestAnimationFrame(() => this.layoutDockedSearch()));
     } else {
@@ -365,7 +366,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     }
   }
 
-  /** Docked (fixed in the bar) or dropped (in-flow overlay) — same logo↔actions width. */
+  /** Docked (fixed in the bar) or dropped (centered overlay) — do not keep docked width on the overlay. */
   private layoutChromeSearch(): void {
     if (this.chromeStuck()) {
       this.layoutDockedSearch();
@@ -377,28 +378,50 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   /**
    * Pin the search field between the logo mark and add/profile (#socialbuttons)
    * — or the overflow menu on narrow viewports — inside the sticky header row.
+   * Wide home overlay stays 640px centered; browse uses the full header gap.
    */
   private layoutDockedSearch(): void {
     const search = this.chromeSearch?.nativeElement;
-    const gap = this.measureChromeSearchGap();
-    if (!search || !gap || !this.chromeStuck()) {
+    if (!search || !this.chromeStuck()) {
       return;
     }
-    this.applySearchGapStyles(search, gap, 'docked');
+    if (this.homeScrollDocked() && !this.isNarrowChrome()) {
+      this.layoutHomeDockedSearch();
+      return;
+    }
+    const gap = this.measureChromeSearchGap();
+    if (!gap) {
+      return;
+    }
+    this.applySearchGapStyles(search, gap);
   }
 
-  /** Home at rest: same horizontal gap as docked, still in flow on the hero. */
+  /** Pin the 640px overlay into the header without stretching to the logo↔actions gap. */
+  private layoutHomeDockedSearch(): void {
+    const bar = this.chromeBar?.nativeElement;
+    const search = this.chromeSearch?.nativeElement;
+    if (!bar || !search) {
+      return;
+    }
+    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
+    const searchHeight = Math.min(search.offsetHeight || 40, barHeight - 8);
+    const top = Math.max(0, (barHeight - searchHeight) / 2);
+    search.style.left = '50%';
+    search.style.right = 'auto';
+    search.style.width = '';
+    search.style.marginLeft = '0';
+    search.style.marginRight = '0';
+    search.style.top = `${top}px`;
+    search.style.transform = 'translateX(-50%)';
+  }
+
+  /** Home at rest: drop docked inline left/width so CSS can center the overlay. */
   private layoutDroppedSearch(): void {
     const search = this.chromeSearch?.nativeElement;
     if (!search || this.chromeStuck()) {
       return;
     }
-    const gap = this.measureChromeSearchGap();
-    if (!gap) {
-      this.clearDockedSearchLayout(search);
-      return;
-    }
-    this.applySearchGapStyles(search, gap, 'dropped');
+    this.clearDockedSearchLayout(search);
   }
 
   private measureChromeSearchGap(): { left: number; width: number; top: number } | null {
@@ -434,25 +457,15 @@ export class AppComponent implements OnDestroy, AfterViewInit {
 
   private applySearchGapStyles(
     search: HTMLElement,
-    gap: { left: number; width: number; top: number },
-    mode: 'docked' | 'dropped'
+    gap: { left: number; width: number; top: number }
   ): void {
     search.style.right = 'auto';
     search.style.width = `${gap.width}px`;
+    search.style.marginLeft = '0';
     search.style.marginRight = '0';
-    if (mode === 'docked') {
-      // position:fixed — viewport left/top.
-      search.style.left = `${gap.left}px`;
-      search.style.marginLeft = '0';
-      search.style.top = `${gap.top}px`;
-      search.style.transform = 'none';
-    } else {
-      // position:relative — in-flow margin, not left (left would shift without shrinking layout).
-      search.style.left = '';
-      search.style.marginLeft = `${gap.left}px`;
-      search.style.top = '';
-      search.style.transform = '';
-    }
+    search.style.left = `${gap.left}px`;
+    search.style.top = `${gap.top}px`;
+    search.style.transform = 'none';
   }
 
   /** Remeasure when add/profile/menu size changes (avatar swap after hydration). */

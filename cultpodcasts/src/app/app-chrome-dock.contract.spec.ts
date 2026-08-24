@@ -130,10 +130,13 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     );
   });
 
-  it('CHROME-DOCK-011: dropped home search spans the chrome gap (not a 640px centered pill)', () => {
-    expect(sass).toMatch(/\.chrome-search[\s\S]*?margin:\s*var\(--site-chrome-search-gap\)\s+7rem\s+12px\s+70px/);
-    expect(sass).not.toMatch(/width:\s*min\(640px,\s*calc\(100%\s*-\s*2\.5rem\)\)/);
+  it('CHROME-DOCK-011: dropped overlay is a centered 640px field; docked inline width is cleared at rest', () => {
+    expect(sass).toMatch(/width:\s*min\(640px,\s*calc\(100%\s*-\s*2\.5rem\)\)/);
+    expect(sass).toMatch(/margin:\s*var\(--site-chrome-search-gap\)\s+auto\s+12px/);
+    expect(sass).toMatch(/\.home-shell\.chrome-stuck\s+\.chrome-search--docked[\s\S]*?translateX\(-50%\)/);
     expect(appTs).toMatch(/layoutDroppedSearch/);
+    expect(appTs).toMatch(/layoutHomeDockedSearch/);
+    expect(appTs).toMatch(/clearDockedSearchLayout/);
     expect(appTs).toMatch(/HOME_UNDOCK_SCROLL_PX/);
     expect(appTs).not.toMatch(/MIN_SCROLL_TO_DOCK_PX/);
   });

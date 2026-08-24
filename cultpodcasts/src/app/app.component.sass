@@ -35,9 +35,7 @@
                 background: transparent !important
                 border-bottom-color: transparent !important
     .chrome-search
-        width: auto
-        margin-left: 58px
-        margin-right: 3.5rem
+        width: min(640px, calc(100% - 1.5rem))
 
 // Do not restore .site-chrome__bar-spacer on home dock — that plus position:fixed
 // on .chrome-search collapsed in-flow height and snapped the hero up. Home flow
@@ -130,8 +128,8 @@
     // collapse ~70px through the slot and yank the hero.
     display: flow-root
 
-// Dropped search (in flow) — same logo↔actions width as the docked header field.
-// Scrolls with the page until it meets the fixed logo bar, then --docked pins it.
+// Dropped search (in flow) — centered overlay on the hero. Scrolls until it
+// meets the fixed logo bar, then --docked pins it into the header gap.
 .chrome-search
     --search-bar-control-h: var(--nflx-search-h)
     --mat-form-field-container-height: var(--nflx-search-h)
@@ -139,11 +137,9 @@
     position: relative
     z-index: 101
     pointer-events: auto
-    width: auto
-    max-width: none
+    width: min(640px, calc(100% - 2.5rem))
+    margin: var(--site-chrome-search-gap) auto 12px
     box-sizing: border-box
-    // Fallback before JS measure — match .chrome-search--docked left/right insets.
-    margin: var(--site-chrome-search-gap) 7rem 12px 70px
     ::ng-deep
         #searchcontainer
             --search-bar-control-h: var(--nflx-search-h)
@@ -156,14 +152,14 @@
 
 // Home overlay: spacer is 0 so the billboard can sit under the bar — push search
 // down explicitly so it starts dropped (not already inside the fixed header).
+// z-index above the logo bar so the field cannot tuck under it while scrolling.
 .home-shell:not(.chrome-stuck) .chrome-search
     margin-top: calc(var(--site-chrome-bar-h) + var(--site-chrome-search-gap))
+    z-index: 110
 
 @media screen and (max-width: 700px)
     .chrome-search
-        width: auto
-        margin-left: 58px
-        margin-right: 3.5rem
+        width: min(640px, calc(100% - 1.5rem))
 
 // Docked into the sticky header between logo (left) and add/profile (right).
 // Left/width/top are set in AppComponent.layoutDockedSearch() from those anchors.
@@ -186,6 +182,7 @@
     transform: none
     --nflx-search-h: 40px
     overflow: visible
+
     ::ng-deep
         // Do NOT enable pointer-events on #searchcontainer / #searchbar — they span the
         // full docked width and would still cover add/profile when measure is late/wide.
@@ -220,6 +217,13 @@
             letter-spacing: 0
             background: var(--nflx-accent, #e8a23a) !important
             color: #111 !important
+
+.home-shell.chrome-stuck .chrome-search--docked
+    left: 50%
+    right: auto
+    width: min(640px, calc(100% - 2.5rem))
+    max-width: min(640px, calc(100vw - 11rem))
+    transform: translateX(-50%)
 
 @media screen and (max-width: 700px)
     .chrome-search--docked
