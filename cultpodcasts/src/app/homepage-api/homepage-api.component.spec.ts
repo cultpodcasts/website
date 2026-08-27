@@ -33,11 +33,8 @@ function ep(
     release: dayOffset(opts.daysAgo ?? 0),
     duration: '01:00:00',
     subjects: opts.subjects ?? [],
-    youtube: new URL(`https://www.youtube.com/watch?v=${id}`),
-    spotify: undefined,
-    apple: undefined,
-    bbc: undefined,
-    internetArchive: undefined,
+    services: { youtube: { url: `https://www.youtube.com/watch?v=${id}` } },
+    ids: { youtube: id },
     image: undefined,
   };
 }

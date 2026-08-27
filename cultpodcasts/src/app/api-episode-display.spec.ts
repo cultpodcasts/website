@@ -32,8 +32,8 @@ describe('apiEpisodeToHomepageEpisode', () => {
     expect(display.episodeTitle).toBe('Display Title');
     expect(display.episodeDescription).toBe('Display description');
     expect(display.podcastName).toBe('Show Name');
-    expect(display.spotify?.toString()).toBe('https://open.spotify.com/episode/abc');
-    expect(display.youtube?.toString()).toBe('https://www.youtube.com/watch?v=xyz');
+    expect(display.services?.['spotify']?.url?.toString()).toBe('https://open.spotify.com/episode/abc');
+    expect(display.services?.['youtube']?.url?.toString()).toBe('https://www.youtube.com/watch?v=xyz');
     expect(display.language).toBe('es');
     expect(display.image?.toString()).toBe('https://i.ytimg.com/vi/xyz/hqdefault.jpg');
   });

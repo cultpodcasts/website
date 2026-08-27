@@ -1,4 +1,5 @@
 import { EpisodeImageUrls } from "./episode-image-urls.interface";
+import { EpisodeIds } from "./episode-ids.interface";
 import { EpisodeUrls } from "./episode-urls.interface";
 import { EpisodeServiceMap } from "./service-catalog";
 import { Person } from "./person.interface";
@@ -20,7 +21,11 @@ export interface ApiEpisode {
     explicit: boolean;
     release: Date;
     duration: string;
-    urls: EpisodeUrls;
+    ids?: EpisodeIds;
+    spotifyId?: string;
+    appleId?: number;
+    youTubeId?: string;
+    urls?: EpisodeUrls;
     images?: EpisodeImageUrls;
     services?: EpisodeServiceMap;
     subjects: string[];

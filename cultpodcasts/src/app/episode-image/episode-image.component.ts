@@ -88,11 +88,12 @@ export class EpisodeImageComponent {
     }
     if (this.apiEpisode) {
       return collectEpisodeServices({
-        youtube: this.asUrl(this.apiEpisode.urls.youtube),
-        spotify: this.asUrl(this.apiEpisode.urls.spotify),
-        apple: this.asUrl(this.apiEpisode.urls.apple),
-        bbc: this.asUrl(this.apiEpisode.urls.bbc),
-        internetArchive: this.asUrl(this.apiEpisode.urls.internetArchive),
+        youtube: this.asUrl(this.apiEpisode.urls?.youtube),
+        spotify: this.asUrl(this.apiEpisode.urls?.spotify),
+        apple: this.asUrl(this.apiEpisode.urls?.apple),
+        bbc: this.asUrl(this.apiEpisode.urls?.bbc),
+        internetArchive: this.asUrl(this.apiEpisode.urls?.internetArchive),
+        ids: this.apiEpisode.ids,
         services: this.apiEpisode.services
       });
     }

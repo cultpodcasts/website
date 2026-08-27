@@ -85,11 +85,12 @@ export function parseFormUrl(value: string | URL | null | undefined): URL | unde
 
 function additionalUrlControls(episode: ApiEpisode): FormArray<FormControl<string>> {
   const urls = additionalServiceUrls({
-    youtube: episode.urls.youtube,
-    spotify: episode.urls.spotify,
-    apple: episode.urls.apple,
-    bbc: episode.urls.bbc,
-    internetArchive: episode.urls.internetArchive,
+    youtube: episode.urls?.youtube,
+    spotify: episode.urls?.spotify,
+    apple: episode.urls?.apple,
+    bbc: episode.urls?.bbc,
+    internetArchive: episode.urls?.internetArchive,
+    ids: episode.ids,
     services: episode.services
   });
   return new FormArray(urls.map((url) => new FormControl(url.toString(), { nonNullable: true })));
@@ -199,11 +200,11 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     removed: new FormControl(episode.removed, { nonNullable: true }),
     release: new FormControl(dateToLocalISO(episode.release), { nonNullable: true }),
     duration: new FormControl(episode.duration, { nonNullable: true }),
-    spotify: new FormControl(episode.urls.spotify || null),
+    spotify: new FormControl(episode.urls?.spotify || null),
     spotifyImage: new FormControl(episode.images?.spotify || null),
-    apple: new FormControl(episode.urls.apple || null),
+    apple: new FormControl(episode.urls?.apple || null),
     appleImage: new FormControl(episode.images?.apple || null),
-    youtube: new FormControl(episode.urls.youtube || null),
+    youtube: new FormControl(episode.urls?.youtube || null),
     youtubeImage: new FormControl(episode.images?.youtube || null),
     otherImage: new FormControl(episode.images?.other || null),
     additionalUrls: additionalUrlControls(episode),

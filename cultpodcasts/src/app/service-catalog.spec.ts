@@ -45,4 +45,13 @@ describe("service-catalog", () => {
   it("labels a pasted URL from its host so the editor does not need a service picker", () => {
     expect(serviceLabelForUrl("https://vimeo.com/123456789")).toBe("Vimeo");
   });
+
+  it("reconstructs Spotify and YouTube listen URLs from ids when services are absent", () => {
+    const links = collectEpisodeServices({
+      ids: { spotify: "opaqueid00000000000000", youtube: "yt123456789" }
+    });
+    expect(links.map((x) => x.key)).toEqual(["youtube", "spotify"]);
+    expect(links[0].url.href).toBe("https://www.youtube.com/watch?v=yt123456789");
+    expect(links[1].url.href).toBe("https://open.spotify.com/episode/opaqueid00000000000000");
+  });
 });

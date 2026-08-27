@@ -151,6 +151,11 @@ export type ServiceLinkSource = {
   apple?: URL;
   bbc?: URL;
   internetArchive?: URL;
+  ids?: { spotify?: string | null; apple?: number | string | null; youtube?: string | null };
+  spotifyId?: string | null;
+  appleId?: number | string | null;
+  podcastAppleId?: string | null;
+  youtubeId?: string | null;
   svc?: string | null;
   services?: EpisodeServiceMap;
 };
@@ -196,6 +201,21 @@ export function collectEpisodeServices(source: ServiceLinkSource): EpisodeServic
   add("youtube", source.youtube);
   add("spotify", source.spotify);
   add("apple", source.apple);
+  const spotifyId = source.ids?.spotify ?? source.spotifyId;
+  const youtubeId = source.ids?.youtube ?? source.youtubeId;
+  const appleId = source.ids?.apple ?? source.appleId;
+  if (spotifyId) {
+    add("spotify", parseUrl(`https://open.spotify.com/episode/${encodeURIComponent(String(spotifyId))}`));
+  }
+  if (youtubeId) {
+    add("youtube", parseUrl(`https://www.youtube.com/watch?v=${encodeURIComponent(String(youtubeId))}`));
+  }
+  if (appleId && source.podcastAppleId) {
+    add(
+      "apple",
+      parseUrl(`https://podcasts.apple.com/podcast/id${encodeURIComponent(String(source.podcastAppleId))}?i=${encodeURIComponent(String(appleId))}`)
+    );
+  }
   if (source.bbc) {
     add(resolveServiceKey(source.bbc), source.bbc);
   }

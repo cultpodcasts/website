@@ -17,11 +17,6 @@ function ep(id: string): HomepageEpisode {
     episodeDescription: `Desc ${id}`,
     release: new Date(),
     duration: '01:00:00',
-    spotify: undefined,
-    apple: undefined,
-    youtube: undefined,
-    bbc: undefined,
-    internetArchive: undefined,
     subjects: [],
     image: undefined,
   };

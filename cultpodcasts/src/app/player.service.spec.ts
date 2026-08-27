@@ -11,7 +11,8 @@ function ep(id: string): SearchDisplayEpisode {
     episodeDescription: `Desc ${id}`,
     release: new Date(),
     duration: '01:00:00',
-    youtube: new URL(`https://www.youtube.com/watch?v=${id}`),
+    services: { youtube: { url: `https://www.youtube.com/watch?v=${id}` } },
+    ids: { youtube: id },
     subjects: [],
   };
 }

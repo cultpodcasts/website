@@ -1,3 +1,6 @@
+import { EpisodeIds } from "./episode-ids.interface";
+import { EpisodeServiceMap } from "./service-catalog";
+
 export interface HomepageEpisode {
   id: string;
   podcastName: string;
@@ -5,13 +8,9 @@ export interface HomepageEpisode {
   episodeDescription: string;
   release: Date;
   duration: string;
-  spotify: URL | undefined;
-  apple: URL | undefined;
-  youtube: URL | undefined;
-  bbc: URL | undefined;
-  internetArchive: URL | undefined;
+  ids?: EpisodeIds;
   svc?: string;
-  services?: Record<string, { url?: string | URL | null; image?: string | URL | null }>;
+  services?: EpisodeServiceMap;
   subjects: string[] | undefined;
   image: URL | undefined;
   /** Non-English IETF tag when present; omitted/undefined means English. */

@@ -5,6 +5,7 @@ export interface SearchResult {
   episodeDescription: string;
   release: Date;
   duration: string;
+  ids?: import("./episode-ids.interface").EpisodeIds;
   spotifyId?: string;
   appleId?: string;
   podcastAppleId?: string;
