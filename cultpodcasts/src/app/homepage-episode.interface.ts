@@ -11,6 +11,12 @@ export interface HomepageEpisode {
   ids?: EpisodeIds;
   svc?: string;
   services?: EpisodeServiceMap;
+  /** Leftover feed fields until R2 is republished with services/ids only. */
+  spotify?: URL | string;
+  apple?: URL | string;
+  youtube?: URL | string;
+  bbc?: URL | string;
+  internetArchive?: URL | string;
   subjects: string[] | undefined;
   image: URL | undefined;
   /** Non-English IETF tag when present; omitted/undefined means English. */

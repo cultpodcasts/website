@@ -16,6 +16,23 @@ describe("search-result-links", () => {
     podcastAppleId: "1234567890"
   };
 
+  it("reads leftover named feed URL fields until the payload is republished with services", () => {
+    const leftover: HomepageEpisode = {
+      id: "id",
+      podcastName: "Podcast",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:01:02",
+      spotify: "https://open.spotify.com/episode/spotify123",
+      youtube: "https://www.youtube.com/watch?v=yt123456789",
+      subjects: [],
+      image: undefined
+    };
+    expect(spotifyUrl(leftover)?.toString()).toBe("https://open.spotify.com/episode/spotify123");
+    expect(youtubeUrl(leftover)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
+  });
+
   it("reconstructs homepage listen URLs from nested ids when services are absent", () => {
     const homepage: HomepageEpisode = {
       id: "id",

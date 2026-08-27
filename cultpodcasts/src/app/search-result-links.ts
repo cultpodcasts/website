@@ -21,21 +21,34 @@ function platformIds(episode: SearchDisplayEpisode): EpisodeIds & { podcastApple
   };
 }
 
+function leftoverNamedUrl(episode: SearchDisplayEpisode, key: "spotify" | "apple" | "youtube"): URL | undefined {
+  const leftover = episode as HomepageEpisode;
+  if (key === "spotify") {
+    return toUrl(leftover.spotify);
+  }
+  if (key === "apple") {
+    return toUrl(leftover.apple);
+  }
+  return toUrl(leftover.youtube);
+}
+
 export function spotifyUrl(episode: SearchDisplayEpisode): URL | undefined {
   const id = platformIds(episode).spotify;
   return serviceUrl(episode, "spotify")
+    ?? leftoverNamedUrl(episode, "spotify")
     ?? (id ? toUrl(`https://open.spotify.com/episode/${encodeURIComponent(String(id))}`) : undefined);
 }
 
 export function youtubeUrl(episode: SearchDisplayEpisode): URL | undefined {
   const id = platformIds(episode).youtube;
   return serviceUrl(episode, "youtube")
+    ?? leftoverNamedUrl(episode, "youtube")
     ?? (id ? toUrl(`https://www.youtube.com/watch?v=${encodeURIComponent(String(id))}`) : undefined);
 }
 
 export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
   const ids = platformIds(episode);
-  const fromServices = serviceUrl(episode, "apple");
+  const fromServices = serviceUrl(episode, "apple") ?? leftoverNamedUrl(episode, "apple");
   if (fromServices) {
     return fromServices;
   }
