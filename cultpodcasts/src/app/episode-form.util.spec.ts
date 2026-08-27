@@ -388,7 +388,7 @@ describe('episode-form.util', () => {
     form.controls.additionalUrls.at(1)!.setValue('https://vimeo.com/123456789');
     const update = baseEpisode();
     applyEpisodeFormServiceFields(form, update);
-    expect(update.urls.bbc?.href).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
+    expect(update.urls?.bbc?.href).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
     expect(update.services).toEqual({
       bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12' },
       vimeo: { url: 'https://vimeo.com/123456789' }
