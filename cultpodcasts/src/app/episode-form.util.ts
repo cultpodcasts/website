@@ -131,8 +131,8 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
     }
     services[key] = { url: url.href };
   }
-  urls.bbc = parseFormUrl(services.bbcIplayer?.url) ?? parseFormUrl(services.bbcSounds?.url);
-  urls.internetArchive = parseFormUrl(services.internetArchive?.url);
+  urls.bbc = parseFormUrl(services['bbcIplayer']?.url) ?? parseFormUrl(services['bbcSounds']?.url);
+  urls.internetArchive = parseFormUrl(services['internetArchive']?.url);
   update.urls = urls;
   update.services = services;
 }
