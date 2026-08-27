@@ -11,6 +11,8 @@ export interface SearchResult {
   youtubeId?: string;
   bbc?: URL | string;
   internetArchive?: URL | string;
+  svc?: string;
+  services?: Record<string, { url?: string | URL | null; image?: string | URL | null }>;
   subjects?: string[];
   image?: URL | string;
   /** Non-English IETF tag from the search index when present; null/omitted ≈ English. */

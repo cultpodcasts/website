@@ -6,8 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-svg.component';
 import { SearchResult } from '../search-result.interface';
 import { MatButtonModule } from '@angular/material/button';
-import { BBCServiceResolver } from '../service-resolver';
-import { appleUrl, episodeImageUrl, spotifyUrl, toUrl, youtubeUrl } from '../search-result-links';
+import { appleUrl, bbcIplayerUrl, bbcSoundsUrl, episodeImageUrl, internetArchiveUrl, spotifyUrl, youtubeUrl } from '../search-result-links';
+import { collectEpisodeServices } from '../service-catalog';
 
 @Component({
   selector: 'app-episode-image',
@@ -74,98 +74,49 @@ export class EpisodeImageComponent {
     }
   }
 
-  get spotify(): URL | undefined {
+  get serviceLinks() {
     if (this.searchResult) {
-      return spotifyUrl(this.searchResult);
-    } else if (this.apiEpisode) {
-      if (this.apiEpisode.urls.spotify) {
-        if (typeof this.apiEpisode.urls.spotify !== 'string') {
-          return this.apiEpisode.urls.spotify;
-        } else {
-          return new URL(this.apiEpisode.urls.spotify);
-        }
-      }
-    } else if (this.discoveryResult) {
-      return this.discoveryResult.urls.spotify;
+      return collectEpisodeServices({
+        youtube: youtubeUrl(this.searchResult),
+        spotify: spotifyUrl(this.searchResult),
+        apple: appleUrl(this.searchResult),
+        bbc: bbcIplayerUrl(this.searchResult) ?? bbcSoundsUrl(this.searchResult),
+        internetArchive: internetArchiveUrl(this.searchResult),
+        svc: this.searchResult.svc,
+        services: this.searchResult.services
+      });
     }
-    return undefined;
+    if (this.apiEpisode) {
+      return collectEpisodeServices({
+        youtube: this.asUrl(this.apiEpisode.urls.youtube),
+        spotify: this.asUrl(this.apiEpisode.urls.spotify),
+        apple: this.asUrl(this.apiEpisode.urls.apple),
+        bbc: this.asUrl(this.apiEpisode.urls.bbc),
+        internetArchive: this.asUrl(this.apiEpisode.urls.internetArchive),
+        services: this.apiEpisode.services
+      });
+    }
+    if (this.discoveryResult) {
+      return collectEpisodeServices({
+        youtube: this.discoveryResult.urls.youtube,
+        spotify: this.discoveryResult.urls.spotify,
+        apple: this.discoveryResult.urls.apple
+      });
+    }
+    return [];
   }
 
-  get applePodcasts(): URL | undefined {
-    if (this.searchResult) {
-      return appleUrl(this.searchResult);
-    } else if (this.apiEpisode) {
-      if (this.apiEpisode.urls.apple) {
-        if (typeof this.apiEpisode.urls.apple !== 'string') {
-          return this.apiEpisode.urls.apple;
-        } else {
-          return new URL(this.apiEpisode.urls.apple);
-        }
-      }
-    } else if (this.discoveryResult) {
-      return this.discoveryResult.urls.apple;
+  private asUrl(value: URL | string | undefined | null): URL | undefined {
+    if (!value) {
+      return undefined;
     }
-    return undefined;
-  }
-
-  get youtube(): URL | undefined {
-    if (this.searchResult) {
-      return youtubeUrl(this.searchResult);
-    } else if (this.apiEpisode) {
-      if (this.apiEpisode.urls.youtube) {
-        if (typeof this.apiEpisode.urls.youtube !== 'string') {
-          return this.apiEpisode.urls.youtube;
-        } else {
-          return new URL(this.apiEpisode.urls.youtube);
-        }
-      }
-    } else if (this.discoveryResult) {
-      return this.discoveryResult.urls.youtube;
+    if (value instanceof URL) {
+      return value;
     }
-    return undefined;
-  }
-
-  private get bbc(): URL | undefined {
-    if (this.searchResult) {
-      return toUrl(this.searchResult.bbc);
-    } else if (this.apiEpisode) {
-      if (this.apiEpisode.urls.bbc) {
-        if (typeof this.apiEpisode.urls.bbc !== 'string') {
-          return this.apiEpisode.urls.bbc;
-        } else {
-          return new URL(this.apiEpisode.urls.bbc);
-        }
-      }
+    try {
+      return new URL(value);
+    } catch {
+      return undefined;
     }
-    return undefined;
-  }
-
-  get bbciPlayer(): URL | undefined {
-    if (this.bbc && BBCServiceResolver.isIplayer(this.bbc)) {
-      return this.bbc;
-    }
-    return undefined;
-  }
-
-  get bbcSounds(): URL | undefined {
-    if (this.bbc && BBCServiceResolver.isSounds(this.bbc)) {
-      return this.bbc;
-    }
-    return undefined;
-  }
-
-  get internetArchive(): URL | undefined {
-    if (this.searchResult) {
-      return toUrl(this.searchResult.internetArchive);
-    } else if (this.apiEpisode) {
-      if (this.apiEpisode.urls.internetArchive) {
-        if (typeof this.apiEpisode.urls.internetArchive !== 'string') {
-          return this.apiEpisode.urls.internetArchive;
-        } else {
-          return new URL(this.apiEpisode.urls.internetArchive);
-        }
-      }
-    }
-    return undefined;
   }
 }

@@ -1,5 +1,6 @@
 import { EpisodeImageUrls } from "./episode-image-urls.interface";
 import { EpisodeUrls } from "./episode-urls.interface";
+import { EpisodeServiceMap } from "./service-catalog";
 import { Person } from "./person.interface";
 import { PersonMatch } from "./person-match.interface";
 
@@ -21,6 +22,7 @@ export interface ApiEpisode {
     duration: string;
     urls: EpisodeUrls;
     images?: EpisodeImageUrls;
+    services?: EpisodeServiceMap;
     subjects: string[];
     searchTerms?: string | null;
     hashTag?: string | null;

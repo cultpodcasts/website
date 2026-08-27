@@ -40,6 +40,9 @@ import {
   applyGuestSelection,
   getEpisodeChanges,
   hasNonEmptyUrlValue,
+  addAdditionalUrlControl,
+  applyEpisodeFormServiceFields,
+  removeAdditionalUrlControl,
   mergeEpisodeSubjects,
   noCompareFunction,
   openExternalUrl,
@@ -50,6 +53,7 @@ import {
   type EpisodeImageService
 } from '../episode-form.util';
 import { normalizeHashTagControl } from '../podcast-form.util';
+import { serviceLabelForUrl } from '../service-catalog';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -202,6 +206,22 @@ export class EditEpisodeDialogComponent {
     clearFormControl(control);
   }
 
+  protected readonly serviceLabelForUrl = serviceLabelForUrl;
+
+  addAdditionalUrl() {
+    const form = this.form();
+    if (form) {
+      addAdditionalUrlControl(form);
+    }
+  }
+
+  removeAdditionalUrl(index: number) {
+    const form = this.form();
+    if (form) {
+      removeAdditionalUrlControl(form, index);
+    }
+  }
+
   normalizeHashTag() {
     const control = this.form()?.controls.hashTag;
     if (control) {
@@ -254,21 +274,7 @@ export class EditEpisodeDialogComponent {
         lang: form.controls.lang.value,
         guests: form.controls.guests.value,
       };
-      if (form.controls.spotify.value) {
-        update.urls.spotify = new URL(form.controls.spotify.value);
-      }
-      if (form.controls.apple.value) {
-        update.urls.apple = new URL(form.controls.apple.value);
-      }
-      if (form.controls.youtube.value) {
-        update.urls.youtube = new URL(form.controls.youtube.value);
-      }
-      if (form.controls.bbc.value) {
-        update.urls.bbc = new URL(form.controls.bbc.value);
-      }
-      if (form.controls.internetArchive.value) {
-        update.urls.internetArchive = new URL(form.controls.internetArchive.value);
-      }
+      applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
       if (this.pendingUnBluesky()) {
         changes.unBluesky = true;

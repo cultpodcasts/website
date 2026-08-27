@@ -10,6 +10,8 @@ export interface HomepageEpisode {
   youtube: URL | undefined;
   bbc: URL | undefined;
   internetArchive: URL | undefined;
+  svc?: string;
+  services?: Record<string, { url?: string | URL | null; image?: string | URL | null }>;
   subjects: string[] | undefined;
   image: URL | undefined;
   /** Non-English IETF tag when present; omitted/undefined means English. */
