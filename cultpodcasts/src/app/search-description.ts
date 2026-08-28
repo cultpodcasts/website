@@ -1,5 +1,5 @@
 /** Matches RedditPodcastPoster.Search.Constants.DescriptionSize */
-export const SEARCH_DESCRIPTION_SIZE = 230;
+export const SEARCH_DESCRIPTION_SIZE = 180;
 
 /** Unicode ellipsis (U+2026) — not three ASCII periods. */
 const ELLIPSIS = '\u2026';
@@ -18,6 +18,14 @@ export function formatSearchDescription(description: string | null | undefined):
   if (text.endsWith('...')) {
     text = `${text.slice(0, -3)}${ELLIPSIS}`;
   }
+  if (text.endsWith(ELLIPSIS) && text.length <= SEARCH_DESCRIPTION_SIZE) {
+    return text;
+  }
+
+  if (text.length > SEARCH_DESCRIPTION_SIZE) {
+    text = text.slice(0, SEARCH_DESCRIPTION_SIZE);
+  }
+
   if (text.endsWith(ELLIPSIS)) {
     return text;
   }

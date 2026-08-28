@@ -25,6 +25,7 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
+import { formatSearchDescription } from '../search-description';
 
 @Component({
   selector: 'app-homepage-hero',
@@ -105,10 +106,9 @@ export class HomepageHeroComponent {
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
 
-  protected readonly featuredDesc = computed(() => {
-    const text = this.featured()?.episodeDescription ?? '';
-    return text.length > 220 ? `${text.slice(0, 220).trim()}…` : text;
-  });
+  protected readonly featuredDesc = computed(() =>
+    formatSearchDescription(this.featured()?.episodeDescription)
+  );
 
   protected readonly hasFeaturedDesc = computed(() => this.featuredDesc().trim().length > 0);
 

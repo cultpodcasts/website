@@ -28,4 +28,12 @@ describe('formatSearchDescription', () => {
 
     expect(formatSearchDescription(hardTruncated)).toBe(`${prefix} Salt\u2026`);
   });
+
+  it('caps homepage-length copy at the search size then mid-word ellipsis', () => {
+    const prefix = 'x'.repeat(SEARCH_DESCRIPTION_SIZE - 9);
+    const fullR2 = `${prefix} Salt Lake City extra homepage copy that exceeds the search cap`;
+    expect(fullR2.length).toBeGreaterThan(SEARCH_DESCRIPTION_SIZE);
+
+    expect(formatSearchDescription(fullR2)).toBe(`${prefix} Salt\u2026`);
+  });
 });
