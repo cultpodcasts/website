@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HomepageHeroComponent } from './homepage-hero.component';
+import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
 
@@ -258,7 +259,7 @@ describe('HomepageHeroComponent', () => {
     const desc = component['featuredDesc']();
     expect(desc.length).toBeLessThan(long.length);
     expect(desc.endsWith('…')).toBe(true);
-    expect(desc.startsWith('x'.repeat(220).trim())).toBe(true);
+    expect(desc.startsWith('x'.repeat(SEARCH_DESCRIPTION_SIZE).trim())).toBe(true);
   });
 
   it('jumps to a slide when its hero dash is clicked', () => {
