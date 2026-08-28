@@ -15,7 +15,8 @@ function ep(id: string, playable = false): SearchDisplayEpisode {
     release: new Date(),
     duration: '01:00:00',
     subjects: [`Subject ${id}`],
-    youtube: playable ? new URL(`https://www.youtube.com/watch?v=${id}`) : undefined,
+    services: playable ? { youtube: { url: `https://www.youtube.com/watch?v=${id}` } } : undefined,
+    ids: playable ? { youtube: id } : undefined,
   };
 }
 

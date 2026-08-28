@@ -93,36 +93,26 @@
                 <mat-accordion>
                     <mat-expansion-panel>
                         <mat-expansion-panel-header>
-                            <mat-panel-title>More</mat-panel-title>
+                            <mat-panel-title>More URLs</mat-panel-title>
                         </mat-expansion-panel-header>
+                        <div formArrayName="additionalUrls">
+                        @for (urlControl of form()!.controls.additionalUrls.controls; track $index) {
                         <mat-form-field class="full-width">
-                    <mat-label>BBC</mat-label>
-                    <input type="text" [formControl]="form()!.controls.bbc" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Open BBC URL"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.bbc.value)"
-                        (click)="openExternalUrl(form()!.controls.bbc.value)">
+                    <mat-label>{{ serviceLabelForUrl(urlControl.value) }}</mat-label>
+                    <input type="text" [formControl]="urlControl" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open URL"
+                        [disabled]="!hasNonEmptyUrlValue(urlControl.value)"
+                        (click)="openExternalUrl(urlControl.value)">
                         <mat-icon>open_in_new</mat-icon>
                     </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove BBC URL"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.bbc.value)"
-                        (click)="clearField(form()!.controls.bbc)">
+                    <button type="button" matIconButton matSuffix aria-label="Remove URL"
+                        (click)="removeAdditionalUrl($index)">
                         <mat-icon>clear</mat-icon>
                     </button>
                 </mat-form-field>
-                        <mat-form-field class="full-width">
-                    <mat-label>Internet Archive</mat-label>
-                    <input type="text" [formControl]="form()!.controls.internetArchive" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Open Internet Archive URL"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.internetArchive.value)"
-                        (click)="openExternalUrl(form()!.controls.internetArchive.value)">
-                        <mat-icon>open_in_new</mat-icon>
-                    </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove Internet Archive URL"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.internetArchive.value)"
-                        (click)="clearField(form()!.controls.internetArchive)">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                </mat-form-field>
+                        }
+                        </div>
+                        <button type="button" matButton="text" (click)="addAdditionalUrl()">Add URL</button>
                     </mat-expansion-panel>
                 </mat-accordion>
             </mat-tab>

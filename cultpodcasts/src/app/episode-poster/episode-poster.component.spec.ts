@@ -14,7 +14,8 @@ function ep(overrides: Partial<SearchDisplayEpisode> = {}): SearchDisplayEpisode
     release: new Date('2019-11-03T12:00:00Z'),
     duration: '01:00:00',
     subjects: ['Subject A'],
-    youtube: new URL('https://www.youtube.com/watch?v=a'),
+    services: { youtube: { url: 'https://www.youtube.com/watch?v=a' } },
+    ids: { youtube: 'a' },
     ...overrides,
   } as SearchDisplayEpisode;
 }

@@ -84,21 +84,21 @@ export class PostEpisodeDialogComponent {
                 this.form?.controls.post.disable();
               } else {
                 if (!resp.ignored && !resp.removed &&
-                  ((!resp.youTubePodcast || resp.urls.youtube) &&
-                    (!resp.applePodcast || resp.urls.apple) &&
-                    (!resp.spotifyPodcast || resp.urls.spotify)
+                  ((!resp.youTubePodcast || resp.urls?.youtube) &&
+                    (!resp.applePodcast || resp.urls?.apple) &&
+                    (!resp.spotifyPodcast || resp.urls?.spotify)
                   )) {
                   this.form?.controls.post.setValue(true);
                 }
               }
             }
             const readyForSocial: boolean = !resp.ignored && !resp.removed &&
-              ((resp.primaryPostService == "Spotify" && resp.spotifyPodcast == true && resp.urls.spotify != null) ||
-                (resp.primaryPostService == "YouTube" && resp.youTubePodcast == true && resp.urls.youtube != null) ||
+              ((resp.primaryPostService == "Spotify" && resp.spotifyPodcast == true && resp.urls?.spotify != null) ||
+                (resp.primaryPostService == "YouTube" && resp.youTubePodcast == true && resp.urls?.youtube != null) ||
                 (resp.primaryPostService == null && (
-                  (resp.youTubePodcast == true && resp.urls.youtube != null) ||
-                  (!(resp.youTubePodcast == true) && (resp.spotifyPodcast == true) && resp.urls.spotify != null) ||
-                  (!(resp.youTubePodcast == true) && !(resp.spotifyPodcast == true) && (resp.applePodcast == true) && resp.urls.apple != null)
+                  (resp.youTubePodcast == true && resp.urls?.youtube != null) ||
+                  (!(resp.youTubePodcast == true) && (resp.spotifyPodcast == true) && resp.urls?.spotify != null) ||
+                  (!(resp.youTubePodcast == true) && !(resp.spotifyPodcast == true) && (resp.applePodcast == true) && resp.urls?.apple != null)
                 )));
             if (this.hasTweeted) {
               this.form?.controls.tweet.disable();

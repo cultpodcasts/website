@@ -16,11 +16,6 @@ function ep(id: string, releaseHoursAgo = 0): HomepageEpisode {
     episodeDescription: `Desc ${id}`,
     release: new Date(Date.now() - releaseHoursAgo * 3600_000),
     duration: '01:00:00',
-    spotify: undefined,
-    apple: undefined,
-    youtube: undefined,
-    bbc: undefined,
-    internetArchive: undefined,
     subjects: [`Subject ${id}`],
     image: undefined,
   };

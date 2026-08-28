@@ -1,50 +1,94 @@
+import { EpisodeIds } from "./episode-ids.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
 import { BBCServiceResolver } from "./service-resolver";
+import { expandSvc } from "./service-catalog";
 
 export type SearchDisplayEpisode = HomepageEpisode | SearchResult;
 
-export function spotifyUrl(episode: SearchDisplayEpisode): URL | undefined {
-  if (isHomepageEpisode(episode)) {
-    return toUrl(episode.spotify);
+function serviceUrl(episode: SearchDisplayEpisode, key: string): URL | undefined {
+  return toUrl(episode.services?.[key]?.url ?? undefined);
+}
+
+function platformIds(episode: SearchDisplayEpisode): EpisodeIds & { podcastAppleId?: string } {
+  const nested = episode.ids ?? {};
+  const search = episode as SearchResult;
+  return {
+    spotify: nested.spotify ?? search.spotifyId,
+    apple: nested.apple ?? search.appleId,
+    youtube: nested.youtube ?? search.youtubeId,
+    podcastAppleId: search.podcastAppleId
+  };
+}
+
+function leftoverNamedUrl(episode: SearchDisplayEpisode, key: "spotify" | "apple" | "youtube"): URL | undefined {
+  const leftover = episode as HomepageEpisode;
+  if (key === "spotify") {
+    return toUrl(leftover.spotify);
   }
-  return episode.spotifyId
-    ? toUrl(`https://open.spotify.com/episode/${encodeURIComponent(episode.spotifyId)}`)
-    : undefined;
+  if (key === "apple") {
+    return toUrl(leftover.apple);
+  }
+  return toUrl(leftover.youtube);
+}
+
+export function spotifyUrl(episode: SearchDisplayEpisode): URL | undefined {
+  const id = platformIds(episode).spotify;
+  return serviceUrl(episode, "spotify")
+    ?? leftoverNamedUrl(episode, "spotify")
+    ?? (id ? toUrl(`https://open.spotify.com/episode/${encodeURIComponent(String(id))}`) : undefined);
 }
 
 export function youtubeUrl(episode: SearchDisplayEpisode): URL | undefined {
-  if (isHomepageEpisode(episode)) {
-    return toUrl(episode.youtube);
-  }
-  return episode.youtubeId
-    ? toUrl(`https://www.youtube.com/watch?v=${encodeURIComponent(episode.youtubeId)}`)
-    : undefined;
+  const id = platformIds(episode).youtube;
+  return serviceUrl(episode, "youtube")
+    ?? leftoverNamedUrl(episode, "youtube")
+    ?? (id ? toUrl(`https://www.youtube.com/watch?v=${encodeURIComponent(String(id))}`) : undefined);
 }
 
 export function appleUrl(episode: SearchDisplayEpisode): URL | undefined {
-  if (isHomepageEpisode(episode)) {
-    return toUrl(episode.apple);
+  const ids = platformIds(episode);
+  const fromServices = serviceUrl(episode, "apple") ?? leftoverNamedUrl(episode, "apple");
+  if (fromServices) {
+    return fromServices;
   }
-  return episode.appleId && episode.podcastAppleId
-    ? toUrl(`https://podcasts.apple.com/podcast/id${encodeURIComponent(episode.podcastAppleId)}?i=${encodeURIComponent(episode.appleId)}`)
+  return ids.apple && ids.podcastAppleId
+    ? toUrl(`https://podcasts.apple.com/podcast/id${encodeURIComponent(String(ids.podcastAppleId))}?i=${encodeURIComponent(String(ids.apple))}`)
     : undefined;
+}
+
+function svcUrl(episode: SearchDisplayEpisode, key: string): URL | undefined {
+  return expandSvc(episode.svc).find((item) => item.key === key)?.url;
+}
+
+function legacyBbcUrl(episode: SearchDisplayEpisode): URL | undefined {
+  return toUrl((episode as SearchResult).bbc);
 }
 
 /** BBC iPlayer (video) page — not embeddable; used for outbound Watch CTAs. */
 export function bbcIplayerUrl(episode: SearchDisplayEpisode): URL | undefined {
-  const bbc = toUrl(episode.bbc);
+  const fromMap = serviceUrl(episode, "bbcIplayer") ?? svcUrl(episode, "bbcIplayer");
+  if (fromMap) {
+    return fromMap;
+  }
+  const bbc = legacyBbcUrl(episode);
   return bbc && BBCServiceResolver.isIplayer(bbc) ? bbc : undefined;
 }
 
 /** BBC Sounds (audio) page — not embeddable; used for outbound Listen CTAs. */
 export function bbcSoundsUrl(episode: SearchDisplayEpisode): URL | undefined {
-  const bbc = toUrl(episode.bbc);
+  const fromServices = serviceUrl(episode, "bbcSounds") ?? svcUrl(episode, "bbcSounds");
+  if (fromServices) {
+    return fromServices;
+  }
+  const bbc = legacyBbcUrl(episode);
   return bbc && BBCServiceResolver.isSounds(bbc) ? bbc : undefined;
 }
 
 export function internetArchiveUrl(episode: SearchDisplayEpisode): URL | undefined {
-  return toUrl(episode.internetArchive);
+  return serviceUrl(episode, "internetArchive")
+    ?? svcUrl(episode, "internetArchive")
+    ?? toUrl((episode as SearchResult).internetArchive);
 }
 
 /**
@@ -66,27 +110,22 @@ export function externalPlaybackUrl(episode: SearchDisplayEpisode): URL | undefi
 }
 
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
-  // Homepage episodes come from a feed that always carries full image URLs.
+  const ytId = String(platformIds(episode).youtube ?? "") || youtubeIdFromWatchUrl(youtubeUrl(episode));
   if (isHomepageEpisode(episode)) {
     const image = toUrl(episode.image);
     if (isYoutubeThumbnailUrl(image)) {
       return image;
     }
-    // Prefer a YouTube frame when the episode is watchable — feed art is often square
-    // podcast cover even for video episodes.
-    const ytId = youtubeIdFromWatchUrl(toUrl(episode.youtube));
     return ytId ? youtubeThumbnailUrl(ytId) : image;
   }
 
-  // Search index may store Spotify/Apple cover as `image` even when `youtubeId` is set
-  // (Watch CTA). Show the video frame so Watch cards don't look like audio squares.
   if (isYoutubeThumbnailUrl(episode.image)) {
-    return expandImage(episode.image, episode.youtubeId);
+    return expandImage(episode.image, ytId || undefined);
   }
-  if (episode.youtubeId) {
-    return youtubeThumbnailUrl(episode.youtubeId);
+  if (ytId) {
+    return youtubeThumbnailUrl(ytId);
   }
-  return expandImage(episode.image, episode.youtubeId);
+  return expandImage(episode.image, ytId || undefined);
 }
 
 function youtubeThumbnailUrl(youtubeId: string): URL | undefined {
@@ -189,7 +228,7 @@ export function expandImage(image: URL | string | undefined, youtubeId: string |
   }
 }
 
-export function toUrl(value: URL | string | undefined): URL | undefined {
+export function toUrl(value: URL | string | undefined | null): URL | undefined {
   if (!value) {
     return undefined;
   }
@@ -204,5 +243,5 @@ export function toUrl(value: URL | string | undefined): URL | undefined {
 }
 
 function isHomepageEpisode(episode: SearchDisplayEpisode): episode is HomepageEpisode {
-  return "spotify" in episode || "apple" in episode || "youtube" in episode;
+  return !("spotifyId" in episode) && !("youtubeId" in episode);
 }

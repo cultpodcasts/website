@@ -9,11 +9,6 @@ function ep(id: string, subjects: string[]): HomepageEpisode {
     episodeDescription: '',
     release: new Date('2026-07-20T12:00:00Z'),
     duration: '01:00:00',
-    spotify: undefined,
-    apple: undefined,
-    youtube: undefined,
-    bbc: undefined,
-    internetArchive: undefined,
     subjects,
     image: new URL(`https://example.com/${id}.jpg`),
   };

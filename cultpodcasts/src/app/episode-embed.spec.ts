@@ -20,11 +20,6 @@ function episode(partial: Partial<HomepageEpisode> = {}): HomepageEpisode {
     episodeDescription: 'Description',
     release: new Date('2026-07-17T00:00:00Z'),
     duration: '00:41:02',
-    spotify: undefined,
-    apple: undefined,
-    youtube: undefined,
-    bbc: undefined,
-    internetArchive: undefined,
     subjects: undefined,
     image: undefined,
     ...partial,
@@ -50,9 +45,11 @@ describe('episode-embed', () => {
 
   it('prefers YouTube then Spotify then Apple', () => {
     const options = episodeEmbedOptions(episode({
-      youtube: new URL('https://www.youtube.com/watch?v=abc123DEF45'),
-      spotify: new URL('https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P'),
-      apple: new URL('https://podcasts.apple.com/us/podcast/id1?i=2'),
+      services: {
+        youtube: { url: 'https://www.youtube.com/watch?v=abc123DEF45' },
+        spotify: { url: 'https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P' },
+        apple: { url: 'https://podcasts.apple.com/us/podcast/id1?i=2' },
+      },
     }));
     expect(options.map((o) => o.service)).toEqual(['youtube', 'spotify', 'apple']);
     expect(preferredEmbedService(options)).toBe('youtube');
@@ -60,10 +57,10 @@ describe('episode-embed', () => {
 
   it('labels YouTube-first episodes Watch and others Listen', () => {
     expect(playActionLabel(episode({
-      youtube: new URL('https://www.youtube.com/watch?v=abc123DEF45'),
+      services: { youtube: { url: 'https://www.youtube.com/watch?v=abc123DEF45' } },
     }))).toBe('Watch');
     expect(playActionLabel(episode({
-      spotify: new URL('https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P'),
+      services: { spotify: { url: 'https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P' } },
     }))).toBe('Listen');
     expect(playActionLabel(episode())).toBe('Listen');
   });
@@ -75,14 +72,14 @@ describe('episode-embed', () => {
 
   it('offers Watch for BBC iPlayer and Internet Archive without embedding', () => {
     const iplayer = episode({
-      bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto'),
+      services: { bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto' } },
       image: new URL('https://i.scdn.co/image/opaque'),
     });
     const archive = episode({
-      internetArchive: new URL('https://archive.org/details/example-video'),
+      services: { internetArchive: { url: 'https://archive.org/details/example-video' } },
     });
     const sounds = episode({
-      bbc: new URL('https://www.bbc.co.uk/sounds/play/m001abcd'),
+      services: { bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m001abcd' } },
     });
 
     expect(canEmbedEpisode(iplayer)).toBe(false);
@@ -99,8 +96,10 @@ describe('episode-embed', () => {
 
   it('prefers in-app Listen over outbound Watch when Spotify and iPlayer both exist', () => {
     const both = episode({
-      spotify: new URL('https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P'),
-      bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto'),
+      services: {
+        spotify: { url: 'https://open.spotify.com/episode/7ouMYWpwJ422jRcDASZB7P' },
+        bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto' },
+      },
     });
     expect(canEmbedEpisode(both)).toBe(true);
     expect(playActionLabel(both)).toBe('Listen');
@@ -108,13 +107,13 @@ describe('episode-embed', () => {
 
   it('starts embed playback or opens external Watch / Listen', () => {
     const yt = episode({
-      youtube: new URL('https://www.youtube.com/watch?v=abc123DEF45'),
+      services: { youtube: { url: 'https://www.youtube.com/watch?v=abc123DEF45' } },
     });
     const iplayer = episode({
-      bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto'),
+      services: { bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto' } },
     });
     const sounds = episode({
-      bbc: new URL('https://www.bbc.co.uk/sounds/play/m001abcd'),
+      services: { bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m001abcd' } },
     });
     const played: SearchDisplayEpisode[] = [];
     const opened: string[] = [];

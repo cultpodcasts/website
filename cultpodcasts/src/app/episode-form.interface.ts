@@ -1,4 +1,4 @@
-import { FormControl } from "@angular/forms";
+import { FormArray, FormControl } from "@angular/forms";
 
 export interface EpisodeForm {
     title: FormControl<string>,
@@ -18,8 +18,7 @@ export interface EpisodeForm {
     youtube: FormControl<URL | null | string>,
     youtubeImage: FormControl<URL | null | string>,
     otherImage: FormControl<URL | null | string>,
-    bbc: FormControl<URL | null | string>,
-    internetArchive: FormControl<URL | null | string>,
+    additionalUrls: FormArray<FormControl<string>>,
     subjects: FormControl<string[]>,
     searchTerms: FormControl<string | null>,
     hashTag: FormControl<string | null>,

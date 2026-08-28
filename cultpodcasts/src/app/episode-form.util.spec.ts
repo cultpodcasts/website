@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { ApiEpisode } from './api-episode.interface';
 import {
   applyGuestSelection,
+  applyEpisodeFormServiceFields,
+  addAdditionalUrlControl,
   buildEpisodeForm,
   catalogueAfterPersonChange,
   dateToLocalISO,
@@ -335,6 +337,18 @@ describe('episode-form.util', () => {
       const now = baseEpisode({ lang: 'unset' });
       expect(getEpisodeChanges(prev, now).lang).toBe('');
     });
+
+    it('patches a Vimeo URL through services using the catalog key inferred from the URL', () => {
+      const prev = baseEpisode();
+      const now = baseEpisode({
+        services: {
+          vimeo: { url: 'https://vimeo.com/123456789' }
+        }
+      });
+      expect(getEpisodeChanges(prev, now).services).toEqual({
+        vimeo: { url: 'https://vimeo.com/123456789' }
+      });
+    });
   });
 
   it('buildEpisodeForm preserves multi-tag hashTag with hash prefix', () => {
@@ -345,6 +359,40 @@ describe('episode-form.util', () => {
   it('buildEpisodeForm leaves empty/null hashTag cleared', () => {
     expect(buildEpisodeForm(baseEpisode({ hashTag: null })).controls.hashTag.value).toBeNull();
     expect(buildEpisodeForm(baseEpisode({ hashTag: '' })).controls.hashTag.value).toBeNull();
+  });
+
+  it('buildEpisodeForm seeds additional URL rows from BBC and services, not dedicated BBC fields', () => {
+    const form = buildEpisodeForm(baseEpisode({
+      urls: {
+        spotify: new URL('https://open.spotify.com/episode/x'),
+        apple: undefined,
+        youtube: undefined,
+        bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abcd12'),
+        internetArchive: undefined
+      },
+      services: {
+        vimeo: { url: 'https://vimeo.com/123456789' }
+      }
+    }));
+    expect(form.controls.additionalUrls.value).toEqual([
+      'https://www.bbc.co.uk/iplayer/episode/p0abcd12',
+      'https://vimeo.com/123456789'
+    ]);
+  });
+
+  it('applyEpisodeFormServiceFields infers BBC iPlayer and Vimeo from a URL list', () => {
+    const form = buildEpisodeForm(baseEpisode());
+    addAdditionalUrlControl(form);
+    addAdditionalUrlControl(form);
+    form.controls.additionalUrls.at(0)!.setValue('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
+    form.controls.additionalUrls.at(1)!.setValue('https://vimeo.com/123456789');
+    const update = baseEpisode();
+    applyEpisodeFormServiceFields(form, update);
+    expect(update.urls?.bbc?.href).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
+    expect(update.services).toEqual({
+      bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12' },
+      vimeo: { url: 'https://vimeo.com/123456789' }
+    });
   });
 
   describe('getEpisodeChanges hashTag', () => {

@@ -16,6 +16,39 @@ describe("search-result-links", () => {
     podcastAppleId: "1234567890"
   };
 
+  it("reads leftover named feed URL fields until the payload is republished with services", () => {
+    const leftover: HomepageEpisode = {
+      id: "id",
+      podcastName: "Podcast",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:01:02",
+      spotify: "https://open.spotify.com/episode/spotify123",
+      youtube: "https://www.youtube.com/watch?v=yt123456789",
+      subjects: [],
+      image: undefined
+    };
+    expect(spotifyUrl(leftover)?.toString()).toBe("https://open.spotify.com/episode/spotify123");
+    expect(youtubeUrl(leftover)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
+  });
+
+  it("reconstructs homepage listen URLs from nested ids when services are absent", () => {
+    const homepage: HomepageEpisode = {
+      id: "id",
+      podcastName: "Podcast",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:01:02",
+      ids: { spotify: "spotify123", youtube: "yt123456789" },
+      subjects: [],
+      image: undefined
+    };
+    expect(spotifyUrl(homepage)?.toString()).toBe("https://open.spotify.com/episode/spotify123");
+    expect(youtubeUrl(homepage)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
+  });
+
   it("reconstructs platform URLs from compact ids", () => {
     expect(spotifyUrl(searchResult)?.toString()).toBe("https://open.spotify.com/episode/spotify123");
     expect(youtubeUrl(searchResult)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
@@ -49,11 +82,6 @@ describe("search-result-links", () => {
       episodeDescription: "Description",
       release: new Date("2026-07-17T00:00:00Z"),
       duration: "00:01:02",
-      spotify: undefined,
-      apple: undefined,
-      youtube: undefined,
-      bbc: undefined,
-      internetArchive: undefined,
       subjects: [],
       image: new URL("https://i.scdn.co/image/opaque")
     };
@@ -76,11 +104,7 @@ describe("search-result-links", () => {
       episodeDescription: "Description",
       release: new Date("2026-07-17T00:00:00Z"),
       duration: "00:57:00",
-      spotify: undefined,
-      apple: undefined,
-      youtube: undefined,
-      bbc: new URL("https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto"),
-      internetArchive: undefined,
+      services: { bbcIplayer: { url: "https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto" } },
       subjects: [],
       image: new URL("https://ichef.bbci.co.uk/images/ic/640xn/p0square.jpg")
     };
@@ -112,11 +136,8 @@ describe("search-result-links", () => {
       episodeDescription: "Description",
       release: new Date("2026-07-17T00:00:00Z"),
       duration: "00:01:02",
-      spotify: undefined,
-      apple: undefined,
-      youtube: new URL("https://www.youtube.com/watch?v=homeYt99"),
-      bbc: undefined,
-      internetArchive: undefined,
+      services: { youtube: { url: "https://www.youtube.com/watch?v=homeYt99" } },
+      ids: { youtube: "homeYt99" },
       subjects: [],
       image: new URL("https://i.scdn.co/image/opaque"),
     };
@@ -139,11 +160,8 @@ describe("search-result-links", () => {
       episodeDescription: "Description",
       release: new Date("2026-07-17T00:00:00Z"),
       duration: "00:01:02",
-      spotify: new URL("https://open.spotify.com/episode/homepage"),
-      apple: undefined,
-      youtube: undefined,
-      bbc: undefined,
-      internetArchive: undefined,
+      services: { spotify: { url: "https://open.spotify.com/episode/homepage" } },
+      ids: { spotify: "homepage" },
       subjects: [],
       image: new URL("https://i.scdn.co/image/opaque")
     };

@@ -1,5 +1,6 @@
 import { EpisodeImageUrls } from "./episode-image-urls.interface";
 import { EpisodePostUrls } from "./episode-post-urls.interface";
+import { EpisodeServiceMap } from "./service-catalog";
 export interface EpisodePost {
     title?: string;
     description?: string;
@@ -14,6 +15,7 @@ export interface EpisodePost {
     duration?: string;
     urls?: EpisodePostUrls;
     images?: EpisodeImageUrls;
+    services?: EpisodeServiceMap;
     subjects?: string[];
     searchTerms?: string | null;
     hashTag?: string | null;

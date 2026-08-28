@@ -1,7 +1,14 @@
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ApiEpisode } from './api-episode.interface';
 import { EpisodeForm } from './episode-form.interface';
 import { EpisodePost } from './episode-post.interface';
+import { EpisodeUrls } from './episode-urls.interface';
+import {
+  additionalServiceUrls,
+  isDefaultUiService,
+  resolveServiceKey,
+  type EpisodeServiceMap
+} from './service-catalog';
 import { episodeLanguageFormValue } from './language-options.util';
 import { Person } from './person.interface';
 import { comparePeopleBySortKey } from './person-sort';
@@ -56,6 +63,82 @@ export function openExternalUrl(value: string | URL | null | undefined): void {
 export function clearFormControl(control: FormControl<string | URL | null>): void {
   control.setValue(null);
   control.markAsDirty();
+}
+
+export function parseFormUrl(value: string | URL | null | undefined): URL | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (value instanceof URL) {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  try {
+    return new URL(trimmed);
+  } catch {
+    return undefined;
+  }
+}
+
+function additionalUrlControls(episode: ApiEpisode): FormArray<FormControl<string>> {
+  const urls = additionalServiceUrls({
+    youtube: episode.urls?.youtube,
+    spotify: episode.urls?.spotify,
+    apple: episode.urls?.apple,
+    bbc: episode.urls?.bbc,
+    internetArchive: episode.urls?.internetArchive,
+    ids: episode.ids,
+    services: episode.services
+  });
+  return new FormArray(urls.map((url) => new FormControl(url.toString(), { nonNullable: true })));
+}
+
+export function addAdditionalUrlControl(form: FormGroup<EpisodeForm>): void {
+  form.controls.additionalUrls.push(new FormControl('', { nonNullable: true }));
+  form.controls.additionalUrls.markAsDirty();
+}
+
+export function removeAdditionalUrlControl(form: FormGroup<EpisodeForm>, index: number): void {
+  form.controls.additionalUrls.removeAt(index);
+  form.controls.additionalUrls.markAsDirty();
+}
+
+/** Maps default Spotify/Apple/YouTube fields plus a free URL list onto urls + services. */
+export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, update: ApiEpisode): void {
+  const urls: EpisodeUrls = {
+    spotify: parseFormUrl(form.controls.spotify.value),
+    apple: parseFormUrl(form.controls.apple.value),
+    youtube: parseFormUrl(form.controls.youtube.value)
+  };
+  const services: EpisodeServiceMap = {};
+  for (const control of form.controls.additionalUrls.controls) {
+    const url = parseFormUrl(control.value);
+    if (!url) {
+      continue;
+    }
+    const key = resolveServiceKey(url);
+    if (!key) {
+      continue;
+    }
+    if (isDefaultUiService(key)) {
+      if (key === 'spotify') {
+        urls.spotify = url;
+      } else if (key === 'apple') {
+        urls.apple = url;
+      } else if (key === 'youtube') {
+        urls.youtube = url;
+      }
+      continue;
+    }
+    services[key] = { url: url.href };
+  }
+  urls.bbc = parseFormUrl(services['bbcIplayer']?.url) ?? parseFormUrl(services['bbcSounds']?.url);
+  urls.internetArchive = parseFormUrl(services['internetArchive']?.url);
+  update.urls = urls;
+  update.services = services;
 }
 
 export type EpisodeImageService = 'spotify' | 'apple' | 'youtube' | 'other';
@@ -120,15 +203,14 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     removed: new FormControl(episode.removed, { nonNullable: true }),
     release: new FormControl(dateToLocalISO(episode.release), { nonNullable: true }),
     duration: new FormControl(episode.duration, { nonNullable: true }),
-    spotify: new FormControl(episode.urls.spotify || null),
+    spotify: new FormControl(episode.urls?.spotify || null),
     spotifyImage: new FormControl(episode.images?.spotify || null),
-    apple: new FormControl(episode.urls.apple || null),
+    apple: new FormControl(episode.urls?.apple || null),
     appleImage: new FormControl(episode.images?.apple || null),
-    youtube: new FormControl(episode.urls.youtube || null),
+    youtube: new FormControl(episode.urls?.youtube || null),
     youtubeImage: new FormControl(episode.images?.youtube || null),
     otherImage: new FormControl(episode.images?.other || null),
-    bbc: new FormControl(episode.urls.bbc || null),
-    internetArchive: new FormControl(episode.urls.internetArchive || null),
+    additionalUrls: additionalUrlControls(episode),
     subjects: new FormControl(episode.subjects, { nonNullable: true }),
     searchTerms: new FormControl(episode.searchTerms || null),
     hashTag: new FormControl(ensureHashPrefix(episode.hashTag) || null, {
@@ -402,6 +484,19 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (!areEqualUrlValue(prev.urls?.youtube, now.urls?.youtube)) changes.urls!.youtube = now.urls?.youtube ?? '';
   if (!areEqualUrlValue(prev.urls?.bbc, now.urls?.bbc)) changes.urls!.bbc = now.urls?.bbc ?? '';
   if (!areEqualUrlValue(prev.urls?.internetArchive, now.urls?.internetArchive)) changes.urls!.internetArchive = now.urls?.internetArchive ?? '';
+
+  const serviceKeys = new Set(
+    [...Object.keys(prev.services ?? {}), ...Object.keys(now.services ?? {})]
+      .filter((key) => !isDefaultUiService(key))
+  );
+  for (const key of serviceKeys) {
+    const previousUrl = parseFormUrl(prev.services?.[key]?.url);
+    const nextUrl = parseFormUrl(now.services?.[key]?.url);
+    if (!areEqualUrlValue(previousUrl, nextUrl)) {
+      changes.services ??= {};
+      changes.services[key] = { url: nextUrl?.href ?? '' };
+    }
+  }
 
   if ((!areEqualUrlValue(prev.images?.apple, now.images?.apple)) ||
     (!areEqualUrlValue(prev.images?.spotify, now.images?.spotify)) ||
