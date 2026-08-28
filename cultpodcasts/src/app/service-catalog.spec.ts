@@ -3,6 +3,7 @@ import {
   additionalServiceUrls,
   collectEpisodeServices,
   DEFAULT_UI_SERVICE_KEYS,
+  SERVICE_CATALOG,
   expandSvc,
   resolveServiceKey,
   serviceLabelForUrl
@@ -16,9 +17,15 @@ describe("service-catalog", () => {
     expect(expanded[1].url.href).toBe("https://vimeo.com/123456789");
   });
 
-  it("resolves Netflix and iPlayer URLs to catalog keys for logos", () => {
+  it("resolves Netflix, iPlayer, Paramount+, HBO Max, Play Suisse, and TVNZ+ URLs to catalog keys for logos", () => {
     expect(resolveServiceKey(new URL("https://www.netflix.com/title/80057281"))).toBe("netflix");
     expect(resolveServiceKey(new URL("https://www.bbc.co.uk/iplayer/episode/p0abcd12"))).toBe("bbcIplayer");
+    expect(resolveServiceKey(new URL("https://www.paramountplus.com/shows/example/"))).toBe("paramountPlus");
+    expect(resolveServiceKey(new URL("https://www.max.com/shows/example"))).toBe("hboMax");
+    expect(resolveServiceKey(new URL("https://www.hbomax.com/series/urn:hbo:series:example"))).toBe("hboMax");
+    expect(resolveServiceKey(new URL("https://www.playsuisse.ch/watch/example"))).toBe("playSuisse");
+    expect(resolveServiceKey(new URL("https://www.tvnz.co.nz/shows/example"))).toBe("tvnzPlus");
+    expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
   it("orders every service with a URL in catalog order, including Spotify and Vimeo together", () => {
@@ -53,5 +60,19 @@ describe("service-catalog", () => {
     expect(links.map((x) => x.key)).toEqual(["youtube", "spotify"]);
     expect(links[0].url.href).toBe("https://www.youtube.com/watch?v=yt123456789");
     expect(links[1].url.href).toBe("https://open.spotify.com/episode/opaqueid00000000000000");
+  });
+
+  it("does not treat other as a defined listen service", () => {
+    expect(SERVICE_CATALOG.some((d) => d.key === "other")).toBe(false);
+    expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "tvnzPlus"])
+    );
+    expect(resolveServiceKey(new URL("https://www.dailymotion.com/video/xexample"))).toBe("dailymotioncom");
+    const links = collectEpisodeServices({
+      services: {
+        other: { url: "https://cdn.example.test/watch" }
+      }
+    });
+    expect(links.map((x) => x.key)).not.toContain("other");
   });
 });

@@ -120,6 +120,9 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
       continue;
     }
     const key = resolveServiceKey(url);
+    if (!key) {
+      continue;
+    }
     if (isDefaultUiService(key)) {
       if (key === 'spotify') {
         urls.spotify = url;

@@ -37,7 +37,10 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "vimeo", displayName: "Vimeo", icon: "vimeo", wideImage: true },
   { key: "netflix", displayName: "Netflix", icon: "netflix", wideImage: true },
   { key: "amazonPrime", displayName: "Amazon Prime Video", icon: "amazon-prime", wideImage: true },
-  { key: "other", displayName: "Other", icon: "external-service", wideImage: false }
+  { key: "paramountPlus", displayName: "Paramount+", icon: "paramount-plus", wideImage: true },
+  { key: "hboMax", displayName: "HBO Max", icon: "hbo-max", wideImage: true },
+  { key: "playSuisse", displayName: "Play Suisse", icon: "play-suisse", wideImage: true },
+  { key: "tvnzPlus", displayName: "TVNZ+", icon: "tvnz-plus", wideImage: true }
 ];
 
 const byKey = new Map(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -55,7 +58,7 @@ export function isDefaultUiService(key: string): boolean {
   return DEFAULT_UI_SET.has(key);
 }
 
-export function resolveServiceKey(url: URL): string {
+export function resolveServiceKey(url: URL): string | undefined {
   const host = url.hostname.replace(/^www\./, "").toLowerCase();
   const path = url.pathname;
   if (host === "youtu.be" || host.endsWith("youtube.com")) {
@@ -92,7 +95,24 @@ export function resolveServiceKey(url: URL): string {
   ) {
     return "amazonPrime";
   }
-  return host.replace(/[^a-z0-9]/g, "") || "other";
+  if (host.endsWith("paramountplus.com")) {
+    return "paramountPlus";
+  }
+  if (
+    host === "max.com" ||
+    host.endsWith(".max.com") ||
+    host === "hbomax.com" ||
+    host.endsWith(".hbomax.com")
+  ) {
+    return "hboMax";
+  }
+  if (host.endsWith("playsuisse.ch")) {
+    return "playSuisse";
+  }
+  if (host.endsWith("tvnz.co.nz")) {
+    return "tvnzPlus";
+  }
+  return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
 
 export function serviceLabelForUrl(value: string | URL | null | undefined): string {
@@ -100,7 +120,11 @@ export function serviceLabelForUrl(value: string | URL | null | undefined): stri
   if (!url) {
     return "URL";
   }
-  return serviceDescriptor(resolveServiceKey(url)).displayName;
+  const key = resolveServiceKey(url);
+  if (!key) {
+    return "URL";
+  }
+  return serviceDescriptor(key).displayName;
 }
 
 const EXPAND: Record<string, (id: string) => string> = {
@@ -217,7 +241,10 @@ export function collectEpisodeServices(source: ServiceLinkSource): EpisodeServic
     );
   }
   if (source.bbc) {
-    add(resolveServiceKey(source.bbc), source.bbc);
+    const bbcKey = resolveServiceKey(source.bbc);
+    if (bbcKey) {
+      add(bbcKey, source.bbc);
+    }
   }
   add("internetArchive", source.internetArchive);
   for (const item of expandSvc(source.svc)) {
@@ -225,6 +252,9 @@ export function collectEpisodeServices(source: ServiceLinkSource): EpisodeServic
   }
   if (source.services) {
     for (const [key, link] of Object.entries(source.services)) {
+      if (key === "other") {
+        continue;
+      }
       add(key, parseUrl(link?.url));
     }
   }
