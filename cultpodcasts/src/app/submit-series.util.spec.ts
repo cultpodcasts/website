@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { submitSeriesFromForm } from './submit-series.util';
+import { showSubmitSeriesPicker, submitSeriesFromForm } from './submit-series.util';
+
+describe('showSubmitSeriesPicker', () => {
+  it('shows Series picker only for the Curator role, because attaching or naming a series is curator work', () => {
+    expect(showSubmitSeriesPicker(['Curator'])).toBe(true);
+    expect(showSubmitSeriesPicker(['Admin'])).toBe(false);
+    expect(showSubmitSeriesPicker([])).toBe(false);
+    expect(showSubmitSeriesPicker(undefined)).toBe(false);
+  });
+});
 
 describe('submitSeriesFromForm', () => {
   it('maps an autocomplete object to podcastId and podcastName', () => {

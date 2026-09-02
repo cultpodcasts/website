@@ -5,6 +5,11 @@ export interface SubmitSeriesSelection {
   podcastName: string | undefined;
 }
 
+/** Series picker (attach/create show) is curator-only; everyone else submits URL-only. */
+export function showSubmitSeriesPicker(roles: readonly string[] | null | undefined): boolean {
+  return !!roles?.includes('Curator');
+}
+
 /**
  * Maps the submit-dialog Series field onto /submit query params.
  * Autocomplete object → id + name; typed string → name only; empty → URL-only submit.
