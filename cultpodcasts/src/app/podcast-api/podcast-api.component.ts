@@ -37,6 +37,9 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { displayCatalogName } from '../display-catalog-name';
+import { submitSeriesFromForm } from '../submit-series.util';
+import { resolveSeriesForAttach } from '../submit-series-conflict';
+import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -94,7 +97,8 @@ export class PodcastApiComponent {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private scrollDispatcher: ScrollDispatcher,
-    private infiniteScrollStrategy: InfiniteScrollStrategy
+    private infiniteScrollStrategy: InfiniteScrollStrategy,
+    private seriesResolve: SubmitSeriesResolveService
   ) {
   }
 
@@ -314,9 +318,32 @@ export class PodcastApiComponent {
       .open(SubmitPodcastComponent, { disableClose: true, autoFocus: true })
       .afterClosed()
       .subscribe(async result => {
-        if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastName: this.podcastName(), podcastId: undefined, shareMode: ShareMode.Text });
+        if (!result?.url) {
+          return;
         }
+        const series = submitSeriesFromForm(result.podcast);
+        if (series.podcastId || series.podcastName) {
+          await this.sendPodcast({
+            url: result.url,
+            podcastId: series.podcastId,
+            podcastName: series.podcastName,
+            shareMode: ShareMode.Text
+          });
+          return;
+        }
+        const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, this.podcastName());
+        if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+          if (outcome.kind !== 'cancelled') {
+            this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
+          }
+          return;
+        }
+        await this.sendPodcast({
+          url: result.url,
+          podcastId: outcome.selection.podcastId,
+          podcastName: outcome.selection.podcastName,
+          shareMode: ShareMode.Text
+        });
       });
   }
 

@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Choose series</h2>
+
+<mat-dialog-content>
+  <p class="series-conflict__lede">
+    Several catalogue rows share this name. Pick by platform ids or removed status — do not guess.
+  </p>
+  <ul class="series-conflict__list">
+    @for (podcast of data.podcasts; track podcast.id) {
+    <li class="series-conflict__item">
+      <button type="button" class="series-conflict__pick" (click)="pick(podcast)">
+        <span class="series-conflict__title">{{ displayCatalogName(podcast.name) }}</span>
+        <span class="series-conflict__meta">id: {{ podcast.id }}</span>
+        <span class="series-conflict__meta">Spotify: {{ podcast.spotifyId || '—' }}</span>
+        <span class="series-conflict__meta">Apple: {{ podcast.appleId ?? '—' }}</span>
+        <span class="series-conflict__meta">YouTube channel: {{ podcast.youTubeChannelId || '—' }}</span>
+        <span class="series-conflict__meta">YouTube playlist: {{ podcast.youTubePlaylistId || '—' }}</span>
+        <span class="series-conflict__meta">Removed: {{ podcast.removed ? 'yes' : 'no' }}</span>
+      </button>
+    </li>
+    }
+  </ul>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-raised-button (click)="close()">Cancel</button>
+</mat-dialog-actions>

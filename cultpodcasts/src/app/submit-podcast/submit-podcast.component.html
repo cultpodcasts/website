@@ -21,8 +21,8 @@
             <mat-form-field>
                 <input matInput placeholder="Series" [formControl]="podcast" [matAutocomplete]="auto">
                 <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
-                    @for (option of (filteredOptions | async); track option.id) {
-                    <mat-option [value]="option">{{option.name}}</mat-option>
+                    @for (option of (filteredOptions | async); track option.value) {
+                    <mat-option [value]="option">{{option.label}}</mat-option>
                     }
                 </mat-autocomplete>
             </mat-form-field>
@@ -33,6 +33,12 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button class="mat-primary" (click)="save()">Save</button>
+    <button mat-raised-button (click)="close()" [disabled]="resolving()">Close</button>
+    <button mat-raised-button class="mat-primary" (click)="save()" [disabled]="resolving()">
+        @if (resolving()) {
+        <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+        Save
+        }
+    </button>
 </mat-dialog-actions>

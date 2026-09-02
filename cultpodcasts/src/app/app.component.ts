@@ -37,6 +37,8 @@ import {
   extractUrlFromDataTransfer,
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
+import { resolveSeriesForAttach } from './submit-series-conflict';
+import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -119,6 +121,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly webPushService = inject(WebPushService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly seriesResolve = inject(SubmitSeriesResolveService);
 
   constructor(
     iconRegistry: MatIconRegistry,
@@ -616,10 +619,29 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
+    let podcastId: string | undefined;
+    let podcastName: string | undefined;
+    if (forPodcast) {
+      const name = this.podcastPageName();
+      if (!name) {
+        this.snackBar.open('Could not resolve this series from the page.', 'Ok', { duration: 5000 });
+        return;
+      }
+      const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
+      if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+        if (outcome.kind !== 'cancelled') {
+          this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
+        }
+        return;
+      }
+      podcastId = outcome.selection.podcastId;
+      podcastName = outcome.selection.podcastName;
+    }
+
     await this.toolbar.sendPodcast({
       url,
-      podcastId: undefined,
-      podcastName: forPodcast ? this.podcastPageName() : undefined,
+      podcastId,
+      podcastName,
       shareMode: ShareMode.Text
     });
   }

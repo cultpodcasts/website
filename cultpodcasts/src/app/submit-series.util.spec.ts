@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { showSubmitSeriesPicker, submitSeriesFromForm } from './submit-series.util';
+import { seriesNameFromForm, showSubmitSeriesPicker, submitSeriesFromForm } from './submit-series.util';
 
 describe('showSubmitSeriesPicker', () => {
   it('shows Series picker only for the Curator role, because attaching or naming a series is curator work', () => {
@@ -7,6 +7,16 @@ describe('showSubmitSeriesPicker', () => {
     expect(showSubmitSeriesPicker(['Admin'])).toBe(false);
     expect(showSubmitSeriesPicker([])).toBe(false);
     expect(showSubmitSeriesPicker(undefined)).toBe(false);
+  });
+});
+
+describe('seriesNameFromForm', () => {
+  it('reads the canonical name from a typeahead suggestion', () => {
+    expect(seriesNameFromForm({
+      type: 'podcast',
+      value: 'Typed Show',
+      label: 'Typed Show'
+    })).toBe('Typed Show');
   });
 });
 
@@ -37,6 +47,17 @@ describe('submitSeriesFromForm', () => {
     expect(submitSeriesFromForm('')).toEqual({
       podcastId: undefined,
       podcastName: undefined
+    });
+  });
+
+  it('maps a typeahead suggestion to name only, because search-suggestions have no podcast ids', () => {
+    expect(submitSeriesFromForm({
+      type: 'podcast',
+      value: 'Typed Show',
+      label: 'Typed Show'
+    })).toEqual({
+      podcastId: undefined,
+      podcastName: 'Typed Show'
     });
   });
 });
