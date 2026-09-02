@@ -38,8 +38,9 @@ import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { displayCatalogName } from '../display-catalog-name';
 import { submitSeriesFromForm } from '../submit-series.util';
-import { resolveSeriesForAttach } from '../submit-series-conflict';
+import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
+import { SubmitUrlLookupService } from '../submit-url-lookup.service';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -98,7 +99,8 @@ export class PodcastApiComponent {
     private dialog: MatDialog,
     private scrollDispatcher: ScrollDispatcher,
     private infiniteScrollStrategy: InfiniteScrollStrategy,
-    private seriesResolve: SubmitSeriesResolveService
+    private seriesResolve: SubmitSeriesResolveService,
+    private submitLookup: SubmitUrlLookupService
   ) {
   }
 
@@ -336,6 +338,21 @@ export class PodcastApiComponent {
           if (outcome.kind !== 'cancelled') {
             this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
           }
+          return;
+        }
+        let lookup: Awaited<ReturnType<SubmitUrlLookupService['lookup']>> | 'error';
+        try {
+          lookup = await this.submitLookup.lookup(result.url.href);
+        } catch {
+          lookup = 'error';
+        }
+        const proceed = await confirmPageDropIfOtherSeries(
+          this.dialog,
+          lookup,
+          outcome.selection.podcastId,
+          outcome.selection.podcastName ?? this.podcastName()
+        );
+        if (!proceed) {
           return;
         }
         await this.sendPodcast({

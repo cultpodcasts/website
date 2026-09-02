@@ -9,6 +9,7 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { postSubmitEpisodeDialog } from '../submit-ingest-ux';
 
 const medium = 15 * 1000;
 const long = 30 * 1000;
@@ -35,11 +36,17 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     public snackBarRef: MatSnackBarRef<SubmitUrlOriginResponseSnackbarComponent>,
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse }) {
     this.existingPodcast = data.existingPodcast;
-    if (data.response.episode === "Created" || data.response.episode === "Enriched" || data.response.episode === "EpisodeAlreadyExists") {
+    const episodeDialog = postSubmitEpisodeDialog(data.response.episode);
+    if (episodeDialog !== 'none') {
       this.actionText.set("Edit");
       this.showReviewButton.set(true);
       snackBarRef.onAction().subscribe(() => {
-        this.editSubmittedEpisode(data.response.podcastId!, data.response.episodeId!, data.response.episode === "Created", data.response.podcast === "Created")
+        this.editSubmittedEpisode(
+          data.response.podcastId!,
+          data.response.episodeId!,
+          episodeDialog === 'add-episode',
+          data.response.podcast === "Created"
+        )
       });
     }
   }

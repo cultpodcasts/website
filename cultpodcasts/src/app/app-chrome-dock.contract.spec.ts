@@ -88,6 +88,14 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(appHtml).not.toMatch(/class="drop-overlay-message"\s+\[hidden\]/);
   });
 
+  it('CHROME-DOCK-DROP: podcast-page overlay keeps two targets and does not add a third zone', () => {
+    const targets = appHtml.match(/class="drop-target"/g);
+    expect(targets?.length).toBe(2);
+    expect(appHtml).toMatch(/Add as a general submission/);
+    expect(appHtml).toMatch(/Link this episode to the podcast shown on this page/);
+    expect(appHtml).not.toMatch(/drop-target-warn/);
+  });
+
   it('CHROME-DOCK-008: privacy/terms are prerendered SSG and excluded from the Pages Worker', () => {
     const serverTs = readFileSync(join(__dirname, '../../server.ts'), 'utf8');
     const mainServer = readFileSync(join(__dirname, '../../src/main.server.ts'), 'utf8');

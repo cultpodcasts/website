@@ -37,8 +37,10 @@ import {
   extractUrlFromDataTransfer,
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
-import { resolveSeriesForAttach } from './submit-series-conflict';
+import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
+import { generalDropSeries } from './submit-ingest-ux';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
+import { SubmitUrlLookupService } from './submit-url-lookup.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -122,6 +124,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
+  private readonly submitLookup = inject(SubmitUrlLookupService);
 
   constructor(
     iconRegistry: MatIconRegistry,
@@ -636,6 +639,25 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       }
       podcastId = outcome.selection.podcastId;
       podcastName = outcome.selection.podcastName;
+      let lookup: Awaited<ReturnType<SubmitUrlLookupService['lookup']>> | 'error';
+      try {
+        lookup = await this.submitLookup.lookup(url.href);
+      } catch {
+        lookup = 'error';
+      }
+      const proceed = await confirmPageDropIfOtherSeries(
+        this.dialog,
+        lookup,
+        podcastId,
+        podcastName ?? name
+      );
+      if (!proceed) {
+        return;
+      }
+    } else {
+      const series = generalDropSeries();
+      podcastId = series.podcastId;
+      podcastName = series.podcastName;
     }
 
     await this.toolbar.sendPodcast({

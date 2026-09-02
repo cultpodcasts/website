@@ -9,6 +9,13 @@ import {
   SubmitSeriesConflictDialogData
 } from './submit-series-conflict-dialog/submit-series-conflict-dialog.component';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
+import { ConfirmComponent } from './confirm/confirm.component';
+import {
+  pageDropConfirmAccepted,
+  pageDropOtherSeriesQuestion,
+  pageDropPlan
+} from './submit-ingest-ux';
+import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection, seriesNameFromForm } from './submit-series.util';
 
 export type ResolveSeriesOutcome =
@@ -70,6 +77,29 @@ export async function resolveSeriesForAttach(
     return { kind: 'error' };
   }
   return outcome;
+}
+
+/**
+ * Page-target submit: continue unless lookup says another series owns the URL
+ * and the curator does not explicitly Yes.
+ */
+export async function confirmPageDropIfOtherSeries(
+  dialog: MatDialog,
+  lookup: SubmitUrlLookupResponse | 'error' | null,
+  pagePodcastId: string,
+  pagePodcastName: string
+): Promise<boolean> {
+  const plan = pageDropPlan(lookup, pagePodcastId);
+  if (plan.kind !== 'confirm-other-series') {
+    return true;
+  }
+  const closed = await firstValueFrom(dialog.open(ConfirmComponent, {
+    data: {
+      title: 'Already on another series',
+      question: pageDropOtherSeriesQuestion(plan.otherPodcastName, pagePodcastName)
+    }
+  }).afterClosed());
+  return pageDropConfirmAccepted(closed);
 }
 
 /**

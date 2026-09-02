@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
-import { resolveAmbiguousPodcastIds, resolveSeriesForAttach, resolveSeriesForSubmit, resolveSubmitNameConflict } from './submit-series-conflict';
+import { confirmPageDropIfOtherSeries, resolveAmbiguousPodcastIds, resolveSeriesForAttach, resolveSeriesForSubmit, resolveSubmitNameConflict } from './submit-series-conflict';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { Podcast } from './podcast.interface';
 
@@ -113,6 +113,49 @@ describe('resolveSeriesForAttach', () => {
     const outcome = await resolveSeriesForAttach(resolve, dialog, 'Missing Series Title');
 
     expect(outcome).toEqual({ kind: 'error' });
+  });
+});
+
+describe('confirmPageDropIfOtherSeries', () => {
+  const pageId = uniqueId;
+  const pageName = 'Page Show';
+
+  it('does not open a dialog when lookup is unknown or the URL already belongs to this page', async () => {
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    expect(await confirmPageDropIfOtherSeries(dialog, { known: false, kind: 'podcast-service' }, pageId, pageName)).toBe(true);
+    expect(await confirmPageDropIfOtherSeries(dialog, {
+      known: true,
+      podcastId: pageId,
+      podcastName: pageName
+    }, pageId, pageName)).toBe(true);
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('cancels Submit-to-this-podcast when the curator dismisses the other-series warning', async () => {
+    const dialog = {
+      open: vi.fn().mockReturnValue({ afterClosed: () => of({ result: false }) })
+    } as unknown as MatDialog;
+
+    const ok = await confirmPageDropIfOtherSeries(dialog, {
+      known: true,
+      podcastId: otherId,
+      podcastName: 'Other Show'
+    }, pageId, pageName);
+
+    expect(ok).toBe(false);
+    expect(dialog.open).toHaveBeenCalled();
+  });
+
+  it('continues Submit-to-this-podcast only after explicit Yes on the other-series warning', async () => {
+    const dialog = {
+      open: vi.fn().mockReturnValue({ afterClosed: () => of({ result: true }) })
+    } as unknown as MatDialog;
+
+    expect(await confirmPageDropIfOtherSeries(dialog, {
+      known: true,
+      podcastId: otherId,
+      podcastName: 'Other Show'
+    }, pageId, pageName)).toBe(true);
   });
 });
 
