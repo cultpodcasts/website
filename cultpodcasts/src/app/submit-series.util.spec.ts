@@ -85,11 +85,14 @@ describe('submitEpisodePostBody', () => {
   const episodeUrl = new URL('https://www.netflix.com/watch/80057281');
 
   it('always sends the absolute episode url, including URL-only submit', () => {
-    expect(submitEpisodePostBody(episodeUrl, { podcastId: undefined, podcastName: undefined })).toEqual({
+    const body = submitEpisodePostBody(episodeUrl, { podcastId: undefined, podcastName: undefined });
+    expect(body).toEqual({
       url: episodeUrl.href,
       podcastId: undefined,
       podcastName: undefined
     });
+    expect(body).not.toEqual(expect.objectContaining({ podcastName: 'Show Name' }));
+    expect(Object.keys(body)).toContain('url');
   });
 
   it('keeps the same url when resubmitting a 409 name collision with a chosen podcastId', () => {

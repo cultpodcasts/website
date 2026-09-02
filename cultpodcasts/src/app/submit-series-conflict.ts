@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import { parseAmbiguousPodcastIds } from './parse-ambiguous-podcast-ids';
@@ -86,7 +87,7 @@ export async function resolveSubmitNameConflict(
     return { kind: 'error' };
   }
   const podcasts = await resolve.loadByIds(ids);
-  if (podcasts.length === 0) {
+  if (podcasts.length !== ids.length) {
     return { kind: 'error' };
   }
   const picked = await chooseSeriesOnConflict(dialog, podcasts, name?.trim() || podcasts[0].name || '');
@@ -120,14 +121,8 @@ export async function chooseSeriesOnConflict(
 export { seriesNameFromForm };
 
 function httpErrorBody(error: unknown): unknown {
-  if (
-    error &&
-    typeof error === 'object' &&
-    'status' in error &&
-    (error as { status: unknown }).status === 409 &&
-    'error' in error
-  ) {
-    return (error as { error: unknown }).error;
+  if (error instanceof HttpErrorResponse && error.status === 409) {
+    return error.error;
   }
   return undefined;
 }

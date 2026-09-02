@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
@@ -128,7 +129,11 @@ describe('resolveSubmitNameConflict', () => {
         afterClosed: () => of({ id: otherId, name })
       })
     } as unknown as MatDialog;
-    const error = { status: 409, error: [uniqueId, otherId] };
+    const error = new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: [uniqueId, otherId]
+    });
 
     const outcome = await resolveSubmitNameConflict(resolve, dialog, error, name);
 
@@ -139,10 +144,30 @@ describe('resolveSubmitNameConflict', () => {
     });
   });
 
+  it('does not open the picker when 409 has no UUID list', async () => {
+    const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    const error = new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: { message: 'name collision' }
+    });
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(resolve.loadByIds).not.toHaveBeenCalled();
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
   it('treats a 400 submit error as not a name collision', async () => {
     const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
     const dialog = { open: vi.fn() } as unknown as MatDialog;
-    const error = { status: 400, error: { message: 'url must be absolute http(s)' } };
+    const error = new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: { message: 'url must be absolute http(s)' }
+    });
 
     const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
 
@@ -150,10 +175,67 @@ describe('resolveSubmitNameConflict', () => {
     expect(resolve.loadByIds).not.toHaveBeenCalled();
   });
 
+  it('treats a 404 submit error as not a name collision', async () => {
+    const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    const error = new HttpErrorResponse({
+      status: 404,
+      statusText: 'Not Found',
+      error: { message: 'not found' }
+    });
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(resolve.loadByIds).not.toHaveBeenCalled();
+  });
+
+  it('returns cancelled when the curator dismisses the picker', async () => {
+    const name = 'Duplicate Series Title';
+    const first = cataloguePodcast(uniqueId, name);
+    const second = cataloguePodcast(otherId, name);
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first, second])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(undefined)
+      })
+    } as unknown as MatDialog;
+    const error = new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: [uniqueId, otherId]
+    });
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, name);
+
+    expect(outcome).toEqual({ kind: 'cancelled' });
+  });
+
+  it('errors when any conflict UUID fails to load, instead of showing a partial picker', async () => {
+    const name = 'Duplicate Series Title';
+    const first = cataloguePodcast(uniqueId, name);
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    const error = new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: [uniqueId, otherId]
+    });
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, name);
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
   it('is not a submit-name conflict when the status is not 409', async () => {
     const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
     const dialog = { open: vi.fn() } as unknown as MatDialog;
-    const error = { status: 500 };
+    const error = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
 
     const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
 

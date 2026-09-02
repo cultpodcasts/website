@@ -31,6 +31,7 @@ export class SendPodcastComponent {
   readonly urlTextError = signal(false);
   readonly unknownError = signal(false);
   readonly submitError = signal(false);
+  readonly conflictDismissed = signal(false);
   readonly shareUrl = signal<URL | undefined>(undefined);
   originResponse: SubmitUrlOriginResponse | undefined;
 
@@ -53,6 +54,7 @@ export class SendPodcastComponent {
 
     if (url) {
       this.isSending.set(true);
+      this.conflictDismissed.set(false);
       const body = submitEpisodePostBody(url, { podcastId: data.podcastId, podcastName: data.podcastName });
       let headers: HttpHeaders = new HttpHeaders();
       if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {
@@ -86,6 +88,7 @@ export class SendPodcastComponent {
         this.close();
       } catch (error) {
         if (!data.podcastId) {
+          this.isSending.set(false);
           const conflict = await resolveSubmitNameConflict(
             this.seriesResolve,
             this.dialog,
@@ -93,8 +96,7 @@ export class SendPodcastComponent {
             data.podcastName
           );
           if (conflict.kind === 'cancelled') {
-            this.isSending.set(false);
-            this.close();
+            this.conflictDismissed.set(true);
             return;
           }
           if (conflict.kind === 'selection' && conflict.selection.podcastId) {

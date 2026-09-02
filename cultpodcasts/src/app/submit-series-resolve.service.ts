@@ -44,7 +44,7 @@ export class SubmitSeriesResolveService {
           return { kind: 'error' };
         }
         const podcasts = await this.loadByIds(ids);
-        if (podcasts.length === 0) {
+        if (podcasts.length !== ids.length) {
           return { kind: 'error' };
         }
         return { kind: 'conflict', ids, podcasts };

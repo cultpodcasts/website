@@ -127,4 +127,37 @@ describe('SubmitSeriesResolveService', () => {
             podcasts: [first, second]
         });
     });
+
+  it('treats a 409 as an error when any UUID fails to load, instead of a one-row picker', async () => {
+    const name = 'Duplicate Series Title';
+    const first = cataloguePodcast(firstConflictId, name, { spotifyId: 'show-one' });
+    const pending = service.probeByName(name);
+
+    httpMock.expectOne(new URL(`/podcast/${encodeURIComponent(name)}`, environment.api).toString())
+      .flush([firstConflictId, secondConflictId], { status: 409, statusText: 'Conflict' });
+
+    const remaining = new Map<string, 'ok' | 'missing'>([
+      [firstConflictId, 'ok'],
+      [secondConflictId, 'missing']
+    ]);
+    for (let i = 0; i < 8 && remaining.size > 0; i++) {
+      await Promise.resolve();
+      const outstanding = httpMock.match(req =>
+        [...remaining.keys()].some(id => req.url.endsWith(`/podcast/${id}`)));
+      for (const req of outstanding) {
+        const id = [...remaining.keys()].find(key => req.request.url.endsWith(`/podcast/${key}`));
+        if (!id) {
+          continue;
+        }
+        if (remaining.get(id) === 'ok') {
+          req.flush(first);
+        } else {
+          req.flush({ error: 'Unable to retrieve podcast' }, { status: 404, statusText: 'Not Found' });
+        }
+        remaining.delete(id);
+      }
+    }
+
+    await expect(pending).resolves.toEqual({ kind: 'error' });
+  });
 });

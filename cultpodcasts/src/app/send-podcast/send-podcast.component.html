@@ -24,12 +24,17 @@
         <p>Error sending Url to CultPodcasts.com</p>
     </div>
     }
+    @if (conflictDismissed()) {
+    <div>
+        <p>Series not selected. Close to return, or submit again from Add Podcast.</p>
+    </div>
+    }
     @if (urlShareError() || urlTextError()) {
     <p>URL: {{shareUrl()}}</p>
     }
 </mat-dialog-content>
 
-@if (urlShareError() || urlTextError() || unknownError() || submitError()) {
+@if (urlShareError() || urlTextError() || unknownError() || submitError() || conflictDismissed()) {
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>
