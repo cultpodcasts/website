@@ -5,7 +5,7 @@ const bbc = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za
 const internetArchive = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
 const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:channels\/[^/]+\/)?(\d+)(?:\/[A-Za-z\d]+)?/;
 const netflix = /^(?:https?:)?\/\/(?:www\.)?netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:title|watch)\/\d+/;
-const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/detail\/[A-Za-z0-9]+|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video|Prime-Video|prime-video))/;
+const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/(?:region\/[^/]+\/)?(?:detail\/[A-Za-z0-9]+|gp\/video)|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video|Prime-Video|prime-video))/;
 
 const patterns = [
   { regex: spotify, useFullInput: false },
@@ -15,7 +15,7 @@ const patterns = [
   { regex: internetArchive, useFullInput: true },
   { regex: vimeo, useFullInput: false },
   { regex: netflix, useFullInput: false },
-  { regex: amazonPrime, useFullInput: false },
+  { regex: amazonPrime, useFullInput: true },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {

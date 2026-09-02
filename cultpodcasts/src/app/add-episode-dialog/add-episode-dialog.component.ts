@@ -35,6 +35,7 @@ import {
   additionalServicePreviewKey,
   buildEpisodeForm,
   clearFormControl,
+  clearNonNullableStringControl,
   collectEpisodeImagePreviews,
   episodeCataloguePeople,
   applyGuestSelection,
@@ -203,8 +204,7 @@ export class AddEpisodeDialogComponent {
   }
 
   clearAdditionalText(control: FormControl<string>) {
-    control.setValue('');
-    control.markAsDirty();
+    clearNonNullableStringControl(control);
   }
 
   protected readonly serviceLabelForUrl = serviceLabelForUrl;

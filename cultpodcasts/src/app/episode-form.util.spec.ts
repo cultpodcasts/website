@@ -5,6 +5,7 @@ import {
   applyEpisodeFormServiceFields,
   addAdditionalUrlControl,
   buildEpisodeForm,
+  clearNonNullableStringControl,
   catalogueAfterPersonChange,
   collectEpisodeImagePreviews,
   dateToLocalISO,
@@ -424,6 +425,32 @@ describe('episode-form.util', () => {
       bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12' },
       vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
     });
+    expect(update.images?.other).toBeUndefined();
+  });
+
+  it('applyEpisodeFormServiceFields copies extra-row YouTube artwork onto images.youtube, not images.other', () => {
+    const form = buildEpisodeForm(baseEpisode());
+    addAdditionalUrlControl(form);
+    form.controls.additionalUrls.at(0)!.setValue({
+      url: 'https://www.youtube.com/watch?v=yt123456789',
+      image: 'https://i.ytimg.com/vi/yt123456789/hqdefault.jpg'
+    });
+    const update = baseEpisode({ images: {} });
+    applyEpisodeFormServiceFields(form, update);
+    expect(update.urls?.youtube?.href).toBe('https://www.youtube.com/watch?v=yt123456789');
+    expect(update.images?.youtube?.toString()).toBe('https://i.ytimg.com/vi/yt123456789/hqdefault.jpg');
+    expect(update.images?.other).toBeUndefined();
+    expect(update.services?.['youtube']).toBeUndefined();
+  });
+
+  it('clearNonNullableStringControl empties extra-row image text without null', () => {
+    const form = buildEpisodeForm(baseEpisode());
+    addAdditionalUrlControl(form);
+    const image = form.controls.additionalUrls.at(0)!.controls.image;
+    image.setValue('https://cdn.example.test/art.jpg');
+    clearNonNullableStringControl(image);
+    expect(image.value).toBe('');
+    expect(image.dirty).toBe(true);
   });
 
   it('collectEpisodeImagePreviews lists extra-service art by catalog key, not Other', () => {

@@ -16,19 +16,28 @@ describe('podcast-url-matcher', () => {
       'https://www.bbc.co.uk/iplayer/episode/p0abcd12/example-slug',
       'https://archive.org/details/example-item',
       'https://vimeo.com/123456789',
+      'https://player.vimeo.com/video/123456789',
       'https://www.netflix.com/title/80057281',
-      'https://www.primevideo.com/detail/0EXAMPLEID00'
+      'https://www.netflix.com/watch/80057281',
+      'https://www.primevideo.com/detail/0EXAMPLEID00',
+      'https://www.primevideo.com/region/na/detail/0EXAMPLEID00',
+      'https://www.amazon.com/gp/video/detail/B0EXAMPLE00'
     ];
 
     for (const url of accepted) {
       expect(isSubmittablePodcastUrl(url), url).toBe(true);
-      expect(parseSubmittablePodcastUrl(url)?.toString()).toContain('http');
+      expect(parseSubmittablePodcastUrl(url)?.href, url).toBe(new URL(url).href);
     }
   });
 
-  it('rejects news and other non-episode hosts', () => {
+  it('rejects news and catalog-only hosts that are not submittable yet', () => {
     expect(isSubmittablePodcastUrl('https://www.bbc.co.uk/news/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://example.test/watch/1')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows/example/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.max.com/shows/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hbomax.com/series/urn:hbo:series:example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.itv.com/watch/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.channel4.com/programmes/example')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
   });
 

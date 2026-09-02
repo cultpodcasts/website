@@ -66,6 +66,12 @@ export function clearFormControl(control: FormControl<string | URL | null>): voi
   control.markAsDirty();
 }
 
+/** Extra-row image fields are non-nullable strings; they cannot use clearFormControl (null). */
+export function clearNonNullableStringControl(control: FormControl<string>): void {
+  control.setValue('');
+  control.markAsDirty();
+}
+
 export function parseFormUrl(value: string | URL | null | undefined): URL | undefined {
   if (!value) {
     return undefined;
@@ -142,6 +148,10 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
         urls.apple = url;
       } else if (key === 'youtube') {
         urls.youtube = url;
+      }
+      if (image && (key === 'spotify' || key === 'apple' || key === 'youtube')) {
+        update.images ??= {};
+        update.images[key] = image;
       }
       continue;
     }

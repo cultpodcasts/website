@@ -35,6 +35,7 @@ import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-previ
 import {
   buildEpisodeForm,
   clearFormControl,
+  clearNonNullableStringControl,
   additionalServicePreviewKey,
   collectEpisodeImagePreviews,
   episodeCataloguePeople,
@@ -208,8 +209,7 @@ export class EditEpisodeDialogComponent {
   }
 
   clearAdditionalText(control: FormControl<string>) {
-    control.setValue('');
-    control.markAsDirty();
+    clearNonNullableStringControl(control);
   }
 
   protected readonly serviceLabelForUrl = serviceLabelForUrl;

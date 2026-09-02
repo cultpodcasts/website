@@ -27,6 +27,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
+import { submitSeriesFromForm } from '../submit-series.util';
 @Component({
   selector: 'app-toolbar',
   imports: [
@@ -110,9 +111,7 @@ export class ToolbarComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async result => {
         if (result?.url) {
-          const podcast = result.podcast;
-          const podcastId = podcast && typeof podcast === 'object' ? podcast.id : undefined;
-          const podcastName = typeof podcast === 'string' ? podcast : podcast?.name;
+          const { podcastId, podcastName } = submitSeriesFromForm(result.podcast);
           await this.sendPodcast({ url: result.url, podcastId, podcastName, shareMode: ShareMode.Text });
         }
       });
