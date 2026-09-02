@@ -7,22 +7,32 @@ const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:
 const netflix = /^(?:https?:)?\/\/(?:www\.)?netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:title|watch)\/\d+/;
 const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/(?:region\/[^/]+\/)?(?:detail\/[A-Za-z0-9]+|gp\/video(?:\/detail\/[A-Za-z0-9]+)?)|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video(?:\/detail\/[A-Za-z0-9]+)?|(?:Prime-Video|prime-video)(?:\/detail\/[A-Za-z0-9]+)?))/;
 
-const patterns = [
-  { regex: spotify, useFullInput: false },
-  { regex: youtube, useFullInput: false },
-  { regex: apple, useFullInput: false },
-  { regex: bbc, useFullInput: false },
-  { regex: internetArchive, useFullInput: true },
-  { regex: vimeo, useFullInput: false },
-  { regex: netflix, useFullInput: false },
-  { regex: amazonPrime, useFullInput: true },
+export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
+
+const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcastUrlKind }[] = [
+  { regex: spotify, useFullInput: false, kind: 'podcast-service' },
+  { regex: youtube, useFullInput: false, kind: 'podcast-service' },
+  { regex: apple, useFullInput: false, kind: 'podcast-service' },
+  { regex: bbc, useFullInput: false, kind: 'streaming' },
+  { regex: internetArchive, useFullInput: true, kind: 'streaming' },
+  { regex: vimeo, useFullInput: false, kind: 'streaming' },
+  { regex: netflix, useFullInput: false, kind: 'streaming' },
+  { regex: amazonPrime, useFullInput: true, kind: 'streaming' },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {
   return parseSubmittablePodcastUrl(input) != null;
 }
 
+export function classifySubmittablePodcastUrl(input: string): SubmittablePodcastUrlKind | undefined {
+  return matchSubmittablePodcastUrl(input)?.kind;
+}
+
 export function parseSubmittablePodcastUrl(input: string): URL | undefined {
+  return matchSubmittablePodcastUrl(input)?.url;
+}
+
+function matchSubmittablePodcastUrl(input: string): { url: URL; kind: SubmittablePodcastUrlKind } | undefined {
   const trimmed = input.trim();
   if (!trimmed) {
     return undefined;
@@ -39,11 +49,11 @@ export function parseSubmittablePodcastUrl(input: string): URL | undefined {
     }
 
     try {
-      return new URL(matchedUrl);
+      return { url: new URL(matchedUrl), kind: pattern.kind };
     } catch {
       if (!/^\w+\:\/\//.test(matchedUrl)) {
         try {
-          return new URL(`https://${matchedUrl}`);
+          return { url: new URL(`https://${matchedUrl}`), kind: pattern.kind };
         } catch {
           return undefined;
         }

@@ -1,5 +1,7 @@
 import { SimplePodcast } from './simple-podcast.interface';
 import { Suggestion } from './search-suggestions.interface';
+import { SubmittablePodcastUrlKind } from './podcast-url-matcher';
+import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 
 export interface SubmitSeriesSelection {
   podcastId: string | undefined;
@@ -8,9 +10,42 @@ export interface SubmitSeriesSelection {
 
 export type SubmitSeriesFormValue = string | SimplePodcast | Suggestion | null | undefined;
 
+export type SubmitSeriesUiMode = 'hide' | 'readonly' | 'picker';
+
 /** Series picker (attach/create show) is curator-only; everyone else submits URL-only. */
 export function showSubmitSeriesPicker(roles: readonly string[] | null | undefined): boolean {
   return !!roles?.includes('Curator');
+}
+
+/**
+ * Add Podcast Series field from URL membership lookup.
+ * Known unique → read-only name (do not send podcastName).
+ * Unknown streaming or ambiguous → picker.
+ * Unknown podcast-service / unrecognised / pending → hide.
+ */
+export function submitSeriesUiFromLookup(
+  lookup: SubmitUrlLookupResponse | 'error' | 'pending' | null,
+  clientKind: SubmittablePodcastUrlKind | undefined
+): SubmitSeriesUiMode {
+  if (!clientKind) {
+    return 'hide';
+  }
+  if (lookup && lookup !== 'error' && lookup !== 'pending') {
+    if (lookup.known) {
+      return 'readonly';
+    }
+    if (lookup.ambiguous) {
+      return 'picker';
+    }
+    if (lookup.kind === 'streaming') {
+      return 'picker';
+    }
+    return 'hide';
+  }
+  if (lookup === 'error') {
+    return clientKind === 'streaming' ? 'picker' : 'hide';
+  }
+  return 'hide';
 }
 
 /** Autocomplete `displayWith`: suggestion uses `label`, SimplePodcast uses `name`. */

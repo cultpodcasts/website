@@ -4,7 +4,8 @@ import {
   seriesNameFromForm,
   showSubmitSeriesPicker,
   submitEpisodePostBody,
-  submitSeriesFromForm
+  submitSeriesFromForm,
+  submitSeriesUiFromLookup
 } from './submit-series.util';
 
 describe('showSubmitSeriesPicker', () => {
@@ -104,5 +105,47 @@ describe('submitEpisodePostBody', () => {
       podcastId: 'podcast-guid-0001',
       podcastName: 'Duplicate Series Title'
     });
+  });
+});
+
+describe('submitSeriesUiFromLookup', () => {
+  it('hides Series for known unique membership so submit is URL-only', () => {
+    expect(submitSeriesUiFromLookup({
+      known: true,
+      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      podcastName: 'Stored Show Name'
+    }, 'podcast-service')).toBe('readonly');
+    expect(submitSeriesUiFromLookup({
+      known: true,
+      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      podcastName: 'Stored Show Name'
+    }, 'streaming')).toBe('readonly');
+  });
+
+  it('hides Series for unknown podcast-service URLs, because platform metadata creates the series', () => {
+    expect(submitSeriesUiFromLookup({ known: false, kind: 'podcast-service' }, 'podcast-service')).toBe('hide');
+  });
+
+  it('shows Series for unknown streaming URLs, because attach-or-create is the rare path', () => {
+    expect(submitSeriesUiFromLookup({ known: false, kind: 'streaming' }, 'streaming')).toBe('picker');
+  });
+
+  it('shows Series when membership is ambiguous so the curator can still pick', () => {
+    expect(submitSeriesUiFromLookup({
+      known: false,
+      ambiguous: true,
+      podcastIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb']
+    }, 'streaming')).toBe('picker');
+  });
+
+  it('hides Series while lookup is pending or the URL is unrecognised', () => {
+    expect(submitSeriesUiFromLookup('pending', 'streaming')).toBe('hide');
+    expect(submitSeriesUiFromLookup(null, undefined)).toBe('hide');
+    expect(submitSeriesUiFromLookup({ known: false, kind: 'unrecognised' }, undefined)).toBe('hide');
+  });
+
+  it('falls back to the client host class when lookup fails', () => {
+    expect(submitSeriesUiFromLookup('error', 'streaming')).toBe('picker');
+    expect(submitSeriesUiFromLookup('error', 'podcast-service')).toBe('hide');
   });
 });

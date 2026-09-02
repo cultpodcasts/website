@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  classifySubmittablePodcastUrl,
   extractUrlFromDataTransfer,
   isSubmittablePodcastUrl,
   parseSubmittablePodcastUrl,
@@ -40,6 +41,18 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.itv.com/watch/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.channel4.com/programmes/example')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
+  });
+
+  it('classifies Spotify/Apple/YouTube as podcast-service and BBC/Archive/Vimeo/Netflix/Prime as streaming', () => {
+    expect(classifySubmittablePodcastUrl('https://open.spotify.com/episode/opaqueid00000000000000')).toBe('podcast-service');
+    expect(classifySubmittablePodcastUrl('https://www.youtube.com/watch?v=yt123456789')).toBe('podcast-service');
+    expect(classifySubmittablePodcastUrl('https://podcasts.apple.com/us/podcast/show-name/id1234567890123?i=1234567890123')).toBe('podcast-service');
+    expect(classifySubmittablePodcastUrl('https://www.bbc.co.uk/sounds/play/p0example')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://archive.org/details/example-item')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://vimeo.com/123456789')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.netflix.com/watch/80057281')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.primevideo.com/detail/0EXAMPLEID00')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
   it('treats scheme-relative Spotify URLs as submittable', () => {
