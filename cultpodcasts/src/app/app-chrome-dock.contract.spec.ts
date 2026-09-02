@@ -128,7 +128,7 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     // Slot must not create a stacking context. z-index here traps
     // position:fixed .chrome-search below .site-chrome__bar (102).
     const slotRule =
-      sass.match(/^\.chrome-search-slot\n(?:[ \t].*\n|\n)*/m)?.[0] ?? '';
+      sass.match(/^\.chrome-search-slot\r?\n(?:[ \t].*\r?\n|\r?\n)*/m)?.[0] ?? '';
     expect(slotRule).toMatch(/pointer-events:\s*none/);
     expect(slotRule).not.toMatch(/^[ \t]+z-index:/m);
     expect(sass).not.toMatch(

@@ -110,7 +110,10 @@ export class ToolbarComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async result => {
         if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, podcastName: undefined, shareMode: ShareMode.Text });
+          const podcast = result.podcast;
+          const podcastId = podcast && typeof podcast === 'object' ? podcast.id : undefined;
+          const podcastName = typeof podcast === 'string' ? podcast : podcast?.name;
+          await this.sendPodcast({ url: result.url, podcastId, podcastName, shareMode: ShareMode.Text });
         }
       });
   }

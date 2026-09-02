@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { isSubmittablePodcastUrl } from './podcast-url-matcher';
 
 export class UrlValidator {
   static isValid(): ValidatorFn {
@@ -22,6 +23,15 @@ export class UrlValidator {
         }
       }
       return validUrl ? null : { invalidUrl: true };
+    };
+  }
+
+  static isSubmittable(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) {
+        return null;
+      }
+      return isSubmittablePodcastUrl(String(control.value)) ? null : { unrecognisedUrl: true };
     };
   }
 }

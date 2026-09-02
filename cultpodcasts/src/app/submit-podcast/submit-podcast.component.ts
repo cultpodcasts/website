@@ -1,9 +1,11 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from "@angular/material/dialog";
+import { AsyncPipe } from '@angular/common';
+import { Observable, map, startWith } from 'rxjs';
 import { UrlValidator } from '../url.validator';
 import { SimplePodcast } from '../simple-podcast.interface';
-import { Observable } from 'rxjs';
+import { PodcastsService } from '../podcasts.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatOptionModule } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -27,34 +29,47 @@ import { TextFieldModule } from '@angular/cdk/text-field';
     MatAutocompleteModule,
     MatOptionModule,
     MatButtonModule,
-    TextFieldModule
+    TextFieldModule,
+    AsyncPipe
   ]
 })
 export class SubmitPodcastComponent implements OnInit {
   form!: FormGroup;
   advancedOpenState: boolean = false;
-  podcast = new FormControl();
-  url = new FormControl()
+  podcast = new FormControl<string | SimplePodcast | null>(null);
+  url = new FormControl('');
   filteredOptions: Observable<SimplePodcast[]> | undefined;
   options: SimplePodcast[] | undefined;
 
   constructor(
-    private dialogRef: MatDialogRef<SubmitPodcastComponent>) {
+    private dialogRef: MatDialogRef<SubmitPodcastComponent>,
+    private podcastsService: PodcastsService) {
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.url.addValidators([
       Validators.required,
-      UrlValidator.isValid()
+      UrlValidator.isValid(),
+      UrlValidator.isSubmittable()
     ]);
     this.form = new FormGroup({
       url: this.url,
       podcast: this.podcast
     });
+
+    const result = await this.podcastsService.getPodcasts();
+    this.options = result.results ?? [];
+    this.filteredOptions = this.podcast.valueChanges.pipe(
+      startWith(this.podcast.value),
+      map(value => this.filterPodcasts(value))
+    );
   }
 
-  displayFn(podcast: SimplePodcast): string {
-    return podcast && podcast.name ? podcast.name : '';
+  displayFn(podcast: SimplePodcast | string | null): string {
+    if (!podcast) {
+      return '';
+    }
+    return typeof podcast === 'string' ? podcast : podcast.name;
   }
 
   save() {
@@ -67,5 +82,14 @@ export class SubmitPodcastComponent implements OnInit {
 
   close() {
     this.dialogRef.close();
+  }
+
+  private filterPodcasts(value: string | SimplePodcast | null): SimplePodcast[] {
+    const options = this.options ?? [];
+    const term = (typeof value === 'string' ? value : value?.name ?? '').trim().toLowerCase();
+    if (!term) {
+      return options;
+    }
+    return options.filter(podcast => podcast.name.toLowerCase().includes(term));
   }
 }

@@ -278,7 +278,15 @@ export function collectEpisodeServices(source: ServiceLinkSource): EpisodeServic
 
 /** URLs that are not the default Spotify/Apple/YouTube editor slots. */
 export function additionalServiceUrls(source: ServiceLinkSource): URL[] {
+  return additionalServiceLinks(source).map((item) => item.url);
+}
+
+/** Extra catalog destinations with adjacent artwork from services.{key}.image. */
+export function additionalServiceLinks(source: ServiceLinkSource): { url: URL; image?: URL }[] {
   return collectEpisodeServices(source)
     .filter((item) => !isDefaultUiService(item.key))
-    .map((item) => item.url);
+    .map((item) => ({
+      url: item.url,
+      image: parseUrl(source.services?.[item.key]?.image)
+    }));
 }

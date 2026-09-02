@@ -96,13 +96,14 @@
                             <mat-panel-title>More URLs</mat-panel-title>
                         </mat-expansion-panel-header>
                         <div formArrayName="additionalUrls">
-                        @for (urlControl of form()!.controls.additionalUrls.controls; track $index) {
+                        @for (row of form()!.controls.additionalUrls.controls; track $index) {
+                        <div [formGroupName]="$index">
                         <mat-form-field class="full-width">
-                    <mat-label>{{ serviceLabelForUrl(urlControl.value) }}</mat-label>
-                    <input type="text" [formControl]="urlControl" matInput>
+                    <mat-label>{{ serviceLabelForUrl(row.controls.url.value) }}</mat-label>
+                    <input type="text" formControlName="url" matInput>
                     <button type="button" matIconButton matSuffix aria-label="Open URL"
-                        [disabled]="!hasNonEmptyUrlValue(urlControl.value)"
-                        (click)="openExternalUrl(urlControl.value)">
+                        [disabled]="!hasNonEmptyUrlValue(row.controls.url.value)"
+                        (click)="openExternalUrl(row.controls.url.value)">
                         <mat-icon>open_in_new</mat-icon>
                     </button>
                     <button type="button" matIconButton matSuffix aria-label="Remove URL"
@@ -110,6 +111,7 @@
                         <mat-icon>clear</mat-icon>
                     </button>
                 </mat-form-field>
+                        </div>
                         }
                         </div>
                         <button type="button" matButton="text" (click)="addAdditionalUrl()">Add URL</button>
@@ -222,20 +224,22 @@
                         <mat-icon>clear</mat-icon>
                     </button>
                 </mat-form-field>
+                @for (row of form()!.controls.additionalUrls.controls; track $index) {
                 <mat-form-field class="full-width">
-                    <mat-label>Other</mat-label>
-                    <input type="text" [formControl]="form()!.controls.otherImage" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Preview other image"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.otherImage.value)"
-                        (click)="previewImage('other')">
+                    <mat-label>{{ serviceLabelForUrl(row.controls.url.value) }}</mat-label>
+                    <input type="text" [formControl]="row.controls.image" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Preview image"
+                        [disabled]="!hasNonEmptyUrlValue(row.controls.image.value)"
+                        (click)="previewImage(additionalServicePreviewKey(row.controls.url.value))">
                         <mat-icon>visibility</mat-icon>
                     </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove other image"
-                        [disabled]="!hasNonEmptyUrlValue(form()!.controls.otherImage.value)"
-                        (click)="clearField(form()!.controls.otherImage)">
+                    <button type="button" matIconButton matSuffix aria-label="Remove image"
+                        [disabled]="!hasNonEmptyUrlValue(row.controls.image.value)"
+                        (click)="clearAdditionalText(row.controls.image)">
                         <mat-icon>clear</mat-icon>
                     </button>
                 </mat-form-field>
+                }
             </mat-tab>
             <mat-tab label="Guests">
                 <mat-form-field class="full-width">

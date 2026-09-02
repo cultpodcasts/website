@@ -32,6 +32,7 @@ import { FeatureSwitchService } from '../feature-switch-service';
 import { MatIconModule } from '@angular/material/icon';
 import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-preview-dialog.component';
 import {
+  additionalServicePreviewKey,
   buildEpisodeForm,
   clearFormControl,
   collectEpisodeImagePreviews,
@@ -201,7 +202,13 @@ export class AddEpisodeDialogComponent {
     clearFormControl(control);
   }
 
+  clearAdditionalText(control: FormControl<string>) {
+    control.setValue('');
+    control.markAsDirty();
+  }
+
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
+  protected readonly additionalServicePreviewKey = additionalServicePreviewKey;
 
   addAdditionalUrl() {
     const form = this.form();
@@ -259,8 +266,7 @@ export class AddEpisodeDialogComponent {
         images: {
           spotify: form.controls.spotifyImage.value,
           apple: form.controls.appleImage.value,
-          youtube: form.controls.youtubeImage.value,
-          other: form.controls.otherImage.value
+          youtube: form.controls.youtubeImage.value
         },
         subjects: form.controls.subjects.value,
         searchTerms: form.controls.searchTerms.value,

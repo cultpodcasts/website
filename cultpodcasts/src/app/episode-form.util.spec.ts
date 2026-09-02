@@ -6,6 +6,7 @@ import {
   addAdditionalUrlControl,
   buildEpisodeForm,
   catalogueAfterPersonChange,
+  collectEpisodeImagePreviews,
   dateToLocalISO,
   episodeCataloguePeople,
   getEpisodeChanges,
@@ -346,8 +347,30 @@ describe('episode-form.util', () => {
         }
       });
       expect(getEpisodeChanges(prev, now).services).toEqual({
-        vimeo: { url: 'https://vimeo.com/123456789' }
+        vimeo: { url: 'https://vimeo.com/123456789', image: '' }
       });
+    });
+
+    it('patches extra-service artwork on services[key].image and never writes images.other', () => {
+      const prev = baseEpisode({
+        services: {
+          vimeo: { url: 'https://vimeo.com/123456789' }
+        }
+      });
+      const now = baseEpisode({
+        services: {
+          vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
+        },
+        images: { other: new URL('https://cdn.example.test/leftover.jpg') }
+      });
+      const changes = getEpisodeChanges(prev, now);
+      expect(changes.services).toEqual({
+        vimeo: {
+          url: 'https://vimeo.com/123456789',
+          image: 'https://i.vimeocdn.com/video/abc.jpg'
+        }
+      });
+      expect(changes.images).toBeUndefined();
     });
   });
 
@@ -361,7 +384,7 @@ describe('episode-form.util', () => {
     expect(buildEpisodeForm(baseEpisode({ hashTag: '' })).controls.hashTag.value).toBeNull();
   });
 
-  it('buildEpisodeForm seeds additional URL rows from BBC and services, not dedicated BBC fields', () => {
+  it('buildEpisodeForm seeds additional URL and image rows from BBC and services, not images.other', () => {
     const form = buildEpisodeForm(baseEpisode({
       urls: {
         spotify: new URL('https://open.spotify.com/episode/x'),
@@ -371,28 +394,49 @@ describe('episode-form.util', () => {
         internetArchive: undefined
       },
       services: {
-        vimeo: { url: 'https://vimeo.com/123456789' }
-      }
+        vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
+      },
+      images: { other: new URL('https://cdn.example.test/leftover.jpg') }
     }));
     expect(form.controls.additionalUrls.value).toEqual([
-      'https://www.bbc.co.uk/iplayer/episode/p0abcd12',
-      'https://vimeo.com/123456789'
+      { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12', image: '' },
+      { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
     ]);
+    expect((form.controls as { otherImage?: unknown }).otherImage).toBeUndefined();
   });
 
-  it('applyEpisodeFormServiceFields infers BBC iPlayer and Vimeo from a URL list', () => {
+  it('applyEpisodeFormServiceFields infers BBC iPlayer and Vimeo from a URL list with adjacent images', () => {
     const form = buildEpisodeForm(baseEpisode());
     addAdditionalUrlControl(form);
     addAdditionalUrlControl(form);
-    form.controls.additionalUrls.at(0)!.setValue('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
-    form.controls.additionalUrls.at(1)!.setValue('https://vimeo.com/123456789');
+    form.controls.additionalUrls.at(0)!.setValue({
+      url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12',
+      image: ''
+    });
+    form.controls.additionalUrls.at(1)!.setValue({
+      url: 'https://vimeo.com/123456789',
+      image: 'https://i.vimeocdn.com/video/abc.jpg'
+    });
     const update = baseEpisode();
     applyEpisodeFormServiceFields(form, update);
     expect(update.urls?.bbc?.href).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
     expect(update.services).toEqual({
       bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12' },
-      vimeo: { url: 'https://vimeo.com/123456789' }
+      vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
     });
+  });
+
+  it('collectEpisodeImagePreviews lists extra-service art by catalog key, not Other', () => {
+    const form = buildEpisodeForm(baseEpisode({
+      images: { youtube: new URL('https://i.ytimg.com/vi/abc/hqdefault.jpg') },
+      services: {
+        vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
+      }
+    }));
+    expect(collectEpisodeImagePreviews(form)).toEqual([
+      { service: 'youtube', label: 'YouTube', url: 'https://i.ytimg.com/vi/abc/hqdefault.jpg' },
+      { service: 'vimeo', label: 'Vimeo', url: 'https://i.vimeocdn.com/video/abc.jpg' }
+    ]);
   });
 
   describe('getEpisodeChanges hashTag', () => {
