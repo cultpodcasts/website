@@ -25,6 +25,13 @@ Client SEO may use episode art from page-details when
 - Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
 - Preview: test with the switch ON and OFF before enabling in production.
 
+## Submit URL flows
+
+Episode URL ingest (Add Podcast, drag drop, share) → Worker lookup/submit. Series attach is the exception.
+
+- Docs: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
+- Rules: `src/app/submit-ingest-ux.ts`, `submit-series.util.ts`, `submit-series-conflict.ts`
+
 ## Repository layout
 
 - **Git root:** `~\source\repos\website` (parent of this folder). Run `git` commands from the parent repo or paths relative to it.
