@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
-import { resolveSeriesForAttach, resolveSeriesForSubmit } from './submit-series-conflict';
+import { resolveSeriesForAttach, resolveSeriesForSubmit, resolveSubmitNameConflict } from './submit-series-conflict';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { Podcast } from './podcast.interface';
 
@@ -112,5 +112,52 @@ describe('resolveSeriesForAttach', () => {
     const outcome = await resolveSeriesForAttach(resolve, dialog, 'Missing Series Title');
 
     expect(outcome).toEqual({ kind: 'error' });
+  });
+});
+
+describe('resolveSubmitNameConflict', () => {
+  it('loads POST /submit 409 UUIDs and returns the chosen podcastId for resubmit', async () => {
+    const name = 'Duplicate Series Title';
+    const first = cataloguePodcast(uniqueId, name);
+    const second = cataloguePodcast(otherId, name);
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first, second])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of({ id: otherId, name })
+      })
+    } as unknown as MatDialog;
+    const error = { status: 409, error: [uniqueId, otherId] };
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, name);
+
+    expect(resolve.loadByIds).toHaveBeenCalledWith([uniqueId, otherId]);
+    expect(outcome).toEqual({
+      kind: 'selection',
+      selection: { podcastId: otherId, podcastName: name }
+    });
+  });
+
+  it('treats a 400 submit error as not a name collision', async () => {
+    const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    const error = { status: 400, error: { message: 'url must be absolute http(s)' } };
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(resolve.loadByIds).not.toHaveBeenCalled();
+  });
+
+  it('is not a submit-name conflict when the status is not 409', async () => {
+    const resolve = { loadByIds: vi.fn() } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+    const error = { status: 500 };
+
+    const outcome = await resolveSubmitNameConflict(resolve, dialog, error, 'Series');
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(resolve.loadByIds).not.toHaveBeenCalled();
   });
 });

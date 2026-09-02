@@ -13,6 +13,20 @@ export function showSubmitSeriesPicker(roles: readonly string[] | null | undefin
   return !!roles?.includes('Curator');
 }
 
+/** Autocomplete `displayWith`: suggestion uses `label`, SimplePodcast uses `name`. */
+export function displaySeriesFormValue(podcast: SubmitSeriesFormValue): string {
+  if (podcast == null || podcast === '') {
+    return '';
+  }
+  if (typeof podcast === 'string') {
+    return podcast;
+  }
+  if ('label' in podcast) {
+    return podcast.label || podcast.value || '';
+  }
+  return podcast.name ?? '';
+}
+
 export function seriesNameFromForm(podcast: SubmitSeriesFormValue): string | undefined {
   if (podcast == null || podcast === '') {
     return undefined;
@@ -45,4 +59,17 @@ export function submitSeriesFromForm(podcast: SubmitSeriesFormValue): SubmitSeri
     return { podcastId: podcast.id, podcastName: podcast.name };
   }
   return { podcastId: undefined, podcastName: seriesNameFromForm(podcast) };
+}
+
+/** POST /submit always includes the episode url; 409 is a name collision for that same url. */
+export function submitEpisodePostBody(url: URL, series: SubmitSeriesSelection): {
+  url: string;
+  podcastId: string | undefined;
+  podcastName: string | undefined;
+} {
+  return {
+    url: url.href,
+    podcastId: series.podcastId,
+    podcastName: series.podcastName
+  };
 }

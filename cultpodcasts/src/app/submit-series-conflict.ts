@@ -1,5 +1,6 @@
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
+import { parseAmbiguousPodcastIds } from './parse-ambiguous-podcast-ids';
 import { Podcast } from './podcast.interface';
 import { SimplePodcast } from './simple-podcast.interface';
 import {
@@ -70,6 +71,34 @@ export async function resolveSeriesForAttach(
   return outcome;
 }
 
+/**
+ * POST /submit 409 with a UUID list: load catalogue rows and let the curator pick,
+ * then the caller resubmits with podcastId.
+ */
+export async function resolveSubmitNameConflict(
+  resolve: SubmitSeriesResolveService,
+  dialog: MatDialog,
+  error: unknown,
+  name: string | undefined
+): Promise<ResolveSeriesOutcome> {
+  const ids = parseAmbiguousPodcastIds(httpErrorBody(error));
+  if (!ids) {
+    return { kind: 'error' };
+  }
+  const podcasts = await resolve.loadByIds(ids);
+  if (podcasts.length === 0) {
+    return { kind: 'error' };
+  }
+  const picked = await chooseSeriesOnConflict(dialog, podcasts, name?.trim() || podcasts[0].name || '');
+  if (!picked) {
+    return { kind: 'cancelled' };
+  }
+  return {
+    kind: 'selection',
+    selection: { podcastId: picked.id, podcastName: picked.name }
+  };
+}
+
 export async function chooseSeriesOnConflict(
   dialog: MatDialog,
   podcasts: Podcast[],
@@ -89,3 +118,16 @@ export async function chooseSeriesOnConflict(
 }
 
 export { seriesNameFromForm };
+
+function httpErrorBody(error: unknown): unknown {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    (error as { status: unknown }).status === 409 &&
+    'error' in error
+  ) {
+    return (error as { error: unknown }).error;
+  }
+  return undefined;
+}

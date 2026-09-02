@@ -5,7 +5,7 @@ const bbc = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za
 const internetArchive = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
 const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:channels\/[^/]+\/)?(\d+)(?:\/[A-Za-z\d]+)?/;
 const netflix = /^(?:https?:)?\/\/(?:www\.)?netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:title|watch)\/\d+/;
-const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/(?:region\/[^/]+\/)?(?:detail\/[A-Za-z0-9]+|gp\/video)|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video|Prime-Video|prime-video))/;
+const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/(?:region\/[^/]+\/)?(?:detail\/[A-Za-z0-9]+|gp\/video(?:\/detail\/[A-Za-z0-9]+)?)|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video(?:\/detail\/[A-Za-z0-9]+)?|(?:Prime-Video|prime-video)(?:\/detail\/[A-Za-z0-9]+)?))/;
 
 const patterns = [
   { regex: spotify, useFullInput: false },

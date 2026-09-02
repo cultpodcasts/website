@@ -7,7 +7,12 @@ import { Observable, from, map, of, startWith, switchMap } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { UrlValidator } from '../url.validator';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { seriesNameFromForm, showSubmitSeriesPicker, SubmitSeriesFormValue } from '../submit-series.util';
+import {
+  displaySeriesFormValue,
+  seriesNameFromForm,
+  showSubmitSeriesPicker,
+  SubmitSeriesFormValue
+} from '../submit-series.util';
 import { resolveSeriesForSubmit } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SearchSuggestionsService } from '../search-suggestions.service';
@@ -97,18 +102,7 @@ export class SubmitPodcastComponent implements OnInit {
     this.changeDetector.markForCheck();
   }
 
-  displayFn(podcast: SubmitSeriesFormValue): string {
-    if (!podcast) {
-      return '';
-    }
-    if (typeof podcast === 'string') {
-      return podcast;
-    }
-    if ('label' in podcast && podcast.label) {
-      return podcast.label;
-    }
-    return podcast.name ?? '';
-  }
+  readonly displayFn = displaySeriesFormValue;
 
   async save() {
     if (!this.form.valid || this.resolving()) {

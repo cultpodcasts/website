@@ -43,13 +43,7 @@ export class SubmitSeriesResolveService {
         if (!ids) {
           return { kind: 'error' };
         }
-        const podcasts: Podcast[] = [];
-        for (const id of ids) {
-          const podcast = await this.getById(id);
-          if (podcast) {
-            podcasts.push(podcast);
-          }
-        }
+        const podcasts = await this.loadByIds(ids);
         if (podcasts.length === 0) {
           return { kind: 'error' };
         }
@@ -57,6 +51,17 @@ export class SubmitSeriesResolveService {
       }
       return { kind: 'error' };
     }
+  }
+
+  async loadByIds(ids: string[]): Promise<Podcast[]> {
+    const podcasts: Podcast[] = [];
+    for (const id of ids) {
+      const podcast = await this.getById(id);
+      if (podcast) {
+        podcasts.push(podcast);
+      }
+    }
+    return podcasts;
   }
 
   async getById(id: string): Promise<Podcast | undefined> {

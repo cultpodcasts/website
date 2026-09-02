@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { seriesNameFromForm, showSubmitSeriesPicker, submitSeriesFromForm } from './submit-series.util';
+import {
+  displaySeriesFormValue,
+  seriesNameFromForm,
+  showSubmitSeriesPicker,
+  submitEpisodePostBody,
+  submitSeriesFromForm
+} from './submit-series.util';
 
 describe('showSubmitSeriesPicker', () => {
   it('shows Series picker only for the Curator role, because attaching or naming a series is curator work', () => {
@@ -7,6 +13,19 @@ describe('showSubmitSeriesPicker', () => {
     expect(showSubmitSeriesPicker(['Admin'])).toBe(false);
     expect(showSubmitSeriesPicker([])).toBe(false);
     expect(showSubmitSeriesPicker(undefined)).toBe(false);
+  });
+});
+
+describe('displaySeriesFormValue', () => {
+  it('shows SimplePodcast.name and Suggestion.label, never Suggestion.name', () => {
+    expect(displaySeriesFormValue({ id: 'podcast-guid-0001', name: 'Show Name' })).toBe('Show Name');
+    expect(displaySeriesFormValue({
+      type: 'podcast',
+      value: 'Canonical Show',
+      label: 'Display Alias'
+    })).toBe('Display Alias');
+    expect(displaySeriesFormValue('Typed Show')).toBe('Typed Show');
+    expect(displaySeriesFormValue(null)).toBe('');
   });
 });
 
@@ -58,6 +77,29 @@ describe('submitSeriesFromForm', () => {
     })).toEqual({
       podcastId: undefined,
       podcastName: 'Typed Show'
+    });
+  });
+});
+
+describe('submitEpisodePostBody', () => {
+  const episodeUrl = new URL('https://www.netflix.com/watch/80057281');
+
+  it('always sends the absolute episode url, including URL-only submit', () => {
+    expect(submitEpisodePostBody(episodeUrl, { podcastId: undefined, podcastName: undefined })).toEqual({
+      url: episodeUrl.href,
+      podcastId: undefined,
+      podcastName: undefined
+    });
+  });
+
+  it('keeps the same url when resubmitting a 409 name collision with a chosen podcastId', () => {
+    expect(submitEpisodePostBody(episodeUrl, {
+      podcastId: 'podcast-guid-0001',
+      podcastName: 'Duplicate Series Title'
+    })).toEqual({
+      url: episodeUrl.href,
+      podcastId: 'podcast-guid-0001',
+      podcastName: 'Duplicate Series Title'
     });
   });
 });

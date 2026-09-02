@@ -21,7 +21,8 @@ describe('podcast-url-matcher', () => {
       'https://www.netflix.com/watch/80057281',
       'https://www.primevideo.com/detail/0EXAMPLEID00',
       'https://www.primevideo.com/region/na/detail/0EXAMPLEID00',
-      'https://www.amazon.com/gp/video/detail/B0EXAMPLE00'
+      'https://www.amazon.com/gp/video/detail/B0EXAMPLE00',
+      'https://www.amazon.co.uk/gp/video/detail/B0EXAMPLE00'
     ];
 
     for (const url of accepted) {

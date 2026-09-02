@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { Share } from '../share.interface';
 import { ShareMode } from "../share-mode.enum";
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -12,6 +12,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubmitDialogResponse } from '../submit-dialog-response.interface';
 import { SubmitUrlOriginResponse } from "../submit-url-origin-response.interface";
 import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
+import { resolveSubmitNameConflict } from '../submit-series-conflict';
+import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
+import { submitEpisodePostBody } from '../submit-series.util';
 
 @Component({
   selector: 'app-send-podcast',
@@ -32,6 +35,8 @@ export class SendPodcastComponent {
   originResponse: SubmitUrlOriginResponse | undefined;
 
   private auth = inject(AuthServiceWrapper);
+  private readonly dialog = inject(MatDialog);
+  private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly isAuthenticated = toSignal(this.auth.authService.isAuthenticated$, { initialValue: false });
 
   constructor(
@@ -48,7 +53,7 @@ export class SendPodcastComponent {
 
     if (url) {
       this.isSending.set(true);
-      const body = { url: url.toString(), podcastId: data.podcastId, podcastName: data.podcastName };
+      const body = submitEpisodePostBody(url, { podcastId: data.podcastId, podcastName: data.podcastName });
       let headers: HttpHeaders = new HttpHeaders();
       if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {
         let token: string | undefined;
@@ -80,6 +85,27 @@ export class SendPodcastComponent {
         }
         this.close();
       } catch (error) {
+        if (!data.podcastId) {
+          const conflict = await resolveSubmitNameConflict(
+            this.seriesResolve,
+            this.dialog,
+            error,
+            data.podcastName
+          );
+          if (conflict.kind === 'cancelled') {
+            this.isSending.set(false);
+            this.close();
+            return;
+          }
+          if (conflict.kind === 'selection' && conflict.selection.podcastId) {
+            await this.submit({
+              ...data,
+              podcastId: conflict.selection.podcastId,
+              podcastName: conflict.selection.podcastName
+            });
+            return;
+          }
+        }
         this.isSending.set(false);
         this.submitError.set(true);
       }
