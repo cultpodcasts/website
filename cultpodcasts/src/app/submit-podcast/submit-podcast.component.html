@@ -37,7 +37,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()" [disabled]="resolving() || lookupPending()">Close</button>
+    <button mat-raised-button (click)="close()" [disabled]="resolving()">Close</button>
     <button mat-raised-button class="mat-primary" (click)="save()" [disabled]="resolving() || lookupPending()">
         @if (resolving()) {
         <mat-spinner diameter="18"></mat-spinner>

@@ -46,4 +46,37 @@ describe('SubmitUrlLookupService', () => {
     req.flush({ known: false, kind: 'streaming' });
     await expect(pending).resolves.toEqual({ known: false, kind: 'streaming' });
   });
+
+  it('accepts unique known membership with podcastId and podcastName', async () => {
+    const url = 'https://open.spotify.com/episode/0exampleepisode00';
+    const pending = service.lookup(url);
+    const expected = new URL('/submit/lookup', environment.api);
+    expected.searchParams.set('url', url);
+    const req = httpMock.expectOne(expected.toString());
+    const body = {
+      known: true as const,
+      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      podcastName: 'Stored Show Name'
+    };
+    req.flush(body);
+    await expect(pending).resolves.toEqual(body);
+  });
+
+  it('accepts ambiguous 200 with a podcastIds UUID list', async () => {
+    const url = 'https://www.netflix.com/watch/80057281';
+    const pending = service.lookup(url);
+    const expected = new URL('/submit/lookup', environment.api);
+    expected.searchParams.set('url', url);
+    const req = httpMock.expectOne(expected.toString());
+    const body = {
+      known: false as const,
+      ambiguous: true as const,
+      podcastIds: [
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+      ]
+    };
+    req.flush(body);
+    await expect(pending).resolves.toEqual(body);
+  });
 });

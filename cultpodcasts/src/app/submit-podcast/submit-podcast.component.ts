@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { AsyncPipe } from '@angular/common';
-import { Observable, from, map, of, startWith, switchMap, catchError } from 'rxjs';
+import { Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UrlValidator } from '../url.validator';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -11,10 +11,12 @@ import {
   displaySeriesFormValue,
   seriesNameFromForm,
   showSubmitSeriesPicker,
+  submitDialogResult,
+  submitLookupReadyForSave,
   submitSeriesUiFromLookup,
   SubmitSeriesFormValue
 } from '../submit-series.util';
-import { resolveSeriesForSubmit } from '../submit-series-conflict';
+import { resolveAmbiguousPodcastIds, resolveSeriesForSubmit } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SubmitUrlLookupService } from '../submit-url-lookup.service';
 import { SubmitUrlLookupResponse } from '../submit-url-lookup.interface';
@@ -33,6 +35,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 const SERIES_SUGGEST_DEBOUNCE_MS = 150;
 const URL_LOOKUP_DEBOUNCE_MS = 300;
+const URL_LOOKUP_TIMEOUT_MS = 15_000;
 
 @Component({
   selector: 'app-submit-podcast',
@@ -73,6 +76,7 @@ export class SubmitPodcastComponent implements OnInit {
   protected readonly resolving = signal(false);
   protected readonly lookupPending = signal(false);
   protected readonly lookup = signal<SubmitUrlLookupResponse | 'error' | null>(null);
+  protected readonly lookedUpHref = signal<string | null>(null);
   protected readonly urlText = signal('');
 
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
@@ -113,17 +117,20 @@ export class SubmitPodcastComponent implements OnInit {
     this.url.valueChanges.pipe(
       startWith(this.url.value),
       map(value => String(value ?? '').trim()),
+      tap(value => this.markUrlLookupDirty(value)),
       debounceTime(URL_LOOKUP_DEBOUNCE_MS),
       distinctUntilChanged(),
       takeUntilDestroyed(this.destroyRef),
       switchMap(value => this.lookupUrl(value))
     ).subscribe(result => {
       this.lookupPending.set(false);
-      if (result === 'cleared') {
+      if (result.kind === 'cleared') {
+        this.lookedUpHref.set(null);
         this.lookup.set(null);
       } else {
-        this.lookup.set(result);
-        if (result !== 'error' && result.known) {
+        this.lookedUpHref.set(result.href);
+        this.lookup.set(result.lookup);
+        if (result.lookup !== 'error' && result.lookup.known) {
           this.podcast.setValue(null);
         }
       }
@@ -131,16 +138,31 @@ export class SubmitPodcastComponent implements OnInit {
     });
   }
 
-  private lookupUrl(value: string) {
+  /** Pending from the first keystroke so Save cannot use a stale lookup for another URL. */
+  private markUrlLookupDirty(value: string) {
     this.urlText.set(value);
     const parsed = parseSubmittablePodcastUrl(value);
     if (!parsed) {
-      return of('cleared' as const);
+      this.lookupPending.set(false);
+      this.lookedUpHref.set(null);
+      this.lookup.set(null);
+    } else if (parsed.href === this.lookedUpHref()) {
+      this.lookupPending.set(false);
+    } else {
+      this.lookupPending.set(true);
     }
-    this.lookupPending.set(true);
     this.changeDetector.markForCheck();
+  }
+
+  private lookupUrl(value: string) {
+    const parsed = parseSubmittablePodcastUrl(value);
+    if (!parsed) {
+      return of({ kind: 'cleared' as const });
+    }
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
-      catchError(() => of('error' as const))
+      timeout(URL_LOOKUP_TIMEOUT_MS),
+      map(lookup => ({ kind: 'ready' as const, href: parsed.href, lookup })),
+      catchError(() => of({ kind: 'ready' as const, href: parsed.href, lookup: 'error' as const }))
     );
   }
 
@@ -160,26 +182,27 @@ export class SubmitPodcastComponent implements OnInit {
   readonly displayFn = displaySeriesFormValue;
 
   async save() {
-    if (!this.form.valid || this.resolving() || this.lookupPending()) {
+    if (!this.form.valid || this.resolving()) {
       return;
     }
 
-    const url = this.url.value;
-    const lookup = this.lookup();
-    if (lookup && lookup !== 'error' && lookup.known) {
-      this.dialogRef.close({ url, podcast: undefined });
+    const url = this.url.value ?? '';
+    const parsed = parseSubmittablePodcastUrl(url);
+    if (!submitLookupReadyForSave(parsed?.href, this.lookedUpHref(), this.lookupPending())) {
       return;
     }
 
-    const seriesName = seriesNameFromForm(this.podcast.value);
-    if (!seriesName) {
-      this.dialogRef.close({ url, podcast: undefined });
+    const plan = submitDialogResult(url, this.lookup(), this.podcast.value);
+    if (plan.kind === 'close') {
+      this.dialogRef.close({ url: plan.url, podcast: plan.podcast });
       return;
     }
 
     this.resolving.set(true);
     try {
-      const outcome = await resolveSeriesForSubmit(this.seriesResolve, this.dialog, seriesName);
+      const outcome = plan.kind === 'ambiguous'
+        ? await resolveAmbiguousPodcastIds(this.seriesResolve, this.dialog, plan.podcastIds, seriesNameFromForm(this.podcast.value))
+        : await resolveSeriesForSubmit(this.seriesResolve, this.dialog, plan.seriesName);
       if (outcome.kind === 'cancelled') {
         return;
       }
@@ -187,8 +210,19 @@ export class SubmitPodcastComponent implements OnInit {
         this.snackBar.open('Could not resolve series. Try again or pick a different name.', 'Ok', { duration: 5000 });
         return;
       }
+      if (plan.kind === 'ambiguous') {
+        if (!outcome.selection.podcastId) {
+          this.snackBar.open('Could not resolve series. Try again or pick a different name.', 'Ok', { duration: 5000 });
+          return;
+        }
+        this.dialogRef.close({
+          url,
+          podcast: { id: outcome.selection.podcastId, name: outcome.selection.podcastName }
+        });
+        return;
+      }
       const podcast = outcome.selection.podcastId
-        ? { id: outcome.selection.podcastId, name: outcome.selection.podcastName ?? seriesName }
+        ? { id: outcome.selection.podcastId, name: outcome.selection.podcastName ?? plan.seriesName }
         : outcome.selection.podcastName;
       this.dialogRef.close({ url, podcast });
     } finally {

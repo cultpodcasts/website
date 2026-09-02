@@ -73,17 +73,16 @@ export async function resolveSeriesForAttach(
 }
 
 /**
- * POST /submit 409 with a UUID list: load catalogue rows and let the curator pick,
- * then the caller resubmits with podcastId.
+ * Lookup 200 `{ ambiguous, podcastIds }` or POST /submit 409 UUID list:
+ * load catalogue rows and let the curator pick. Cancel stays on the form.
  */
-export async function resolveSubmitNameConflict(
+export async function resolveAmbiguousPodcastIds(
   resolve: SubmitSeriesResolveService,
   dialog: MatDialog,
-  error: unknown,
+  ids: string[],
   name: string | undefined
 ): Promise<ResolveSeriesOutcome> {
-  const ids = parseAmbiguousPodcastIds(httpErrorBody(error));
-  if (!ids) {
+  if (ids.length === 0) {
     return { kind: 'error' };
   }
   const podcasts = await resolve.loadByIds(ids);
@@ -98,6 +97,23 @@ export async function resolveSubmitNameConflict(
     kind: 'selection',
     selection: { podcastId: picked.id, podcastName: picked.name }
   };
+}
+
+/**
+ * POST /submit 409 with a UUID list: load catalogue rows and let the curator pick,
+ * then the caller resubmits with podcastId.
+ */
+export async function resolveSubmitNameConflict(
+  resolve: SubmitSeriesResolveService,
+  dialog: MatDialog,
+  error: unknown,
+  name: string | undefined
+): Promise<ResolveSeriesOutcome> {
+  const ids = parseAmbiguousPodcastIds(httpErrorBody(error));
+  if (!ids) {
+    return { kind: 'error' };
+  }
+  return resolveAmbiguousPodcastIds(resolve, dialog, ids, name);
 }
 
 export async function chooseSeriesOnConflict(

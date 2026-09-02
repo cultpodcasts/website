@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -87,7 +87,7 @@ export class SendPodcastComponent {
         }
         this.close();
       } catch (error) {
-        if (!data.podcastId) {
+        if (!data.podcastId && error instanceof HttpErrorResponse && error.status === 409) {
           this.isSending.set(false);
           const conflict = await resolveSubmitNameConflict(
             this.seriesResolve,

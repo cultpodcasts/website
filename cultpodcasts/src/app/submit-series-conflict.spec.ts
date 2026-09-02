@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
-import { resolveSeriesForAttach, resolveSeriesForSubmit, resolveSubmitNameConflict } from './submit-series-conflict';
+import { resolveAmbiguousPodcastIds, resolveSeriesForAttach, resolveSeriesForSubmit, resolveSubmitNameConflict } from './submit-series-conflict';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { Podcast } from './podcast.interface';
 
@@ -241,5 +241,59 @@ describe('resolveSubmitNameConflict', () => {
 
     expect(outcome).toEqual({ kind: 'error' });
     expect(resolve.loadByIds).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveAmbiguousPodcastIds', () => {
+  it('opens the conflict picker for lookup podcastIds and returns the chosen id', async () => {
+    const name = 'Duplicate Series Title';
+    const first = cataloguePodcast(uniqueId, name);
+    const second = cataloguePodcast(otherId, name);
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first, second])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of({ id: otherId, name })
+      })
+    } as unknown as MatDialog;
+
+    const outcome = await resolveAmbiguousPodcastIds(resolve, dialog, [uniqueId, otherId], undefined);
+
+    expect(resolve.loadByIds).toHaveBeenCalledWith([uniqueId, otherId]);
+    expect(outcome).toEqual({
+      kind: 'selection',
+      selection: { podcastId: otherId, podcastName: name }
+    });
+  });
+
+  it('returns cancelled when the curator dismisses, so Save stays on the form', async () => {
+    const first = cataloguePodcast(uniqueId, 'Series A');
+    const second = cataloguePodcast(otherId, 'Series B');
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first, second])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = {
+      open: vi.fn().mockReturnValue({
+        afterClosed: () => of(undefined)
+      })
+    } as unknown as MatDialog;
+
+    const outcome = await resolveAmbiguousPodcastIds(resolve, dialog, [uniqueId, otherId], undefined);
+
+    expect(outcome).toEqual({ kind: 'cancelled' });
+  });
+
+  it('errors on a partial UUID load instead of a one-row picker', async () => {
+    const first = cataloguePodcast(uniqueId, 'Series A');
+    const resolve = {
+      loadByIds: vi.fn().mockResolvedValue([first])
+    } as unknown as SubmitSeriesResolveService;
+    const dialog = { open: vi.fn() } as unknown as MatDialog;
+
+    const outcome = await resolveAmbiguousPodcastIds(resolve, dialog, [uniqueId, otherId], undefined);
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(dialog.open).not.toHaveBeenCalled();
   });
 });

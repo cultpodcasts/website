@@ -12,6 +12,12 @@ export type SubmitSeriesFormValue = string | SimplePodcast | Suggestion | null |
 
 export type SubmitSeriesUiMode = 'hide' | 'readonly' | 'picker';
 
+/** What Save should do once lookup has completed for the current URL. */
+export type SubmitDialogResult =
+  | { kind: 'close'; url: string; podcast: undefined }
+  | { kind: 'ambiguous'; podcastIds: string[] }
+  | { kind: 'resolve-name'; seriesName: string };
+
 /** Series picker (attach/create show) is curator-only; everyone else submits URL-only. */
 export function showSubmitSeriesPicker(roles: readonly string[] | null | undefined): boolean {
   return !!roles?.includes('Curator');
@@ -46,6 +52,48 @@ export function submitSeriesUiFromLookup(
     return clientKind === 'streaming' ? 'picker' : 'hide';
   }
   return 'hide';
+}
+
+/** Save is allowed only after lookup finished for this exact parsed href. */
+export function submitLookupReadyForSave(
+  parsedHref: string | undefined,
+  lookedUpHref: string | null,
+  pending: boolean
+): boolean {
+  return !!parsedHref && !pending && lookedUpHref === parsedHref;
+}
+
+/**
+ * Close / resolve plan for Add Podcast Save after lookup for this URL finished.
+ * Known unique → URL-only (never send leftover podcastName).
+ * Ambiguous 200 → picker from podcastIds (never URL-only).
+ * Unknown podcast-service → URL-only even if Series still has text.
+ * Unknown streaming + typed name → resolve by name; empty Series → URL-only.
+ */
+export function submitDialogResult(
+  url: string,
+  lookup: SubmitUrlLookupResponse | 'error' | null,
+  seriesForm: SubmitSeriesFormValue
+): SubmitDialogResult {
+  const urlOnly = (): SubmitDialogResult => ({ kind: 'close', url, podcast: undefined });
+
+  if (lookup && lookup !== 'error') {
+    if (lookup.known) {
+      return urlOnly();
+    }
+    if (lookup.ambiguous) {
+      return { kind: 'ambiguous', podcastIds: lookup.podcastIds };
+    }
+    if (lookup.kind === 'podcast-service') {
+      return urlOnly();
+    }
+  }
+
+  const seriesName = seriesNameFromForm(seriesForm);
+  if (seriesName) {
+    return { kind: 'resolve-name', seriesName };
+  }
+  return urlOnly();
 }
 
 /** Autocomplete `displayWith`: suggestion uses `label`, SimplePodcast uses `name`. */

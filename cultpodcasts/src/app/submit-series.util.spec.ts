@@ -3,7 +3,9 @@ import {
   displaySeriesFormValue,
   seriesNameFromForm,
   showSubmitSeriesPicker,
+  submitDialogResult,
   submitEpisodePostBody,
+  submitLookupReadyForSave,
   submitSeriesFromForm,
   submitSeriesUiFromLookup
 } from './submit-series.util';
@@ -109,7 +111,7 @@ describe('submitEpisodePostBody', () => {
 });
 
 describe('submitSeriesUiFromLookup', () => {
-  it('hides Series for known unique membership so submit is URL-only', () => {
+  it('known unique → readonly Series (URL-only submit)', () => {
     expect(submitSeriesUiFromLookup({
       known: true,
       podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -124,6 +126,7 @@ describe('submitSeriesUiFromLookup', () => {
 
   it('hides Series for unknown podcast-service URLs, because platform metadata creates the series', () => {
     expect(submitSeriesUiFromLookup({ known: false, kind: 'podcast-service' }, 'podcast-service')).toBe('hide');
+    expect(submitSeriesUiFromLookup({ known: false, kind: 'podcast-service' }, 'streaming')).toBe('hide');
   });
 
   it('shows Series for unknown streaming URLs, because attach-or-create is the rare path', () => {
@@ -147,5 +150,78 @@ describe('submitSeriesUiFromLookup', () => {
   it('falls back to the client host class when lookup fails', () => {
     expect(submitSeriesUiFromLookup('error', 'streaming')).toBe('picker');
     expect(submitSeriesUiFromLookup('error', 'podcast-service')).toBe('hide');
+  });
+});
+
+describe('submitLookupReadyForSave', () => {
+  const href = 'https://open.spotify.com/episode/0exampleepisode00';
+
+  it('blocks Save until lookup finished for this parsed href', () => {
+    expect(submitLookupReadyForSave(href, null, true)).toBe(false);
+    expect(submitLookupReadyForSave(href, 'https://www.netflix.com/watch/80057281', false)).toBe(false);
+    expect(submitLookupReadyForSave(href, href, true)).toBe(false);
+    expect(submitLookupReadyForSave(undefined, href, false)).toBe(false);
+    expect(submitLookupReadyForSave(href, href, false)).toBe(true);
+  });
+});
+
+describe('submitDialogResult', () => {
+  const url = 'https://open.spotify.com/episode/0exampleepisode00';
+  const leftoverName = 'Leftover Series Text';
+  const knownId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const otherId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+  it('closes URL-only when lookup is known unique, with no podcastName', () => {
+    expect(submitDialogResult(url, {
+      known: true,
+      podcastId: knownId,
+      podcastName: 'Stored Show Name'
+    }, leftoverName)).toEqual({
+      kind: 'close',
+      url,
+      podcast: undefined
+    });
+  });
+
+  it('uses ambiguous podcastIds instead of URL-only or a typed name', () => {
+    expect(submitDialogResult(url, {
+      known: false,
+      ambiguous: true,
+      podcastIds: [knownId, otherId]
+    }, leftoverName)).toEqual({
+      kind: 'ambiguous',
+      podcastIds: [knownId, otherId]
+    });
+    expect(submitDialogResult(url, {
+      known: false,
+      ambiguous: true,
+      podcastIds: [knownId, otherId]
+    }, null)).toEqual({
+      kind: 'ambiguous',
+      podcastIds: [knownId, otherId]
+    });
+  });
+
+  it('resolves a typed name for unknown streaming', () => {
+    expect(submitDialogResult(url, { known: false, kind: 'streaming' }, leftoverName)).toEqual({
+      kind: 'resolve-name',
+      seriesName: leftoverName
+    });
+  });
+
+  it('closes URL-only for unknown streaming when Series is empty', () => {
+    expect(submitDialogResult(url, { known: false, kind: 'streaming' }, null)).toEqual({
+      kind: 'close',
+      url,
+      podcast: undefined
+    });
+  });
+
+  it('closes URL-only for unknown podcast-service even if Series still has text', () => {
+    expect(submitDialogResult(url, { known: false, kind: 'podcast-service' }, leftoverName)).toEqual({
+      kind: 'close',
+      url,
+      podcast: undefined
+    });
   });
 });
