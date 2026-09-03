@@ -38,7 +38,7 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
-import { generalDropSeries } from './submit-ingest-ux';
+import { generalDropSeries, shouldCallSubmitUrlLookup } from './submit-ingest-ux';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { SubmitUrlLookupService } from './submit-url-lookup.service';
 import { filter, map, startWith } from 'rxjs';
@@ -204,7 +204,17 @@ export class AppComponent implements OnDestroy, AfterViewInit {
 
   async onSwMessage(message: MessageEvent) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share });
+      const parsed = parseSubmittablePodcastUrl(String(message.data.url ?? ''));
+      if (!parsed) {
+        return;
+      }
+      const series = await this.generalDropPersistSeries(parsed.href);
+      await this.toolbar.sendPodcast({
+        url: parsed,
+        podcastId: series.podcastId,
+        podcastName: series.podcastName,
+        shareMode: ShareMode.Share
+      });
     }
   }
 
@@ -639,12 +649,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       }
       podcastId = outcome.selection.podcastId;
       podcastName = outcome.selection.podcastName;
-      let lookup: Awaited<ReturnType<SubmitUrlLookupService['lookup']>> | 'error';
-      try {
-        lookup = await this.submitLookup.lookup(url.href);
-      } catch {
-        lookup = 'error';
-      }
+      const lookup = await this.lookupSubmitUrl(url.href);
       const proceed = await confirmPageDropIfOtherSeries(
         this.dialog,
         lookup,
@@ -655,7 +660,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         return;
       }
     } else {
-      const series = generalDropSeries();
+      const series = await this.generalDropPersistSeries(url.href);
       podcastId = series.podcastId;
       podcastName = series.podcastName;
     }
@@ -666,6 +671,21 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       podcastName,
       shareMode: ShareMode.Text
     });
+  }
+
+  private async generalDropPersistSeries(href: string) {
+    if (!shouldCallSubmitUrlLookup(this.canSubmitUrlForPodcast())) {
+      return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
+    }
+    return generalDropSeries(await this.lookupSubmitUrl(href));
+  }
+
+  private async lookupSubmitUrl(href: string) {
+    try {
+      return await this.submitLookup.lookup(href);
+    } catch {
+      return 'error' as const;
+    }
   }
 
   private isDropTargetEnabled(target: 'general' | 'podcast'): boolean {

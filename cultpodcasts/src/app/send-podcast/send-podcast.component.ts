@@ -39,6 +39,7 @@ export class SendPodcastComponent {
   private readonly dialog = inject(MatDialog);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly isAuthenticated = toSignal(this.auth.authService.isAuthenticated$, { initialValue: false });
+  private readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 
   constructor(
     private http: HttpClient,
@@ -63,7 +64,7 @@ export class SendPodcastComponent {
           token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
             authorizationParams: {
               audience: `https://api.cultpodcasts.com/`,
-              scope: 'submit'
+              scope: this.authRoles().includes('Curator') ? 'curate' : 'submit'
             }
           }));
         } catch (e) {

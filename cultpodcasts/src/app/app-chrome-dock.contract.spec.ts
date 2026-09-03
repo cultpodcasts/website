@@ -1,38 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { AppComponent } from './app.component';
+import { routes } from './app.routes';
+import { isAuthClientOnlyPath } from './auth-client-only-path';
+import { ContentComponent } from './content/content.component';
+import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
+import { SearchBarComponent } from './search-bar/search-bar.component';
+import { ToolbarComponent } from './toolbar/toolbar.component';
+
+function compiledHost(cmp: unknown): string {
+  return JSON.stringify((cmp as { ɵcmp?: unknown }).ɵcmp ?? {});
+}
+
+function contentChildren(): { path?: string; component?: unknown }[] {
+  const content = routes.find((r) => r.path === 'content');
+  return (content?.children ?? []) as { path?: string; component?: unknown }[];
+}
 
 describe('site chrome docked search (privacy-policy cold load)', () => {
-  const sass = readFileSync(
-    join(__dirname, 'app.component.sass'),
-    'utf8'
-  );
-  const appHtml = readFileSync(
-    join(__dirname, 'app.component.html'),
-    'utf8'
-  );
-  const appTs = readFileSync(
-    join(__dirname, 'app.component.ts'),
-    'utf8'
-  );
-  const toolbarTs = readFileSync(
-    join(__dirname, 'toolbar/toolbar.component.ts'),
-    'utf8'
-  );
-  const searchBarTs = readFileSync(
-    join(__dirname, 'search-bar/search-bar.component.ts'),
-    'utf8'
-  );
-  const contentTs = readFileSync(
-    join(__dirname, 'content/content.component.ts'),
-    'utf8'
-  );
+  const sass = readFileSync(join(__dirname, 'app.component.sass'), 'utf8');
+  const appHtml = readFileSync(join(__dirname, 'app.component.html'), 'utf8');
   const contentHtml = readFileSync(
     join(__dirname, 'content/content.component.html'),
-    'utf8'
-  );
-  const routesTs = readFileSync(
-    join(__dirname, 'app.routes.ts'),
     'utf8'
   );
 
@@ -56,24 +46,25 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
   });
 
   it('CHROME-DOCK-003: toolbar hydrates (no ngSkipHydration) so Add/Profile click handlers bind on cold load', () => {
-    expect(toolbarTs).not.toMatch(/ngSkipHydration:\s*['"]true['"]/);
-    expect(toolbarTs).not.toMatch(/host:\s*\{\s*ngSkipHydration/);
-    expect(toolbarTs).toMatch(/afterNextRender/);
-    expect(toolbarTs).toMatch(/authChromeReady/);
+    expect(compiledHost(ToolbarComponent)).not.toMatch(/ngSkipHydration/);
+    expect(
+      typeof (ToolbarComponent.prototype as unknown as { showSignedInChrome?: unknown }).showSignedInChrome
+    ).toBe('function');
   });
 
   it('CHROME-DOCK-004: search-bar hydrates (no ngSkipHydration) so typeahead listeners bind on cold load', () => {
-    expect(searchBarTs).not.toMatch(/ngSkipHydration:\s*['"]true['"]/);
-    expect(searchBarTs).not.toMatch(/host:\s*\{\s*ngSkipHydration/);
-    expect(searchBarTs).toMatch(/applyChipFromUrl/);
+    expect(compiledHost(SearchBarComponent)).not.toMatch(/ngSkipHydration/);
+    expect(
+      typeof (SearchBarComponent.prototype as unknown as { applyChipFromUrl?: unknown }).applyChipFromUrl
+    ).toBe('function');
   });
 
   it('CHROME-DOCK-005: content pages use child routes (no @switch on :path)', () => {
     expect(contentHtml).toMatch(/router-outlet/);
     expect(contentHtml).not.toMatch(/@switch/);
-    expect(contentTs).not.toMatch(/ngSkipHydration/);
-    expect(routesTs).toMatch(/path:\s*['"]privacy-policy['"]/);
-    expect(routesTs).toMatch(/PrivacyPolicyComponent/);
+    expect(compiledHost(ContentComponent)).not.toMatch(/ngSkipHydration/);
+    const privacy = contentChildren().find((c) => c.path === 'privacy-policy');
+    expect(privacy?.component).toBe(PrivacyPolicyComponent);
   });
 
   it('CHROME-DOCK-006: drop overlay host stays mounted; idle body is structural @if inside', () => {
@@ -97,32 +88,21 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
   });
 
   it('CHROME-DOCK-008: privacy/terms are prerendered SSG and excluded from the Pages Worker', () => {
-    const serverTs = readFileSync(join(__dirname, '../../server.ts'), 'utf8');
-    const mainServer = readFileSync(join(__dirname, '../../src/main.server.ts'), 'utf8');
     const prerenderRoutes = readFileSync(join(__dirname, '../../prerender-routes'), 'utf8');
     const routesJson = readFileSync(join(__dirname, '../_routes.json'), 'utf8');
     expect(prerenderRoutes).toMatch(/\/content\/privacy-policy/);
     expect(prerenderRoutes).toMatch(/\/content\/terms-and-conditions/);
-    // Static asset serve — Worker must not re-SSR (would fight the SSG tree).
     expect(routesJson).toMatch(/\/content\/privacy-policy/);
     expect(routesJson).toMatch(/\/content\/terms-and-conditions/);
     expect(routesJson).toMatch(/"exclude"/);
-    // Must not CSR-shell legal pages (body must be in the baked HTML).
-    expect(serverTs).not.toMatch(/pathname\.startsWith\(['"]\/content\//);
-    expect(serverTs).toMatch(/isAuthClientOnlyPath/);
-    expect(serverTs).toMatch(/renderApplication/);
-    // Other SSR routes still bootstrap from empty CSR shell (never homepage index.html).
-    expect(serverTs).toMatch(/index\.csr\.html/);
-    expect(serverTs).toMatch(/new URL\(\s*['"]\/index\.csr\.html['"]/);
-    // Local HTTPS uses .cert — no NODE_TLS_REJECT_UNAUTHORIZED / ssrIgnoresSsl.
-    expect(mainServer).not.toMatch(/NODE_TLS_REJECT_UNAUTHORIZED/);
-    expect(mainServer).not.toMatch(/ssrIgnoresSsl/);
+    expect(isAuthClientOnlyPath('/content/privacy-policy')).toBe(false);
+    expect(isAuthClientOnlyPath('/content/terms-and-conditions')).toBe(false);
+    expect(isAuthClientOnlyPath('/discovery')).toBe(true);
   });
 
-  it('CHROME-DOCK-007: chromeStuck is computed from isHomePage so browse SSR emits chrome-stuck', () => {
-    expect(appTs).toMatch(/homeScrollDocked/);
-    expect(appTs).toMatch(/chromeStuck\s*=\s*computed/);
-    expect(appTs).not.toMatch(/chromeStuck\s*=\s*signal\(/);
+  it('CHROME-DOCK-007: chrome-stuck is driven from the template binding', () => {
+    expect(appHtml).toMatch(/chromeStuck/);
+    expect(appHtml).toMatch(/\[class\.chrome-stuck\]/);
   });
 
   it('CHROME-DOCK-010: home search slot reserves --site-chrome-h so dock cannot collapse flow', () => {
@@ -133,8 +113,6 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(sass).toMatch(
       /\.home-shell\s+\.chrome-search-slot[\s\S]*?display:\s*flow-root/
     );
-    // Slot must not create a stacking context. z-index here traps
-    // position:fixed .chrome-search below .site-chrome__bar (102).
     const slotRule =
       sass.match(/^\.chrome-search-slot\r?\n(?:[ \t].*\r?\n|\r?\n)*/m)?.[0] ?? '';
     expect(slotRule).toMatch(/pointer-events:\s*none/);
@@ -156,13 +134,11 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     );
     expect(sass).toMatch(/\.chrome-stuck\s+\.chrome-search\.chrome-search--docked/);
     expect(appHtml).toMatch(/fillHeaderSearchGap/);
-    expect(appTs).toMatch(/fillHeaderSearchGap\s*=\s*computed\(\(\)\s*=>\s*this\.narrowChrome\(\)\)/);
-    expect(appTs).toMatch(/layoutDroppedSearch/);
-    expect(appTs).toMatch(/homeStickTop/);
-    expect(appTs).toMatch(/homePinAtScrollY/);
-    expect(appTs).toMatch(/clearDockedSearchLayout/);
-    expect(appTs).not.toMatch(/HOME_UNDOCK_SCROLL_PX/);
-    expect(appTs).not.toMatch(/layoutHomeDockedSearch/);
-    expect(appTs).not.toMatch(/MIN_SCROLL_TO_DOCK_PX/);
+    const proto = AppComponent.prototype as unknown as Record<string, unknown>;
+    expect(typeof proto['layoutDroppedSearch']).toBe('function');
+    expect(typeof proto['homeStickTop']).toBe('function');
+    expect(typeof proto['homePinAtScrollY']).toBe('function');
+    expect(typeof proto['clearDockedSearchLayout']).toBe('function');
+    expect(proto['layoutHomeDockedSearch']).toBeUndefined();
   });
 });

@@ -35,16 +35,20 @@ describe('SubmitUrlLookupService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('GETs /submit/lookup with the encoded url and submit scope', async () => {
+  it('GETs /submit/lookup with the encoded url and curate scope, because only Curator may call Azure lookup', async () => {
     const url = 'https://www.bbc.co.uk/sounds/play/p0example';
     const pending = service.lookup(url);
     const expected = new URL('/submit/lookup', environment.api);
     expected.searchParams.set('url', url);
     const req = httpMock.expectOne(expected.toString());
     expect(req.request.method).toBe('GET');
-    expect(req.request.context.get(AUTH_SCOPE)).toBe('submit');
-    req.flush({ known: false, kind: 'streaming' });
-    await expect(pending).resolves.toEqual({ known: false, kind: 'streaming' });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ known: false, kind: 'streaming', podcastName: 'Extracted Show' });
+    await expect(pending).resolves.toEqual({
+      known: false,
+      kind: 'streaming',
+      podcastName: 'Extracted Show'
+    });
   });
 
   it('accepts unique known membership with podcastId and podcastName', async () => {

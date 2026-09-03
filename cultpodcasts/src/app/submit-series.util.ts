@@ -63,6 +63,22 @@ export function submitLookupReadyForSave(
   return !!parsedHref && !pending && lookedUpHref === parsedHref;
 }
 
+/** Non-Curator Save needs a valid URL only — lookup is never called. */
+export function submitSaveReady(
+  isCurator: boolean,
+  parsedHref: string | undefined,
+  lookedUpHref: string | null,
+  pending: boolean
+): boolean {
+  if (!parsedHref) {
+    return false;
+  }
+  if (!isCurator) {
+    return true;
+  }
+  return submitLookupReadyForSave(parsedHref, lookedUpHref, pending);
+}
+
 /**
  * Close / resolve plan for Add Podcast Save after lookup for this URL finished.
  * Known unique → URL-only (never send leftover podcastName).

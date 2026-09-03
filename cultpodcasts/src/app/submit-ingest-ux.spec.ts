@@ -2,20 +2,89 @@ import { describe, expect, it } from 'vitest';
 import { submitEpisodePostBody } from './submit-series.util';
 import {
   generalDropSeries,
+  generalDropSeriesForActor,
   pageDropConfirmAccepted,
   pageDropOtherSeriesQuestion,
   pageDropPlan,
-  postSubmitEpisodeDialog
+  postSubmitEpisodeDialog,
+  shouldCallSubmitUrlLookup
 } from './submit-ingest-ux';
 
 const pageId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const otherId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const episodeUrl = new URL('https://open.spotify.com/episode/0exampleepisode00');
 
+describe('shouldCallSubmitUrlLookup', () => {
+  it('never calls GET /submit/lookup unless the actor is a Curator', () => {
+    expect(shouldCallSubmitUrlLookup(false)).toBe(false);
+    expect(shouldCallSubmitUrlLookup(true)).toBe(true);
+  });
+});
+
 describe('general drop', () => {
-  it('sends URL-only so Cult Podcasts matches the series automatically', () => {
-    expect(submitEpisodePostBody(episodeUrl, generalDropSeries())).toEqual({
+  it('sends URL-only after known-unique lookup so membership is not re-attached', () => {
+    expect(submitEpisodePostBody(episodeUrl, generalDropSeries({
+      known: true,
+      podcastId: pageId,
+      podcastName: 'Stored Show',
+      kind: 'podcast-service'
+    }))).toEqual({
       url: episodeUrl.href,
+      podcastId: undefined,
+      podcastName: undefined
+    });
+  });
+
+  it('sends URL-only for unknown podcast-service so platform metadata creates the show', () => {
+    expect(submitEpisodePostBody(episodeUrl, generalDropSeries({
+      known: false,
+      kind: 'podcast-service'
+    }))).toEqual({
+      url: episodeUrl.href,
+      podcastId: undefined,
+      podcastName: undefined
+    });
+  });
+
+  it('sends extracted podcastName for unknown streaming so persist can attach or create without a curator picker', () => {
+    const streamingUrl = new URL('https://www.netflix.com/watch/80057281');
+    expect(submitEpisodePostBody(streamingUrl, generalDropSeries({
+      known: false,
+      kind: 'streaming',
+      podcastName: 'Extracted Show'
+    }))).toEqual({
+      url: streamingUrl.href,
+      podcastId: undefined,
+      podcastName: 'Extracted Show'
+    });
+  });
+
+  it('signed-out and non-Curator general drop persist URL-only without using lookup', () => {
+    const streamingLookup = {
+      known: false as const,
+      kind: 'streaming' as const,
+      podcastName: 'Extracted Show'
+    };
+    expect(generalDropSeriesForActor(false, streamingLookup)).toEqual({
+      podcastId: undefined,
+      podcastName: undefined
+    });
+    expect(generalDropSeriesForActor(true, streamingLookup)).toEqual({
+      podcastId: undefined,
+      podcastName: 'Extracted Show'
+    });
+  });
+
+  it('falls back to URL-only when streaming lookup has no extracted name, or lookup failed', () => {
+    expect(generalDropSeries({ known: false, kind: 'streaming' })).toEqual({
+      podcastId: undefined,
+      podcastName: undefined
+    });
+    expect(generalDropSeries('error')).toEqual({
+      podcastId: undefined,
+      podcastName: undefined
+    });
+    expect(generalDropSeries(null)).toEqual({
       podcastId: undefined,
       podcastName: undefined
     });

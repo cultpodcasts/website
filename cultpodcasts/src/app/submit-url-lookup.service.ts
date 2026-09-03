@@ -14,7 +14,7 @@ export class SubmitUrlLookupService {
     endpoint.searchParams.set('url', url);
     return firstValueFrom(
       this.http.get<SubmitUrlLookupResponse>(endpoint.toString(), {
-        context: new HttpContext().set(AUTH_SCOPE, 'submit')
+        context: new HttpContext().set(AUTH_SCOPE, 'curate')
       })
     );
   }

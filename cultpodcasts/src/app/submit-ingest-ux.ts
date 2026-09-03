@@ -1,9 +1,48 @@
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
 
-/** General drop / share: Cult Podcasts matches the series. Never send Series fields. */
-export function generalDropSeries(): SubmitSeriesSelection {
-  return { podcastId: undefined, podcastName: undefined };
+/**
+ * Worker public gate is Curator (`curate` JWT). Client uses the Auth0 Curator role.
+ * Signed-out and signed-in-without-Curator never call GET /submit/lookup.
+ */
+export function shouldCallSubmitUrlLookup(isCurator: boolean): boolean {
+  return isCurator;
+}
+
+/**
+ * Homepage general drop / share after GET /submit/lookup (Curator only).
+ * Known unique or unknown podcast-service → URL-only (platform metadata / stored membership).
+ * Unknown streaming → persist extracted podcastName when lookup returned it (no curator picker).
+ * Ambiguous / error → URL-only (do not invent a Series picker).
+ */
+export function generalDropSeries(
+  lookup: SubmitUrlLookupResponse | 'error' | null
+): SubmitSeriesSelection {
+  const urlOnly = (): SubmitSeriesSelection => ({ podcastId: undefined, podcastName: undefined });
+  if (!lookup || lookup === 'error') {
+    return urlOnly();
+  }
+  if (lookup.known || lookup.ambiguous) {
+    return urlOnly();
+  }
+  if (lookup.kind === 'streaming') {
+    const extracted = lookup.podcastName?.trim();
+    if (extracted) {
+      return { podcastId: undefined, podcastName: extracted };
+    }
+  }
+  return urlOnly();
+}
+
+/** Non-Curator general drop / share / Add Podcast: URL-only POST, never lookup-derived names. */
+export function generalDropSeriesForActor(
+  isCurator: boolean,
+  lookup: SubmitUrlLookupResponse | 'error' | null
+): SubmitSeriesSelection {
+  if (!shouldCallSubmitUrlLookup(isCurator)) {
+    return { podcastId: undefined, podcastName: undefined };
+  }
+  return generalDropSeries(lookup);
 }
 
 export type PageDropPlan =

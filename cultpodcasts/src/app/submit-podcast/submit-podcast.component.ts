@@ -1,9 +1,9 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, computed, inject, signal, DestroyRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { AsyncPipe } from '@angular/common';
-import { Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
+import { EMPTY, Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UrlValidator } from '../url.validator';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -12,10 +12,11 @@ import {
   seriesNameFromForm,
   showSubmitSeriesPicker,
   submitDialogResult,
-  submitLookupReadyForSave,
+  submitSaveReady,
   submitSeriesUiFromLookup,
   SubmitSeriesFormValue
 } from '../submit-series.util';
+import { generalDropSeriesForActor, shouldCallSubmitUrlLookup } from '../submit-ingest-ux';
 import { resolveAmbiguousPodcastIds, resolveSeriesForSubmit } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SubmitUrlLookupService } from '../submit-url-lookup.service';
@@ -57,18 +58,17 @@ const URL_LOOKUP_TIMEOUT_MS = 15_000;
     AsyncPipe
   ]
 })
-export class SubmitPodcastComponent implements OnInit {
+export class SubmitPodcastComponent {
   private readonly dialogRef = inject(MatDialogRef<SubmitPodcastComponent>);
   private readonly dialog = inject(MatDialog);
   private readonly auth = inject(AuthServiceWrapper);
   private readonly changeDetector = inject(ChangeDetectorRef);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly suggestions = inject(SearchSuggestionsService);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly urlLookup = inject(SubmitUrlLookupService);
   private readonly snackBar = inject(MatSnackBar);
 
-  form!: FormGroup;
+  form: FormGroup;
   advancedOpenState: boolean = false;
   podcast = new FormControl<SubmitSeriesFormValue>(null);
   url = new FormControl('');
@@ -96,15 +96,34 @@ export class SubmitPodcastComponent implements OnInit {
   });
 
   constructor() {
-    this.auth.roles.pipe(takeUntilDestroyed()).subscribe(roles => {
-      if (showSubmitSeriesPicker(roles)) {
-        this.suggestions.preload();
-        this.ensureSeriesTypeahead();
+    this.auth.roles.pipe(
+      takeUntilDestroyed(),
+      tap(roles => {
+        if (showSubmitSeriesPicker(roles)) {
+          this.suggestions.preload();
+          this.ensureSeriesTypeahead();
+        }
+      }),
+      switchMap(roles => {
+        if (!showSubmitSeriesPicker(roles)) {
+          return EMPTY;
+        }
+        const href = this.url?.value ? String(this.url.value).trim() : '';
+        if (!href || this.lookup() != null) {
+          return EMPTY;
+        }
+        this.lookupPending.set(true);
+        return this.lookupUrl(href);
+      })
+    ).subscribe(result => {
+      this.lookupPending.set(false);
+      if (result.kind === 'ready') {
+        this.lookedUpHref.set(result.href);
+        this.lookup.set(result.lookup);
       }
+      this.changeDetector.markForCheck();
     });
-  }
 
-  async ngOnInit() {
     this.url.addValidators([
       Validators.required,
       UrlValidator.isValid(),
@@ -120,12 +139,15 @@ export class SubmitPodcastComponent implements OnInit {
       tap(value => this.markUrlLookupDirty(value)),
       debounceTime(URL_LOOKUP_DEBOUNCE_MS),
       distinctUntilChanged(),
-      takeUntilDestroyed(this.destroyRef),
+      takeUntilDestroyed(),
       switchMap(value => this.lookupUrl(value))
     ).subscribe(result => {
       this.lookupPending.set(false);
       if (result.kind === 'cleared') {
         this.lookedUpHref.set(null);
+        this.lookup.set(null);
+      } else if (result.kind === 'skipped') {
+        this.lookedUpHref.set(result.href);
         this.lookup.set(null);
       } else {
         this.lookedUpHref.set(result.href);
@@ -146,7 +168,7 @@ export class SubmitPodcastComponent implements OnInit {
       this.lookupPending.set(false);
       this.lookedUpHref.set(null);
       this.lookup.set(null);
-    } else if (parsed.href === this.lookedUpHref()) {
+    } else if (!shouldCallSubmitUrlLookup(this.isCurator()) || parsed.href === this.lookedUpHref()) {
       this.lookupPending.set(false);
     } else {
       this.lookupPending.set(true);
@@ -158,6 +180,9 @@ export class SubmitPodcastComponent implements OnInit {
     const parsed = parseSubmittablePodcastUrl(value);
     if (!parsed) {
       return of({ kind: 'cleared' as const });
+    }
+    if (!shouldCallSubmitUrlLookup(this.isCurator())) {
+      return of({ kind: 'skipped' as const, href: parsed.href });
     }
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
       timeout(URL_LOOKUP_TIMEOUT_MS),
@@ -188,7 +213,16 @@ export class SubmitPodcastComponent implements OnInit {
 
     const url = this.url.value ?? '';
     const parsed = parseSubmittablePodcastUrl(url);
-    if (!submitLookupReadyForSave(parsed?.href, this.lookedUpHref(), this.lookupPending())) {
+    if (!submitSaveReady(this.isCurator(), parsed?.href, this.lookedUpHref(), this.lookupPending())) {
+      return;
+    }
+
+    if (!this.isCurator()) {
+      const series = generalDropSeriesForActor(false, null);
+      this.dialogRef.close({
+        url,
+        podcast: series.podcastName ?? undefined
+      });
       return;
     }
 

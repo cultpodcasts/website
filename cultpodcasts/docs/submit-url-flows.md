@@ -2,7 +2,20 @@
 
 How the client turns an episode URL into `POST /submit`, which Worker/Azure endpoints it calls, and what each response does next.
 
-**Business rules (Vitest):** `src/app/submit-ingest-ux.ts`, `src/app/submit-series.util.ts`, `src/app/submit-series-conflict.ts`.
+**API business rules are canonical.** Worker Vitest in sibling repo `Api` (`tests/submit-lookup.business-rules.spec.ts`) executes handlers against the case table. UI tests do not invent a parallel API.
+
+**Fixture (copy from Api):** `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts` (keep byte-identical). Cases 1–7, actors, HTTP sequence (method/path/body/status/D1 vs Azure), and persist bodies. Check copies with `pwsh ../scripts/assert-submit-url-contract-copy.ps1` from `cultpodcasts/` when the Api repo is a sibling.
+
+**UI business rules (Vitest):** `src/app/submit-url-flows.business-rules.spec.ts` consumes that fixture and asserts client helpers (`shouldCallSubmitUrlLookup`, `generalDropSeriesForActor`, persist body helpers) emit the **same** requests the fixture says that actor sends. Also `src/app/submit-ingest-ux.ts`, `src/app/submit-series.util.ts`, `src/app/submit-series-conflict.ts`.
+
+**Faked-API e2e + video:** `e2e/submit-url-flows.spec.ts` (no Auth0 / Azure). Fake API (`e2e/submit-url-flows/fake-api.ts`) is a thin adapter over the same contract: lookup 401/403 unless Curator; unsigned/non-curate POST is D1 `{ success: "Submitted" }`; Curator POST is Isolated `SubmitUrlResponse` + `X-Origin`. From `cultpodcasts/`:
+
+```bash
+npx playwright install chromium
+npm run test:e2e:submit-url
+```
+
+Videos: `test-results/**/video.webm` (gitignored). The **video tour** (`e2e/submit-url-flows.tour.spec.ts`) is paced: each case opens with a plain-language intro that states **signed out / not Curator vs Curator**, then the homepage / Add Podcast / drop-target / confirm UI, with a live **HTTP overlay** (GET probes and gold **POST /submit** persist bodies). Homepage general drop is shown first as **signed out** (**POST /submit only** — D1; no lookup). Each tour case has a matching Vitest in `src/app/submit-url-flows.business-rules.spec.ts`.
 
 **Siblings:** RedditPodcastPoster PR submit (`GET`/`POST` Isolated `SubmitUrl`); Api Worker `GET /submit/lookup`, `POST /submit`, `GET /podcast/{name|id}`.
 
@@ -16,12 +29,17 @@ Client talks to the **Cloudflare Worker** (`environment.api`). The Worker proxie
 
 | Worker | Azure | Auth | Role |
 |--------|--------|------|------|
-| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | `submit` | Read-only membership. No ingest. |
-| `POST /submit` | `POST /api/SubmitUrl` | `submit` (optional token) | Command: categorise, attach, or create. |
+| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | Worker: `curate` (Curator). Isolated still checks JWT **`submit`** on the forwarded call. | Read-only membership. **Never** called signed-out or without Curator. |
+| `POST /submit` | D1 queue, or `POST /api/SubmitUrl` if Curator | none → D1; `curate` → Azure (Isolated still requires **`submit`** on the JWT) | Command. Signed-out and non-Curator persist to **D1 only**. |
 | `GET /podcast/{name}` | GET podcast by name | `curate` | Unique → id; missing → 404; many → **409** UUID list. |
 | `GET /podcast/{id}` | GET podcast by id | `curate` | Catalogue row for conflict pickers. |
 
 Worker **forwards** Azure 400 / 404 / 409 on POST (and lookup 400 / 404). Those are not D1-queued as success.
+
+`POST /submit` 200 bodies:
+
+- Signed-out / not Curator (D1): `{ "success": "Submitted" }` — no `X-Origin`.
+- Curator (Azure Isolated): `{ "success": { "episode", "podcast", "episodeId", "podcastId", … } }` plus `X-Origin: true`.
 
 `POST /submit` body always includes an absolute `http`/`https` `url`. Optional `podcastId` / `podcastName` only when the flow is attach or name-create.
 
@@ -52,16 +70,35 @@ Which probes:
 
 | Entry | Lookup | GET podcast by name | GET podcast by id |
 | --- | --- | --- | --- |
-| General drop / share | no | no | only if POST 409 |
-| Add Podcast | yes | if Save needs a name | if lookup or name is ambiguous |
-| Submit to this page | after page id | yes — must already exist | no (confirm dialog instead) |
+| General drop / share | **Curator only** | no | only if POST 409 |
+| Add Podcast | **Curator only** | if Save needs a name | if lookup or name is ambiguous |
+| Submit to this page | after page id (Curator) | yes — must already exist | no (confirm dialog instead) |
 
-### URL-only (general drop, share, Add Podcast known / unknown podcast-service)
+### General drop / share — signed out / not Curator (D1)
+
+```mermaid
+flowchart LR
+  U[Valid URL] --> S["POST { url } — Worker D1"]
+```
+
+No `GET /submit/lookup`. Overlay: *Drop episode link to submit* (never the two-target podcast-page cards).
+
+### General drop / share — Curator
+
+```mermaid
+flowchart LR
+  U[Valid URL] --> L[GET /submit/lookup]
+  L -->|known unique or unknown podcast-service| S["POST { url }"]
+  L -->|unknown streaming + extracted name| Sn["POST { url, podcastName }"]
+  L -->|unknown streaming without name / error| S
+```
+
+### URL-only (Add Podcast known / unknown podcast-service)
 
 ```mermaid
 flowchart LR
   U[Valid URL] --> L{Lookup?}
-  L -->|skipped or known or unknown podcast-service| S["POST { url }"]
+  L -->|known or unknown podcast-service| S["POST { url }"]
 ```
 
 ### Add Podcast when Series is in play
@@ -105,9 +142,9 @@ flowchart LR
 
 | Call | Response | Next |
 | --- | --- | --- |
-| **GET `/submit/lookup`** | `known: true` | Add Podcast: URL-only POST, Series read-only. Page drop: if **other** `podcastId` → confirm; if **same** → POST to page. |
-| | `known: false`, `kind: podcast-service` | Add Podcast: hide Series, URL-only POST. Page drop: POST to page (no picker). |
-| | `known: false`, `kind: streaming` | Add Podcast: Series picker. Page drop: POST to page. |
+| **GET `/submit/lookup`** | `known: true` | Add Podcast: URL-only POST, Series read-only. General drop: URL-only POST. Page drop: if **other** `podcastId` → confirm; if **same** → POST to page. |
+| | `known: false`, `kind: podcast-service` | Add Podcast / general drop: URL-only POST. Page drop: POST to page (no picker). |
+| | `known: false`, `kind: streaming` | Add Podcast Curator: Series picker. General drop / public Add Podcast: use extracted `podcastName` on POST when present (no picker). Page drop: POST to page. |
 | | `ambiguous: true` + `podcastIds` | Add Podcast: load ids, picker, then POST with chosen id. Page drop: **ignore picker**, POST to page. |
 | | `kind: unrecognised` or 400 | Reject URL. |
 | | error / 500 | Add Podcast: fall back to host class (`submitSeriesUiFromLookup`). Page drop: still POST to page. |
@@ -125,8 +162,8 @@ flowchart LR
 
 Curator Series field is driven by lookup (`submitSeriesUiFromLookup` / `submitDialogResult`). Public users never see Series.
 
-1. Debounced `GET /submit/lookup` after a valid parsed URL.
-2. Save waits until lookup finished for **this** href (`submitLookupReadyForSave`).
+1. **Curator only:** debounced `GET /submit/lookup` after a valid parsed URL. Signed-out / non-Curator never call lookup (`shouldCallSubmitUrlLookup`).
+2. Curator Save waits until lookup finished for **this** href (`submitSaveReady`). Non-Curator Save needs a valid URL only.
 3. Known unique → POST `{ url }` only (never leftover `podcastName`).
 4. Unknown podcast-service → POST `{ url }` only (platform metadata creates the show).
 5. Unknown streaming + typed name → `GET /podcast/{name}` then POST with id or name.
@@ -134,7 +171,12 @@ Curator Series field is driven by lookup (`submitSeriesUiFromLookup` / `submitDi
 
 ### General drop and share
 
-Matcher only. **No lookup required.** Body is `generalDropSeries()`: `{ url }` with no series fields. Overlay copy: *Cult Podcasts will match the podcast automatically.*
+Homepage (and share-target). Overlay: *Drop episode link to submit* (never the two-target podcast-page cards).
+
+1. Matcher. **`GET /submit/lookup` only if Curator.** Signed-out and non-Curator persist `{ url }` to D1.
+2. Curator + podcast-service (Spotify / Apple / YouTube): persist `generalDropSeries(lookup)` → `{ url }` (known unique or unknown).
+3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): if lookup returned an extracted `podcastName` (adapter `ShowName`), persist `{ url, podcastName }`. No Series picker on the homepage.
+4. Lookup error / no extracted name / not Curator → `{ url }` only. POST 409 still opens the name picker only when a name was sent.
 
 ### Submit to this podcast (page drop)
 
@@ -213,6 +255,9 @@ sequenceDiagram
 | `src/app/submit-ingest-ux.ts` | General drop body, page-drop plan, post-submit dialog kind |
 | `src/app/submit-series.util.ts` | Add Podcast Series UI + Save plan + POST body |
 | `src/app/submit-series-conflict.ts` | Name probe, attach, 409 picker, other-series confirm |
+| `src/app/submit-url-contract.ts` | Copied case table from Api `tests/fixtures/submit-url-contract.ts` |
+| `src/app/submit-url-flows.business-rules.spec.ts` | One Vitest per fixture case; asserts client requests match the table |
+| `e2e/submit-url-flows/fake-api.ts` | Thin adapter over the same fixture (lookup/POST/auth) |
 | `src/app/submit-url-lookup.service.ts` | `GET /submit/lookup` |
 | `src/app/submit-podcast/` | Add Podcast dialog |
 | `src/app/send-podcast/` | `POST /submit` + 409 retry |
