@@ -8,7 +8,7 @@ import {
 } from './podcast-url-matcher';
 
 describe('podcast-url-matcher', () => {
-  it('accepts Spotify, YouTube, Apple, BBC, Archive, Vimeo, Netflix, and Prime Video URLs', () => {
+  it('accepts Spotify, YouTube, Apple, BBC, Archive, Vimeo, Netflix, Prime Video, and next-wave streaming URLs', () => {
     const accepted = [
       'https://open.spotify.com/episode/opaqueid00000000000000',
       'https://www.youtube.com/watch?v=yt123456789',
@@ -23,7 +23,22 @@ describe('podcast-url-matcher', () => {
       'https://www.primevideo.com/detail/0EXAMPLEID00',
       'https://www.primevideo.com/region/na/detail/0EXAMPLEID00',
       'https://www.amazon.com/gp/video/detail/B0EXAMPLE00',
-      'https://www.amazon.co.uk/gp/video/detail/B0EXAMPLE00'
+      'https://www.amazon.co.uk/gp/video/detail/B0EXAMPLE00',
+      'https://www.itv.com/watch/example-slug/1a2345',
+      'https://www.itv.com/watch/example-slug/1a2345/1a2345a0001',
+      'https://www.channel4.com/programmes/example-slug',
+      'https://www.channel4.com/programmes/example-slug/on-demand/75051-091',
+      'https://www.all4.com/programmes/example-slug',
+      'https://fawesome.tv/movies/1/example-slug',
+      'https://www.paramountplus.com/shows/example-slug/',
+      'https://www.max.com/shows/example-slug',
+      'https://www.hbomax.com/series/urn:hbo:series:example',
+      'https://www.playsuisse.ch/watch/2261604',
+      'https://www.tvnz.co.nz/shows/example-slug',
+      'https://www.disneyplus.com/series/example-slug',
+      'https://www.disneyplus.com/browse/entity-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      'https://www.discoveryplus.com/show/example-slug',
+      'https://www.discoveryplus.com/gb/show/example-slug'
     ];
 
     for (const url of accepted) {
@@ -32,14 +47,14 @@ describe('podcast-url-matcher', () => {
     }
   });
 
-  it('rejects news and catalog-only hosts that are not submittable yet', () => {
+  it('rejects news and marketing hosts that are not catalogue title pages', () => {
     expect(isSubmittablePodcastUrl('https://www.bbc.co.uk/news/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://example.test/watch/1')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows/example/')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.max.com/shows/example')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.hbomax.com/series/urn:hbo:series:example')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.itv.com/watch/example')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.channel4.com/programmes/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.itv.com/watch/news/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.channel4.com/categories/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.max.com/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://fawesome.tv/')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
   });
 
@@ -52,6 +67,13 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://vimeo.com/123456789')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.netflix.com/watch/80057281')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.primevideo.com/detail/0EXAMPLEID00')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.itv.com/watch/example-slug/1a2345')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.channel4.com/programmes/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://fawesome.tv/movies/1/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.paramountplus.com/shows/example-slug/')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.max.com/shows/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 

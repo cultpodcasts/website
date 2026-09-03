@@ -26,6 +26,12 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://www.hbomax.com/series/urn:hbo:series:example"))).toBe("hboMax");
     expect(resolveServiceKey(new URL("https://www.playsuisse.ch/watch/example"))).toBe("playSuisse");
     expect(resolveServiceKey(new URL("https://www.tvnz.co.nz/shows/example"))).toBe("tvnzPlus");
+    expect(resolveServiceKey(new URL("https://www.itv.com/watch/example/1a2345"))).toBe("itvx");
+    expect(resolveServiceKey(new URL("https://www.channel4.com/programmes/example"))).toBe("channel4");
+    expect(resolveServiceKey(new URL("https://www.all4.com/programmes/example"))).toBe("channel4");
+    expect(resolveServiceKey(new URL("https://fawesome.tv/movies/1/example"))).toBe("fawesome");
+    expect(resolveServiceKey(new URL("https://www.disneyplus.com/series/example"))).toBe("disneyPlus");
+    expect(resolveServiceKey(new URL("https://www.discoveryplus.com/show/example"))).toBe("discoveryPlus");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
@@ -86,7 +92,7 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.some((d) => d.key === "other")).toBe(false);
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "tvnzPlus"])
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus"])
     );
     expect(resolveServiceKey(new URL("https://www.dailymotion.com/video/xexample"))).toBe("dailymotioncom");
     const links = collectEpisodeServices({
