@@ -10,6 +10,20 @@ branch, push is OK — Pages **preview** may build from git; do not run deploy C
 
 - Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
 
+## Auth0 roles and permissions
+
+ID-token **roles** (`Curator`, `Submitter`, `Admin`) gate SPA UI; access-token **permissions** (`submit`, `curate`, `admin`) gate the Worker and Azure APIs.
+
+- Docs: [`docs/auth0-roles-and-permissions.md`](docs/auth0-roles-and-permissions.md)
+- Submit UX detail: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
+
+## Planned catalogue content types epic (not scheduled)
+
+Search cards, facets, and detail routes by `contentKind` (`Podcast | TvShow | Movie | NewsReport`). Submit lookup will generalize `parentName` + kind hint — **planning only** until a phase is explicitly started.
+
+- Epic + Phase 0 ADRs: [`RedditPodcastPoster/docs/catalogue-content-types-epic.md`](../../../cultpodcasts/RedditPodcastPoster/docs/catalogue-content-types-epic.md)
+- Search storage impact: [`RedditPodcastPoster/docs/catalogue-content-types-search-storage-impact.md`](../../../cultpodcasts/RedditPodcastPoster/docs/catalogue-content-types-search-storage-impact.md)
+
 ## Preview ↔ production secrets (HARD)
 
 Any new Pages / Auth0 / build secret for preview/staging **must** also be planned for production. PR body **must** include `## Config / secrets` with **key names** (never values). At deploy, read that section and set both environments.
@@ -24,6 +38,18 @@ Client SEO may use episode art from page-details when
 
 - Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
 - Preview: test with the switch ON and OFF before enabling in production.
+
+## Submit URL flows
+
+Episode URL ingest (Add Podcast, drag drop, share) → Worker lookup/submit. Series attach is the exception.
+
+- Docs: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
+- **Canonical cases:** copy `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts`
+- Rules: `src/app/submit-ingest-ux.ts`, `submit-series.util.ts`, `submit-series-conflict.ts`
+- **Signed-out:** never `GET /submit/lookup` (Azure). Persist `POST /submit` to Worker D1.
+- **Submitter / Curator:** lookup first, then POST (extracted name rules on general drop). **Podcast-page drop/attach** is **Curator-only** (`canSubmitUrlForPodcast`); series picker Curator only.
+- Faked-API Playwright + video tour: `npm run test:e2e:submit-url` (`e2e/submit-url-flows.spec.ts`)
+- Tour cases ↔ Vitest: `src/app/submit-url-flows.business-rules.spec.ts` (consumes the Api fixture)
 
 ## Repository layout
 

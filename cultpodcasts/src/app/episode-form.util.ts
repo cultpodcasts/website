@@ -1,12 +1,13 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ApiEpisode } from './api-episode.interface';
-import { EpisodeForm } from './episode-form.interface';
+import { AdditionalServiceForm, EpisodeForm } from './episode-form.interface';
 import { EpisodePost } from './episode-post.interface';
 import { EpisodeUrls } from './episode-urls.interface';
 import {
-  additionalServiceUrls,
+  additionalServiceLinks,
   isDefaultUiService,
   resolveServiceKey,
+  serviceLabelForUrl,
   type EpisodeServiceMap
 } from './service-catalog';
 import { episodeLanguageFormValue } from './language-options.util';
@@ -65,6 +66,12 @@ export function clearFormControl(control: FormControl<string | URL | null>): voi
   control.markAsDirty();
 }
 
+/** Extra-row image fields are non-nullable strings; they cannot use clearFormControl (null). */
+export function clearNonNullableStringControl(control: FormControl<string>): void {
+  control.setValue('');
+  control.markAsDirty();
+}
+
 export function parseFormUrl(value: string | URL | null | undefined): URL | undefined {
   if (!value) {
     return undefined;
@@ -83,8 +90,15 @@ export function parseFormUrl(value: string | URL | null | undefined): URL | unde
   }
 }
 
-function additionalUrlControls(episode: ApiEpisode): FormArray<FormControl<string>> {
-  const urls = additionalServiceUrls({
+export function additionalServiceFormGroup(url = '', image = ''): FormGroup<AdditionalServiceForm> {
+  return new FormGroup<AdditionalServiceForm>({
+    url: new FormControl(url, { nonNullable: true }),
+    image: new FormControl(image, { nonNullable: true })
+  });
+}
+
+function additionalUrlControls(episode: ApiEpisode): FormArray<FormGroup<AdditionalServiceForm>> {
+  const links = additionalServiceLinks({
     youtube: episode.urls?.youtube,
     spotify: episode.urls?.spotify,
     apple: episode.urls?.apple,
@@ -93,11 +107,14 @@ function additionalUrlControls(episode: ApiEpisode): FormArray<FormControl<strin
     ids: episode.ids,
     services: episode.services
   });
-  return new FormArray(urls.map((url) => new FormControl(url.toString(), { nonNullable: true })));
+  return new FormArray(links.map((link) => additionalServiceFormGroup(
+    link.url.toString(),
+    link.image?.toString() ?? ''
+  )));
 }
 
 export function addAdditionalUrlControl(form: FormGroup<EpisodeForm>): void {
-  form.controls.additionalUrls.push(new FormControl('', { nonNullable: true }));
+  form.controls.additionalUrls.push(additionalServiceFormGroup());
   form.controls.additionalUrls.markAsDirty();
 }
 
@@ -114,8 +131,8 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
     youtube: parseFormUrl(form.controls.youtube.value)
   };
   const services: EpisodeServiceMap = {};
-  for (const control of form.controls.additionalUrls.controls) {
-    const url = parseFormUrl(control.value);
+  for (const group of form.controls.additionalUrls.controls) {
+    const url = parseFormUrl(group.controls.url.value);
     if (!url) {
       continue;
     }
@@ -123,6 +140,7 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
     if (!key) {
       continue;
     }
+    const image = parseFormUrl(group.controls.image.value);
     if (isDefaultUiService(key)) {
       if (key === 'spotify') {
         urls.spotify = url;
@@ -131,9 +149,16 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
       } else if (key === 'youtube') {
         urls.youtube = url;
       }
+      if (image && (key === 'spotify' || key === 'apple' || key === 'youtube')) {
+        update.images ??= {};
+        update.images[key] = image;
+      }
       continue;
     }
-    services[key] = { url: url.href };
+    services[key] = {
+      url: url.href,
+      ...(image ? { image: image.href } : {})
+    };
   }
   urls.bbc = parseFormUrl(services['bbcIplayer']?.url) ?? parseFormUrl(services['bbcSounds']?.url);
   urls.internetArchive = parseFormUrl(services['internetArchive']?.url);
@@ -141,12 +166,17 @@ export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, upda
   update.services = services;
 }
 
-export type EpisodeImageService = 'spotify' | 'apple' | 'youtube' | 'other';
+export type EpisodeImageService = string;
 
 export interface EpisodeImagePreviewItem {
   service: EpisodeImageService;
   label: string;
   url: string;
+}
+
+export function additionalServicePreviewKey(urlValue: string | URL | null | undefined): string {
+  const url = parseFormUrl(urlValue);
+  return (url && resolveServiceKey(url)) || 'additional';
 }
 
 /** Non-empty episode image fields in display order for the preview gallery. */
@@ -161,7 +191,14 @@ export function collectEpisodeImagePreviews(form: FormGroup<EpisodeForm>): Episo
   add('spotify', 'Spotify', form.controls.spotifyImage.value);
   add('apple', 'Apple', form.controls.appleImage.value);
   add('youtube', 'YouTube', form.controls.youtubeImage.value);
-  add('other', 'Other', form.controls.otherImage.value);
+  for (const group of form.controls.additionalUrls.controls) {
+    const urlValue = group.controls.url.value;
+    add(
+      additionalServicePreviewKey(urlValue),
+      serviceLabelForUrl(urlValue),
+      group.controls.image.value
+    );
+  }
   return items;
 }
 
@@ -209,7 +246,6 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     appleImage: new FormControl(episode.images?.apple || null),
     youtube: new FormControl(episode.urls?.youtube || null),
     youtubeImage: new FormControl(episode.images?.youtube || null),
-    otherImage: new FormControl(episode.images?.other || null),
     additionalUrls: additionalUrlControls(episode),
     subjects: new FormControl(episode.subjects, { nonNullable: true }),
     searchTerms: new FormControl(episode.searchTerms || null),
@@ -492,22 +528,25 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   for (const key of serviceKeys) {
     const previousUrl = parseFormUrl(prev.services?.[key]?.url);
     const nextUrl = parseFormUrl(now.services?.[key]?.url);
-    if (!areEqualUrlValue(previousUrl, nextUrl)) {
+    const previousImage = parseFormUrl(prev.services?.[key]?.image);
+    const nextImage = parseFormUrl(now.services?.[key]?.image);
+    if (!areEqualUrlValue(previousUrl, nextUrl) || !areEqualUrlValue(previousImage, nextImage)) {
       changes.services ??= {};
-      changes.services[key] = { url: nextUrl?.href ?? '' };
+      changes.services[key] = {
+        url: nextUrl?.href ?? '',
+        image: nextImage?.href ?? ''
+      };
     }
   }
 
   if ((!areEqualUrlValue(prev.images?.apple, now.images?.apple)) ||
     (!areEqualUrlValue(prev.images?.spotify, now.images?.spotify)) ||
-    (!areEqualUrlValue(prev.images?.youtube, now.images?.youtube)) ||
-    (!areEqualUrlValue(prev.images?.other, now.images?.other))) {
+    (!areEqualUrlValue(prev.images?.youtube, now.images?.youtube))) {
     changes.images = {};
   }
   if (!areEqualUrlValue(prev.images?.apple, now.images?.apple)) changes.images!.apple = now.images?.apple ?? '';
   if (!areEqualUrlValue(prev.images?.spotify, now.images?.spotify)) changes.images!.spotify = now.images?.spotify ?? '';
   if (!areEqualUrlValue(prev.images?.youtube, now.images?.youtube)) changes.images!.youtube = now.images?.youtube ?? '';
-  if (!areEqualUrlValue(prev.images?.other, now.images?.other)) changes.images!.other = now.images?.other ?? '';
   if (!areEqualUrlValue(prev.lang ?? 'unset', now.lang ?? 'unset')) {
     const next = episodeLanguageFormValue(now.lang);
     changes.lang = next === 'unset' ? '' : next;

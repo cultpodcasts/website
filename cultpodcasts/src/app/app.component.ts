@@ -37,6 +37,10 @@ import {
   extractUrlFromDataTransfer,
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
+import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
+import { generalDropSeries, shouldCallSubmitUrlLookup } from './submit-ingest-ux';
+import { SubmitSeriesResolveService } from './submit-series-resolve.service';
+import { SubmitUrlLookupService } from './submit-url-lookup.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -119,6 +123,8 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly webPushService = inject(WebPushService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly seriesResolve = inject(SubmitSeriesResolveService);
+  private readonly submitLookup = inject(SubmitUrlLookupService);
 
   constructor(
     iconRegistry: MatIconRegistry,
@@ -198,7 +204,17 @@ export class AppComponent implements OnDestroy, AfterViewInit {
 
   async onSwMessage(message: MessageEvent) {
     if (message != null && message.data != null && message.data.msg == "podcast-share") {
-      await this.toolbar.sendPodcast({ url: message.data.url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share });
+      const parsed = parseSubmittablePodcastUrl(String(message.data.url ?? ''));
+      if (!parsed) {
+        return;
+      }
+      const series = await this.generalDropPersistSeries(parsed.href);
+      await this.toolbar.sendPodcast({
+        url: parsed,
+        podcastId: series.podcastId,
+        podcastName: series.podcastName,
+        shareMode: ShareMode.Share
+      });
     }
   }
 
@@ -616,12 +632,60 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
+    let podcastId: string | undefined;
+    let podcastName: string | undefined;
+    if (forPodcast) {
+      const name = this.podcastPageName();
+      if (!name) {
+        this.snackBar.open('Could not resolve this series from the page.', 'Ok', { duration: 5000 });
+        return;
+      }
+      const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
+      if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+        if (outcome.kind !== 'cancelled') {
+          this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
+        }
+        return;
+      }
+      podcastId = outcome.selection.podcastId;
+      podcastName = outcome.selection.podcastName;
+      const lookup = await this.lookupSubmitUrl(url.href);
+      const proceed = await confirmPageDropIfOtherSeries(
+        this.dialog,
+        lookup,
+        podcastId,
+        podcastName ?? name
+      );
+      if (!proceed) {
+        return;
+      }
+    } else {
+      const series = await this.generalDropPersistSeries(url.href);
+      podcastId = series.podcastId;
+      podcastName = series.podcastName;
+    }
+
     await this.toolbar.sendPodcast({
       url,
-      podcastId: undefined,
-      podcastName: forPodcast ? this.podcastPageName() : undefined,
+      podcastId,
+      podcastName,
       shareMode: ShareMode.Text
     });
+  }
+
+  private async generalDropPersistSeries(href: string) {
+    if (!shouldCallSubmitUrlLookup(this.authRoles())) {
+      return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
+    }
+    return generalDropSeries(await this.lookupSubmitUrl(href));
+  }
+
+  private async lookupSubmitUrl(href: string) {
+    try {
+      return await this.submitLookup.lookup(href);
+    } catch {
+      return 'error' as const;
+    }
   }
 
   private isDropTargetEnabled(target: 'general' | 'podcast'): boolean {

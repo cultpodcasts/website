@@ -79,4 +79,13 @@ describe('SearchSuggestionsService', () => {
         const results = await pending;
         expect(results.some(r => r.type === 'podcast' && r.value === 'Behind the Bastards')).toBe(true);
     });
+
+    it('limits matches to the requested type when a type filter is passed', async () => {
+        const pending = service.suggest('in', 8, 'podcast');
+        flushCorpus();
+        const results = await pending;
+        expect(results.length).toBeGreaterThan(0);
+        expect(results.every(r => r.type === 'podcast')).toBe(true);
+        expect(results.some(r => r.type === 'subject')).toBe(false);
+    });
 });

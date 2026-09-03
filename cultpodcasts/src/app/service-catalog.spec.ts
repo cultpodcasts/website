@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  additionalServiceLinks,
   additionalServiceUrls,
   collectEpisodeServices,
   DEFAULT_UI_SERVICE_KEYS,
@@ -46,6 +47,26 @@ describe("service-catalog", () => {
     expect(extra.map((url) => url.href)).toEqual([
       "https://www.bbc.co.uk/sounds/play/p0example",
       "https://vimeo.com/123456789"
+    ]);
+  });
+
+  it("pairs extra-service URLs with adjacent services.{key}.image artwork", () => {
+    const extra = additionalServiceLinks({
+      bbc: new URL("https://www.bbc.co.uk/sounds/play/p0example"),
+      services: {
+        bbcSounds: { image: "https://ichef.bbci.co.uk/images/ic/1200x675/p0example.jpg" },
+        vimeo: { url: "https://vimeo.com/123456789", image: "https://i.vimeocdn.com/video/abc.jpg" }
+      }
+    });
+    expect(extra.map((item) => ({ href: item.url.href, image: item.image?.href }))).toEqual([
+      {
+        href: "https://www.bbc.co.uk/sounds/play/p0example",
+        image: "https://ichef.bbci.co.uk/images/ic/1200x675/p0example.jpg"
+      },
+      {
+        href: "https://vimeo.com/123456789",
+        image: "https://i.vimeocdn.com/video/abc.jpg"
+      }
     ]);
   });
 

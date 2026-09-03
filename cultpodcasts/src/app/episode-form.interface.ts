@@ -1,4 +1,9 @@
-import { FormArray, FormControl } from "@angular/forms";
+import { FormArray, FormControl, FormGroup } from "@angular/forms";
+
+export interface AdditionalServiceForm {
+    url: FormControl<string>,
+    image: FormControl<string>,
+}
 
 export interface EpisodeForm {
     title: FormControl<string>,
@@ -17,8 +22,7 @@ export interface EpisodeForm {
     appleImage: FormControl<URL | null | string>,
     youtube: FormControl<URL | null | string>,
     youtubeImage: FormControl<URL | null | string>,
-    otherImage: FormControl<URL | null | string>,
-    additionalUrls: FormArray<FormControl<string>>,
+    additionalUrls: FormArray<FormGroup<AdditionalServiceForm>>,
     subjects: FormControl<string[]>,
     searchTerms: FormControl<string | null>,
     hashTag: FormControl<string | null>,

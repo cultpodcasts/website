@@ -35,6 +35,8 @@ import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-previ
 import {
   buildEpisodeForm,
   clearFormControl,
+  clearNonNullableStringControl,
+  additionalServicePreviewKey,
   collectEpisodeImagePreviews,
   episodeCataloguePeople,
   applyGuestSelection,
@@ -206,7 +208,12 @@ export class EditEpisodeDialogComponent {
     clearFormControl(control);
   }
 
+  clearAdditionalText(control: FormControl<string>) {
+    clearNonNullableStringControl(control);
+  }
+
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
+  protected readonly additionalServicePreviewKey = additionalServicePreviewKey;
 
   addAdditionalUrl() {
     const form = this.form();
@@ -265,8 +272,7 @@ export class EditEpisodeDialogComponent {
         images: {
           spotify: form.controls.spotifyImage.value,
           apple: form.controls.appleImage.value,
-          youtube: form.controls.youtubeImage.value,
-          other: form.controls.otherImage.value
+          youtube: form.controls.youtubeImage.value
         },
         subjects: form.controls.subjects.value,
         searchTerms: form.controls.searchTerms.value,

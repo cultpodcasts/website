@@ -27,6 +27,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
+import { submitSeriesFromForm } from '../submit-series.util';
 @Component({
   selector: 'app-toolbar',
   imports: [
@@ -110,7 +111,8 @@ export class ToolbarComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async result => {
         if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastId: result.podcast?.id, podcastName: undefined, shareMode: ShareMode.Text });
+          const { podcastId, podcastName } = submitSeriesFromForm(result.podcast);
+          await this.sendPodcast({ url: result.url, podcastId, podcastName, shareMode: ShareMode.Text });
         }
       });
   }
@@ -163,7 +165,7 @@ export class ToolbarComponent {
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success } });
+            this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success, roles: this.authRoles() } });
           } else {
             this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }

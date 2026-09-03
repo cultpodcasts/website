@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import {
   Suggestion,
   SuggestionIndexEntry,
+  SuggestionType,
   SuggestionsCorpus
 } from './search-suggestions.interface';
 import { displayCatalogName } from './display-catalog-name';
@@ -42,7 +43,11 @@ export class SearchSuggestionsService {
     void this.loadIndex();
   }
 
-  async suggest(query: string, limit: number = DEFAULT_LIMIT): Promise<Suggestion[]> {
+  async suggest(
+    query: string,
+    limit: number = DEFAULT_LIMIT,
+    type?: SuggestionType
+  ): Promise<Suggestion[]> {
     const term = query.trim().toLowerCase();
     if (term.length === 0) {
       return [];
@@ -54,6 +59,9 @@ export class SearchSuggestionsService {
     const best = new Map<string, { suggestion: Suggestion; rank: number }>();
 
     for (const entry of index) {
+      if (type && entry.type !== type) {
+        continue;
+      }
       const rank = rankMatch(entry.searchText, term, !!entry.alias);
       if (rank < 0) {
         continue;

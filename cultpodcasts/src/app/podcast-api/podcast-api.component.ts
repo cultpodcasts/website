@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { Observable } from 'rxjs';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
@@ -37,6 +38,10 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { displayCatalogName } from '../display-catalog-name';
+import { podcastPageAttachAfterDialog } from '../submit-ingest-ux';
+import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
+import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
+import { SubmitUrlLookupService } from '../submit-url-lookup.service';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -82,6 +87,7 @@ export class PodcastApiComponent {
   protected isSubsequentLoading = signal<boolean>(false);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
+  private readonly untilDestroyed = takeUntilDestroyed() as <T>(source: Observable<T>) => Observable<T>;
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
@@ -94,7 +100,9 @@ export class PodcastApiComponent {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private scrollDispatcher: ScrollDispatcher,
-    private infiniteScrollStrategy: InfiniteScrollStrategy
+    private infiniteScrollStrategy: InfiniteScrollStrategy,
+    private seriesResolve: SubmitSeriesResolveService,
+    private submitLookup: SubmitUrlLookupService
   ) {
   }
 
@@ -311,12 +319,46 @@ export class PodcastApiComponent {
 
   submitUrlForPodcast() {
     this.dialog
-      .open(SubmitPodcastComponent, { disableClose: true, autoFocus: true })
+      .open(SubmitPodcastComponent, {
+        disableClose: true,
+        autoFocus: true,
+        data: { attachToPage: true }
+      })
       .afterClosed()
+      .pipe(this.untilDestroyed)
       .subscribe(async result => {
-        if (result?.url) {
-          await this.sendPodcast({ url: result.url, podcastName: this.podcastName(), podcastId: undefined, shareMode: ShareMode.Text });
+        const attached = await podcastPageAttachAfterDialog({
+          rawUrl: result?.url,
+          pagePodcastName: this.podcastName(),
+          lookupHref: async href => {
+            try {
+              return await this.submitLookup.lookup(href);
+            } catch {
+              return 'error';
+            }
+          },
+          resolvePage: name => resolveSeriesForAttach(this.seriesResolve, this.dialog, name),
+          confirmOther: (lookup, pagePodcastId, pagePodcastName) =>
+            confirmPageDropIfOtherSeries(this.dialog, lookup, pagePodcastId, pagePodcastName)
+        });
+        if (attached.kind === 'abort') {
+          if (attached.reason === 'resolve' || attached.reason === 'unparseable') {
+            this.snackBar.open(
+              attached.reason === 'unparseable'
+                ? 'Unsupported episode link'
+                : 'Could not resolve this series. Choose a catalogue row or try again.',
+              'Ok',
+              { duration: 5000 }
+            );
+          }
+          return;
         }
+        await this.sendPodcast({
+          url: attached.url,
+          podcastId: attached.podcastId,
+          podcastName: attached.podcastName,
+          shareMode: ShareMode.Text
+        });
       });
   }
 
@@ -324,10 +366,11 @@ export class PodcastApiComponent {
     const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
+      .pipe(this.untilDestroyed)
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: true, response: result.originResponse?.success } });
+            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: true, response: result.originResponse?.success, roles: this.authRoles() } });
           } else {
             let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }

@@ -4,11 +4,45 @@
 
     <mat-form-field>
         <input matInput placeholder="Podcast Url" [formControl]="url" (keyup.enter)="save()">
+        @if (url.hasError('invalidUrl')) {
+        <mat-error>Invalid URL</mat-error>
+        }
+        @if (url.hasError('unrecognisedUrl')) {
+        <mat-error>Unrecognised podcast URL</mat-error>
+        }
     </mat-form-field>
+
+    @if (isCurator() && seriesUi() === 'readonly') {
+    <p class="known-series">Series: {{ knownSeriesName() }}</p>
+    }
+
+    @if (isCurator() && seriesUi() === 'picker') {
+    <mat-accordion>
+        <mat-expansion-panel [(expanded)]="advancedOpenState">
+            <mat-expansion-panel-header>
+                <mat-panel-title>Series (optional)</mat-panel-title>
+            </mat-expansion-panel-header>
+            <mat-form-field>
+                <input matInput placeholder="Series" [formControl]="podcast" [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
+                    @for (option of (filteredOptions | async); track option.value) {
+                    <mat-option [value]="option">{{option.label}}</mat-option>
+                    }
+                </mat-autocomplete>
+            </mat-form-field>
+        </mat-expansion-panel>
+    </mat-accordion>
+    }
 
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button class="mat-primary" (click)="save()">Save</button>
+    <button mat-raised-button (click)="close()" [disabled]="resolving()">Close</button>
+    <button mat-raised-button class="mat-primary" (click)="save()" [disabled]="resolving() || lookupPending()">
+        @if (resolving()) {
+        <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+        Save
+        }
+    </button>
 </mat-dialog-actions>

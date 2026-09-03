@@ -2,6 +2,8 @@
 
 Angular **22** PWA for [cultpodcasts.com](https://cultpodcasts.com). Consumes the Cult Podcasts API via the Cloudflare Worker gateway.
 
+**Auth0 roles and permissions** (Submitter/Curator roles, JWT scopes, UI vs Worker vs Azure gates): [docs/auth0-roles-and-permissions.md](docs/auth0-roles-and-permissions.md)
+
 ## Local ports
 
 | Port | Service | Command |
