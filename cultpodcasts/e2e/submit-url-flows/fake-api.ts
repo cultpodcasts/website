@@ -124,7 +124,10 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
-				headers: { "X-Origin": "true" },
+				headers: {
+					"X-Origin": "true",
+					"Access-Control-Expose-Headers": "X-Origin"
+				},
 				body: JSON.stringify(azureSubmitCreated(payload.podcastId ?? submitUrlIds.pageId))
 			});
 			return;

@@ -358,7 +358,12 @@ export function submitUrlFlowsDocument(): string {
       const res = await origFetch(input, init);
       const text = await res.clone().text();
       const st = card.querySelector('.status');
-      st.textContent = '← ' + res.status + (text ? '  ' + text : '');
+      const xOrigin = res.headers.get('X-Origin');
+      st.textContent =
+        '← ' +
+        res.status +
+        (xOrigin ? '  X-Origin' : '') +
+        (text ? '  ' + text : '');
       st.classList.remove('pending');
       if (method === 'POST' && path === '/submit' && res.ok) st.classList.add('persist');
       if (!res.ok) st.classList.add('stop');

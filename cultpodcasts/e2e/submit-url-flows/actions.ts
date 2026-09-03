@@ -65,7 +65,7 @@ export async function setRole(page: Page, role: TourRole) {
 	if (role === "curator") {
 		await expect(page.locator("#auth-badge")).toHaveText("Signed in · Curator");
 	} else if (role === "member") {
-		await expect(page.locator("#auth-badge")).toHaveText("Signed in · not Curator");
+		await expect(page.locator("#auth-badge")).toHaveText("Signed in · Submitter");
 	} else {
 		await expect(page.locator("#auth-badge")).toHaveText("Signed out");
 	}
