@@ -165,7 +165,7 @@ export class ToolbarComponent {
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success } });
+            this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: false, response: result.originResponse?.success, roles: this.authRoles() } });
           } else {
             this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }

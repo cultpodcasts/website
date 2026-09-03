@@ -157,16 +157,6 @@ export function actorIsCurator(actor: SubmitUrlActor): boolean {
 	return actor === "curator";
 }
 
-export function rolesForActor(actor: SubmitUrlActor): string[] {
-	if (actor === "curator") {
-		return ["Curator"];
-	}
-	if (actor === "member-submit") {
-		return ["Submitter"];
-	}
-	return [];
-}
-
 export function lookupDenialForActor(
 	actor: SubmitUrlActor
 ): { status: number; body: object } | null {

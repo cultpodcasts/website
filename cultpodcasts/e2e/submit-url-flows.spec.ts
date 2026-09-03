@@ -57,7 +57,7 @@ test.describe("submit URL flows — faked API", () => {
 		await expectHttpConversation(page, ["GET", "POST"]);
 	});
 
-	test("fake API matches Worker: unsigned lookup is 401, member lookup is 403, D1 POST has no Azure body", async ({
+	test("fake API matches Worker: unsigned lookup is 401, Submitter lookup is 200, signed-out POST has no Azure body", async ({
 		page
 	}) => {
 		const captured: Captured[] = [];
@@ -76,7 +76,7 @@ test.describe("submit URL flows — faked API", () => {
 				headers: { "X-Tour-Role": "member" }
 			});
 		});
-		expect(captured.some((c) => c.path.includes("/submit/lookup") && c.status === 403)).toBe(true);
+		expect(captured.some((c) => c.path.includes("/submit/lookup") && c.status === 200)).toBe(true);
 	});
 
 	test("homepage drop overlay is a single message and never shows Submit to Page Show", async ({ page }) => {
@@ -96,7 +96,7 @@ test.describe("submit URL flows — faked API", () => {
 		await expectSingleDropMessage(page);
 	});
 
-	test("Add Podcast known unique as non-curator persists URL only with no lookup and no Series field", async ({
+	test("Add Podcast known unique as Submitter looks up then persists URL-only to Azure", async ({
 		page
 	}) => {
 		const captured: Captured[] = [];
@@ -108,9 +108,11 @@ test.describe("submit URL flows — faked API", () => {
 		await expect(page.locator("#series-panel")).toBeHidden();
 		await saveAddPodcast(page);
 		await expect.poll(() => persistPosts(captured)).toHaveLength(1);
+		expect(captured.some((c) => c.path.includes("/submit/lookup"))).toBe(true);
 		expect(persistPosts(captured)[0].body).toEqual({ url: URLS.known });
-		expect(captured.some((c) => c.path.includes("/submit/lookup"))).toBe(false);
-		await expect(page.locator("#http-log")).toContainText('"Submitted"');
+		await expect(page.locator("#http-log")).toContainText('"Created"');
+		await expect(page.locator("#http-log")).toContainText("X-Origin");
+		await expectHttpConversation(page, ["GET", "POST"]);
 	});
 
 	test("Add Podcast streaming plus name as Curator probes GET /podcast then persists podcastId", async ({

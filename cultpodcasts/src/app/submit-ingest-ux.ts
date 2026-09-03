@@ -169,3 +169,14 @@ export function postSubmitEpisodeDialog(episode: string | undefined): PostSubmit
   }
   return 'none';
 }
+
+/** Curator-only — episode Add/Edit dialogs require `curate` scope. */
+export function postSubmitEpisodeDialogForActor(
+  roles: readonly string[] | null | undefined,
+  episode: string | undefined
+): PostSubmitEpisodeDialog {
+  if (!roles?.includes('Curator')) {
+    return 'none';
+  }
+  return postSubmitEpisodeDialog(episode);
+}

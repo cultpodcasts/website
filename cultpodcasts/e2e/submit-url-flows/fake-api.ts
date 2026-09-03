@@ -1,7 +1,6 @@
 import type { Page } from "@playwright/test";
 import { submitUrlFlowsDocument } from "./harness";
 import {
-	actorIsCurator,
 	azureSubmitCreated,
 	d1SubmitOk,
 	lookupDenialForActor,
@@ -102,7 +101,7 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 		}
 
 		if (method === "POST" && url.pathname === "/submit") {
-			if (!actorIsCurator(actor)) {
+			if (actor === "anonymous") {
 				push(200);
 				await route.fulfill({
 					status: 200,

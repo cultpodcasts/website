@@ -10,9 +10,9 @@ import {
 import {
   SUBMIT_URL_CONTRACT_COPY_FROM,
   actorIsCurator,
-  rolesForActor,
   submitUrlCases,
   submitUrlIds,
+  type SubmitUrlActor,
   type SubmitUrlCase
 } from './submit-url-contract';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
@@ -23,6 +23,16 @@ function compactPersist(body: { url: string; podcastId?: string; podcastName?: s
     ...(body.podcastId ? { podcastId: body.podcastId } : {}),
     ...(body.podcastName ? { podcastName: body.podcastName } : {})
   };
+}
+
+function rolesForActor(actor: SubmitUrlActor): string[] {
+  if (actor === 'curator') {
+    return ['Curator'];
+  }
+  if (actor === 'member-submit') {
+    return ['Submitter'];
+  }
+  return [];
 }
 
 function uniqueProbeByName(name: string) {

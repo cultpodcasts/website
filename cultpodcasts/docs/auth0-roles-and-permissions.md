@@ -102,7 +102,7 @@ Read from `user["https://api.cultpodcasts.com/roles"]` in `AuthServiceWrapper` �
 | **UI (target)** | Add Podcast, homepage general drop / share-to-submit; `GET /submit/lookup` when saving ambiguous URLs; `POST /submit` with Azure response + optional post-submit episode dialogs. **No** podcast-page attach drop (Curator-only — see below), Discovery, Review Episodes, Outgoing, hero curation, or Curate menu. |
 | **UI (today)** | Lookup + general drop wired for **`Submitter`** or **`Curator`** (`shouldCallSubmitUrlLookup`). Series picker remains **`Curator`** only. **`Submitter` is rejected** from Curator-only routes (`has-role.guard.spec.ts`). |
 | **JWT** | Should carry **`submit`** permission (Auth0 role → permission mapping). |
-| **Backend** | Azure already accepts `submit`; Worker/UI alignment pending. |
+| **Backend** | Azure accepts `submit`; Worker `canCallAzureSubmitBackend` accepts **`submit` or `curate`**. UI lookup wired via **`Submitter`** / **`Curator`** roles. |
 
 ### `Curator`
 
@@ -114,7 +114,7 @@ Human catalogue editors.
 | **Toolbar** | Discovery link, Curate submenu (Create Subject, Review Outgoing). |
 | **Submit UX** | Full submit-url flows including lookup, Series picker, **podcast-page drop/attach** (Curator-only — binds episode to an existing catalogue row via `podcastId`), page-attach confirm, post-submit Add/Edit Episode dialogs. |
 | **Inline curation** | Homepage hero pin/promote; subject/podcast/episode edit entry points; discovery badge (`GET /discovery-info` with `curate`). |
-| **JWT** | **`curate`** scope on curation API calls; submit flows currently also use **`curate`** for lookup (`SubmitUrlLookupService` → `AUTH_SCOPE: 'curate'`). |
+| **JWT** | **`curate`** scope on curation API calls; submit lookup uses **`submit`** (`SubmitUrlLookupService` → `AUTH_SCOPE: 'submit'`). |
 
 ### `Admin`
 
@@ -137,9 +137,9 @@ Per-feature token requests:
 
 | Scope | Request mechanism | Features |
 |-------|-------------------|----------|
-| **`curate`** | `AUTH_SCOPE` on `HttpClient` or explicit `getAccessTokenSilently` | Discovery load/submit, episodes/outgoing, episode/podcast/subject/person CRUD, hero curation, submit lookup (`SubmitUrlLookupService`), submit series resolve, Add Podcast (Curator path), curation submit service, episode update service |
+| **`curate`** | `AUTH_SCOPE` on `HttpClient` or explicit `getAccessTokenSilently` | Discovery load/submit, episodes/outgoing, episode/podcast/subject/person CRUD, hero curation, submit series resolve, Add Podcast (Curator path), curation submit service, episode update service |
 | **`admin`** | explicit `getAccessTokenSilently` | Search indexer, publish homepage, title casing rules, language ignored subjects, supported languages, discovery schedule, delete episode, rename podcast, push subscription |
-| **`submit`** | explicit `getAccessTokenSilently` in `SendPodcastComponent` when actor is **not** Curator | Share / drop POST `/submit` (non-Curator signed-in path) |
+| **`submit`** | `AUTH_SCOPE` on `SubmitUrlLookupService`; explicit `getAccessTokenSilently` in `SendPodcastComponent` when actor is **not** Curator | `GET /submit/lookup`, share / drop POST `/submit` (Submitter path) |
 | **`''` (empty)** | explicit `getAccessTokenSilently` | Bookmarks list/mutate, profile — authenticated API identity without elevating scope |
 | *(none)* | No `AUTH_SCOPE`; interceptor skips Bearer | Public homepage, search, page details, unsigned `POST /submit` |
 
@@ -153,7 +153,7 @@ Per-feature token requests:
 
 | Permission | Representative Worker routes |
 |------------|------------------------------|
-| **`submit`** / Azure submit | **Target:** gates Azure for `GET /submit/lookup`, `POST /submit`. **Today:** gated by **`curate`** via `canCallAzureSubmitBackend`. |
+| **`submit`** / Azure submit | `GET /submit/lookup`, `POST /submit` when JWT has **`submit` or `curate`** (`canCallAzureSubmitBackend`). |
 | **`curate`** | `/discovery-curation`, `/episode/*`, `/episodes/outgoing`, `/podcast/*` (most), `/subject/*`, `/person/*`, `/publish` (catalogue), `/hero-curation/*`, `/flairs`, `/people`, `/subjects` (curator variants), `/languages` (with admin), proxy to Azure submit when curate present |
 | **`admin`** | `/searchindex/run`, `/publish/homepage`, `/supported-languages*`, `/title-casing-rules/*`, `/discovery-schedule`, `/pushsubscription`, `/podcast/name/:name`, `DELETE /episode/*` |
 | **Auth only (`sub`)** | `/bookmarks`, `/bookmark/:episodeId` |
@@ -232,7 +232,7 @@ Any authenticated user with a valid JWT `sub` may use bookmarks. Do not require 
 | [preview-production-secrets.md](./preview-production-secrets.md) | Pages env vars / Auth0 client IDs |
 | [worker-secrets.md](../../../Api/docs/worker-secrets.md) | Worker secrets for Azure proxy endpoints |
 | [Api `hasPermission.ts`](../../../Api/src/hasPermission.ts) | Worker permission helper |
-| [Api `submitAccess.ts`](../../../Api/src/submitAccess.ts) | Submit Azure gate (pending correction) |
+| [Api `submitAccess.ts`](../../../Api/src/submitAccess.ts) | Submit Azure gate (`submit` or `curate`) |
 
 ---
 

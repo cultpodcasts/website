@@ -9,6 +9,7 @@ import {
   parseSubmitDialogUrl,
   podcastPageAttachAfterDialog,
   postSubmitEpisodeDialog,
+  postSubmitEpisodeDialogForActor,
   shouldCallSubmitUrlLookup
 } from './submit-ingest-ux';
 
@@ -213,6 +214,16 @@ describe('pageDropOtherSeriesQuestion', () => {
     expect(pageDropOtherSeriesQuestion('Other Show', 'Page Show')).toBe(
       'This URL is already on Other Show. Submit to Page Show anyway?'
     );
+  });
+});
+
+describe('postSubmitEpisodeDialogForActor', () => {
+  it('returns none for Submitter even when episode was Created', () => {
+    expect(postSubmitEpisodeDialogForActor(['Submitter'], 'Created')).toBe('none');
+  });
+
+  it('returns add-episode for Curator when episode was Created', () => {
+    expect(postSubmitEpisodeDialogForActor(['Curator'], 'Created')).toBe('add-episode');
   });
 });
 

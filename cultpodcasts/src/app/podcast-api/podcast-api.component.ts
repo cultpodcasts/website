@@ -370,7 +370,7 @@ export class PodcastApiComponent {
       .subscribe(result => {
         if (result && result.submitted) {
           if (result.originResponse?.success != null) {
-            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: true, response: result.originResponse?.success } });
+            let snackBarRef = this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, { duration: 10000, data: { existingPodcast: true, response: result.originResponse?.success, roles: this.authRoles() } });
           } else {
             let snackBarRef = this.snackBar.open('Podcast Sent!', "Ok", { duration: 3000 });
           }

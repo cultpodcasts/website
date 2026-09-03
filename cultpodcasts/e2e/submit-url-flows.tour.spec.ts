@@ -83,15 +83,15 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await page.waitForTimeout(AFTER_HTTP_MS);
 
 	await showIntro(page, {
-		kicker: "Case 3 of 7 — signed in, not Curator",
-		title: "Add Podcast — URL-only, no lookup",
-		lede: "You are logged in, but you do not have the Curator role. Toolbar Add Podcast still works. Persist goes to D1. Lookup is not called.",
+		kicker: "Case 3 of 7 — Submitter",
+		title: "Add Podcast — lookup then URL-only Azure POST",
+		lede: "You are signed in with the Submitter role (submit permission, not Curator). Add Podcast calls GET /submit/lookup, then POST /submit URL-only to Azure.",
 		points: [
-			"Valid URL → no GET /submit/lookup. That backend is Curator-only.",
-			"The Series field is Curator-only. You never see it.",
-			"Save posts URL-only to POST /submit (Worker D1)."
+			"Valid URL → GET /submit/lookup returns known unique membership.",
+			"The Series field stays Curator-only. Submitter never sees it.",
+			"Save posts { url } only — Azure persist with X-Origin, not Worker D1."
 		],
-		persist: "Overlay: POST /submit with { url } only. No GET /submit/lookup."
+		persist: "Overlay: GET /submit/lookup, then POST /submit { url } with Azure Created."
 	}, INTRO_MS);
 	await clearHttp(page);
 	await setRole(page, "member");
@@ -102,8 +102,8 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await page.waitForTimeout(UI_HOLD_MS);
 	await saveAddPodcast(page);
 	await expect.poll(() => persistPosts(captured)).toHaveLength(3);
-	await expect(page.locator("#http-log")).not.toContainText("GET /submit/lookup");
-	await expectHttpConversation(page, ["POST"]);
+	await expect(page.locator("#http-log")).toContainText("GET /submit/lookup");
+	await expectHttpConversation(page, ["GET", "POST"]);
 	await page.waitForTimeout(AFTER_HTTP_MS);
 
 	await showIntro(page, {
