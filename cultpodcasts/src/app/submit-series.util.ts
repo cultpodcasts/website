@@ -14,7 +14,7 @@ export type SubmitSeriesUiMode = 'hide' | 'readonly' | 'picker';
 
 /** What Save should do once lookup has completed for the current URL. */
 export type SubmitDialogResult =
-  | { kind: 'close'; url: string; podcast: undefined }
+  | { kind: 'close'; url: string; podcast: string | undefined }
   | { kind: 'ambiguous'; podcastIds: string[] }
   | { kind: 'resolve-name'; seriesName: string };
 
@@ -63,17 +63,18 @@ export function submitLookupReadyForSave(
   return !!parsedHref && !pending && lookedUpHref === parsedHref;
 }
 
-/** Non-Curator Save needs a valid URL only — lookup is never called. */
+/** Non-Curator Save needs a valid URL only — lookup is never called. Page-attach is URL capture only. */
 export function submitSaveReady(
   isCurator: boolean,
   parsedHref: string | undefined,
   lookedUpHref: string | null,
-  pending: boolean
+  pending: boolean,
+  urlCaptureOnly = false
 ): boolean {
   if (!parsedHref) {
     return false;
   }
-  if (!isCurator) {
+  if (!isCurator || urlCaptureOnly) {
     return true;
   }
   return submitLookupReadyForSave(parsedHref, lookedUpHref, pending);
@@ -84,7 +85,8 @@ export function submitSaveReady(
  * Known unique → URL-only (never send leftover podcastName).
  * Ambiguous 200 → picker from podcastIds (never URL-only).
  * Unknown podcast-service → URL-only even if Series still has text.
- * Unknown streaming + typed name → resolve by name; empty Series → URL-only.
+ * Unknown streaming + typed name → resolve by name.
+ * Unknown streaming + empty Series → persist Isolated scrape `podcastName` (same as homepage Curator drop).
  */
 export function submitDialogResult(
   url: string,
@@ -108,6 +110,12 @@ export function submitDialogResult(
   const seriesName = seriesNameFromForm(seriesForm);
   if (seriesName) {
     return { kind: 'resolve-name', seriesName };
+  }
+  if (lookup && lookup !== 'error' && lookup.kind === 'streaming') {
+    const extracted = lookup.podcastName?.trim();
+    if (extracted) {
+      return { kind: 'close', url, podcast: extracted };
+    }
   }
   return urlOnly();
 }

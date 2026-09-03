@@ -179,6 +179,10 @@ describe('submitSaveReady', () => {
     expect(submitSaveReady(true, href, null, true)).toBe(false);
     expect(submitSaveReady(true, href, href, false)).toBe(true);
   });
+
+  it('lets page-attach Save with a valid URL without waiting for lookup', () => {
+    expect(submitSaveReady(true, href, null, true, true)).toBe(true);
+  });
 });
 
 describe('submitDialogResult', () => {
@@ -225,11 +229,23 @@ describe('submitDialogResult', () => {
     });
   });
 
-  it('closes URL-only for unknown streaming when Series is empty', () => {
+  it('closes URL-only for unknown streaming when Series is empty and lookup has no scrape name', () => {
     expect(submitDialogResult(url, { known: false, kind: 'streaming' }, null)).toEqual({
       kind: 'close',
       url,
       podcast: undefined
+    });
+  });
+
+  it('persists Isolated scrape podcastName for unknown streaming when Series is empty', () => {
+    expect(submitDialogResult(url, {
+      known: false,
+      kind: 'streaming',
+      podcastName: 'Extracted Show'
+    }, null)).toEqual({
+      kind: 'close',
+      url,
+      podcast: 'Extracted Show'
     });
   });
 

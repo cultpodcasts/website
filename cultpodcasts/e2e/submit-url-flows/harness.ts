@@ -298,7 +298,7 @@ export function submitUrlFlowsDocument(): string {
         known.hidden = false;
         known.textContent = 'Series: ' + lookup.podcastName;
         panel.hidden = true;
-      } else if (lookup && lookup.kind === 'streaming') {
+      } else if (lookup && (lookup.kind === 'streaming' || lookup.ambiguous)) {
         known.hidden = true;
         panel.hidden = false;
       } else {

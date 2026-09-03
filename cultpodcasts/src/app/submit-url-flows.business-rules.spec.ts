@@ -24,6 +24,13 @@ function compactPersist(body: { url: string; podcastId?: string; podcastName?: s
   };
 }
 
+function uniqueProbeByName(name: string) {
+  return {
+    podcastId: submitUrlIds.pageId,
+    podcastName: name
+  };
+}
+
 function persistFromClient(tourCase: SubmitUrlCase) {
   const isCurator = actorIsCurator(tourCase.actor);
   const lookup = tourCase.client.lookup as SubmitUrlLookupResponse | null;
@@ -54,30 +61,25 @@ function persistFromClient(tourCase: SubmitUrlCase) {
     ];
   }
 
-  if (tourCase.client.seriesForm && tourCase.id === 4) {
-    expect(submitDialogResult(tourCase.url, lookup, tourCase.client.seriesForm)).toEqual({
-      kind: 'resolve-name',
-      seriesName: tourCase.client.seriesForm
-    });
-    return [
-      compactPersist(
-        submitEpisodePostBody(url, {
-          podcastId: tourCase.client.pagePodcastId!,
-          podcastName: tourCase.client.seriesForm
-        })
-      )
-    ];
-  }
-
-  if (tourCase.client.seriesForm && tourCase.id === 7) {
-    return tourCase.client.persistBodies.map((expected, index) =>
-      compactPersist(
-        submitEpisodePostBody(url, {
-          podcastId: index === 0 ? undefined : expected.podcastId,
-          podcastName: expected.podcastName
-        })
-      )
-    );
+  if (tourCase.client.seriesForm) {
+    const plan = submitDialogResult(tourCase.url, lookup, tourCase.client.seriesForm);
+    expect(plan.kind).toBe('resolve-name');
+    if (plan.kind !== 'resolve-name') {
+      return [];
+    }
+    const expected = tourCase.client.persistBodies;
+    if (expected.length === 2) {
+      return [
+        compactPersist(submitEpisodePostBody(url, { podcastId: undefined, podcastName: plan.seriesName })),
+        compactPersist(
+          submitEpisodePostBody(url, {
+            podcastId: expected[1].podcastId,
+            podcastName: plan.seriesName
+          })
+        )
+      ];
+    }
+    return [compactPersist(submitEpisodePostBody(url, uniqueProbeByName(plan.seriesName)))];
   }
 
   return [

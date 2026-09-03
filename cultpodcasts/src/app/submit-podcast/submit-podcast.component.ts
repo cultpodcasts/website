@@ -1,9 +1,9 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatDialog, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { AsyncPipe } from '@angular/common';
-import { EMPTY, Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
+import { Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UrlValidator } from '../url.validator';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -38,6 +38,10 @@ const SERIES_SUGGEST_DEBOUNCE_MS = 150;
 const URL_LOOKUP_DEBOUNCE_MS = 300;
 const URL_LOOKUP_TIMEOUT_MS = 15_000;
 
+export interface SubmitPodcastDialogData {
+  attachToPage?: boolean;
+}
+
 @Component({
   selector: 'app-submit-podcast',
   templateUrl: './submit-podcast.component.html',
@@ -67,6 +71,8 @@ export class SubmitPodcastComponent {
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly urlLookup = inject(SubmitUrlLookupService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialogData = inject<SubmitPodcastDialogData | null>(MAT_DIALOG_DATA, { optional: true });
+  private readonly urlCaptureOnly = this.dialogData?.attachToPage === true;
 
   form: FormGroup;
   advancedOpenState: boolean = false;
@@ -82,7 +88,7 @@ export class SubmitPodcastComponent {
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => showSubmitSeriesPicker(this.authRoles()));
   protected readonly seriesUi = computed(() => {
-    if (!this.isCurator()) {
+    if (this.urlCaptureOnly || !this.isCurator()) {
       return 'hide' as const;
     }
     return submitSeriesUiFromLookup(
@@ -103,26 +109,8 @@ export class SubmitPodcastComponent {
           this.suggestions.preload();
           this.ensureSeriesTypeahead();
         }
-      }),
-      switchMap(roles => {
-        if (!showSubmitSeriesPicker(roles)) {
-          return EMPTY;
-        }
-        const href = this.url?.value ? String(this.url.value).trim() : '';
-        if (!href || this.lookup() != null) {
-          return EMPTY;
-        }
-        this.lookupPending.set(true);
-        return this.lookupUrl(href);
       })
-    ).subscribe(result => {
-      this.lookupPending.set(false);
-      if (result.kind === 'ready') {
-        this.lookedUpHref.set(result.href);
-        this.lookup.set(result.lookup);
-      }
-      this.changeDetector.markForCheck();
-    });
+    ).subscribe();
 
     this.url.addValidators([
       Validators.required,
@@ -154,6 +142,15 @@ export class SubmitPodcastComponent {
         this.lookup.set(result.lookup);
         if (result.lookup !== 'error' && result.lookup.known) {
           this.podcast.setValue(null);
+        } else if (
+          result.lookup !== 'error' &&
+          !result.lookup.known &&
+          !result.lookup.ambiguous &&
+          result.lookup.kind === 'streaming' &&
+          result.lookup.podcastName &&
+          !seriesNameFromForm(this.podcast.value)
+        ) {
+          this.podcast.setValue(result.lookup.podcastName);
         }
       }
       this.changeDetector.markForCheck();
@@ -168,7 +165,11 @@ export class SubmitPodcastComponent {
       this.lookupPending.set(false);
       this.lookedUpHref.set(null);
       this.lookup.set(null);
-    } else if (!shouldCallSubmitUrlLookup(this.isCurator()) || parsed.href === this.lookedUpHref()) {
+    } else if (
+      this.urlCaptureOnly ||
+      !shouldCallSubmitUrlLookup(this.isCurator()) ||
+      parsed.href === this.lookedUpHref()
+    ) {
       this.lookupPending.set(false);
     } else {
       this.lookupPending.set(true);
@@ -181,7 +182,7 @@ export class SubmitPodcastComponent {
     if (!parsed) {
       return of({ kind: 'cleared' as const });
     }
-    if (!shouldCallSubmitUrlLookup(this.isCurator())) {
+    if (this.urlCaptureOnly || !shouldCallSubmitUrlLookup(this.isCurator())) {
       return of({ kind: 'skipped' as const, href: parsed.href });
     }
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
@@ -213,11 +214,17 @@ export class SubmitPodcastComponent {
 
     const url = this.url.value ?? '';
     const parsed = parseSubmittablePodcastUrl(url);
-    if (!submitSaveReady(this.isCurator(), parsed?.href, this.lookedUpHref(), this.lookupPending())) {
+    if (!submitSaveReady(
+      this.isCurator(),
+      parsed?.href,
+      this.lookedUpHref(),
+      this.lookupPending(),
+      this.urlCaptureOnly
+    )) {
       return;
     }
 
-    if (!this.isCurator()) {
+    if (!this.isCurator() || this.urlCaptureOnly) {
       const series = generalDropSeriesForActor(false, null);
       this.dialogRef.close({
         url,

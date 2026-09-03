@@ -6,6 +6,8 @@ import {
   pageDropConfirmAccepted,
   pageDropOtherSeriesQuestion,
   pageDropPlan,
+  parseSubmitDialogUrl,
+  podcastPageAttachAfterDialog,
   postSubmitEpisodeDialog,
   shouldCallSubmitUrlLookup
 } from './submit-ingest-ux';
@@ -132,6 +134,60 @@ describe('pageDropPlan', () => {
       kind: 'confirm-other-series',
       otherPodcastId: otherId,
       otherPodcastName: 'Other Show'
+    });
+  });
+});
+
+describe('podcastPageAttachAfterDialog', () => {
+  const vimeo = 'https://vimeo.com/999000111';
+  const otherLookup = {
+    known: true as const,
+    podcastId: otherId,
+    podcastName: 'Other Show',
+    kind: 'streaming' as const
+  };
+
+  it('parses a string close payload and asks confirm when lookup is known on another series', async () => {
+    let lookedUpHref: string | undefined;
+    let confirmAsked = false;
+    const result = await podcastPageAttachAfterDialog({
+      rawUrl: vimeo,
+      pagePodcastName: 'Page Show',
+      lookupHref: async href => {
+        lookedUpHref = href;
+        return otherLookup;
+      },
+      resolvePage: async () => ({
+        kind: 'selection',
+        selection: { podcastId: pageId, podcastName: 'Page Show' }
+      }),
+      confirmOther: async (lookup, pagePodcastId) => {
+        const plan = pageDropPlan(lookup, pagePodcastId);
+        confirmAsked = plan.kind === 'confirm-other-series';
+        return false;
+      }
+    });
+    expect(lookedUpHref).toBe(vimeo);
+    expect(confirmAsked).toBe(true);
+    expect(result).toEqual({ kind: 'abort', reason: 'declined' });
+  });
+
+  it('ignores a typed series on the close payload and still attaches to the page after Yes', async () => {
+    const result = await podcastPageAttachAfterDialog({
+      rawUrl: vimeo,
+      pagePodcastName: 'Page Show',
+      lookupHref: async () => otherLookup,
+      resolvePage: async () => ({
+        kind: 'selection',
+        selection: { podcastId: pageId, podcastName: 'Page Show' }
+      }),
+      confirmOther: async () => true
+    });
+    expect(result).toEqual({
+      kind: 'send',
+      url: parseSubmitDialogUrl(vimeo),
+      podcastId: pageId,
+      podcastName: 'Page Show'
     });
   });
 });

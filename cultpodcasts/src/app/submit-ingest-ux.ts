@@ -1,3 +1,4 @@
+import { parseSubmittablePodcastUrl } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
 
@@ -85,6 +86,70 @@ export function pageDropOtherSeriesQuestion(otherPodcastName: string, pagePodcas
 /** Backdrop / No / undefined close is cancel. Only explicit Yes continues. */
 export function pageDropConfirmAccepted(closed: { result?: boolean } | undefined | null): boolean {
   return closed?.result === true;
+}
+
+/** Add Podcast closes with a form string; drop/share already have a URL. */
+export function parseSubmitDialogUrl(raw: unknown): URL | undefined {
+  if (raw == null || raw === '') {
+    return undefined;
+  }
+  const text = raw instanceof URL ? raw.href : String(raw);
+  return parseSubmittablePodcastUrl(text) ?? undefined;
+}
+
+export type PodcastPageAttachResult =
+  | { kind: 'send'; url: URL; podcastId: string; podcastName: string | undefined }
+  | { kind: 'abort'; reason: 'no-url' | 'unparseable' | 'resolve' | 'cancelled' | 'declined' };
+
+export type PodcastPageResolveOutcome =
+  | { kind: 'selection'; selection: { podcastId?: string; podcastName?: string } }
+  | { kind: 'cancelled' }
+  | { kind: 'error' };
+
+/**
+ * Submit Url for Podcast: ignore typed Series, parse the close payload,
+ * attach to the page id, and confirm when lookup says another series owns the URL.
+ */
+export async function podcastPageAttachAfterDialog(args: {
+  rawUrl: unknown;
+  pagePodcastName: string;
+  lookupHref: (href: string) => Promise<SubmitUrlLookupResponse | 'error'>;
+  resolvePage: (name: string) => Promise<PodcastPageResolveOutcome>;
+  confirmOther: (
+    lookup: SubmitUrlLookupResponse | 'error',
+    pagePodcastId: string,
+    pagePodcastName: string
+  ) => Promise<boolean>;
+}): Promise<PodcastPageAttachResult> {
+  if (args.rawUrl == null || args.rawUrl === '') {
+    return { kind: 'abort', reason: 'no-url' };
+  }
+  const url = parseSubmitDialogUrl(args.rawUrl);
+  if (!url) {
+    return { kind: 'abort', reason: 'unparseable' };
+  }
+  const outcome = await args.resolvePage(args.pagePodcastName);
+  if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+    return { kind: 'abort', reason: outcome.kind === 'cancelled' ? 'cancelled' : 'resolve' };
+  }
+  let lookup: SubmitUrlLookupResponse | 'error';
+  try {
+    lookup = await args.lookupHref(url.href);
+  } catch {
+    lookup = 'error';
+  }
+  const pagePodcastId = outcome.selection.podcastId;
+  const pagePodcastName = outcome.selection.podcastName ?? args.pagePodcastName;
+  const proceed = await args.confirmOther(lookup, pagePodcastId, pagePodcastName);
+  if (!proceed) {
+    return { kind: 'abort', reason: 'declined' };
+  }
+  return {
+    kind: 'send',
+    url,
+    podcastId: pagePodcastId,
+    podcastName: outcome.selection.podcastName
+  };
 }
 
 export type PostSubmitEpisodeDialog = 'add-episode' | 'edit-episode' | 'none';
