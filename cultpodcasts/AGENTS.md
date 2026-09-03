@@ -10,6 +10,13 @@ branch, push is OK — Pages **preview** may build from git; do not run deploy C
 
 - Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
 
+## Auth0 roles and permissions
+
+ID-token **roles** (`Curator`, `Submitter`, `Admin`) gate SPA UI; access-token **permissions** (`submit`, `curate`, `admin`) gate the Worker and Azure APIs.
+
+- Docs: [`docs/auth0-roles-and-permissions.md`](docs/auth0-roles-and-permissions.md)
+- Submit UX detail: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
+
 ## Preview ↔ production secrets (HARD)
 
 Any new Pages / Auth0 / build secret for preview/staging **must** also be planned for production. PR body **must** include `## Config / secrets` with **key names** (never values). At deploy, read that section and set both environments.
@@ -32,8 +39,8 @@ Episode URL ingest (Add Podcast, drag drop, share) → Worker lookup/submit. Ser
 - Docs: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
 - **Canonical cases:** copy `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts`
 - Rules: `src/app/submit-ingest-ux.ts`, `submit-series.util.ts`, `submit-series-conflict.ts`
-- **Signed-out / non-Curator:** never `GET /submit/lookup` (Azure). Persist `POST /submit` to Worker D1.
-- **Curator:** lookup first, then POST (attach / extracted name rules).
+- **Signed-out:** never `GET /submit/lookup` (Azure). Persist `POST /submit` to Worker D1.
+- **Submitter / Curator:** lookup first, then POST (attach / extracted name rules; series picker Curator only).
 - Faked-API Playwright + video tour: `npm run test:e2e:submit-url` (`e2e/submit-url-flows.spec.ts`)
 - Tour cases ↔ Vitest: `src/app/submit-url-flows.business-rules.spec.ts` (consumes the Api fixture)
 

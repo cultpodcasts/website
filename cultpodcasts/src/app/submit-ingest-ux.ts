@@ -3,15 +3,17 @@ import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
 
 /**
- * Worker public gate is Curator (`curate` JWT). Client uses the Auth0 Curator role.
- * Signed-out and signed-in-without-Curator never call GET /submit/lookup.
+ * Worker public gate: Auth0 roles with submit backend access (`Submitter`, `Curator`).
+ * Signed-out users never call GET /submit/lookup.
  */
-export function shouldCallSubmitUrlLookup(isCurator: boolean): boolean {
-  return isCurator;
+export function shouldCallSubmitUrlLookup(
+  roles: readonly string[] | null | undefined
+): boolean {
+  return !!roles?.includes('Submitter') || !!roles?.includes('Curator');
 }
 
 /**
- * Homepage general drop / share after GET /submit/lookup (Curator only).
+ * Homepage general drop / share after GET /submit/lookup (Submitter/Curator).
  * Known unique or unknown podcast-service → URL-only (platform metadata / stored membership).
  * Unknown streaming → persist extracted podcastName when lookup returned it (no curator picker).
  * Ambiguous / error → URL-only (do not invent a Series picker).
@@ -35,12 +37,12 @@ export function generalDropSeries(
   return urlOnly();
 }
 
-/** Non-Curator general drop / share / Add Podcast: URL-only POST, never lookup-derived names. */
+/** Signed-out general drop / share / Add Podcast: URL-only POST, never lookup-derived names. */
 export function generalDropSeriesForActor(
-  isCurator: boolean,
+  roles: readonly string[] | null | undefined,
   lookup: SubmitUrlLookupResponse | 'error' | null
 ): SubmitSeriesSelection {
-  if (!shouldCallSubmitUrlLookup(isCurator)) {
+  if (!shouldCallSubmitUrlLookup(roles)) {
     return { podcastId: undefined, podcastName: undefined };
   }
   return generalDropSeries(lookup);

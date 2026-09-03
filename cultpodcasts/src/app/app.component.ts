@@ -70,6 +70,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly profileService = inject(ProfileService);
   private readonly authRoles = toSignal(this.profileService.roles, { initialValue: [] as string[] });
   protected readonly canSubmitUrlForPodcast = computed(() => this.authRoles().includes('Curator'));
+  protected readonly canCallSubmitUrlLookup = computed(() => shouldCallSubmitUrlLookup(this.authRoles()));
   private readonly router = inject(Router);
   protected readonly routeUrl = toSignal(
     this.router.events.pipe(
@@ -674,7 +675,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   }
 
   private async generalDropPersistSeries(href: string) {
-    if (!shouldCallSubmitUrlLookup(this.canSubmitUrlForPodcast())) {
+    if (!shouldCallSubmitUrlLookup(this.authRoles())) {
       return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
     }
     return generalDropSeries(await this.lookupSubmitUrl(href));

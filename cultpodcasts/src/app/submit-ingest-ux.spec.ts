@@ -17,9 +17,12 @@ const otherId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const episodeUrl = new URL('https://open.spotify.com/episode/0exampleepisode00');
 
 describe('shouldCallSubmitUrlLookup', () => {
-  it('never calls GET /submit/lookup unless the actor is a Curator', () => {
-    expect(shouldCallSubmitUrlLookup(false)).toBe(false);
-    expect(shouldCallSubmitUrlLookup(true)).toBe(true);
+  it('calls GET /submit/lookup for Submitter or Curator Auth0 roles only', () => {
+    expect(shouldCallSubmitUrlLookup([])).toBe(false);
+    expect(shouldCallSubmitUrlLookup(['Admin'])).toBe(false);
+    expect(shouldCallSubmitUrlLookup(['Submitter'])).toBe(true);
+    expect(shouldCallSubmitUrlLookup(['Curator'])).toBe(true);
+    expect(shouldCallSubmitUrlLookup(['Submitter', 'Curator'])).toBe(true);
   });
 });
 
@@ -61,17 +64,21 @@ describe('general drop', () => {
     });
   });
 
-  it('signed-out and non-Curator general drop persist URL-only without using lookup', () => {
+  it('signed-out general drop persist URL-only without using lookup', () => {
     const streamingLookup = {
       known: false as const,
       kind: 'streaming' as const,
       podcastName: 'Extracted Show'
     };
-    expect(generalDropSeriesForActor(false, streamingLookup)).toEqual({
+    expect(generalDropSeriesForActor([], streamingLookup)).toEqual({
       podcastId: undefined,
       podcastName: undefined
     });
-    expect(generalDropSeriesForActor(true, streamingLookup)).toEqual({
+    expect(generalDropSeriesForActor(['Submitter'], streamingLookup)).toEqual({
+      podcastId: undefined,
+      podcastName: 'Extracted Show'
+    });
+    expect(generalDropSeriesForActor(['Curator'], streamingLookup)).toEqual({
       podcastId: undefined,
       podcastName: 'Extracted Show'
     });

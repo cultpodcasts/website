@@ -2,13 +2,15 @@
 
 How the client turns an episode URL into `POST /submit`, which Worker/Azure endpoints it calls, and what each response does next.
 
+**Auth model:** [`auth0-roles-and-permissions.md`](./auth0-roles-and-permissions.md) — roles vs permissions, `Submitter`/`submit` vs `Curator`/`curate`.
+
 **API business rules are canonical.** Worker Vitest in sibling repo `Api` (`tests/submit-lookup.business-rules.spec.ts`) executes handlers against the case table. UI tests do not invent a parallel API.
 
 **Fixture (copy from Api):** `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts` (keep byte-identical). Cases 1–7, actors, HTTP sequence (method/path/body/status/D1 vs Azure), and persist bodies. Check copies with `pwsh ../scripts/assert-submit-url-contract-copy.ps1` from `cultpodcasts/` when the Api repo is a sibling.
 
 **UI business rules (Vitest):** `src/app/submit-url-flows.business-rules.spec.ts` consumes that fixture and asserts client helpers (`shouldCallSubmitUrlLookup`, `generalDropSeriesForActor`, persist body helpers) emit the **same** requests the fixture says that actor sends. Also `src/app/submit-ingest-ux.ts`, `src/app/submit-series.util.ts`, `src/app/submit-series-conflict.ts`.
 
-**Faked-API e2e + video:** `e2e/submit-url-flows.spec.ts` (no Auth0 / Azure). Fake API (`e2e/submit-url-flows/fake-api.ts`) is a thin adapter over the same contract: lookup 401/403 unless Curator; unsigned/non-curate POST is D1 `{ success: "Submitted" }`; Curator POST is Isolated `SubmitUrlResponse` + `X-Origin`. From `cultpodcasts/`:
+**Faked-API e2e + video:** `e2e/submit-url-flows.spec.ts` (no Auth0 / Azure). Fake API (`e2e/submit-url-flows/fake-api.ts`) is a thin adapter over the same contract: lookup 401 when signed out; Submitter/Curator lookup 200; unsigned POST is D1 `{ success: "Submitted" }`; Submitter/Curator POST is Isolated `SubmitUrlResponse` + `X-Origin`. From `cultpodcasts/`:
 
 ```bash
 npx playwright install chromium
@@ -29,8 +31,8 @@ Client talks to the **Cloudflare Worker** (`environment.api`). The Worker proxie
 
 | Worker | Azure | Auth | Role |
 |--------|--------|------|------|
-| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | Worker: `curate` (Curator). Isolated still checks JWT **`submit`** on the forwarded call. | Read-only membership. **Never** called signed-out or without Curator. |
-| `POST /submit` | D1 queue, or `POST /api/SubmitUrl` if Curator | none → D1; `curate` → Azure (Isolated still requires **`submit`** on the JWT) | Command. Signed-out and non-Curator persist to **D1 only**. |
+| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | Worker: `submit` or `curate`. Isolated accepts **`submit` OR `curate`**. | Read-only membership. **Submitter** or **Curator** only — never signed-out. |
+| `POST /submit` | D1 queue, or `POST /api/SubmitUrl` if `submit`/`curate` JWT | none → D1; `submit` or `curate` → Azure | Command. Signed-out → **D1 only**. |
 | `GET /podcast/{name}` | GET podcast by name | `curate` | Unique → id; missing → 404; many → **409** UUID list. |
 | `GET /podcast/{id}` | GET podcast by id | `curate` | Catalogue row for conflict pickers. |
 
@@ -38,8 +40,8 @@ Worker **forwards** Azure 400 / 404 / 409 on POST (and lookup 400 / 404). Those 
 
 `POST /submit` 200 bodies:
 
-- Signed-out / not Curator (D1): `{ "success": "Submitted" }` — no `X-Origin`.
-- Curator (Azure Isolated): `{ "success": { "episode", "podcast", "episodeId", "podcastId", … } }` plus `X-Origin: true`.
+- Signed-out (D1): `{ "success": "Submitted" }` — no `X-Origin`.
+- Submitter/Curator (Azure Isolated): `{ "success": { "episode", "podcast", "episodeId", "podcastId", … } }` plus `X-Origin: true`.
 
 `POST /submit` body always includes an absolute `http`/`https` `url`. Optional `podcastId` / `podcastName` only when the flow is attach or name-create.
 
@@ -70,8 +72,8 @@ Which probes:
 
 | Entry | Lookup | GET podcast by name | GET podcast by id |
 | --- | --- | --- | --- |
-| General drop / share | **Curator only** | no | only if POST 409 |
-| Add Podcast | **Curator only** | if Save needs a name | if lookup or name is ambiguous |
+| General drop / share | **Submitter or Curator** | no | only if POST 409 |
+| Add Podcast | **Submitter or Curator** (series picker **Curator** only) | if Save needs a name | if lookup or name is ambiguous |
 | Submit to this page | after page id (Curator) | yes — must already exist | no (confirm dialog instead) |
 
 ### General drop / share — signed out / not Curator (D1)
@@ -162,7 +164,7 @@ flowchart LR
 
 Curator Series field is driven by lookup (`submitSeriesUiFromLookup` / `submitDialogResult`). Public users never see Series.
 
-1. **Curator only:** debounced `GET /submit/lookup` after a valid parsed URL. Signed-out / non-Curator never call lookup (`shouldCallSubmitUrlLookup`).
+1. **Submitter or Curator:** debounced `GET /submit/lookup` after a valid parsed URL. Signed-out never calls lookup (`shouldCallSubmitUrlLookup`).
 2. Curator Save waits until lookup finished for **this** href (`submitSaveReady`). Non-Curator Save needs a valid URL only.
 3. Known unique → POST `{ url }` only (never leftover `podcastName`).
 4. Unknown podcast-service → POST `{ url }` only (platform metadata creates the show).
@@ -173,7 +175,7 @@ Curator Series field is driven by lookup (`submitSeriesUiFromLookup` / `submitDi
 
 Homepage (and share-target). Overlay: *Drop episode link to submit* (never the two-target podcast-page cards).
 
-1. Matcher. **`GET /submit/lookup` only if Curator.** Signed-out and non-Curator persist `{ url }` to D1.
+1. Matcher. **`GET /submit/lookup` when Submitter or Curator.** Signed-out persist `{ url }` to D1.
 2. Curator + podcast-service (Spotify / Apple / YouTube): persist `generalDropSeries(lookup)` → `{ url }` (known unique or unknown).
 3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): if lookup returned an extracted `podcastName` (adapter `ShowName`), persist `{ url, podcastName }`. No Series picker on the homepage.
 4. Lookup error / no extracted name / not Curator → `{ url }` only. POST 409 still opens the name picker only when a name was sent.

@@ -10,6 +10,7 @@ import {
 import {
   SUBMIT_URL_CONTRACT_COPY_FROM,
   actorIsCurator,
+  rolesForActor,
   submitUrlCases,
   submitUrlIds,
   type SubmitUrlCase
@@ -83,7 +84,7 @@ function persistFromClient(tourCase: SubmitUrlCase) {
   }
 
   return [
-    compactPersist(submitEpisodePostBody(url, generalDropSeriesForActor(isCurator, lookup)))
+    compactPersist(submitEpisodePostBody(url, generalDropSeriesForActor(rolesForActor(tourCase.actor), lookup)))
   ];
 }
 
@@ -101,7 +102,7 @@ describe('submit URL tour business rules', () => {
   for (const tourCase of submitUrlCases) {
     it(tourCase.rule, () => {
       const isCurator = actorIsCurator(tourCase.actor);
-      expect(shouldCallSubmitUrlLookup(isCurator)).toBe(tourCase.client.shouldCallLookup);
+      expect(shouldCallSubmitUrlLookup(rolesForActor(tourCase.actor))).toBe(tourCase.client.shouldCallLookup);
       expect(showSubmitSeriesPicker(isCurator ? ['Curator'] : ['Admin'])).toBe(isCurator);
 
       const persist = persistFromClient(tourCase);

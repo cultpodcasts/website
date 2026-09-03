@@ -87,6 +87,7 @@ export class SubmitPodcastComponent {
 
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => showSubmitSeriesPicker(this.authRoles()));
+  protected readonly canCallSubmitUrlLookup = computed(() => shouldCallSubmitUrlLookup(this.authRoles()));
   protected readonly seriesUi = computed(() => {
     if (this.urlCaptureOnly || !this.isCurator()) {
       return 'hide' as const;
@@ -167,7 +168,7 @@ export class SubmitPodcastComponent {
       this.lookup.set(null);
     } else if (
       this.urlCaptureOnly ||
-      !shouldCallSubmitUrlLookup(this.isCurator()) ||
+      !shouldCallSubmitUrlLookup(this.authRoles()) ||
       parsed.href === this.lookedUpHref()
     ) {
       this.lookupPending.set(false);
@@ -182,7 +183,7 @@ export class SubmitPodcastComponent {
     if (!parsed) {
       return of({ kind: 'cleared' as const });
     }
-    if (this.urlCaptureOnly || !shouldCallSubmitUrlLookup(this.isCurator())) {
+    if (this.urlCaptureOnly || !shouldCallSubmitUrlLookup(this.authRoles())) {
       return of({ kind: 'skipped' as const, href: parsed.href });
     }
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
@@ -215,7 +216,7 @@ export class SubmitPodcastComponent {
     const url = this.url.value ?? '';
     const parsed = parseSubmittablePodcastUrl(url);
     if (!submitSaveReady(
-      this.isCurator(),
+      this.canCallSubmitUrlLookup(),
       parsed?.href,
       this.lookedUpHref(),
       this.lookupPending(),
@@ -225,7 +226,7 @@ export class SubmitPodcastComponent {
     }
 
     if (!this.isCurator() || this.urlCaptureOnly) {
-      const series = generalDropSeriesForActor(false, null);
+      const series = generalDropSeriesForActor(this.authRoles(), this.lookup());
       this.dialogRef.close({
         url,
         podcast: series.podcastName ?? undefined

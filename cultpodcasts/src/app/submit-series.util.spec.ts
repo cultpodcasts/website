@@ -169,13 +169,13 @@ describe('submitLookupReadyForSave', () => {
 describe('submitSaveReady', () => {
   const href = 'https://open.spotify.com/episode/0exampleepisode00';
 
-  it('lets a non-Curator Save with a valid URL without waiting for lookup', () => {
+  it('lets Save proceed without waiting for lookup when the actor cannot call lookup', () => {
     expect(submitSaveReady(false, href, null, false)).toBe(true);
     expect(submitSaveReady(false, href, null, true)).toBe(true);
     expect(submitSaveReady(false, undefined, null, false)).toBe(false);
   });
 
-  it('still waits for Curator lookup to finish for this href before Save', () => {
+  it('waits for Submitter/Curator lookup to finish for this href before Save', () => {
     expect(submitSaveReady(true, href, null, true)).toBe(false);
     expect(submitSaveReady(true, href, href, false)).toBe(true);
   });

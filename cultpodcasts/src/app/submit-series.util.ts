@@ -63,9 +63,9 @@ export function submitLookupReadyForSave(
   return !!parsedHref && !pending && lookedUpHref === parsedHref;
 }
 
-/** Non-Curator Save needs a valid URL only — lookup is never called. Page-attach is URL capture only. */
+/** Non-submit-capable Save needs a valid URL only — lookup is never called. Page-attach is URL capture only. */
 export function submitSaveReady(
-  isCurator: boolean,
+  canLookup: boolean,
   parsedHref: string | undefined,
   lookedUpHref: string | null,
   pending: boolean,
@@ -74,7 +74,7 @@ export function submitSaveReady(
   if (!parsedHref) {
     return false;
   }
-  if (!isCurator || urlCaptureOnly) {
+  if (!canLookup || urlCaptureOnly) {
     return true;
   }
   return submitLookupReadyForSave(parsedHref, lookedUpHref, pending);

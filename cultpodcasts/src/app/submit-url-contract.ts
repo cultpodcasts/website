@@ -115,7 +115,7 @@ export const lookupUnknownPodcastService = {
 	kind: "podcast-service"
 } as const;
 
-/** Fake-API lookup 200 bodies keyed by episode URL (Curator only). */
+/** Fake-API lookup 200 bodies keyed by episode URL (Submitter/Curator). */
 export const submitUrlLookupByUrl: Record<string, Record<string, unknown>> = {
 	[submitUrlUrls.general]: lookupUnknownPodcastService,
 	[submitUrlUrls.known]: lookupKnownUnique,
@@ -157,14 +157,21 @@ export function actorIsCurator(actor: SubmitUrlActor): boolean {
 	return actor === "curator";
 }
 
+export function rolesForActor(actor: SubmitUrlActor): string[] {
+	if (actor === "curator") {
+		return ["Curator"];
+	}
+	if (actor === "member-submit") {
+		return ["Submitter"];
+	}
+	return [];
+}
+
 export function lookupDenialForActor(
 	actor: SubmitUrlActor
 ): { status: number; body: object } | null {
 	if (actor === "anonymous") {
 		return { status: 401, body: lookupUnauthorised };
-	}
-	if (actor === "member-submit") {
-		return { status: 403, body: lookupForbidden };
 	}
 	return null;
 }
@@ -249,11 +256,11 @@ export const submitUrlCases: SubmitUrlCase[] = [
 	},
 	{
 		id: 3,
-		rule: "Case 3 of 7 — signed in, not Curator: Add Podcast is URL-only with no lookup (D1)",
+		rule: "Case 3 of 7 — Submitter: Add Podcast looks up then POSTs URL-only to Azure (known unique)",
 		actor: "member-submit",
 		url: submitUrlUrls.known,
 		client: {
-			shouldCallLookup: false,
+			shouldCallLookup: true,
 			lookup: lookupKnownUnique,
 			seriesForm: null,
 			pagePodcastId: null,
@@ -264,13 +271,23 @@ export const submitUrlCases: SubmitUrlCase[] = [
 		},
 		http: [
 			{
+				method: "GET",
+				path: lookupPath(submitUrlUrls.known),
+				requestBody: null,
+				responseStatus: 200,
+				responseBody: lookupKnownUnique,
+				backend: "azure",
+				workerRoute: "lookup"
+			},
+			{
 				method: "POST",
 				path: "/submit",
 				requestBody: { url: submitUrlUrls.known },
 				responseStatus: 200,
-				responseBody: d1SubmitOk,
-				backend: "d1",
-				workerRoute: "submit"
+				responseBody: azureSubmitCreated(submitUrlIds.pageId),
+				backend: "azure",
+				workerRoute: "submit",
+				xOrigin: "true"
 			}
 		]
 	},
