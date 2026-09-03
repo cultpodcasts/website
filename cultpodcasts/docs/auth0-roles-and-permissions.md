@@ -99,8 +99,8 @@ Read from `user["https://api.cultpodcasts.com/roles"]` in `AuthServiceWrapper` �
 
 | Area | Behaviour |
 |------|-----------|
-| **UI (target)** | Add Podcast, homepage/podcast drop targets, share-to-submit; `GET /submit/lookup` when saving ambiguous URLs; `POST /submit` with Azure response + optional post-submit episode dialogs. **No** Discovery, Review Episodes, Outgoing, hero curation, or Curate menu. |
-| **UI (today)** | **Not wired.** Submit affordances key off **`Curator`** (`canSubmitUrlForPodcast`, `shouldCallSubmitUrlLookup`, `showSubmitSeriesPicker`). `has-role.guard.spec.ts` documents that **`Submitter` is rejected** from Curator-only routes — the role exists in Auth0 but is not yet a first-class submit actor in components. |
+| **UI (target)** | Add Podcast, homepage general drop / share-to-submit; `GET /submit/lookup` when saving ambiguous URLs; `POST /submit` with Azure response + optional post-submit episode dialogs. **No** podcast-page attach drop (Curator-only — see below), Discovery, Review Episodes, Outgoing, hero curation, or Curate menu. |
+| **UI (today)** | Lookup + general drop wired for **`Submitter`** or **`Curator`** (`shouldCallSubmitUrlLookup`). Series picker remains **`Curator`** only. **`Submitter` is rejected** from Curator-only routes (`has-role.guard.spec.ts`). |
 | **JWT** | Should carry **`submit`** permission (Auth0 role → permission mapping). |
 | **Backend** | Azure already accepts `submit`; Worker/UI alignment pending. |
 
@@ -112,7 +112,7 @@ Human catalogue editors.
 |------|-----------|
 | **Route guards** | `hasRoleGuard` with `data.roles: ["Curator"]` — `/discovery`, `/episodes/:episodeIds`, `/outgoingEpisodes`. |
 | **Toolbar** | Discovery link, Curate submenu (Create Subject, Review Outgoing). |
-| **Submit UX** | Full submit-url flows including lookup, Series picker, page-attach confirm, post-submit Add/Edit Episode dialogs. |
+| **Submit UX** | Full submit-url flows including lookup, Series picker, **podcast-page drop/attach** (Curator-only — binds episode to an existing catalogue row via `podcastId`), page-attach confirm, post-submit Add/Edit Episode dialogs. |
 | **Inline curation** | Homepage hero pin/promote; subject/podcast/episode edit entry points; discovery badge (`GET /discovery-info` with `curate`). |
 | **JWT** | **`curate`** scope on curation API calls; submit flows currently also use **`curate`** for lookup (`SubmitUrlLookupService` → `AUTH_SCOPE: 'curate'`). |
 
@@ -217,7 +217,7 @@ Any authenticated user with a valid JWT `sub` may use bookmarks. Do not require 
 | **Submitter in submit UI** | `shouldCallSubmitUrlLookup` checks **`Submitter`** or **`Curator`** Auth0 roles. |
 | **Worker submit gate** | `Api/src/submitAccess.ts` — `submit` **or** `curate`. |
 | **Lookup scope** | `submit-url-lookup.service.ts` — **`submit`**. |
-| **Podcast-page drop** | **`Curator`** only (`canSubmitUrlForPodcast`). |
+| **Podcast-page drop / attach** | **`Curator`** only (`canSubmitUrlForPodcast`). Attaching to the page’s catalogue row is curation — requires **`curate`**, not merely **`submit`**. Submitter gets general drop only (`shouldCallSubmitUrlLookup`). |
 | **Series picker** | **`Curator`** only (`showSubmitSeriesPicker`). |
 
 ---

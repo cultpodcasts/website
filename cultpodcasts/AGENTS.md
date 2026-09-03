@@ -40,7 +40,7 @@ Episode URL ingest (Add Podcast, drag drop, share) → Worker lookup/submit. Ser
 - **Canonical cases:** copy `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts`
 - Rules: `src/app/submit-ingest-ux.ts`, `submit-series.util.ts`, `submit-series-conflict.ts`
 - **Signed-out:** never `GET /submit/lookup` (Azure). Persist `POST /submit` to Worker D1.
-- **Submitter / Curator:** lookup first, then POST (attach / extracted name rules; series picker Curator only).
+- **Submitter / Curator:** lookup first, then POST (extracted name rules on general drop). **Podcast-page drop/attach** is **Curator-only** (`canSubmitUrlForPodcast`); series picker Curator only.
 - Faked-API Playwright + video tour: `npm run test:e2e:submit-url` (`e2e/submit-url-flows.spec.ts`)
 - Tour cases ↔ Vitest: `src/app/submit-url-flows.business-rules.spec.ts` (consumes the Api fixture)
 

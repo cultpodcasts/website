@@ -74,7 +74,7 @@ Which probes:
 | --- | --- | --- | --- |
 | General drop / share | **Submitter or Curator** | no | only if POST 409 |
 | Add Podcast | **Submitter or Curator** (series picker **Curator** only) | if Save needs a name | if lookup or name is ambiguous |
-| Submit to this page | after page id (Curator) | yes — must already exist | no (confirm dialog instead) |
+| Submit to this page | **Curator only** — after page id (`canSubmitUrlForPodcast`; attach to existing catalogue row, not general ingest) | yes — must already exist | no (confirm dialog instead) |
 
 ### General drop / share — signed out / not Curator (D1)
 
@@ -182,7 +182,7 @@ Homepage (and share-target). Overlay: *Drop episode link to submit* (never the t
 
 ### Submit to this podcast (page drop)
 
-Curator, podcast route only. Overlay copy: *Link this episode to the podcast shown on this page.*
+**Curator only** (`canSubmitUrlForPodcast`) — podcast route only. Page attach sends `POST { url, podcastId }` for an **existing** catalogue row; that is curation (`curate`), not the Submitter general-ingest path. Overlay copy: *Link this episode to the podcast shown on this page.*
 
 1. `GET /podcast/{name}` via `resolveSeriesForAttach` — must already exist (`podcastId` required).
 2. `GET /submit/lookup`.
