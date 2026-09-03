@@ -264,11 +264,12 @@ export function submitUrlFlowsDocument(): string {
     let onPodcastPage = false;
 
     function isCurator() { return tourRole === 'curator'; }
+    function canCallSubmitUrlLookup() { return tourRole === 'curator' || tourRole === 'member'; }
 
     function applyAuthChrome() {
       const badge = document.getElementById('auth-badge');
       if (tourRole === 'curator') badge.textContent = 'Signed in · Curator';
-      else if (tourRole === 'member') badge.textContent = 'Signed in · not Curator';
+      else if (tourRole === 'member') badge.textContent = 'Signed in · Submitter';
       else badge.textContent = 'Signed out';
     }
 
@@ -418,7 +419,7 @@ export function submitUrlFlowsDocument(): string {
         saveBtn.disabled = true;
         return;
       }
-      if (!isCurator()) {
+      if (!canCallSubmitUrlLookup()) {
         lookup = null;
         lookedUpHref = href;
         pending = false;
@@ -500,11 +501,20 @@ export function submitUrlFlowsDocument(): string {
     async function saveAdd() {
       const url = parsedHref();
       if (!url) return;
-      if (!isCurator()) {
+      if (!canCallSubmitUrlLookup()) {
         await persist(url);
         return;
       }
       if (lookedUpHref !== url || !lookup) return;
+      if (!isCurator()) {
+        if (lookup.known || lookup.kind === 'podcast-service') {
+          await persist(url);
+          return;
+        }
+        const series = generalDropSeries(lookup);
+        await persist(url, series.podcastId, series.podcastName);
+        return;
+      }
       if (lookup && lookup.known) {
         await persist(url);
         return;
@@ -528,7 +538,7 @@ export function submitUrlFlowsDocument(): string {
 
     async function dropGeneral(url) {
       hideDrop();
-      if (!isCurator()) {
+      if (!canCallSubmitUrlLookup()) {
         await persist(url);
         return;
       }
