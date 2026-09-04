@@ -131,7 +131,7 @@ describe('submitSeriesUiFromLookup', () => {
   });
 
   it('shows Series for unknown streaming URLs, because attach-or-create is the rare path', () => {
-    expect(submitSeriesUiFromLookup({ known: false, kind: 'streaming' }, 'streaming')).toBe('picker');
+    expect(submitSeriesUiFromLookup({ known: false, kind: 'streaming', service: 'netflix' }, 'streaming')).toBe('picker');
   });
 
   it('shows Series when membership is ambiguous so the curator can still pick', () => {
@@ -223,14 +223,14 @@ describe('submitDialogResult', () => {
   });
 
   it('resolves a typed name for unknown streaming', () => {
-    expect(submitDialogResult(url, { known: false, kind: 'streaming' }, leftoverName)).toEqual({
+    expect(submitDialogResult(url, { known: false, kind: 'streaming', service: 'netflix' }, leftoverName)).toEqual({
       kind: 'resolve-name',
       seriesName: leftoverName
     });
   });
 
   it('closes URL-only for unknown streaming when Series is empty and lookup has no scrape name', () => {
-    expect(submitDialogResult(url, { known: false, kind: 'streaming' }, null)).toEqual({
+    expect(submitDialogResult(url, { known: false, kind: 'streaming', service: 'netflix' }, null)).toEqual({
       kind: 'close',
       url,
       podcast: undefined
@@ -241,6 +241,7 @@ describe('submitDialogResult', () => {
     expect(submitDialogResult(url, {
       known: false,
       kind: 'streaming',
+      service: 'netflix',
       podcastName: 'Extracted Show'
     }, null)).toEqual({
       kind: 'close',

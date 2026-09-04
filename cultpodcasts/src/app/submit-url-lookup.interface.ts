@@ -1,44 +1,57 @@
+import type { StreamingServiceKey } from './streaming-submit-contract';
+
 export type SubmitUrlLookupKind = 'podcast-service' | 'streaming' | 'unrecognised';
 
-/** Streaming ServiceKeys — aligned with Api streamingServiceKeySchema / RPP ServiceKeys. */
-export type SubmitUrlStreamingService =
-  | 'bbcSounds'
-  | 'bbcIplayer'
-  | 'internetArchive'
-  | 'vimeo'
-  | 'netflix'
-  | 'amazonPrime'
-  | 'paramountPlus'
-  | 'hboMax'
-  | 'playSuisse'
-  | 'tvnzPlus'
-  | 'itvx'
-  | 'channel4'
-  | 'fawesome'
-  | 'disneyPlus'
-  | 'discoveryPlus';
+/**
+ * Streaming ServiceKeys — alias of the Api contract type.
+ * Do not duplicate the literal list; extend the fixture and re-copy.
+ */
+export type SubmitUrlStreamingService = StreamingServiceKey;
 
+type NonStreamingLookupKind = Exclude<SubmitUrlLookupKind, 'streaming'>;
+
+/**
+ * Lookup 200 body. Streaming arms require `service` (Api membership wire).
+ * Podcast-service / unrecognised arms omit `service`.
+ */
 export type SubmitUrlLookupResponse =
   | {
       known: true;
       podcastId: string;
       podcastName: string;
-      kind?: SubmitUrlLookupKind;
-      /** Present when kind is streaming. */
-      service?: SubmitUrlStreamingService;
+      kind: 'streaming';
+      service: SubmitUrlStreamingService;
     }
   | {
       known: false;
-      kind: SubmitUrlLookupKind;
+      kind: 'streaming';
       ambiguous?: false;
       /** Extracted series name for unknown streaming (adapter ShowName). Not a catalogue id. */
-      podcastName?: string;
-      service?: SubmitUrlStreamingService;
+      podcastName?: string | null;
+      service: SubmitUrlStreamingService;
     }
   | {
       known: false;
       ambiguous: true;
       podcastIds: string[];
-      kind?: SubmitUrlLookupKind;
-      service?: SubmitUrlStreamingService;
+      kind: 'streaming';
+      service: SubmitUrlStreamingService;
+    }
+  | {
+      known: true;
+      podcastId: string;
+      podcastName: string;
+      kind?: NonStreamingLookupKind;
+    }
+  | {
+      known: false;
+      kind: NonStreamingLookupKind;
+      ambiguous?: false;
+      podcastName?: string;
+    }
+  | {
+      known: false;
+      ambiguous: true;
+      podcastIds: string[];
+      kind?: NonStreamingLookupKind;
     };

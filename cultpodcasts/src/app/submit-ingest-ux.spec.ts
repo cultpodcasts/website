@@ -57,6 +57,7 @@ describe('general drop', () => {
     expect(submitEpisodePostBody(streamingUrl, generalDropSeries({
       known: false,
       kind: 'streaming',
+      service: 'netflix',
       podcastName: 'Extracted Show'
     }))).toEqual({
       url: streamingUrl.href,
@@ -69,6 +70,7 @@ describe('general drop', () => {
     const streamingLookup = {
       known: false as const,
       kind: 'streaming' as const,
+      service: 'netflix' as const,
       podcastName: 'Extracted Show'
     };
     expect(generalDropSeriesForActor([], streamingLookup)).toEqual({
@@ -86,7 +88,7 @@ describe('general drop', () => {
   });
 
   it('falls back to URL-only when streaming lookup has no extracted name, or lookup failed', () => {
-    expect(generalDropSeries({ known: false, kind: 'streaming' })).toEqual({
+    expect(generalDropSeries({ known: false, kind: 'streaming', service: 'netflix' })).toEqual({
       podcastId: undefined,
       podcastName: undefined
     });
@@ -104,7 +106,7 @@ describe('general drop', () => {
 describe('pageDropPlan', () => {
   it('submits to this podcast when lookup is unknown, because attach is the point of the page target', () => {
     expect(pageDropPlan({ known: false, kind: 'podcast-service' }, pageId)).toEqual({ kind: 'submit-to-page' });
-    expect(pageDropPlan({ known: false, kind: 'streaming' }, pageId)).toEqual({ kind: 'submit-to-page' });
+    expect(pageDropPlan({ known: false, kind: 'streaming', service: 'netflix' }, pageId)).toEqual({ kind: 'submit-to-page' });
   });
 
   it('submits to this podcast when membership is ambiguous, without opening the 409 picker', () => {
@@ -152,7 +154,8 @@ describe('podcastPageAttachAfterDialog', () => {
     known: true as const,
     podcastId: otherId,
     podcastName: 'Other Show',
-    kind: 'streaming' as const
+    kind: 'streaming' as const,
+    service: 'vimeo' as const
   };
 
   it('parses a string close payload and asks confirm when lookup is known on another series', async () => {
