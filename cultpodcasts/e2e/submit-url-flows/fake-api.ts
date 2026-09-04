@@ -11,6 +11,7 @@ import {
 	submitUrlUrls,
 	type SubmitUrlActor
 } from "../../src/app/submit-url-contract";
+import { streamingLookupByUrl } from "../../src/app/streaming-submit-contract";
 
 /** Re-export contract constants so e2e specs stay on the API case table. */
 export const PAGE_ID = submitUrlIds.pageId;
@@ -63,7 +64,10 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 				return;
 			}
 			const episodeUrl = url.searchParams.get("url") ?? "";
-			const lookupBody = submitUrlLookupByUrl[episodeUrl] ?? { known: false, kind: "podcast-service" };
+			const lookupBody =
+				submitUrlLookupByUrl[episodeUrl] ??
+				streamingLookupByUrl[episodeUrl] ??
+				{ known: false, kind: "podcast-service" };
 			push(200);
 			await route.fulfill({
 				status: 200,

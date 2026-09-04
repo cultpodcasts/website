@@ -100,6 +100,7 @@ export const lookupKnownUnique = {
 export const lookupStreamingExtracted = {
 	known: false,
 	kind: "streaming",
+	service: "netflix",
 	podcastName: submitUrlNames.extractedShow
 } as const;
 
@@ -107,7 +108,8 @@ export const lookupOtherSeries = {
 	known: true,
 	podcastId: submitUrlIds.otherId,
 	podcastName: submitUrlNames.otherShow,
-	kind: "streaming"
+	kind: "streaming",
+	service: "vimeo"
 } as const;
 
 export const lookupUnknownPodcastService = {
