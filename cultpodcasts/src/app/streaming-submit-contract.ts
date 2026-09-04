@@ -48,7 +48,8 @@ export type MembershipKind = (typeof membershipKinds)[number];
 
 /**
  * How prepare fetches catalogue HTML for a streaming service.
- * CF Worker env `BROWSER_RENDERING_SERVICES` lists keys that use browserRendering.
+ * Worker secret `browserRenderingServices` is a CSV of keys that use browserRendering
+ * (callers split before htmlFetchModeForService).
  */
 export const htmlFetchModes = ["directHttp", "browserRendering"] as const;
 export type HtmlFetchMode = (typeof htmlFetchModes)[number];

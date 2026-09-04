@@ -11,7 +11,13 @@ import {
 	submitUrlUrls,
 	type SubmitUrlActor
 } from "../../src/app/submit-url-contract";
-import { streamingLookupByUrl } from "../../src/app/streaming-submit-contract";
+import {
+	htmlFetchModeForService,
+	streamingLookupByUrl,
+	streamingServiceKeys,
+	streamingSubmitNames,
+	type StreamingPrepareResponse
+} from "../../src/app/streaming-submit-contract";
 
 /** Re-export contract constants so e2e specs stay on the API case table. */
 export const PAGE_ID = submitUrlIds.pageId;
@@ -73,6 +79,42 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 				status: 200,
 				contentType: "application/json",
 				body: JSON.stringify(lookupBody)
+			});
+			return;
+		}
+
+		if (method === "POST" && url.pathname === "/submit/prepare") {
+			const denied = lookupDenialForActor(actor);
+			if (denied) {
+				push(denied.status);
+				await route.fulfill({
+					status: denied.status,
+					contentType: "application/json",
+					body: JSON.stringify(denied.body)
+				});
+				return;
+			}
+			const episodeUrl = typeof body?.url === "string" ? body.url : "";
+			const lookup =
+				submitUrlLookupByUrl[episodeUrl] ?? streamingLookupByUrl[episodeUrl];
+			const service =
+				lookup && "service" in lookup && typeof lookup.service === "string"
+					? lookup.service
+					: "itvx";
+			const mode = (streamingServiceKeys as readonly string[]).includes(service)
+				? htmlFetchModeForService(service as (typeof streamingServiceKeys)[number])
+				: "directHttp";
+			const prepareBody: StreamingPrepareResponse = {
+				service: service as StreamingPrepareResponse["service"],
+				htmlFetchMode: mode,
+				podcastName: streamingSubmitNames.extractedShow,
+				title: streamingSubmitNames.extractedShow
+			};
+			push(200);
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify(prepareBody)
 			});
 			return;
 		}

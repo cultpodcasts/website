@@ -10,7 +10,8 @@ import {
   podcastPageAttachAfterDialog,
   postSubmitEpisodeDialog,
   postSubmitEpisodeDialogForActor,
-  shouldCallSubmitUrlLookup
+  shouldCallSubmitUrlLookup,
+  shouldCallSubmitUrlPrepare
 } from './submit-ingest-ux';
 
 const pageId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -24,6 +25,32 @@ describe('shouldCallSubmitUrlLookup', () => {
     expect(shouldCallSubmitUrlLookup(['Submitter'])).toBe(true);
     expect(shouldCallSubmitUrlLookup(['Curator'])).toBe(true);
     expect(shouldCallSubmitUrlLookup(['Submitter', 'Curator'])).toBe(true);
+  });
+});
+
+describe('shouldCallSubmitUrlPrepare', () => {
+  it('calls POST /submit/prepare only for unknown streaming lookup arms', () => {
+    expect(shouldCallSubmitUrlPrepare(null)).toBe(false);
+    expect(shouldCallSubmitUrlPrepare('error')).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: true,
+        podcastId: pageId,
+        podcastName: 'Stored',
+        kind: 'streaming',
+        service: 'itvx'
+      })
+    ).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({ known: false, kind: 'podcast-service' })
+    ).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: false,
+        kind: 'streaming',
+        service: 'itvx'
+      })
+    ).toBe(true);
   });
 });
 

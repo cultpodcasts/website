@@ -38,9 +38,10 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
-import { generalDropSeries, shouldCallSubmitUrlLookup } from './submit-ingest-ux';
+import { generalDropSeries, shouldCallSubmitUrlLookup, shouldCallSubmitUrlPrepare } from './submit-ingest-ux';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { SubmitUrlLookupService } from './submit-url-lookup.service';
+import { SubmitUrlPrepareService } from './submit-url-prepare.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -125,6 +126,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly submitLookup = inject(SubmitUrlLookupService);
+  private readonly submitPrepare = inject(SubmitUrlPrepareService);
 
   constructor(
     iconRegistry: MatIconRegistry,
@@ -676,7 +678,19 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     if (!shouldCallSubmitUrlLookup(this.authRoles())) {
       return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
     }
-    return generalDropSeries(await this.lookupSubmitUrl(href));
+    const lookup = await this.lookupSubmitUrl(href);
+    if (shouldCallSubmitUrlPrepare(lookup) && lookup !== 'error' && lookup) {
+      try {
+        const prepared = await this.submitPrepare.prepare(href);
+        const withName = prepared.podcastName
+          ? { ...lookup, podcastName: prepared.podcastName }
+          : lookup;
+        return generalDropSeries(withName);
+      } catch {
+        return generalDropSeries(lookup);
+      }
+    }
+    return generalDropSeries(lookup);
   }
 
   private async lookupSubmitUrl(href: string) {

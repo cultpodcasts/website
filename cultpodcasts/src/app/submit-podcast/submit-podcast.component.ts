@@ -16,10 +16,11 @@ import {
   submitSeriesUiFromLookup,
   SubmitSeriesFormValue
 } from '../submit-series.util';
-import { generalDropSeriesForActor, shouldCallSubmitUrlLookup } from '../submit-ingest-ux';
+import { generalDropSeriesForActor, shouldCallSubmitUrlLookup, shouldCallSubmitUrlPrepare } from '../submit-ingest-ux';
 import { resolveAmbiguousPodcastIds, resolveSeriesForSubmit } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SubmitUrlLookupService } from '../submit-url-lookup.service';
+import { SubmitUrlPrepareService } from '../submit-url-prepare.service';
 import { SubmitUrlLookupResponse } from '../submit-url-lookup.interface';
 import { classifySubmittablePodcastUrl, parseSubmittablePodcastUrl } from '../podcast-url-matcher';
 import { SearchSuggestionsService } from '../search-suggestions.service';
@@ -70,6 +71,7 @@ export class SubmitPodcastComponent {
   private readonly suggestions = inject(SearchSuggestionsService);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly urlLookup = inject(SubmitUrlLookupService);
+  private readonly urlPrepare = inject(SubmitUrlPrepareService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogData = inject<SubmitPodcastDialogData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly urlCaptureOnly = this.dialogData?.attachToPage === true;
@@ -231,7 +233,24 @@ export class SubmitPodcastComponent {
     }
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
       timeout(URL_LOOKUP_TIMEOUT_MS),
-      map(lookup => ({ kind: 'ready' as const, href: parsed.href, lookup })),
+      switchMap(async (lookup) => {
+        if (shouldCallSubmitUrlPrepare(lookup)) {
+          try {
+            const prepared = await this.urlPrepare.prepare(parsed.toString());
+            const nextLookup = prepared.podcastName
+              ? { ...lookup, podcastName: prepared.podcastName }
+              : lookup;
+            return {
+              kind: 'ready' as const,
+              href: parsed.href,
+              lookup: nextLookup
+            };
+          } catch {
+            return { kind: 'ready' as const, href: parsed.href, lookup };
+          }
+        }
+        return { kind: 'ready' as const, href: parsed.href, lookup };
+      }),
       catchError(() => of({ kind: 'ready' as const, href: parsed.href, lookup: 'error' as const }))
     );
   }
