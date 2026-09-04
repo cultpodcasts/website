@@ -28,6 +28,10 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
 import { submitSeriesFromForm } from '../submit-series.util';
+import {
+  runSendPodcastPrepareFlow,
+  SendPodcastPrepareOutcome
+} from '../send-podcast-prepare';
 @Component({
   selector: 'app-toolbar',
   imports: [
@@ -157,7 +161,10 @@ export class ToolbarComponent {
       });
   }
 
-  async sendPodcast(share: Share) {
+  async sendPodcast(
+    share: Share,
+    prepare?: () => Promise<SendPodcastPrepareOutcome>
+  ) {
     const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
@@ -171,7 +178,22 @@ export class ToolbarComponent {
           }
         }
       });
-    await dialog.componentInstance.submit(share);
+    const component = dialog.componentInstance;
+    const closeWithoutSubmit = () =>
+      dialog.close({ submitted: false, originResponse: undefined });
+    await runSendPodcastPrepareFlow(share, prepare, {
+      beginBusy: () => component.beginBusy(),
+      submit: s => component.submit(s),
+      onCancelled: closeWithoutSubmit,
+      onPrepareError: () => {
+        closeWithoutSubmit();
+        this.snackBar.open('Could not prepare this podcast URL. Try again.', 'Ok', { duration: 5000 });
+      },
+      onSubmitError: e => {
+        console.error(e);
+        component.markSubmitError();
+      }
+    });
   }
 
   openReviewOutgoing() {

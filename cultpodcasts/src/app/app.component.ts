@@ -208,13 +208,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       if (!parsed) {
         return;
       }
-      const series = await this.generalDropPersistSeries(parsed.href);
-      await this.toolbar.sendPodcast({
-        url: parsed,
-        podcastId: series.podcastId,
-        podcastName: series.podcastName,
-        shareMode: ShareMode.Share
-      });
+      await this.toolbar.sendPodcast(
+        { url: parsed, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share },
+        async () => this.generalDropPersistSeries(parsed.href)
+      );
     }
   }
 
@@ -640,6 +637,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         this.snackBar.open('Could not resolve this series from the page.', 'Ok', { duration: 5000 });
         return;
       }
+      // Interactive resolve/confirm stay outside prepare so Sending Podcast is not stacked under pickers.
       const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
       if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
         if (outcome.kind !== 'cancelled') {
@@ -647,30 +645,31 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         }
         return;
       }
-      podcastId = outcome.selection.podcastId;
-      podcastName = outcome.selection.podcastName;
+      const pagePodcastId = outcome.selection.podcastId;
+      const pagePodcastName = outcome.selection.podcastName ?? name;
       const lookup = await this.lookupSubmitUrl(url.href);
       const proceed = await confirmPageDropIfOtherSeries(
         this.dialog,
         lookup,
-        podcastId,
-        podcastName ?? name
+        pagePodcastId,
+        pagePodcastName
       );
       if (!proceed) {
         return;
       }
-    } else {
-      const series = await this.generalDropPersistSeries(url.href);
-      podcastId = series.podcastId;
-      podcastName = series.podcastName;
+      await this.toolbar.sendPodcast({
+        url,
+        podcastId: pagePodcastId,
+        podcastName: outcome.selection.podcastName,
+        shareMode: ShareMode.Text
+      });
+      return;
     }
 
-    await this.toolbar.sendPodcast({
-      url,
-      podcastId,
-      podcastName,
-      shareMode: ShareMode.Text
-    });
+    await this.toolbar.sendPodcast(
+      { url, podcastId, podcastName, shareMode: ShareMode.Text },
+      async () => this.generalDropPersistSeries(url.href)
+    );
   }
 
   private async generalDropPersistSeries(href: string) {
