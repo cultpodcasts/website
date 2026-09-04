@@ -6,7 +6,8 @@ import { svgIconLiterals } from './svg-icon-literals';
  * Register Material SVG icons as string literals so MatIconRegistry never
  * HTTP-fetches during SSR/prerender (which has no asset server).
  *
- * Regenerate literals after editing src/assets/*.svg:
+ * Regenerate after editing src/assets/*.svg or streamingIconSvgs in the
+ * generator (do not hand-edit svg-icon-literals.ts):
  *   node tools/generate-svg-icon-literals.mjs
  */
 export function registerSvgIcons(

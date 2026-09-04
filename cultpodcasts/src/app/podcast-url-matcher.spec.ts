@@ -52,6 +52,7 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://example.test/watch/1')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.itv.com/watch/news/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.channel4.com/categories/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.channel4.com/programmes/example-slug/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.max.com/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://fawesome.tv/')).toBe(false);
@@ -72,6 +73,9 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://fawesome.tv/movies/1/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.paramountplus.com/shows/example-slug/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.max.com/shows/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.hbomax.com/series/urn:hbo:series:example')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/watch/2261604')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();

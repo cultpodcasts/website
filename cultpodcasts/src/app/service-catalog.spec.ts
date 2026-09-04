@@ -78,6 +78,10 @@ describe("service-catalog", () => {
 
   it("labels a pasted URL from its host so the editor does not need a service picker", () => {
     expect(serviceLabelForUrl("https://vimeo.com/123456789")).toBe("Vimeo");
+    expect(serviceLabelForUrl("https://www.channel4.com/programmes/example")).toBe("Channel 4");
+    expect(serviceLabelForUrl("https://www.itv.com/watch/example/1a2345")).toBe("ITVX");
+    expect(serviceLabelForUrl("https://www.disneyplus.com/series/example")).toBe("Disney+");
+    expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+");
   });
 
   it("reconstructs Spotify and YouTube listen URLs from ids when services are absent", () => {
