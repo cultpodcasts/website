@@ -30,13 +30,24 @@ export function shouldCallSubmitUrlPrepare(
 /**
  * Merge prepare's extracted show name onto an unknown-streaming lookup.
  * Empty / missing prepare name leaves lookup unchanged.
+ * Only the unknown (non-ambiguous) streaming arm accepts `podcastName`.
  */
 export function lookupWithPreparedPodcastName(
   lookup: SubmitUrlLookupResponse,
   prepared: { podcastName?: string | null }
 ): SubmitUrlLookupResponse {
   const name = prepared.podcastName?.trim();
-  return name ? { ...lookup, podcastName: name } : lookup;
+  if (!name) {
+    return lookup;
+  }
+  if (
+    !lookup.known &&
+    !lookup.ambiguous &&
+    lookup.kind === 'streaming'
+  ) {
+    return { ...lookup, podcastName: name };
+  }
+  return lookup;
 }
 
 /**
