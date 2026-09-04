@@ -10,7 +10,9 @@ import {
   podcastPageAttachAfterDialog,
   postSubmitEpisodeDialog,
   postSubmitEpisodeDialogForActor,
-  shouldCallSubmitUrlLookup
+  shouldCallSubmitUrlLookup,
+  shouldCallSubmitUrlPrepare,
+  lookupWithPreparedPodcastName
 } from './submit-ingest-ux';
 
 const pageId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -24,6 +26,62 @@ describe('shouldCallSubmitUrlLookup', () => {
     expect(shouldCallSubmitUrlLookup(['Submitter'])).toBe(true);
     expect(shouldCallSubmitUrlLookup(['Curator'])).toBe(true);
     expect(shouldCallSubmitUrlLookup(['Submitter', 'Curator'])).toBe(true);
+  });
+});
+
+describe('shouldCallSubmitUrlPrepare', () => {
+  it('calls POST /submit/prepare only for unknown streaming lookup arms', () => {
+    expect(shouldCallSubmitUrlPrepare(null)).toBe(false);
+    expect(shouldCallSubmitUrlPrepare('error')).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: true,
+        podcastId: pageId,
+        podcastName: 'Stored',
+        kind: 'streaming',
+        service: 'itvx'
+      })
+    ).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({ known: false, kind: 'podcast-service' })
+    ).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: false,
+        kind: 'streaming',
+        service: 'itvx'
+      })
+    ).toBe(true);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: false,
+        ambiguous: true,
+        kind: 'streaming',
+        service: 'itvx',
+        podcastIds: [pageId, otherId]
+      })
+    ).toBe(false);
+  });
+});
+
+describe('lookupWithPreparedPodcastName', () => {
+  const unknownStreaming = {
+    known: false as const,
+    kind: 'streaming' as const,
+    service: 'itvx' as const
+  };
+
+  it('merges a non-empty prepare podcastName onto the lookup', () => {
+    expect(lookupWithPreparedPodcastName(unknownStreaming, { podcastName: '  Extracted Show  ' })).toEqual({
+      ...unknownStreaming,
+      podcastName: 'Extracted Show'
+    });
+  });
+
+  it('leaves lookup unchanged when prepare has no usable podcastName', () => {
+    expect(lookupWithPreparedPodcastName(unknownStreaming, { podcastName: null })).toEqual(unknownStreaming);
+    expect(lookupWithPreparedPodcastName(unknownStreaming, { podcastName: '   ' })).toEqual(unknownStreaming);
+    expect(lookupWithPreparedPodcastName(unknownStreaming, {})).toEqual(unknownStreaming);
   });
 });
 

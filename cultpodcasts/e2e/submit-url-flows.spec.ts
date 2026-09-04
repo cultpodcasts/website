@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
 	openHarness,
 	persistPosts,
+	preparePosts,
 	PAGE_ID,
 	OTHER_ID,
 	PICK_ID,
@@ -42,19 +43,27 @@ test.describe("submit URL flows — faked API", () => {
 		await expect(page.locator("#http-log")).not.toContainText("X-Origin");
 	});
 
-	test("homepage general drop as Curator looks up streaming then persists extracted podcastName", async ({ page }) => {
+	test("homepage general drop as Curator looks up, prepares, then persists extracted podcastName", async ({ page }) => {
 		const captured: Captured[] = [];
 		await openHarness(page, captured);
 		await dropGeneral(page, URLS.netflix, "curator");
 		await expect.poll(() => persistPosts(captured)).toHaveLength(1);
 		expect(captured.some((c) => c.method === "GET" && c.path.includes("/submit/lookup"))).toBe(true);
+		expect(preparePosts(captured)).toEqual([
+			{
+				method: "POST",
+				path: "/submit/prepare",
+				body: { url: URLS.netflix },
+				status: 200
+			}
+		]);
 		expect(persistPosts(captured)[0].body).toEqual({
 			url: URLS.netflix,
 			podcastName: EXTRACTED_SHOW
 		});
 		expect(persistPosts(captured)[0].status).toBe(200);
 		await expect(page.locator("#http-log")).toContainText('"Created"');
-		await expectHttpConversation(page, ["GET", "POST"]);
+		await expectHttpConversation(page, ["GET", "POST", "POST"]);
 	});
 
 	test("fake API matches Worker: unsigned lookup is 401, Submitter lookup is 200, signed-out POST has no Azure body", async ({
@@ -115,7 +124,7 @@ test.describe("submit URL flows — faked API", () => {
 		await expectHttpConversation(page, ["GET", "POST"]);
 	});
 
-	test("Add Podcast streaming plus name as Curator probes GET /podcast then persists podcastId", async ({
+	test("Add Podcast streaming plus name as Curator prepares then probes GET /podcast then persists podcastId", async ({
 		page
 	}) => {
 		const captured: Captured[] = [];
@@ -126,13 +135,13 @@ test.describe("submit URL flows — faked API", () => {
 		await fillSeries(page, "Typed Show", false);
 		await saveAddPodcast(page);
 		await expect.poll(() => persistPosts(captured)).toHaveLength(1);
+		expect(preparePosts(captured).some((c) => (c.body as { url?: string })?.url === URLS.netflix)).toBe(true);
 		expect(persistPosts(captured)[0].body).toEqual({
 			url: URLS.netflix,
 			podcastId: PAGE_ID,
 			podcastName: "Typed Show"
 		});
-		await expectHttpConversation(page, ["GET", "GET", "POST"]);
-		await expectHttpConversation(page, ["GET", "GET", "POST"]);
+		await expectHttpConversation(page, ["GET", "POST", "GET", "POST"]);
 	});
 
 	test("page drop other series No does not persist", async ({ page }) => {
@@ -180,6 +189,6 @@ test.describe("submit URL flows — faked API", () => {
 			podcastId: PICK_ID,
 			podcastName: "Duplicate Series"
 		});
-		await expectHttpConversation(page, ["GET", "GET", "POST", "GET", "GET", "POST"]);
+		await expectHttpConversation(page, ["GET", "POST", "GET", "POST", "GET", "GET", "POST"]);
 	});
 });

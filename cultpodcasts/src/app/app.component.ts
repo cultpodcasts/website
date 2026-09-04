@@ -38,9 +38,16 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
-import { generalDropSeries, shouldCallSubmitUrlLookup } from './submit-ingest-ux';
+import {
+  generalDropSeries,
+  lookupWithPreparedPodcastName,
+  shouldCallSubmitUrlLookup,
+  shouldCallSubmitUrlPrepare
+} from './submit-ingest-ux';
+import type { SendPodcastPrepareOutcome } from './send-podcast-prepare';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { SubmitUrlLookupService } from './submit-url-lookup.service';
+import { SubmitUrlPrepareService } from './submit-url-prepare.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -125,6 +132,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
   private readonly submitLookup = inject(SubmitUrlLookupService);
+  private readonly submitPrepare = inject(SubmitUrlPrepareService);
 
   constructor(
     iconRegistry: MatIconRegistry,
@@ -657,12 +665,26 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       if (!proceed) {
         return;
       }
-      await this.toolbar.sendPodcast({
-        url,
-        podcastId: pagePodcastId,
-        podcastName: outcome.selection.podcastName,
-        shareMode: ShareMode.Text
-      });
+      const prepareForPage =
+        shouldCallSubmitUrlPrepare(lookup)
+          ? async (): Promise<SendPodcastPrepareOutcome> => {
+              try {
+                // StreamMeta KV side-effect; series id/name already come from the page.
+                await this.submitPrepare.prepare(url.href);
+              } catch {
+                return 'error';
+              }
+            }
+          : undefined;
+      await this.toolbar.sendPodcast(
+        {
+          url,
+          podcastId: pagePodcastId,
+          podcastName: outcome.selection.podcastName,
+          shareMode: ShareMode.Text
+        },
+        prepareForPage
+      );
       return;
     }
 
@@ -672,11 +694,20 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     );
   }
 
-  private async generalDropPersistSeries(href: string) {
+  private async generalDropPersistSeries(href: string): Promise<SendPodcastPrepareOutcome> {
     if (!shouldCallSubmitUrlLookup(this.authRoles())) {
       return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
     }
-    return generalDropSeries(await this.lookupSubmitUrl(href));
+    const lookup = await this.lookupSubmitUrl(href);
+    if (shouldCallSubmitUrlPrepare(lookup) && lookup !== 'error' && lookup) {
+      try {
+        const prepared = await this.submitPrepare.prepare(href);
+        return generalDropSeries(lookupWithPreparedPodcastName(lookup, prepared));
+      } catch {
+        return 'error';
+      }
+    }
+    return generalDropSeries(lookup);
   }
 
   private async lookupSubmitUrl(href: string) {

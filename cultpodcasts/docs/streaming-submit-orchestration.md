@@ -16,19 +16,21 @@ pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
 
 1. **Lookup** returns streaming `service` (`ServiceKeys` string). Do not invent a parallel provider enum.
    The SPA may re-export `StreamingServiceKey` as `SubmitUrlStreamingService`; do not duplicate the literal list.
-2. **Prepare** (when implemented) owns HTML fetch; membership does not scrape.
+2. **Prepare** — after unknown streaming lookup, SPA calls `POST /submit/prepare` (`SubmitUrlPrepareService`). Worker owns HTML fetch (BR or Azure prepare); membership does not scrape.
 3. **Submit** uses server-side prefetched meta after prepare — client does not POST HTML/meta.
 4. Spotify / Apple / YouTube stay on existing podcast-service flows (APIs) — out of this contract.
+
+Gate: `shouldCallSubmitUrlPrepare` in `submit-ingest-ux.ts` (unknown streaming only). Wired from general drop/share (`app.component`), Add Podcast (`submit-podcast.component`), and Curator podcast-page attach (`app.component` `handleDrop(forPodcast)` — prepare for StreamMeta; series id comes from the page).
 
 ## Tests / fakes
 
 | Artifact | Role |
 |----------|------|
 | `streaming-submit-contract.business-rules.spec.ts` | Consumer locks permutations from the copied fixture; bridges bodies to `SubmitUrlLookupResponse`; smokes fake-api merge for URLs only in `streamingLookupByUrl` (e.g. itvx) |
-| `e2e/submit-url-flows/fake-api.ts` | Merges `streamingLookupByUrl` for streaming specimen URLs |
+| `e2e/submit-url-flows/fake-api.ts` | Merges `streamingLookupByUrl`; handles `POST /submit/prepare` |
+| `submit-url-prepare.service.spec.ts` | Prepare HTTP POST + auth scope |
+| `submit-ingest-ux.spec.ts` | `shouldCallSubmitUrlPrepare` arms + `lookupWithPreparedPodcastName` |
 | `submit-url-contract.ts` | Existing actor/D1 case table (separate; keep in sync via its own assert) |
-
-Full Playwright coverage of the merge path for new streamers is deferred until prepare UX lands; the unit smoke above guards the merge until then.
 
 ## Assert script (local / sibling Api)
 

@@ -60,14 +60,15 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 
 	await showIntro(page, {
 		kicker: "Case 2 of 7 — Curator",
-		title: "Homepage drop: Curator lookup, then POST",
-		lede: "Now you are signed in as a Curator. Homepage drop still shows one message, but lookup runs first so streaming metadata can attach a series name.",
+		title: "Homepage drop: Curator lookup, prepare, then POST",
+		lede: "Now you are signed in as a Curator. Homepage drop still shows one message, but lookup runs first, then prepare extracts the series name.",
 		points: [
-			"GET /submit/lookup (Azure Isolated GET SubmitUrl) returns known: false, kind: streaming, plus extracted podcastName.",
+			"GET /submit/lookup returns known: false, kind: streaming (no scraped podcastName).",
+			"POST /submit/prepare extracts podcastName and caches StreamMeta.",
 			"Homepage overlay stays a single message — not the two podcast-page cards.",
 			"Then POST /submit with url + that podcastName."
 		],
-		persist: `HTTP overlay: GET /submit/lookup, then POST /submit with url + podcastName \"${EXTRACTED_SHOW}\".`
+		persist: `HTTP overlay: GET /submit/lookup, POST /submit/prepare, then POST /submit with url + podcastName \"${EXTRACTED_SHOW}\".`
 	}, INTRO_MS);
 	await clearHttp(page);
 	await setRole(page, "curator");
@@ -78,8 +79,9 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await page.locator("#drop-home").click();
 	await expect.poll(() => persistPosts(captured)).toHaveLength(2);
 	await expect(page.locator("#http-log")).toContainText("GET /submit/lookup");
+	await expect(page.locator("#http-log")).toContainText("POST /submit/prepare");
 	await expect(page.locator("#http-log")).toContainText(EXTRACTED_SHOW);
-	await expectHttpConversation(page, ["GET", "POST"]);
+	await expectHttpConversation(page, ["GET", "POST", "POST"]);
 	await page.waitForTimeout(AFTER_HTTP_MS);
 
 	await showIntro(page, {
@@ -109,13 +111,14 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await showIntro(page, {
 		kicker: "Case 4 of 7 — Curator",
 		title: "Add Podcast — streaming URL plus a series name",
-		lede: "Now you are signed in as a Curator. Lookup says unknown streaming, so the Series field is offered.",
+		lede: "Now you are signed in as a Curator. Lookup says unknown streaming, so prepare runs and the Series field is offered.",
 		points: [
-			"GET /submit/lookup returns known: false, kind: streaming (and may include an extracted name).",
+			"GET /submit/lookup returns known: false, kind: streaming (no scraped name).",
+			"POST /submit/prepare extracts podcastName and caches StreamMeta.",
 			"You type an existing series name. Save probes GET /podcast/{name}.",
 			"Unique name → persist with that catalogue id so the episode attaches to the right show."
 		],
-		persist: "Overlay: lookup GET, name GET, then POST /submit with url + podcastId + podcastName."
+		persist: "Overlay: lookup GET, prepare POST, name GET, then POST /submit with url + podcastId + podcastName."
 	}, INTRO_MS);
 	await clearHttp(page);
 	await setRole(page, "curator");
@@ -125,7 +128,7 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await page.waitForTimeout(UI_HOLD_MS);
 	await saveAddPodcast(page);
 	await expect.poll(() => persistPosts(captured)).toHaveLength(4);
-	await expectHttpConversation(page, ["GET", "GET", "POST"]);
+	await expectHttpConversation(page, ["GET", "POST", "GET", "POST"]);
 	await page.waitForTimeout(AFTER_HTTP_MS);
 
 	await showIntro(page, {
@@ -201,6 +204,6 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await page.locator(".conflict-pick", { hasText: PICK_ID }).click();
 	await expect.poll(() => persistPosts(captured).length).toBeGreaterThanOrEqual(postsBeforeNo + 3);
 	await expect(page.locator("#http-log")).toContainText("409");
-	await expectHttpConversation(page, ["GET", "GET", "POST", "GET", "GET", "POST"]);
+	await expectHttpConversation(page, ["GET", "POST", "GET", "POST", "GET", "GET", "POST"]);
 	await page.waitForTimeout(AFTER_HTTP_MS + 800);
 });

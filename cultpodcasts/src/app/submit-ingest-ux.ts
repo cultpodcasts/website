@@ -13,9 +13,36 @@ export function shouldCallSubmitUrlLookup(
 }
 
 /**
+ * After lookup: unknown streaming URLs need POST /submit/prepare for show name (no scrape on lookup).
+ */
+export function shouldCallSubmitUrlPrepare(
+  lookup: SubmitUrlLookupResponse | 'error' | null
+): boolean {
+  return (
+    !!lookup &&
+    lookup !== 'error' &&
+    !lookup.known &&
+    !lookup.ambiguous &&
+    lookup.kind === 'streaming'
+  );
+}
+
+/**
+ * Merge prepare's extracted show name onto an unknown-streaming lookup.
+ * Empty / missing prepare name leaves lookup unchanged.
+ */
+export function lookupWithPreparedPodcastName(
+  lookup: SubmitUrlLookupResponse,
+  prepared: { podcastName?: string | null }
+): SubmitUrlLookupResponse {
+  const name = prepared.podcastName?.trim();
+  return name ? { ...lookup, podcastName: name } : lookup;
+}
+
+/**
  * Homepage general drop / share after GET /submit/lookup (Submitter/Curator).
  * Known unique or unknown podcast-service → URL-only (platform metadata / stored membership).
- * Unknown streaming → persist extracted podcastName when lookup returned it (no curator picker).
+ * Unknown streaming → persist podcastName from prepare (or lookup if already present).
  * Ambiguous / error → URL-only (do not invent a Series picker).
  */
 export function generalDropSeries(

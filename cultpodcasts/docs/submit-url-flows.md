@@ -21,7 +21,7 @@ npm run test:e2e:submit-url
 
 Videos: `test-results/**/video.webm` (gitignored). The **video tour** (`e2e/submit-url-flows.tour.spec.ts`) is paced: each case opens with a plain-language intro that states **signed out / not Curator vs Curator**, then the homepage / Add Podcast / drop-target / confirm UI, with a live **HTTP overlay** (GET probes and gold **POST /submit** persist bodies). Homepage general drop is shown first as **signed out** (**POST /submit only** — D1; no lookup). Each tour case has a matching Vitest in `src/app/submit-url-flows.business-rules.spec.ts`.
 
-**Siblings:** RedditPodcastPoster PR submit (`GET`/`POST` Isolated `SubmitUrl`); Api Worker `GET /submit/lookup`, `POST /submit`, `GET /podcast/{name|id}`.
+**Siblings:** RedditPodcastPoster PR submit (`GET`/`POST` Isolated `SubmitUrl` + prepare/extract); Api Worker `GET /submit/lookup`, `POST /submit/prepare`, `POST /submit`, `GET /podcast/{name|id}`.
 
 ## Purpose
 
@@ -33,8 +33,9 @@ Client talks to the **Cloudflare Worker** (`environment.api`). The Worker proxie
 
 | Worker | Azure | Auth | Role |
 |--------|--------|------|------|
-| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | Worker: `submit` or `curate`. Isolated accepts **`submit` OR `curate`**. | Read-only membership. **Submitter** or **Curator** only — never signed-out. |
-| `POST /submit` | D1 queue, or `POST /api/SubmitUrl` if `submit`/`curate` JWT | none → D1; `submit` or `curate` → Azure | Command. Signed-out → **D1 only**. |
+| `GET /submit/lookup?url=` | `GET /api/SubmitUrl?url=` | Worker: `submit` or `curate`. Isolated accepts **`submit` OR `curate`**. | Read-only membership. **Submitter** or **Curator** only — never signed-out. No HTML scrape. |
+| `POST /submit/prepare` | `POST …/SubmitUrl/prepare` or `/extract` | `submit` or `curate` | Streaming HTML fetch + extract; caches meta for submit. Unknown streaming after lookup. |
+| `POST /submit` | D1 queue, or `POST /api/SubmitUrl` if `submit`/`curate` JWT | none → D1; `submit` or `curate` → Azure | Command. Signed-out → **D1 only**. Worker may inject trusted `prefetchedMeta`. |
 | `GET /podcast/{name}` | GET podcast by name | `curate` | Unique → id; missing → 404; many → **409** UUID list. |
 | `GET /podcast/{id}` | GET podcast by id | `curate` | Catalogue row for conflict pickers. |
 
@@ -95,8 +96,10 @@ No `GET /submit/lookup`. Overlay: *Drop episode link to submit* (never the two-t
 flowchart LR
   U[Valid URL] --> L[GET /submit/lookup]
   L -->|known unique or unknown podcast-service| S["POST { url }"]
-  L -->|unknown streaming + extracted name| Sn["POST { url, podcastName }"]
-  L -->|unknown streaming without name / error| S
+  L -->|unknown streaming| P[POST /submit/prepare]
+  P -->|podcastName| Sn["POST { url, podcastName }"]
+  P -->|prepare error| X[Abort — snack]
+  L -->|lookup error| S
 ```
 
 ### URL-only (Add Podcast known / unknown podcast-service)
@@ -181,7 +184,7 @@ Homepage (and share-target). Overlay: *Drop episode link to submit* (never the t
 
 1. Matcher. **`GET /submit/lookup` when Submitter or Curator.** Signed-out persist `{ url }` to D1.
 2. Curator + podcast-service (Spotify / Apple / YouTube): persist `generalDropSeries(lookup)` → `{ url }` (known unique or unknown).
-3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): if lookup returned an extracted `podcastName` (adapter `ShowName`), persist `{ url, podcastName }`. No Series picker on the homepage.
+3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): after lookup, `POST /submit/prepare` extracts `podcastName` (and caches StreamMeta); persist `{ url, podcastName }`. No Series picker on the homepage.
 4. Lookup error / no extracted name / not Curator → `{ url }` only. POST 409 still opens the name picker only when a name was sent.
 
 ### Submit to this podcast (page drop)

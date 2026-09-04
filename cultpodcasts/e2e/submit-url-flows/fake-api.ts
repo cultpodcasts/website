@@ -11,7 +11,13 @@ import {
 	submitUrlUrls,
 	type SubmitUrlActor
 } from "../../src/app/submit-url-contract";
-import { streamingLookupByUrl } from "../../src/app/streaming-submit-contract";
+import {
+	htmlFetchModeForService,
+	streamingLookupByUrl,
+	streamingServiceKeys,
+	streamingSubmitNames,
+	type StreamingPrepareResponse
+} from "../../src/app/streaming-submit-contract";
 
 /** Re-export contract constants so e2e specs stay on the API case table. */
 export const PAGE_ID = submitUrlIds.pageId;
@@ -64,15 +70,65 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 				return;
 			}
 			const episodeUrl = url.searchParams.get("url") ?? "";
-			const lookupBody =
+			const rawLookup =
 				submitUrlLookupByUrl[episodeUrl] ??
 				streamingLookupByUrl[episodeUrl] ??
 				{ known: false, kind: "podcast-service" };
+			// Unknown streaming must not carry legacy lookup podcastName — prepare supplies it.
+			const lookupBody =
+				rawLookup &&
+				typeof rawLookup === "object" &&
+				"known" in rawLookup &&
+				rawLookup.known === false &&
+				"kind" in rawLookup &&
+				rawLookup.kind === "streaming" &&
+				"podcastName" in rawLookup
+					? (() => {
+							const { podcastName: _omit, ...rest } = rawLookup as Record<string, unknown>;
+							return rest;
+						})()
+					: rawLookup;
 			push(200);
 			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
 				body: JSON.stringify(lookupBody)
+			});
+			return;
+		}
+
+		if (method === "POST" && url.pathname === "/submit/prepare") {
+			const denied = lookupDenialForActor(actor);
+			if (denied) {
+				push(denied.status);
+				await route.fulfill({
+					status: denied.status,
+					contentType: "application/json",
+					body: JSON.stringify(denied.body)
+				});
+				return;
+			}
+			const episodeUrl = typeof body?.url === "string" ? body.url : "";
+			const lookup =
+				submitUrlLookupByUrl[episodeUrl] ?? streamingLookupByUrl[episodeUrl];
+			const service =
+				lookup && "service" in lookup && typeof lookup.service === "string"
+					? lookup.service
+					: "itvx";
+			const mode = (streamingServiceKeys as readonly string[]).includes(service)
+				? htmlFetchModeForService(service as (typeof streamingServiceKeys)[number])
+				: "directHttp";
+			const prepareBody: StreamingPrepareResponse = {
+				service: service as StreamingPrepareResponse["service"],
+				htmlFetchMode: mode,
+				podcastName: streamingSubmitNames.extractedShow,
+				title: streamingSubmitNames.extractedShow
+			};
+			push(200);
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify(prepareBody)
 			});
 			return;
 		}
@@ -150,4 +206,8 @@ export async function openHarness(page: Page, captured: Captured[], options: Fak
 
 export function persistPosts(captured: Captured[]) {
 	return captured.filter((c) => c.method === "POST" && c.path === "/submit");
+}
+
+export function preparePosts(captured: Captured[]) {
+	return captured.filter((c) => c.method === "POST" && c.path === "/submit/prepare");
 }
