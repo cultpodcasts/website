@@ -38,7 +38,10 @@ describe('podcast-url-matcher', () => {
       'https://www.disneyplus.com/series/example-slug',
       'https://www.disneyplus.com/browse/entity-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       'https://www.discoveryplus.com/show/example-slug',
-      'https://www.discoveryplus.com/gb/show/example-slug'
+      'https://www.discoveryplus.com/gb/show/example-slug',
+      'https://www.discoveryplus.com/video/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      'https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      'https://www.discoveryplus.com/gb/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
     ];
 
     for (const url of accepted) {
@@ -56,6 +59,8 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.max.com/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://fawesome.tv/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/movie')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
   });
 
@@ -78,6 +83,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
