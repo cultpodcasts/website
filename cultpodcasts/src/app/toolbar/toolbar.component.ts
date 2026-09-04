@@ -157,7 +157,10 @@ export class ToolbarComponent {
       });
   }
 
-  async sendPodcast(share: Share) {
+  async sendPodcast(
+    share: Share,
+    prepare?: () => Promise<Pick<Share, 'podcastId' | 'podcastName'> | 'cancelled' | void>
+  ) {
     const dialog = this.dialog.open<SendPodcastComponent, any, SubmitDialogResponse>(SendPodcastComponent, { disableClose: true, autoFocus: true });
     dialog
       .afterClosed()
@@ -171,7 +174,23 @@ export class ToolbarComponent {
           }
         }
       });
-    await dialog.componentInstance.submit(share);
+    const component = dialog.componentInstance;
+    component.beginBusy();
+    try {
+      if (prepare) {
+        const prepared = await prepare();
+        if (prepared === 'cancelled') {
+          dialog.close({ submitted: false });
+          return;
+        }
+        if (prepared) {
+          share = { ...share, ...prepared };
+        }
+      }
+      await component.submit(share);
+    } catch {
+      component.markSubmitError();
+    }
   }
 
   openReviewOutgoing() {

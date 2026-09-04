@@ -46,6 +46,20 @@ export class SendPodcastComponent {
     private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>) {
   }
 
+  public beginBusy() {
+    this.isSending.set(true);
+    this.urlShareError.set(false);
+    this.urlTextError.set(false);
+    this.unknownError.set(false);
+    this.submitError.set(false);
+    this.conflictDismissed.set(false);
+  }
+
+  public markSubmitError() {
+    this.isSending.set(false);
+    this.submitError.set(true);
+  }
+
   close() {
     this.dialogRef.close({ submitted: this.submitted, originResponse: this.originResponse, });
   }
@@ -54,8 +68,7 @@ export class SendPodcastComponent {
     const url = parseSubmittablePodcastUrl(data.url.toString());
 
     if (url) {
-      this.isSending.set(true);
-      this.conflictDismissed.set(false);
+      this.beginBusy();
       const body = submitEpisodePostBody(url, { podcastId: data.podcastId, podcastName: data.podcastName });
       let headers: HttpHeaders = new HttpHeaders();
       if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {

@@ -208,13 +208,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       if (!parsed) {
         return;
       }
-      const series = await this.generalDropPersistSeries(parsed.href);
-      await this.toolbar.sendPodcast({
-        url: parsed,
-        podcastId: series.podcastId,
-        podcastName: series.podcastName,
-        shareMode: ShareMode.Share
-      });
+      await this.toolbar.sendPodcast(
+        { url: parsed, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Share },
+        async () => this.generalDropPersistSeries(parsed.href)
+      );
     }
   }
 
@@ -640,37 +637,38 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         this.snackBar.open('Could not resolve this series from the page.', 'Ok', { duration: 5000 });
         return;
       }
-      const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
-      if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
-        if (outcome.kind !== 'cancelled') {
-          this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
+      await this.toolbar.sendPodcast(
+        { url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Text },
+        async () => {
+          const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
+          if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+            if (outcome.kind !== 'cancelled') {
+              this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
+            }
+            return 'cancelled';
+          }
+          const pagePodcastId = outcome.selection.podcastId;
+          const pagePodcastName = outcome.selection.podcastName ?? name;
+          const lookup = await this.lookupSubmitUrl(url.href);
+          const proceed = await confirmPageDropIfOtherSeries(
+            this.dialog,
+            lookup,
+            pagePodcastId,
+            pagePodcastName
+          );
+          if (!proceed) {
+            return 'cancelled';
+          }
+          return { podcastId: pagePodcastId, podcastName: outcome.selection.podcastName };
         }
-        return;
-      }
-      podcastId = outcome.selection.podcastId;
-      podcastName = outcome.selection.podcastName;
-      const lookup = await this.lookupSubmitUrl(url.href);
-      const proceed = await confirmPageDropIfOtherSeries(
-        this.dialog,
-        lookup,
-        podcastId,
-        podcastName ?? name
       );
-      if (!proceed) {
-        return;
-      }
-    } else {
-      const series = await this.generalDropPersistSeries(url.href);
-      podcastId = series.podcastId;
-      podcastName = series.podcastName;
+      return;
     }
 
-    await this.toolbar.sendPodcast({
-      url,
-      podcastId,
-      podcastName,
-      shareMode: ShareMode.Text
-    });
+    await this.toolbar.sendPodcast(
+      { url, podcastId, podcastName, shareMode: ShareMode.Text },
+      async () => this.generalDropPersistSeries(url.href)
+    );
   }
 
   private async generalDropPersistSeries(href: string) {
