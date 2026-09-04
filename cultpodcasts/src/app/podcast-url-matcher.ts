@@ -14,7 +14,7 @@ const hboMax = /^(?:https?:)?\/\/(?:(?:www|play)\.)?(?:max|hbomax)\.com\/(?:show
 const playSuisse = /^(?:https?:)?\/\/(?:www\.)?playsuisse\.ch\/(?:[a-z]{2}\/)?(?:watch|detail)\/\d+/;
 const tvnzPlus = /^(?:https?:)?\/\/(?:www\.)?tvnz\.co\.nz\/shows\/[^/\s]+/;
 const disneyPlus = /^(?:https?:)?\/\/(?:www\.)?disneyplus\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:browse\/entity-[^/\s]+|(?:series|movies|play)\/[^/\s]+)/;
-const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video)\/[^/\s]+/;
+const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 

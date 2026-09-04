@@ -38,7 +38,10 @@ describe('podcast-url-matcher', () => {
       'https://www.disneyplus.com/series/example-slug',
       'https://www.disneyplus.com/browse/entity-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       'https://www.discoveryplus.com/show/example-slug',
-      'https://www.discoveryplus.com/gb/show/example-slug'
+      'https://www.discoveryplus.com/gb/show/example-slug',
+      'https://www.discoveryplus.com/video/975f6b9d-d38e-4108-a413-046c0f482c62',
+      'https://www.discoveryplus.com/movie/975f6b9d-d38e-4108-a413-046c0f482c62',
+      'https://www.discoveryplus.com/gb/movie/975f6b9d-d38e-4108-a413-046c0f482c62'
     ];
 
     for (const url of accepted) {
@@ -78,6 +81,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/975f6b9d-d38e-4108-a413-046c0f482c62')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
