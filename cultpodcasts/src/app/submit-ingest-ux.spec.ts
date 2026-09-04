@@ -83,6 +83,17 @@ describe('lookupWithPreparedPodcastName', () => {
     expect(lookupWithPreparedPodcastName(unknownStreaming, { podcastName: '   ' })).toEqual(unknownStreaming);
     expect(lookupWithPreparedPodcastName(unknownStreaming, {})).toEqual(unknownStreaming);
   });
+
+  it('does not attach podcastName to ambiguous streaming lookups', () => {
+    const ambiguous = {
+      known: false as const,
+      ambiguous: true as const,
+      podcastIds: [pageId],
+      kind: 'streaming' as const,
+      service: 'itvx' as const
+    };
+    expect(lookupWithPreparedPodcastName(ambiguous, { podcastName: 'Show' })).toEqual(ambiguous);
+  });
 });
 
 describe('general drop', () => {
