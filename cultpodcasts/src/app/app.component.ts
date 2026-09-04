@@ -637,31 +637,32 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         this.snackBar.open('Could not resolve this series from the page.', 'Ok', { duration: 5000 });
         return;
       }
-      await this.toolbar.sendPodcast(
-        { url, podcastId: undefined, podcastName: undefined, shareMode: ShareMode.Text },
-        async () => {
-          const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
-          if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
-            if (outcome.kind !== 'cancelled') {
-              this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
-            }
-            return 'cancelled';
-          }
-          const pagePodcastId = outcome.selection.podcastId;
-          const pagePodcastName = outcome.selection.podcastName ?? name;
-          const lookup = await this.lookupSubmitUrl(url.href);
-          const proceed = await confirmPageDropIfOtherSeries(
-            this.dialog,
-            lookup,
-            pagePodcastId,
-            pagePodcastName
-          );
-          if (!proceed) {
-            return 'cancelled';
-          }
-          return { podcastId: pagePodcastId, podcastName: outcome.selection.podcastName };
+      // Interactive resolve/confirm stay outside prepare so Sending Podcast is not stacked under pickers.
+      const outcome = await resolveSeriesForAttach(this.seriesResolve, this.dialog, name);
+      if (outcome.kind !== 'selection' || !outcome.selection.podcastId) {
+        if (outcome.kind !== 'cancelled') {
+          this.snackBar.open('Could not resolve this series. Choose a catalogue row or try again.', 'Ok', { duration: 5000 });
         }
+        return;
+      }
+      const pagePodcastId = outcome.selection.podcastId;
+      const pagePodcastName = outcome.selection.podcastName ?? name;
+      const lookup = await this.lookupSubmitUrl(url.href);
+      const proceed = await confirmPageDropIfOtherSeries(
+        this.dialog,
+        lookup,
+        pagePodcastId,
+        pagePodcastName
       );
+      if (!proceed) {
+        return;
+      }
+      await this.toolbar.sendPodcast({
+        url,
+        podcastId: pagePodcastId,
+        podcastName: outcome.selection.podcastName,
+        shareMode: ShareMode.Text
+      });
       return;
     }
 

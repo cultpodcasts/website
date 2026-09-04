@@ -46,6 +46,11 @@ export class SendPodcastComponent {
     private dialogRef: MatDialogRef<SendPodcastComponent, SubmitDialogResponse>) {
   }
 
+  /**
+   * Spinner / disableClose busy. Toolbar may call this before `prepare` (lookup on
+   * general drop/share). `submit()` always calls it again for POST so POST owns busy
+   * when there is no prepare — re-entry is intentional (resets error flags).
+   */
   public beginBusy() {
     this.isSending.set(true);
     this.urlShareError.set(false);
