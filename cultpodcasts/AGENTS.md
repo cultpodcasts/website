@@ -44,6 +44,7 @@ Client SEO may use episode art from page-details when
 Episode URL ingest (Add Podcast, drag drop, share) → Worker lookup/submit. Series attach is the exception.
 
 - Docs: [`docs/submit-url-flows.md`](docs/submit-url-flows.md)
+- **Streaming orchestration contract:** [`docs/streaming-submit-orchestration.md`](docs/streaming-submit-orchestration.md) — copy `Api/tests/fixtures/streaming-submit-contract.ts` → `src/app/streaming-submit-contract.ts`
 - **Canonical cases:** copy `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts`
 - Rules: `src/app/submit-ingest-ux.ts`, `submit-series.util.ts`, `submit-series-conflict.ts`
 - **Signed-out:** never `GET /submit/lookup` (Azure). Persist `POST /submit` to Worker D1.

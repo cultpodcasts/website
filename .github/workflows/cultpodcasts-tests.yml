@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "cultpodcasts/**"
+      - "scripts/**"
       - ".github/workflows/cultpodcasts-tests.yml"
 
 env:

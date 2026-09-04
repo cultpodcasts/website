@@ -43,12 +43,35 @@ describe('SubmitUrlLookupService', () => {
     const req = httpMock.expectOne(expected.toString());
     expect(req.request.method).toBe('GET');
     expect(req.request.context.get(AUTH_SCOPE)).toBe('submit');
-    req.flush({ known: false, kind: 'streaming', podcastName: 'Extracted Show' });
+    req.flush({
+      known: false,
+      kind: 'streaming',
+      service: 'bbcSounds',
+      podcastName: 'Extracted Show'
+    });
     await expect(pending).resolves.toEqual({
       known: false,
       kind: 'streaming',
+      service: 'bbcSounds',
       podcastName: 'Extracted Show'
     });
+  });
+
+  it('round-trips streaming known membership with required service', async () => {
+    const url = 'https://www.itv.com/watch/example-slug/1a2345/1a2345a0001';
+    const pending = service.lookup(url);
+    const expected = new URL('/submit/lookup', environment.api);
+    expected.searchParams.set('url', url);
+    const req = httpMock.expectOne(expected.toString());
+    const body = {
+      known: true as const,
+      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      podcastName: 'Stored Show',
+      kind: 'streaming' as const,
+      service: 'itvx' as const
+    };
+    req.flush(body);
+    await expect(pending).resolves.toEqual(body);
   });
 
   it('accepts unique known membership with podcastId and podcastName', async () => {

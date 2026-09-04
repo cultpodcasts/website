@@ -8,7 +8,9 @@ How the client turns an episode URL into `POST /submit`, which Worker/Azure endp
 
 **Fixture (copy from Api):** `Api/tests/fixtures/submit-url-contract.ts` → `src/app/submit-url-contract.ts` (keep byte-identical). Cases 1–7, actors, HTTP sequence (method/path/body/status/D1 vs Azure), and persist bodies. Check copies with `pwsh ../scripts/assert-submit-url-contract-copy.ps1` from `cultpodcasts/` when the Api repo is a sibling.
 
-**UI business rules (Vitest):** `src/app/submit-url-flows.business-rules.spec.ts` consumes that fixture and asserts client helpers (`shouldCallSubmitUrlLookup`, `generalDropSeriesForActor`, persist body helpers) emit the **same** requests the fixture says that actor sends. Also `src/app/submit-ingest-ux.ts`, `src/app/submit-series.util.ts`, `src/app/submit-series-conflict.ts`.
+**Streaming orchestration contract (copy from Api):** `Api/tests/fixtures/streaming-submit-contract.ts` → `src/app/streaming-submit-contract.ts`. Membership `service` enum, prepare/submit fetch policy, fake lookup-by-URL for every streaming ServiceKey. Docs: [`streaming-submit-orchestration.md`](./streaming-submit-orchestration.md). Assert: `pwsh ../scripts/assert-streaming-submit-contract-copy.ps1`.
+
+**UI business rules (Vitest):** `src/app/submit-url-flows.business-rules.spec.ts` consumes that fixture and asserts client helpers (`shouldCallSubmitUrlLookup`, `generalDropSeriesForActor`, persist body helpers) emit the **same** requests the fixture says that actor sends. Also `src/app/submit-ingest-ux.ts`, `src/app/submit-series.util.ts`, `src/app/submit-series-conflict.ts`. Streaming shape permutations: `src/app/streaming-submit-contract.business-rules.spec.ts`.
 
 **Faked-API e2e + video:** `e2e/submit-url-flows.spec.ts` (no Auth0 / Azure). Fake API (`e2e/submit-url-flows/fake-api.ts`) is a thin adapter over the same contract: lookup 401 when signed out; Submitter/Curator lookup 200; unsigned POST is D1 `{ success: "Submitted" }`; Submitter/Curator POST is Isolated `SubmitUrlResponse` + `X-Origin`. From `cultpodcasts/`:
 
@@ -47,9 +49,11 @@ Worker **forwards** Azure 400 / 404 / 409 on POST (and lookup 400 / 404). Those 
 
 Lookup **200** shapes:
 
-- Known unique: `{ known: true, podcastId, podcastName, kind }`
-- Unknown: `{ known: false, kind: "podcast-service" \| "streaming" \| "unrecognised" }`
-- Ambiguous: `{ known: false, ambiguous: true, kind, podcastIds }` (**200**, not 409)
+- Known unique: `{ known: true, podcastId, podcastName, kind, service? }` — `service` when streaming
+- Unknown: `{ known: false, kind: "podcast-service" \| "streaming" \| "unrecognised", service?, podcastName? }` — streaming includes `service` (ServiceKeys)
+- Ambiguous: `{ known: false, ambiguous: true, kind, service?, podcastIds }` (**200**, not 409)
+
+See also [`streaming-submit-orchestration.md`](./streaming-submit-orchestration.md).
 
 Name **409** is a **shared podcast name**, not URL membership. Do not confuse the two.
 
