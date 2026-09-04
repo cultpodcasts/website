@@ -16,7 +16,7 @@ import {
   submitSeriesUiFromLookup,
   SubmitSeriesFormValue
 } from '../submit-series.util';
-import { generalDropSeriesForActor, shouldCallSubmitUrlLookup, shouldCallSubmitUrlPrepare } from '../submit-ingest-ux';
+import { generalDropSeriesForActor, lookupWithPreparedPodcastName, shouldCallSubmitUrlLookup, shouldCallSubmitUrlPrepare } from '../submit-ingest-ux';
 import { resolveAmbiguousPodcastIds, resolveSeriesForSubmit } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SubmitUrlLookupService } from '../submit-url-lookup.service';
@@ -88,6 +88,8 @@ export class SubmitPodcastComponent {
   protected readonly lookup = signal<SubmitUrlLookupResponse | 'error' | null>(null);
   protected readonly lookedUpHref = signal<string | null>(null);
   protected readonly urlText = signal('');
+  /** Prepare failed for unknown streaming — do not Persist without StreamMeta. */
+  protected readonly prepareFailed = signal(false);
 
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => showSubmitSeriesPicker(this.authRoles()));
@@ -107,7 +109,7 @@ export class SubmitPodcastComponent {
   });
   /** Blocks Save until lookup for this URL finished (Submitter/Curator) or while POST resolve runs. */
   protected readonly saveDisabled = computed(() => {
-    if (this.resolving() || this.lookupPending()) {
+    if (this.resolving() || this.lookupPending() || this.prepareFailed()) {
       return true;
     }
     return !submitSaveReady(
@@ -180,12 +182,20 @@ export class SubmitPodcastComponent {
       if (result.kind === 'cleared') {
         this.lookedUpHref.set(null);
         this.lookup.set(null);
+        this.prepareFailed.set(false);
       } else if (result.kind === 'skipped') {
         this.lookedUpHref.set(result.href);
         this.lookup.set(null);
+        this.prepareFailed.set(false);
+      } else if (result.kind === 'prepare-failed') {
+        this.lookedUpHref.set(result.href);
+        this.lookup.set('error');
+        this.prepareFailed.set(true);
+        this.snackBar.open('Could not prepare this podcast URL. Try again.', 'Ok', { duration: 5000 });
       } else {
         this.lookedUpHref.set(result.href);
         this.lookup.set(result.lookup);
+        this.prepareFailed.set(false);
         if (result.lookup !== 'error' && result.lookup.known) {
           this.podcast.setValue(null);
         } else if (
@@ -211,6 +221,7 @@ export class SubmitPodcastComponent {
       this.lookupPending.set(false);
       this.lookedUpHref.set(null);
       this.lookup.set(null);
+      this.prepareFailed.set(false);
     } else if (
       this.urlCaptureOnly ||
       !shouldCallSubmitUrlLookup(this.authRoles()) ||
@@ -219,6 +230,7 @@ export class SubmitPodcastComponent {
       this.lookupPending.set(false);
     } else {
       this.lookupPending.set(true);
+      this.prepareFailed.set(false);
     }
     this.changeDetector.markForCheck();
   }
@@ -237,16 +249,13 @@ export class SubmitPodcastComponent {
         if (shouldCallSubmitUrlPrepare(lookup)) {
           try {
             const prepared = await this.urlPrepare.prepare(parsed.toString());
-            const nextLookup = prepared.podcastName
-              ? { ...lookup, podcastName: prepared.podcastName }
-              : lookup;
             return {
               kind: 'ready' as const,
               href: parsed.href,
-              lookup: nextLookup
+              lookup: lookupWithPreparedPodcastName(lookup, prepared)
             };
           } catch {
-            return { kind: 'ready' as const, href: parsed.href, lookup };
+            return { kind: 'prepare-failed' as const, href: parsed.href };
           }
         }
         return { kind: 'ready' as const, href: parsed.href, lookup };
@@ -271,7 +280,7 @@ export class SubmitPodcastComponent {
   readonly displayFn = displaySeriesFormValue;
 
   async save() {
-    if (!this.form.valid || this.resolving()) {
+    if (!this.form.valid || this.resolving() || this.prepareFailed()) {
       return;
     }
 

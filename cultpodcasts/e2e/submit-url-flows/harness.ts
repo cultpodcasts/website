@@ -439,7 +439,16 @@ export function submitUrlFlowsDocument(): string {
       pending = true;
       saveBtn.disabled = true;
       const res = await call('GET', '/submit/lookup?url=' + encodeURIComponent(href));
-      lookup = res.json;
+      const prepared = await prepareUnknownStreaming(href, res.json);
+      if (!prepared.ok) {
+        lookup = null;
+        lookedUpHref = href;
+        pending = false;
+        applySeriesFromLookup();
+        saveBtn.disabled = true;
+        return;
+      }
+      lookup = prepared.lookup;
       lookedUpHref = href;
       pending = false;
       applySeriesFromLookup();
@@ -503,6 +512,27 @@ export function submitUrlFlowsDocument(): string {
       return {};
     }
 
+    function shouldCallSubmitUrlPrepare(looked) {
+      return !!(looked && !looked.known && !looked.ambiguous && looked.kind === 'streaming');
+    }
+
+    function withPreparedPodcastName(looked, prepared) {
+      const name = prepared && prepared.podcastName ? String(prepared.podcastName).trim() : '';
+      return name ? Object.assign({}, looked, { podcastName: name }) : looked;
+    }
+
+    async function prepareUnknownStreaming(href, looked) {
+      if (!shouldCallSubmitUrlPrepare(looked)) return { ok: true, lookup: looked };
+      const prep = await call('POST', '/submit/prepare', { url: href });
+      if (prep.status !== 200 || !prep.json) {
+        const snack = document.getElementById('snack');
+        snack.textContent = 'Could not prepare this podcast URL. Try again.';
+        snack.classList.add('open');
+        return { ok: false, lookup: looked };
+      }
+      return { ok: true, lookup: withPreparedPodcastName(looked, prep.json) };
+    }
+
     async function saveAdd() {
       const url = parsedHref();
       if (!url) return;
@@ -548,7 +578,9 @@ export function submitUrlFlowsDocument(): string {
         return;
       }
       const looked = await call('GET', '/submit/lookup?url=' + encodeURIComponent(url));
-      const series = generalDropSeries(looked.json);
+      const prepared = await prepareUnknownStreaming(url, looked.json);
+      if (!prepared.ok) return;
+      const series = generalDropSeries(prepared.lookup);
       await persist(url, series.podcastId, series.podcastName);
     }
 
@@ -564,6 +596,8 @@ export function submitUrlFlowsDocument(): string {
         setScrim('dlg-confirm', false);
         if (!yes) return;
       }
+      const prepared = await prepareUnknownStreaming(url, looked.json);
+      if (!prepared.ok) return;
       await persist(url, page.json.id, page.json.name);
     }
 

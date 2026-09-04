@@ -70,10 +70,24 @@ export async function installFakeApi(page: Page, captured: Captured[], options: 
 				return;
 			}
 			const episodeUrl = url.searchParams.get("url") ?? "";
-			const lookupBody =
+			const rawLookup =
 				submitUrlLookupByUrl[episodeUrl] ??
 				streamingLookupByUrl[episodeUrl] ??
 				{ known: false, kind: "podcast-service" };
+			// Unknown streaming must not carry legacy lookup podcastName — prepare supplies it.
+			const lookupBody =
+				rawLookup &&
+				typeof rawLookup === "object" &&
+				"known" in rawLookup &&
+				rawLookup.known === false &&
+				"kind" in rawLookup &&
+				rawLookup.kind === "streaming" &&
+				"podcastName" in rawLookup
+					? (() => {
+							const { podcastName: _omit, ...rest } = rawLookup as Record<string, unknown>;
+							return rest;
+						})()
+					: rawLookup;
 			push(200);
 			await route.fulfill({
 				status: 200,
@@ -192,4 +206,8 @@ export async function openHarness(page: Page, captured: Captured[], options: Fak
 
 export function persistPosts(captured: Captured[]) {
 	return captured.filter((c) => c.method === "POST" && c.path === "/submit");
+}
+
+export function preparePosts(captured: Captured[]) {
+	return captured.filter((c) => c.method === "POST" && c.path === "/submit/prepare");
 }

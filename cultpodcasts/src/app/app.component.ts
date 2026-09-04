@@ -38,7 +38,13 @@ import {
   parseSubmittablePodcastUrl
 } from './podcast-url-matcher';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from './submit-series-conflict';
-import { generalDropSeries, shouldCallSubmitUrlLookup, shouldCallSubmitUrlPrepare } from './submit-ingest-ux';
+import {
+  generalDropSeries,
+  lookupWithPreparedPodcastName,
+  shouldCallSubmitUrlLookup,
+  shouldCallSubmitUrlPrepare
+} from './submit-ingest-ux';
+import type { SendPodcastPrepareOutcome } from './send-podcast-prepare';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { SubmitUrlLookupService } from './submit-url-lookup.service';
 import { SubmitUrlPrepareService } from './submit-url-prepare.service';
@@ -659,12 +665,26 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       if (!proceed) {
         return;
       }
-      await this.toolbar.sendPodcast({
-        url,
-        podcastId: pagePodcastId,
-        podcastName: outcome.selection.podcastName,
-        shareMode: ShareMode.Text
-      });
+      const prepareForPage =
+        shouldCallSubmitUrlPrepare(lookup)
+          ? async (): Promise<SendPodcastPrepareOutcome> => {
+              try {
+                // StreamMeta KV side-effect; series id/name already come from the page.
+                await this.submitPrepare.prepare(url.href);
+              } catch {
+                return 'error';
+              }
+            }
+          : undefined;
+      await this.toolbar.sendPodcast(
+        {
+          url,
+          podcastId: pagePodcastId,
+          podcastName: outcome.selection.podcastName,
+          shareMode: ShareMode.Text
+        },
+        prepareForPage
+      );
       return;
     }
 
@@ -674,7 +694,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     );
   }
 
-  private async generalDropPersistSeries(href: string) {
+  private async generalDropPersistSeries(href: string): Promise<SendPodcastPrepareOutcome> {
     if (!shouldCallSubmitUrlLookup(this.authRoles())) {
       return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
     }
@@ -682,12 +702,9 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     if (shouldCallSubmitUrlPrepare(lookup) && lookup !== 'error' && lookup) {
       try {
         const prepared = await this.submitPrepare.prepare(href);
-        const withName = prepared.podcastName
-          ? { ...lookup, podcastName: prepared.podcastName }
-          : lookup;
-        return generalDropSeries(withName);
+        return generalDropSeries(lookupWithPreparedPodcastName(lookup, prepared));
       } catch {
-        return generalDropSeries(lookup);
+        return 'error';
       }
     }
     return generalDropSeries(lookup);

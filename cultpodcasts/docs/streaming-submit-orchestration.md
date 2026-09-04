@@ -20,7 +20,7 @@ pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
 3. **Submit** uses server-side prefetched meta after prepare — client does not POST HTML/meta.
 4. Spotify / Apple / YouTube stay on existing podcast-service flows (APIs) — out of this contract.
 
-Gate: `shouldCallSubmitUrlPrepare` in `submit-ingest-ux.ts` (unknown streaming only). Wired from general drop (`app.component`) and Add Podcast (`submit-podcast.component`).
+Gate: `shouldCallSubmitUrlPrepare` in `submit-ingest-ux.ts` (unknown streaming only). Wired from general drop/share (`app.component`), Add Podcast (`submit-podcast.component`), and Curator podcast-page attach (`app.component` `handleDrop(forPodcast)` — prepare for StreamMeta; series id comes from the page).
 
 ## Tests / fakes
 
@@ -29,7 +29,7 @@ Gate: `shouldCallSubmitUrlPrepare` in `submit-ingest-ux.ts` (unknown streaming o
 | `streaming-submit-contract.business-rules.spec.ts` | Consumer locks permutations from the copied fixture; bridges bodies to `SubmitUrlLookupResponse`; smokes fake-api merge for URLs only in `streamingLookupByUrl` (e.g. itvx) |
 | `e2e/submit-url-flows/fake-api.ts` | Merges `streamingLookupByUrl`; handles `POST /submit/prepare` |
 | `submit-url-prepare.service.spec.ts` | Prepare HTTP POST + auth scope |
-| `submit-ingest-ux.spec.ts` | `shouldCallSubmitUrlPrepare` arms |
+| `submit-ingest-ux.spec.ts` | `shouldCallSubmitUrlPrepare` arms + `lookupWithPreparedPodcastName` |
 | `submit-url-contract.ts` | Existing actor/D1 case table (separate; keep in sync via its own assert) |
 
 ## Assert script (local / sibling Api)

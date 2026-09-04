@@ -96,8 +96,10 @@ No `GET /submit/lookup`. Overlay: *Drop episode link to submit* (never the two-t
 flowchart LR
   U[Valid URL] --> L[GET /submit/lookup]
   L -->|known unique or unknown podcast-service| S["POST { url }"]
-  L -->|unknown streaming + extracted name| Sn["POST { url, podcastName }"]
-  L -->|unknown streaming without name / error| S
+  L -->|unknown streaming| P[POST /submit/prepare]
+  P -->|podcastName| Sn["POST { url, podcastName }"]
+  P -->|prepare error| X[Abort — snack]
+  L -->|lookup error| S
 ```
 
 ### URL-only (Add Podcast known / unknown podcast-service)
@@ -182,7 +184,7 @@ Homepage (and share-target). Overlay: *Drop episode link to submit* (never the t
 
 1. Matcher. **`GET /submit/lookup` when Submitter or Curator.** Signed-out persist `{ url }` to D1.
 2. Curator + podcast-service (Spotify / Apple / YouTube): persist `generalDropSeries(lookup)` → `{ url }` (known unique or unknown).
-3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): if lookup returned an extracted `podcastName` (adapter `ShowName`), persist `{ url, podcastName }`. No Series picker on the homepage.
+3. Curator + streaming (BBC, Netflix, Prime, Vimeo, iPlayer, Internet Archive, …): after lookup, `POST /submit/prepare` extracts `podcastName` (and caches StreamMeta); persist `{ url, podcastName }`. No Series picker on the homepage.
 4. Lookup error / no extracted name / not Curator → `{ url }` only. POST 409 still opens the name picker only when a name was sent.
 
 ### Submit to this podcast (page drop)
