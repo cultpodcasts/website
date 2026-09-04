@@ -38,8 +38,11 @@
 
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()" [disabled]="resolving()">Close</button>
-    <button mat-raised-button class="mat-primary" (click)="save()" [disabled]="resolving() || lookupPending()">
-        @if (resolving()) {
+    <button mat-raised-button class="mat-primary" (click)="save()"
+        [disabled]="saveDisabled()"
+        [attr.aria-busy]="saveBusy()"
+        [attr.aria-label]="lookupPending() ? 'Looking up URL' : resolving() ? 'Saving' : 'Save'">
+        @if (saveBusy()) {
         <mat-spinner diameter="18"></mat-spinner>
         } @else {
         Save

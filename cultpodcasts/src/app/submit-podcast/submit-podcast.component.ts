@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef, MatDialogModule } from "@angular/material/dialog";
 import { AsyncPipe } from '@angular/common';
-import { Observable, from, map, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
+import { Observable, Subject, from, map, merge, of, startWith, switchMap, catchError, tap, timeout } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UrlValidator } from '../url.validator';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -73,6 +73,8 @@ export class SubmitPodcastComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogData = inject<SubmitPodcastDialogData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly urlCaptureOnly = this.dialogData?.attachToPage === true;
+  /** Re-runs lookup when Auth0 roles arrive after the URL was already typed. */
+  private readonly urlLookupTrigger = new Subject<string>();
 
   form: FormGroup;
   advancedOpenState: boolean = false;
@@ -101,6 +103,30 @@ export class SubmitPodcastComponent {
     const lookup = this.lookup();
     return lookup && lookup !== 'error' && lookup.known ? lookup.podcastName : '';
   });
+  /** Blocks Save until lookup for this URL finished (Submitter/Curator) or while POST resolve runs. */
+  protected readonly saveDisabled = computed(() => {
+    if (this.resolving() || this.lookupPending()) {
+      return true;
+    }
+    return !submitSaveReady(
+      this.canCallSubmitUrlLookup(),
+      parseSubmittablePodcastUrl(this.urlText())?.href,
+      this.lookedUpHref(),
+      this.lookupPending(),
+      this.urlCaptureOnly
+    );
+  });
+  /** Spinner on Save while lookup is in flight or Save is waiting on that lookup for a typed URL. */
+  protected readonly saveBusy = computed(() => {
+    if (this.resolving() || this.lookupPending()) {
+      return true;
+    }
+    if (!this.canCallSubmitUrlLookup() || this.urlCaptureOnly) {
+      return false;
+    }
+    const href = parseSubmittablePodcastUrl(this.urlText())?.href;
+    return !!href && this.lookedUpHref() !== href;
+  });
 
   constructor() {
     this.auth.roles.pipe(
@@ -110,6 +136,17 @@ export class SubmitPodcastComponent {
           this.suggestions.preload();
           this.ensureSeriesTypeahead();
         }
+      }),
+      map(roles => shouldCallSubmitUrlLookup(roles)),
+      distinctUntilChanged(),
+      tap(canLookup => {
+        const trimmed = String(this.url.value ?? '').trim();
+        if (!canLookup || this.urlCaptureOnly || !parseSubmittablePodcastUrl(trimmed)) {
+          return;
+        }
+        // Roles often load after paste; force lookup even if a skipped pass already stamped lookedUpHref.
+        this.lookedUpHref.set(null);
+        this.urlLookupTrigger.next(trimmed);
       })
     ).subscribe();
 
@@ -122,12 +159,18 @@ export class SubmitPodcastComponent {
       url: this.url,
       podcast: this.podcast
     });
-    this.url.valueChanges.pipe(
-      startWith(this.url.value),
-      map(value => String(value ?? '').trim()),
-      tap(value => this.markUrlLookupDirty(value)),
-      debounceTime(URL_LOOKUP_DEBOUNCE_MS),
-      distinctUntilChanged(),
+    merge(
+      this.url.valueChanges.pipe(
+        startWith(this.url.value),
+        map(value => String(value ?? '').trim()),
+        tap(value => this.markUrlLookupDirty(value)),
+        debounceTime(URL_LOOKUP_DEBOUNCE_MS),
+        distinctUntilChanged()
+      ),
+      this.urlLookupTrigger.pipe(
+        tap(value => this.markUrlLookupDirty(value))
+      )
+    ).pipe(
       takeUntilDestroyed(),
       switchMap(value => this.lookupUrl(value))
     ).subscribe(result => {

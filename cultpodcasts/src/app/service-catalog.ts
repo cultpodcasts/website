@@ -40,7 +40,12 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "paramountPlus", displayName: "Paramount+", icon: "paramount-plus", wideImage: true },
   { key: "hboMax", displayName: "HBO Max", icon: "hbo-max", wideImage: true },
   { key: "playSuisse", displayName: "Play Suisse", icon: "play-suisse", wideImage: true },
-  { key: "tvnzPlus", displayName: "TVNZ+", icon: "tvnz-plus", wideImage: true }
+  { key: "tvnzPlus", displayName: "TVNZ+", icon: "tvnz-plus", wideImage: true },
+  { key: "itvx", displayName: "ITVX", icon: "itvx", wideImage: true },
+  { key: "channel4", displayName: "Channel 4", icon: "channel4", wideImage: true },
+  { key: "fawesome", displayName: "Fawesome", icon: "fawesome", wideImage: true },
+  { key: "disneyPlus", displayName: "Disney+", icon: "disney-plus", wideImage: true },
+  { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true }
 ];
 
 const byKey = new Map(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -111,6 +116,21 @@ export function resolveServiceKey(url: URL): string | undefined {
   }
   if (host.endsWith("tvnz.co.nz")) {
     return "tvnzPlus";
+  }
+  if (host.endsWith("itv.com")) {
+    return "itvx";
+  }
+  if (host.endsWith("channel4.com") || host.endsWith("all4.com")) {
+    return "channel4";
+  }
+  if (host.endsWith("fawesome.tv")) {
+    return "fawesome";
+  }
+  if (host.endsWith("disneyplus.com")) {
+    return "disneyPlus";
+  }
+  if (host.endsWith("discoveryplus.com")) {
+    return "discoveryPlus";
   }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }

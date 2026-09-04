@@ -6,6 +6,15 @@ const internetArchive = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]
 const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:channels\/[^/]+\/)?(\d+)(?:\/[A-Za-z\d]+)?/;
 const netflix = /^(?:https?:)?\/\/(?:www\.)?netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:title|watch)\/\d+/;
 const amazonPrime = /^(?:https?:)?\/\/(?:www\.)?(?:primevideo\.com\/(?:region\/[^/]+\/)?(?:detail\/[A-Za-z0-9]+|gp\/video(?:\/detail\/[A-Za-z0-9]+)?)|(?:amazon\.com|amazon\.co\.uk)\/(?:gp\/video(?:\/detail\/[A-Za-z0-9]+)?|(?:Prime-Video|prime-video)(?:\/detail\/[A-Za-z0-9]+)?))/;
+const itvx = /^(?:https?:)?\/\/(?:www\.)?itv\.com\/watch\/(?!news\/)[^/\s]+\/[^/\s]+/;
+const channel4 = /^(?:https?:)?\/\/(?:www\.)?(?:channel4|all4)\.com\/programmes\/[^/\s]+(?:\/on-demand\/[^/\s]+)?\/?$/;
+const fawesome = /^(?:https?:)?\/\/(?:www\.)?fawesome\.tv\/(?:movies|tv-shows|tv|shows)\/\d+/;
+const paramountPlus = /^(?:https?:)?\/\/(?:www\.)?paramountplus\.com\/(?:[a-z]{2}\/)?(?:shows|movies|video)\/[^/\s]+/;
+const hboMax = /^(?:https?:)?\/\/(?:(?:www|play)\.)?(?:max|hbomax)\.com\/(?:shows?|movies?|series)\/[^/\s]+/;
+const playSuisse = /^(?:https?:)?\/\/(?:www\.)?playsuisse\.ch\/(?:[a-z]{2}\/)?(?:watch|detail)\/\d+/;
+const tvnzPlus = /^(?:https?:)?\/\/(?:www\.)?tvnz\.co\.nz\/shows\/[^/\s]+/;
+const disneyPlus = /^(?:https?:)?\/\/(?:www\.)?disneyplus\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:browse\/entity-[^/\s]+|(?:series|movies|play)\/[^/\s]+)/;
+const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video)\/[^/\s]+/;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
@@ -18,6 +27,15 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: vimeo, useFullInput: false, kind: 'streaming' },
   { regex: netflix, useFullInput: false, kind: 'streaming' },
   { regex: amazonPrime, useFullInput: true, kind: 'streaming' },
+  { regex: itvx, useFullInput: true, kind: 'streaming' },
+  { regex: channel4, useFullInput: true, kind: 'streaming' },
+  { regex: fawesome, useFullInput: true, kind: 'streaming' },
+  { regex: paramountPlus, useFullInput: true, kind: 'streaming' },
+  { regex: hboMax, useFullInput: true, kind: 'streaming' },
+  { regex: playSuisse, useFullInput: true, kind: 'streaming' },
+  { regex: tvnzPlus, useFullInput: true, kind: 'streaming' },
+  { regex: disneyPlus, useFullInput: true, kind: 'streaming' },
+  { regex: discoveryPlus, useFullInput: true, kind: 'streaming' },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {
