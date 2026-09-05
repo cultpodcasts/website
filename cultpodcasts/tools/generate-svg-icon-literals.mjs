@@ -61,14 +61,15 @@ const streamingIconSvgs = {
     `<path fill="#00A8E1" d="M17.4 14.8l3.2.9-2.4 2.4z"/>` +
     `</svg>`,
   'paramount-plus': boxedIcon('#0064FF', simpleIconPaths.paramountplus, { inset: 1.25 }),
-  // HBO Max — stacked HBO (O with inner circle) / max; light on near-black for dark UI.
+  // HBO Max — stacked HBO (O with classic solid center dot) / max; light on near-black for dark UI.
   // Do NOT use SI "max" (black self-boxed glyph — invisible on dark chrome).
   'hbo-max':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#1A1A1A"/>` +
     `<text x="2.6" y="10" fill="#F5F5F5" font-family="Arial Black, Impact, Arial, sans-serif" font-size="6.5" font-weight="900" letter-spacing="0.08">HB</text>` +
     `<circle cx="16.35" cy="7.9" r="2.55" fill="#F5F5F5"/>` +
-    `<circle cx="16.35" cy="7.9" r="1.15" fill="#1A1A1A"/>` +
+    `<circle cx="16.35" cy="7.9" r="1.35" fill="#1A1A1A"/>` +
+    `<circle cx="16.35" cy="7.9" r="0.7" fill="#F5F5F5"/>` +
     `<text x="3" y="17.8" fill="#F5F5F5" font-family="Arial, Helvetica, sans-serif" font-size="6.6" font-weight="400" letter-spacing="0.35">max</text>` +
     `</svg>`,
   // Play Suisse — official >+ glyph on dark (not red R+).
