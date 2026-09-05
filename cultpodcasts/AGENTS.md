@@ -33,11 +33,13 @@ Any new Pages / Auth0 / build secret for preview/staging **must** also be planne
 
 ## Episode OG share image
 
-Client SEO may use episode art from page-details when
-`FeatureSwitch.episodeOgShareImage` is enabled (default **OFF**).
+Client SEO uses episode art when `FeatureSwitch.episodeOgShareImage` is enabled
+(default **ON**). SSR prefers shortener page-details (branded `/og-image` when
+present); when page-details has no image, enrich from search via the same
+`episodeImageUrl` / `episodeArtAspect` path as the hero (entity-decoded CDN URLs).
 
 - Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
-- Preview: test with the switch ON and OFF before enabling in production.
+- Preview: validate ON (default) and OFF (rollback) paths.
 
 ## Submit URL flows
 

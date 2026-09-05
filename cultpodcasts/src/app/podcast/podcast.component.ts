@@ -83,6 +83,7 @@ export class PodcastComponent {
           // Prefer shortener page-details (branded /og-image when present). When KV has no image
           // (streaming-only episodes often omit share art), fall back to search art like the hero.
           void (async () => {
+            let hadKvPageDetails = false;
             try {
               const episodePageDetails = await this.episodeService.getEpisodeDetailsFromKvViaApi(
                 episodeUuid,
@@ -90,6 +91,7 @@ export class PodcastComponent {
               ); // pragma: allowlist secret
               if (episodePageDetails) {
                 pageDetails = episodePageDetails;
+                hadKvPageDetails = true;
               }
             } catch (e) {
               console.error(JSON.stringify(e));
@@ -100,7 +102,13 @@ export class PodcastComponent {
                   episodeUuid,
                   this.podcastName
                 );
-                pageDetails = withEpisodeShareImage(pageDetails, episode);
+                // Full KV miss: use search for title/release/duration + art (same as client).
+                // KV hit without image: keep KV title/meta, fill art only.
+                pageDetails = hadKvPageDetails
+                  ? withEpisodeShareImage(pageDetails, episode)
+                  : episode
+                    ? pageDetailsFromSearchEpisode(this.podcastName, episode)
+                    : pageDetails;
               } catch (e) {
                 console.error(JSON.stringify(e));
               }

@@ -4,6 +4,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details.interface';
 import { FeatureSwitch } from './feature-switch.enum';
 import { FeatureSwitchService } from './feature-switch-service';
+import { decodeHtmlEntitiesInUrl } from './search-result-links';
 
 const siteName: string = "Cult Podcasts";
 const defaultShareImagePath: string = "/assets/sq-image.png";
@@ -30,11 +31,7 @@ export class SeoService {
       const pageDetailsTItle = pageDetails.title;
       title = `${pageDetailsTItle} | ${siteName}`;
     }
-    const htmlTItle = title
-      .replaceAll("&amp;", "&")
-      .replaceAll("&#39;", "'")
-      .replaceAll("&quot;", '"')
-      .replaceAll("&apos;", "'");
+    const htmlTItle = decodeHtmlEntitiesInUrl(title);
     this.title.setTitle(htmlTItle);
 
     if (this.isServer) {
@@ -110,10 +107,6 @@ export class SeoService {
     if (!image) {
       return undefined;
     }
-    return image
-      .replaceAll("&amp;", "&")
-      .replaceAll("&quot;", '"')
-      .replaceAll("&#39;", "'")
-      .replaceAll("&apos;", "'");
+    return decodeHtmlEntitiesInUrl(image);
   }
 }
