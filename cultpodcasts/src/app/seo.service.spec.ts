@@ -83,4 +83,21 @@ describe('SeoService share images', () => {
       .toBe('https://i.ytimg.com/vi/griffinsong42/hqdefault.jpg');
     expect(meta.getTag('name="twitter:card"')?.content).toBe('summary_large_image');
   });
+
+  it('decodes HTML entities in episode og:image URLs when switch is ON', () => {
+    episodeOgShareImageEnabled = true;
+    seo.AddMetaTags({
+      title: 'Ep | Show',
+      description: 'Show',
+      image:
+        'https://beam-images.warnermediacdn.com/art.jpg?host=x.example&amp;partner=beamcom&amp;w=500',
+      imageAspect: 'wide'
+    });
+
+    expect(meta.getTag('property="og:image"')?.content)
+      .toBe('https://beam-images.warnermediacdn.com/art.jpg?host=x.example&partner=beamcom&w=500');
+    expect(meta.getTag('name="twitter:image"')?.content)
+      .toBe('https://beam-images.warnermediacdn.com/art.jpg?host=x.example&partner=beamcom&w=500');
+    expect(meta.getTag('name="twitter:card"')?.content).toBe('summary_large_image');
+  });
 });

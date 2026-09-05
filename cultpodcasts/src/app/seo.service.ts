@@ -4,6 +4,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { IPageDetails } from './page-details.interface';
 import { FeatureSwitch } from './feature-switch.enum';
 import { FeatureSwitchService } from './feature-switch-service';
+import { decodeHtmlEntitiesInUrl } from './search-result-links';
 
 const siteName: string = "Cult Podcasts";
 const defaultShareImagePath: string = "/assets/sq-image.png";
@@ -30,11 +31,7 @@ export class SeoService {
       const pageDetailsTItle = pageDetails.title;
       title = `${pageDetailsTItle} | ${siteName}`;
     }
-    const htmlTItle = title
-      .replaceAll("&amp;", "&")
-      .replaceAll("&#39;", "'")
-      .replaceAll("&quot;", '"')
-      .replaceAll("&apos;", "'");
+    const htmlTItle = decodeHtmlEntitiesInUrl(title);
     this.title.setTitle(htmlTItle);
 
     if (this.isServer) {
@@ -88,11 +85,12 @@ export class SeoService {
   }
 
   private applyShareImage(pageDetails: IPageDetails): void {
+    const episodeImage = this.normalizeShareImageUrl(pageDetails.image);
     const useEpisodeImage =
       this.featureSwitchService.IsEnabled(FeatureSwitch.episodeOgShareImage) &&
-      !!pageDetails.image;
+      !!episodeImage;
     const image = useEpisodeImage
-      ? pageDetails.image
+      ? episodeImage
       : (this.url ? new URL(defaultShareImagePath, this.url).toString() : undefined);
     if (!image) {
       return;
@@ -102,5 +100,13 @@ export class SeoService {
     // Episode art (wide or square) → large card; site-icon fallback stays summary.
     const card = useEpisodeImage ? "summary_large_image" : "summary";
     this.meta.updateTag({ name: "twitter:card", content: card });
+  }
+
+  /** Match hero URL parsing: decode `&amp;` etc. before writing crawler meta. */
+  private normalizeShareImageUrl(image: string | undefined): string | undefined {
+    if (!image) {
+      return undefined;
+    }
+    return decodeHtmlEntitiesInUrl(image);
   }
 }

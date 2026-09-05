@@ -255,9 +255,15 @@ describe("search-result-links", () => {
         .toBe("https://is3-ssl.mzstatic.com/image/thumb/Music/draymoor/600x600bb.jpg");
     });
 
-    it("returns full URLs unchanged and ignores unusable input", () => {
+    it('returns full URLs unchanged, decodes HTML entities, and ignores unusable input', () => {
       expect(expandImage("https://feeds.saltandcinder.example/art.jpg", undefined)?.toString())
         .toBe("https://feeds.saltandcinder.example/art.jpg");
+      expect(
+        expandImage(
+          "https://beam-images.warnermediacdn.com/art.jpg?host=x.example&amp;partner=beamcom&amp;w=500",
+          undefined
+        )?.toString()
+      ).toBe("https://beam-images.warnermediacdn.com/art.jpg?host=x.example&partner=beamcom&w=500");
       expect(expandImage("yx", undefined)).toBeUndefined(); // youtube token needs youtubeId
       expect(expandImage(undefined, "griffinsong42")).toBeUndefined();
     });
