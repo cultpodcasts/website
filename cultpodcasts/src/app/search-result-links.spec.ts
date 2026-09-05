@@ -1,4 +1,4 @@
-import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
+import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, externalWatchUrl, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
 import { SearchResult } from "./search-result.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 
@@ -117,6 +117,55 @@ describe("search-result-links", () => {
 
     expect(episodeArtAspect(iplayer)).toBe("wide");
     expect(episodeArtAspect(archive)).toBe("wide");
+  });
+
+  it("offers Watch URLs for streaming services and keeps BBC Sounds as Listen-only", () => {
+    const itvx: HomepageEpisode = {
+      id: "id",
+      podcastName: "Show",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:45:00",
+      services: { itvx: { url: "https://www.itv.com/watch/example-slug/1a2345/1a2345a0001" } },
+      subjects: [],
+      image: new URL("https://example.test/square.jpg")
+    };
+    const netflix: SearchResult = {
+      ...searchResult,
+      youtubeId: undefined,
+      image: "sab6765cover",
+      services: { netflix: { url: "https://www.netflix.com/watch/80057281" } }
+    };
+    const sounds: HomepageEpisode = {
+      ...itvx,
+      services: { bbcSounds: { url: "https://www.bbc.co.uk/sounds/play/m001abcd" } }
+    };
+
+    expect(externalWatchUrl(itvx)?.toString()).toBe("https://www.itv.com/watch/example-slug/1a2345/1a2345a0001");
+    expect(episodeArtAspect(itvx)).toBe("wide");
+    expect(externalWatchUrl(netflix)?.toString()).toBe("https://www.netflix.com/watch/80057281");
+    expect(episodeArtAspect(netflix)).toBe("wide");
+    expect(externalWatchUrl(sounds)).toBeUndefined();
+    expect(episodeArtAspect(sounds)).toBe("square");
+  });
+
+  it("prefers iPlayer over later streaming Watch URLs when both exist", () => {
+    const both: HomepageEpisode = {
+      id: "id",
+      podcastName: "Show",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:45:00",
+      services: {
+        itvx: { url: "https://www.itv.com/watch/example-slug/1a2345/1a2345a0001" },
+        bbcIplayer: { url: "https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto" }
+      },
+      subjects: [],
+      image: undefined
+    };
+    expect(externalWatchUrl(both)?.toString()).toBe("https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto");
   });
 
   it("prefers a YouTube thumbnail when the index stored square cover but the episode is watchable", () => {

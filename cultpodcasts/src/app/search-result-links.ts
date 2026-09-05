@@ -2,7 +2,18 @@ import { EpisodeIds } from "./episode-ids.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
 import { BBCServiceResolver } from "./service-resolver";
-import { expandSvc } from "./service-catalog";
+import { expandSvc, SERVICE_CATALOG } from "./service-catalog";
+
+/** Catalogue key type — keeps Watch special-cases aligned with SERVICE_CATALOG. */
+type ServiceCatalogKey = (typeof SERVICE_CATALOG)[number]["key"];
+
+/**
+ * Non-embeddable video destinations (wideImage catalogue services).
+ * YouTube embeds in-app; BBC Sounds is audio (wideImage: false) — Listen only.
+ */
+const EXTERNAL_WATCH_SERVICE_KEYS: ReadonlyArray<ServiceCatalogKey> = SERVICE_CATALOG
+  .filter((d) => d.wideImage && d.key !== "youtube")
+  .map((d) => d.key);
 
 export type SearchDisplayEpisode = HomepageEpisode | SearchResult;
 
@@ -92,11 +103,22 @@ export function internetArchiveUrl(episode: SearchDisplayEpisode): URL | undefin
 }
 
 /**
- * Non-embeddable video destinations. Prefer iPlayer when both exist.
- * BBC Sounds is audio — see `externalListenUrl`.
+ * Non-embeddable video destinations in catalogue order (iPlayer → Archive →
+ * Vimeo / Netflix / ITVX / …). BBC Sounds is audio — see `externalListenUrl`.
  */
 export function externalWatchUrl(episode: SearchDisplayEpisode): URL | undefined {
-  return bbcIplayerUrl(episode) ?? internetArchiveUrl(episode);
+  for (const key of EXTERNAL_WATCH_SERVICE_KEYS) {
+    const url =
+      key === "bbcIplayer"
+        ? bbcIplayerUrl(episode)
+        : key === "internetArchive"
+          ? internetArchiveUrl(episode)
+          : serviceUrl(episode, key) ?? svcUrl(episode, key);
+    if (url) {
+      return url;
+    }
+  }
+  return undefined;
 }
 
 /** Non-embeddable audio destinations (BBC Sounds). */
@@ -180,8 +202,8 @@ export function isYoutubeThumbnailUrl(image: URL | string | undefined): boolean 
 export type EpisodeArtAspect = "wide" | "square";
 
 /**
- * Layout for cover art: YouTube thumbs → 16:9; BBC iPlayer / Internet Archive video
- * episodes → 16:9 (feed art is often square and gets cover-cropped); else square.
+ * Layout for cover art: YouTube thumbs → 16:9; external Watch destinations
+ * (iPlayer / Archive / ITVX / …) → 16:9; else square.
  */
 export function episodeArtAspect(episode: SearchDisplayEpisode): EpisodeArtAspect {
   if (isYoutubeThumbnailUrl(episodeImageUrl(episode))) {
