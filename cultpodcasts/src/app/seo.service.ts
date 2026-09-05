@@ -88,11 +88,12 @@ export class SeoService {
   }
 
   private applyShareImage(pageDetails: IPageDetails): void {
+    const episodeImage = this.normalizeShareImageUrl(pageDetails.image);
     const useEpisodeImage =
       this.featureSwitchService.IsEnabled(FeatureSwitch.episodeOgShareImage) &&
-      !!pageDetails.image;
+      !!episodeImage;
     const image = useEpisodeImage
-      ? pageDetails.image
+      ? episodeImage
       : (this.url ? new URL(defaultShareImagePath, this.url).toString() : undefined);
     if (!image) {
       return;
@@ -102,5 +103,17 @@ export class SeoService {
     // Episode art (wide or square) → large card; site-icon fallback stays summary.
     const card = useEpisodeImage ? "summary_large_image" : "summary";
     this.meta.updateTag({ name: "twitter:card", content: card });
+  }
+
+  /** Match hero URL parsing: decode `&amp;` etc. before writing crawler meta. */
+  private normalizeShareImageUrl(image: string | undefined): string | undefined {
+    if (!image) {
+      return undefined;
+    }
+    return image
+      .replaceAll("&amp;", "&")
+      .replaceAll("&quot;", '"')
+      .replaceAll("&#39;", "'")
+      .replaceAll("&apos;", "'");
   }
 }

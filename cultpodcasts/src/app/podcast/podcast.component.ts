@@ -12,7 +12,7 @@ import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
-import { bbcIplayerUrl, episodeImageUrl, isYoutubeThumbnailUrl } from '../search-result-links';
+import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-seo';
 
 @Component({
   selector: 'app-podcast',
@@ -80,41 +80,41 @@ export class PodcastComponent {
       if (isEpisode) {
         if (this.isServer) {
           // SSR: SEO tags only — do not SSR episode body (avoids hydration mismatch with client).
-          this.episodeService.getEpisodeDetailsFromKvViaApi(episodeUuid, this.podcastName) // pragma: allowlist secret
-            .then(episodePageDetails => {
+          // Prefer shortener page-details (branded /og-image when present). When KV has no image
+          // (streaming-only episodes often omit share art), fall back to search art like the hero.
+          void (async () => {
+            try {
+              const episodePageDetails = await this.episodeService.getEpisodeDetailsFromKvViaApi(
+                episodeUuid,
+                this.podcastName
+              ); // pragma: allowlist secret
               if (episodePageDetails) {
                 pageDetails = episodePageDetails;
               }
-            })
-            .catch(e => {
+            } catch (e) {
               console.error(JSON.stringify(e));
-            }).finally(() => {
-              this.seoService.AddMetaTags(pageDetails);
-              // Stay in loading on server so we don't emit a "not found" shell for hydration.
-              this.isLoading.set(true);
-            });
+            }
+            if (!pageDetails.image) {
+              try {
+                const episode = await this.episodeService.GetEpisodeDetailsFromApi(
+                  episodeUuid,
+                  this.podcastName
+                );
+                pageDetails = withEpisodeShareImage(pageDetails, episode);
+              } catch (e) {
+                console.error(JSON.stringify(e));
+              }
+            }
+            this.seoService.AddMetaTags(pageDetails);
+            // Stay in loading on server so we don't emit a "not found" shell for hydration.
+            this.isLoading.set(true);
+          })();
         } else {
           this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
             .then(episode => {
               this.episode.set(episode);
               if (episode) {
-                const shareImage = episodeImageUrl(episode)?.toString();
-                pageDetails = {
-                  description: this.podcastName,
-                  title: `${episode.episodeTitle} | ${this.podcastName}`,
-                  releaseDate: episode.release.toString(),
-                  duration: episode.duration,
-                  image: shareImage,
-                  // YouTube / BBC iPlayer / Internet Archive → wide; Spotify/Apple/BBC Sounds → square.
-                  imageAspect: shareImage
-                    ? (isYoutubeThumbnailUrl(shareImage)
-                      || !!episode.youtubeId
-                      || !!bbcIplayerUrl(episode)
-                      || !!episode.internetArchive
-                      ? "wide"
-                      : "square")
-                    : undefined
-                };
+                pageDetails = pageDetailsFromSearchEpisode(this.podcastName, episode);
               }
             })
             .catch(e => {

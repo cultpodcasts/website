@@ -250,6 +250,18 @@ export function expandImage(image: URL | string | undefined, youtubeId: string |
   }
 }
 
+/**
+ * Decode HTML entities that sometimes appear in Cosmos / search image query strings
+ * (`&amp;` → `&`) so hero `<img>` and og:image share the same usable absolute URL.
+ */
+export function decodeHtmlEntitiesInUrl(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&apos;", "'");
+}
+
 export function toUrl(value: URL | string | undefined | null): URL | undefined {
   if (!value) {
     return undefined;
@@ -258,7 +270,7 @@ export function toUrl(value: URL | string | undefined | null): URL | undefined {
     return value;
   }
   try {
-    return new URL(value);
+    return new URL(decodeHtmlEntitiesInUrl(value));
   } catch {
     return undefined;
   }
