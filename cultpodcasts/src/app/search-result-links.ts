@@ -4,11 +4,14 @@ import { SearchResult } from "./search-result.interface";
 import { BBCServiceResolver } from "./service-resolver";
 import { expandSvc, SERVICE_CATALOG } from "./service-catalog";
 
+/** Catalogue key type — keeps Watch special-cases aligned with SERVICE_CATALOG. */
+type ServiceCatalogKey = (typeof SERVICE_CATALOG)[number]["key"];
+
 /**
  * Non-embeddable video destinations (wideImage catalogue services).
  * YouTube embeds in-app; BBC Sounds is audio (wideImage: false) — Listen only.
  */
-const EXTERNAL_WATCH_SERVICE_KEYS: readonly string[] = SERVICE_CATALOG
+const EXTERNAL_WATCH_SERVICE_KEYS: ReadonlyArray<ServiceCatalogKey> = SERVICE_CATALOG
   .filter((d) => d.wideImage && d.key !== "youtube")
   .map((d) => d.key);
 
@@ -105,14 +108,12 @@ export function internetArchiveUrl(episode: SearchDisplayEpisode): URL | undefin
  */
 export function externalWatchUrl(episode: SearchDisplayEpisode): URL | undefined {
   for (const key of EXTERNAL_WATCH_SERVICE_KEYS) {
-    let url = serviceUrl(episode, key) ?? svcUrl(episode, key);
-    if (!url && key === "bbcIplayer") {
-      const bbc = legacyBbcUrl(episode);
-      url = bbc && BBCServiceResolver.isIplayer(bbc) ? bbc : undefined;
-    }
-    if (!url && key === "internetArchive") {
-      url = toUrl((episode as SearchResult).internetArchive);
-    }
+    const url =
+      key === "bbcIplayer"
+        ? bbcIplayerUrl(episode)
+        : key === "internetArchive"
+          ? internetArchiveUrl(episode)
+          : serviceUrl(episode, key) ?? svcUrl(episode, key);
     if (url) {
       return url;
     }
