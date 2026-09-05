@@ -72,8 +72,8 @@ export function canEmbedEpisode(episode: SearchDisplayEpisode): boolean {
 }
 
 /**
- * Primary CTA visibility: in-app embed **or** outbound Watch/Listen (BBC iPlayer /
- * Internet Archive / BBC Sounds). Embeddable audio/video still wins for the click handler.
+ * Primary CTA visibility: in-app embed **or** outbound Watch/Listen (iPlayer /
+ * Archive / ITVX / other wideImage streamers / BBC Sounds). Embed wins on click.
  */
 export function canPlayEpisode(episode: SearchDisplayEpisode): boolean {
   return canEmbedEpisode(episode) || !!externalPlaybackUrl(episode);
@@ -101,8 +101,8 @@ export function playActionLabel(episode: SearchDisplayEpisode): 'Watch' | 'Liste
 }
 
 /**
- * Start in-app embed playback, or open BBC iPlayer / Internet Archive / Sounds
- * in a new tab. Returns whether a playback action was taken.
+ * Start in-app embed playback, or open an external Watch/Listen URL (iPlayer,
+ * Archive, ITVX, … / Sounds) in a new tab. Returns whether playback was taken.
  */
 export function startEpisodePlayback(
   episode: SearchDisplayEpisode,

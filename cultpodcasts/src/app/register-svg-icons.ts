@@ -8,7 +8,7 @@ import { svgIconLiterals } from './svg-icon-literals';
  *
  * Regenerate after editing src/assets/*.svg or streamingIconSvgs in the
  * generator (do not hand-edit svg-icon-literals.ts):
- *   node tools/generate-svg-icon-literals.mjs
+ *   npm run generate:svg-icons
  */
 export function registerSvgIcons(
   iconRegistry: MatIconRegistry,

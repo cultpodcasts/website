@@ -70,13 +70,16 @@ describe('episode-embed', () => {
     expect(canEmbedEpisode(episode())).toBe(false);
   });
 
-  it('offers Watch for BBC iPlayer and Internet Archive without embedding', () => {
+  it('offers Watch for BBC iPlayer, Internet Archive, and streaming services without embedding', () => {
     const iplayer = episode({
       services: { bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto' } },
       image: new URL('https://i.scdn.co/image/opaque'),
     });
     const archive = episode({
       services: { internetArchive: { url: 'https://archive.org/details/example-video' } },
+    });
+    const itvx = episode({
+      services: { itvx: { url: 'https://www.itv.com/watch/example-slug/1a2345/1a2345a0001' } },
     });
     const sounds = episode({
       services: { bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m001abcd' } },
@@ -89,9 +92,22 @@ describe('episode-embed', () => {
     expect(canPlayEpisode(archive)).toBe(true);
     expect(playActionLabel(archive)).toBe('Watch');
 
+    expect(canEmbedEpisode(itvx)).toBe(false);
+    expect(canPlayEpisode(itvx)).toBe(true);
+    expect(playActionLabel(itvx)).toBe('Watch');
+
     expect(canEmbedEpisode(sounds)).toBe(false);
     expect(canPlayEpisode(sounds)).toBe(true);
     expect(playActionLabel(sounds)).toBe('Listen');
+  });
+
+  it('opens ITVX Watch in a new tab when nothing embeds', () => {
+    const itvx = episode({
+      services: { itvx: { url: 'https://www.itv.com/watch/example-slug/1a2345/1a2345a0001' } },
+    });
+    const opened: string[] = [];
+    expect(startEpisodePlayback(itvx, () => undefined, (url) => opened.push(url.toString()))).toBe(true);
+    expect(opened).toEqual(['https://www.itv.com/watch/example-slug/1a2345/1a2345a0001']);
   });
 
   it('prefers in-app Listen over outbound Watch when Spotify and iPlayer both exist', () => {

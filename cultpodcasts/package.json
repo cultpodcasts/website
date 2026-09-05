@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.11.15",
+  "version": "1.11.16",
   "scripts": {
     "ng": "ng",
     "start": "node ./tools/start-local.mjs",
@@ -20,6 +20,7 @@
     "process": "node ./tools/copy-files.mjs && node ./tools/alter-polyfills.mjs",
     "deploy": "npm run build -- production && npm run process && wrangler pages deploy dist/cloudflare",
     "dev": "ng serve --configuration development",
+    "generate:svg-icons": "node ./tools/generate-svg-icon-literals.mjs",
     "deps:check": "node ./tools/check-dependency-updates.mjs",
     "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs"
   },
