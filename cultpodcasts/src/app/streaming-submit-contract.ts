@@ -33,6 +33,7 @@ export const streamingServiceKeys = [
 	"paramountPlus",
 	"hboMax",
 	"playSuisse",
+	"playRts",
 	"tvnzPlus",
 	"itvx",
 	"channel4",
@@ -58,7 +59,7 @@ export type HtmlFetchMode = (typeof htmlFetchModes)[number];
 export const defaultBrowserRenderingServices: readonly StreamingServiceKey[] = ["itvx"];
 
 export function htmlFetchModeForService(
-	service: StreamingServiceKey,
+	service: string,
 	browserRenderingServices: readonly string[] = defaultBrowserRenderingServices
 ): HtmlFetchMode {
 	return browserRenderingServices.includes(service) ? "browserRendering" : "directHttp";
@@ -87,6 +88,7 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	paramountPlus: "https://www.paramountplus.com/shows/example-slug/",
 	hboMax: "https://www.max.com/shows/example-slug",
 	playSuisse: "https://www.playsuisse.ch/watch/2261604",
+	playRts: "https://www.rts.ch/play/tv/example-show/video/example-episode",
 	tvnzPlus: "https://www.tvnz.co.nz/shows/example-slug",
 	itvx: "https://www.itv.com/watch/example-slug/1a2345/1a2345a0001",
 	channel4: "https://www.channel4.com/programmes/example-slug",
