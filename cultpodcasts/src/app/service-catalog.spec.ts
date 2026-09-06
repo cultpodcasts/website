@@ -26,6 +26,7 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://www.hbomax.com/series/urn:hbo:series:example"))).toBe("hboMax");
     expect(resolveServiceKey(new URL("https://www.playsuisse.ch/watch/example"))).toBe("playSuisse");
     expect(resolveServiceKey(new URL("https://www.rts.ch/play/tv/example-show/video/example-episode"))).toBe("playRts");
+    expect(resolveServiceKey(new URL("https://foorts.ch/play/tv/x"))).not.toBe("playRts");
     expect(resolveServiceKey(new URL("https://www.tvnz.co.nz/shows/example"))).toBe("tvnzPlus");
     expect(resolveServiceKey(new URL("https://www.itv.com/watch/example/1a2345"))).toBe("itvx");
     expect(resolveServiceKey(new URL("https://www.channel4.com/programmes/example"))).toBe("channel4");
@@ -82,6 +83,7 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://www.channel4.com/programmes/example")).toBe("Channel 4");
     expect(serviceLabelForUrl("https://www.itv.com/watch/example/1a2345")).toBe("ITVX");
     expect(serviceLabelForUrl("https://www.disneyplus.com/series/example")).toBe("Disney+");
+    expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+"); // pragma: allowlist secret
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });

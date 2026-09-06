@@ -115,7 +115,7 @@ export function resolveServiceKey(url: URL): string | undefined {
   if (host.endsWith("playsuisse.ch")) {
     return "playSuisse";
   }
-  if (host.endsWith("rts.ch")) {
+  if (host === "rts.ch" || host.endsWith(".rts.ch")) {
     return "playRts";
   }
   if (host.endsWith("tvnz.co.nz")) {
