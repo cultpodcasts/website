@@ -40,6 +40,7 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "paramountPlus", displayName: "Paramount+", icon: "paramount-plus", wideImage: true },
   { key: "hboMax", displayName: "HBO Max", icon: "hbo-max", wideImage: true },
   { key: "playSuisse", displayName: "Play Suisse", icon: "play-suisse", wideImage: true },
+  { key: "playRts", displayName: "Play RTS", icon: "play-rts", wideImage: true },
   { key: "tvnzPlus", displayName: "TVNZ+", icon: "tvnz-plus", wideImage: true },
   { key: "itvx", displayName: "ITVX", icon: "itvx", wideImage: true },
   { key: "channel4", displayName: "Channel 4", icon: "channel4", wideImage: true },
@@ -113,6 +114,9 @@ export function resolveServiceKey(url: URL): string | undefined {
   }
   if (host.endsWith("playsuisse.ch")) {
     return "playSuisse";
+  }
+  if (host.endsWith("rts.ch")) {
+    return "playRts";
   }
   if (host.endsWith("tvnz.co.nz")) {
     return "tvnzPlus";

@@ -11,7 +11,8 @@ const channel4 = /^(?:https?:)?\/\/(?:www\.)?(?:channel4|all4)\.com\/programmes\
 const fawesome = /^(?:https?:)?\/\/(?:www\.)?fawesome\.tv\/(?:movies|tv-shows|tv|shows)\/\d+/;
 const paramountPlus = /^(?:https?:)?\/\/(?:www\.)?paramountplus\.com\/(?:[a-z]{2}\/)?(?:shows|movies|video)\/[^/\s]+/;
 const hboMax = /^(?:https?:)?\/\/(?:(?:www|play)\.)?(?:max|hbomax)\.com\/(?:shows?|movies?|series)\/[^/\s]+/;
-const playSuisse = /^(?:https?:)?\/\/(?:www\.)?playsuisse\.ch\/(?:[a-z]{2}\/)?(?:watch|detail)\/\d+/;
+const playSuisse = /^(?:https?:)?\/\/(?:www\.)?playsuisse\.ch\/(?:[a-z]{2}\/)?(?:watch|detail|show)\/\d+/;
+const playRts = /^(?:https?:)?\/\/(?:www\.)?rts\.ch\/play\/(?:tv|radio)\/[^/\s?#]+(?:\/(?:video|audio)\/[^/\s?#]+)?/;
 const tvnzPlus = /^(?:https?:)?\/\/(?:www\.)?tvnz\.co\.nz\/shows\/[^/\s]+/;
 const disneyPlus = /^(?:https?:)?\/\/(?:www\.)?disneyplus\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:browse\/entity-[^/\s]+|(?:series|movies|play)\/[^/\s]+)/;
 const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
@@ -33,6 +34,7 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: paramountPlus, useFullInput: true, kind: 'streaming' },
   { regex: hboMax, useFullInput: true, kind: 'streaming' },
   { regex: playSuisse, useFullInput: true, kind: 'streaming' },
+  { regex: playRts, useFullInput: true, kind: 'streaming' },
   { regex: tvnzPlus, useFullInput: true, kind: 'streaming' },
   { regex: disneyPlus, useFullInput: true, kind: 'streaming' },
   { regex: discoveryPlus, useFullInput: true, kind: 'streaming' },
