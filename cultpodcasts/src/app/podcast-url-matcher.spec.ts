@@ -34,6 +34,7 @@ describe('podcast-url-matcher', () => {
       'https://www.max.com/shows/example-slug',
       'https://www.hbomax.com/series/urn:hbo:series:example',
       'https://www.playsuisse.ch/watch/2261604',
+      'https://www.playsuisse.ch/detail/4511637?locale=fr',
       'https://www.playsuisse.ch/show/4511637',
       'https://www.playsuisse.ch/fr/show/4511637',
       'https://www.rts.ch/play/tv/example-show/video/example-episode',
@@ -87,6 +88,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.max.com/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.hbomax.com/series/urn:hbo:series:example')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/watch/2261604')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/detail/4511637?locale=fr')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/show/4511637')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video/example-episode')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
