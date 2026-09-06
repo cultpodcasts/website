@@ -125,6 +125,7 @@ Every website PR that changes shipped client code **MUST** bump `cultpodcasts/pa
 Multi-repo workspace: this app is at `/agent/repos/website/cultpodcasts` alongside `/agent/repos/api`
 and `/agent/repos/redditpodcastposter`. The startup update script runs `npm ci` here.
 
+- **HARD**: Never use the `pin-github-identity` skill (or `GH_TOKEN` process-override from `gh auth token --user …`) on Cursor Cloud / Cloud Agent VMs; GitHub identity is whatever Cursor assigned to the run.
 - **Node**: needs Node 22.22.3 (`.nvmrc`, installed via nvm). Login shells (`bash -lc`, tmux) get it
   from `~/.bashrc`. A sandbox `/exec-daemon/node` (22.14.0) shadows PATH in bare non-login shells —
   prefer `bash -lc "…"` or prepend `$HOME/.nvm/versions/node/v22.22.3/bin`.
