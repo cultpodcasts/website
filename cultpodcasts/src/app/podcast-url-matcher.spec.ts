@@ -40,6 +40,7 @@ describe('podcast-url-matcher', () => {
       'https://www.rts.ch/play/tv/example-show/video/example-episode',
       'https://www.rts.ch/play/tv/example-show',
       'https://www.rts.ch/play/tv/example-show/video/example-episode?urn=urn:rts:video:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      'https://www.rts.ch/play/radio/example-show/audio/example-episode',
       'https://www.tvnz.co.nz/shows/example-slug',
       'https://www.disneyplus.com/series/example-slug',
       'https://www.disneyplus.com/browse/entity-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
@@ -68,6 +69,8 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/movie')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.playsuisse.ch/')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
   });
@@ -91,6 +94,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/detail/4511637?locale=fr')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.playsuisse.ch/show/4511637')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video/example-episode')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.rts.ch/play/radio/example-show/audio/example-episode')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
