@@ -2,7 +2,7 @@
 
 Prefer **official storefront SVG**. Raster PNG is a last resort when the live
 app icon is a photographic / 3D mark with no usable colourful SVG (Disney+
-aurora, D+ glossy D, Max O ring).
+aurora, D+ glossy D).
 
 Do not hotlink CDNs at runtime (SSR + CORS). Check files into `icon-sources/`,
 then `npm run generate:svg-icons`. Do not hand-edit `svg-icon-literals.ts`.
@@ -15,17 +15,18 @@ then `npm run generate:svg-icons`. Do not hand-edit `svg-icon-literals.ts`.
 | `vimeo-iris.svg` | Vimeo `iris_icon_v_64.svg` on the live apple-touch charcoal |
 | `play-suisse-icon.svg` | Play Suisse `ps-icon-with-srg.svg` chevron + plus on the live red tile |
 | `itvx-app-icon.svg` | Vector of the live ITVX apple-touch (lime + navy X; no storefront SVG) |
+| `hbo-max-logo.svg` | HBO Max brand portal 1-color stacked logo (`HBO_Max_Vert_W_RGB.svg`) |
 
 Refresh Channel 4 / Vimeo / Play Suisse by re-downloading the storefront SVG,
 keeping geometry, then regenerating.
 
 ## Official PNG (no colourful SVG)
 
-Disney+ (`disney-plus-app-icon.png`), D+ (`dplus-app-icon.png`), and Max
-(`max-app-icon.png`) are the live apple-touch / bamgrid app icons, resized to
-96×96. Max publishes PNG/ICO only (`/dotcom/img/hbomax/apple-touch-icon.png`);
-`favicon.svg` is 404. Disney+ `mask-icon` SVG is a monochrome aurora outline —
-do not use it for the episode-link tile.
+Disney+ (`disney-plus-app-icon.png`) and D+ (`dplus-app-icon.png`) are the live
+apple-touch / bamgrid app icons, resized to 96×96. Disney+ `mask-icon` SVG is
+a monochrome aurora outline — do not use it for the episode-link tile. Max
+publishes no favicon.svg; the episode tile uses the brand-portal 1-color SVG
+instead (primary iridescent logos are pixel-based per their guidelines).
 
 ## Simple Icons paths
 
@@ -35,7 +36,7 @@ mountain). Only keep SI paths that `boxedIcon(...)` still references.
 
 **Max / HBO Max:** do **not** re-add Simple Icons `max`. That glyph is a black
 self-boxed rounded square — it disappears on dark episode-link chrome. Product
-mark is the live white O ring on black.
+mark is the official 1-color stacked logo SVG from the brand portal.
 
 ## Hand-drawn SVG (matches live apple-touch geometry)
 
