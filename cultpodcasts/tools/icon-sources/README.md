@@ -18,9 +18,16 @@ Invoke-WebRequest "https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/itvx.svg"
   stacked light `HBO` (O with inner circle) / `max` on a near-black `rx=5.4` tile in the
   generator.
 
+## Official storefront PNGs
+
+Disney+ (`disney-plus-app-icon.png`) and D+ (`dplus-app-icon.png`) are the live
+apple-touch / bamgrid app icons, resized to 96×96. The generator embeds them as
+data URIs inside the shared 24×24 rounded clip — do not hotlink the CDN at runtime
+(SSR + CORS). Refresh by downloading the current apple-touch, resizing, then
+`npm run generate:svg-icons`.
+
 ## Hand-drawn (not in paths.json)
 
-Disney+, discovery+ (white outlined `d` + rainbow globe), Fawesome, TVNZ+ (white `tvnz` +
-gradient plus), Play Suisse (`>+` on dark), Amazon Prime (navy + `prime` + cyan smile), and
-HBO Max (see above) live in `generate-svg-icon-literals.mjs` — edit there, then
-`npm run generate:svg-icons`.
+Fawesome, TVNZ+ (gradient plus), Play Suisse (`>+` on dark), Amazon Prime
+(navy + `prime` + cyan smile), and HBO Max (see above) live in
+`generate-svg-icon-literals.mjs` — edit there, then `npm run generate:svg-icons`.

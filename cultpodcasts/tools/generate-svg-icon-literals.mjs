@@ -44,6 +44,19 @@ function boxedIcon(bg, pathD, { fg = '#fff', inset = 2.75 } = {}) {
   );
 }
 
+/** Official storefront PNG (96×96) clipped to the shared 24×24 rounded tile. */
+function boxedOfficialPng(file, clipId) {
+  const png = fs.readFileSync(path.join(root, 'icon-sources', file));
+  const b64 = png.toString('base64');
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
+    `<image href="data:image/png;base64,${b64}" width="24" height="24" ` +
+    `clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>` +
+    `</svg>`
+  );
+}
+
 /**
  * Compact streaming / service mark SVGs (no separate asset files).
  * Prefer Simple Icons paths (tools/icon-sources) boxed to 24×24.
@@ -105,35 +118,10 @@ const streamingIconSvgs = {
     `<path fill="#fff" d="M13.5 3.45h5.35L16.2 13.7z"/>` +
     `<path fill="#fff" d="M12 13.05l2.7 7.35H9.3z"/>` +
     `</svg>`,
-  // Disney+ — live favicon: aurora gradient + Disney script wordmark and plus (not Mickey ears).
-  'disney-plus':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<defs><linearGradient id="cp-disney-aurora" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0%" stop-color="#0A3048"/><stop offset="100%" stop-color="#2EC8D2"/>` +
-    `</linearGradient></defs>` +
-    `<rect width="24" height="24" rx="5.4" fill="url(#cp-disney-aurora)"/>` +
-    `<path fill="none" stroke="#fff" stroke-width="1.15" stroke-linecap="round" d="M3.4 8.6c3.4-2.8 8.6-3.4 13.2-.4 1.6 1.1 3.2 3.4 4 6"/>` +
-    `<text x="2.1" y="15.4" fill="#fff" font-family="Georgia, 'Times New Roman', Times, serif" font-style="italic" font-size="7.1" font-weight="700">Disney</text>` +
-    `<text x="18.7" y="16.1" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="8.2" font-weight="400">+</text>` +
-    `</svg>`,
-  // discovery+ — live apple-touch: white tile, rainbow d-bowl + glossy globe (not outlined d on black). // pragma: allowlist secret
-  'discovery-plus': // pragma: allowlist secret
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<defs>` +
-    `<linearGradient id="cp-discovery-bowl" x1="0%" y1="100%" x2="100%" y2="0%">` + // pragma: allowlist secret
-    `<stop offset="0%" stop-color="#3B6BFF"/><stop offset="22%" stop-color="#7B2FFF"/>` +
-    `<stop offset="48%" stop-color="#FF2D8A"/><stop offset="72%" stop-color="#FF7A1A"/>` +
-    `<stop offset="100%" stop-color="#FFD400"/>` +
-    `</linearGradient>` +
-    `<radialGradient id="cp-discovery-globe" cx="38%" cy="38%" r="62%">` + // pragma: allowlist secret
-    `<stop offset="0%" stop-color="#9EC5FF"/><stop offset="45%" stop-color="#5A6BFF"/>` +
-    `<stop offset="100%" stop-color="#3A1EE0"/>` +
-    `</radialGradient>` +
-    `</defs>` +
-    `<rect width="24" height="24" rx="5.4" fill="#F4F4F4"/>` +
-    `<path fill="url(#cp-discovery-bowl)" fill-rule="evenodd" d="M14.85 2.15a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5zm-1.55 3.7a6.55 6.55 0 1 0 0 13.1 6.55 6.55 0 0 0 0-13.1z"/>` + // pragma: allowlist secret
-    `<circle cx="8.35" cy="12" r="5.7" fill="url(#cp-discovery-globe)"/>` + // pragma: allowlist secret
-    `</svg>`,
+  // Disney+ — official bamgrid 180px app icon (resized 96×96), not a traced wordmark.
+  'disney-plus': boxedOfficialPng('disney-plus-app-icon.png', 'cp-disney-plus-clip'),
+  // D+ — official apple-touch app icon (resized 96×96). // pragma: allowlist secret
+  'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'), // pragma: allowlist secret
   // BitChute — official favicon: red C (opens right) with a small lower-left play cut. // pragma: allowlist secret
   // Path traced from https://www.bitchute.com/static/icons/favicon-128x128.png // pragma: allowlist secret
   bitchute: // pragma: allowlist secret
