@@ -105,14 +105,9 @@ const streamingIconSvgs = {
     `<path fill="#FF9900" d="M17.2 16.7l3 .8-2.2 2.2z"/>` +
     `</svg>`,
   'paramount-plus': boxedIcon('#0064FF', simpleIconPaths.paramountplus, { inset: 1.25 }),
-  // Max (catalog: HBO Max) — live max.com apple-touch: white O (ring) on black.
-  // Do NOT use SI "max" as-is (self-boxed black glyph — invisible on dark chrome).
-  'hbo-max':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
-    `<circle cx="12" cy="12" r="8.2" fill="#fff"/>` +
-    `<circle cx="12" cy="12" r="5.05" fill="#000"/>` +
-    `</svg>`,
+  // Max — official apple-touch PNG (storefront has no favicon.svg).
+  // Do NOT use SI "max" (self-boxed black glyph — invisible on dark chrome).
+  'hbo-max': boxedOfficialPng('max-app-icon.png', 'cp-hbo-max-clip'),
   // Play Suisse — official chevron + plus paths on the live red tile.
   'play-suisse': boxedOfficialSvg('play-suisse-icon.svg', 'cp-play-suisse-clip'),
   // Play RTS — live apple-touch: SRG red tile with RTS wordmark.

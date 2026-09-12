@@ -2,7 +2,7 @@
 
 Prefer **official storefront SVG**. Raster PNG is a last resort when the live
 app icon is a photographic / 3D mark with no usable colourful SVG (Disney+
-aurora, D+ glossy D).
+aurora, D+ glossy D, Max O ring).
 
 Do not hotlink CDNs at runtime (SSR + CORS). Check files into `icon-sources/`,
 then `npm run generate:svg-icons`. Do not hand-edit `svg-icon-literals.ts`.
@@ -21,9 +21,11 @@ keeping geometry, then regenerating.
 
 ## Official PNG (no colourful SVG)
 
-Disney+ (`disney-plus-app-icon.png`) and D+ (`dplus-app-icon.png`) are the live
-apple-touch / bamgrid app icons, resized to 96×96. Disney+ `mask-icon` SVG is
-a monochrome aurora outline — do not use it for the episode-link tile.
+Disney+ (`disney-plus-app-icon.png`), D+ (`dplus-app-icon.png`), and Max
+(`max-app-icon.png`) are the live apple-touch / bamgrid app icons, resized to
+96×96. Max publishes PNG/ICO only (`/dotcom/img/hbomax/apple-touch-icon.png`);
+`favicon.svg` is 404. Disney+ `mask-icon` SVG is a monochrome aurora outline —
+do not use it for the episode-link tile.
 
 ## Simple Icons paths
 
@@ -37,6 +39,6 @@ mark is the live white O ring on black.
 
 ## Hand-drawn SVG (matches live apple-touch geometry)
 
-Prime Video (blue + `prime` / `video` + smile), HBO Max O, TVNZ+ gradient plus,
-Play RTS (`RTS` on `#AF001E`), Fawesome triangles, and the video-host C live
-in `generate-svg-icon-literals.mjs`.
+Prime Video (blue + `prime` / `video` + smile), TVNZ+ gradient plus, Play RTS
+(`RTS` on `#AF001E`), Fawesome triangles, and the video-host C live in
+`generate-svg-icon-literals.mjs`.
