@@ -141,9 +141,9 @@ const streamingIconSvgs = {
   // Disney+ — live bamgrid app icon (aurora raster; mask-icon SVG is monochrome).
   'disney-plus': boxedOfficialPng('disney-plus-app-icon.png', 'cp-disney-plus-clip'),
   // Video-host tile — official storefront favicon PNG (red C).
-  ["\u0062itchute"]: boxedOfficialPng('bc-app-icon.png', 'cp-bc-clip'),
+  bitchute: boxedOfficialPng('bc-app-icon.png', 'cp-bc-clip'),
   // D+ — official apple-touch app icon (3D raster; no colourful SVG).
-  ["\u0064iscovery-plus"]: boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
+  'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +
@@ -151,34 +151,13 @@ const streamingIconSvgs = {
     `</svg>`,
 };
 
-function jsNameLiteral(name) {
-  const hostBc = '\u0062itchute';
-  const dplus = '\u0064iscovery';
-  return JSON.stringify(name)
-    .replaceAll(hostBc, '\\u0062itchute')
-    .replaceAll(dplus, '\\u0064iscovery');
-}
-
-const secretSubstr = new RegExp(
-  ['\u0062itchute', '\u0064iscovery', 'Pod\u0063asts', '\u0045pisodes', '\u0068omepage'].join('|'),
-  'i',
-);
-
-function emitStreamingEntry(name, svg) {
-  const line = `  [${jsNameLiteral(name)}, ${JSON.stringify(svg)}],`;
-  if (secretSubstr.test(line)) {
-    throw new Error(`streaming icon ${name} still contains a scanner trigger`);
-  }
-  return line;
-}
-
 const assetEntries = assetIcons.map(([name, file]) => {
   const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').trim();
   return `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}], // pragma: allowlist secret`;
 });
 
 const streamingEntries = Object.entries(streamingIconSvgs).map(
-  ([name, svg]) => emitStreamingEntry(name, svg),
+  ([name, svg]) => `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}],`,
 );
 
 const entries = [...assetEntries, ...streamingEntries].join('\n');

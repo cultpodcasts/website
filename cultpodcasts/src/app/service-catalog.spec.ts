@@ -19,11 +19,9 @@ describe("service-catalog", () => {
     expect(expanded[1].url.href).toBe("https://vimeo.com/123456789");
   });
 
-  it("expands a compact video-host svc token to the canonical /video/ URL", () => {
-    const host = "\u0062itchute";
-    const expanded = expandSvc(`${host}:32qXfqGEf4Qx`);
-    expect(expanded).toEqual([
-      { key: host, url: new URL(`https://www.${host}.com/video/32qXfqGEf4Qx`) }
+  it("expands a compact BitChute svc token to the canonical /video/ URL", () => {
+    expect(expandSvc("bitchute:32qXfqGEf4Qx")).toEqual([
+      { key: "bitchute", url: new URL("https://www.bitchute.com/video/32qXfqGEf4Qx") }
     ]);
   });
 
@@ -43,8 +41,8 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://fawesome.tv/movies/1/example"))).toBe("fawesome");
     expect(resolveServiceKey(new URL("https://www.disneyplus.com/series/example"))).toBe("disneyPlus");
     expect(resolveServiceKey(new URL("https://www.discoveryplus.com/show/example"))).toBe("discoveryPlus");
-    expect(resolveServiceKey(new URL(`https://www.${"\u0062itchute"}.com/video/32qXfqGEf4Qx/`))).toBe("\u0062itchute");
-    expect(resolveServiceKey(new URL(`https://evil${"\u0062itchute"}.com/video/32qXfqGEf4Qx/`))).not.toBe("\u0062itchute");
+    expect(resolveServiceKey(new URL('https://www.bitchute.com/video/32qXfqGEf4Qx/'))).toBe("bitchute");
+    expect(resolveServiceKey(new URL('https://evilbitchute.com/video/32qXfqGEf4Qx/'))).not.toBe("bitchute");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
@@ -105,7 +103,7 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://www.itv.com/watch/example/1a2345")).toBe("ITVX");
     expect(serviceLabelForUrl("https://www.disneyplus.com/series/example")).toBe("Disney+");
     expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+");
-    expect(serviceLabelForUrl(`https://www.${"\u0062itchute"}.com/video/32qXfqGEf4Qx/`)).toBe("\u0042itChute");
+    expect(serviceLabelForUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe("BitChute");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -124,7 +122,7 @@ describe("service-catalog", () => {
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
       expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute"])
     );
-    expect(SERVICE_CATALOG.some((d) => d.key === "\u0062itchute")).toBe(true);
+    expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(resolveServiceKey(new URL("https://www.dailymotion.com/video/xexample"))).toBe("dailymotioncom");
     const links = collectEpisodeServices({
       services: {
