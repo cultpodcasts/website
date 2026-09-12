@@ -96,8 +96,8 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	channel4: "https://www.channel4.com/programmes/example-slug",
 	fawesome: "https://fawesome.tv/movies/1/example-slug",
 	disneyPlus: "https://www.disneyplus.com/series/example-slug",
-	discoveryPlus: "https://www.discoveryplus.com/show/example-slug", // pragma: allowlist secret
-	bitchute: "https://www.bitchute.com/video/exampleVideoId" // pragma: allowlist secret
+	bitchute: "https://www.bitchute.com/video/exampleVideoId", // pragma: allowlist secret
+	discoveryPlus: "https://www.discoveryplus.com/show/example-slug" // pragma: allowlist secret
 };
 
 export type StreamingMembershipKnown = {
