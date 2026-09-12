@@ -1,33 +1,42 @@
-# Simple Icons path extracts
+# Streaming icon sources
 
-`paths.json` holds SVG path `d` attributes from [Simple Icons](https://simple-icons.org)
-(used by `generate-svg-icon-literals.mjs` to build boxed 24×24 streaming marks).
+Prefer **official storefront SVG**. Raster PNG is a last resort when the live
+app icon is a photographic / 3D mark with no usable colourful SVG (Disney+
+aurora, D+ glossy D).
 
-Refresh a slug (example ITVX from jsDelivr):
+Do not hotlink CDNs at runtime (SSR + CORS). Check files into `icon-sources/`,
+then `npm run generate:svg-icons`. Do not hand-edit `svg-icon-literals.ts`.
 
-```powershell
-Invoke-WebRequest "https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/itvx.svg" -OutFile itvx.svg
-# then extract `<path d="…">` into paths.json under the matching key
-```
+## Official SVG tiles
 
-## Hygiene
+| File | Source |
+| --- | --- |
+| `channel4-favicon.svg` | `https://www.channel4.com/favicon.svg` (class-based fill inlined) |
+| `vimeo-iris.svg` | Vimeo `iris_icon_v_64.svg` on the live apple-touch charcoal |
+| `play-suisse-icon.svg` | Play Suisse `ps-icon-with-srg.svg` chevron + plus on the live red tile |
+| `itvx-app-icon.svg` | Vector of the live ITVX apple-touch (lime + navy X; no storefront SVG) |
 
-- Only keep SI paths that the generator still references (`boxedIcon(...)`).
-- **Max / HBO Max:** do **not** re-add Simple Icons `max`. That glyph is a black self-boxed
-  rounded square — it disappears on dark episode-link chrome. Product mark is hand-drawn
-  stacked light `HBO` (O with inner circle) / `max` on a near-black `rx=5.4` tile in the
-  generator.
+Refresh Channel 4 / Vimeo / Play Suisse by re-downloading the storefront SVG,
+keeping geometry, then regenerating.
 
-## Official storefront PNGs
+## Official PNG (no colourful SVG)
 
 Disney+ (`disney-plus-app-icon.png`) and D+ (`dplus-app-icon.png`) are the live
-apple-touch / bamgrid app icons, resized to 96×96. The generator embeds them as
-data URIs inside the shared 24×24 rounded clip — do not hotlink the CDN at runtime
-(SSR + CORS). Refresh by downloading the current apple-touch, resizing, then
-`npm run generate:svg-icons`.
+apple-touch / bamgrid app icons, resized to 96×96. Disney+ `mask-icon` SVG is
+a monochrome aurora outline — do not use it for the episode-link tile.
 
-## Hand-drawn (not in paths.json)
+## Simple Icons paths
 
-Fawesome, TVNZ+ (gradient plus), Play Suisse (`>+` on dark), Amazon Prime
-(navy + `prime` + cyan smile), and HBO Max (see above) live in
-`generate-svg-icon-literals.mjs` — edit there, then `npm run generate:svg-icons`.
+`paths.json` holds SVG path `d` attributes from [Simple Icons](https://simple-icons.org)
+for marks that are already official vector glyphs (Netflix N, Paramount+
+mountain). Only keep SI paths that `boxedIcon(...)` still references.
+
+**Max / HBO Max:** do **not** re-add Simple Icons `max`. That glyph is a black
+self-boxed rounded square — it disappears on dark episode-link chrome. Product
+mark is the live white O ring on black.
+
+## Hand-drawn SVG (matches live apple-touch geometry)
+
+Prime Video (blue + `prime` / `video` + smile), HBO Max O, TVNZ+ gradient plus,
+Play RTS (`RTS` on `#AF001E`), Fawesome triangles, and the video-host C live
+in `generate-svg-icon-literals.mjs`.
