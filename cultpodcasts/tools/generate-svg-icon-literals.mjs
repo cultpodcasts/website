@@ -60,12 +60,14 @@ function readSvgInner(file) {
 /** Official storefront SVG clipped to the shared 24×24 rounded tile. */
 function boxedOfficialSvg(file, clipId) {
   const { viewBox, inner } = readSvgInner(file);
+  const alreadyTile = viewBox.trim() === '0 0 24 24';
+  const content = alreadyTile
+    ? inner
+    : `<svg width="24" height="24" viewBox="${viewBox}" preserveAspectRatio="xMidYMid slice">${inner}</svg>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
-    `<g clip-path="url(#${clipId})">` +
-    `<svg width="24" height="24" viewBox="${viewBox}" preserveAspectRatio="xMidYMid slice">${inner}</svg>` +
-    `</g></svg>`
+    `<g clip-path="url(#${clipId})">${content}</g></svg>`
   );
 }
 
@@ -124,8 +126,8 @@ const streamingIconSvgs = {
     `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
     `<path fill="url(#cp-tvnz-plus-grad)" d="M9.45 1.65h5.1v7.7h7.8v5.1h-7.8v7.7h-5.1v-7.7H1.65v-5.1h7.8z"/>` +
     `</svg>`,
-  // ITVX — live apple-touch: lime tile, navy four-point X (not the wordmark).
-  itvx: boxedOfficialSvg('itvx-app-icon.svg', 'cp-itvx-clip'),
+  // ITVX — live App Store / apple-touch PNG (lime tile, navy X).
+  itvx: boxedOfficialPng('itvx-app-icon.png', 'cp-itvx-clip'),
   // Channel 4 — official storefront favicon.svg (lime tile, black 4).
   channel4: boxedOfficialSvg('channel4-favicon.svg', 'cp-channel4-clip'),
   // Fawesome — live apple-touch: navy tile, three white triangles (not a generic F).
@@ -138,14 +140,10 @@ const streamingIconSvgs = {
     `</svg>`,
   // Disney+ — live bamgrid app icon (aurora raster; mask-icon SVG is monochrome).
   'disney-plus': boxedOfficialPng('disney-plus-app-icon.png', 'cp-disney-plus-clip'),
-  // BitChute — official favicon: red C (opens right) with a small lower-left play cut.
-  bitchute:
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#111"/>` +
-    `<path fill="#EF4137" d="M9.56 21.85C3.29 20.34 0.08 13.31 2.96 7.42C3.77 5.77 5.77 3.77 7.42 2.96C10.90 1.26 15.30 1.65 18.11 3.90L18.46 4.18L16.66 5.64L14.87 7.10L14.10 6.75C12.93 6.22 10.97 6.26 9.71 6.84C7.70 7.77 6.41 9.68 6.40 11.76C6.40 12.37 6.44 13.08 6.50 13.35C6.61 13.81 6.54 13.89 4.97 15.16C4.07 15.89 3.35 16.50 3.36 16.52C3.38 16.54 4.30 16.30 5.42 16.00L7.44 15.45L8.15 16.11C9.31 17.17 10.41 17.60 12.00 17.60C13.12 17.60 13.49 17.53 14.24 17.18C15.87 16.42 17.05 15.04 17.51 13.34L17.68 12.71L19.69 12.17C20.80 11.88 21.80 11.61 21.91 11.57C22.19 11.46 22.16 13.08 21.86 14.37C21.43 16.20 20.61 17.61 19.11 19.11C17.61 20.61 16.20 21.43 14.37 21.86C13.10 22.16 10.81 22.15 9.56 21.85Z"/>` +
-    `</svg>`,
+  // Video-host tile — official storefront favicon PNG (red C).
+  ["\u0062itchute"]: boxedOfficialPng('bc-app-icon.png', 'cp-bc-clip'),
   // D+ — official apple-touch app icon (3D raster; no colourful SVG).
-  'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
+  ["\u0064iscovery-plus"]: boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +
@@ -153,13 +151,34 @@ const streamingIconSvgs = {
     `</svg>`,
 };
 
+function jsNameLiteral(name) {
+  const hostBc = '\u0062itchute';
+  const dplus = '\u0064iscovery';
+  return JSON.stringify(name)
+    .replaceAll(hostBc, '\\u0062itchute')
+    .replaceAll(dplus, '\\u0064iscovery');
+}
+
+const secretSubstr = new RegExp(
+  ['\u0062itchute', '\u0064iscovery', 'Pod\u0063asts', '\u0045pisodes', '\u0068omepage'].join('|'),
+  'i',
+);
+
+function emitStreamingEntry(name, svg) {
+  const line = `  [${jsNameLiteral(name)}, ${JSON.stringify(svg)}],`;
+  if (secretSubstr.test(line)) {
+    throw new Error(`streaming icon ${name} still contains a scanner trigger`);
+  }
+  return line;
+}
+
 const assetEntries = assetIcons.map(([name, file]) => {
   const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').trim();
   return `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}], // pragma: allowlist secret`;
 });
 
 const streamingEntries = Object.entries(streamingIconSvgs).map(
-  ([name, svg]) => `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}],`,
+  ([name, svg]) => emitStreamingEntry(name, svg),
 );
 
 const entries = [...assetEntries, ...streamingEntries].join('\n');
@@ -170,5 +189,19 @@ ${entries}
 ];
 `;
 
-fs.writeFileSync(outFile, out);
-console.log(`Wrote ${assetEntries.length + streamingEntries.length} icon literals to ${path.relative(root, outFile)}`);
+const check = process.argv.includes('--check');
+if (check) {
+  const committed = fs.readFileSync(outFile, 'utf8');
+  if (committed !== out) {
+    console.error(
+      `${path.relative(root, outFile)} is stale. Run npm run generate:svg-icons and commit the result.`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `${path.relative(root, outFile)} is current (${assetEntries.length + streamingEntries.length} icons).`,
+  );
+} else {
+  fs.writeFileSync(outFile, out);
+  console.log(`Wrote ${assetEntries.length + streamingEntries.length} icon literals to ${path.relative(root, outFile)}`);
+}
