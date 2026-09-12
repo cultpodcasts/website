@@ -1,3 +1,4 @@
+// pragma: allowlist secret
 import { describe, expect, it } from 'vitest';
 import {
   classifySubmittablePodcastUrl,
@@ -12,7 +13,7 @@ describe('podcast-url-matcher', () => {
     const accepted = [
       'https://open.spotify.com/episode/opaqueid00000000000000',
       'https://www.youtube.com/watch?v=yt123456789',
-      'https://podcasts.apple.com/us/podcast/show-name/id1234567890123?i=1234567890123',
+      'https://podcasts.apple.com/us/podcast/show-name/id1234567890123?i=1234567890123', // pragma: allowlist secret
       'https://www.bbc.co.uk/sounds/play/p0example',
       'https://www.bbc.co.uk/iplayer/episode/p0abcd12/example-slug',
       'https://archive.org/details/example-item',
@@ -44,11 +45,14 @@ describe('podcast-url-matcher', () => {
       'https://www.tvnz.co.nz/shows/example-slug',
       'https://www.disneyplus.com/series/example-slug',
       'https://www.disneyplus.com/browse/entity-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      'https://www.discoveryplus.com/show/example-slug',
-      'https://www.discoveryplus.com/gb/show/example-slug',
-      'https://www.discoveryplus.com/video/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      'https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      'https://www.discoveryplus.com/gb/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+      'https://www.discoveryplus.com/show/example-slug', // pragma: allowlist secret
+      'https://www.discoveryplus.com/gb/show/example-slug', // pragma: allowlist secret
+      'https://www.discoveryplus.com/video/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', // pragma: allowlist secret
+      'https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', // pragma: allowlist secret
+      'https://www.discoveryplus.com/gb/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', // pragma: allowlist secret
+      'https://www.bitchute.com/video/32qXfqGEf4Qx/', // pragma: allowlist secret
+      'https://www.bitchute.com/embed/32qXfqGEf4Qx', // pragma: allowlist secret
+      'https://bitchute.com/video/exampleVideoId' // pragma: allowlist secret
     ];
 
     for (const url of accepted) {
@@ -66,8 +70,10 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.paramountplus.com/shows')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.max.com/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://fawesome.tv/')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/')).toBe(false);
-    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/movie')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/')).toBe(false); // pragma: allowlist secret
+    expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/movie')).toBe(false); // pragma: allowlist secret
+    expect(isSubmittablePodcastUrl('https://www.bitchute.com/')).toBe(false); // pragma: allowlist secret
+    expect(isSubmittablePodcastUrl('https://www.bitchute.com/channel/example')).toBe(false); // pragma: allowlist secret
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -78,7 +84,7 @@ describe('podcast-url-matcher', () => {
   it('classifies Spotify/Apple/YouTube as podcast-service and BBC/Archive/Vimeo/Netflix/Prime as streaming', () => {
     expect(classifySubmittablePodcastUrl('https://open.spotify.com/episode/opaqueid00000000000000')).toBe('podcast-service');
     expect(classifySubmittablePodcastUrl('https://www.youtube.com/watch?v=yt123456789')).toBe('podcast-service');
-    expect(classifySubmittablePodcastUrl('https://podcasts.apple.com/us/podcast/show-name/id1234567890123?i=1234567890123')).toBe('podcast-service');
+    expect(classifySubmittablePodcastUrl('https://podcasts.apple.com/us/podcast/show-name/id1234567890123?i=1234567890123')).toBe('podcast-service'); // pragma: allowlist secret
     expect(classifySubmittablePodcastUrl('https://www.bbc.co.uk/sounds/play/p0example')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://archive.org/details/example-item')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://vimeo.com/123456789')).toBe('streaming');
@@ -97,8 +103,9 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.rts.ch/play/radio/example-show/audio/example-episode')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.tvnz.co.nz/shows/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
-    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
-    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming'); // pragma: allowlist secret
+    expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('streaming'); // pragma: allowlist secret
+    expect(classifySubmittablePodcastUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe('streaming'); // pragma: allowlist secret
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 

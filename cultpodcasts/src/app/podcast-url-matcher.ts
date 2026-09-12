@@ -1,6 +1,7 @@
+// pragma: allowlist secret
 const spotify = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
 const youtube = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
-const apple = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
+const apple = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/; // pragma: allowlist secret
 const bbc = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za-z\d\-_]+)|(sounds\/play\/[\w]+))/;
 const internetArchive = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
 const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:channels\/[^/]+\/)?(\d+)(?:\/[A-Za-z\d]+)?/;
@@ -15,7 +16,8 @@ const playSuisse = /^(?:https?:)?\/\/(?:www\.)?playsuisse\.ch\/(?:[a-z]{2}\/)?(?
 const playRts = /^(?:https?:)?\/\/(?:www\.)?rts\.ch\/play\/(?:tv|radio)\/[^/\s?#]+(?:\/(?:video|audio)\/[^/\s?#]+)?(?:[?#]|$)/;
 const tvnzPlus = /^(?:https?:)?\/\/(?:www\.)?tvnz\.co\.nz\/shows\/[^/\s]+/;
 const disneyPlus = /^(?:https?:)?\/\/(?:www\.)?disneyplus\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:browse\/entity-[^/\s]+|(?:series|movies|play)\/[^/\s]+)/;
-const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
+const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/; // pragma: allowlist secret
+const bitchute = /^(?:https?:)?\/\/(?:www\.)?bitchute\.com\/(?:video|embed)\/[A-Za-z0-9]{6,}\/?/; // pragma: allowlist secret
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
@@ -37,7 +39,8 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: playRts, useFullInput: true, kind: 'streaming' },
   { regex: tvnzPlus, useFullInput: true, kind: 'streaming' },
   { regex: disneyPlus, useFullInput: true, kind: 'streaming' },
-  { regex: discoveryPlus, useFullInput: true, kind: 'streaming' },
+  { regex: discoveryPlus, useFullInput: true, kind: 'streaming' }, // pragma: allowlist secret
+  { regex: bitchute, useFullInput: true, kind: 'streaming' }, // pragma: allowlist secret
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {
