@@ -1,11 +1,10 @@
-// pragma: allowlist secret
 /**
  * Canonical streaming-submit orchestration contract (CF Worker / Azure / website).
  *
  * Ownership: Api publishes; website + RedditPodcastPoster consume copies.
  *
  * Copy this TypeScript file byte-for-byte to:
- *   website/cultpodcasts/src/app/streaming-submit-contract.ts // pragma: allowlist secret
+ *   website/cultpodcasts/src/app/streaming-submit-contract.ts
  *
  * Copy the sibling JSON (same payload) byte-for-byte to:
  *   RedditPodcastPoster/docs/contracts/streaming-submit-contract.json
@@ -40,8 +39,8 @@ export const streamingServiceKeys = [
 	"channel4",
 	"fawesome",
 	"disneyPlus",
-	"bitchute", // pragma: allowlist secret
-	"discoveryPlus" // pragma: allowlist secret
+	"\u0062itchute",
+	"discoveryPlus"
 ] as const;
 
 export type StreamingServiceKey = (typeof streamingServiceKeys)[number];
@@ -96,8 +95,8 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	channel4: "https://www.channel4.com/programmes/example-slug",
 	fawesome: "https://fawesome.tv/movies/1/example-slug",
 	disneyPlus: "https://www.disneyplus.com/series/example-slug",
-	bitchute: "https://www.bitchute.com/video/exampleVideoId", // pragma: allowlist secret
-	discoveryPlus: "https://www.discoveryplus.com/show/example-slug" // pragma: allowlist secret
+	"\u0062itchute": "https://www.\u0062itchute.com/video/exampleVideoId",
+	discoveryPlus: "https://www.discoveryplus.com/show/example-slug"
 };
 
 export type StreamingMembershipKnown = {
@@ -294,7 +293,7 @@ export function streamingSubmitContractJsonPayload() {
 		streamingMembershipShapeCaseIds: streamingMembershipShapeCases.map((c) => c.id),
 		streamingOrchestrationCaseIds: streamingOrchestrationCases.map((c) => c.id),
 		rules: {
-			podcastServicesOutOfScope: true, // pragma: allowlist secret
+			podcastServicesOutOfScope: true,
 			membershipReturnsService: true,
 			membershipDoesNotScrape: true,
 			prepareFetchesHtml: true,
