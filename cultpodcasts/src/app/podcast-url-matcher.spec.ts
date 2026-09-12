@@ -49,9 +49,9 @@ describe('podcast-url-matcher', () => {
       'https://www.discoveryplus.com/video/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       'https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       'https://www.discoveryplus.com/gb/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      `https://www.${'\u0062itchute'}.com/video/32qXfqGEf4Qx/`,
-      `https://www.${'\u0062itchute'}.com/embed/32qXfqGEf4Qx`,
-      `https://${'\u0062itchute'}.com/video/exampleVideoId`
+      'https://www.bitchute.com/video/32qXfqGEf4Qx/',
+      'https://www.bitchute.com/embed/32qXfqGEf4Qx',
+      'https://bitchute.com/video/exampleVideoId'
     ];
 
     for (const url of accepted) {
@@ -71,8 +71,8 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://fawesome.tv/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.discoveryplus.com/movie')).toBe(false);
-    expect(isSubmittablePodcastUrl(`https://www.${'\u0062itchute'}.com/`)).toBe(false);
-    expect(isSubmittablePodcastUrl(`https://www.${'\u0062itchute'}.com/channel/example`)).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.bitchute.com/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.bitchute.com/channel/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -104,7 +104,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.disneyplus.com/series/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/show/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('streaming');
-    expect(classifySubmittablePodcastUrl(`https://www.${'\u0062itchute'}.com/video/32qXfqGEf4Qx/`)).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
