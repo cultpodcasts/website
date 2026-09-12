@@ -39,6 +39,7 @@ export const streamingServiceKeys = [
 	"channel4",
 	"fawesome",
 	"disneyPlus",
+	"bitchute",
 	"discoveryPlus"
 ] as const;
 
@@ -94,6 +95,7 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	channel4: "https://www.channel4.com/programmes/example-slug",
 	fawesome: "https://fawesome.tv/movies/1/example-slug",
 	disneyPlus: "https://www.disneyplus.com/series/example-slug",
+	"bitchute": "https://www.bitchute.com/video/exampleVideoId",
 	discoveryPlus: "https://www.discoveryplus.com/show/example-slug"
 };
 

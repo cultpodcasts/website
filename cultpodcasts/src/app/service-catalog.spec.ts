@@ -9,6 +9,7 @@ import {
   resolveServiceKey,
   serviceLabelForUrl
 } from "./service-catalog";
+import { svgIconLiterals } from "./svg-icon-literals";
 
 describe("service-catalog", () => {
   it("expands compact BBC Sounds and Vimeo svc tokens to full URLs", () => {
@@ -16,6 +17,12 @@ describe("service-catalog", () => {
     expect(expanded.map((x) => x.key)).toEqual(["bbcSounds", "vimeo"]);
     expect(expanded[0].url.href).toBe("https://www.bbc.co.uk/sounds/play/p0example");
     expect(expanded[1].url.href).toBe("https://vimeo.com/123456789");
+  });
+
+  it("expands a compact BitChute svc token to the canonical /video/ URL", () => {
+    expect(expandSvc("bitchute:32qXfqGEf4Qx")).toEqual([
+      { key: "bitchute", url: new URL("https://www.bitchute.com/video/32qXfqGEf4Qx") }
+    ]);
   });
 
   it("resolves Netflix, iPlayer, Paramount+, HBO Max, Play Suisse, and TVNZ+ URLs to catalog keys for logos", () => {
@@ -34,7 +41,19 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://fawesome.tv/movies/1/example"))).toBe("fawesome");
     expect(resolveServiceKey(new URL("https://www.disneyplus.com/series/example"))).toBe("disneyPlus");
     expect(resolveServiceKey(new URL("https://www.discoveryplus.com/show/example"))).toBe("discoveryPlus");
+    expect(resolveServiceKey(new URL('https://www.bitchute.com/video/32qXfqGEf4Qx/'))).toBe("bitchute");
+    expect(resolveServiceKey(new URL('https://evilbitchute.com/video/32qXfqGEf4Qx/'))).not.toBe("bitchute");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
+  });
+
+  it("registers every catalog icon name in the generated svgIconLiterals map", () => {
+    const registered = new Map(svgIconLiterals);
+    for (const descriptor of SERVICE_CATALOG) {
+      if (descriptor.key === "apple") {
+        continue;
+      }
+      expect(registered.has(descriptor.icon), descriptor.icon).toBe(true);
+    }
   });
 
   it("orders every service with a URL in catalog order, including Spotify and Vimeo together", () => {
@@ -83,7 +102,8 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://www.channel4.com/programmes/example")).toBe("Channel 4");
     expect(serviceLabelForUrl("https://www.itv.com/watch/example/1a2345")).toBe("ITVX");
     expect(serviceLabelForUrl("https://www.disneyplus.com/series/example")).toBe("Disney+");
-    expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+"); // pragma: allowlist secret
+    expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+");
+    expect(serviceLabelForUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe("BitChute");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -100,8 +120,9 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.some((d) => d.key === "other")).toBe(false);
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus"]) // pragma: allowlist secret
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute"])
     );
+    expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(resolveServiceKey(new URL("https://www.dailymotion.com/video/xexample"))).toBe("dailymotioncom");
     const links = collectEpisodeServices({
       services: {

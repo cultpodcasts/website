@@ -43,93 +43,107 @@ function boxedIcon(bg, pathD, { fg = '#fff', inset = 2.75 } = {}) {
   );
 }
 
+function readSvgInner(file) {
+  const raw = fs.readFileSync(path.join(root, 'icon-sources', file), 'utf8');
+  const vbMatch = raw.match(/viewBox=["']([^"']+)["']/i);
+  const viewBox = vbMatch ? vbMatch[1] : '0 0 24 24';
+  const inner = raw
+    .replace(/<\?xml[\s\S]*?\?>/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!DOCTYPE[\s\S]*?>/gi, '')
+    .replace(/<svg\b[^>]*>/i, '')
+    .replace(/<\/svg>\s*$/i, '')
+    .trim();
+  return { viewBox, inner };
+}
+
+/** Official storefront SVG clipped to the shared 24×24 rounded tile. */
+function boxedOfficialSvg(file, clipId) {
+  const { viewBox, inner } = readSvgInner(file);
+  const alreadyTile = viewBox.trim() === '0 0 24 24';
+  const content = alreadyTile
+    ? inner
+    : `<svg width="24" height="24" viewBox="${viewBox}" preserveAspectRatio="xMidYMid slice">${inner}</svg>`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
+    `<g clip-path="url(#${clipId})">${content}</g></svg>`
+  );
+}
+
+/** Official storefront PNG (96×96) clipped to the shared 24×24 rounded tile. */
+function boxedOfficialPng(file, clipId) {
+  const png = fs.readFileSync(path.join(root, 'icon-sources', file));
+  const b64 = png.toString('base64');
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
+    `<image href="data:image/png;base64,${b64}" width="24" height="24" ` +
+    `clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>` +
+    `</svg>`
+  );
+}
+
 /**
  * Compact streaming / service mark SVGs (no separate asset files).
- * Prefer Simple Icons paths (tools/icon-sources) boxed to 24×24.
- * Edit here (or refresh paths.json), then regenerate — do not hand-edit svg-icon-literals.ts.
+ * Prefer official storefront SVG. Raster app icons are PNG only when the
+ * live mark is photographic / 3D and has no usable colourful SVG.
+ * Edit here (or refresh icon-sources), then regenerate — do not hand-edit
+ * svg-icon-literals.ts.
  */
 const streamingIconSvgs = {
-  vimeo: boxedIcon('#1AB7EA', simpleIconPaths.vimeo),
+  // Vimeo — official iris mark on the live apple-touch charcoal tile.
+  vimeo: boxedOfficialSvg('vimeo-iris.svg', 'cp-vimeo-clip'),
   // Netflix N on near-black (SI path is the N glyph).
   netflix: boxedIcon('#141414', simpleIconPaths.netflix, { fg: '#E50914', inset: 1.5 }),
-  // Prime Video — navy + white "prime" + cyan smile arrow (SI wordmarks illegible at 24px).
+  // Prime Video — live app icon: bright blue + stacked wordmark + yellow smile.
   'amazon-prime':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#232F3E"/>` +
-    `<text x="12" y="11.2" text-anchor="middle" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="5.6" font-weight="700" letter-spacing="0.2">prime</text>` +
-    `<path fill="none" stroke="#00A8E1" stroke-width="1.7" stroke-linecap="round" d="M4.8 14.1c2.6 2.2 5.5 3.3 8.9 3.3 1.8 0 3.5-.3 5-.9"/>` +
-    `<path fill="#00A8E1" d="M17.4 14.8l3.2.9-2.4 2.4z"/>` +
+    `<rect width="24" height="24" rx="5.4" fill="#0578FF"/>` +
+    `<text x="12" y="9.4" text-anchor="middle" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="5.4" font-weight="700" letter-spacing="0.15">prime</text>` +
+    `<text x="12" y="14.6" text-anchor="middle" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="5.4" font-weight="700" letter-spacing="0.1">video</text>` +
+    `<path fill="none" stroke="#FF9900" stroke-width="1.55" stroke-linecap="round" d="M5.2 16.4c2.5 2 5.2 3 8.4 3 1.7 0 3.3-.3 4.8-.9"/>` +
+    `<path fill="#FF9900" d="M17.2 16.7l3 .8-2.2 2.2z"/>` +
     `</svg>`,
   'paramount-plus': boxedIcon('#0064FF', simpleIconPaths.paramountplus, { inset: 1.25 }),
-  // HBO Max — stacked HBO (O with classic solid center dot) / max; light on near-black for dark UI.
-  // Do NOT use SI "max" (black self-boxed glyph — invisible on dark chrome).
-  'hbo-max':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#1A1A1A"/>` +
-    `<text x="2.6" y="10" fill="#F5F5F5" font-family="Arial Black, Impact, Arial, sans-serif" font-size="6.5" font-weight="900" letter-spacing="0.08">HB</text>` +
-    `<circle cx="16.35" cy="7.9" r="2.55" fill="#F5F5F5"/>` +
-    `<circle cx="16.35" cy="7.9" r="1.35" fill="#1A1A1A"/>` +
-    `<circle cx="16.35" cy="7.9" r="0.7" fill="#F5F5F5"/>` +
-    `<text x="3" y="17.8" fill="#F5F5F5" font-family="Arial, Helvetica, sans-serif" font-size="6.6" font-weight="400" letter-spacing="0.35">max</text>` +
-    `</svg>`,
-  // Play Suisse — official >+ glyph on dark (not red R+).
-  'play-suisse':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#111111"/>` +
-    `<path fill="#E8E8E8" d="M4.2 6.2l1.9-1.2 7.2 7-7.2 7-1.9-1.2 5.4-5.8z"/>` +
-    `<path fill="#E8E8E8" d="M14.2 9.2h2.7V6.5h2.4v2.7H22v2.4h-2.7v2.7h-2.4v-2.7h-2.7z"/>` +
-    `</svg>`,
-  // Play RTS — SRG SSR red tile with RTS wordmark.
+  // Max — official 1-color stacked logo SVG from brand.hbomax.com.
+  // Do NOT use SI "max" (self-boxed black glyph — invisible on dark chrome).
+  'hbo-max': boxedOfficialSvg('hbo-max-logo.svg', 'cp-hbo-max-clip'),
+  // Play Suisse — official chevron + plus paths on the live red tile.
+  'play-suisse': boxedOfficialSvg('play-suisse-icon.svg', 'cp-play-suisse-clip'),
+  // Play RTS — live apple-touch: SRG red tile with RTS wordmark.
   'play-rts':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#E2001A"/>` +
+    `<rect width="24" height="24" rx="5.4" fill="#AF001E"/>` +
     `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="8" font-weight="900" letter-spacing="0.4">RTS</text>` +
     `</svg>`,
-  // TVNZ+ — white lowercase wordmark + blue→cyan gradient plus.
+  // TVNZ+ — live favicon: cyan/blue plus on black (not a "tvnz" wordmark).
   'tvnz-plus':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<defs><linearGradient id="cp-tvnz-plus-grad" x1="0%" y1="100%" x2="100%" y2="0%">` +
     `<stop offset="0%" stop-color="#0057FF"/><stop offset="100%" stop-color="#00E5FF"/>` +
     `</linearGradient></defs>` +
     `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
-    `<text x="2.2" y="15.1" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7" font-weight="900" letter-spacing="-0.4">tvnz</text>` +
-    `<path fill="url(#cp-tvnz-plus-grad)" d="M17.6 8h1.7v2.2h2.2v1.7h-2.2v2.2h-1.7v-2.2h-2.2v-1.7h2.2z"/>` +
+    `<path fill="url(#cp-tvnz-plus-grad)" d="M9.45 1.65h5.1v7.7h7.8v5.1h-7.8v7.7h-5.1v-7.7H1.65v-5.1h7.8z"/>` +
     `</svg>`,
-  // ITVX — SI wordmark+X in brand lime on dark (not the old blue “T”).
-  itvx: boxedIcon('#0B1C2C', simpleIconPaths.itvx, { fg: '#DEEB52', inset: 1.5 }),
-  // Channel 4 geometric 4 in brand lime on black.
-  channel4: boxedIcon('#111111', simpleIconPaths.channel4, { fg: '#AAFF89', inset: 1.25 }),
-  // Fawesome — no SI slug; orange tile with bold F.
+  // ITVX — live App Store / apple-touch PNG (lime tile, navy X).
+  itvx: boxedOfficialPng('itvx-app-icon.png', 'cp-itvx-clip'),
+  // Channel 4 — official storefront favicon.svg (lime tile, black 4).
+  channel4: boxedOfficialSvg('channel4-favicon.svg', 'cp-channel4-clip'),
+  // Fawesome — live apple-touch: navy tile, three white triangles (not a generic F).
   fawesome:
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#FF6A00"/>` +
-    `<path fill="#fff" d="M7.4 6.8h9.2v2.3H9.8v2.2h6.2v2.2H9.8v4.5H7.4z"/>` +
+    `<rect width="24" height="24" rx="5.4" fill="#0E0E21"/>` +
+    `<path fill="#fff" d="M5.15 3.45h5.35L8.05 13.7z"/>` +
+    `<path fill="#fff" d="M13.5 3.45h5.35L16.2 13.7z"/>` +
+    `<path fill="#fff" d="M12 13.05l2.7 7.35H9.3z"/>` +
     `</svg>`,
-  // Disney+ — no current SI slug; Disney blue + Mickey ears cue and plus.
-  'disney-plus':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#113CCF"/>` +
-    `<circle cx="8.2" cy="9.2" r="2.1" fill="#fff"/>` +
-    `<circle cx="15.8" cy="9.2" r="2.1" fill="#fff"/>` +
-    `<circle cx="12" cy="12.2" r="3.4" fill="#fff"/>` +
-    `<path fill="#113CCF" d="M12 10.4c-1.2 0-2.1.9-2.1 2.1S10.8 14.6 12 14.6s2.1-.9 2.1-2.1-.9-2.1-2.1-2.1z"/>` +
-    `<path fill="#fff" d="M16.4 15.6h1.4v-1.4H19v1.4h1.4v1.4H19v1.4h-1.2v-1.4h-1.4z"/>` +
-    `</svg>`,
-  // discovery+ — white outlined lowercase d with rainbow globe (not yellow D + plus).
-  'discovery-plus':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<defs><linearGradient id="cp-discovery-globe" x1="0%" y1="100%" x2="100%" y2="0%">` +
-    `<stop offset="0%" stop-color="#2E7DFF"/><stop offset="20%" stop-color="#7B2FFF"/>` +
-    `<stop offset="40%" stop-color="#FF2D8A"/><stop offset="60%" stop-color="#FF7A1A"/>` +
-    `<stop offset="80%" stop-color="#FFD400"/><stop offset="100%" stop-color="#2ECC71"/>` +
-    `</linearGradient></defs>` +
-    `<rect width="24" height="24" rx="5.4" fill="#0D0D0D"/>` +
-    `<path fill="#fff" d="M6.2 5.2h5.1c4.05 0 6.7 2.55 6.7 6.8s-2.65 6.8-6.7 6.8H6.2V5.2zm3.05 2.55v8.5h2.05c2.45 0 3.85-1.55 3.85-4.25s-1.4-4.25-3.85-4.25H9.25z"/>` +
-    `<circle cx="12.35" cy="12" r="3.55" fill="url(#cp-discovery-globe)"/>` +
-    `<circle cx="12.35" cy="12" r="2.15" fill="#0D0D0D"/>` +
-    `<ellipse cx="12.35" cy="12" rx="1.05" ry="2.15" fill="none" stroke="#fff" stroke-width="0.45" opacity="0.55"/>` +
-    `<path fill="none" stroke="#fff" stroke-width="0.45" opacity="0.55" d="M10.2 12h4.3M11 10.1h2.7M11 13.9h2.7"/>` +
-    `</svg>`,
+  // Disney+ — live bamgrid app icon (aurora raster; mask-icon SVG is monochrome).
+  'disney-plus': boxedOfficialPng('disney-plus-app-icon.png', 'cp-disney-plus-clip'),
+  // Video-host tile — official storefront favicon PNG (red C).
+  bitchute: boxedOfficialPng('bc-app-icon.png', 'cp-bc-clip'),
+  // D+ — official apple-touch app icon (3D raster; no colourful SVG).
+  'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +
@@ -143,7 +157,7 @@ const assetEntries = assetIcons.map(([name, file]) => {
 });
 
 const streamingEntries = Object.entries(streamingIconSvgs).map(
-  ([name, svg]) => `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}], // pragma: allowlist secret`,
+  ([name, svg]) => `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}],`,
 );
 
 const entries = [...assetEntries, ...streamingEntries].join('\n');
@@ -154,5 +168,19 @@ ${entries}
 ];
 `;
 
-fs.writeFileSync(outFile, out);
-console.log(`Wrote ${assetEntries.length + streamingEntries.length} icon literals to ${path.relative(root, outFile)}`);
+const check = process.argv.includes('--check');
+if (check) {
+  const committed = fs.readFileSync(outFile, 'utf8');
+  if (committed !== out) {
+    console.error(
+      `${path.relative(root, outFile)} is stale. Run npm run generate:svg-icons and commit the result.`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `${path.relative(root, outFile)} is current (${assetEntries.length + streamingEntries.length} icons).`,
+  );
+} else {
+  fs.writeFileSync(outFile, out);
+  console.log(`Wrote ${assetEntries.length + streamingEntries.length} icon literals to ${path.relative(root, outFile)}`);
+}
