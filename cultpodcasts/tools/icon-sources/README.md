@@ -41,6 +41,7 @@ keeping geometry, then regenerating.
 | `dplus-app-icon.png` | Live apple-touch, resized to 96×96 |
 | `bc-app-icon.png` | Official 128 favicon, resized to 96×96 (filename omits the host) |
 | `itvx-app-icon.png` | Live App Store / apple-touch tile, 96×96 |
+| `tubi-app-icon.png` | Live apple-touch app icon, resized to 96×96 |
 
 Disney+ `mask-icon` SVG is a monochrome aurora outline — do not use it for the
 episode-link tile. Max publishes no favicon.svg; the episode tile uses the
