@@ -28,14 +28,12 @@
     @if (data.response.episodeDetails) {
     <span>
         <span id="service-icons">
-            @if (data.response.episodeDetails.spotify) {
-            <mat-icon svgIcon="spotify"></mat-icon>
-            }
-            @if (data.response.episodeDetails.apple) {
+            @for (row of serviceIconRows; track row.key) {
+            @if (row.usesAppleMark) {
             <mat-icon><app-apple-podcasts-svg></app-apple-podcasts-svg></mat-icon>
+            } @else {
+            <mat-icon [svgIcon]="row.icon"></mat-icon>
             }
-            @if (data.response.episodeDetails.youtube) {
-            <mat-icon svgIcon="youtube"></mat-icon>
             }
         </span>
         @if (data.response.episodeDetails.subjects.length > 0) {
