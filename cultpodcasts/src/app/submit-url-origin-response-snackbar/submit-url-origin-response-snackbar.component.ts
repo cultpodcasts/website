@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
+import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
 const medium = 15 * 1000;
 const long = 30 * 1000;
@@ -29,6 +30,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly actionText = signal("Ok");
   readonly showReviewButton = signal(false);
   readonly existingPodcast: boolean;
+  readonly serviceIconRows: SubmitEpisodeServiceIconRow[];
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -36,6 +38,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     public snackBarRef: MatSnackBarRef<SubmitUrlOriginResponseSnackbarComponent>,
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse, roles?: readonly string[] }) {
     this.existingPodcast = data.existingPodcast;
+    this.serviceIconRows = submitEpisodeServiceIconRows(data.response.episodeDetails);
     const episodeDialog = postSubmitEpisodeDialogForActor(data.roles, data.response.episode);
     if (episodeDialog !== 'none') {
       this.actionText.set("Edit");
