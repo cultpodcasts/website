@@ -47,6 +47,7 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "fawesome", displayName: "Fawesome", icon: "fawesome", wideImage: true },
   { key: "disneyPlus", displayName: "Disney+", icon: "disney-plus", wideImage: true },
   { key: "bitchute", displayName: "BitChute", icon: "bitchute", wideImage: true },
+  { key: "tubi", displayName: "Tubi", icon: "tubi", wideImage: true },
   { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true }
 ];
 
@@ -122,7 +123,7 @@ export function resolveServiceKey(url: URL): string | undefined {
   if (host.endsWith("tvnz.co.nz")) {
     return "tvnzPlus";
   }
-  if (host.endsWith("itv.com")) {
+  if (host === "itv.com" || host.endsWith(".itv.com")) {
     return "itvx";
   }
   if (host.endsWith("channel4.com") || host.endsWith("all4.com")) {
@@ -136,6 +137,9 @@ export function resolveServiceKey(url: URL): string | undefined {
   }
   if (host === "bitchute.com" || host.endsWith(".bitchute.com")) {
     return "bitchute";
+  }
+  if (host === "tubitv.com" || host.endsWith(".tubitv.com")) {
+    return "tubi";
   }
   if (host.endsWith("discoveryplus.com")) {
     return "discoveryPlus";
@@ -161,7 +165,8 @@ const EXPAND: Record<string, (id: string) => string> = {
   internetArchive: (id) => `https://archive.org/details/${id}`,
   vimeo: (id) => `https://vimeo.com/${id}`,
   netflix: (id) => `https://www.netflix.com/title/${id}`,
-  bitchute: (id) => `https://www.bitchute.com/video/${id}`
+  bitchute: (id) => `https://www.bitchute.com/video/${id}`,
+  tubi: (id) => `https://tubitv.com/${id}`
 };
 
 /** Inverse of RPP SearchEpisodeServices compact `svc` field. */
