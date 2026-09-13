@@ -142,6 +142,8 @@ const streamingIconSvgs = {
   'disney-plus': boxedOfficialPng('disney-plus-app-icon.png', 'cp-disney-plus-clip'),
   // Video-host tile — official storefront favicon PNG (red C).
   bitchute: boxedOfficialPng('bc-app-icon.png', 'cp-bc-clip'),
+  // Tubi — live apple-touch app icon.
+  tubi: boxedOfficialPng('tubi-app-icon.png', 'cp-tubi-clip'),
   // D+ — official apple-touch app icon (3D raster; no colourful SVG).
   'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
   'external-service':

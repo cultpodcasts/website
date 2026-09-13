@@ -52,7 +52,13 @@ describe('podcast-url-matcher', () => {
       'https://www.bitchute.com/video/32qXfqGEf4Qx/',
       'https://www.bitchute.com/embed/32qXfqGEf4Qx',
       'https://bitchute.com/video/exampleVideoId',
-      'https://www.bitchute.com/video/32qXfqGEf4Qx?ref=share'
+      'https://www.bitchute.com/video/32qXfqGEf4Qx?ref=share',
+      'https://tubitv.com/movies/1/example-slug',
+      'https://tubitv.com/en-au/movies/100041774/the-family',
+      'https://www.tubitv.com/tv-shows/1/example-slug',
+      'https://tubitv.com/movies/1',
+      'https://tubitv.com/video/1',
+      'https://tubitv.com/movies/1/example-slug?ref=share'
     ];
 
     for (const url of accepted) {
@@ -76,6 +82,10 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.bitchute.com/channel/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/extra')).toBe(false);
     expect(isSubmittablePodcastUrl('https://evilbitchute.com/video/32qXfqGEf4Qx/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://tubitv.com/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://tubitv.com/category/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://tubitv.com/movies/1/example-slug/extra')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://eviltubitv.com/movies/1/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -109,6 +119,10 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.discoveryplus.com/movie/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.bitchute.com/embed/32qXfqGEf4Qx')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://tubitv.com/en-au/movies/100041774/the-family')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://tubitv.com/movies/1')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://tubitv.com/video/1')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://tubitv.com/movies/1/example-slug?ref=share')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
