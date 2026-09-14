@@ -18,7 +18,7 @@ const disneyPlus = /^(?:https?:)?\/\/(?:www\.)?disneyplus\.com\/(?:[a-z]{2}(?:-[
 const bitchute = /^(?:https?:)?\/\/(?:www\.)?bitchute\.com\/(?:video|embed)\/[A-Za-z0-9]{6,}\/?(?:[?#]|$)/;
 const tubi = /^(?:https?:)?\/\/(?:www\.)?tubitv\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:movies|movie|tv-shows|tv|shows|series|video)\/\d+(?:\/[^/\s?#]+)?\/?(?:[?#]|$)/;
 const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
-const franceTv = /^(?:https?:)?\/\/(?:www\.)?france\.tv\/[^/\s]+\/[^/\s]+(?:\/\d+-[^/\s]+\.html)?\/?$/;
+const franceTv = /^(?:https?:)?\/\/(?:www\.)?france\.tv\/[^/\s.?#]+\/[^/\s.?#]+(?:\/\d+-[^/\s.?#]+\.html)?\/?(?:[?#]|$)/;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 

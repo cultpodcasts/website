@@ -68,6 +68,8 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://tubitv.com/en-au/movies/1/example-slug"))).toBe("tubi");
     expect(resolveServiceKey(new URL("https://eviltubitv.com/movies/1/example-slug"))).not.toBe("tubi");
     expect(resolveServiceKey(new URL("https://www.france.tv/slash/example-show/"))).toBe("franceTv");
+    expect(resolveServiceKey(new URL("https://evilfrance.tv/slash/example-show/"))).not.toBe("franceTv");
+    expect(resolveServiceKey(new URL("https://notfrance.tv/slash/example-show/"))).not.toBe("franceTv");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 

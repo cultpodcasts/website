@@ -60,7 +60,10 @@ describe('podcast-url-matcher', () => {
       'https://tubitv.com/video/1',
       'https://tubitv.com/movies/1/example-slug?ref=share',
       'https://www.france.tv/slash/example-show/',
-      'https://www.france.tv/slash/example-show/8847336-example-episode.html'
+      'https://www.france.tv/slash/example-show/8847336-example-episode.html',
+      'https://www.france.tv/slash/example-show/?utm_source=share',
+      'https://www.france.tv/slash/example-show/8847336-example-episode.html?ref=share',
+      'https://www.france.tv/slash/example-show/#frag'
     ];
 
     for (const url of accepted) {
@@ -90,6 +93,9 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://eviltubitv.com/movies/1/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.france.tv/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.france.tv/slash/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.france.tv/slash/show.with.dots/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://evilfrance.tv/slash/example-show/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://notfrance.tv/slash/example-show/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -129,6 +135,8 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://tubitv.com/movies/1/example-slug?ref=share')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/8847336-example-episode.html')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/?utm_source=share')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/#frag')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 

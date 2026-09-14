@@ -170,7 +170,7 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   if (host.endsWith("discoveryplus.com")) {
     return "discoveryPlus";
   }
-  if (host.endsWith("france.tv")) {
+  if (host === "france.tv" || host.endsWith(".france.tv")) {
     return "franceTv";
   }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
