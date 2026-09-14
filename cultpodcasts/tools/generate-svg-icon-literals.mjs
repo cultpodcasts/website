@@ -146,6 +146,12 @@ const streamingIconSvgs = {
   tubi: boxedOfficialPng('tubi-app-icon.png', 'cp-tubi-clip'),
   // D+ — official apple-touch app icon (3D raster; no colourful SVG).
   'discovery-plus': boxedOfficialPng('dplus-app-icon.png', 'cp-dplus-clip'),
+  // France TV — brand blue tile with FTV wordmark.
+  'france-tv':
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#0C1B8C"/>` +
+    `<text x="12" y="15.2" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7.2" font-weight="900" letter-spacing="0.35">FTV</text>` +
+    `</svg>`,
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

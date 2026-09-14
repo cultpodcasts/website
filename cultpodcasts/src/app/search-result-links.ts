@@ -2,10 +2,10 @@ import { EpisodeIds } from "./episode-ids.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
 import { BBCServiceResolver } from "./service-resolver";
-import { expandSvc, SERVICE_CATALOG } from "./service-catalog";
+import { expandSvc, SERVICE_CATALOG, type KnownServiceKey } from "./service-catalog";
 
 /** Catalogue key type — keeps Watch special-cases aligned with SERVICE_CATALOG. */
-type ServiceCatalogKey = (typeof SERVICE_CATALOG)[number]["key"];
+type ServiceCatalogKey = KnownServiceKey;
 
 /**
  * Non-embeddable video destinations (wideImage catalogue services).

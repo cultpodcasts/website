@@ -1,3 +1,5 @@
+import { streamingServiceKeys, type StreamingServiceKey } from "./streaming-submit-contract";
+
 export type EpisodeServiceLink = {
   url?: string | URL | null;
   image?: string | URL | null;
@@ -24,10 +26,30 @@ export type EpisodeServiceItem = {
 export const DEFAULT_UI_SERVICE_KEYS = ["spotify", "apple", "youtube"] as const;
 export type DefaultUiServiceKey = (typeof DEFAULT_UI_SERVICE_KEYS)[number];
 
+/**
+ * Wire keys the SPA knows by name: podcast trio + {@link StreamingServiceKey}.
+ * Unknown-host slugs from {@link resolveServiceKey} stay plain `string`.
+ */
+export type KnownServiceKey = DefaultUiServiceKey | StreamingServiceKey;
+
+/** Catalog row — key is always a known podcast or streaming wire value. */
+export type CatalogServiceDescriptor = ServiceDescriptor & { key: KnownServiceKey };
+
 const DEFAULT_UI_SET = new Set<string>(DEFAULT_UI_SERVICE_KEYS);
+const STREAMING_KEY_SET = new Set<string>(streamingServiceKeys);
+
+export type { StreamingServiceKey };
+
+export function isStreamingServiceKey(key: string): key is StreamingServiceKey {
+  return STREAMING_KEY_SET.has(key);
+}
+
+export function isKnownServiceKey(key: string): key is KnownServiceKey {
+  return DEFAULT_UI_SET.has(key) || STREAMING_KEY_SET.has(key);
+}
 
 /** Mirrors RPP ServiceCatalog JSON keys, icon names, and display order. */
-export const SERVICE_CATALOG: ServiceDescriptor[] = [
+export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "youtube", displayName: "YouTube", icon: "youtube", wideImage: true },
   { key: "spotify", displayName: "Spotify", icon: "spotify", wideImage: false },
   { key: "apple", displayName: "Apple Podcasts", icon: "apple", wideImage: false },
@@ -48,10 +70,11 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "disneyPlus", displayName: "Disney+", icon: "disney-plus", wideImage: true },
   { key: "bitchute", displayName: "BitChute", icon: "bitchute", wideImage: true },
   { key: "tubi", displayName: "Tubi", icon: "tubi", wideImage: true },
-  { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true }
+  { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true },
+  { key: "franceTv", displayName: "France TV", icon: "france-tv", wideImage: true }
 ];
 
-const byKey = new Map(SERVICE_CATALOG.map((d) => [d.key, d]));
+const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
 
 export function serviceDescriptor(key: string): ServiceDescriptor {
   return byKey.get(key) ?? {
@@ -66,7 +89,10 @@ export function isDefaultUiService(key: string): boolean {
   return DEFAULT_UI_SET.has(key);
 }
 
-export function resolveServiceKey(url: URL): string | undefined {
+/**
+ * Resolve a listen/watch URL to a catalog wire key when known; otherwise a host slug.
+ */
+export function resolveServiceKey(url: URL): KnownServiceKey | string | undefined {
   const host = url.hostname.replace(/^www\./, "").toLowerCase();
   const path = url.pathname;
   if (host === "youtu.be" || host.endsWith("youtube.com")) {
@@ -144,6 +170,9 @@ export function resolveServiceKey(url: URL): string | undefined {
   if (host.endsWith("discoveryplus.com")) {
     return "discoveryPlus";
   }
+  if (host === "france.tv" || host.endsWith(".france.tv")) {
+    return "franceTv";
+  }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
 
@@ -159,7 +188,7 @@ export function serviceLabelForUrl(value: string | URL | null | undefined): stri
   return serviceDescriptor(key).displayName;
 }
 
-const EXPAND: Record<string, (id: string) => string> = {
+const EXPAND: Partial<Record<StreamingServiceKey, (id: string) => string>> = {
   bbcSounds: (id) => `https://www.bbc.co.uk/sounds/play/${id}`,
   bbcIplayer: (id) => `https://www.bbc.co.uk/iplayer/episode/${id}`,
   internetArchive: (id) => `https://archive.org/details/${id}`,
@@ -188,7 +217,7 @@ export function expandSvc(svc: string | undefined | null): { key: string; url: U
     let href: string | undefined;
     if (payload.startsWith("http")) {
       href = payload;
-    } else {
+    } else if (isStreamingServiceKey(key)) {
       href = EXPAND[key]?.(payload);
     }
     if (!href) {
