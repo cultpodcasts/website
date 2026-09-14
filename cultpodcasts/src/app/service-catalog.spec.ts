@@ -4,14 +4,29 @@ import {
   additionalServiceUrls,
   collectEpisodeServices,
   DEFAULT_UI_SERVICE_KEYS,
+  isKnownServiceKey,
+  isStreamingServiceKey,
   SERVICE_CATALOG,
   expandSvc,
   resolveServiceKey,
   serviceLabelForUrl
 } from "./service-catalog";
+import { streamingServiceKeys } from "./streaming-submit-contract";
 import { svgIconLiterals } from "./svg-icon-literals";
 
 describe("service-catalog", () => {
+  it("keeps SERVICE_CATALOG streaming keys identical to streamingServiceKeys (wire enum parity)", () => {
+    const catalogStreaming = SERVICE_CATALOG.map((d) => d.key).filter(isStreamingServiceKey);
+    expect(new Set(catalogStreaming)).toEqual(new Set(streamingServiceKeys));
+    expect(catalogStreaming).toHaveLength(streamingServiceKeys.length);
+    for (const key of DEFAULT_UI_SERVICE_KEYS) {
+      expect(isStreamingServiceKey(key)).toBe(false);
+      expect(isKnownServiceKey(key)).toBe(true);
+    }
+    expect(isKnownServiceKey("franceTv")).toBe(true);
+    expect(isKnownServiceKey("dailymotioncom")).toBe(false);
+  });
+
   it("expands compact BBC Sounds and Vimeo svc tokens to full URLs", () => {
     const expanded = expandSvc("bbcSounds:p0example|vimeo:123456789");
     expect(expanded.map((x) => x.key)).toEqual(["bbcSounds", "vimeo"]);
