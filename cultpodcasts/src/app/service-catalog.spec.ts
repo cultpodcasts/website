@@ -145,7 +145,7 @@ describe("service-catalog", () => {
   });
 
   it("does not treat other as a defined listen service", () => {
-    expect(SERVICE_CATALOG.some((d) => d.key === "other")).toBe(false);
+    expect(SERVICE_CATALOG.map((d) => d.key)).not.toContain("other");
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
       expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv"])
     );
