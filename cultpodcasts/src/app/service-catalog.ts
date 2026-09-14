@@ -48,7 +48,8 @@ export const SERVICE_CATALOG: ServiceDescriptor[] = [
   { key: "disneyPlus", displayName: "Disney+", icon: "disney-plus", wideImage: true },
   { key: "bitchute", displayName: "BitChute", icon: "bitchute", wideImage: true },
   { key: "tubi", displayName: "Tubi", icon: "tubi", wideImage: true },
-  { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true }
+  { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true },
+  { key: "franceTv", displayName: "France TV", icon: "france-tv", wideImage: true }
 ];
 
 const byKey = new Map(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -143,6 +144,9 @@ export function resolveServiceKey(url: URL): string | undefined {
   }
   if (host.endsWith("discoveryplus.com")) {
     return "discoveryPlus";
+  }
+  if (host.endsWith("france.tv")) {
+    return "franceTv";
   }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }

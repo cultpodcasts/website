@@ -52,6 +52,7 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL('https://evilbitchute.com/video/32qXfqGEf4Qx/'))).not.toBe("bitchute");
     expect(resolveServiceKey(new URL("https://tubitv.com/en-au/movies/1/example-slug"))).toBe("tubi");
     expect(resolveServiceKey(new URL("https://eviltubitv.com/movies/1/example-slug"))).not.toBe("tubi");
+    expect(resolveServiceKey(new URL("https://www.france.tv/slash/example-show/"))).toBe("franceTv");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
@@ -114,6 +115,7 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://www.discoveryplus.com/show/example")).toBe("discovery+");
     expect(serviceLabelForUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe("BitChute");
     expect(serviceLabelForUrl("https://tubitv.com/movies/1/example-slug")).toBe("Tubi");
+    expect(serviceLabelForUrl("https://www.france.tv/slash/example-show/")).toBe("France TV");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -130,7 +132,7 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.some((d) => d.key === "other")).toBe(false);
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi"])
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv"])
     );
     expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(SERVICE_CATALOG.some((d) => d.key === "tubi")).toBe(true);
