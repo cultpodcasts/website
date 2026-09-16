@@ -25,6 +25,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import { Podcast } from '../podcast.interface';
+import { podcastGetPath } from '../podcast-get-path';
 import { MatDividerModule } from '@angular/material/divider';
 import { buildEpisodeLanguageOptions } from '../language-options.util';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
@@ -496,25 +497,14 @@ export class EditEpisodeDialogComponent {
       return null;
     }
     try {
-      // encodeURIComponent so names ending in '?' (e.g. "Was I In A Cult?") are not
-      // treated as the start of a query string by `new URL(...)`.
-      // Only append episodeId for *name* lookups (disambiguation). Guid identifiers must
-      // hit GET /podcast/{id} — /podcast/{guid}/{episodeId} is treated as a name route and 404s.
-      const encoded = encodeURIComponent(podcastIdentifier);
-      const path = this.episodeId && !isPodcastGuid(podcastIdentifier)
-        ? `/podcast/${encoded}/${this.episodeId}`
-        : `/podcast/${encoded}`;
-      const podcastEndpoint = new URL(path, environment.api).toString();
+      const podcastEndpoint = new URL(
+        podcastGetPath(podcastIdentifier, this.episodeId),
+        environment.api
+      ).toString();
       const podcast = await firstValueFrom(this.http.get<Podcast>(podcastEndpoint, { headers: headers }));
       return podcast;
     } catch {
       return null;
     }
   }
-}
-
-const podcastGuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isPodcastGuid(identifier: string): boolean {
-  return podcastGuidPattern.test(identifier);
 }

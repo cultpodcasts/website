@@ -26,6 +26,8 @@ import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
+import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
+import { podcastGetPathFromEditData } from '../podcast-get-path';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -91,10 +93,11 @@ export class EditPodcastDialogComponent {
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string | undefined },
+    @Inject(MAT_DIALOG_DATA) public data: EditPodcastDialogData,
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;
+    this.podcastId = data.podcastId;
     this.episodeId = data.episodeId;
   }
 
@@ -109,12 +112,10 @@ export class EditPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      let episodeEndpoint: string;
-      if (this.episodeId) {
-        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}/${this.episodeId}`, environment.api).toString();
-      } else {
-        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
-      }
+      const episodeEndpoint = new URL(
+        podcastGetPathFromEditData(this.data),
+        environment.api
+      ).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
