@@ -555,9 +555,9 @@ export class EpisodesApiComponent implements AfterViewInit {
     });
   }
 
-  editPodcast(podcastName: string, episodeId?: string) {
+  editPodcast(podcastName: string, episodeId?: string, podcastId?: string) {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
-      data: { podcastName: podcastName, episodeId: episodeId },
+      data: { podcastName: podcastName, episodeId: episodeId, podcastId: podcastId },
       disableClose: true,
       autoFocus: true,
       width: '90%'

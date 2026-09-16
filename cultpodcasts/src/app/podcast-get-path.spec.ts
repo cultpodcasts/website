@@ -1,8 +1,8 @@
 import { isPodcastGuid, podcastGetPath } from "./podcast-get-path";
 
 describe("podcastGetPath", () => {
-  const podcastId = "ffed5bfd-335d-402a-a406-e4d627b674f5";
-  const episodeId = "e1ff6d85-b545-4fac-962c-61728ae13fa9";
+  const podcastId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const episodeId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
   it("looks up by podcast guid alone so a trailing episode id cannot be treated as a name route", () => {
     expect(isPodcastGuid(podcastId)).toBe(true);

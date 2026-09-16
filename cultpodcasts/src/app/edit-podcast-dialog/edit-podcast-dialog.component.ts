@@ -92,10 +92,15 @@ export class EditPodcastDialogComponent {
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastName: string, episodeId: string | undefined },
+    @Inject(MAT_DIALOG_DATA) public data: {
+      podcastName: string,
+      podcastId?: string,
+      episodeId: string | undefined
+    },
     private dialog: MatDialog,
   ) {
     this.podcastName = data.podcastName;
+    this.podcastId = data.podcastId;
     this.episodeId = data.episodeId;
   }
 
@@ -111,7 +116,7 @@ export class EditPodcastDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(
-        podcastGetPath(this.podcastName, this.episodeId),
+        podcastGetPath(this.podcastId ?? this.podcastName, this.episodeId),
         environment.api
       ).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
