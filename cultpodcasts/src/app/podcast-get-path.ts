@@ -1,3 +1,5 @@
+import { EditPodcastDialogData } from "./edit-podcast-dialog-data.interface";
+
 /**
  * GET /podcast path for curator edit dialogs.
  * Guid identifiers must hit GET /podcast/{id}. Name lookups may append episodeId
@@ -13,4 +15,8 @@ export function podcastGetPath(identifier: string, episodeId?: string): string {
     return `/podcast/${encoded}/${episodeId}`;
   }
   return `/podcast/${encoded}`;
+}
+
+export function podcastGetPathFromEditData(data: EditPodcastDialogData): string {
+  return podcastGetPath(data.podcastId ?? data.podcastName, data.episodeId);
 }

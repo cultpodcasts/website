@@ -23,6 +23,7 @@ import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-da
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
+import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
@@ -601,9 +602,9 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
       });
   }
 
-  editPodcast(podcastName: string, podcastId?: string) {
+  editPodcast(data: EditPodcastDialogData) {
     const dialogRef = this.dialog.open(EditPodcastDialogComponent, {
-      data: { podcastName: podcastName, podcastId: podcastId },
+      data,
       disableClose: true,
       autoFocus: true,
       width: '90%'
