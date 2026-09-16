@@ -26,6 +26,7 @@ import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
+import { podcastGetPath } from '../podcast-get-path';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -109,12 +110,10 @@ export class EditPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      let episodeEndpoint: string;
-      if (this.episodeId) {
-        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}/${this.episodeId}`, environment.api).toString();
-      } else {
-        episodeEndpoint = new URL(`/podcast/${encodeURIComponent(this.podcastName)}`, environment.api).toString();
-      }
+      const episodeEndpoint = new URL(
+        podcastGetPath(this.podcastName, this.episodeId),
+        environment.api
+      ).toString();
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
 
