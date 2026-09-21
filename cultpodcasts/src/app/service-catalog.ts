@@ -71,7 +71,8 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "bitchute", displayName: "BitChute", icon: "bitchute", wideImage: true },
   { key: "tubi", displayName: "Tubi", icon: "tubi", wideImage: true },
   { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true },
-  { key: "franceTv", displayName: "France TV", icon: "france-tv", wideImage: true }
+  { key: "franceTv", displayName: "France TV", icon: "france-tv", wideImage: true },
+  { key: "arte", displayName: "ARTE", icon: "arte", wideImage: true }
 ];
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -172,6 +173,9 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   }
   if (host === "france.tv" || host.endsWith(".france.tv")) {
     return "franceTv";
+  }
+  if (host === "arte.tv" || host.endsWith(".arte.tv")) {
+    return "arte";
   }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }

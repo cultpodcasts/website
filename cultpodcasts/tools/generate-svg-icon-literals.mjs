@@ -152,6 +152,12 @@ const streamingIconSvgs = {
     `<rect width="24" height="24" rx="5.4" fill="#0C1B8C"/>` +
     `<text x="12" y="15.2" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7.2" font-weight="900" letter-spacing="0.35">FTV</text>` +
     `</svg>`,
+  // ARTE — orange tile with the ARTE wordmark (catalogue is multi-language, not French-only).
+  arte:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#FF4D00"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.2">ARTE</text>` +
+    `</svg>`,
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

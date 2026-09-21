@@ -63,7 +63,14 @@ describe('podcast-url-matcher', () => {
       'https://www.france.tv/slash/example-show/8847336-example-episode.html',
       'https://www.france.tv/slash/example-show/?utm_source=share',
       'https://www.france.tv/slash/example-show/8847336-example-episode.html?ref=share',
-      'https://www.france.tv/slash/example-show/#frag'
+      'https://www.france.tv/slash/example-show/#frag',
+      'https://www.arte.tv/fr/videos/RC-018565/colonia-dignidad/',
+      'https://www.arte.tv/de/videos/RC-018565/colonia-dignidad/',
+      'https://www.arte.tv/en/videos/000000-001-A/example-slug/',
+      'https://www.arte.tv/es/videos/000000-000-A/example-slug',
+      'https://arte.tv/pl/videos/000000-001-A/example-slug/?trailer=true',
+      'https://www.arte.tv/it/videos/000000-001-A/example-slug/#frag',
+      'https://www.arte.tv/ro/videos/000000-001-A/'
     ];
 
     for (const url of accepted) {
@@ -96,6 +103,12 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.france.tv/slash/show.with.dots/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://evilfrance.tv/slash/example-show/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://notfrance.tv/slash/example-show/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.arte.tv/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.arte.tv/en/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.arte.tv/fr/videos/histoire/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.arte.tv/eng/videos/000000-001-A/example-slug/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://api.arte.tv/fr/videos/RC-000000/example/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://notarte.tv/fr/videos/RC-000000/example/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -137,6 +150,8 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/8847336-example-episode.html')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/?utm_source=share')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/#frag')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.arte.tv/en/videos/000000-001-A/example-slug/')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.arte.tv/de/videos/RC-000000/example-collection/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 

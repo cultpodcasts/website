@@ -70,6 +70,13 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://www.france.tv/slash/example-show/"))).toBe("franceTv");
     expect(resolveServiceKey(new URL("https://evilfrance.tv/slash/example-show/"))).not.toBe("franceTv");
     expect(resolveServiceKey(new URL("https://notfrance.tv/slash/example-show/"))).not.toBe("franceTv");
+    expect(resolveServiceKey(new URL("https://www.arte.tv/en/videos/000000-001-A/example-slug/"))).toBe("arte");
+    expect(resolveServiceKey(new URL("https://www.arte.tv/de/videos/RC-000000/example-collection/"))).toBe("arte");
+    expect(resolveServiceKey(new URL("https://notarte.tv/en/videos/000000-001-A/example-slug/"))).not.toBe("arte");
+    expect(resolveServiceKey(new URL("https://www.arte.tv/en/videos/000000-001-A/example-slug/"))).toBe("arte");
+    expect(resolveServiceKey(new URL("https://www.arte.tv/de/videos/RC-018565/colonia-dignidad/"))).toBe("arte");
+    expect(resolveServiceKey(new URL("https://notarte.tv/fr/videos/RC-018565/colonia-dignidad/"))).not.toBe("arte");
+    expect(resolveServiceKey(new URL("https://evilarte.tv/en/videos/000000-001-A/example-slug/"))).not.toBe("arte");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
@@ -133,6 +140,7 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl('https://www.bitchute.com/video/32qXfqGEf4Qx/')).toBe("BitChute");
     expect(serviceLabelForUrl("https://tubitv.com/movies/1/example-slug")).toBe("Tubi");
     expect(serviceLabelForUrl("https://www.france.tv/slash/example-show/")).toBe("France TV");
+    expect(serviceLabelForUrl("https://www.arte.tv/fr/videos/RC-000000/example-collection/")).toBe("ARTE");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -149,7 +157,7 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.map((d) => d.key)).not.toContain("other");
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv"])
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv", "arte"])
     );
     expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(SERVICE_CATALOG.some((d) => d.key === "tubi")).toBe(true);
