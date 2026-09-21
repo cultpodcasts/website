@@ -42,7 +42,8 @@ export const streamingServiceKeys = [
 	"bitchute",
 	"tubi",
 	"discoveryPlus",
-	"franceTv"
+	"franceTv",
+	"arte"
 ] as const;
 
 export type StreamingServiceKey = (typeof streamingServiceKeys)[number];
@@ -100,7 +101,8 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	bitchute: "https://www.bitchute.com/video/exampleVideoId",
 	tubi: "https://tubitv.com/movies/1/example-slug",
 	discoveryPlus: "https://www.discoveryplus.com/show/example-slug",
-	franceTv: "https://www.france.tv/slash/example-show/8847336-example-episode.html"
+	franceTv: "https://www.france.tv/slash/example-show/8847336-example-episode.html",
+	arte: "https://www.arte.tv/en/videos/000000-001-A/example-slug/"
 };
 
 export type StreamingMembershipKnown = {

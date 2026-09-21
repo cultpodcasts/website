@@ -19,6 +19,7 @@ const bitchute = /^(?:https?:)?\/\/(?:www\.)?bitchute\.com\/(?:video|embed)\/[A-
 const tubi = /^(?:https?:)?\/\/(?:www\.)?tubitv\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:movies|movie|tv-shows|tv|shows|series|video)\/\d+(?:\/[^/\s?#]+)?\/?(?:[?#]|$)/;
 const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
 const franceTv = /^(?:https?:)?\/\/(?:www\.)?france\.tv\/[^/\s.?#]+\/[^/\s.?#]+(?:\/\d+-[^/\s.?#]+\.html)?\/?(?:[?#]|$)/;
+const arte = /^(?:https?:)?\/\/(?:www\.)?arte\.tv\/[a-z]{2}\/videos\/(?:RC-\d+|\d{6}-\d{3}-[A-Za-z])(?:\/[^/\s?#]+)?\/?(?:[?#]|$)/;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
@@ -44,6 +45,7 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: tubi, useFullInput: true, kind: 'streaming' },
   { regex: discoveryPlus, useFullInput: true, kind: 'streaming' },
   { regex: franceTv, useFullInput: true, kind: 'streaming' },
+  { regex: arte, useFullInput: true, kind: 'streaming' },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {
