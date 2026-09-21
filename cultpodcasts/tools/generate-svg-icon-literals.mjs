@@ -158,6 +158,42 @@ const streamingIconSvgs = {
     `<rect width="24" height="24" rx="5.4" fill="#FF4D00"/>` +
     `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="5.6" font-weight="900" letter-spacing="0.2">ARTE</text>` +
     `</svg>`,
+  // Hulu — green tile with Hulu wordmark.
+  hulu:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#1CE783"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#0B0B0B" font-family="Arial Black, Impact, Arial, sans-serif" font-size="6.2" font-weight="900" letter-spacing="0.1">hulu</text>` +
+    `</svg>`,
+  // Peacock — yellow tile with peacock wordmark.
+  peacock:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#FFC800"/>` +
+    `<text x="12" y="15.2" text-anchor="middle" fill="#111" font-family="Arial Black, Impact, Arial, sans-serif" font-size="4.4" font-weight="900" letter-spacing="-0.2">PEACOCK</text>` +
+    `</svg>`,
+  // Apple TV+ — black tile with TV+ wordmark.
+  'apple-tv-plus':
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="6" font-weight="900" letter-spacing="0.1">TV+</text>` +
+    `</svg>`,
+  // ZDF — orange tile with ZDF wordmark.
+  zdf:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#FA7D19"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7" font-weight="900" letter-spacing="0.3">ZDF</text>` +
+    `</svg>`,
+  // ARD — blue tile with ARD wordmark.
+  ard:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#003D7A"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7" font-weight="900" letter-spacing="0.3">ARD</text>` +
+    `</svg>`,
+  // Canal+ — black tile with C+ wordmark.
+  'canal-plus':
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
+    `<text x="12" y="15.6" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="8" font-weight="900" letter-spacing="0.1">C+</text>` +
+    `</svg>`,
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

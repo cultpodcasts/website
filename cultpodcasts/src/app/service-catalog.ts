@@ -72,7 +72,13 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "tubi", displayName: "Tubi", icon: "tubi", wideImage: true },
   { key: "discoveryPlus", displayName: "discovery+", icon: "discovery-plus", wideImage: true },
   { key: "franceTv", displayName: "France TV", icon: "france-tv", wideImage: true },
-  { key: "arte", displayName: "ARTE", icon: "arte", wideImage: true }
+  { key: "arte", displayName: "ARTE", icon: "arte", wideImage: true },
+  { key: "hulu", displayName: "Hulu", icon: "hulu", wideImage: true },
+  { key: "peacock", displayName: "Peacock", icon: "peacock", wideImage: true },
+  { key: "appleTvPlus", displayName: "Apple TV+", icon: "apple-tv-plus", wideImage: true },
+  { key: "zdf", displayName: "ZDF", icon: "zdf", wideImage: true },
+  { key: "ard", displayName: "ARD", icon: "ard", wideImage: true },
+  { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true }
 ];
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -176,6 +182,24 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   }
   if (host === "arte.tv" || host.endsWith(".arte.tv")) {
     return "arte";
+  }
+  if (host === "hulu.com" || host.endsWith(".hulu.com")) {
+    return "hulu";
+  }
+  if (host === "peacocktv.com" || host.endsWith(".peacocktv.com")) {
+    return "peacock";
+  }
+  if (host === "tv.apple.com") {
+    return "appleTvPlus";
+  }
+  if (host === "zdf.de" || host.endsWith(".zdf.de")) {
+    return "zdf";
+  }
+  if (host === "ardmediathek.de" || host.endsWith(".ardmediathek.de")) {
+    return "ard";
+  }
+  if (host === "canalplus.com" || host.endsWith(".canalplus.com")) {
+    return "canalPlus";
   }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
