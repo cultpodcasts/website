@@ -77,6 +77,17 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://www.arte.tv/de/videos/RC-018565/colonia-dignidad/"))).toBe("arte");
     expect(resolveServiceKey(new URL("https://notarte.tv/fr/videos/RC-018565/colonia-dignidad/"))).not.toBe("arte");
     expect(resolveServiceKey(new URL("https://evilarte.tv/en/videos/000000-001-A/example-slug/"))).not.toBe("arte");
+    expect(resolveServiceKey(new URL("https://www.hulu.com/series/example-slug"))).toBe("hulu");
+    expect(resolveServiceKey(new URL("https://evilhulu.com/series/example-slug"))).not.toBe("hulu");
+    expect(resolveServiceKey(new URL("https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890"))).toBe("peacock");
+    expect(resolveServiceKey(new URL("https://evilpeacocktv.com/watch/asset/tv/example-slug/1234567890"))).not.toBe("peacock");
+    expect(resolveServiceKey(new URL("https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000"))).toBe("appleTvPlus");
+    expect(resolveServiceKey(new URL("https://www.zdf.de/serien/example-slug"))).toBe("zdf");
+    expect(resolveServiceKey(new URL("https://evilzdf.de/serien/example-slug"))).not.toBe("zdf");
+    expect(resolveServiceKey(new URL("https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ"))).toBe("ard");
+    expect(resolveServiceKey(new URL("https://evilardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ"))).not.toBe("ard");
+    expect(resolveServiceKey(new URL("https://www.canalplus.com/series/example-slug/h/12345_67890"))).toBe("canalPlus");
+    expect(resolveServiceKey(new URL("https://evilcanalplus.com/series/example-slug/h/12345_67890"))).not.toBe("canalPlus");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
   });
 
@@ -141,6 +152,12 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://tubitv.com/movies/1/example-slug")).toBe("Tubi");
     expect(serviceLabelForUrl("https://www.france.tv/slash/example-show/")).toBe("France TV");
     expect(serviceLabelForUrl("https://www.arte.tv/fr/videos/RC-000000/example-collection/")).toBe("ARTE");
+    expect(serviceLabelForUrl("https://www.hulu.com/series/example-slug")).toBe("Hulu");
+    expect(serviceLabelForUrl("https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890")).toBe("Peacock");
+    expect(serviceLabelForUrl("https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000")).toBe("Apple TV+");
+    expect(serviceLabelForUrl("https://www.zdf.de/serien/example-slug")).toBe("ZDF");
+    expect(serviceLabelForUrl("https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ")).toBe("ARD");
+    expect(serviceLabelForUrl("https://www.canalplus.com/series/example-slug/h/12345_67890")).toBe("Canal+");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -157,7 +174,7 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.map((d) => d.key)).not.toContain("other");
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv", "arte"])
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv", "arte", "hulu", "peacock", "appleTvPlus", "zdf", "ard", "canalPlus"])
     );
     expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(SERVICE_CATALOG.some((d) => d.key === "tubi")).toBe(true);

@@ -70,7 +70,21 @@ describe('podcast-url-matcher', () => {
       'https://www.arte.tv/es/videos/000000-000-A/example-slug',
       'https://arte.tv/pl/videos/000000-001-A/example-slug/?trailer=true',
       'https://www.arte.tv/it/videos/000000-001-A/example-slug/#frag',
-      'https://www.arte.tv/ro/videos/000000-001-A/'
+      'https://www.arte.tv/ro/videos/000000-001-A/',
+      'https://www.hulu.com/series/example-slug',
+      'https://www.hulu.com/movie/example-slug',
+      'https://www.hulu.com/watch/2f76adde-7bdc-409d-b1a9-a8cdcbdcbf9f',
+      'https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890',
+      'https://www.peacocktv.com/watch/playback/vod/GMO_00000000066613_01',
+      'https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000',
+      'https://tv.apple.com/gb/movie/example-slug/umc.cmc.exampleid000000000000',
+      'https://tv.apple.com/de/episode/example-slug/umc.cmc.exampleid000000000000',
+      'https://www.zdf.de/serien/example-slug',
+      'https://www.zdf.de/video/serien/example-slug/example-episode',
+      'https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ',
+      'https://www.ardmediathek.de/video/example-show/example-episode/ard/Y3JpZDovL2V4YW1wbGUvaWQ',
+      'https://www.canalplus.com/series/example-slug/h/12345_67890',
+      'https://www.canalplus.com/fr/cinema/example-slug/h/12345_67890'
     ];
 
     for (const url of accepted) {
@@ -109,6 +123,19 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.arte.tv/eng/videos/000000-001-A/example-slug/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://api.arte.tv/fr/videos/RC-000000/example/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://notarte.tv/fr/videos/RC-000000/example/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hulu.com/series')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hulu.com/watch/offers')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://evilhulu.com/series/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.peacocktv.com/watch/home')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://evilpeacocktv.com/watch/asset/tv/example-slug/1234567890')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://tv.apple.com/us/channel/apple-tv/tvs.sbd.4000')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://tv.apple.com/us/show/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.zdf.de/serien')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.zdf.de/impressum')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.ardmediathek.de/filme')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.ardmediathek.de/video')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.canalplus.com/series')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.canalplus.com/series/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -152,6 +179,12 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/#frag')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.arte.tv/en/videos/000000-001-A/example-slug/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.arte.tv/de/videos/RC-000000/example-collection/')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.hulu.com/series/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.zdf.de/serien/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.canalplus.com/series/example-slug/h/12345_67890')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 

@@ -43,7 +43,13 @@ export const streamingServiceKeys = [
 	"tubi",
 	"discoveryPlus",
 	"franceTv",
-	"arte"
+	"arte",
+	"hulu",
+	"peacock",
+	"appleTvPlus",
+	"zdf",
+	"ard",
+	"canalPlus"
 ] as const;
 
 export type StreamingServiceKey = (typeof streamingServiceKeys)[number];
@@ -102,7 +108,13 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	tubi: "https://tubitv.com/movies/1/example-slug",
 	discoveryPlus: "https://www.discoveryplus.com/show/example-slug",
 	franceTv: "https://www.france.tv/slash/example-show/8847336-example-episode.html",
-	arte: "https://www.arte.tv/en/videos/000000-001-A/example-slug/"
+	arte: "https://www.arte.tv/en/videos/000000-001-A/example-slug/",
+	hulu: "https://www.hulu.com/series/example-slug",
+	peacock: "https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890",
+	appleTvPlus: "https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000",
+	zdf: "https://www.zdf.de/serien/example-slug",
+	ard: "https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ",
+	canalPlus: "https://www.canalplus.com/series/example-slug/h/12345_67890"
 };
 
 export type StreamingMembershipKnown = {
