@@ -3,6 +3,8 @@ import {
 	STREAMING_SUBMIT_CONTRACT_COPY_FROM,
 	defaultBrowserRenderingServices,
 	htmlFetchModeForService,
+	prepareUrlRewrites,
+	resolvePrepareFetchUrl,
 	resolveScrapeProfile,
 	streamingLookupByUrl,
 	streamingMembershipShapeCases,
@@ -101,5 +103,27 @@ describe("streaming-submit-contract (website consumer)", () => {
 			expect(modes[s]).toBe("directHttp");
 			expect(resolveScrapeProfile(s).region).toBe("default");
 		}
+	});
+
+	it("declares Peacock prepareUrlRewrites and resolves asset→watch-online before regional scrape", () => {
+		expect(prepareUrlRewrites.peacock).toEqual({
+			fromPathPrefix: "/watch/asset/",
+			toPathPrefix: "/watch-online/",
+			segmentRemaps: { movie: "movies" },
+			hostSuffix: "peacocktv.com"
+		});
+		const asset =
+			"https://www.peacocktv.com/watch/asset/tv/the-office-uk/8893980556248533112/seasons/1/episodes/work-experience-episode-2/9694b7a9-ffae-3b84-9606-5f852ccffee0";
+		const seo =
+			"https://www.peacocktv.com/watch-online/tv/the-office-uk/8893980556248533112/seasons/1/episodes/work-experience-episode-2/9694b7a9-ffae-3b84-9606-5f852ccffee0";
+		expect(resolvePrepareFetchUrl("peacock", asset)).toEqual({
+			requestUrl: seo,
+			rewrittenTo: seo
+		});
+		expect(resolvePrepareFetchUrl("peacock", seo)).toEqual({
+			requestUrl: seo,
+			rewrittenTo: null
+		});
+		expect(resolvePrepareFetchUrl("zdf", asset).rewrittenTo).toBeNull();
 	});
 });

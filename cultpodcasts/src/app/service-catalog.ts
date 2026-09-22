@@ -52,10 +52,6 @@ export function isStreamingServiceKey(key: string): key is StreamingServiceKey {
   return STREAMING_KEY_SET.has(key);
 }
 
-export function isRetiredStreamingDisplayKey(key: string): key is RetiredStreamingDisplayKey {
-  return RETIRED_DISPLAY_SET.has(key);
-}
-
 export function isKnownServiceKey(key: string): key is KnownServiceKey {
   return DEFAULT_UI_SET.has(key) || STREAMING_KEY_SET.has(key) || RETIRED_DISPLAY_SET.has(key);
 }
