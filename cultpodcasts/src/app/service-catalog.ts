@@ -27,16 +27,24 @@ export const DEFAULT_UI_SERVICE_KEYS = ["spotify", "apple", "youtube"] as const;
 export type DefaultUiServiceKey = (typeof DEFAULT_UI_SERVICE_KEYS)[number];
 
 /**
- * Wire keys the SPA knows by name: podcast trio + {@link StreamingServiceKey}.
+ * Submit-retired streaming keys kept for display of historical episode links
+ * (not in {@link streamingServiceKeys}; not submittable).
+ */
+export const retiredStreamingDisplayKeys = ["hulu"] as const;
+export type RetiredStreamingDisplayKey = (typeof retiredStreamingDisplayKeys)[number];
+
+/**
+ * Wire keys the SPA knows by name: podcast trio + submit-eligible streaming + retired display.
  * Unknown-host slugs from {@link resolveServiceKey} stay plain `string`.
  */
-export type KnownServiceKey = DefaultUiServiceKey | StreamingServiceKey;
+export type KnownServiceKey = DefaultUiServiceKey | StreamingServiceKey | RetiredStreamingDisplayKey;
 
 /** Catalog row — key is always a known podcast or streaming wire value. */
 export type CatalogServiceDescriptor = ServiceDescriptor & { key: KnownServiceKey };
 
 const DEFAULT_UI_SET = new Set<string>(DEFAULT_UI_SERVICE_KEYS);
 const STREAMING_KEY_SET = new Set<string>(streamingServiceKeys);
+const RETIRED_DISPLAY_SET = new Set<string>(retiredStreamingDisplayKeys);
 
 export type { StreamingServiceKey };
 
@@ -45,7 +53,7 @@ export function isStreamingServiceKey(key: string): key is StreamingServiceKey {
 }
 
 export function isKnownServiceKey(key: string): key is KnownServiceKey {
-  return DEFAULT_UI_SET.has(key) || STREAMING_KEY_SET.has(key);
+  return DEFAULT_UI_SET.has(key) || STREAMING_KEY_SET.has(key) || RETIRED_DISPLAY_SET.has(key);
 }
 
 /** Mirrors RPP ServiceCatalog JSON keys, icon names, and display order. */
