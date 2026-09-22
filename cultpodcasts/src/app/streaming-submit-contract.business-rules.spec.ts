@@ -91,9 +91,9 @@ describe("streaming-submit-contract (website consumer)", () => {
 			streamingServiceKeys.map((s: StreamingServiceKey) => [s, htmlFetchModeForService(s)])
 		);
 		expect(defaultBrowserRenderingServices).toContain("itvx");
-		expect(modes.itvx).toBe("browserRendering");
-		expect(modes.hulu).toBe("directHttp");
-		expect(modes.peacock).toBe("directHttp");
+		expect(modes["itvx"]).toBe("browserRendering");
+		expect(modes["hulu"]).toBe("directHttp");
+		expect(modes["peacock"]).toBe("directHttp");
 		expect(resolveScrapeProfile("hulu")).toEqual({ mode: "directHttp", region: "us" });
 		expect(resolveScrapeProfile("peacock")).toEqual({ mode: "directHttp", region: "us" });
 		expect(resolveScrapeProfile("itvx").region).toBe("default");
