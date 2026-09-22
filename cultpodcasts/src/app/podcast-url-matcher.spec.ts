@@ -75,7 +75,14 @@ describe('podcast-url-matcher', () => {
       'https://www.hulu.com/movie/example-slug',
       'https://www.hulu.com/watch/2f76adde-7bdc-409d-b1a9-a8cdcbdcbf9f',
       'https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890',
+      'https://www.peacocktv.com/watch/asset/tv/the-national-dog-show-2025/f4ea0790-2f7a-34ee-ba2c-30ff9ed2c03d',
+      'https://www.peacocktv.com/watch/asset/tv/example-slug/8893980556248533112/seasons/1/episodes/example-episode/9694b7a9-ffae-3b84-9606-5f852ccffee0',
       'https://www.peacocktv.com/watch/playback/vod/GMO_00000000066613_01',
+      'https://www.peacocktv.com/watch/playback/vod/GMO_00000000391471_01/8e388082-094f-3974-951b-03332f1a1e67',
+      'https://www.peacocktv.com/watch/playback/vod/_/99d0061c-9f02-3093-819d-c397049a8106',
+      'https://www.peacocktv.com/watch-online/movies/example-slug/f45c2853-4230-3910-aa53-51ac37f5a788',
+      'https://www.peacocktv.com/watch-online/tv/example-slug/8893980556248533112',
+      'https://www.peacocktv.com/watch-online/tv/example-slug/8893980556248533112/seasons/1/episodes/example-episode/9694b7a9-ffae-3b84-9606-5f852ccffee0',
       'https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000',
       'https://tv.apple.com/gb/movie/example-slug/umc.cmc.exampleid000000000000',
       'https://tv.apple.com/de/episode/example-slug/umc.cmc.exampleid000000000000',
@@ -127,6 +134,7 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.hulu.com/watch/offers')).toBe(false);
     expect(isSubmittablePodcastUrl('https://evilhulu.com/series/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.peacocktv.com/watch/home')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.peacocktv.com/watch-online/tv')).toBe(false);
     expect(isSubmittablePodcastUrl('https://evilpeacocktv.com/watch/asset/tv/example-slug/1234567890')).toBe(false);
     expect(isSubmittablePodcastUrl('https://tv.apple.com/us/channel/apple-tv/tvs.sbd.4000')).toBe(false);
     expect(isSubmittablePodcastUrl('https://tv.apple.com/us/show/example-slug')).toBe(false);
