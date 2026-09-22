@@ -87,6 +87,149 @@ export const scrapeProfiles: Readonly<Partial<Record<StreamingServiceKey, Scrape
 	peacock: { mode: "directHttp", region: "us" }
 };
 
+/**
+ * Rewrite signed-in / soft-wall catalogue paths to public SEO twins before
+ * regional scrape (`SCRAPE_US`). Applied once in Api `scrapeViaRegionalWorker`
+ * (prepare + survey). Playback / app shells are not rewritten.
+ */
+export type PrepareUrlRewriteSpec = {
+	/** Absolute-path prefix of the soft-wall / signed-in catalogue URL. */
+	fromPathPrefix: string;
+	/** Absolute-path prefix of the public SEO twin. */
+	toPathPrefix: string;
+	/** Optional first catalogue-kind segment remaps (e.g. movie → movies). */
+	segmentRemaps?: Readonly<Record<string, string>>;
+	/** Host must be this registrable domain or a subdomain of it. */
+	hostSuffix: string;
+};
+
+export const prepareUrlRewrites: Readonly<
+	Partial<Record<StreamingServiceKey, PrepareUrlRewriteSpec>>
+> = {
+	peacock: {
+		fromPathPrefix: "/watch/asset/",
+		toPathPrefix: "/watch-online/",
+		segmentRemaps: { movie: "movies" },
+		hostSuffix: "peacocktv.com"
+	}
+};
+
+export type PrepareFetchUrlResolution = {
+	requestUrl: string;
+	/** Non-null when a {@link prepareUrlRewrites} rule changed the fetch URL. */
+	rewrittenTo: string | null;
+};
+
+/**
+ * Resolve the URL to fetch for prepare / regional scrape.
+ * Missing rewrite spec → return input unchanged.
+ */
+export function resolvePrepareFetchUrl(
+	service: string,
+	url: string
+): PrepareFetchUrlResolution {
+	const spec = prepareUrlRewrites[service.trim() as StreamingServiceKey];
+	if (!spec) {
+		return { requestUrl: url, rewrittenTo: null };
+	}
+	const rewritten = applyPathPrefixRewrite(url, spec);
+	if (!rewritten) {
+		return { requestUrl: url, rewrittenTo: null };
+	}
+	return { requestUrl: rewritten, rewrittenTo: rewritten };
+}
+
+const PREPARE_REWRITE_UUID =
+	/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const PREPARE_REWRITE_NUMERIC_ID = /^\d{6,}$/;
+
+function prepareRewriteHostOk(hostname: string, hostSuffix: string): boolean {
+	const h = hostname.toLowerCase();
+	const suffix = hostSuffix.toLowerCase();
+	return h === suffix || h.endsWith(`.${suffix}`);
+}
+
+function prepareRewriteAssetId(segment: string): boolean {
+	return PREPARE_REWRITE_NUMERIC_ID.test(segment) || PREPARE_REWRITE_UUID.test(segment);
+}
+
+function prepareRewriteCatalogueSegment(segment: string): boolean {
+	return segment.length > 0 && !segment.includes(".");
+}
+
+/** Peacock (and similar): `/from/...` → `/to/...` with tv|movies catalogue shape. */
+function applyPathPrefixRewrite(url: string, spec: PrepareUrlRewriteSpec): string | null {
+	let u: URL;
+	try {
+		u = new URL(url);
+	} catch {
+		return null;
+	}
+	if (!prepareRewriteHostOk(u.hostname, spec.hostSuffix)) {
+		return null;
+	}
+
+	const fromParts = spec.fromPathPrefix.split("/").filter(Boolean);
+	const toParts = spec.toPathPrefix.split("/").filter(Boolean);
+	const parts = u.pathname.split("/").filter(Boolean);
+	if (parts.length < fromParts.length + 2) {
+		return null;
+	}
+	for (let i = 0; i < fromParts.length; i++) {
+		if (parts[i].toLowerCase() !== fromParts[i].toLowerCase()) {
+			return null;
+		}
+	}
+
+	const after = parts.slice(fromParts.length);
+	// after: {kind}/{slug}/{id}[ /seasons/n/episodes/ep-slug/ep-id ]
+	if (
+		after.length < 3 ||
+		!prepareRewriteCatalogueSegment(after[1]) ||
+		!prepareRewriteAssetId(after[2])
+	) {
+		return null;
+	}
+
+	const remaps = spec.segmentRemaps ?? {};
+	const rawKind = after[0].toLowerCase();
+	const kind = (remaps[rawKind] ?? rawKind).toLowerCase();
+	if (kind !== "tv" && kind !== "movies") {
+		return null;
+	}
+
+	const seoAfter = [kind, ...after.slice(1)];
+	if (kind === "movies") {
+		if (seoAfter.length !== 3) {
+			return null;
+		}
+	} else if (seoAfter.length === 3) {
+		// series hub
+	} else if (
+		!(
+			seoAfter.length >= 8 &&
+			seoAfter[3].toLowerCase() === "seasons" &&
+			prepareRewriteCatalogueSegment(seoAfter[4]) &&
+			seoAfter[5].toLowerCase() === "episodes" &&
+			prepareRewriteCatalogueSegment(seoAfter[6]) &&
+			prepareRewriteAssetId(seoAfter[7])
+		)
+	) {
+		return null;
+	}
+
+	const out = new URL(u.href);
+	out.pathname = `/${[...toParts, ...seoAfter].join("/")}`;
+	out.search = "";
+	out.hash = "";
+	return out.toString();
+}
+
+/** @deprecated Prefer {@link resolvePrepareFetchUrl}; kept for Peacock-focused callers/tests. */
+export function toPeacockWatchOnlineUrl(url: string): string | null {
+	return resolvePrepareFetchUrl("peacock", url).rewrittenTo;
+}
+
 /** Default allowlist — ops may expand via Worker env without SPA changes. */
 export const defaultBrowserRenderingServices: readonly StreamingServiceKey[] = ["itvx"];
 
@@ -353,6 +496,7 @@ export function streamingSubmitContractJsonPayload() {
 		defaultBrowserRenderingServices: [...defaultBrowserRenderingServices],
 		scrapeRegions: [...scrapeRegions],
 		scrapeProfiles: { ...scrapeProfiles },
+		prepareUrlRewrites: { ...prepareUrlRewrites },
 		streamingSpecimenUrls: { ...streamingSpecimenUrls },
 		streamingMembershipShapeCaseIds: streamingMembershipShapeCases.map((c) => c.id),
 		streamingOrchestrationCaseIds: streamingOrchestrationCases.map((c) => c.id),
@@ -362,6 +506,7 @@ export function streamingSubmitContractJsonPayload() {
 			membershipDoesNotScrape: true,
 			prepareFetchesHtml: true,
 			prepareFetchModeFromEnvAllowlist: true,
+			prepareUrlRewriteBeforeRegionalScrape: true,
 			submitUsesPrefetchedMetaWhenCached: true,
 			azureDoesNotCallCloudflare: true
 		}
