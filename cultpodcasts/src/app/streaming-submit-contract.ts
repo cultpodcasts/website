@@ -1,17 +1,15 @@
 /**
  * Canonical streaming-submit orchestration contract (CF Worker / Azure / website).
  *
- * Ownership: Api publishes; website + RedditPodcastPoster consume copies.
+ * Ownership: Api publishes.
  *
- * Copy this TypeScript file byte-for-byte to:
+ * Preferred distribution: GitHub Packages `@cultpodcasts/streaming-submit-contract`
+ * (staging + production) via Workers Builds — see `docs/contract-publish.md`.
+ *
+ * Legacy byte-copies (until consumers switch to the package):
  *   website/cultpodcasts/src/app/streaming-submit-contract.ts
- *
- * Copy the sibling JSON (same payload) byte-for-byte to:
  *   RedditPodcastPoster/docs/contracts/streaming-submit-contract.json
- *
- * Assert:
- *   website:  pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
- *   RPP:      pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
+ *   Assert: pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
  *
  * Podcast-service platforms (Spotify / Apple / YouTube) are out of scope — APIs, not scrapers.
  * This contract covers streaming ServiceKeys only.
@@ -69,7 +67,7 @@ export type HtmlFetchMode = (typeof htmlFetchModes)[number];
 /**
  * Logical scrape geo for prepare HTML fetch.
  * `default` = run on the edge Api Worker (no regional service binding).
- * `us` / `uk` / `de` = dispatch to a placed scrape Worker (Phase 1: `us` only).
+ * `us` / `uk` / `de` = dispatch to a placed scrape Worker (Phase 1: `us` only; further regions only if soft-wall proven).
  */
 export const scrapeRegions = ["default", "us", "uk", "de"] as const;
 export type ScrapeRegion = (typeof scrapeRegions)[number];
@@ -84,8 +82,9 @@ export type ScrapeProfile = {
  * uses `region: default` and the BR allowlist for mode.
  */
 export const scrapeProfiles: Readonly<Partial<Record<StreamingServiceKey, ScrapeProfile>>> = {
-	hulu: { mode: "browserRendering", region: "us" },
-	peacock: { mode: "browserRendering", region: "us" }
+	/** US geo soft-wall: placed Worker fetch (not BR — BR is not region-pinnable). */
+	hulu: { mode: "directHttp", region: "us" },
+	peacock: { mode: "directHttp", region: "us" }
 };
 
 /** Default allowlist — ops may expand via Worker env without SPA changes. */
