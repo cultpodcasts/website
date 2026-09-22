@@ -71,9 +71,6 @@ describe('podcast-url-matcher', () => {
       'https://arte.tv/pl/videos/000000-001-A/example-slug/?trailer=true',
       'https://www.arte.tv/it/videos/000000-001-A/example-slug/#frag',
       'https://www.arte.tv/ro/videos/000000-001-A/',
-      'https://www.hulu.com/series/example-slug',
-      'https://www.hulu.com/movie/example-slug',
-      'https://www.hulu.com/watch/2f76adde-7bdc-409d-b1a9-a8cdcbdcbf9f',
       'https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890',
       'https://www.peacocktv.com/watch/asset/tv/the-national-dog-show-2025/f4ea0790-2f7a-34ee-ba2c-30ff9ed2c03d',
       'https://www.peacocktv.com/watch/asset/tv/example-slug/8893980556248533112/seasons/1/episodes/example-episode/9694b7a9-ffae-3b84-9606-5f852ccffee0',
@@ -130,6 +127,9 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.arte.tv/eng/videos/000000-001-A/example-slug/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://api.arte.tv/fr/videos/RC-000000/example/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://notarte.tv/fr/videos/RC-000000/example/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hulu.com/series/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hulu.com/movie/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://www.hulu.com/watch/2f76adde-7bdc-409d-b1a9-a8cdcbdcbf9f')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.hulu.com/series')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.hulu.com/watch/offers')).toBe(false);
     expect(isSubmittablePodcastUrl('https://evilhulu.com/series/example-slug')).toBe(false);
@@ -187,7 +187,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.france.tv/slash/example-show/#frag')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.arte.tv/en/videos/000000-001-A/example-slug/')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.arte.tv/de/videos/RC-000000/example-collection/')).toBe('streaming');
-    expect(classifySubmittablePodcastUrl('https://www.hulu.com/series/example-slug')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://www.hulu.com/series/example-slug')).toBeUndefined();
     expect(classifySubmittablePodcastUrl('https://www.peacocktv.com/watch/asset/tv/example-slug/1234567890')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.zdf.de/serien/example-slug')).toBe('streaming');

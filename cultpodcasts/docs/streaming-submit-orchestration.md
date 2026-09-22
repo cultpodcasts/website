@@ -17,7 +17,7 @@ pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
 1. **Lookup** returns streaming `service` (`ServiceKeys` string). Do not invent a parallel provider enum.
    The SPA may re-export `StreamingServiceKey` as `SubmitUrlStreamingService`; do not duplicate the literal list.
 2. **Prepare** — after unknown streaming lookup, SPA calls `POST /submit/prepare` (`SubmitUrlPrepareService`). Worker owns HTML fetch (Browser Rendering, regional scrape Workers for geo, or Azure prepare); membership does not scrape.
-   - Wire fields in the copied fixture: `scrapeRegions` (`default` \| `us` \| `uk` \| `de`) and `scrapeProfiles` (per-service `{ mode, region }`). Worker resolves via `resolveScrapeProfile` and dispatches region on prepare (Phase 1: `hulu` / `peacock` → US `directHttp`). Full process: Api docs [Browser Rendering allowlist + scrape profiles](../../../Api/docs/streaming-submit-orchestration.md#browser-rendering-allowlist--scrape-profiles).
+   - Wire fields in the copied fixture: `scrapeRegions` (`default` \| `us` \| `uk` \| `de`) and `scrapeProfiles` (per-service `{ mode, region }`). Worker resolves via `resolveScrapeProfile` and dispatches region on prepare (Phase 1: `peacock` → US `directHttp`; Hulu submit-retired). Full process: Api docs [Browser Rendering allowlist + scrape profiles](../../../Api/docs/streaming-submit-orchestration.md#browser-rendering-allowlist--scrape-profiles).
 3. **Submit** uses server-side prefetched meta after prepare — client does not POST HTML/meta.
 4. Spotify / Apple / YouTube stay on existing podcast-service flows (APIs) — out of this contract.
 

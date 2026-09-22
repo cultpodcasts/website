@@ -42,7 +42,6 @@ export const streamingServiceKeys = [
 	"discoveryPlus",
 	"franceTv",
 	"arte",
-	"hulu",
 	"peacock",
 	"appleTvPlus",
 	"zdf",
@@ -82,8 +81,7 @@ export type ScrapeProfile = {
  * uses `region: default` and the BR allowlist for mode.
  */
 export const scrapeProfiles: Readonly<Partial<Record<StreamingServiceKey, ScrapeProfile>>> = {
-	/** US geo soft-wall: placed Worker fetch (not BR — BR is not region-pinnable). */
-	hulu: { mode: "directHttp", region: "us" },
+	/** US geo soft-wall: placed Worker fetch (not BR — BR is not region-pinnable). Peacock only; Hulu is submit-retired (no episode URLs). */
 	peacock: { mode: "directHttp", region: "us" }
 };
 
@@ -296,7 +294,6 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	discoveryPlus: "https://www.discoveryplus.com/show/example-slug",
 	franceTv: "https://www.france.tv/slash/example-show/8847336-example-episode.html",
 	arte: "https://www.arte.tv/en/videos/000000-001-A/example-slug/",
-	hulu: "https://www.hulu.com/series/example-slug",
 	peacock: "https://www.peacocktv.com/watch-online/movies/example-slug/f45c2853-4230-3910-aa53-51ac37f5a788",
 	appleTvPlus: "https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000",
 	zdf: "https://www.zdf.de/serien/example-slug",

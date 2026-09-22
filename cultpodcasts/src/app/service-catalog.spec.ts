@@ -15,10 +15,13 @@ import { streamingServiceKeys } from "./streaming-submit-contract";
 import { svgIconLiterals } from "./svg-icon-literals";
 
 describe("service-catalog", () => {
-  it("keeps SERVICE_CATALOG streaming keys identical to streamingServiceKeys (wire enum parity)", () => {
+  it("keeps SERVICE_CATALOG submit-eligible streaming keys identical to streamingServiceKeys; retired display keys (Hulu) stay for historical links", () => {
     const catalogStreaming = SERVICE_CATALOG.map((d) => d.key).filter(isStreamingServiceKey);
     expect(new Set(catalogStreaming)).toEqual(new Set(streamingServiceKeys));
     expect(catalogStreaming).toHaveLength(streamingServiceKeys.length);
+    expect(isStreamingServiceKey("hulu")).toBe(false);
+    expect(isKnownServiceKey("hulu")).toBe(true);
+    expect(SERVICE_CATALOG.some((d) => d.key === "hulu")).toBe(true);
     for (const key of DEFAULT_UI_SERVICE_KEYS) {
       expect(isStreamingServiceKey(key)).toBe(false);
       expect(isKnownServiceKey(key)).toBe(true);

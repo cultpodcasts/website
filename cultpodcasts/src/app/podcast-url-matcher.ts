@@ -20,7 +20,6 @@ const tubi = /^(?:https?:)?\/\/(?:www\.)?tubitv\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\
 const discoveryPlus = /^(?:https?:)?\/\/(?:www\.)?discoveryplus\.com\/(?:[a-z]{2}\/)?(?:show|video|movie)\/[^/\s]+/;
 const franceTv = /^(?:https?:)?\/\/(?:www\.)?france\.tv\/[^/\s.?#]+\/[^/\s.?#]+(?:\/\d+-[^/\s.?#]+\.html)?\/?(?:[?#]|$)/;
 const arte = /^(?:https?:)?\/\/(?:www\.)?arte\.tv\/[a-z]{2}\/videos\/(?:RC-\d+|\d{6}-\d{3}-[A-Za-z])(?:\/[^/\s?#]+)?\/?(?:[?#]|$)/;
-const hulu = /^(?:https?:)?\/\/(?:www\.)?hulu\.com\/(?:series|movie)\/[^/\s?#]+\/?(?:[?#]|$)|^(?:https?:)?\/\/(?:www\.)?hulu\.com\/watch\/(?!offers(?:\/|[?#]|$))[^/\s?#]+\/?(?:[?#]|$)/;
 const peacock = /^(?:https?:)?\/\/(?:www\.)?peacocktv\.com\/(?:watch-online\/(?:movies\/[^/\s?#]+\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})|tv\/[^/\s?#]+\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/seasons\/[^/\s?#]+\/episodes\/[^/\s?#]+\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?)|watch\/(?:asset\/[^/\s?#]+\/[^/\s?#]+\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/seasons\/[^/\s?#]+\/episodes\/[^/\s?#]+\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?|playback\/vod\/(?:_|[^/\s?#]+)(?:\/(?:\d{6,}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}))?))\/?(?:[?#]|$)/;
 const appleTvPlus = /^(?:https?:)?\/\/tv\.apple\.com\/[a-z]{2}\/(?:show|movie|episode)\/[^/\s?#]+\/umc\.cmc\.[a-z0-9]+\/?(?:[?#]|$)/;
 const zdf = /^(?:https?:)?\/\/(?:www\.)?zdf\.de\/(?:(?:video|play)\/)?[a-z0-9\-]+\/[a-z0-9\-]+(?:\/[a-z0-9\-]+)?(?:\.html)?\/?(?:[?#]|$)/;
@@ -52,7 +51,6 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: discoveryPlus, useFullInput: true, kind: 'streaming' },
   { regex: franceTv, useFullInput: true, kind: 'streaming' },
   { regex: arte, useFullInput: true, kind: 'streaming' },
-  { regex: hulu, useFullInput: true, kind: 'streaming' },
   { regex: peacock, useFullInput: true, kind: 'streaming' },
   { regex: appleTvPlus, useFullInput: true, kind: 'streaming' },
   { regex: zdf, useFullInput: true, kind: 'streaming' },

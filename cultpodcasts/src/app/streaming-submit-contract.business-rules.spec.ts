@@ -86,20 +86,18 @@ describe("streaming-submit-contract (website consumer)", () => {
 		}
 	});
 
-	it("uses scrapeProfiles for Hulu/Peacock (US directHttp) and default allowlist for itvx", () => {
+	it("uses scrapeProfiles for Peacock (US directHttp) and default allowlist for itvx", () => {
 		const modes = Object.fromEntries(
 			streamingServiceKeys.map((s: StreamingServiceKey) => [s, htmlFetchModeForService(s)])
 		);
 		expect(defaultBrowserRenderingServices).toContain("itvx");
 		expect(modes["itvx"]).toBe("browserRendering");
-		expect(modes["hulu"]).toBe("directHttp");
 		expect(modes["peacock"]).toBe("directHttp");
-		expect(resolveScrapeProfile("hulu")).toEqual({ mode: "directHttp", region: "us" });
+		expect(modes["hulu"]).toBeUndefined();
 		expect(resolveScrapeProfile("peacock")).toEqual({ mode: "directHttp", region: "us" });
+		expect(resolveScrapeProfile("hulu")).toEqual({ mode: "directHttp", region: "default" });
 		expect(resolveScrapeProfile("itvx").region).toBe("default");
-		for (const s of streamingServiceKeys.filter(
-			(k) => k !== "itvx" && k !== "hulu" && k !== "peacock"
-		)) {
+		for (const s of streamingServiceKeys.filter((k) => k !== "itvx" && k !== "peacock")) {
 			expect(modes[s]).toBe("directHttp");
 			expect(resolveScrapeProfile(s).region).toBe("default");
 		}
