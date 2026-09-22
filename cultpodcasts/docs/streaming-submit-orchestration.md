@@ -16,7 +16,7 @@ pwsh ./scripts/assert-streaming-submit-contract-copy.ps1
 
 1. **Lookup** returns streaming `service` (`ServiceKeys` string). Do not invent a parallel provider enum.
    The SPA may re-export `StreamingServiceKey` as `SubmitUrlStreamingService`; do not duplicate the literal list.
-2. **Prepare** — after unknown streaming lookup, SPA calls `POST /submit/prepare` (`SubmitUrlPrepareService`). Worker owns HTML fetch (BR or Azure prepare); membership does not scrape.
+2. **Prepare** — after unknown streaming lookup, SPA calls `POST /submit/prepare` (`SubmitUrlPrepareService`). Worker owns HTML fetch (Browser Rendering, regional scrape Workers for geo, or Azure prepare); membership does not scrape.
 3. **Submit** uses server-side prefetched meta after prepare — client does not POST HTML/meta.
 4. Spotify / Apple / YouTube stay on existing podcast-service flows (APIs) — out of this contract.
 

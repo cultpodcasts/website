@@ -60,19 +60,64 @@ export type MembershipKind = (typeof membershipKinds)[number];
 /**
  * How prepare fetches catalogue HTML for a streaming service.
  * Worker secret `browserRenderingServices` is a CSV of keys that use browserRendering
- * (callers split before htmlFetchModeForService).
+ * (callers split before htmlFetchModeForService). Prefer {@link scrapeProfiles} for
+ * both mode and geo region; the secret remains a legacy overlay that can force BR.
  */
 export const htmlFetchModes = ["directHttp", "browserRendering"] as const;
 export type HtmlFetchMode = (typeof htmlFetchModes)[number];
 
+/**
+ * Logical scrape geo for prepare HTML fetch.
+ * `default` = run on the edge Api Worker (no regional service binding).
+ * `us` / `uk` / `de` = dispatch to a placed scrape Worker (Phase 1: `us` only).
+ */
+export const scrapeRegions = ["default", "us", "uk", "de"] as const;
+export type ScrapeRegion = (typeof scrapeRegions)[number];
+
+export type ScrapeProfile = {
+	mode: HtmlFetchMode;
+	region: ScrapeRegion;
+};
+
+/**
+ * Canonical mode + region per service. Missing key → {@link resolveScrapeProfile}
+ * uses `region: default` and the BR allowlist for mode.
+ */
+export const scrapeProfiles: Readonly<Partial<Record<StreamingServiceKey, ScrapeProfile>>> = {
+	hulu: { mode: "browserRendering", region: "us" },
+	peacock: { mode: "browserRendering", region: "us" }
+};
+
 /** Default allowlist — ops may expand via Worker env without SPA changes. */
 export const defaultBrowserRenderingServices: readonly StreamingServiceKey[] = ["itvx"];
+
+/**
+ * Resolve prepare scrape mode and geo. Profile wins for region; mode is profile
+ * mode, or BR allowlist / secret overlay when no profile (or when secret forces BR).
+ */
+export function resolveScrapeProfile(
+	service: string,
+	browserRenderingServices: readonly string[] = defaultBrowserRenderingServices
+): ScrapeProfile {
+	const profile = scrapeProfiles[service as StreamingServiceKey];
+	const forceBr = browserRenderingServices.includes(service);
+	if (profile) {
+		return {
+			mode: forceBr || profile.mode === "browserRendering" ? "browserRendering" : profile.mode,
+			region: profile.region
+		};
+	}
+	return {
+		mode: forceBr ? "browserRendering" : "directHttp",
+		region: "default"
+	};
+}
 
 export function htmlFetchModeForService(
 	service: string,
 	browserRenderingServices: readonly string[] = defaultBrowserRenderingServices
 ): HtmlFetchMode {
-	return browserRenderingServices.includes(service) ? "browserRendering" : "directHttp";
+	return resolveScrapeProfile(service, browserRenderingServices).mode;
 }
 
 /** Stable specimen ids for contract / fake-api (not production brands). */
@@ -307,6 +352,8 @@ export function streamingSubmitContractJsonPayload() {
 		membershipKinds: [...membershipKinds],
 		htmlFetchModes: [...htmlFetchModes],
 		defaultBrowserRenderingServices: [...defaultBrowserRenderingServices],
+		scrapeRegions: [...scrapeRegions],
+		scrapeProfiles: { ...scrapeProfiles },
 		streamingSpecimenUrls: { ...streamingSpecimenUrls },
 		streamingMembershipShapeCaseIds: streamingMembershipShapeCases.map((c) => c.id),
 		streamingOrchestrationCaseIds: streamingOrchestrationCases.map((c) => c.id),
