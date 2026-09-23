@@ -19,9 +19,9 @@ ID-token **roles** (`Curator`, `Submitter`, `Admin`) gate SPA UI; access-token *
 
 ## Planned catalogue content types epic (not scheduled)
 
-Search cards, facets, and detail routes by `contentKind` (`Podcast | TvShow | Movie | NewsReport`). Submit lookup will generalize `parentName` + kind hint — **planning only** until a phase is explicitly started.
+Search cards, facets, and detail routes by `contentKind` (`Episode | TvShowEpisode | Film | NewsReport`). Film = made-as-film one-off (cinema or TV; no parent). Routes: `/film/{slug}/{shortId}`, `/tv/{slug}`, `/tv/{slug}/{shortId}`, `/news/{slug}`, `/news/{slug}/{shortId}`. Submit lookup will generalize `parentName` + kind hint (Film: title only) — **planning only** until a phase is explicitly started. Phase 0 sign-off 2026-09-23.
 
-- Epic + Phase 0 ADRs: [`RedditPodcastPoster/docs/catalogue-content-types-epic.md`](../../../cultpodcasts/RedditPodcastPoster/docs/catalogue-content-types-epic.md)
+- Epic + ADRs: [`RedditPodcastPoster/docs/catalogue-content-types-epic.md`](../../../cultpodcasts/RedditPodcastPoster/docs/catalogue-content-types-epic.md)
 - Search storage impact: [`RedditPodcastPoster/docs/catalogue-content-types-search-storage-impact.md`](../../../cultpodcasts/RedditPodcastPoster/docs/catalogue-content-types-search-storage-impact.md)
 
 ## Preview ↔ production secrets (HARD)
