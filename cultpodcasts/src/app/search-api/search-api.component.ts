@@ -21,7 +21,7 @@ import { startEpisodePlayback } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
-import { normalizePlayableHit } from '../playable-search-hit';
+import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -172,7 +172,7 @@ export class SearchApiComponent {
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
-        facets: [`${this.legacyNames ? "podcastName" : "seriesName"},count:1000,sort:count`, "subjects,count:1000,sort:count"],
+        facets: [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
         next: data => {
@@ -229,9 +229,7 @@ export class SearchApiComponent {
           this.isLoading.set(false);
         },
         error: (e) => {
-          if (!this.legacyNames) {
-            this.legacyNames = true;
-            this.podcastsFilter = this.podcastsFilter.replaceAll("seriesName", "podcastName");
+          if (this.adoptLegacyField(e)) {
             this.execSearch(initial, reset, subsequent);
             return;
           }
@@ -303,7 +301,7 @@ export class SearchApiComponent {
     this.podcasts.set(next);
     this.podcastsFilter = next.length === 0
       ? ''
-      : `search.in(seriesName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+      : `search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
     this.page = 1;
     this.execSearch(true, { subjects: true });
   }
@@ -321,6 +319,20 @@ export class SearchApiComponent {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
+  }
+
+  private adoptLegacyField(error: unknown): boolean {
+    const next = nextLegacyNameLatch(this.legacyNames, error);
+    if (next.retry) {
+      this.legacyNames = true;
+      this.podcastsFilter = rewritePlayableSeriesField(this.podcastsFilter, true);
+      return true;
+    }
+    if (this.legacyNames && !next.legacyNames) {
+      this.legacyNames = false;
+      this.podcastsFilter = rewritePlayableSeriesField(this.podcastsFilter, false);
+    }
+    return false;
   }
 
   buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {

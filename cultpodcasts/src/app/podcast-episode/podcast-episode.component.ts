@@ -31,6 +31,7 @@ import { languageFlagBadgeForEpisode } from '../language-flag';
 import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
+import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 
 interface SubjectRail {
   subject: string;
@@ -260,19 +261,14 @@ export class PodcastEpisodeComponent {
     });
   }
 
-  /** Fetches "more from this podcast" + one rail per subject, without blocking the hero. */
-  private loadRelated(episode: SearchResult, podcastName: string): void {
-    this.relatedLoading.set(true);
-    this.morePodcastEpisodes.set([]);
-    this.subjectRails.set([]);
-
-    const escape = (value: string) => value.replaceAll("'", "''");
-
+  /** "More from this podcast". Asks for seriesName, and once for podcastName if that field is missing. */
+  private loadMoreFromShow(episode: SearchResult, podcastName: string, field: "seriesName" | "podcastName"): void {
+    const nameFilter = field === "seriesName" ? seriesNameEquals(podcastName) : podcastNameEquals(podcastName);
     this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: `(podcastName eq '${escape(podcastName)}') and id ne '${episode.id}'`,
+        filter: `${nameFilter} and id ne '${episode.id}'`,
         searchMode: 'any',
         queryType: 'simple',
         count: false,
@@ -283,10 +279,28 @@ export class PodcastEpisodeComponent {
       }
     ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => this.morePodcastEpisodes.set(
-        data.entities.filter((e) => e.id !== episode.id)
+        data.entities
+          .filter((e) => e.id !== episode.id)
+          .map((hit) => normalizePlayableHit(hit))
       ),
-      error: () => this.morePodcastEpisodes.set([])
+      error: (error) => {
+        if (field === "seriesName" && isUnknownSearchFieldError(error)) {
+          this.loadMoreFromShow(episode, podcastName, "podcastName");
+          return;
+        }
+        this.morePodcastEpisodes.set([]);
+      }
     });
+  }
+
+  /** Fetches "more from this podcast" + one rail per subject, without blocking the hero. */
+  private loadRelated(episode: SearchResult, podcastName: string): void {
+    this.relatedLoading.set(true);
+    this.morePodcastEpisodes.set([]);
+    this.subjectRails.set([]);
+
+    const escape = (value: string) => value.replaceAll("'", "''");
+    this.loadMoreFromShow(episode, podcastName, "seriesName");
 
     const subjects = this.visibleSubjects().slice(0, MAX_SUBJECT_RAILS);
     if (subjects.length === 0) {
@@ -312,7 +326,9 @@ export class PodcastEpisodeComponent {
         }
       ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (data) => {
-          const episodes = data.entities.filter((e) => e.id !== episode.id);
+          const episodes = data.entities
+            .filter((e) => e.id !== episode.id)
+            .map((hit) => normalizePlayableHit(hit));
           if (episodes.length > 0) {
             found.push({ subject, episodes });
           }
