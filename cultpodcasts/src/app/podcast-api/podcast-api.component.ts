@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { normalizePlayableHit } from '../playable-search-hit';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -72,6 +73,7 @@ export class PodcastApiComponent {
   private filter: string | null = null;
 
   protected podcastName = signal<string>("");
+  private legacyNames = false;
   sortParamRank: string = sortParamRank;
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
@@ -149,7 +151,7 @@ export class PodcastApiComponent {
           this.sortOrder.set(sortParamDateDesc);
         }
       }
-      this.filter = `(podcastName eq '${this.podcastName().replaceAll("'", "''")}')`;
+      this.filter = `(${this.legacyNames ? "podcastName" : "seriesName"} eq '${this.podcastName().replaceAll("'", "''")}')`;
       this.siteService.setFilter(this.filter);
       this.execSearch(initial, initial);
     });
@@ -195,9 +197,9 @@ export class PodcastApiComponent {
             });
           }
           if (reset) {
-            this.results.set(data.entities);
+            this.results.set(data.entities.map(hit => normalizePlayableHit(hit)));
           } else {
-            this.results.update(v => v.concat(data.entities));
+            this.results.update(v => v.concat(data.entities.map(hit => normalizePlayableHit(hit))));
           }
           this.isSubsequentLoading.set(false);
           if (subsequent) {
@@ -209,6 +211,12 @@ export class PodcastApiComponent {
           this.isLoading.set(false);
         },
         error: (e) => {
+          if (!this.legacyNames) {
+            this.legacyNames = true;
+            this.filter = (this.filter ?? "").replaceAll("seriesName", "podcastName");
+            this.execSearch(reset, subsequent);
+            return;
+          }
           console.error(e);
           this.errorMessage.set("Something went wrong. Please try again.");
           this.isLoading.set(false);

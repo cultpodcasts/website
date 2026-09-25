@@ -21,6 +21,7 @@ import { startEpisodePlayback } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
+import { normalizePlayableHit } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -64,6 +65,7 @@ export class SearchApiComponent {
   protected podcasts = signal<string[]>([]);
   private podcastsFilter: string = "";
   private subjectsFilter: string = "";
+  private legacyNames = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
   protected readonly playerService = inject(PlayerService);
@@ -170,7 +172,7 @@ export class SearchApiComponent {
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
-        facets: ["podcastName,count:1000,sort:count", "subjects,count:1000,sort:count"],
+        facets: [`${this.legacyNames ? "podcastName" : "seriesName"},count:1000,sort:count`, "subjects,count:1000,sort:count"],
         orderby: sort
       }).subscribe({
         next: data => {
@@ -190,21 +192,21 @@ export class SearchApiComponent {
             });
           }
           if (initial) {
-            this.results.set(data.entities);
+            this.results.set(data.entities.map(hit => normalizePlayableHit(hit)));
           } else {
-            this.results.update(v => v.concat(data.entities));
+            this.results.update(v => v.concat(data.entities.map(hit => normalizePlayableHit(hit))));
           }
           this.isSubsequentLoading.set(false);
           if (subsequent) {
             if (subsequent.podcasts) {
-              this.facets.update(f => ({ ...f, podcastName: data.facets.podcastName }));
+              this.facets.update(f => ({ ...f, podcastName: data.facets.seriesName ?? data.facets.podcastName }));
             }
             if (subsequent.subjects) {
               this.facets.update(f => ({ ...f, subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_")) }));
             }
           } else {
             if (reset?.podcasts) {
-              this.facets.update(f => ({ ...f, podcastName: data.facets.podcastName }));
+              this.facets.update(f => ({ ...f, podcastName: data.facets.seriesName ?? data.facets.podcastName }));
             }
             if (reset?.subjects) {
               this.facets.update(f => ({ ...f, subjects: data.facets.subjects }));
@@ -227,6 +229,12 @@ export class SearchApiComponent {
           this.isLoading.set(false);
         },
         error: (e) => {
+          if (!this.legacyNames) {
+            this.legacyNames = true;
+            this.podcastsFilter = this.podcastsFilter.replaceAll("seriesName", "podcastName");
+            this.execSearch(initial, reset, subsequent);
+            return;
+          }
           console.error(e);
           this.resultsHeading.set("Something went wrong. Please try again.");
           this.isLoading.set(false);
@@ -295,7 +303,7 @@ export class SearchApiComponent {
     this.podcasts.set(next);
     this.podcastsFilter = next.length === 0
       ? ''
-      : `search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+      : `search.in(seriesName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
     this.page = 1;
     this.execSearch(true, { subjects: true });
   }

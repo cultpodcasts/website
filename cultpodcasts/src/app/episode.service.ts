@@ -5,6 +5,7 @@ import { SearchResult } from './search-result.interface';
 import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { podcastNameEquals, seriesNameEquals, normalizePlayableHit } from './playable-search-hit';
 
 @Injectable({
   providedIn: 'root'
@@ -22,11 +23,19 @@ export class EpisodeService {
   }
 
   public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<SearchResult | undefined> {
+    const bySeries = await this.lookup(episodeId, seriesNameEquals(podcastName));
+    if (bySeries) {
+      return bySeries;
+    }
+    return this.lookup(episodeId, podcastNameEquals(podcastName));
+  }
+
+  private async lookup(episodeId: string, nameFilter: string): Promise<SearchResult | undefined> {
     var result = await firstValueFrom(this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: `(podcastName eq '${podcastName.replaceAll("'", "''")}') and (id eq '${episodeId}')`,
+        filter: `${nameFilter} and (id eq '${episodeId}')`,
         searchMode: 'any',
         queryType: 'simple',
         count: false,
@@ -37,8 +46,7 @@ export class EpisodeService {
       }))
     if (result.status == 200) {
       if (result.entities && result.entities.length == 1) {
-        const episode = result.entities[0];
-        return episode;
+        return normalizePlayableHit(result.entities[0]);
       }
     }
     return undefined;
