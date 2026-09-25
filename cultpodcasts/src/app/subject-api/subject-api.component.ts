@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
+import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
@@ -80,6 +81,7 @@ export class SubjectApiComponent {
   protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
   private podcastFilter: string = "";
+  private legacyNames = false;
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
   protected selectedLanguageValues = signal<string[]>([ENGLISH_LANGUAGE_VALUE]);
@@ -183,7 +185,7 @@ export class SubjectApiComponent {
           top: this.infiniteScrollStrategy.getTake(this.page),
           facets: subsequent
             ? []
-            : ["podcastName,count:1000,sort:count", "subjects,count:10,sort:count"],
+            : [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:10,sort:count"],
           orderby: sort
         }).subscribe(
           {
@@ -204,14 +206,14 @@ export class SubjectApiComponent {
                 });
               }
               if (initial) {
-                this.results.set(data.entities);
+                this.results.set(data.entities.map(hit => normalizePlayableHit(hit)));
               } else {
-                this.results.update(v => v.concat(data.entities));
+                this.results.update(v => v.concat(data.entities.map(hit => normalizePlayableHit(hit))));
               }
               this.isSubsequentLoading.set(false);
               if (subsequent && facetsFromResponse) {
                 const newFacets: SearchResultsFacets = {
-                  podcastName: facetsFromResponse.podcastName,
+                  podcastName: facetsFromResponse.seriesName ?? facetsFromResponse.podcastName,
                   subjects: facetsFromResponse.subjects?.filter(x => !x.value.startsWith("_")),
                   lang: facetsFromResponse.lang
                 };
@@ -223,6 +225,10 @@ export class SubjectApiComponent {
               this.isLoading.set(false);
             },
             error: (e) => {
+              if (this.adoptLegacyField(e)) {
+                this.execSearch(initial, subsequent);
+                return;
+              }
               console.error(e);
               this.errorMessage.set("Something went wrong. Please try again.");
               this.isLoading.set(false);
@@ -242,7 +248,7 @@ export class SubjectApiComponent {
           skip: 0,
           top: 0,
           facets: [
-            "podcastName,count:1000,sort:count",
+            `${playableSeriesField(this.legacyNames)},count:1000,sort:count`,
             "subjects,count:10,sort:count",
             "lang,count:50,sort:count"
           ],
@@ -263,6 +269,10 @@ export class SubjectApiComponent {
             runResults(facetData.facets, scopedTotal);
           },
           error: (e) => {
+            if (this.adoptLegacyField(e)) {
+              this.execSearch(initial, subsequent);
+              return;
+            }
             console.error(e);
             this.errorMessage.set("Something went wrong. Please try again.");
             this.isLoading.set(false);
@@ -356,7 +366,7 @@ export class SubjectApiComponent {
     this.podcasts.set(next);
     this.podcastFilter = next.length === 0
       ? ''
-      : ` and search.in(podcastName, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+      : ` and search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
     this.page = 1;
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
@@ -418,6 +428,11 @@ export class SubjectApiComponent {
         }
       },
       error: e => {
+        const filter = `${this.filter ?? ""}${this.podcastFilter}`;
+        if (filter.includes("seriesName") && this.adoptLegacyField(e)) {
+          this.execSearch(true, false);
+          return;
+        }
         console.error(e);
         if (options?.thenSearch) {
           this.execSearch(true, false);
@@ -465,6 +480,20 @@ export class SubjectApiComponent {
 
   protected visibleLanguageOptions = computed(() =>
     displayedLanguageOptions(this.languageOptions(), this.languageSelection()));
+
+  private adoptLegacyField(error: unknown): boolean {
+    const next = nextLegacyNameLatch(this.legacyNames, error);
+    if (next.retry) {
+      this.legacyNames = true;
+      this.podcastFilter = rewritePlayableSeriesField(this.podcastFilter, true);
+      return true;
+    }
+    if (this.legacyNames && !next.legacyNames) {
+      this.legacyNames = false;
+      this.podcastFilter = rewritePlayableSeriesField(this.podcastFilter, false);
+    }
+    return false;
+  }
 
   isScrolledToBottom(): boolean {
     const scrollPosition = window.scrollY + window.innerHeight;

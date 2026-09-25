@@ -4,7 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { BehaviorSubject, of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { PodcastEpisodeComponent } from './podcast-episode.component';
 import { SearchResult } from '../search-result.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -44,6 +45,7 @@ class ImmediateImage {
 describe('PodcastEpisodeComponent', () => {
   let fixture: ComponentFixture<PodcastEpisodeComponent>;
   let originalImage: typeof Image;
+  let getEntities: ReturnType<typeof vi.fn>;
   const routeParams = new BehaviorSubject<{ podcastName: string }>({
     podcastName: 'Show A',
   });
@@ -51,6 +53,7 @@ describe('PodcastEpisodeComponent', () => {
   beforeEach(async () => {
     originalImage = globalThis.Image;
     globalThis.Image = ImmediateImage as unknown as typeof Image;
+    getEntities = vi.fn(() => of({ entities: [] as SearchResult[] }));
 
     await TestBed.configureTestingModule({
       imports: [PodcastEpisodeComponent],
@@ -83,7 +86,7 @@ describe('PodcastEpisodeComponent', () => {
         {
           provide: ODataService,
           useValue: {
-            getEntities: () => of({ entities: [] }),
+            getEntities,
           },
         },
         {
@@ -151,5 +154,89 @@ describe('PodcastEpisodeComponent', () => {
     const meta = query('.hero-meta');
     expect(meta?.querySelector('.hero-meta__dot')).toBeNull();
     expect(meta?.textContent?.replace(/\s+/g, ' ').trim()).toBe('1:06:12');
+  });
+
+  function rails(): {
+    morePodcastEpisodes(): SearchResult[];
+    subjectRails(): { subject: string; episodes: SearchResult[] }[];
+  } {
+    return fixture.componentInstance as unknown as {
+      morePodcastEpisodes(): SearchResult[];
+      subjectRails(): { subject: string; episodes: SearchResult[] }[];
+    };
+  }
+
+  function rawHit(fields: Partial<SearchResult> & { title?: string; seriesName?: string; description?: string }): SearchResult {
+    return {
+      id: 'other',
+      podcastName: '',
+      episodeTitle: '',
+      episodeDescription: '',
+      release: new Date('2026-07-31T12:00:00Z'),
+      duration: '00:10:00',
+      ...fields,
+    };
+  }
+
+  it('loads More from with seriesName and normalizes both related rails', () => {
+    const filters: string[] = [];
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      filters.push(request.filter);
+      if (request.filter.includes('seriesName')) {
+        return of({
+          entities: [rawHit({ id: 'more', title: 'More title', seriesName: 'Show A', description: 'More blurb' })],
+        });
+      }
+      return of({
+        entities: [rawHit({ id: 'subject-hit', title: 'Subject title', seriesName: 'Other show', description: 'Subject blurb' })],
+      });
+    });
+
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-b', subjects: ['Subject A'] }));
+    fixture.detectChanges();
+
+    expect(filters.some((filter) => filter.includes("(seriesName eq 'Show A')"))).toBe(true);
+    expect(filters.some((filter) => filter.includes('podcastName'))).toBe(false);
+    expect(rails().morePodcastEpisodes()[0].episodeTitle).toBe('More title');
+    expect(rails().morePodcastEpisodes()[0].podcastName).toBe('Show A');
+    expect(rails().morePodcastEpisodes()[0].episodeDescription).toBe('More blurb');
+    expect(rails().subjectRails()[0].episodes[0].episodeTitle).toBe('Subject title');
+    expect(rails().subjectRails()[0].episodes[0].podcastName).toBe('Other show');
+  });
+
+  it('retries More from with podcastName once when seriesName is an unknown field', () => {
+    const filters: string[] = [];
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      filters.push(request.filter);
+      if (request.filter.includes('seriesName')) {
+        return throwError(() => new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} }));
+      }
+      if (request.filter.includes('podcastName')) {
+        return of({ entities: [rawHit({ id: 'more', episodeTitle: 'Live title', podcastName: 'Show A' })] });
+      }
+      return of({ entities: [] });
+    });
+
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-c', subjects: [] }));
+    fixture.detectChanges();
+
+    expect(filters.filter((filter) => filter.includes('seriesName'))).toHaveLength(1);
+    expect(filters.filter((filter) => filter.includes('podcastName'))).toHaveLength(1);
+    expect(rails().morePodcastEpisodes()[0].episodeTitle).toBe('Live title');
+  });
+
+  it('does not retry More from after a non-field error', () => {
+    const filters: string[] = [];
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      filters.push(request.filter);
+      return throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error', error: { message: 'timeout' } }));
+    });
+
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-d', subjects: [] }));
+    fixture.detectChanges();
+
+    expect(filters).toHaveLength(1);
+    expect(filters[0]).toContain('seriesName');
+    expect(rails().morePodcastEpisodes()).toEqual([]);
   });
 });
