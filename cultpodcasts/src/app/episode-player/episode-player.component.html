@@ -35,13 +35,17 @@
     }
     <div class="stage__text">
       <p class="stage__title">{{ ep.episodeTitle }}</p>
+      @if (parentLink(ep) || languageFlag()) {
       <p class="stage__show-row">
-        <a class="stage__show" [routerLink]="playableLink(ep)">{{ displayCatalogName(ep.podcastName) }}</a>
+        @if (parentLink(ep); as parent) {
+        <a class="stage__show" [routerLink]="parent">{{ displayCatalogName(ep.podcastName) }}</a>
+        }
         @if (languageFlag(); as lang) {
         <span class="stage__lang" [class.stage__lang--code]="lang.isCode" [attr.title]="lang.label"
           [attr.aria-label]="lang.label">{{ lang.flag }}</span>
         }
       </p>
+      }
     </div>
 
     <div class="stage__services" role="tablist" aria-label="Playback service">

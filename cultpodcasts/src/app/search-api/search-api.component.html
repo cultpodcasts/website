@@ -32,7 +32,7 @@
       </mat-menu>
     </div>
 
-    @if (facets().contentKind && facets().contentKind!.length > 1) {
+    @if ((facets().contentKind?.length ?? 0) > 1 || kinds().length > 0) {
     <div class="browse-facet" aria-label="Filter by kind">
       <span class="browse-facet__label">Kind</span>
       <div class="browse-facet__scroller" tabindex="0">

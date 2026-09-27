@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, of, throwError, BehaviorSubject } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
@@ -40,16 +40,18 @@ describe('PodcastApiComponent', () => {
   let fixture: ComponentFixture<PodcastApiComponent>;
   let calls: SearchCall[];
   let script: Array<'unknown' | 'server' | 'ok'>;
+  let routeParams: BehaviorSubject<Record<string, string>>;
 
   beforeEach(async () => {
     calls = [];
     script = ['ok'];
+    routeParams = new BehaviorSubject<Record<string, string>>({ podcastName: 'Show A' });
     await TestBed.configureTestingModule({
       imports: [PodcastApiComponent],
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { params: of({ podcastName: 'Show A' }), queryParams: of({}) } },
+        { provide: ActivatedRoute, useValue: { params: routeParams.asObservable(), queryParams: of({}) } },
         { provide: AuthServiceWrapper, useValue: { roles: of([]), isSignedIn: of(false) } },
         { provide: SiteService, useValue: { setQuery: () => undefined, setPodcast: () => undefined, setSubject: () => undefined, setFilter: () => undefined, getSiteData: () => ({ query: '' }) } },
         {
@@ -108,5 +110,13 @@ describe('PodcastApiComponent', () => {
     expect(calls[1].filter).toContain("(podcastName eq 'Show A')");
     expect(calls[2].filter).toContain("(seriesName eq 'Show A')");
     expect(calls[2].filter).not.toContain('podcastName');
+  });
+
+  it('lists a tv hub from the slug param', () => {
+    routeParams.next({ slug: 'Nightly' });
+    fixture = TestBed.createComponent(PodcastApiComponent);
+    fixture.detectChanges();
+
+    expect(calls[0].filter).toContain("(seriesName eq 'Nightly')");
   });
 });

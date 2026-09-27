@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { escapedOData, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals } from "./playable-search-hit";
+import { escapedOData, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName } from "./playable-search-hit";
 import { SearchResult } from "./search-result.interface";
 
 describe("playable search hits", () => {
@@ -49,6 +49,8 @@ describe("playable search hits", () => {
     const proxied = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
     expect(isUnknownSearchFieldError(named)).toBe(true);
     expect(isUnknownSearchFieldError(proxied)).toBe(true);
+    expect(unknownSearchFieldName(named)).toBe("seriesName");
+    expect(unknownSearchFieldName(proxied)).toBeNull();
   });
 
   it("does not treat a timeout, a 500, or a bad request as an unknown field", () => {

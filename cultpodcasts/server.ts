@@ -1,4 +1,5 @@
 import { renderApplication } from "@angular/platform-server";
+import { RESPONSE_INIT } from "@angular/core";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
@@ -51,13 +52,20 @@ async function workerFetchHandler(request: Request, env: Env) {
 		return new Response(document, indexResponse);
 	}
 
+	const responseInit: ResponseInit = { headers: new Headers() };
 	const content = await renderApplication(bootstrap, {
 		document,
 		url: url.pathname,
 		platformProviders: [
-			{ provide: 'url', useValue: url }
+			{ provide: 'url', useValue: url },
+			{ provide: RESPONSE_INIT, useValue: responseInit }
 		]
 	});
+
+	const location = new Headers(responseInit.headers).get("Location");
+	if (location) {
+		return Response.redirect(new URL(location, url), responseInit.status ?? 301);
+	}
 
 	console.log("rendered SSR");
 	return new Response(content, indexResponse);

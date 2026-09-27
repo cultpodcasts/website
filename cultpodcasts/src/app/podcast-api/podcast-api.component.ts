@@ -130,7 +130,7 @@ export class PodcastApiComponent {
         }
       }
       const { params, queryParams } = res;
-      this.podcastName.set(params["podcastName"]);
+      this.podcastName.set(params["slug"] ?? params["podcastName"] ?? "");
       let query = params["query"] ?? "";
       this.isLoading.set(true);
       this.query.set(query);
@@ -271,7 +271,9 @@ export class PodcastApiComponent {
   }
 
   setSort(sort: string) {
-    var url = `/podcast/${this.podcastName()}`;
+    const root = this.route.snapshot.url[0]?.path;
+    const prefix = root === "tv" || root === "news" ? root : "podcast";
+    var url = `/${prefix}/${this.podcastName()}`;
     var query = this.siteService.getSiteData().query;
     if (query && query != "") {
       url = `${url}/${query}`;

@@ -22,7 +22,7 @@ import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
-import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
+import { isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, unknownSearchFieldName } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -68,6 +68,8 @@ export class SearchApiComponent {
   private podcastsFilter: string = "";
   private subjectsFilter: string = "";
   private kindsFilter: string = "";
+  /** include until the index says contentKind is missing. probing is the one retry without it. */
+  private contentKindMode: "include" | "probing" | "omit" = "include";
   private legacyNames = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
@@ -122,9 +124,11 @@ export class SearchApiComponent {
       if (initial) {
         this.podcastsFilter = "";
         this.subjectsFilter = "";
+        this.kindsFilter = "";
         this.podcasts.set([]);
         this.subjects.set([]);
-        this.facets.update(f => ({ ...f, subjects: [], podcastName: [] }));
+        this.kinds.set([]);
+        this.facets.update(f => ({ ...f, subjects: [], podcastName: [], contentKind: [] }));
       }
 
       const { params, queryParams } = res;
@@ -171,13 +175,13 @@ export class SearchApiComponent {
           this.filter,
           this.podcastsFilter,
           this.subjectsFilter,
-          this.kindsFilter),
+          this.requestedKindsFilter()),
         searchMode: 'any',
         queryType: 'simple',
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
-        facets: [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:1000,sort:count", "contentKind,count:10"],
+        facets: this.searchFacets(),
         orderby: sort
       }).subscribe({
         next: data => {
@@ -231,11 +235,17 @@ export class SearchApiComponent {
           }
 
           this.resultsHeading.set(`Found ${resultsSummary} for "${presentableQuery}"`);
-          this.facets.update(f => ({ ...f, contentKind: data.facets.contentKind }));
+          if (this.contentKindMode === "probing") {
+            this.contentKindMode = "omit";
+            this.kindsFilter = "";
+            this.kinds.set([]);
+          } else if (this.contentKindMode === "include" && !this.kindsFilter && data.facets.contentKind) {
+            this.facets.update(f => ({ ...f, contentKind: data.facets.contentKind }));
+          }
           this.isLoading.set(false);
         },
         error: (e) => {
-          if (this.adoptLegacyField(e)) {
+          if (this.recoverSearch(e)) {
             this.execSearch(initial, reset, subsequent);
             return;
           }
@@ -350,6 +360,49 @@ export class SearchApiComponent {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
+  }
+
+  private searchFacets(): string[] {
+    const facets = [
+      `${playableSeriesField(this.legacyNames)},count:1000,sort:count`,
+      "subjects,count:1000,sort:count",
+    ];
+    if (this.contentKindMode === "include") {
+      facets.push("contentKind,count:10");
+    }
+    return facets;
+  }
+
+  /** Kind filter uses contentKind. Leave it off while that field is being dropped. */
+  private requestedKindsFilter(): string {
+    return this.contentKindMode === "include" ? this.kindsFilter : "";
+  }
+
+  /**
+   * A missing contentKind field is not a series-name miss. Drop the facet and the kind
+   * filter and retry once. Only a later unknown-field response flips the series latch.
+   */
+  private recoverSearch(error: unknown): boolean {
+    if (this.contentKindMode === "probing") {
+      this.contentKindMode = "include";
+      if (!isUnknownSearchFieldError(error)) {
+        return false;
+      }
+      return this.adoptLegacyField(error);
+    }
+    if (this.shouldDropContentKind(error)) {
+      this.contentKindMode = "probing";
+      return true;
+    }
+    return this.adoptLegacyField(error);
+  }
+
+  private shouldDropContentKind(error: unknown): boolean {
+    if (this.contentKindMode !== "include" || !isUnknownSearchFieldError(error)) {
+      return false;
+    }
+    const field = unknownSearchFieldName(error);
+    return field !== "seriesName" && field !== "podcastName";
   }
 
   private adoptLegacyField(error: unknown): boolean {

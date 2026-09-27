@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, RESPONSE_INIT, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
@@ -13,6 +13,7 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
 import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-seo';
+import { parentCommands } from '../playable-card-link';
 import { episodeIdFromRouteQuery, movedKindRedirect } from '../playable-route';
 
 @Component({
@@ -34,6 +35,7 @@ export class PodcastComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly responseInit = inject(RESPONSE_INIT, { optional: true });
 
   podcastName: string = "";
   isServer: boolean;
@@ -98,31 +100,40 @@ export class PodcastComponent {
             } catch (e) {
               console.error(JSON.stringify(e));
             }
-            if (!pageDetails.image) {
-              try {
-                const episode = await this.resolvePlayable(episodeUuid);
-                // Full KV miss: use search for title/release/duration + art (same as client).
-                // KV hit without image: keep KV title/meta, fill art only.
-                pageDetails = hadKvPageDetails
-                  ? withEpisodeShareImage(pageDetails, episode)
-                  : episode
-                    ? pageDetailsFromSearchEpisode(this.podcastName, episode)
-                    : pageDetails;
-              } catch (e) {
-                console.error(JSON.stringify(e));
-              }
+            let episode: SearchResult | undefined;
+            try {
+              episode = await this.resolvePlayable(episodeUuid);
+            } catch (e) {
+              console.error(JSON.stringify(e));
+            }
+            const target = episode
+              ? movedKindRedirect(this.router.url, episode, this.guidService)
+              : null;
+            if (target && episode) {
+              pageDetails = pageDetailsFromSearchEpisode(this.kindSlug(episode), episode);
+              this.sendMovedKind(target);
+            } else if (!pageDetails.image) {
+              pageDetails = hadKvPageDetails
+                ? withEpisodeShareImage(pageDetails, episode)
+                : episode
+                  ? pageDetailsFromSearchEpisode(this.podcastName, episode)
+                  : pageDetails;
             }
             this.seoService.AddMetaTags(pageDetails);
             // Stay in loading on server so we don't emit a "not found" shell for hydration.
             this.isLoading.set(true);
           })();
         } else {
+          let redirecting = false;
           this.resolvePlayable(episodeUuid)
             .then(episode => {
               const target = episode
                 ? movedKindRedirect(this.router.url, episode, this.guidService)
                 : null;
-              if (target) {
+              if (target && episode) {
+                redirecting = true;
+                pageDetails = pageDetailsFromSearchEpisode(this.kindSlug(episode), episode);
+                this.sendMovedKind(target);
                 void this.router.navigateByUrl(target, { replaceUrl: true });
                 return;
               }
@@ -136,13 +147,53 @@ export class PodcastComponent {
             })
             .finally(() => {
               this.seoService.AddMetaTags(pageDetails);
-              this.isLoading.set(false);
+              if (!redirecting) {
+                this.isLoading.set(false);
+              }
             });
         }
       } else {
         this.seoService.AddMetaTags(pageDetails);
         this.isLoading.set(false);
       }
+    });
+  }
+
+  /** Film, TV, and News leave /podcast/. Episode, and a missing kind, stay. */
+  private kindSlug(episode: SearchResult): string {
+    const slug = episode.contentKind === "Film" ? episode.episodeTitle : episode.podcastName;
+    return slug || this.podcastName;
+  }
+
+  private sendMovedKind(target: string): void {
+    const init = this.responseInit;
+    if (!init) {
+      return;
+    }
+    init.status = 301;
+    const headers = new Headers(init.headers);
+    headers.set("Location", target);
+    init.headers = headers;
+  }
+
+  /** TV and news not-found links use the parent hub. A film has none. Podcast stays on /podcast/. */
+  protected notFoundHub(): string[] | null {
+    const root = this.route.snapshot.url[0]?.path;
+    const contentKind = root === "tv"
+      ? "TvShowEpisode"
+      : root === "news"
+        ? "NewsReport"
+        : root === "film"
+          ? "Film"
+          : "Episode";
+    return parentCommands({
+      id: "",
+      episodeTitle: "",
+      podcastName: this.podcastName,
+      episodeDescription: "",
+      release: new Date(0),
+      duration: "",
+      contentKind,
     });
   }
 

@@ -95,6 +95,14 @@ export class PodcastEpisodeComponent {
   podcastName = signal("");
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly parentLink = parentCommands;
+  /** TV and news "More from" titles go to the parent hub. A film has no parent. */
+  protected readonly moreFromLink = computed(() => {
+    const episode = this._episode();
+    if (!episode) {
+      return undefined;
+    }
+    return parentCommands(episode) ?? undefined;
+  });
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
@@ -256,7 +264,7 @@ export class PodcastEpisodeComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params } = res;
-      this.podcastName.set(params["podcastName"]);
+      this.podcastName.set(params["slug"] ?? params["podcastName"] ?? "");
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);

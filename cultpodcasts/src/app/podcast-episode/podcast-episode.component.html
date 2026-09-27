@@ -111,7 +111,7 @@
   <app-episode-rail
     [title]="'More from ' + displayCatalogName(podcastName())"
     [episodes]="morePodcastEpisodes()"
-    [titleLink]="['/podcast', podcastName()]"
+    [titleLink]="moreFromLink()"
     [ariaLabel]="'More from this podcast'"
     [displayTitle]="true"
     [showShow]="false"

@@ -22,7 +22,7 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { displayCatalogName } from '../display-catalog-name';
-import { playableCommands } from '../playable-card-link';
+import { parentCommands, playableCommands } from '../playable-card-link';
 
 interface YouTubePlayerLike {
   destroy(): void;
@@ -136,6 +136,7 @@ export class EpisodePlayerComponent {
   );
 
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly parentLink = parentCommands;
   protected readonly playableLink = playableCommands;
 
   protected readonly queueCount = computed(() => this.queue().length);

@@ -38,11 +38,21 @@ export function rewritePlayableSeriesField(filter: string, legacyNames: boolean)
 }
 
 const UNKNOWN_SEARCH_FIELD = /could not find a property named/i;
+const NAMED_SEARCH_FIELD = /could not find a property named ['"]([^'"]+)['"]/i;
 
 /**
  * Azure Search says a missing field with "Could not find a property named …".
  * The /search proxy forwards that failure as HTTP 400 with an empty object.
  */
+/** Property Azure named in "Could not find a property named '…'". Empty proxy bodies have no name. */
+export function unknownSearchFieldName(error: unknown): string | null {
+  const body = errorBody(error);
+  const message = error && typeof error === "object" && "message" in error
+    ? (error as { message: unknown }).message
+    : undefined;
+  return namedSearchField(body) ?? namedSearchField(message);
+}
+
 export function isUnknownSearchFieldError(error: unknown): boolean {
   const body = errorBody(error);
   const message = error && typeof error === "object" && "message" in error
@@ -79,6 +89,30 @@ function errorBody(error: unknown): unknown {
     return (error as { error: unknown }).error;
   }
   return undefined;
+}
+
+function namedSearchField(value: unknown): string | null {
+  if (typeof value === "string") {
+    return value.match(NAMED_SEARCH_FIELD)?.[1] ?? null;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = namedSearchField(item);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      const found = namedSearchField(item);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
 }
 
 function containsUnknownFieldMessage(value: unknown): boolean {
