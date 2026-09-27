@@ -72,9 +72,11 @@
           Now featuring
         </p>
         <p class="hero-show">
-          <a class="hero-pill" [routerLink]="['/podcast', feature.podcastName]">
+          @if (parentLink(feature); as parent) {
+          <a class="hero-pill" [routerLink]="parent">
             {{ displayCatalogName(feature.podcastName) }}
           </a>
+          }
         </p>
         <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
         <p class="hero-meta">
@@ -115,13 +117,13 @@
         </button>
         } @else {
         <a mat-flat-button class="billboard__play"
-          [routerLink]="['/podcast', feature.podcastName, feature.id]">
+          [routerLink]="playableLink(feature)">
           <mat-icon>play_arrow</mat-icon>
           {{ playLabel(feature) }}
         </a>
         }
         <a mat-stroked-button class="billboard__more"
-          [routerLink]="['/podcast', feature.podcastName, feature.id]">
+          [routerLink]="playableLink(feature)">
           More info
         </a>
       </div>

@@ -5,6 +5,7 @@ import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback 
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SearchDisplayEpisode, episodeArtAspect, episodeImageUrl } from '../search-result-links';
 import { displayCatalogName } from '../display-catalog-name';
+import { parentCommands, playableCommands } from '../playable-card-link';
 import { releaseDateLabel } from '../release-label';
 import { pickCardSubject } from '../card-subject';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
@@ -37,6 +38,8 @@ export class EpisodePosterComponent {
   readonly showRelease = input(false);
   /** Search hit titles may contain highlight markup. */
   readonly titleAsHtml = input(false);
+  protected readonly playableLink = computed(() => playableCommands(this.episode()));
+  protected readonly parentLink = computed(() => parentCommands(this.episode()));
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
   readonly excludeSubject = input<string | undefined>(undefined);
   /** Curator-only: show a star to promote/demote this episode in the homepage hero. */

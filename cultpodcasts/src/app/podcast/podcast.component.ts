@@ -1,6 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
 import { GuidService } from '../guid.service';
 import { SeoService } from '../seo.service';
@@ -13,6 +13,7 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
 import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-seo';
+import { episodeIdFromRouteQuery, movedKindRedirect } from '../playable-route';
 
 @Component({
   selector: 'app-podcast',
@@ -31,6 +32,7 @@ import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-
 
 export class PodcastComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   podcastName: string = "";
@@ -62,8 +64,8 @@ export class PodcastComponent {
   }
 
   private applyRouteParams(params: Record<string, string | undefined>): void {
-    this.podcastName = params["podcastName"] ?? "";
-    const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
+    this.podcastName = params["slug"] ?? params["podcastName"] ?? "";
+    const episodeUuid = episodeIdFromRouteQuery(this.guidService, params["query"] ?? "");
     this.isEpisode.set(episodeUuid != "");
     this.episode.set(undefined);
     this.isLoading.set(true);
@@ -75,7 +77,7 @@ export class PodcastComponent {
     ).subscribe(async params => {
       this.applyRouteParams(params);
       let pageDetails: IPageDetails = { title: this.podcastName };
-      const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
+      const episodeUuid = episodeIdFromRouteQuery(this.guidService, params["query"] ?? "");
       const isEpisode = episodeUuid != "";
       if (isEpisode) {
         if (this.isServer) {
@@ -98,10 +100,7 @@ export class PodcastComponent {
             }
             if (!pageDetails.image) {
               try {
-                const episode = await this.episodeService.GetEpisodeDetailsFromApi(
-                  episodeUuid,
-                  this.podcastName
-                );
+                const episode = await this.resolvePlayable(episodeUuid);
                 // Full KV miss: use search for title/release/duration + art (same as client).
                 // KV hit without image: keep KV title/meta, fill art only.
                 pageDetails = hadKvPageDetails
@@ -118,8 +117,15 @@ export class PodcastComponent {
             this.isLoading.set(true);
           })();
         } else {
-          this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
+          this.resolvePlayable(episodeUuid)
             .then(episode => {
+              const target = episode
+                ? movedKindRedirect(this.router.url, episode, this.guidService)
+                : null;
+              if (target) {
+                void this.router.navigateByUrl(target, { replaceUrl: true });
+                return;
+              }
               this.episode.set(episode);
               if (episode) {
                 pageDetails = pageDetailsFromSearchEpisode(this.podcastName, episode);
@@ -138,5 +144,10 @@ export class PodcastComponent {
         this.isLoading.set(false);
       }
     });
+  }
+
+  private async resolvePlayable(episodeId: string) {
+    const byName = await this.episodeService.GetEpisodeDetailsFromApi(episodeId, this.podcastName);
+    return byName ?? await this.episodeService.getPlayableById(episodeId);
   }
 }

@@ -21,4 +21,5 @@ export interface HomepageEpisode {
   image: URL | undefined;
   /** Non-English IETF tag when present; omitted/undefined means English. */
   language?: string;
+  contentKind?: string | null;
 }

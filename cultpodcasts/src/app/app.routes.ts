@@ -20,6 +20,11 @@ export const routes: Routes = [
   { path: 'search/:query', component: SearchComponent },
   { path: 'podcast/:podcastName', component: PodcastComponent },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent },
+  { path: 'film/:slug/:query', component: PodcastComponent },
+  { path: 'tv/:slug/:query', component: PodcastComponent },
+  { path: 'tv/:slug', component: PodcastComponent },
+  { path: 'news/:slug/:query', component: PodcastComponent },
+  { path: 'news/:slug', component: PodcastComponent },
   { path: 'subject/:subjectName', component: SubjectComponent },
   { path: 'subject/:subjectName/:query', component: SubjectComponent },
   {

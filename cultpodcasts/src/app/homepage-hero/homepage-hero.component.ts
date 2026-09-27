@@ -24,6 +24,7 @@ import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
+import { parentCommands, playableCommands } from '../playable-card-link';
 import { releaseDateLabel } from '../release-label';
 import { formatSearchDescription } from '../search-description';
 
@@ -85,6 +86,8 @@ export class HomepageHeroComponent {
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
 
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly playableLink = playableCommands;
+  protected readonly parentLink = parentCommands;
 
   private readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 

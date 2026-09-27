@@ -21,6 +21,7 @@ import { startEpisodePlayback } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
+import { contentKindLabel } from '../content-kind-label';
 import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
@@ -63,13 +64,16 @@ export class SearchApiComponent {
   protected facets = signal<SearchResultsFacets>({});
   protected subjects = signal<string[]>([]);
   protected podcasts = signal<string[]>([]);
+  protected kinds = signal<string[]>([]);
   private podcastsFilter: string = "";
   private subjectsFilter: string = "";
+  private kindsFilter: string = "";
   private legacyNames = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
   protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly contentKindLabel = contentKindLabel;
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
@@ -166,13 +170,14 @@ export class SearchApiComponent {
         filter: this.buildFilter(
           this.filter,
           this.podcastsFilter,
-          this.subjectsFilter),
+          this.subjectsFilter,
+          this.kindsFilter),
         searchMode: 'any',
         queryType: 'simple',
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
-        facets: [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:1000,sort:count"],
+        facets: [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:1000,sort:count", "contentKind,count:10"],
         orderby: sort
       }).subscribe({
         next: data => {
@@ -226,6 +231,7 @@ export class SearchApiComponent {
           }
 
           this.resultsHeading.set(`Found ${resultsSummary} for "${presentableQuery}"`);
+          this.facets.update(f => ({ ...f, contentKind: data.facets.contentKind }));
           this.isLoading.set(false);
         },
         error: (e) => {
@@ -309,8 +315,33 @@ export class SearchApiComponent {
   clearAllFilters(): void {
     this.subjects.set([]);
     this.podcasts.set([]);
+    this.kinds.set([]);
     this.subjectsFilter = '';
     this.podcastsFilter = '';
+    this.kindsFilter = '';
+    this.page = 1;
+    this.execSearch(true, { subjects: true, podcasts: true });
+  }
+
+  toggleKind(value: string): void {
+    const current = this.kinds();
+    const next = current.includes(value)
+      ? current.filter((k) => k !== value)
+      : [...current, value];
+    this.kinds.set(next);
+    this.kindsFilter = next.length === 0
+      ? ''
+      : `search.in(contentKind, '${next.map((k) => k.replaceAll("'", "''")).join('£')}', '£')`;
+    this.page = 1;
+    this.execSearch(true, { subjects: true, podcasts: true });
+  }
+
+  clearKinds(): void {
+    if (this.kinds().length === 0) {
+      return;
+    }
+    this.kinds.set([]);
+    this.kindsFilter = '';
     this.page = 1;
     this.execSearch(true, { subjects: true, podcasts: true });
   }
@@ -335,7 +366,7 @@ export class SearchApiComponent {
     return false;
   }
 
-  buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {
+  buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string, kindsFilter = ""): string {
     let filter: string = "";
     if (baseFilter && baseFilter != "") {
       filter = baseFilter;
@@ -351,6 +382,12 @@ export class SearchApiComponent {
         filter += " and ";
       }
       filter += subjectsFilter;
+    }
+    if (kindsFilter && kindsFilter != "") {
+      if (filter.length > 0) {
+        filter += " and ";
+      }
+      filter += kindsFilter;
     }
     return filter;
   }

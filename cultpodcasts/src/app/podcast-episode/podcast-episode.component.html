@@ -56,9 +56,11 @@
 
     <div class="episode-hero">
       <p class="hero-show">
-        <a class="hero-pill" [routerLink]="['/podcast', podcastName()]">
+        @if (parentLink(episode); as parent) {
+        <a class="hero-pill" [routerLink]="parent">
           {{ displayCatalogName(podcastName()) }}
         </a>
+        }
       </p>
       <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
       <p class="hero-meta">

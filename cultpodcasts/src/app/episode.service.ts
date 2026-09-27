@@ -5,7 +5,7 @@ import { SearchResult } from './search-result.interface';
 import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from './playable-search-hit';
+import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals, escapedOData } from './playable-search-hit';
 
 @Injectable({
   providedIn: 'root'
@@ -34,11 +34,20 @@ export class EpisodeService {
   }
 
   private async lookup(episodeId: string, nameFilter: string): Promise<SearchResult | undefined> {
+    return this.lookupFiltered(episodeId, nameFilter);
+  }
+
+  public async getPlayableById(episodeId: string): Promise<SearchResult | undefined> {
+    return this.lookupFiltered(episodeId, null);
+  }
+
+  private async lookupFiltered(episodeId: string, nameFilter: string | null): Promise<SearchResult | undefined> {
+    const idFilter = `(id eq '${escapedOData(episodeId)}')`;
     var result = await firstValueFrom(this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: `${nameFilter} and (id eq '${episodeId}')`,
+        filter: nameFilter ? `${nameFilter} and ${idFilter}` : idFilter,
         searchMode: 'any',
         queryType: 'simple',
         count: false,

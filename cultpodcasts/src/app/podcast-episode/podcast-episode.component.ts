@@ -23,6 +23,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { SearchDescriptionPipe } from '../search-description.pipe';
 import { displayCatalogName } from '../display-catalog-name';
+import { parentCommands } from '../playable-card-link';
 import { releaseDateLabel } from '../release-label';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
@@ -93,6 +94,7 @@ export class PodcastEpisodeComponent {
 
   podcastName = signal("");
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly parentLink = parentCommands;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
