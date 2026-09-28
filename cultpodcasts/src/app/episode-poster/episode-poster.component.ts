@@ -36,10 +36,20 @@ export class EpisodePosterComponent {
    * date-grouped rails already state it in their heading.
    */
   readonly showRelease = input(false);
-  /** Search hit titles may contain highlight markup. */
+  /** Search titles may contain highlight markup. */
   readonly titleAsHtml = input(false);
-  protected readonly playableLink = computed(() => playableCommands(this.episode()));
-  protected readonly parentLink = computed(() => parentCommands(this.episode()));
+  /** When set, replaces the podcast episode URL. */
+  readonly titleLink = input<readonly string[] | undefined>(undefined);
+  /** undefined keeps the podcast parent. null hides the parent line. */
+  readonly showLink = input<readonly string[] | null | undefined>(undefined);
+  protected readonly playableLink = computed(() => this.titleLink() ?? playableCommands(this.episode()));
+  protected readonly parentLink = computed(() => {
+    const show = this.showLink();
+    if (show === null) {
+      return null;
+    }
+    return show ?? parentCommands(this.episode());
+  });
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
   readonly excludeSubject = input<string | undefined>(undefined);
   /** Curator-only: show a star to promote/demote this episode in the homepage hero. */

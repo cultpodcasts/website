@@ -1,0 +1,17 @@
+<app-site-loading [active]="isLoading()" label="Loading episodes" />
+@if (!isLoading()) {
+<section class="browse">
+  <h2>{{ displayCatalogName(seriesName()) }}</h2>
+  @if (error()) {
+  <p>{{ error() }}</p>
+  } @else if (results().length === 0) {
+  <p>There were no results for "{{ displayCatalogName(seriesName()) }}"</p>
+  } @else {
+  <div class="browse-grid">
+    @for (result of results(); track result.id) {
+    <app-catalogue-card [episode]="result" [showRelease]="true" (play)="playEpisode($event)" />
+    }
+  </div>
+  }
+</section>
+}

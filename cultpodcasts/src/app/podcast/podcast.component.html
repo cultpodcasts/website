@@ -9,11 +9,9 @@
   } @else {
   <section class="browse-empty">
     <h2>Episode not found.</h2>
-    @if (notFoundHub(); as hub) {
     <div id="cta-button">
-      <a mat-flat-button color="primary" [routerLink]="hub">Try the Podcast's page!</a>
+      <a mat-flat-button color="primary" [routerLink]="['/podcast', podcastName]">Try the Podcast's page!</a>
     </div>
-    }
   </section>
   }
 } @else {

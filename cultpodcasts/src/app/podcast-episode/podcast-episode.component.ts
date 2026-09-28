@@ -23,7 +23,6 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { SearchDescriptionPipe } from '../search-description.pipe';
 import { displayCatalogName } from '../display-catalog-name';
-import { parentCommands } from '../playable-card-link';
 import { releaseDateLabel } from '../release-label';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
@@ -94,15 +93,6 @@ export class PodcastEpisodeComponent {
 
   podcastName = signal("");
   protected readonly displayCatalogName = displayCatalogName;
-  protected readonly parentLink = parentCommands;
-  /** TV and news "More from" titles go to the parent hub. A film has no parent. */
-  protected readonly moreFromLink = computed(() => {
-    const episode = this._episode();
-    if (!episode) {
-      return undefined;
-    }
-    return parentCommands(episode) ?? undefined;
-  });
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
@@ -264,7 +254,7 @@ export class PodcastEpisodeComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params } = res;
-      this.podcastName.set(params["slug"] ?? params["podcastName"] ?? "");
+      this.podcastName.set(params["podcastName"] ?? "");
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);

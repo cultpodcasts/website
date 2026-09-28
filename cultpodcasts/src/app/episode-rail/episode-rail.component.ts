@@ -14,13 +14,13 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { CatalogueCardComponent } from '../catalogue/catalogue-card.component';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { PlayerService } from '../player.service';
 
 @Component({
   selector: 'app-episode-rail',
-  imports: [RouterLink, MatIconModule, EpisodePosterComponent],
+  imports: [RouterLink, MatIconModule, CatalogueCardComponent],
   templateUrl: './episode-rail.component.html',
   styleUrl: './episode-rail.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,

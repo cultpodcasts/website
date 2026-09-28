@@ -239,46 +239,4 @@ describe('PodcastEpisodeComponent', () => {
     expect(filters[0]).toContain('seriesName');
     expect(rails().morePodcastEpisodes()).toEqual([]);
   });
-
-  it('reads a tv slug and points the parent pill and More from at /tv/', () => {
-    routeParams.next({ slug: 'Show A' });
-    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
-      if (request.filter.includes('seriesName')) {
-        return of({
-          entities: [rawHit({ id: 'more', episodeTitle: 'More title', podcastName: 'Show A' })],
-        });
-      }
-      return of({ entities: [] });
-    });
-
-    fixture.componentRef.setInput('episode', ep({ id: 'ep-tv', contentKind: 'TvShowEpisode', subjects: [] }));
-    fixture.detectChanges();
-    fixture.detectChanges();
-
-    const pill = query('a.hero-pill') as HTMLAnchorElement | null;
-    const more = query('a.rail__title') as HTMLAnchorElement | null;
-    expect(pill?.textContent?.trim()).toBe('Show A');
-    expect(pill?.getAttribute('href')).toBe('/tv/Show%20A');
-    expect(more?.getAttribute('href')).toBe('/tv/Show%20A');
-  });
-
-  it('does not add a film parent line or a More from parent link', () => {
-    getEntities.mockImplementation(() => of({
-      entities: [rawHit({ id: 'more', episodeTitle: 'More title', podcastName: 'Show A' })],
-    }));
-
-    fixture.componentRef.setInput('episode', ep({
-      id: 'ep-film',
-      contentKind: 'Film',
-      podcastName: 'Should Not Show',
-      episodeTitle: 'One Off',
-      subjects: [],
-    }));
-    fixture.detectChanges();
-    fixture.detectChanges();
-
-    expect(query('a.hero-pill')).toBeNull();
-    expect(query('a.rail__title')).toBeNull();
-    expect(fixture.nativeElement.textContent).not.toContain('Should Not Show');
-  });
 });

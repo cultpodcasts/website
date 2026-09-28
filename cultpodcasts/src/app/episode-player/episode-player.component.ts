@@ -10,6 +10,7 @@ import {
   inject,
   signal,
   viewChild,
+  input,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -22,7 +23,6 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { displayCatalogName } from '../display-catalog-name';
-import { parentCommands, playableCommands } from '../playable-card-link';
 
 interface YouTubePlayerLike {
   destroy(): void;
@@ -136,8 +136,9 @@ export class EpisodePlayerComponent {
   );
 
   protected readonly displayCatalogName = displayCatalogName;
-  protected readonly parentLink = parentCommands;
-  protected readonly playableLink = playableCommands;
+  /** Set by the shell. This player does not choose Film, TV, or News links. */
+  readonly parentLink = input<readonly string[] | null>(null);
+  readonly pageLink = input<readonly string[] | null>(null);
 
   protected readonly queueCount = computed(() => this.queue().length);
 

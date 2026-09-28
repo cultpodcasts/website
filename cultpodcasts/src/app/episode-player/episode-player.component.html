@@ -35,9 +35,9 @@
     }
     <div class="stage__text">
       <p class="stage__title">{{ ep.episodeTitle }}</p>
-      @if (parentLink(ep) || languageFlag()) {
+      @if (parentLink() || languageFlag()) {
       <p class="stage__show-row">
-        @if (parentLink(ep); as parent) {
+        @if (parentLink(); as parent) {
         <a class="stage__show" [routerLink]="parent">{{ displayCatalogName(ep.podcastName) }}</a>
         }
         @if (languageFlag(); as lang) {
@@ -106,7 +106,7 @@
 } @else {
 <div class="stage stage--empty" #stageEl>
   <p>No playable link for this episode.</p>
-  <a mat-stroked-button [routerLink]="playableLink(ep)">Episode page</a>
+  <a mat-stroked-button [routerLink]="pageLink()">Episode page</a>
   <button type="button" mat-icon-button aria-label="Close player" (click)="close()">
     <mat-icon>close</mat-icon>
   </button>

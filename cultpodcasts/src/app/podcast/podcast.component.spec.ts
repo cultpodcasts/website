@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PLATFORM_ID, provideZonelessChangeDetection, RESPONSE_INIT } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -40,7 +40,6 @@ describe('PodcastComponent', () => {
     root: string;
     episode?: SearchResult;
     platform?: string;
-    responseInit?: { status?: number; headers?: HeadersInit };
   }): Promise<{
     fixture: ComponentFixture<PodcastComponent>;
     lookedUp: string[];
@@ -68,7 +67,6 @@ describe('PodcastComponent', () => {
           },
         },
         { provide: PLATFORM_ID, useValue: options.platform ?? 'browser' },
-        ...(options.responseInit ? [{ provide: RESPONSE_INIT, useValue: options.responseInit }] : []),
         {
           provide: EpisodeService,
           useValue: {
@@ -111,72 +109,25 @@ describe('PodcastComponent', () => {
     return { fixture, lookedUp, titles, nav };
   }
 
-  it('keeps the loading shell up while an old unprefixed id leaves for its film', async () => {
+  it('shows a podcast episode and keeps its not-found link on /podcast/', async () => {
     const shortId = guids.toBase64(id);
-    const { fixture, lookedUp, nav } = await render({
-      path: `/podcast/${encodeURIComponent('Old Show')}/${shortId}`,
-      params: { podcastName: 'Old Show', query: shortId },
-      root: 'podcast',
-      episode: hit({ contentKind: 'Film', podcastName: '', episodeTitle: 'One Off' }),
-    });
-
-    expect(lookedUp).toEqual([id]);
-    expect(nav).toHaveBeenCalledTimes(1);
-    expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
-    expect((fixture.componentInstance as unknown as { isLoading(): boolean }).isLoading()).toBe(true);
-    expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
-  });
-
-  it('sends a moved TV episode to /tv/ on the server and leaves a podcast episode on /podcast/', async () => {
-    const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
-    const shortId = guids.toBase64(id);
-    const moved = await render({
-      path: `/podcast/${encodeURIComponent('Old Show')}/${shortId}`,
-      params: { podcastName: 'Old Show', query: shortId },
-      root: 'podcast',
-      episode: hit({ contentKind: 'TvShowEpisode', podcastName: 'Nightly', episodeTitle: 'Part' }),
-      platform: 'server',
-      responseInit,
-    });
-
-    expect(moved.lookedUp).toEqual([id]);
-    expect(moved.nav).not.toHaveBeenCalled();
-    expect(responseInit.status).toBe(301);
-    expect(responseInit.headers.get('Location')).toBe(`/tv/${encodeURIComponent('Nightly')}/${guids.toCatalogueShortId(id, 'TvShowEpisode')}`);
-    expect(moved.titles.some((title) => title.includes('Nightly'))).toBe(true);
-    expect(moved.titles.some((title) => title.includes('Old Show'))).toBe(false);
-    expect(moved.fixture.nativeElement.textContent).not.toContain('Episode not found');
-
     const stayed = await render({
       path: `/podcast/${encodeURIComponent('Show')}/${shortId}`,
       params: { podcastName: 'Show', query: shortId },
       root: 'podcast',
       episode: hit({ contentKind: 'Episode', podcastName: 'Show', episodeTitle: 'Part' }),
     });
+    expect(stayed.lookedUp).toContain(id);
     expect(stayed.nav).not.toHaveBeenCalled();
-    expect(stayed.fixture.nativeElement.textContent).not.toContain('Episode not found');
     expect(stayed.fixture.nativeElement.textContent).toContain('Part');
-  });
 
-  it('points a missing TV episode at /tv/ and does not offer a film hub', async () => {
-    const shortId = guids.toBase64(id);
-    const tv = await render({
-      path: `/tv/${encodeURIComponent('Nightly')}/${shortId}`,
-      params: { slug: 'Nightly', query: shortId },
-      root: 'tv',
+    const missing = await render({
+      path: `/podcast/${encodeURIComponent('Show')}/${shortId}`,
+      params: { podcastName: 'Show', query: shortId },
+      root: 'podcast',
     });
-    const tvLink = tv.fixture.nativeElement.querySelector('#cta-button a') as HTMLAnchorElement | null;
-    expect(tv.fixture.nativeElement.textContent).toContain('Episode not found');
-    expect(tvLink?.getAttribute('href')).toBe('/tv/Nightly');
-
-    const film = await render({
-      path: `/film/${encodeURIComponent('One Off')}/${shortId}`,
-      params: { slug: 'One Off', query: shortId },
-      root: 'film',
-    });
-    expect(film.fixture.nativeElement.textContent).toContain('Episode not found');
-    expect(film.fixture.nativeElement.querySelector('#cta-button')).toBeNull();
-    expect(film.fixture.nativeElement.textContent).not.toContain("Try the Podcast's page");
+    const link = missing.fixture.nativeElement.querySelector('#cta-button a') as HTMLAnchorElement;
+    expect(missing.fixture.nativeElement.textContent).toContain('Episode not found');
+    expect(link.getAttribute('href')).toBe('/podcast/Show');
   });
 });

@@ -111,12 +111,4 @@ describe('PodcastApiComponent', () => {
     expect(calls[2].filter).toContain("(seriesName eq 'Show A')");
     expect(calls[2].filter).not.toContain('podcastName');
   });
-
-  it('lists a tv hub from the slug param', () => {
-    routeParams.next({ slug: 'Nightly' });
-    fixture = TestBed.createComponent(PodcastApiComponent);
-    fixture.detectChanges();
-
-    expect(calls[0].filter).toContain("(seriesName eq 'Nightly')");
-  });
 });

@@ -29,7 +29,7 @@
     @if (postersActive()) {
     <div class="rail__track">
       @for (item of episodes(); track item.id) {
-      <app-episode-poster class="rail-poster" [episode]="item" [excludeSubject]="subject()"
+      <app-catalogue-card class="rail-poster" [episode]="item" [excludeSubject]="subject()"
         [playing]="isPlaying(item.id)"
         [queued]="isQueued(item.id)"
         [showShow]="showShow()"
