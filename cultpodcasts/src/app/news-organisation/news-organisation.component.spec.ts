@@ -1,14 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, ActivatedRoute } from '@angular/router';
+import { DeferBlockState } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { NewsOrganisationComponent } from './news-organisation.component';
 import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
+import { SeoService } from '../seo.service';
+import { IPageDetails } from '../page-details.interface';
 
 describe('NewsOrganisationComponent', () => {
-  it('reads the slug, asks for that organisation, and shows the report title', () => {
+  it('sets hub SEO on the shell, defers the list, then reads the slug and shows the report title', async () => {
     const calls: { filter?: string }[] = [];
+    const titles: string[] = [];
     TestBed.configureTestingModule({
       imports: [NewsOrganisationComponent],
       providers: [
@@ -35,9 +39,25 @@ describe('NewsOrganisationComponent', () => {
           },
         },
         { provide: PlayerService, useValue: { play: () => undefined, episode: () => undefined, mode: () => 'dock', isQueuedId: () => false, queuedKeys: () => new Set<string>() } },
+        {
+          provide: SeoService,
+          useValue: {
+            AddMetaTags: (details: IPageDetails) => {
+              if (details.title) {
+                titles.push(details.title);
+              }
+            },
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(NewsOrganisationComponent);
+    fixture.detectChanges();
+    expect(titles).toEqual(['Desk']);
+    expect(calls).toHaveLength(0);
+    expect(fixture.nativeElement.querySelector('[aria-label="Loading news organisation"]')).toBeTruthy();
+    const [hub] = await fixture.getDeferBlocks();
+    await hub.render(DeferBlockState.Complete);
     fixture.detectChanges();
     expect(calls[0].filter).toContain("(seriesName eq 'Desk')");
     expect(fixture.nativeElement.textContent).toContain('Desk');
