@@ -4,7 +4,7 @@ import { ODataService } from "../odata.service";
 import { environment } from "../../environments/environment";
 import { SearchResult } from "../search-result.interface";
 import { normalizePlayableHit, seriesNameEquals } from "../playable-search-hit";
-import { CatalogueCardComponent } from "./catalogue-card.component";
+import { CatalogueCardComponent } from "../catalogue-card/catalogue-card.component";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { PlayerService } from "../player.service";
 import { SearchDisplayEpisode } from "../search-result-links";

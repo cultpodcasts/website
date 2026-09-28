@@ -1,4 +1,4 @@
-import { GuidService } from "../guid.service";
+import { GuidService } from "./guid.service";
 import { catalogueParentLink, cataloguePlayableLink, movedKindRedirect } from "./catalogue-links";
 
 describe("catalogue links", () => {

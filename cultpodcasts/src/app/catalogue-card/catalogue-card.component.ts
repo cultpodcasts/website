@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 import { SearchDisplayEpisode } from "../search-result-links";
 import { EpisodePosterComponent } from "../episode-poster/episode-poster.component";
-import { FilmCardComponent } from "./film-card.component";
-import { NewsReportCardComponent } from "./news-report-card.component";
-import { TvShowEpisodeCardComponent } from "./tv-show-episode-card.component";
+import { FilmCardComponent } from "../film-card/film-card.component";
+import { NewsReportCardComponent } from "../news-report-card/news-report-card.component";
+import { TvShowEpisodeCardComponent } from "../tv-show-episode-card/tv-show-episode-card.component";
 
 /** List boundary. The podcast poster itself does not choose a kind. */
 @Component({

@@ -22,7 +22,7 @@ import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { registerSvgIcons } from './register-svg-icons';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
-import { NowPlayingComponent } from './catalogue/now-playing.component';
+import { NowPlayingComponent } from './now-playing/now-playing.component';
 import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';

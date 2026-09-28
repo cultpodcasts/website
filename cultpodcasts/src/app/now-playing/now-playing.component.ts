@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from "@angular/core";
 import { PlayerService } from "../player.service";
 import { EpisodePlayerComponent } from "../episode-player/episode-player.component";
-import { catalogueParentLink, cataloguePlayableLink } from "./catalogue-links";
+import { catalogueParentLink, cataloguePlayableLink } from "../catalogue-links";
 
 /** Chooses the parent and page links for whatever is playing. The player does not. */
 @Component({

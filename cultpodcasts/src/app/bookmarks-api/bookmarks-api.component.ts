@@ -20,7 +20,7 @@ import { SiteService } from '../site.service';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
-import { CatalogueCardComponent } from '../catalogue/catalogue-card.component';
+import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { apiEpisodeToHomepageEpisode } from '../api-episode-display';

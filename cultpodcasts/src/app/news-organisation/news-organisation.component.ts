@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute } from "@angular/router";
-import { SeriesHubComponent } from "./series-hub.component";
+import { SeriesHubComponent } from "../series-hub/series-hub.component";
 
 @Component({
   selector: "app-news-organisation",

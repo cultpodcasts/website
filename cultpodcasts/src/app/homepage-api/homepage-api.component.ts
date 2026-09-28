@@ -50,7 +50,7 @@ import {
   RailsManageDialogResult,
 } from '../rails-manage-dialog/rails-manage-dialog.component';
 import { HomepageHeroComponent, HomepageHeroSlide } from '../homepage-hero/homepage-hero.component';
-import { catalogueParentLink, cataloguePlayableLink } from '../catalogue/catalogue-links';
+import { catalogueParentLink, cataloguePlayableLink } from '../catalogue-links';
 import { HomepageCatalogueComponent } from '../homepage-catalogue/homepage-catalogue.component';
 import { HomepageDiscoverRailComponent } from '../homepage-discover-rail/homepage-discover-rail.component';
 import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';

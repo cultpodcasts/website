@@ -1,9 +1,9 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
 import { RESPONSE_INIT } from "@angular/core";
-import { EpisodeService } from "../episode.service";
-import { GuidService } from "../guid.service";
-import { episodeIdFromRouteQuery } from "../playable-route";
+import { EpisodeService } from "./episode.service";
+import { GuidService } from "./guid.service";
+import { episodeIdFromRouteQuery } from "./playable-route";
 import { movedKindRedirect } from "./catalogue-links";
 
 /** Old /podcast/ links for a moved Film, TV episode, or news report leave before the podcast page renders. */

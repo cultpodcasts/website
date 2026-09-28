@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/cor
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute } from "@angular/router";
 import { DestroyRef } from "@angular/core";
-import { SeriesHubComponent } from "./series-hub.component";
+import { SeriesHubComponent } from "../series-hub/series-hub.component";
 
 @Component({
   selector: "app-tv-show",

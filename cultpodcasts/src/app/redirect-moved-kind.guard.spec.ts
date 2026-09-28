@@ -2,9 +2,9 @@ import { TestBed } from "@angular/core/testing";
 import { RESPONSE_INIT, provideZonelessChangeDetection } from "@angular/core";
 import { provideRouter, Router, UrlTree } from "@angular/router";
 import { redirectMovedKind } from "./redirect-moved-kind.guard";
-import { EpisodeService } from "../episode.service";
-import { GuidService } from "../guid.service";
-import { SearchResult } from "../search-result.interface";
+import { EpisodeService } from "./episode.service";
+import { GuidService } from "./guid.service";
+import { SearchResult } from "./search-result.interface";
 
 const id = "00112233-4455-4677-8899-aabbccddeeff";
 

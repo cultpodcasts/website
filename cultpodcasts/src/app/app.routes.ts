@@ -14,12 +14,12 @@ import { EpisodesComponent } from './episodes/episodes.component';
 import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
 import { HomeComponent } from './home/home.component';
 import { BookmarksComponent } from './bookmarks/bookmarks.component';
-import { FilmPageComponent } from './catalogue/film-page.component';
-import { TvShowComponent } from './catalogue/tv-show.component';
-import { TvShowEpisodeComponent } from './catalogue/tv-show-episode.component';
-import { NewsOrganisationComponent } from './catalogue/news-organisation.component';
-import { NewsReportComponent } from './catalogue/news-report.component';
-import { redirectMovedKind } from './catalogue/redirect-moved-kind.guard';
+import { FilmPageComponent } from './film-page/film-page.component';
+import { TvShowComponent } from './tv-show/tv-show.component';
+import { TvShowEpisodeComponent } from './tv-show-episode/tv-show-episode.component';
+import { NewsOrganisationComponent } from './news-organisation/news-organisation.component';
+import { NewsReportComponent } from './news-report/news-report.component';
+import { redirectMovedKind } from './redirect-moved-kind.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },

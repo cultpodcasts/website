@@ -14,7 +14,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { CatalogueCardComponent } from '../catalogue/catalogue-card.component';
+import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { episodeArtAspect, SearchDisplayEpisode } from '../search-result-links';
 import { PlayerService } from '../player.service';
 

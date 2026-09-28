@@ -2,14 +2,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection, RESPONSE_INIT, Type } from '@angular/core';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
-import { FilmPageComponent } from './film-page.component';
-import { TvShowEpisodeComponent } from './tv-show-episode.component';
-import { NewsReportComponent } from './news-report.component';
-import { routes } from '../app.routes';
-import { GuidService } from '../guid.service';
-import { EpisodeService } from '../episode.service';
-import { SeoService } from '../seo.service';
-import { SearchResult } from '../search-result.interface';
+import { FilmPageComponent } from './film-page/film-page.component';
+import { TvShowEpisodeComponent } from './tv-show-episode/tv-show-episode.component';
+import { NewsReportComponent } from './news-report/news-report.component';
+import { routes } from './app.routes';
+import { GuidService } from './guid.service';
+import { EpisodeService } from './episode.service';
+import { SeoService } from './seo.service';
+import { SearchResult } from './search-result.interface';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
 

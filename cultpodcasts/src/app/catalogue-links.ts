@@ -1,6 +1,6 @@
-import { GuidService } from "../guid.service";
-import { HomepageEpisode } from "../homepage-episode.interface";
-import { SearchResult } from "../search-result.interface";
+import { GuidService } from "./guid.service";
+import { HomepageEpisode } from "./homepage-episode.interface";
+import { SearchResult } from "./search-result.interface";
 
 type CatalogueItem = HomepageEpisode | SearchResult;
 

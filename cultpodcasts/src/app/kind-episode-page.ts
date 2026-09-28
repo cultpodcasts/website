@@ -4,14 +4,14 @@ import { RESPONSE_INIT } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, Router } from "@angular/router";
 import { DestroyRef } from "@angular/core";
-import { GuidService } from "../guid.service";
-import { SeoService } from "../seo.service";
-import { EpisodeService } from "../episode.service";
-import { SearchResult } from "../search-result.interface";
-import { IPageDetails } from "../page-details.interface";
-import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from "../episode-seo";
-import { displayCatalogName } from "../display-catalog-name";
-import { episodeIdFromRouteQuery } from "../playable-route";
+import { GuidService } from "./guid.service";
+import { SeoService } from "./seo.service";
+import { EpisodeService } from "./episode.service";
+import { SearchResult } from "./search-result.interface";
+import { IPageDetails } from "./page-details.interface";
+import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from "./episode-seo";
+import { displayCatalogName } from "./display-catalog-name";
+import { episodeIdFromRouteQuery } from "./playable-route";
 import { movedKindRedirect } from "./catalogue-links";
 
 export interface KindEpisodePageState {
