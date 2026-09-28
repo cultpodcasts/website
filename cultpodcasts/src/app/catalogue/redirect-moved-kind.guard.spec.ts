@@ -81,4 +81,20 @@ describe("redirectMovedKind", () => {
     );
     expect(stayed.result).toBe(true);
   });
+
+  it("sends a moved news report to /news/ and leaves the podcast page for an Episode", async () => {
+    const shortId = guids.toBase64(id);
+    const moved = await run(
+      hit({ contentKind: "NewsReport", podcastName: "Desk", episodeTitle: "Bulletin" }),
+      `/podcast/Old%20Show/${shortId}`
+    );
+    expect((moved.result as UrlTree).toString()).toBe(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(id, "NewsReport")}`);
+
+    const stayed = await run(
+      hit({ contentKind: "Episode", podcastName: "Show", episodeTitle: "Part" }),
+      `/podcast/Show/${guids.toCatalogueShortId(id, "Episode")}`
+    );
+    expect(stayed.result).toBe(true);
+    expect(stayed.lookedUp).toEqual([id]);
+  });
 });

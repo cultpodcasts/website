@@ -15,7 +15,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { CatalogueCardComponent } from '../catalogue/catalogue-card.component';
-import { SearchDisplayEpisode } from '../search-result-links';
+import { episodeArtAspect, SearchDisplayEpisode } from '../search-result-links';
 import { PlayerService } from '../player.service';
 
 @Component({
@@ -33,6 +33,7 @@ export class EpisodeRailComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly artAspect = episodeArtAspect;
 
   readonly title = input.required<string>();
   readonly episodes = input.required<SearchDisplayEpisode[]>();

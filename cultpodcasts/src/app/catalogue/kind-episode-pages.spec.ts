@@ -4,6 +4,7 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { FilmPageComponent } from './film-page.component';
 import { TvShowEpisodeComponent } from './tv-show-episode.component';
+import { NewsReportComponent } from './news-report.component';
 import { routes } from '../app.routes';
 import { GuidService } from '../guid.service';
 import { EpisodeService } from '../episode.service';
@@ -132,5 +133,56 @@ describe('kind episode pages', () => {
     const pill = stayed.fixture.nativeElement.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.getAttribute('href')).toBe('/tv/Nightly');
     expect(pill.textContent?.trim()).toBe('Nightly');
+  });
+
+  it('opens a film from the raw guid a card puts in the path, then uses the prefixed short id', async () => {
+    const { fixture, lookedUp, nav } = await render(FilmPageComponent, {
+      path: `/film/${encodeURIComponent('One Off')}/${id}`,
+      params: { slug: 'One Off', query: id },
+      episode: hit({ contentKind: 'Film', podcastName: '', episodeTitle: 'One Off' }),
+    });
+
+    expect(lookedUp).toEqual([id]);
+    expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
+    expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(fixture.nativeElement.querySelector('a.hero-pill')).toBeNull();
+  });
+
+  it('points a news report parent at /news/ and does not flash not found during a move', async () => {
+    const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+    const legacy = guids.toBase64(id);
+    const moving = await render(NewsReportComponent, {
+      path: `/podcast/Old%20Desk/${legacy}`,
+      params: { slug: 'Old Desk', query: legacy },
+      episode: hit({ contentKind: 'NewsReport', podcastName: 'Desk', episodeTitle: 'Bulletin' }),
+      platform: 'server',
+      responseInit,
+    });
+    expect(responseInit.status).toBe(301);
+    expect(responseInit.headers.get('Location')).toBe(`/news/${encodeURIComponent('Desk')}/${guids.toCatalogueShortId(id, 'NewsReport')}`);
+    expect(moving.fixture.nativeElement.textContent).not.toContain('Episode not found');
+
+    const shortId = guids.toCatalogueShortId(id, 'NewsReport');
+    const stayed = await render(NewsReportComponent, {
+      path: `/news/${encodeURIComponent('Desk')}/${shortId}`,
+      params: { slug: 'Desk', query: shortId },
+      episode: hit({ contentKind: 'NewsReport', podcastName: 'Desk', episodeTitle: 'Bulletin' }),
+    });
+    const pill = stayed.fixture.nativeElement.querySelector('a.hero-pill') as HTMLAnchorElement;
+    expect(pill.getAttribute('href')).toBe('/news/Desk');
+    expect(pill.textContent?.trim()).toBe('Desk');
+    expect(stayed.fixture.nativeElement.textContent).toContain('Bulletin');
+  });
+
+  it('sends a missing news report back to the organisation hub', async () => {
+    const shortId = guids.toCatalogueShortId(id, 'NewsReport');
+    const { fixture } = await render(NewsReportComponent, {
+      path: `/news/${encodeURIComponent('Desk')}/${shortId}`,
+      params: { slug: 'Desk', query: shortId },
+    });
+    expect(fixture.nativeElement.textContent).toContain('Episode not found');
+    const link = fixture.nativeElement.querySelector('#cta-button a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/news/Desk');
   });
 });

@@ -8,4 +8,14 @@ describe("episode route ids", () => {
   it("reads a legacy unprefixed short id as the same guid", () => {
     expect(episodeIdFromRouteQuery(guids, guids.toBase64(id))).toBe(id);
   });
+
+  it("reads a prefixed film, TV, and news short id as the same guid", () => {
+    for (const kind of ["Film", "TvShowEpisode", "NewsReport"]) {
+      expect(episodeIdFromRouteQuery(guids, guids.toCatalogueShortId(id, kind))).toBe(id);
+    }
+  });
+
+  it("reads the raw guid a card puts in the path", () => {
+    expect(episodeIdFromRouteQuery(guids, id)).toBe(id);
+  });
 });
