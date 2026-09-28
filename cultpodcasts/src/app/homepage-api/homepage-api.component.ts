@@ -49,10 +49,20 @@ import {
   RailsManageDialogComponent,
   RailsManageDialogResult,
 } from '../rails-manage-dialog/rails-manage-dialog.component';
-import { HomepageHeroComponent } from '../homepage-hero/homepage-hero.component';
+import { HomepageHeroComponent, HomepageHeroSlide } from '../homepage-hero/homepage-hero.component';
+import { catalogueParentLink, cataloguePlayableLink } from '../catalogue/catalogue-links';
 import { HomepageCatalogueComponent } from '../homepage-catalogue/homepage-catalogue.component';
 import { HomepageDiscoverRailComponent } from '../homepage-discover-rail/homepage-discover-rail.component';
 import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
+
+/** Homepage list boundary. The hero renders these paths and does not choose them. */
+export function withHeroLinks(episodes: HomepageEpisode[]): HomepageHeroSlide[] {
+  return episodes.map((episode) => ({
+    ...episode,
+    playableLink: cataloguePlayableLink(episode),
+    parentLink: catalogueParentLink(episode),
+  }));
+}
 
 export interface EpisodeRail {
   id: string;
@@ -146,16 +156,16 @@ export class HomepageApiComponent {
    * Billboard slides: curated picks first (in order), autofilled from the week-wide
    * recent / subject / Discover interleave when curated count is under the pool size.
    */
-  protected readonly heroSlides = computed((): HomepageEpisode[] => {
+  protected readonly heroSlides = computed((): HomepageHeroSlide[] => {
     const all = this.allEpisodes();
     if (all.length === 0) {
       return [];
     }
-    return buildHeroSlides(this.curatedEpisodeIds(), all, {
+    return withHeroLinks(buildHeroSlides(this.curatedEpisodeIds(), all, {
       subjectRails: this.subjectRails(),
       obscureCults: this.obscureCults(),
       bucket: this.heroTimeBucket(),
-    });
+    }));
   });
 
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));

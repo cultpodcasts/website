@@ -4,7 +4,7 @@ import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HomepageHeroComponent } from './homepage-hero.component';
+import { HomepageHeroComponent, HomepageHeroSlide } from './homepage-hero.component';
 import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
@@ -12,8 +12,8 @@ import { PlayerService } from '../player.service';
 const heroDir = dirname(fileURLToPath(import.meta.url));
 const heroSass = readFileSync(join(heroDir, 'homepage-hero.component.sass'), 'utf8');
 
-function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageEpisode {
-  return {
+function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageHeroSlide {
+  const episode: HomepageEpisode = {
     id,
     podcastName: `Show ${id}`,
     episodeTitle: `Episode ${id}`,
@@ -25,6 +25,11 @@ function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageEpiso
     subjects: [`Subject ${id}`],
     image: new URL(`https://img.example/${id}.jpg`),
     ...overrides,
+  };
+  return {
+    ...episode,
+    playableLink: ['/podcast', episode.podcastName, episode.id],
+    parentLink: episode.podcastName ? ['/podcast', episode.podcastName] : null,
   };
 }
 
@@ -92,6 +97,19 @@ describe('HomepageHeroComponent', () => {
     vi.useRealTimers();
     globalThis.Image = originalImage;
     component['stopHeroCycle']();
+  });
+
+  it('renders a film with no parent line when the homepage passes a null parent path', () => {
+    const film = ep('a', { contentKind: 'Film', podcastName: 'Studio', episodeTitle: 'One Off' });
+    film.playableLink = ['/film', 'One Off', 'a'];
+    film.parentLink = null;
+    fixture.componentRef.setInput('slides', [film, ep('b'), ep('c')]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('a.hero-pill')).toBeNull();
+    const more = root.querySelector('a.billboard__more') as HTMLAnchorElement;
+    expect(more.getAttribute('href')).toBe('/film/One%20Off/a');
   });
 
   it('starts on the first slide', () => {

@@ -72,7 +72,7 @@
           Now featuring
         </p>
         <p class="hero-show">
-          @if (parentLink(feature); as parent) {
+          @if (feature.parentLink; as parent) {
           <a class="hero-pill" [routerLink]="parent">
             {{ displayCatalogName(feature.podcastName) }}
           </a>
@@ -117,13 +117,13 @@
         </button>
         } @else {
         <a mat-flat-button class="billboard__play"
-          [routerLink]="playableLink(feature)">
+          [routerLink]="feature.playableLink">
           <mat-icon>play_arrow</mat-icon>
           {{ playLabel(feature) }}
         </a>
         }
         <a mat-stroked-button class="billboard__more"
-          [routerLink]="playableLink(feature)">
+          [routerLink]="feature.playableLink">
           More info
         </a>
       </div>

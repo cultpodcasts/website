@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { BehaviorSubject, of, ReplaySubject } from 'rxjs';
-import { HomepageApiComponent } from './homepage-api.component';
+import { HomepageApiComponent, withHeroLinks } from './homepage-api.component';
 import { HomepageService } from '../homepage.service';
 import { HeroCurationService } from '../hero-curation.service';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -296,5 +296,32 @@ describe('HomepageApiComponent', () => {
     expect(
       component['subjectRailCandidates']().find((c) => c.subject === subject)?.episodes.length
     ).toBeGreaterThan(RAIL_DISPLAY_SIZE);
+  });
+});
+
+describe('withHeroLinks', () => {
+  const base: HomepageEpisode = {
+    id: 'ep-1',
+    podcastName: 'Nightly',
+    episodeTitle: 'Part',
+    episodeDescription: '',
+    release: new Date('2026-07-31T12:00:00Z'),
+    duration: '01:00:00',
+    subjects: [],
+    image: undefined,
+  };
+
+  it('passes a film path and no parent into the hero slide', () => {
+    const [slide] = withHeroLinks([{ ...base, contentKind: 'Film', podcastName: 'Studio', episodeTitle: 'One Off' }]);
+    expect(slide.playableLink).toEqual(['/film', 'One Off', 'ep-1']);
+    expect(slide.parentLink).toBeNull();
+  });
+
+  it('passes TV and news hub paths into the hero slide', () => {
+    const [tv] = withHeroLinks([{ ...base, contentKind: 'TvShowEpisode' }]);
+    const [news] = withHeroLinks([{ ...base, contentKind: 'NewsReport', podcastName: 'Desk' }]);
+    expect(tv.parentLink).toEqual(['/tv', 'Nightly']);
+    expect(news.playableLink).toEqual(['/news', 'Desk', 'ep-1']);
+    expect(news.parentLink).toEqual(['/news', 'Desk']);
   });
 });

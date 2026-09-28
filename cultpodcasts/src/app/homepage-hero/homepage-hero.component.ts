@@ -24,9 +24,14 @@ import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
-import { catalogueParentLink, cataloguePlayableLink } from '../catalogue/catalogue-links';
 import { releaseDateLabel } from '../release-label';
 import { formatSearchDescription } from '../search-description';
+
+/** Paths are chosen by the homepage list. This hero only renders them. */
+export interface HomepageHeroSlide extends HomepageEpisode {
+  playableLink: readonly string[];
+  parentLink: readonly string[] | null;
+}
 
 @Component({
   selector: 'app-homepage-hero',
@@ -49,7 +54,7 @@ export class HomepageHeroComponent {
   /** Keep in sync with `.billboard__feature.is-hidden` transition-duration. */
   private static readonly heroContentOutMs = 550;
 
-  readonly slides = input.required<HomepageEpisode[]>();
+  readonly slides = input.required<HomepageHeroSlide[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
   readonly isCurator = input(false);
 
@@ -86,8 +91,6 @@ export class HomepageHeroComponent {
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
 
   protected readonly displayCatalogName = displayCatalogName;
-  protected readonly playableLink = cataloguePlayableLink;
-  protected readonly parentLink = catalogueParentLink;
 
   private readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
