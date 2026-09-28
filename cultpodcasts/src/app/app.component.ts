@@ -22,7 +22,7 @@ import { MatIconModule, MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { registerSvgIcons } from './register-svg-icons';
 import { SearchBarComponent } from "./search-bar/search-bar.component";
-import { EpisodePlayerComponent } from './episode-player/episode-player.component';
+import { NowPlayingComponent } from './now-playing/now-playing.component';
 import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
@@ -55,7 +55,7 @@ import { scheduleChromeSync } from './episode-form.util';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.sass'],
-  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, EpisodePlayerComponent, ResumeSessionPromptComponent],
+  imports: [RouterOutlet, RouterLink, MatIconModule, MatMenuModule, ToolbarComponent, SearchBarComponent, NowPlayingComponent, ResumeSessionPromptComponent],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 

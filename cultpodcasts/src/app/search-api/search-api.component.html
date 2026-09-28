@@ -32,6 +32,23 @@
       </mat-menu>
     </div>
 
+    @if ((facets().contentKind?.length ?? 0) > 1 || kinds().length > 0) {
+    <div class="browse-facet" aria-label="Filter by kind">
+      <span class="browse-facet__label">Kind</span>
+      <div class="browse-facet__scroller" tabindex="0">
+        <button type="button" class="browse-pill" [class.is-active]="kinds().length === 0"
+          (click)="clearKinds()">All</button>
+        @for (kind of facets().contentKind; track kind.value) {
+        <button type="button" class="browse-pill"
+          [class.is-active]="kinds().indexOf(kind.value) >= 0"
+          (click)="toggleKind(kind.value)">
+          {{ contentKindLabel(kind.value) }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
     @if (facets().subjects && facets().subjects!.length > 0) {
     <div class="browse-facet" aria-label="Filter by subject">
       <span class="browse-facet__label">Subjects</span>
@@ -66,14 +83,14 @@
     </div>
     }
 
-    @if (subjects().length > 0 || podcasts().length > 0) {
+    @if (subjects().length > 0 || podcasts().length > 0 || kinds().length > 0) {
     <button type="button" class="browse-clear" (click)="clearAllFilters()">Clear filters</button>
     }
   </div>
 
   <div class="browse-grid">
     @for (result of results(); track result.id) {
-    <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)"
+    <app-catalogue-card [episode]="result" [playing]="isPlayingId(result.id)"
       [queued]="isQueuedId(result.id)" [titleAsHtml]="true" [showRelease]="true"
       (play)="playEpisode($event)" />
     }

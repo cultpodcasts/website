@@ -1,0 +1,9 @@
+@defer {
+  <app-series-hub [seriesName]="slug()" hub="tv" />
+} @placeholder {
+  <app-site-loading [active]="true" label="Loading TV show" />
+} @error {
+  <section class="browse-empty">
+    <h2>Failed to load this TV show.</h2>
+  </section>
+}

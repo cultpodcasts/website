@@ -69,7 +69,7 @@
         </mat-menu>
         }
       </div>
-      <app-episode-poster [episode]="result" [playing]="isPlayingId(result.id)"
+      <app-catalogue-card [episode]="result" [playing]="isPlayingId(result.id)"
         [queued]="isQueuedId(result.id)" [showRelease]="true"
         (play)="playEpisode($event)" />
     </div>

@@ -51,7 +51,7 @@ export class EpisodeLinksComponent {
       duration = duration.substring(1);
     }
     description = description + " [" + duration + "]";
-    const shortGuid = this.guidService.toBase64(item.id);
+    const shortGuid = this.guidService.toCatalogueShortId(item.id, "contentKind" in item ? item.contentKind : undefined);
     const share: ShareData = {
       title: item.episodeTitle,
       text: description,

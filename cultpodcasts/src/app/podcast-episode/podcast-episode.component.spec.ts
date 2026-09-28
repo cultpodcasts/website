@@ -46,7 +46,7 @@ describe('PodcastEpisodeComponent', () => {
   let fixture: ComponentFixture<PodcastEpisodeComponent>;
   let originalImage: typeof Image;
   let getEntities: ReturnType<typeof vi.fn>;
-  const routeParams = new BehaviorSubject<{ podcastName: string }>({
+  const routeParams = new BehaviorSubject<Record<string, string>>({
     podcastName: 'Show A',
   });
 

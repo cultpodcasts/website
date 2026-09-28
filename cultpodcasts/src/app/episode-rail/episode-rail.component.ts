@@ -14,13 +14,13 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
-import { SearchDisplayEpisode } from '../search-result-links';
+import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
+import { episodeArtAspect, SearchDisplayEpisode } from '../search-result-links';
 import { PlayerService } from '../player.service';
 
 @Component({
   selector: 'app-episode-rail',
-  imports: [RouterLink, MatIconModule, EpisodePosterComponent],
+  imports: [RouterLink, MatIconModule, CatalogueCardComponent],
   templateUrl: './episode-rail.component.html',
   styleUrl: './episode-rail.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +33,7 @@ export class EpisodeRailComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly artAspect = episodeArtAspect;
 
   readonly title = input.required<string>();
   readonly episodes = input.required<SearchDisplayEpisode[]>();

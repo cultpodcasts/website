@@ -20,26 +20,38 @@ function unknownField(): HttpErrorResponse {
   return new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} });
 }
 
+function namedField(property: string): HttpErrorResponse {
+  return new HttpErrorResponse({
+    status: 400,
+    statusText: 'Bad Request',
+    error: { error: { message: `Could not find a property named '${property}' on type 'search.document'.` } },
+  });
+}
+
 function serverError(): HttpErrorResponse {
   return new HttpErrorResponse({ status: 500, statusText: 'Server Error', error: { message: 'timeout' } });
 }
 
-function searchPage() {
+function searchPage(contentKind: { value: string; count: number }[] = []) {
   return {
     metadata: new Map<string, number>([['count', 0]]),
     entities: [],
-    facets: { podcastName: [], seriesName: [], subjects: [], lang: [] },
+    facets: { podcastName: [], seriesName: [], subjects: [], lang: [], contentKind },
   };
 }
+
+type ScriptStep = 'unknown' | 'series' | 'kind' | 'server' | 'ok';
 
 describe('SearchApiComponent', () => {
   let fixture: ComponentFixture<SearchApiComponent>;
   let calls: SearchCall[];
-  let script: Array<'unknown' | 'server' | 'ok'>;
+  let script: ScriptStep[];
+  let page = searchPage();
 
   beforeEach(async () => {
     calls = [];
     script = ['ok'];
+    page = searchPage();
     await TestBed.configureTestingModule({
       imports: [SearchApiComponent],
       providers: [
@@ -57,10 +69,16 @@ describe('SearchApiComponent', () => {
               if (next === 'unknown') {
                 return throwError(() => unknownField());
               }
+              if (next === 'series') {
+                return throwError(() => namedField('seriesName'));
+              }
+              if (next === 'kind') {
+                return throwError(() => namedField('contentKind'));
+              }
               if (next === 'server') {
                 return throwError(() => serverError());
               }
-              return of(searchPage());
+              return of(page);
             },
           },
         },
@@ -78,7 +96,7 @@ describe('SearchApiComponent', () => {
   }
 
   it('filters a podcast chip with the latched live field', () => {
-    script = ['unknown', 'ok'];
+    script = ['series', 'ok'];
     fixture.detectChanges();
     fixture.componentInstance.togglePodcast('Show A');
 
@@ -101,7 +119,7 @@ describe('SearchApiComponent', () => {
   });
 
   it('clears the live-field latch when the retry fails so the next search uses seriesName', () => {
-    script = ['unknown', 'server'];
+    script = ['series', 'server'];
     fixture.detectChanges();
     fixture.componentInstance.toggleSubject('Topic');
 
@@ -109,5 +127,48 @@ describe('SearchApiComponent', () => {
     expect(facetsOf(calls[1])).toContain('podcastName,count:1000');
     expect(facetsOf(calls[2])).toContain('seriesName');
     expect(facetsOf(calls[2])).not.toContain('podcastName');
+  });
+
+  it('drops a missing contentKind facet and does not latch the series field', () => {
+    script = ['kind', 'ok'];
+    fixture.detectChanges();
+
+    expect(facetsOf(calls[0])).toContain('contentKind');
+    expect(facetsOf(calls[0])).toContain('seriesName');
+    expect(facetsOf(calls[1])).not.toContain('contentKind');
+    expect(facetsOf(calls[1])).toContain('seriesName');
+    expect(facetsOf(calls[1])).not.toContain('podcastName');
+    expect(calls[1].filter ?? '').not.toContain('contentKind');
+    expect(fixture.nativeElement.textContent).not.toContain('Something went wrong');
+  });
+
+  it('treats an unnamed missing-field response as contentKind before flipping the series latch', () => {
+    script = ['unknown', 'ok'];
+    fixture.detectChanges();
+
+    expect(facetsOf(calls[0])).toContain('contentKind');
+    expect(facetsOf(calls[1])).not.toContain('contentKind');
+    expect(facetsOf(calls[1])).toContain('seriesName');
+    expect(facetsOf(calls[1])).not.toContain('podcastName');
+  });
+
+  it('keeps every kind pill after one kind is selected', () => {
+    page = searchPage([
+      { value: 'Episode', count: 4 },
+      { value: 'Film', count: 2 },
+      { value: 'TvShowEpisode', count: 1 },
+    ]);
+    fixture.detectChanges();
+
+    page = searchPage([{ value: 'Film', count: 2 }]);
+    fixture.componentInstance.toggleKind('Film');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('All');
+    expect(text).toContain('Podcast');
+    expect(text).toContain('Film');
+    expect(text).toContain('TV');
+    expect(calls.at(-1)?.filter).toContain("search.in(contentKind, 'Film'");
   });
 });

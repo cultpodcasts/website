@@ -14,12 +14,23 @@ import { EpisodesComponent } from './episodes/episodes.component';
 import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
 import { HomeComponent } from './home/home.component';
 import { BookmarksComponent } from './bookmarks/bookmarks.component';
+import { FilmPageComponent } from './film-page/film-page.component';
+import { TvShowComponent } from './tv-show/tv-show.component';
+import { TvShowEpisodeComponent } from './tv-show-episode/tv-show-episode.component';
+import { NewsOrganisationComponent } from './news-organisation/news-organisation.component';
+import { NewsReportComponent } from './news-report/news-report.component';
+import { redirectMovedKind } from './redirect-moved-kind.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent },
   { path: 'podcast/:podcastName', component: PodcastComponent },
-  { path: 'podcast/:podcastName/:query', component: PodcastComponent },
+  { path: 'podcast/:podcastName/:query', component: PodcastComponent, canActivate: [redirectMovedKind] },
+  { path: 'film/:slug/:query', component: FilmPageComponent },
+  { path: 'tv/:slug/:query', component: TvShowEpisodeComponent },
+  { path: 'tv/:slug', component: TvShowComponent },
+  { path: 'news/:slug/:query', component: NewsReportComponent },
+  { path: 'news/:slug', component: NewsOrganisationComponent },
   { path: 'subject/:subjectName', component: SubjectComponent },
   { path: 'subject/:subjectName/:query', component: SubjectComponent },
   {

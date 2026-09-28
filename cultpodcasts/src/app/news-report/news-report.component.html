@@ -1,0 +1,29 @@
+@if (isEpisode()) {
+  @if (episode(); as ep) {
+  <article class="kind-episode">
+    @if (parentHub(); as hub) {
+    <p class="hero-show">
+      <a class="hero-pill" [routerLink]="hub">{{ displayCatalogName(slug()) }}</a>
+    </p>
+    }
+    <h1>{{ ep.episodeTitle }}</h1>
+    @if (parentHub(); as hub) {
+    <a [routerLink]="hub">More from {{ displayCatalogName(slug()) }}</a>
+    }
+  </article>
+  } @else if (isLoading()) {
+  <app-site-loading [active]="true" label="Loading episode" />
+  @if (showEpisodeSkeleton()) {
+  <app-episode-loading-skeleton />
+  }
+  } @else {
+  <section class="browse-empty">
+    <h2>Episode not found.</h2>
+    @if (parentHub(); as hub) {
+    <div id="cta-button">
+      <a mat-flat-button color="primary" [routerLink]="hub">Try the page</a>
+    </div>
+    }
+  </section>
+  }
+}

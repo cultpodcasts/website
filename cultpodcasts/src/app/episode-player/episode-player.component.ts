@@ -10,6 +10,7 @@ import {
   inject,
   signal,
   viewChild,
+  input,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -135,6 +136,9 @@ export class EpisodePlayerComponent {
   );
 
   protected readonly displayCatalogName = displayCatalogName;
+  /** Set by the shell. This player does not choose Film, TV, or News links. */
+  readonly parentLink = input<readonly string[] | null>(null);
+  readonly pageLink = input<readonly string[] | null>(null);
 
   protected readonly queueCount = computed(() => this.queue().length);
 

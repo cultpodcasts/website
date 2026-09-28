@@ -254,7 +254,7 @@ export class PodcastEpisodeComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params } = res;
-      this.podcastName.set(params["podcastName"]);
+      this.podcastName.set(params["podcastName"] ?? "");
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);

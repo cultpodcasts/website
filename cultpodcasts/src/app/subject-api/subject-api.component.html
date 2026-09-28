@@ -95,7 +95,7 @@
   @if (count() > 0) {
   <div class="browse-grid">
     @for (result of results(); track result.id) {
-    <app-episode-poster [episode]="result" [excludeSubject]="subjectName()"
+    <app-catalogue-card [episode]="result" [excludeSubject]="subjectName()"
       [playing]="isPlayingId(result.id)" [queued]="isQueuedId(result.id)" [titleAsHtml]="true"
       [showRelease]="true" (play)="playEpisode($event)" />
     }

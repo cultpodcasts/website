@@ -27,6 +27,12 @@ import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
 import { formatSearchDescription } from '../search-description';
 
+/** Paths are chosen by the homepage list. This hero only renders them. */
+export interface HomepageHeroSlide extends HomepageEpisode {
+  playableLink: readonly string[];
+  parentLink: readonly string[] | null;
+}
+
 @Component({
   selector: 'app-homepage-hero',
   imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent],
@@ -48,7 +54,7 @@ export class HomepageHeroComponent {
   /** Keep in sync with `.billboard__feature.is-hidden` transition-duration. */
   private static readonly heroContentOutMs = 550;
 
-  readonly slides = input.required<HomepageEpisode[]>();
+  readonly slides = input.required<HomepageHeroSlide[]>();
   readonly curatedEpisodeIds = input<readonly string[]>([]);
   readonly isCurator = input(false);
 

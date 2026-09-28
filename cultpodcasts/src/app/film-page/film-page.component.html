@@ -1,0 +1,16 @@
+@if (isEpisode()) {
+  @if (episode(); as ep) {
+  <article class="kind-episode">
+    <h1>{{ ep.episodeTitle }}</h1>
+  </article>
+  } @else if (isLoading()) {
+  <app-site-loading [active]="true" label="Loading episode" />
+  @if (showEpisodeSkeleton()) {
+  <app-episode-loading-skeleton />
+  }
+  } @else {
+  <section class="browse-empty">
+    <h2>Episode not found.</h2>
+  </section>
+  }
+}

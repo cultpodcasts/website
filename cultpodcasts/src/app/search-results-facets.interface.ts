@@ -5,6 +5,7 @@ export interface SearchResultsFacets {
     seriesName?: SearchResultFacet[];
     subjects?: SearchResultFacet[];
     lang?: SearchResultFacet[];
+    contentKind?: SearchResultFacet[];
 }
 
 

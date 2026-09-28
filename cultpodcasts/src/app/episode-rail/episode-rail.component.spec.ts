@@ -50,6 +50,21 @@ describe('EpisodeRailComponent', () => {
     expect(fixture.nativeElement.querySelector('a.rail__title--link')).toBeNull();
   });
 
+  it('marks a square cover as a narrow rail tile and leaves a wide still full width', () => {
+    fixture.componentRef.setInput('episodes', [
+      { ...ep('square'), image: new URL('https://i.scdn.co/image/square') },
+      {
+        ...ep('wide', true),
+        image: new URL('https://i.ytimg.com/vi/wide/hqdefault.jpg'),
+      },
+    ]);
+    fixture.detectChanges();
+
+    const posters = fixture.nativeElement.querySelectorAll('.rail-poster');
+    expect(posters[0].classList.contains('rail-poster--square')).toBe(true);
+    expect(posters[1].classList.contains('rail-poster--square')).toBe(false);
+  });
+
   it('renders a linked title and browse-all when titleLink / browseAllLink are set', () => {
     fixture.componentRef.setInput('title', 'Scientology');
     fixture.componentRef.setInput('subject', 'Scientology');

@@ -56,9 +56,11 @@
 
     <div class="episode-hero">
       <p class="hero-show">
-        <a class="hero-pill" [routerLink]="['/podcast', podcastName()]">
-          {{ displayCatalogName(podcastName()) }}
+        @if (podcastName(); as name) {
+        <a class="hero-pill" [routerLink]="['/podcast', name]">
+          {{ displayCatalogName(name) }}
         </a>
+        }
       </p>
       <h1 class="episode-hero__title" [innerHTML]="episode.episodeTitle"></h1>
       <p class="hero-meta">
@@ -109,7 +111,7 @@
   <app-episode-rail
     [title]="'More from ' + displayCatalogName(podcastName())"
     [episodes]="morePodcastEpisodes()"
-    [titleLink]="['/podcast', podcastName()]"
+    [titleLink]="podcastName() ? ['/podcast', podcastName()] : undefined"
     [ariaLabel]="'More from this podcast'"
     [displayTitle]="true"
     [showShow]="false"

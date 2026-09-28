@@ -13,6 +13,7 @@ import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.comp
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
 import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-seo';
+import { episodeIdFromRouteQuery } from '../playable-route';
 
 @Component({
   selector: 'app-podcast',
@@ -63,7 +64,7 @@ export class PodcastComponent {
 
   private applyRouteParams(params: Record<string, string | undefined>): void {
     this.podcastName = params["podcastName"] ?? "";
-    const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
+    const episodeUuid = episodeIdFromRouteQuery(this.guidService, params["query"] ?? "");
     this.isEpisode.set(episodeUuid != "");
     this.episode.set(undefined);
     this.isLoading.set(true);
@@ -75,7 +76,7 @@ export class PodcastComponent {
     ).subscribe(async params => {
       this.applyRouteParams(params);
       let pageDetails: IPageDetails = { title: this.podcastName };
-      const episodeUuid = this.guidService.getEpisodeUuid(params["query"] ?? "");
+      const episodeUuid = episodeIdFromRouteQuery(this.guidService, params["query"] ?? "");
       const isEpisode = episodeUuid != "";
       if (isEpisode) {
         if (this.isServer) {
@@ -96,29 +97,25 @@ export class PodcastComponent {
             } catch (e) {
               console.error(JSON.stringify(e));
             }
+            let episode: SearchResult | undefined;
+            try {
+              episode = await this.resolvePlayable(episodeUuid);
+            } catch (e) {
+              console.error(JSON.stringify(e));
+            }
             if (!pageDetails.image) {
-              try {
-                const episode = await this.episodeService.GetEpisodeDetailsFromApi(
-                  episodeUuid,
-                  this.podcastName
-                );
-                // Full KV miss: use search for title/release/duration + art (same as client).
-                // KV hit without image: keep KV title/meta, fill art only.
-                pageDetails = hadKvPageDetails
-                  ? withEpisodeShareImage(pageDetails, episode)
-                  : episode
-                    ? pageDetailsFromSearchEpisode(this.podcastName, episode)
-                    : pageDetails;
-              } catch (e) {
-                console.error(JSON.stringify(e));
-              }
+              pageDetails = hadKvPageDetails
+                ? withEpisodeShareImage(pageDetails, episode)
+                : episode
+                  ? pageDetailsFromSearchEpisode(this.podcastName, episode)
+                  : pageDetails;
             }
             this.seoService.AddMetaTags(pageDetails);
             // Stay in loading on server so we don't emit a "not found" shell for hydration.
             this.isLoading.set(true);
           })();
         } else {
-          this.episodeService.GetEpisodeDetailsFromApi(episodeUuid, this.podcastName)
+          this.resolvePlayable(episodeUuid)
             .then(episode => {
               this.episode.set(episode);
               if (episode) {
@@ -138,5 +135,10 @@ export class PodcastComponent {
         this.isLoading.set(false);
       }
     });
+  }
+
+  private async resolvePlayable(episodeId: string) {
+    const byName = await this.episodeService.GetEpisodeDetailsFromApi(episodeId, this.podcastName);
+    return byName ?? await this.episodeService.getPlayableById(episodeId);
   }
 }

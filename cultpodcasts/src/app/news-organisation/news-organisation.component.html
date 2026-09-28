@@ -1,0 +1,9 @@
+@defer {
+  <app-series-hub [seriesName]="slug()" hub="news" />
+} @placeholder {
+  <app-site-loading [active]="true" label="Loading news organisation" />
+} @error {
+  <section class="browse-empty">
+    <h2>Failed to load this news organisation.</h2>
+  </section>
+}

@@ -32,7 +32,7 @@ import {
   shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive';
@@ -53,7 +53,7 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    EpisodePosterComponent,
+    CatalogueCardComponent,
     SiteLoadingComponent,
     BrowseLoadingSkeletonComponent,
     BrowseFacetScrollerDirective,

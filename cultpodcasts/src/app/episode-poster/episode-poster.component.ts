@@ -5,6 +5,7 @@ import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback 
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SearchDisplayEpisode, episodeArtAspect, episodeImageUrl } from '../search-result-links';
 import { displayCatalogName } from '../display-catalog-name';
+import { parentCommands, playableCommands } from '../playable-card-link';
 import { releaseDateLabel } from '../release-label';
 import { pickCardSubject } from '../card-subject';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
@@ -35,8 +36,20 @@ export class EpisodePosterComponent {
    * date-grouped rails already state it in their heading.
    */
   readonly showRelease = input(false);
-  /** Search hit titles may contain highlight markup. */
+  /** Search titles may contain highlight markup. */
   readonly titleAsHtml = input(false);
+  /** When set, replaces the podcast episode URL. */
+  readonly titleLink = input<readonly string[] | undefined>(undefined);
+  /** undefined keeps the podcast parent. null hides the parent line. */
+  readonly showLink = input<readonly string[] | null | undefined>(undefined);
+  protected readonly playableLink = computed(() => this.titleLink() ?? playableCommands(this.episode()));
+  protected readonly parentLink = computed(() => {
+    const show = this.showLink();
+    if (show === null) {
+      return null;
+    }
+    return show ?? parentCommands(this.episode());
+  });
   /** Subject-scoped views pass their own subject so the card's chip adds new information. */
   readonly excludeSubject = input<string | undefined>(undefined);
   /** Curator-only: show a star to promote/demote this episode in the homepage hero. */

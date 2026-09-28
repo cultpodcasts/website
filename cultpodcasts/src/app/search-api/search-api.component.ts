@@ -12,7 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
-import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
+import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
 import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive';
@@ -21,7 +21,8 @@ import { startEpisodePlayback } from '../episode-embed';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
-import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
+import { contentKindLabel } from '../content-kind-label';
+import { isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, unknownSearchFieldName } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -38,7 +39,7 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    EpisodePosterComponent,
+    CatalogueCardComponent,
     SiteLoadingComponent,
     BrowseLoadingSkeletonComponent,
     BrowseFacetScrollerDirective,
@@ -63,13 +64,18 @@ export class SearchApiComponent {
   protected facets = signal<SearchResultsFacets>({});
   protected subjects = signal<string[]>([]);
   protected podcasts = signal<string[]>([]);
+  protected kinds = signal<string[]>([]);
   private podcastsFilter: string = "";
   private subjectsFilter: string = "";
+  private kindsFilter: string = "";
+  /** include until the index says contentKind is missing. probing is the one retry without it. */
+  private contentKindMode: "include" | "probing" | "omit" = "include";
   private legacyNames = false;
   protected isSubsequentLoading = signal<boolean>(false);
   protected results = signal<SearchResult[]>([]);
   protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly contentKindLabel = contentKindLabel;
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
@@ -118,9 +124,11 @@ export class SearchApiComponent {
       if (initial) {
         this.podcastsFilter = "";
         this.subjectsFilter = "";
+        this.kindsFilter = "";
         this.podcasts.set([]);
         this.subjects.set([]);
-        this.facets.update(f => ({ ...f, subjects: [], podcastName: [] }));
+        this.kinds.set([]);
+        this.facets.update(f => ({ ...f, subjects: [], podcastName: [], contentKind: [] }));
       }
 
       const { params, queryParams } = res;
@@ -166,13 +174,14 @@ export class SearchApiComponent {
         filter: this.buildFilter(
           this.filter,
           this.podcastsFilter,
-          this.subjectsFilter),
+          this.subjectsFilter,
+          this.requestedKindsFilter()),
         searchMode: 'any',
         queryType: 'simple',
         count: true,
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
-        facets: [`${playableSeriesField(this.legacyNames)},count:1000,sort:count`, "subjects,count:1000,sort:count"],
+        facets: this.searchFacets(),
         orderby: sort
       }).subscribe({
         next: data => {
@@ -226,10 +235,17 @@ export class SearchApiComponent {
           }
 
           this.resultsHeading.set(`Found ${resultsSummary} for "${presentableQuery}"`);
+          if (this.contentKindMode === "probing") {
+            this.contentKindMode = "omit";
+            this.kindsFilter = "";
+            this.kinds.set([]);
+          } else if (this.contentKindMode === "include" && !this.kindsFilter && data.facets.contentKind) {
+            this.facets.update(f => ({ ...f, contentKind: data.facets.contentKind }));
+          }
           this.isLoading.set(false);
         },
         error: (e) => {
-          if (this.adoptLegacyField(e)) {
+          if (this.recoverSearch(e)) {
             this.execSearch(initial, reset, subsequent);
             return;
           }
@@ -309,8 +325,33 @@ export class SearchApiComponent {
   clearAllFilters(): void {
     this.subjects.set([]);
     this.podcasts.set([]);
+    this.kinds.set([]);
     this.subjectsFilter = '';
     this.podcastsFilter = '';
+    this.kindsFilter = '';
+    this.page = 1;
+    this.execSearch(true, { subjects: true, podcasts: true });
+  }
+
+  toggleKind(value: string): void {
+    const current = this.kinds();
+    const next = current.includes(value)
+      ? current.filter((k) => k !== value)
+      : [...current, value];
+    this.kinds.set(next);
+    this.kindsFilter = next.length === 0
+      ? ''
+      : `search.in(contentKind, '${next.map((k) => k.replaceAll("'", "''")).join('£')}', '£')`;
+    this.page = 1;
+    this.execSearch(true, { subjects: true, podcasts: true });
+  }
+
+  clearKinds(): void {
+    if (this.kinds().length === 0) {
+      return;
+    }
+    this.kinds.set([]);
+    this.kindsFilter = '';
     this.page = 1;
     this.execSearch(true, { subjects: true, podcasts: true });
   }
@@ -319,6 +360,49 @@ export class SearchApiComponent {
     const scrollPosition = window.scrollY + window.innerHeight;
     const threshold = document.documentElement.scrollHeight - this.infiniteScrollStrategy.getYThreshold(this.page);
     return scrollPosition >= threshold;
+  }
+
+  private searchFacets(): string[] {
+    const facets = [
+      `${playableSeriesField(this.legacyNames)},count:1000,sort:count`,
+      "subjects,count:1000,sort:count",
+    ];
+    if (this.contentKindMode === "include") {
+      facets.push("contentKind,count:10");
+    }
+    return facets;
+  }
+
+  /** Kind filter uses contentKind. Leave it off while that field is being dropped. */
+  private requestedKindsFilter(): string {
+    return this.contentKindMode === "include" ? this.kindsFilter : "";
+  }
+
+  /**
+   * A missing contentKind field is not a series-name miss. Drop the facet and the kind
+   * filter and retry once. Only a later unknown-field response flips the series latch.
+   */
+  private recoverSearch(error: unknown): boolean {
+    if (this.contentKindMode === "probing") {
+      this.contentKindMode = "include";
+      if (!isUnknownSearchFieldError(error)) {
+        return false;
+      }
+      return this.adoptLegacyField(error);
+    }
+    if (this.shouldDropContentKind(error)) {
+      this.contentKindMode = "probing";
+      return true;
+    }
+    return this.adoptLegacyField(error);
+  }
+
+  private shouldDropContentKind(error: unknown): boolean {
+    if (this.contentKindMode !== "include" || !isUnknownSearchFieldError(error)) {
+      return false;
+    }
+    const field = unknownSearchFieldName(error);
+    return field !== "seriesName" && field !== "podcastName";
   }
 
   private adoptLegacyField(error: unknown): boolean {
@@ -335,7 +419,7 @@ export class SearchApiComponent {
     return false;
   }
 
-  buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string): string {
+  buildFilter(baseFilter: string | null, podcastsFilter: string, subjectsFilter: string, kindsFilter = ""): string {
     let filter: string = "";
     if (baseFilter && baseFilter != "") {
       filter = baseFilter;
@@ -351,6 +435,12 @@ export class SearchApiComponent {
         filter += " and ";
       }
       filter += subjectsFilter;
+    }
+    if (kindsFilter && kindsFilter != "") {
+      if (filter.length > 0) {
+        filter += " and ";
+      }
+      filter += kindsFilter;
     }
     return filter;
   }

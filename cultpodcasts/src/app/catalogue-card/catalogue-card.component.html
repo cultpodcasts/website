@@ -1,0 +1,22 @@
+@switch (episode().contentKind) {
+  @case ("Film") {
+    <app-film-card [episode]="episode()" [playing]="playing()" [queued]="queued()"
+      [titleAsHtml]="titleAsHtml()" [showRelease]="showRelease()" (play)="play.emit($event)" />
+  }
+  @case ("TvShowEpisode") {
+    <app-tv-show-episode-card [episode]="episode()" [playing]="playing()" [queued]="queued()"
+      [titleAsHtml]="titleAsHtml()" [showRelease]="showRelease()" [excludeSubject]="excludeSubject()"
+      (play)="play.emit($event)" />
+  }
+  @case ("NewsReport") {
+    <app-news-report-card [episode]="episode()" [playing]="playing()" [queued]="queued()"
+      [titleAsHtml]="titleAsHtml()" [showRelease]="showRelease()" [excludeSubject]="excludeSubject()"
+      (play)="play.emit($event)" />
+  }
+  @default {
+    <app-episode-poster [episode]="episode()" [playing]="playing()" [queued]="queued()"
+      [showShow]="showShow()" [showRelease]="showRelease()" [titleAsHtml]="titleAsHtml()"
+      [excludeSubject]="excludeSubject()" [showPromote]="showPromote()" [promoted]="promoted()"
+      (play)="play.emit($event)" (promoteToggle)="promoteToggle.emit($event)" />
+  }
+}

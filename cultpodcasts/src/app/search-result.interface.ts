@@ -18,4 +18,5 @@ export interface SearchResult {
   image?: URL | string;
   /** Non-English IETF tag from the search index when present; null/omitted ≈ English. */
   lang?: string | null;
+  contentKind?: string | null;
 }
