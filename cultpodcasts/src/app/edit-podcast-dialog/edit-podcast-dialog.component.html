@@ -188,6 +188,20 @@
                     <input type="text" [formControl]="form()!.controls.episodeIncludeTitleRegex" matInput>
                 </mat-form-field>
             </mat-tab>
+            <mat-tab label="Catalogue">
+                <mat-form-field class="full-width">
+                    <mat-label>Transfer to</mat-label>
+                    <mat-select [value]="transferTarget()" (selectionChange)="transferTarget.set($event.value)">
+                        <mat-option [value]="null">Keep as podcast</mat-option>
+                        <mat-option [value]="CatalogueParentKind.TvShow">TV show</mat-option>
+                        <mat-option [value]="CatalogueParentKind.NewsOrganisation">News organisation</mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <p class="transfer-hint">The podcast id becomes the new parent id. Episode ids stay the same. This cannot be Film.</p>
+                <button type="button" matButton="filled"
+                    [disabled]="!podcastId || transferTarget() == null"
+                    (click)="transferKind()">Transfer</button>
+            </mat-tab>
         </mat-tab-group>
     </form>
     }

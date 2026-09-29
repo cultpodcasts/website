@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { ShareMode } from '../share-mode.enum';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
@@ -255,7 +256,17 @@ export class PodcastApiComponent {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
+      if (result?.transferred) {
+        const hub = result.targetKind === CatalogueParentKind.TvShow ? 'tv' : 'news';
+        let message = 'Podcast transferred';
+        if (result.response?.failureIndexingPlayables) {
+          message += '. Some playables failed to reindex';
+        }
+        this.snackBar.open(message, 'Ok', { duration: 10000 });
+        this.router.navigate(['/' + hub, this.podcastName()]);
+        return;
+      }
+      if (result?.updated) {
         var message = "Podcast updated";
         if (result.response?.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
@@ -264,7 +275,7 @@ export class PodcastApiComponent {
           message += ". Some episodes failed to delete from index";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      } else if (result.noChange) {
+      } else if (result?.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
     });

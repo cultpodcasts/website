@@ -15,6 +15,9 @@ import { environment } from './../../environments/environment';
 import { Subject } from '../subject.interface';
 import { EditPodcastPost } from "../edit-podcast-post.interface";
 import { EditPodcastSendComponent } from '../edit-podcast-send/edit-podcast-send.component';
+import { ConfirmComponent } from '../confirm/confirm.component';
+import { TransferPodcastKindSendComponent } from '../transfer-podcast-kind-send/transfer-podcast-kind-send.component';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { PodcastServiceType } from "../podcast-service-type.enum";
 import { MatInputModule } from '@angular/material/input';
 import { TextFieldModule } from '@angular/cdk/text-field';
@@ -87,6 +90,8 @@ export class EditPodcastDialogComponent {
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string | undefined;
   episodeId: string | undefined;
+  readonly transferTarget = signal<CatalogueParentKind | null>(null);
+  protected readonly CatalogueParentKind = CatalogueParentKind;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -266,6 +271,40 @@ export class EditPodcastDialogComponent {
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });
+      }
+    });
+  }
+
+  async transferKind() {
+    const targetKind = this.transferTarget();
+    if (!this.podcastId || targetKind == null) {
+      return;
+    }
+
+    const isTvShow = targetKind === CatalogueParentKind.TvShow;
+    const title = isTvShow ? 'Transfer to TV show' : 'Transfer to news organisation';
+    const question = isTvShow
+      ? 'Move this podcast and all of its episodes to a TV show? The podcast id becomes the TV show id. Episode ids stay the same.'
+      : 'Move this podcast and all of its episodes to a news organisation? The podcast id becomes the news organisation id. Episode ids stay the same.';
+
+    const confirmed = await firstValueFrom(this.dialog.open(ConfirmComponent, {
+      data: { title: title, question: question },
+      disableClose: true,
+      autoFocus: true
+    }).afterClosed());
+    if (!confirmed?.result) {
+      return;
+    }
+
+    const sendRef = this.dialog.open(TransferPodcastKindSendComponent, { disableClose: true, autoFocus: true });
+    sendRef.componentInstance.submit(this.podcastId, targetKind);
+    sendRef.afterClosed().subscribe(result => {
+      if (result?.transferred) {
+        this.dialogRef.close({
+          transferred: true,
+          targetKind: targetKind,
+          response: result.response
+        });
       }
     });
   }
