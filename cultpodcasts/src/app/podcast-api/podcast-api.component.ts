@@ -17,7 +17,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
-import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
+import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
 import { ShareMode } from '../share-mode.enum';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
@@ -255,23 +256,17 @@ export class PodcastApiComponent {
       autoFocus: true,
       width: '90%'
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result?.transferred) {
-        const hub = result.targetKind === CatalogueParentKind.TvShow ? 'tv' : 'news';
-        let message = 'Podcast transferred';
-        if (result.response?.failureIndexingPlayables) {
-          message += '. Some playables failed to reindex';
-        }
-        this.snackBar.open(message, 'Ok', { duration: 10000 });
-        this.router.navigate(['/' + hub, this.podcastName()]);
+    dialogRef.afterClosed().subscribe(async (result: EditPodcastDialogResponse | undefined) => {
+      if (applyTransferredPodcastKindClose(result, this.podcastName(), this.snackBar, this.router)) {
         return;
       }
       if (result?.updated) {
         var message = "Podcast updated";
-        if (result.response?.failureIndexingEpisodes) {
+        const flags = podcastPostUpdateFlags(result.response);
+        if (flags.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }
-        if (result.response?.failureDeletingFromIndex) {
+        if (flags.failureDeletingFromIndex) {
           message += ". Some episodes failed to delete from index";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });

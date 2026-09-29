@@ -23,11 +23,13 @@ import { MatCardModule } from '@angular/material/card';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 
 export interface DiscoveryScoreDisplay {
   label: string;
@@ -74,7 +76,8 @@ export class DiscoveryItemComponent implements OnInit {
 
   constructor(
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {
     effect(() => {
       this.selected.set(this.selectedIds().includes(this.result().id));
@@ -154,10 +157,13 @@ export class DiscoveryItemComponent implements OnInit {
     });
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
+      .subscribe((result: EditPodcastDialogResponse | undefined) => {
+        if (applyTransferredPodcastKindClose(result, podcastName, this.snackBar, this.router)) {
+          return;
+        }
         if (result?.updated) {
           let message = 'Podcast updated';
-          if (result.response?.failureIndexingEpisodes) {
+          if (podcastPostUpdateFlags(result.response).failureIndexingEpisodes) {
             message += '. Some episodes failed to index';
           }
           this.snackBar.open(message, 'Ok', { duration: 10000 });

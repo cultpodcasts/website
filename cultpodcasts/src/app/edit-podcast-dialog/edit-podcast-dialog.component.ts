@@ -30,6 +30,8 @@ import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
+import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
+import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
 import { podcastGetPathFromEditData } from '../podcast-get-path';
 import {
   buildPodcastFormControls,
@@ -97,7 +99,7 @@ export class EditPodcastDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
-    private dialogRef: MatDialogRef<EditPodcastDialogComponent, any>,
+    private dialogRef: MatDialogRef<EditPodcastDialogComponent, EditPodcastDialogResponse>,
     @Inject(MAT_DIALOG_DATA) public data: EditPodcastDialogData,
     private dialog: MatDialog,
   ) {
@@ -298,12 +300,12 @@ export class EditPodcastDialogComponent {
 
     const sendRef = this.dialog.open(TransferPodcastKindSendComponent, { disableClose: true, autoFocus: true });
     sendRef.componentInstance.submit(this.podcastId, targetKind);
-    sendRef.afterClosed().subscribe(result => {
+    sendRef.afterClosed().subscribe((result: TransferPodcastKindSendClose | undefined) => {
       if (result?.transferred) {
         this.dialogRef.close({
           transferred: true,
-          targetKind: targetKind,
-          response: result.response
+          targetKind: result.targetKind ?? targetKind,
+          response: result.response ?? undefined
         });
       }
     });

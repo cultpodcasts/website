@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -25,6 +25,8 @@ import { EpisodeStatusComponent } from "../episode-status/episode-status.compone
 import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
@@ -110,6 +112,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   private snapOffsetObserver: ResizeObserver | undefined;
 
   constructor(
+    private router: Router,
     private http: HttpClient,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -609,17 +612,21 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
       autoFocus: true,
       width: '90%'
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
+    dialogRef.afterClosed().subscribe(async (result: EditPodcastDialogResponse | undefined) => {
+      if (applyTransferredPodcastKindClose(result, data.podcastName, this.snackBar, this.router)) {
+        return;
+      }
+      if (result?.updated) {
         var message = "Podcast updated";
-        if (result.response?.failureIndexingEpisodes) {
+        const flags = podcastPostUpdateFlags(result.response);
+        if (flags.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }
-        if (result.response?.failureDeletingFromIndex) {
+        if (flags.failureDeletingFromIndex) {
           message += ". Some episodes failed to delete from index";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      } else if (result.noChange) {
+      } else if (result?.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
     });

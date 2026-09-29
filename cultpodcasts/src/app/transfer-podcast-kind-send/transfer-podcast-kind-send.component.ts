@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { CurationSubmitService } from '../curation-submit.service';
 import { PodcastKindTransferResponse } from '../podcast-kind-transfer-response.interface';
+import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
 
 @Component({
   selector: 'app-transfer-podcast-kind-send',
@@ -18,7 +19,7 @@ export class TransferPodcastKindSendComponent {
   readonly sendError = signal(false);
 
   constructor(
-    private dialogRef: MatDialogRef<TransferPodcastKindSendComponent>,
+    private dialogRef: MatDialogRef<TransferPodcastKindSendComponent, TransferPodcastKindSendClose>,
     private curationSubmit: CurationSubmitService) {
   }
 
@@ -26,7 +27,12 @@ export class TransferPodcastKindSendComponent {
     this.curationSubmit.postPodcastKind(podcastId, targetKind).subscribe({
       next: resp => {
         const body = resp.body as PodcastKindTransferResponse | null;
-        this.dialogRef.close({ transferred: true, response: body });
+        this.dialogRef.close({
+          transferred: true,
+          targetKind: targetKind,
+          parentId: body?.parentId,
+          response: body
+        });
       },
       error: e => {
         this.isSending.set(false);
