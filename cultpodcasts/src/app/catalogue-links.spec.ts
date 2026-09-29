@@ -1,5 +1,12 @@
+import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
 import { GuidService } from "./guid.service";
-import { catalogueParentLink, cataloguePlayableLink, movedKindRedirect } from "./catalogue-links";
+import {
+  applyTransferredPodcastKindClose,
+  catalogueParentHubCommands,
+  catalogueParentLink,
+  cataloguePlayableLink,
+  movedKindRedirect
+} from "./catalogue-links";
 
 describe("catalogue links", () => {
   const guids = new GuidService();
@@ -44,5 +51,51 @@ describe("catalogue links", () => {
       guids
     );
     expect(target).toBe(`/film/${encodeURIComponent("One Off")}/${guids.toCatalogueShortId(id, "Film")}`);
+  });
+
+  it("maps TV and news parent kinds to slug hubs and rejects unexpected kinds", () => {
+    expect(catalogueParentHubCommands(CatalogueParentKind.TvShow, "Show A")).toEqual(["/tv", "Show A"]);
+    expect(catalogueParentHubCommands(CatalogueParentKind.NewsOrganisation, "Show A")).toEqual(["/news", "Show A"]);
+    expect(catalogueParentHubCommands("Film" as CatalogueParentKind, "Show A")).toBeNull();
+    expect(catalogueParentHubCommands(undefined, "Show A")).toBeNull();
+    expect(catalogueParentHubCommands(CatalogueParentKind.TvShow, "")).toBeNull();
+  });
+
+  it("navigates a transferred TV close to /tv/slug and stays put for an unknown kind", () => {
+    const snackBar = { open: vi.fn() };
+    const router = { navigate: vi.fn() };
+
+    expect(applyTransferredPodcastKindClose(
+      { transferred: true, targetKind: CatalogueParentKind.TvShow },
+      "Show A",
+      snackBar,
+      router
+    )).toBe(true);
+    expect(router.navigate).toHaveBeenCalledWith(["/tv", "Show A"]);
+
+    router.navigate.mockClear();
+    expect(applyTransferredPodcastKindClose(
+      { transferred: true, targetKind: CatalogueParentKind.NewsOrganisation },
+      "Show A",
+      snackBar,
+      router
+    )).toBe(true);
+    expect(router.navigate).toHaveBeenCalledWith(["/news", "Show A"]);
+
+    router.navigate.mockClear();
+    expect(applyTransferredPodcastKindClose(
+      { transferred: true, targetKind: "Film" as CatalogueParentKind },
+      "Show A",
+      snackBar,
+      router
+    )).toBe(true);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(snackBar.open).toHaveBeenCalledWith(
+      "Podcast transferred but destination is unknown",
+      "Ok",
+      { duration: 10000 }
+    );
+
+    expect(applyTransferredPodcastKindClose({ updated: true } as never, "Show A", snackBar, router)).toBe(false);
   });
 });

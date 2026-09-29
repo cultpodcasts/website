@@ -22,6 +22,8 @@ import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-p
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
+import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.component";
@@ -563,17 +565,21 @@ export class EpisodesApiComponent implements AfterViewInit {
       autoFocus: true,
       width: '90%'
     });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
+    dialogRef.afterClosed().subscribe(async (result: EditPodcastDialogResponse | undefined) => {
+      if (applyTransferredPodcastKindClose(result, data.podcastName, this.snackBar, this.router)) {
+        return;
+      }
+      if (result?.updated) {
         var message = "Podcast updated";
-        if (result.response?.failureIndexingEpisodes) {
+        const flags = podcastPostUpdateFlags(result.response);
+        if (flags.failureIndexingEpisodes) {
           message += ". Some episodes failed to index";
         }
-        if (result.response?.failureDeletingFromIndex) {
+        if (flags.failureDeletingFromIndex) {
           message += ". Some episodes failed to delete from index";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
-      } else if (result.noChange) {
+      } else if (result?.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
     });

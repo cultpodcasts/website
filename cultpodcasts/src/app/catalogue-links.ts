@@ -1,3 +1,4 @@
+import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
@@ -33,6 +34,62 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
     default:
       return item.podcastName ? ["/podcast", item.podcastName] : null;
   }
+}
+
+/** Public parent hubs after a podcast→TV/news transfer. Film is not a parent. */
+export function catalogueParentHubCommands(
+  kind: CatalogueParentKind | string | null | undefined,
+  slug: string
+): string[] | null {
+  if (!slug) {
+    return null;
+  }
+  switch (kind) {
+    case CatalogueParentKind.TvShow:
+      return ["/tv", slug];
+    case CatalogueParentKind.NewsOrganisation:
+      return ["/news", slug];
+    default:
+      return null;
+  }
+}
+
+export function transferredPodcastKindSnackbarMessage(failureIndexingPlayables?: boolean): string {
+  if (failureIndexingPlayables) {
+    return "Podcast transferred. Some playables failed to reindex";
+  }
+  return "Podcast transferred";
+}
+
+type TransferredKindClose = {
+  transferred?: boolean;
+  targetKind?: CatalogueParentKind | string;
+  response?: unknown;
+};
+
+/** Snackbar + slug-hub navigate for edit-podcast transfer close. Returns true when handled. */
+export function applyTransferredPodcastKindClose(
+  result: TransferredKindClose | null | undefined,
+  slug: string,
+  snackBar: { open: (message: string, action?: string, config?: { duration: number }) => unknown },
+  router: { navigate: (commands: string[]) => unknown }
+): boolean {
+  if (!result?.transferred) {
+    return false;
+  }
+  const commands = catalogueParentHubCommands(result.targetKind, slug);
+  if (!commands) {
+    snackBar.open("Podcast transferred but destination is unknown", "Ok", { duration: 10000 });
+    return true;
+  }
+  const transferResponse = result.response as { failureIndexingPlayables?: boolean } | undefined;
+  snackBar.open(
+    transferredPodcastKindSnackbarMessage(transferResponse?.failureIndexingPlayables),
+    "Ok",
+    { duration: 10000 }
+  );
+  router.navigate(commands);
+  return true;
 }
 
 /** Podcast page stays put. A guid stored as Film, TV, or News leaves for that path. */

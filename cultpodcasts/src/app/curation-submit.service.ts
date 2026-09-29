@@ -6,6 +6,9 @@ import { EpisodePost } from './episode-post.interface';
 import { EpisodeChangeResponse } from './episode-change-response.interface';
 import { AddPodcastPost } from './add-podcast-post.interface';
 import { PodcastPostResponse } from './podcast-post-response.interface';
+import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
+import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
+import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
 /**
  * Shared authenticated API posts used by spinner/send dialogs.
@@ -36,8 +39,17 @@ export class CurationSubmitService {
   }
 
   postPodcast(podcastId: string, body: unknown) {
-    const url = new URL(`/podcast/${podcastId}`, environment.api).toString();
+    const url = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
     return this.http.post<PodcastPostResponse>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  postPodcastKind(podcastId: string, targetKind: CatalogueParentKind) {
+    const url = new URL(`/podcast/${encodeURIComponent(podcastId)}/kind`, environment.api).toString();
+    const body: PodcastKindTransferRequest = { targetKind: targetKind };
+    return this.http.post<PodcastKindTransferResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

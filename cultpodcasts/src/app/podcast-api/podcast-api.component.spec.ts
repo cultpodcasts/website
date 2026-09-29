@@ -3,9 +3,11 @@ import { provideRouter, ActivatedRoute } from '@angular/router';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NEVER, of, throwError, BehaviorSubject } from 'rxjs';
+import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { PodcastApiComponent } from './podcast-api.component';
 import { ODataService } from '../odata.service';
 import { SiteService } from '../site.service';
@@ -110,5 +112,33 @@ describe('PodcastApiComponent', () => {
     expect(calls[1].filter).toContain("(podcastName eq 'Show A')");
     expect(calls[2].filter).toContain("(seriesName eq 'Show A')");
     expect(calls[2].filter).not.toContain('podcastName');
+  });
+
+  it('afterClosed { transferred: true, targetKind: TvShow } navigates [\'/tv\', \'Show A\']', () => {
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate');
+    const dialog = TestBed.inject(MatDialog);
+    vi.mocked(dialog.open).mockReturnValue({
+      afterClosed: () => of({ transferred: true, targetKind: CatalogueParentKind.TvShow })
+    } as ReturnType<MatDialog['open']>);
+
+    fixture.componentInstance.editPodcast();
+
+    expect(navigate).toHaveBeenCalledWith(['/tv', 'Show A']);
+  });
+
+  it('afterClosed { transferred: true, targetKind: NewsOrganisation } navigates [\'/news\', \'Show A\']', () => {
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate');
+    const dialog = TestBed.inject(MatDialog);
+    vi.mocked(dialog.open).mockReturnValue({
+      afterClosed: () => of({ transferred: true, targetKind: CatalogueParentKind.NewsOrganisation })
+    } as ReturnType<MatDialog['open']>);
+
+    fixture.componentInstance.editPodcast();
+
+    expect(navigate).toHaveBeenCalledWith(['/news', 'Show A']);
   });
 });
