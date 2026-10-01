@@ -26,6 +26,7 @@ import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
   ],
   templateUrl: "./series-hub.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [InfiniteScrollStrategy],
 })
 export class SeriesHubComponent {
   readonly seriesName = input.required<string>();
