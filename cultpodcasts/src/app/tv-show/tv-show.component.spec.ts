@@ -22,9 +22,13 @@ describe('TvShowComponent', () => {
         {
           provide: ODataService,
           useValue: {
-            getEntities: (_url: string, request: { filter?: string }) => {
+            getEntitiesWithFacets: (_url: string, request: { filter?: string }) => {
               calls.push(request);
-              return of({ entities: [] });
+              return of({
+                metadata: new Map<string, number>([['count', 0]]),
+                entities: [],
+                facets: { subjects: [] },
+              });
             },
           },
         },

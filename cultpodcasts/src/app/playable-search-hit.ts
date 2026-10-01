@@ -18,6 +18,18 @@ export function escapedOData(value: string): string {
   return value.replaceAll("'", "''");
 }
 
+/**
+ * Facet predicate for browse + hub. Empty when nothing is selected; otherwise a
+ * leading ` and ` so callers can concat onto a series/hub filter.
+ * Search-api strips the prefix because it AND-joins clauses itself.
+ */
+export function subjectsAnySearchIn(values: string[]): string {
+  if (values.length === 0) {
+    return "";
+  }
+  return ` and subjects/any(s: search.in(s, '${values.map((s) => escapedOData(s)).join("£")}', '£'))`;
+}
+
 export function seriesNameEquals(name: string): string {
   return `(seriesName eq '${escapedOData(name)}')`;
 }
@@ -38,6 +50,15 @@ export function hubContentKind(hub: "tv" | "news"): "TvShowEpisode" | "NewsRepor
 export function catalogueHubFilter(name: string, hub: "tv" | "news", legacyNames: boolean): string {
   const series = legacyNames ? podcastNameEquals(name) : seriesNameEquals(name);
   return `${contentKindEquals(hubContentKind(hub))} and ${series}`;
+}
+
+/**
+ * Probe for `/podcast/{name}` after a TV or news transfer. Film is not a parent
+ * and Episode stays on the podcast page, so those kinds are omitted.
+ */
+export function transferredSeriesHubFilter(name: string, legacyNames: boolean): string {
+  const series = legacyNames ? podcastNameEquals(name) : seriesNameEquals(name);
+  return `${series} and (contentKind eq 'NewsReport' or contentKind eq 'TvShowEpisode')`;
 }
 
 /** Index field the cards filter and facet. New name until a missing-field response latches the live one. */

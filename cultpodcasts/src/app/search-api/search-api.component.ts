@@ -22,7 +22,7 @@ import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
-import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
+import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -292,9 +292,7 @@ export class SearchApiComponent {
       ? current.filter((s) => s !== value)
       : [...current, value];
     this.subjects.set(next);
-    this.subjectsFilter = next.length === 0
-      ? ''
-      : `subjects/any(s: search.in(s, '${next.map((s) => s.replaceAll("'", "''")).join('£')}', '£'))`;
+    this.subjectsFilter = subjectsAnySearchIn(next).replace(/^ and /, "");
     this.page = 1;
     this.execSearch(true, { podcasts: true });
   }

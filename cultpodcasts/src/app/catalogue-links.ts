@@ -92,6 +92,21 @@ export function applyTransferredPodcastKindClose(
   return true;
 }
 
+/** Series /podcast/{name} after a TV or news transfer. Film has no parent hub. */
+export function movedSeriesHubPath(
+  currentPath: string,
+  seriesName: string,
+  contentKind?: string | null
+): string | null {
+  const root = contentKind === "TvShowEpisode" ? "tv" : contentKind === "NewsReport" ? "news" : null;
+  if (!root || !seriesName) {
+    return null;
+  }
+  const target = `/${root}/${encodeURIComponent(seriesName)}`;
+  const here = decodeURI(currentPath.split("?")[0]);
+  return here === decodeURI(target) ? null : target;
+}
+
 /** Podcast page stays put. A guid stored as Film, TV, or News leaves for that path. */
 export function movedKindRedirect(
   currentPath: string,

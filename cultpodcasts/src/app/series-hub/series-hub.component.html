@@ -1,17 +1,56 @@
-<app-site-loading [active]="isLoading()" label="Loading episodes" />
-@if (!isLoading()) {
-<section class="browse">
-  <h2>{{ displayCatalogName(seriesName()) }}</h2>
-  @if (error()) {
-  <p>{{ error() }}</p>
-  } @else if (results().length === 0) {
-  <p>There were no results for "{{ displayCatalogName(seriesName()) }}"</p>
-  } @else {
+<app-site-loading [active]="isLoading() || isSubsequentLoading()" [label]="loadingLabel()" />
+@if (isLoading() && results().length === 0) {
+<app-browse-loading-skeleton />
+} @else if (count() > 0) {
+<section class="browse" [class.browse--playing]="!!playerService.episode() && playerService.mode() === 'dock'"
+  [class.is-updating]="isLoading() && results().length > 0" id="results">
+  <div class="browse-filters">
+    <div class="browse-toolbar">
+      <h2>{{ displayCatalogName(seriesName()) }} has {{ count() }} {{ itemNoun() }}@if (count() > 1 || count() == 0) {s}
+        found by CultPodcasts.com</h2>
+    </div>
+
+    @if (facets().subjects && facets().subjects!.length > 0) {
+    <div class="browse-facet" aria-label="Filter by subject">
+      <span class="browse-facet__label">Subjects</span>
+      <div class="browse-facet__scroller" tabindex="0">
+        <button type="button" class="browse-pill" [class.is-active]="subjects().length === 0"
+          (click)="clearSubjects()">All</button>
+        @for (subject of facets().subjects; track subject.value) {
+        <button type="button" class="browse-pill"
+          [class.is-active]="subjects().indexOf(subject.value) >= 0"
+          (click)="toggleSubject(subject.value)">
+          {{ displayCatalogName(subject.value) }}
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    @if (subjects().length > 0) {
+    <button type="button" class="browse-clear" (click)="clearSubjects()">Clear filters</button>
+    }
+  </div>
+
   <div class="browse-grid">
     @for (result of results(); track result.id) {
     <app-catalogue-card [episode]="result" [showRelease]="true" (play)="playEpisode($event)" />
     }
   </div>
+
+  @if (isSubsequentLoading()) {
+  <div class="browse-more" aria-hidden="true">
+    <div class="browse-more__dots"><span></span><span></span><span></span></div>
+    Loading more
+  </div>
   }
+</section>
+} @else if (error() && !isLoading()) {
+<section class="browse-error">
+  <h2>{{ error() }}</h2>
+</section>
+} @else if (count() === 0 && !isLoading()) {
+<section class="browse-empty">
+  <h2>There were no results for "{{ displayCatalogName(seriesName()) }}"</h2>
 </section>
 }

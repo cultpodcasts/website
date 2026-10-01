@@ -22,9 +22,10 @@ describe('NewsOrganisationComponent', () => {
         {
           provide: ODataService,
           useValue: {
-            getEntities: (_url: string, request: { filter?: string }) => {
+            getEntitiesWithFacets: (_url: string, request: { filter?: string }) => {
               calls.push(request);
               return of({
+                metadata: new Map<string, number>([['count', 1]]),
                 entities: [{
                   id: 'report-1',
                   title: 'Bulletin',
@@ -34,6 +35,7 @@ describe('NewsOrganisationComponent', () => {
                   duration: '00:05:00',
                   contentKind: 'NewsReport',
                 }],
+                facets: { subjects: [] },
               });
             },
           },
