@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { escapedOData, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName } from "./playable-search-hit";
+import { escapedOData, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter } from "./playable-search-hit";
 import { SearchResult } from "./search-result.interface";
 
 describe("playable search hits", () => {
@@ -33,6 +33,13 @@ describe("playable search hits", () => {
   it("escapes quotes in series and podcast filters", () => {
     expect(seriesNameEquals("O'Hara")).toBe("(seriesName eq 'O''Hara')");
     expect(podcastNameEquals("O'Hara")).toBe("(podcastName eq 'O''Hara')");
+    expect(contentKindEquals("TvShowEpisode")).toBe("(contentKind eq 'TvShowEpisode')");
+    expect(catalogueHubFilter("O'Hara", "tv", false)).toBe(
+      "(contentKind eq 'TvShowEpisode') and (seriesName eq 'O''Hara')"
+    );
+    expect(catalogueHubFilter("Desk", "news", true)).toBe(
+      "(contentKind eq 'NewsReport') and (podcastName eq 'Desk')"
+    );
     expect(escapedOData("a'b")).toBe("a''b");
   });
 

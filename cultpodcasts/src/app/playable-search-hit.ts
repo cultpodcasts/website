@@ -26,6 +26,20 @@ export function podcastNameEquals(name: string): string {
   return `(podcastName eq '${escapedOData(name)}')`;
 }
 
+export function contentKindEquals(kind: string): string {
+  return `(contentKind eq '${escapedOData(kind)}')`;
+}
+
+export function hubContentKind(hub: "tv" | "news"): "TvShowEpisode" | "NewsReport" {
+  return hub === "tv" ? "TvShowEpisode" : "NewsReport";
+}
+
+/** Search filter for `/tv` and `/news` hubs — same series-name field as podcasts, plus playable kind. */
+export function catalogueHubFilter(name: string, hub: "tv" | "news", legacyNames: boolean): string {
+  const series = legacyNames ? podcastNameEquals(name) : seriesNameEquals(name);
+  return `${contentKindEquals(hubContentKind(hub))} and ${series}`;
+}
+
 /** Index field the cards filter and facet. New name until a missing-field response latches the live one. */
 export function playableSeriesField(legacyNames: boolean): "podcastName" | "seriesName" {
   return legacyNames ? "podcastName" : "seriesName";

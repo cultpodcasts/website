@@ -28,6 +28,7 @@ export interface KindEpisodePageState {
 export function connectKindEpisode(options: {
   parentHub: (slug: string) => string[] | null;
   seoName: (episode: SearchResult, slug: string) => string;
+  contentKind?: string;
 }): KindEpisodePageState {
   const route = inject(ActivatedRoute);
   const router = inject(Router);
@@ -75,8 +76,8 @@ export function connectKindEpisode(options: {
   }
 
   async function resolvePlayable(episodeId: string): Promise<SearchResult | undefined> {
-    const byName = await episodes.GetEpisodeDetailsFromApi(episodeId, slug());
-    return byName ?? await episodes.getPlayableById(episodeId);
+    const byName = await episodes.GetEpisodeDetailsFromApi(episodeId, slug(), options.contentKind);
+    return byName ?? await episodes.getPlayableById(episodeId, options.contentKind);
   }
 
   function start(): void {

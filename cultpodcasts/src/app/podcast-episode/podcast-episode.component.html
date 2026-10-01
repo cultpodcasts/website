@@ -56,9 +56,9 @@
 
     <div class="episode-hero">
       <p class="hero-show">
-        @if (podcastName(); as name) {
-        <a class="hero-pill" [routerLink]="['/podcast', name]">
-          {{ displayCatalogName(name) }}
+        @if (parentLink(); as parent) {
+        <a class="hero-pill" [routerLink]="parent">
+          {{ displayCatalogName(showName()) }}
         </a>
         }
       </p>
@@ -109,9 +109,9 @@
 
   @if (morePodcastEpisodes().length > 0) {
   <app-episode-rail
-    [title]="'More from ' + displayCatalogName(podcastName())"
+    [title]="'More from ' + displayCatalogName(showName())"
     [episodes]="morePodcastEpisodes()"
-    [titleLink]="podcastName() ? ['/podcast', podcastName()] : undefined"
+    [titleLink]="parentLink() ?? undefined"
     [ariaLabel]="'More from this podcast'"
     [displayTitle]="true"
     [showShow]="false"

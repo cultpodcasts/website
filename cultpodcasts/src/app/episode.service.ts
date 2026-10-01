@@ -22,32 +22,51 @@ export class EpisodeService {
     return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
-  public async GetEpisodeDetailsFromApi(episodeId: string, podcastName: string): Promise<SearchResult | undefined> {
+  public async GetEpisodeDetailsFromApi(
+    episodeId: string,
+    podcastName: string,
+    contentKind?: string
+  ): Promise<SearchResult | undefined> {
     try {
-      return await this.lookup(episodeId, seriesNameEquals(podcastName));
+      return await this.lookup(episodeId, seriesNameEquals(podcastName), contentKind);
     } catch (error) {
       if (!isUnknownSearchFieldError(error)) {
         throw error;
       }
-      return this.lookup(episodeId, podcastNameEquals(podcastName));
+      return this.lookup(episodeId, podcastNameEquals(podcastName), contentKind);
     }
   }
 
-  private async lookup(episodeId: string, nameFilter: string): Promise<SearchResult | undefined> {
-    return this.lookupFiltered(episodeId, nameFilter);
+  private async lookup(
+    episodeId: string,
+    nameFilter: string,
+    contentKind?: string
+  ): Promise<SearchResult | undefined> {
+    return this.lookupFiltered(episodeId, nameFilter, contentKind);
   }
 
-  public async getPlayableById(episodeId: string): Promise<SearchResult | undefined> {
-    return this.lookupFiltered(episodeId, null);
+  public async getPlayableById(episodeId: string, contentKind?: string): Promise<SearchResult | undefined> {
+    return this.lookupFiltered(episodeId, null, contentKind);
   }
 
-  private async lookupFiltered(episodeId: string, nameFilter: string | null): Promise<SearchResult | undefined> {
+  private async lookupFiltered(
+    episodeId: string,
+    nameFilter: string | null,
+    contentKind?: string
+  ): Promise<SearchResult | undefined> {
     const idFilter = `(id eq '${escapedOData(episodeId)}')`;
+    const parts = [idFilter];
+    if (nameFilter) {
+      parts.unshift(nameFilter);
+    }
+    if (contentKind) {
+      parts.unshift(`(contentKind eq '${escapedOData(contentKind)}')`);
+    }
     var result = await firstValueFrom(this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: nameFilter ? `${nameFilter} and ${idFilter}` : idFilter,
+        filter: parts.join(" and "),
         searchMode: 'any',
         queryType: 'simple',
         count: false,

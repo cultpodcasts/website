@@ -10,6 +10,7 @@ import { TvShowEpisodeCardComponent } from "../tv-show-episode-card/tv-show-epis
   selector: "app-catalogue-card",
   imports: [EpisodePosterComponent, FilmCardComponent, TvShowEpisodeCardComponent, NewsReportCardComponent],
   templateUrl: "./catalogue-card.component.html",
+  styleUrl: "../playable-card-host.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalogueCardComponent {

@@ -13,6 +13,7 @@ export class FilmPageComponent {
   private readonly page = connectKindEpisode({
     parentHub: () => null,
     seoName: (episode) => episode.episodeTitle || "Film",
+    contentKind: "Film",
   });
   protected readonly slug = this.page.slug;
   protected readonly episode = this.page.episode;

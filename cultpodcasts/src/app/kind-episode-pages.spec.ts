@@ -10,6 +10,13 @@ import { GuidService } from './guid.service';
 import { EpisodeService } from './episode.service';
 import { SeoService } from './seo.service';
 import { SearchResult } from './search-result.interface';
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
+import { SiteService } from './site.service';
+import { ODataService } from './odata.service';
+import { PlayerService } from './player.service';
+import { ProfileService } from './profile.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
 
@@ -51,9 +58,40 @@ describe('kind episode pages', () => {
           provide: ActivatedRoute,
           useValue: {
             params: of(options.params),
+            queryParams: of({}),
             snapshot: { params: options.params },
           },
         },
+        {
+          provide: AuthServiceWrapper,
+          useValue: { roles: of([] as string[]), isSignedIn: of(false) },
+        },
+        {
+          provide: SiteService,
+          useValue: {
+            setQuery: () => undefined,
+            setPodcast: () => undefined,
+            setSubject: () => undefined,
+          },
+        },
+        { provide: ODataService, useValue: { getEntities: () => of({ entities: [] as SearchResult[] }) } },
+        {
+          provide: PlayerService,
+          useValue: {
+            episode: () => undefined,
+            mode: () => 'dock',
+            play: () => undefined,
+            isQueuedId: () => false,
+            queuedKeys: () => new Set<string>(),
+            toggleQueue: () => undefined,
+          },
+        },
+        {
+          provide: ProfileService,
+          useValue: { isAuthenticated$: of(false), bookmarks$: of(new Set<string>()) },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
         ...(options.responseInit ? [{ provide: RESPONSE_INIT, useValue: options.responseInit }] : []),
         {
           provide: EpisodeService,

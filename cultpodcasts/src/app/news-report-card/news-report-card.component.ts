@@ -6,6 +6,7 @@ import { EpisodePosterComponent } from "../episode-poster/episode-poster.compone
   selector: "app-news-report-card",
   imports: [EpisodePosterComponent],
   templateUrl: "./news-report-card.component.html",
+  styleUrl: "../playable-card-host.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewsReportCardComponent {

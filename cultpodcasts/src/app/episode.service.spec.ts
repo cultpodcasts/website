@@ -84,4 +84,17 @@ describe("EpisodeService", () => {
     expect(filters).toHaveLength(1);
     expect(filters[0]).toContain("seriesName");
   });
+
+  it("adds contentKind to a TV episode lookup", async () => {
+    const { filters, episode } = service(() => of({
+      status: 200,
+      entities: [hit({ title: "Part", seriesName: "Nightly" })],
+    }));
+
+    await episode.GetEpisodeDetailsFromApi("ep-1", "Nightly", "TvShowEpisode");
+
+    expect(filters).toEqual([
+      "(contentKind eq 'TvShowEpisode') and (seriesName eq 'Nightly') and (id eq 'ep-1')",
+    ]);
+  });
 });
