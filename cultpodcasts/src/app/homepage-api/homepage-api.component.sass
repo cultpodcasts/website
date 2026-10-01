@@ -4,8 +4,6 @@
 .nflx
     --rail-poster-w: min(42vw, 220px)
     --rail-poster-sq: min(32vw, 160px)
-    --obscure-card-w: min(42vw, 168px)
-    --obscure-yt-w: min(55vw, 240px)
     position: relative
     color: var(--nflx-text)
     background: var(--nflx-bg)
@@ -32,16 +30,12 @@
         // Larger than mobile peek cards so desktop rails read as poster art, not thumbnails.
         --rail-poster-w: 320px
         --rail-poster-sq: 220px
-        --obscure-card-w: 180px
-        --obscure-yt-w: 260px
 
 @media screen and (max-width: 700px)
     .nflx
         // Fixed chrome overlays the top of the document — do not pull further up
         // (that stacked with copy clearance and hid "Now featuring").
         margin-top: 0
-        --obscure-card-w: 42vw
-        --obscure-yt-w: 55vw
 
 @media screen and (max-width: 600px)
     .nflx
