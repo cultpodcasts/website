@@ -3,16 +3,20 @@ import { Observable, of, throwError } from "rxjs";
 import { EpisodeService } from "./episode.service";
 import { SearchResult } from "./search-result.interface";
 
-function unknownField(): HttpErrorResponse {
+function unknownField(name = "seriesName"): HttpErrorResponse {
   return new HttpErrorResponse({
     status: 400,
     statusText: "Bad Request",
     error: {
       error: {
-        message: "Invalid expression: Could not find a property named 'seriesName' on type 'search.document'.",
+        message: `Invalid expression: Could not find a property named '${name}' on type 'search.document'.`,
       },
     },
   });
+}
+
+function empty400(): HttpErrorResponse {
+  return new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
 }
 
 function hit(fields: Partial<SearchResult> & { title?: string; seriesName?: string }): SearchResult {
@@ -83,5 +87,63 @@ describe("EpisodeService", () => {
     await expect(episode.GetEpisodeDetailsFromApi("ep-1", "Show")).rejects.toBe(server);
     expect(filters).toHaveLength(1);
     expect(filters[0]).toContain("seriesName");
+  });
+
+  it("adds contentKind to a TV episode lookup", async () => {
+    const { filters, episode } = service(() => of({
+      status: 200,
+      entities: [hit({ title: "Part", seriesName: "Nightly" })],
+    }));
+
+    await episode.GetEpisodeDetailsFromApi("ep-1", "Nightly", "TvShowEpisode");
+
+    expect(filters).toEqual([
+      "(contentKind eq 'TvShowEpisode') and (seriesName eq 'Nightly') and (id eq 'ep-1')",
+    ]);
+  });
+
+  it("looks up by unique id without a contentKind clause", async () => {
+    const { filters, episode } = service(() => of({
+      status: 200,
+      entities: [hit({ title: "Part", seriesName: "Nightly" })],
+    }));
+
+    await episode.getPlayableById("ep-1");
+
+    expect(filters).toEqual(["(id eq 'ep-1')"]);
+  });
+
+  it("retries once without contentKind when Azure names that field unknown", async () => {
+    const { filters, episode } = service((filter) => {
+      if (filter.includes("contentKind")) {
+        return throwError(() => unknownField("contentKind"));
+      }
+      return of({ status: 200, entities: [hit({ title: "Part", seriesName: "Nightly" })] });
+    });
+
+    const found = await episode.GetEpisodeDetailsFromApi("ep-1", "Nightly", "TvShowEpisode");
+
+    expect(found?.episodeTitle).toBe("Part");
+    expect(filters).toEqual([
+      "(contentKind eq 'TvShowEpisode') and (seriesName eq 'Nightly') and (id eq 'ep-1')",
+      "(seriesName eq 'Nightly') and (id eq 'ep-1')",
+    ]);
+  });
+
+  it("retries once without contentKind on an empty 400 and does not latch podcastName", async () => {
+    const { filters, episode } = service((filter) => {
+      if (filter.includes("contentKind")) {
+        return throwError(() => empty400());
+      }
+      return of({ status: 200, entities: [hit({ title: "One Off" })] });
+    });
+
+    const found = await episode.GetEpisodeDetailsFromApi("ep-1", "One Off", "Film");
+
+    expect(found?.episodeTitle).toBe("One Off");
+    expect(filters).toEqual([
+      "(contentKind eq 'Film') and (seriesName eq 'One Off') and (id eq 'ep-1')",
+      "(seriesName eq 'One Off') and (id eq 'ep-1')",
+    ]);
   });
 });

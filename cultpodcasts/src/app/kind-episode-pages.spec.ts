@@ -10,6 +10,13 @@ import { GuidService } from './guid.service';
 import { EpisodeService } from './episode.service';
 import { SeoService } from './seo.service';
 import { SearchResult } from './search-result.interface';
+import { AuthServiceWrapper } from './auth-service-wrapper.class';
+import { SiteService } from './site.service';
+import { ODataService } from './odata.service';
+import { PlayerService } from './player.service';
+import { ProfileService } from './profile.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
 
@@ -34,11 +41,18 @@ describe('kind episode pages', () => {
       path: string;
       params: Record<string, string>;
       episode?: SearchResult;
+      idHit?: SearchResult;
       platform?: string;
       responseInit?: { status?: number; headers: Headers };
     }
-  ): Promise<{ fixture: ComponentFixture<T>; lookedUp: string[]; nav: ReturnType<typeof vi.spyOn> }> {
-    const lookedUp: string[] = [];
+  ): Promise<{
+    fixture: ComponentFixture<T>;
+    lookedUp: Array<{ episodeId: string; name: string; kind?: string }>;
+    idFallbacks: string[];
+    nav: ReturnType<typeof vi.spyOn>;
+  }> {
+    const lookedUp: Array<{ episodeId: string; name: string; kind?: string }> = [];
+    const idFallbacks: string[] = [];
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [component],
@@ -51,19 +65,53 @@ describe('kind episode pages', () => {
           provide: ActivatedRoute,
           useValue: {
             params: of(options.params),
+            queryParams: of({}),
             snapshot: { params: options.params },
           },
         },
+        {
+          provide: AuthServiceWrapper,
+          useValue: { roles: of([] as string[]), isSignedIn: of(false) },
+        },
+        {
+          provide: SiteService,
+          useValue: {
+            setQuery: () => undefined,
+            setPodcast: () => undefined,
+            setSubject: () => undefined,
+          },
+        },
+        { provide: ODataService, useValue: { getEntities: () => of({ entities: [] as SearchResult[] }) } },
+        {
+          provide: PlayerService,
+          useValue: {
+            episode: () => undefined,
+            mode: () => 'dock',
+            play: () => undefined,
+            isQueuedId: () => false,
+            queuedKeys: () => new Set<string>(),
+            toggleQueue: () => undefined,
+          },
+        },
+        {
+          provide: ProfileService,
+          useValue: { isAuthenticated$: of(false), bookmarks$: of(new Set<string>()) },
+        },
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
         ...(options.responseInit ? [{ provide: RESPONSE_INIT, useValue: options.responseInit }] : []),
         {
           provide: EpisodeService,
           useValue: {
             getEpisodeDetailsFromKvViaApi: async () => undefined,
-            GetEpisodeDetailsFromApi: async (episodeId: string) => {
-              lookedUp.push(episodeId);
+            GetEpisodeDetailsFromApi: async (episodeId: string, name: string, kind?: string) => {
+              lookedUp.push({ episodeId, name, kind });
               return options.episode;
             },
-            getPlayableById: async () => undefined,
+            getPlayableById: async (episodeId: string) => {
+              idFallbacks.push(episodeId);
+              return options.idHit;
+            },
           },
         },
         { provide: SeoService, useValue: { AddMetaTags: () => undefined } },
@@ -78,7 +126,7 @@ describe('kind episode pages', () => {
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
-    return { fixture, lookedUp, nav };
+    return { fixture, lookedUp, idFallbacks, nav };
   }
 
   it('keeps the loading shell up while an old unprefixed id leaves for its film', async () => {
@@ -89,7 +137,7 @@ describe('kind episode pages', () => {
       episode: hit({ contentKind: 'Film', podcastName: '', episodeTitle: 'One Off' }),
     });
 
-    expect(lookedUp).toEqual([id]);
+    expect(lookedUp).toEqual([{ episodeId: id, name: 'Old Show', kind: 'Film' }]);
     expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
     expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
@@ -120,6 +168,7 @@ describe('kind episode pages', () => {
       platform: 'server',
       responseInit,
     });
+    expect(moving.lookedUp).toEqual([{ episodeId: id, name: 'Old Show', kind: 'TvShowEpisode' }]);
     expect(responseInit.status).toBe(301);
     expect(responseInit.headers.get('Location')).toBe(`/tv/${encodeURIComponent('Nightly')}/${guids.toCatalogueShortId(id, 'TvShowEpisode')}`);
     expect(moving.fixture.nativeElement.textContent).not.toContain('Episode not found');
@@ -130,6 +179,7 @@ describe('kind episode pages', () => {
       params: { slug: 'Nightly', query: shortId },
       episode: hit({ contentKind: 'TvShowEpisode', podcastName: 'Nightly', episodeTitle: 'Part' }),
     });
+    expect(stayed.lookedUp).toEqual([{ episodeId: id, name: 'Nightly', kind: 'TvShowEpisode' }]);
     const pill = stayed.fixture.nativeElement.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.getAttribute('href')).toBe('/tv/Nightly');
     expect(pill.textContent?.trim()).toBe('Nightly');
@@ -142,7 +192,7 @@ describe('kind episode pages', () => {
       episode: hit({ contentKind: 'Film', podcastName: '', episodeTitle: 'One Off' }),
     });
 
-    expect(lookedUp).toEqual([id]);
+    expect(lookedUp).toEqual([{ episodeId: id, name: 'One Off', kind: 'Film' }]);
     expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
     expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
@@ -159,6 +209,7 @@ describe('kind episode pages', () => {
       platform: 'server',
       responseInit,
     });
+    expect(moving.lookedUp).toEqual([{ episodeId: id, name: 'Old Desk', kind: 'NewsReport' }]);
     expect(responseInit.status).toBe(301);
     expect(responseInit.headers.get('Location')).toBe(`/news/${encodeURIComponent('Desk')}/${guids.toCatalogueShortId(id, 'NewsReport')}`);
     expect(moving.fixture.nativeElement.textContent).not.toContain('Episode not found');
@@ -169,6 +220,7 @@ describe('kind episode pages', () => {
       params: { slug: 'Desk', query: shortId },
       episode: hit({ contentKind: 'NewsReport', podcastName: 'Desk', episodeTitle: 'Bulletin' }),
     });
+    expect(stayed.lookedUp).toEqual([{ episodeId: id, name: 'Desk', kind: 'NewsReport' }]);
     const pill = stayed.fixture.nativeElement.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.getAttribute('href')).toBe('/news/Desk');
     expect(pill.textContent?.trim()).toBe('Desk');
@@ -184,5 +236,20 @@ describe('kind episode pages', () => {
     expect(fixture.nativeElement.textContent).toContain('Episode not found');
     const link = fixture.nativeElement.querySelector('#cta-button a') as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/news/Desk');
+  });
+
+  it('falls back to an unkinded unique-id fetch when the name lookup misses', async () => {
+    const shortId = guids.toCatalogueShortId(id, 'Film');
+    const { fixture, lookedUp, idFallbacks, nav } = await render(FilmPageComponent, {
+      path: `/film/${encodeURIComponent('One Off')}/${shortId}`,
+      params: { slug: 'One Off', query: shortId },
+      idHit: hit({ episodeTitle: 'One Off' }),
+    });
+
+    expect(lookedUp).toEqual([{ episodeId: id, name: 'One Off', kind: 'Film' }]);
+    expect(idFallbacks).toEqual([id]);
+    expect(nav).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('One Off');
+    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
   });
 });

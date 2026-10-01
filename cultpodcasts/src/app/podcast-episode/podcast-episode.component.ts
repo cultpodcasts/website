@@ -31,7 +31,8 @@ import { languageFlagBadgeForEpisode } from '../language-flag';
 import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
-import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
+import { catalogueParentLink } from '../catalogue-links';
+import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 
 interface SubjectRail {
   subject: string;
@@ -92,6 +93,11 @@ export class PodcastEpisodeComponent {
   private _parentLoaded: boolean = false;
 
   podcastName = signal("");
+  protected readonly showName = computed(() => this._episode()?.podcastName || this.podcastName());
+  protected readonly parentLink = computed(() => {
+    const ep = this._episode();
+    return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
+  });
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
@@ -184,7 +190,7 @@ export class PodcastEpisodeComponent {
 
     effect(() => {
       const ep = this._episode();
-      const podcast = this.podcastName();
+      const podcast = ep?.podcastName || this.podcastName();
       if (!ep || !podcast) {
         return;
       }
@@ -254,7 +260,7 @@ export class PodcastEpisodeComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
       const { params } = res;
-      this.podcastName.set(params["podcastName"] ?? "");
+      this.podcastName.set(params["podcastName"] ?? params["slug"] ?? "");
       this.siteService.setQuery(null);
       this.siteService.setPodcast(this.podcastName());
       this.siteService.setSubject(null);
@@ -264,11 +270,15 @@ export class PodcastEpisodeComponent {
   /** "More from this podcast". Asks for seriesName, and once for podcastName if that field is missing. */
   private loadMoreFromShow(episode: SearchResult, podcastName: string, field: "seriesName" | "podcastName"): void {
     const nameFilter = field === "seriesName" ? seriesNameEquals(podcastName) : podcastNameEquals(podcastName);
+    const kind = episode.contentKind === "TvShowEpisode" || episode.contentKind === "NewsReport"
+      ? episode.contentKind
+      : undefined;
+    const kindFilter = kind ? `${contentKindEquals(kind)} and ` : "";
     this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: "",
-        filter: `${nameFilter} and id ne '${episode.id}'`,
+        filter: `${kindFilter}${nameFilter} and id ne '${episode.id}'`,
         searchMode: 'any',
         queryType: 'simple',
         count: false,
@@ -390,8 +400,10 @@ export class PodcastEpisodeComponent {
   }
 
   podcastPage() {
-    let url = `podcast/${this.podcastName()}`;
-    this.router.navigate([url]);
+    const commands = this.parentLink() ?? (this.showName() ? ["/podcast", this.showName()] : null);
+    if (commands) {
+      this.router.navigate(commands);
+    }
   }
 
   post(podcastName: string, episodeId: string) {

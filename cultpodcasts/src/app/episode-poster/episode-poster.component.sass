@@ -5,14 +5,16 @@
     min-width: 0
     color: inherit
     scroll-snap-align: start
-    // Hover lift only when a real pointing device is present — avoids compositor
-    // work on every touch scroll over hundreds of posters.
+    // Hover zoom is art-only. Scaling the host grew the title and the rail
+    // tile overflow:hidden clipped it.
     @media (hover: hover) and (pointer: fine)
-        transition: transform 0.2s ease
+        .episode-poster__art
+            transition: transform 0.2s ease
         &:hover,
         &:focus-within
-            transform: scale(1.03)
             z-index: 2
+            .episode-poster__art
+                transform: scale(1.03)
             .episode-poster__play
                 opacity: 1
     &:focus-within

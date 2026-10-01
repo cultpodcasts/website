@@ -94,6 +94,7 @@
     <app-episode-rail
       [title]="displayCatalogName(rail.title)"
       [episodes]="rail.episodes"
+      [displayTitle]="true"
       [subject]="rail.subject"
       [titleLink]="rail.subject ? ['/subject', rail.subject] : undefined"
       [browseAllLink]="rail.subject ? ['/subject', rail.subject] : undefined"

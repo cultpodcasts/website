@@ -147,6 +147,15 @@ describe('PodcastEpisodeComponent', () => {
     expect(title!.compareDocumentPosition(meta!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('points a TV episode show pill at the TV hub', () => {
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'TvShowEpisode', podcastName: 'Nightly' }));
+    fixture.detectChanges();
+
+    const pill = query('a.hero-pill') as HTMLAnchorElement | null;
+    expect(pill?.textContent?.trim()).toBe('Nightly');
+    expect(pill?.getAttribute('href')).toBe('/tv/Nightly');
+  });
+
   it('omits the release date from the meta line when the episode has no usable release', () => {
     fixture.componentRef.setInput('episode', ep({ release: new Date('not-a-date') }));
     fixture.detectChanges();

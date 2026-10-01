@@ -6,6 +6,7 @@ import { EpisodePosterComponent } from "../episode-poster/episode-poster.compone
   selector: "app-tv-show-episode-card",
   imports: [EpisodePosterComponent],
   templateUrl: "./tv-show-episode-card.component.html",
+  styleUrl: "../playable-card-host.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TvShowEpisodeCardComponent {
