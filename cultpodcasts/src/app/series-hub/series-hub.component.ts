@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ODataService } from "../odata.service";
 import { environment } from "../../environments/environment";
 import { SearchResult } from "../search-result.interface";
-import { catalogueHubFilter, nextLegacyNameLatch, normalizePlayableHit } from "../playable-search-hit";
+import { catalogueHubFilter, isUnknownContentKindField, nextLegacyNameLatch, normalizePlayableHit } from "../playable-search-hit";
 import { CatalogueCardComponent } from "../catalogue-card/catalogue-card.component";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { PlayerService } from "../player.service";
@@ -63,6 +63,12 @@ export class SeriesHubComponent {
         this.isLoading.set(false);
       },
       error: (error) => {
+        if (isUnknownContentKindField(error)) {
+          this.results.set([]);
+          this.error.set("");
+          this.isLoading.set(false);
+          return;
+        }
         const latch = nextLegacyNameLatch(this.legacyNames, error);
         if (latch.retry) {
           this.legacyNames = latch.legacyNames;

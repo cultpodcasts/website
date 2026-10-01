@@ -22,7 +22,7 @@ import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
-import { isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, unknownSearchFieldName } from '../playable-search-hit';
+import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
 
 const sortParam: string = "sort";
@@ -398,11 +398,7 @@ export class SearchApiComponent {
   }
 
   private shouldDropContentKind(error: unknown): boolean {
-    if (this.contentKindMode !== "include" || !isUnknownSearchFieldError(error)) {
-      return false;
-    }
-    const field = unknownSearchFieldName(error);
-    return field !== "seriesName" && field !== "podcastName";
+    return this.contentKindMode === "include" && isUnknownContentKindField(error);
   }
 
   private adoptLegacyField(error: unknown): boolean {

@@ -5,7 +5,7 @@ import { SearchResult } from './search-result.interface';
 import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals, escapedOData } from './playable-search-hit';
+import { contentKindEquals, isUnknownContentKindField, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals, escapedOData } from './playable-search-hit';
 
 @Injectable({
   providedIn: 'root'
@@ -28,28 +28,35 @@ export class EpisodeService {
     contentKind?: string
   ): Promise<SearchResult | undefined> {
     try {
-      return await this.lookup(episodeId, seriesNameEquals(podcastName), contentKind);
+      return await this.lookupFiltered(episodeId, seriesNameEquals(podcastName), contentKind);
     } catch (error) {
       if (!isUnknownSearchFieldError(error)) {
         throw error;
       }
-      return this.lookup(episodeId, podcastNameEquals(podcastName), contentKind);
+      return this.lookupFiltered(episodeId, podcastNameEquals(podcastName), contentKind);
     }
   }
 
-  private async lookup(
-    episodeId: string,
-    nameFilter: string,
-    contentKind?: string
-  ): Promise<SearchResult | undefined> {
-    return this.lookupFiltered(episodeId, nameFilter, contentKind);
-  }
-
-  public async getPlayableById(episodeId: string, contentKind?: string): Promise<SearchResult | undefined> {
-    return this.lookupFiltered(episodeId, null, contentKind);
+  public async getPlayableById(episodeId: string): Promise<SearchResult | undefined> {
+    return this.lookupFiltered(episodeId, null);
   }
 
   private async lookupFiltered(
+    episodeId: string,
+    nameFilter: string | null,
+    contentKind?: string
+  ): Promise<SearchResult | undefined> {
+    try {
+      return await this.fetchPlayable(episodeId, nameFilter, contentKind);
+    } catch (error) {
+      if (contentKind && isUnknownContentKindField(error)) {
+        return this.fetchPlayable(episodeId, nameFilter);
+      }
+      throw error;
+    }
+  }
+
+  private async fetchPlayable(
     episodeId: string,
     nameFilter: string | null,
     contentKind?: string
@@ -60,7 +67,7 @@ export class EpisodeService {
       parts.unshift(nameFilter);
     }
     if (contentKind) {
-      parts.unshift(`(contentKind eq '${escapedOData(contentKind)}')`);
+      parts.unshift(contentKindEquals(contentKind));
     }
     var result = await firstValueFrom(this.oDataService.getEntities<SearchResult>(
       new URL("/search", environment.api).toString(),

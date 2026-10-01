@@ -79,6 +79,18 @@ export function isUnknownSearchFieldError(error: unknown): boolean {
   return status === 400 && (body == null || isEmptyJsonObject(body));
 }
 
+/**
+ * A missing contentKind field is not a series-name miss. Named contentKind, or an
+ * empty 400 while the filter still includes kind, should drop kind — not latch podcastName.
+ */
+export function isUnknownContentKindField(error: unknown): boolean {
+  if (!isUnknownSearchFieldError(error)) {
+    return false;
+  }
+  const field = unknownSearchFieldName(error);
+  return field !== "seriesName" && field !== "podcastName";
+}
+
 /** Retry the live field once. A later failure drops the latch so the next search tries the new name again. */
 export function nextLegacyNameLatch(legacyNames: boolean, error: unknown): { legacyNames: boolean; retry: boolean } {
   if (!legacyNames && isUnknownSearchFieldError(error)) {

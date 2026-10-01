@@ -821,7 +821,7 @@ body {
   --mat-card-subtitle-text-size: 0.95rem !important;
   --mat-card-subtitle-text-weight: 500 !important;
 
-  h2:not(.rail__title):not(.obscure__title) {
+  h2 {
     font-family: var(--cp-font-display) !important;
     font-size: 1.65rem !important;
     font-weight: 400 !important;

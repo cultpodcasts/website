@@ -53,13 +53,8 @@ describe("SeriesHubComponent", () => {
     );
   });
 
-  it("retries the TV hub on podcastName when seriesName is unknown", async () => {
-    const unknown = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
-    oData = {
-      getEntities: vi.fn()
-        .mockReturnValueOnce(throwError(() => unknown))
-        .mockReturnValue(of({ status: 200, entities: [], facets: {}, count: 0 })),
-    };
+  async function renderWithSearch(respond: ReturnType<typeof vi.fn>): Promise<ComponentFixture<SeriesHubComponent>> {
+    oData = { getEntities: respond };
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [SeriesHubComponent],
@@ -75,9 +70,36 @@ describe("SeriesHubComponent", () => {
     fixture.componentRef.setInput("hub", "tv");
     fixture.detectChanges();
     await fixture.whenStable();
+    return fixture;
+  }
+
+  function unknownField(name: string): HttpErrorResponse {
+    return new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: `Invalid expression: Could not find a property named '${name}' on type 'search.document'.`,
+        },
+      },
+    });
+  }
+
+  it("retries the TV hub on podcastName when seriesName is unknown", async () => {
+    await renderWithSearch(vi.fn()
+      .mockReturnValueOnce(throwError(() => unknownField("seriesName")))
+      .mockReturnValue(of({ status: 200, entities: [], facets: {}, count: 0 })));
     expect(oData.getEntities.mock.calls[1][1].filter).toBe(
       "(contentKind eq 'TvShowEpisode') and (podcastName eq 'Nightly')"
     );
+  });
+
+  it("shows an empty TV hub when contentKind is unknown instead of a generic error", async () => {
+    const fixture = await renderWithSearch(vi.fn()
+      .mockReturnValue(throwError(() => unknownField("contentKind"))));
+    expect(oData.getEntities).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.textContent).toContain('There were no results for "Nightly"');
+    expect(fixture.nativeElement.textContent).not.toContain("Something went wrong");
   });
 
   it("filters the news hub by NewsReport and seriesName", async () => {

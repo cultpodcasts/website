@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { escapedOData, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter } from "./playable-search-hit";
+import { escapedOData, isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter } from "./playable-search-hit";
 import { SearchResult } from "./search-result.interface";
 
 describe("playable search hits", () => {
@@ -58,6 +58,20 @@ describe("playable search hits", () => {
     expect(isUnknownSearchFieldError(proxied)).toBe(true);
     expect(unknownSearchFieldName(named)).toBe("seriesName");
     expect(unknownSearchFieldName(proxied)).toBeNull();
+    expect(isUnknownContentKindField(named)).toBe(false);
+    expect(isUnknownContentKindField(proxied)).toBe(true);
+
+    const kindNamed = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Invalid expression: Could not find a property named 'contentKind' on type 'search.document'.",
+        },
+      },
+    });
+    expect(unknownSearchFieldName(kindNamed)).toBe("contentKind");
+    expect(isUnknownContentKindField(kindNamed)).toBe(true);
   });
 
   it("does not treat a timeout, a 500, or a bad request as an unknown field", () => {

@@ -77,7 +77,7 @@ export function connectKindEpisode(options: {
 
   async function resolvePlayable(episodeId: string): Promise<SearchResult | undefined> {
     const byName = await episodes.GetEpisodeDetailsFromApi(episodeId, slug(), options.contentKind);
-    return byName ?? await episodes.getPlayableById(episodeId, options.contentKind);
+    return byName ?? await episodes.getPlayableById(episodeId);
   }
 
   function start(): void {
