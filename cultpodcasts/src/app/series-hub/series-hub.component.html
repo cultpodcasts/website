@@ -1,4 +1,4 @@
-<app-site-loading [active]="isLoading()" label="Loading episodes" />
+<app-site-loading [active]="isLoading() || isSubsequentLoading()" [label]="loadingLabel()" />
 @if (isLoading() && results().length === 0) {
 <app-browse-loading-skeleton />
 } @else if (count() > 0) {
@@ -37,6 +37,13 @@
     <app-catalogue-card [episode]="result" [showRelease]="true" (play)="playEpisode($event)" />
     }
   </div>
+
+  @if (isSubsequentLoading()) {
+  <div class="browse-more" aria-hidden="true">
+    <div class="browse-more__dots"><span></span><span></span><span></span></div>
+    Loading more
+  </div>
+  }
 </section>
 } @else if (error() && !isLoading()) {
 <section class="browse-error">

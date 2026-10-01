@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { escapedOData, isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter } from "./playable-search-hit";
+import { escapedOData, isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter, subjectsAnySearchIn, transferredSeriesHubFilter } from "./playable-search-hit";
 import { SearchResult } from "./search-result.interface";
 
 describe("playable search hits", () => {
@@ -41,6 +41,17 @@ describe("playable search hits", () => {
       "(contentKind eq 'NewsReport') and (podcastName eq 'Desk')"
     );
     expect(escapedOData("a'b")).toBe("a''b");
+    expect(subjectsAnySearchIn([])).toBe("");
+    expect(subjectsAnySearchIn(["World"])).toBe(" and subjects/any(s: search.in(s, 'World', '£'))");
+    expect(subjectsAnySearchIn(["O'Hara", "World"])).toBe(
+      " and subjects/any(s: search.in(s, 'O''Hara£World', '£'))"
+    );
+    expect(transferredSeriesHubFilter("Show A", false)).toBe(
+      "(seriesName eq 'Show A') and (contentKind eq 'NewsReport' or contentKind eq 'TvShowEpisode')"
+    );
+    expect(transferredSeriesHubFilter("O'Hara", true)).toBe(
+      "(podcastName eq 'O''Hara') and (contentKind eq 'NewsReport' or contentKind eq 'TvShowEpisode')"
+    );
   });
 
   it("treats Azure's missing property message and the search proxy's empty 400 as an unknown field", () => {

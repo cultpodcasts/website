@@ -59,12 +59,18 @@ describe("redirectMovedKind", () => {
         {
           provide: ODataService,
           useValue: {
-            getEntities: (_url: string, request: { filter?: string }) => {
+            getEntities: (_url: string, request: { filter?: string; top?: number }) => {
               seriesCalls.push(request);
-              if (options?.seriesError) {
+              if (options?.seriesError && seriesCalls.length === 1) {
                 return throwError(() => options.seriesError);
               }
-              return of({ entities: options?.seriesHits ?? [] });
+              let hits = options?.seriesHits ?? [];
+              if (request.filter?.includes("NewsReport") || request.filter?.includes("TvShowEpisode")) {
+                hits = hits.filter((row) =>
+                  row.contentKind === "NewsReport" || row.contentKind === "TvShowEpisode"
+                );
+              }
+              return of({ entities: hits.slice(0, request.top ?? hits.length) });
             },
           },
         },
@@ -140,7 +146,9 @@ describe("redirectMovedKind", () => {
       }
     );
     expect(lookedUp).toEqual([]);
-    expect(seriesCalls[0].filter).toBe("(seriesName eq 'Show A')");
+    expect(seriesCalls[0].filter).toBe(
+      "(seriesName eq 'Show A') and (contentKind eq 'NewsReport' or contentKind eq 'TvShowEpisode')"
+    );
     expect(result).toBeInstanceOf(UrlTree);
     expect((result as UrlTree).toString()).toBe(`/news/${encodeURIComponent("Show A")}`);
     expect(responseInit.status).toBe(301);
@@ -174,5 +182,98 @@ describe("redirectMovedKind", () => {
     );
     expect(result).toBe(true);
     expect(seriesCalls).toHaveLength(1);
+    expect(seriesCalls[0].filter).toContain("NewsReport");
+  });
+
+  it("redirects a mixed series when an older NewsReport exists even if the newest row is still Episode", async () => {
+    const { result, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesHits: [
+          hit({ contentKind: "Episode", podcastName: "Show A", episodeTitle: "Newest", release: new Date("2026-09-01") }),
+          hit({
+            id: "11112222-3333-4444-5555-666677778888",
+            contentKind: "NewsReport",
+            podcastName: "Show A",
+            episodeTitle: "Older bulletin",
+            release: new Date("2026-01-01"),
+          }),
+        ],
+      }
+    );
+    expect(seriesCalls[0].filter).toContain("NewsReport");
+    expect((result as UrlTree).toString()).toBe(`/news/${encodeURIComponent("Show A")}`);
+  });
+
+  it("latches podcastName when seriesName is unknown then redirects a NewsReport", async () => {
+    const unknownSeriesName = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Invalid expression: Could not find a property named 'seriesName' on type 'search.document'.",
+        },
+      },
+    });
+    const { result, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesError: unknownSeriesName,
+        seriesHits: [hit({ contentKind: "NewsReport", podcastName: "Show A", episodeTitle: "Bulletin" })],
+      }
+    );
+    expect(seriesCalls).toHaveLength(2);
+    expect(seriesCalls[0].filter).toContain("seriesName eq 'Show A'");
+    expect(seriesCalls[1].filter).toBe(
+      "(podcastName eq 'Show A') and (contentKind eq 'NewsReport' or contentKind eq 'TvShowEpisode')"
+    );
+    expect((result as UrlTree).toString()).toBe(`/news/${encodeURIComponent("Show A")}`);
+  });
+
+  it("stays on /podcast/ when the transferred-kind probe is empty", async () => {
+    const { result } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      { query: null, podcastName: "Show A", seriesHits: [] }
+    );
+    expect(result).toBe(true);
+  });
+
+  it("stays on /podcast/ when the series probe fails with a non-unknown 500", async () => {
+    const { result, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesError: new HttpErrorResponse({ status: 500, statusText: "Server Error", error: { message: "timeout" } }),
+      }
+    );
+    expect(seriesCalls).toHaveLength(1);
+    expect(result).toBe(true);
+  });
+
+  it("does not redirect a Film hit because Film is not a parent hub", async () => {
+    const { result } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesHits: [hit({ contentKind: "Film", podcastName: "", episodeTitle: "One Off" })],
+      }
+    );
+    expect(result).toBe(true);
   });
 });

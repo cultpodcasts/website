@@ -9,7 +9,7 @@ import { movedKindRedirect, movedSeriesHubPath } from "./catalogue-links";
 import { ODataService } from "./odata.service";
 import { environment } from "./../environments/environment";
 import { SearchResult } from "./search-result.interface";
-import { isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from "./playable-search-hit";
+import { isUnknownSearchFieldError, normalizePlayableHit, transferredSeriesHubFilter } from "./playable-search-hit";
 
 /** Old /podcast/ links for a moved Film, TV episode, news report, or transferred series leave before the podcast page renders. */
 export const redirectMovedKind: CanActivateFn = async (route, state) => {
@@ -83,7 +83,7 @@ async function firstSeriesHit(
     new URL("/search", environment.api).toString(),
     {
       search: "",
-      filter: legacyNames ? podcastNameEquals(name) : seriesNameEquals(name),
+      filter: transferredSeriesHubFilter(name, legacyNames),
       searchMode: "any",
       queryType: "simple",
       count: true,

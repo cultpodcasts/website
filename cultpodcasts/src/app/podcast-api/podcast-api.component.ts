@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
+import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
@@ -460,9 +460,7 @@ export class PodcastApiComponent {
       ? current.filter((s) => s !== value)
       : [...current, value];
     this.subjects.set(next);
-    this.subjectsFilter = next.length === 0
-      ? ''
-      : ` and subjects/any(s: search.in(s, '${next.map((s) => s.replaceAll("'", "''")).join('£')}', '£'))`;
+    this.subjectsFilter = subjectsAnySearchIn(next);
     this.page = 1;
     this.execSearch(true, false);
   }
