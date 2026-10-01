@@ -1,9 +1,12 @@
 import { TestBed } from "@angular/core/testing";
 import { RESPONSE_INIT, provideZonelessChangeDetection } from "@angular/core";
 import { provideRouter, Router, UrlTree } from "@angular/router";
+import { of, throwError } from "rxjs";
+import { HttpErrorResponse } from "@angular/common/http";
 import { redirectMovedKind } from "./redirect-moved-kind.guard";
 import { EpisodeService } from "./episode.service";
 import { GuidService } from "./guid.service";
+import { ODataService } from "./odata.service";
 import { SearchResult } from "./search-result.interface";
 
 const id = "00112233-4455-4677-8899-aabbccddeeff";
@@ -23,8 +26,19 @@ function hit(overrides: Partial<SearchResult>): SearchResult {
 describe("redirectMovedKind", () => {
   const guids = new GuidService();
 
-  async function run(episode: SearchResult | undefined, path: string, responseInit?: { status?: number; headers: Headers }) {
+  async function run(
+    episode: SearchResult | undefined,
+    path: string,
+    responseInit?: { status?: number; headers: Headers },
+    options?: {
+      query?: string | null;
+      podcastName?: string;
+      seriesHits?: SearchResult[];
+      seriesError?: HttpErrorResponse;
+    }
+  ) {
     const lookedUp: string[] = [];
+    const seriesCalls: { filter?: string }[] = [];
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       providers: [
@@ -42,25 +56,40 @@ describe("redirectMovedKind", () => {
             getPlayableById: async () => episode,
           },
         },
+        {
+          provide: ODataService,
+          useValue: {
+            getEntities: (_url: string, request: { filter?: string }) => {
+              seriesCalls.push(request);
+              if (options?.seriesError) {
+                return throwError(() => options.seriesError);
+              }
+              return of({ entities: options?.seriesHits ?? [] });
+            },
+          },
+        },
       ],
     }).compileComponents();
     const router = TestBed.inject(Router);
+    const podcastName = options?.podcastName ?? "Old Show";
+    const query = options && "query" in options ? options.query : path.split("/").pop()!;
     const result = await TestBed.runInInjectionContext(() => redirectMovedKind(
-      { paramMap: { get: (key: string) => key === "query" ? path.split("/").pop()! : "Old Show" } } as never,
+      { paramMap: { get: (key: string) => key === "query" ? query : podcastName } } as never,
       { url: path } as never
     ));
-    return { result, lookedUp, router };
+    return { result, lookedUp, router, seriesCalls };
   }
 
   it("resolves an old unprefixed short id to the same guid and sends a film to /film/", async () => {
     const shortId = guids.toBase64(id);
     const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
-    const { result, lookedUp } = await run(
+    const { result, lookedUp, seriesCalls } = await run(
       hit({ contentKind: "Film", podcastName: "", episodeTitle: "One Off" }),
       `/podcast/${encodeURIComponent("Old Show")}/${shortId}`,
       responseInit
     );
     expect(lookedUp).toEqual([id]);
+    expect(seriesCalls).toHaveLength(0);
     expect(result).toBeInstanceOf(UrlTree);
     expect((result as UrlTree).toString()).toBe(`/film/${encodeURIComponent("One Off")}/${guids.toCatalogueShortId(id, "Film")}`);
     expect(responseInit.headers.get("Location")).toContain("/film/");
@@ -96,5 +125,54 @@ describe("redirectMovedKind", () => {
     );
     expect(stayed.result).toBe(true);
     expect(stayed.lookedUp).toEqual([id]);
+  });
+
+  it("sends a transferred news series from /podcast/Name to /news/Name with a 301", async () => {
+    const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+    const { result, lookedUp, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      responseInit,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesHits: [hit({ contentKind: "NewsReport", podcastName: "Show A", episodeTitle: "Bulletin" })],
+      }
+    );
+    expect(lookedUp).toEqual([]);
+    expect(seriesCalls[0].filter).toBe("(seriesName eq 'Show A')");
+    expect(result).toBeInstanceOf(UrlTree);
+    expect((result as UrlTree).toString()).toBe(`/news/${encodeURIComponent("Show A")}`);
+    expect(responseInit.status).toBe(301);
+    expect(responseInit.headers.get("Location")).toBe(`/news/${encodeURIComponent("Show A")}`);
+  });
+
+  it("sends a transferred TV series from /podcast/Name to /tv/Name", async () => {
+    const { result } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesHits: [hit({ contentKind: "TvShowEpisode", podcastName: "Show A", episodeTitle: "Part" })],
+      }
+    );
+    expect((result as UrlTree).toString()).toBe(`/tv/${encodeURIComponent("Show A")}`);
+  });
+
+  it("leaves a remaining podcast series on /podcast/", async () => {
+    const { result, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesHits: [hit({ contentKind: "Episode", podcastName: "Show A", episodeTitle: "Part" })],
+      }
+    );
+    expect(result).toBe(true);
+    expect(seriesCalls).toHaveLength(1);
   });
 });

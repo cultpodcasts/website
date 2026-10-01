@@ -24,7 +24,7 @@ import { redirectMovedKind } from './redirect-moved-kind.guard';
 export const routes: Routes = [
   { path: '', component: HomeComponent, title: "Cult Podcasts" },
   { path: 'search/:query', component: SearchComponent },
-  { path: 'podcast/:podcastName', component: PodcastComponent },
+  { path: 'podcast/:podcastName', component: PodcastComponent, canActivate: [redirectMovedKind] },
   { path: 'podcast/:podcastName/:query', component: PodcastComponent, canActivate: [redirectMovedKind] },
   { path: 'film/:slug/:query', component: FilmPageComponent },
   { path: 'tv/:slug/:query', component: TvShowEpisodeComponent },

@@ -5,7 +5,8 @@ import {
   catalogueParentHubCommands,
   catalogueParentLink,
   cataloguePlayableLink,
-  movedKindRedirect
+  movedKindRedirect,
+  movedSeriesHubPath
 } from "./catalogue-links";
 
 describe("catalogue links", () => {
@@ -97,5 +98,12 @@ describe("catalogue links", () => {
     );
 
     expect(applyTransferredPodcastKindClose({ updated: true } as never, "Show A", snackBar, router)).toBe(false);
+  });
+
+  it("sends a transferred news or TV series off /podcast/ and leaves a podcast series", () => {
+    expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "NewsReport")).toBe(`/news/${encodeURIComponent("Show A")}`);
+    expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "TvShowEpisode")).toBe(`/tv/${encodeURIComponent("Show A")}`);
+    expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "Episode")).toBeNull();
+    expect(movedSeriesHubPath(`/news/${encodeURIComponent("Show A")}`, "Show A", "NewsReport")).toBeNull();
   });
 });
