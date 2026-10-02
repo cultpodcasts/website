@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
+import { EditTvShowEpisodeCanonicalDialogComponent } from '../edit-tv-show-episode-canonical-dialog/edit-tv-show-episode-canonical-dialog.component';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
@@ -375,6 +376,27 @@ export class PodcastEpisodeComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
+    if (this.episode?.contentKind === 'TvShowEpisode') {
+      const identityRef = this.dialog.open<
+        EditTvShowEpisodeCanonicalDialogComponent,
+        { episodeId: string },
+        EditEpisodeDialogResponse
+      >(EditTvShowEpisodeCanonicalDialogComponent, {
+        data: { episodeId },
+        disableClose: true,
+        autoFocus: true,
+        width: '90%'
+      });
+      identityRef.afterClosed().subscribe(result => {
+        if (result?.updated) {
+          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        } else if (result?.noChange) {
+          this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
+      });
+      return;
+    }
+
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: episodeId, podcastIdentifier: podcastName },
       disableClose: true,

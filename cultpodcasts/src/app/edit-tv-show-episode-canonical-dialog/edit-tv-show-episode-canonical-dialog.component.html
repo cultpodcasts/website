@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Edit TV episode identity</h2>
+
+<mat-dialog-content>
+    @if (isLoading()) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (isInError()) {
+    <p id="error">An error occurred</p>
+    } @else {
+    <p class="episode-title">{{title()}}</p>
+    <form id="edit" [formGroup]="form" (ngSubmit)="onSubmit()">
+        <mat-form-field class="full-width">
+            <mat-label>IMDb</mat-label>
+            <input type="text" formControlName="imdb" matInput>
+            <button type="button" matIconButton matSuffix aria-label="Open IMDb URL"
+                [disabled]="!hasNonEmptyUrlValue(form.controls.imdb.value)"
+                (click)="openExternalUrl(form.controls.imdb.value)">
+                <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button type="button" matIconButton matSuffix aria-label="Remove IMDb URL"
+                [disabled]="!hasNonEmptyUrlValue(form.controls.imdb.value)"
+                (click)="clearField(form.controls.imdb)">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>TheTVDB</mat-label>
+            <input type="text" formControlName="tvdb" matInput>
+            <button type="button" matIconButton matSuffix aria-label="Open TheTVDB URL"
+                [disabled]="!hasNonEmptyUrlValue(form.controls.tvdb.value)"
+                (click)="openExternalUrl(form.controls.tvdb.value)">
+                <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB URL"
+                [disabled]="!hasNonEmptyUrlValue(form.controls.tvdb.value)"
+                (click)="clearField(form.controls.tvdb)">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-form-field>
+    </form>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button mat-button (click)="close()" [disabled]="isSaving()">Cancel</button>
+    @if (!isLoading() && !isInError()) {
+    <button mat-button (click)="onSubmit()" [disabled]="isSaving()">Save</button>
+    }
+</mat-dialog-actions>
