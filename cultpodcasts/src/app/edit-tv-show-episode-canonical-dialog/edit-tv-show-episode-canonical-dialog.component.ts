@@ -1,5 +1,6 @@
 import { Component, Inject, ChangeDetectionStrategy, signal, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +11,22 @@ import { firstValueFrom } from 'rxjs';
 import { CurationSubmitService } from '../curation-submit.service';
 import { hasNonEmptyUrlValue, openExternalUrl } from '../episode-form.util';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { TvShowEpisodeCanonicalDto } from '../tv-show-episode-canonical.interface';
+import { buildTvShowEpisodeCanonicalChangeRequest } from '../tv-show-episode-canonical.util';
+
+function apiErrorMessage(error: unknown): string | undefined {
+  if (!(error instanceof HttpErrorResponse)) {
+    return undefined;
+  }
+  const body = error.error;
+  if (typeof body === 'string' && body.trim()) {
+    return body;
+  }
+  if (body && typeof body.message === 'string' && body.message.trim()) {
+    return body.message;
+  }
+  return undefined;
+}
 
 @Component({
   selector: 'app-edit-tv-show-episode-canonical-dialog',
@@ -33,10 +50,12 @@ export class EditTvShowEpisodeCanonicalDialogComponent implements OnInit {
   readonly isInError = signal(false);
   readonly isSaving = signal(false);
   readonly title = signal('');
+  readonly submitError = signal('');
   readonly form = new FormGroup({
     imdb: new FormControl('', { nonNullable: true }),
     tvdb: new FormControl('', { nonNullable: true })
   });
+  private loaded: Pick<TvShowEpisodeCanonicalDto, 'imdb' | 'tvdb'> = { imdb: null, tvdb: null };
 
   constructor(
     private curationSubmit: CurationSubmitService,
@@ -48,6 +67,7 @@ export class EditTvShowEpisodeCanonicalDialogComponent implements OnInit {
     try {
       const dto = await firstValueFrom(this.curationSubmit.getTvShowEpisode(this.data.episodeId));
       this.title.set(dto.title);
+      this.loaded = { imdb: dto.imdb ?? null, tvdb: dto.tvdb ?? null };
       this.form.setValue({
         imdb: dto.imdb ?? '',
         tvdb: dto.tvdb ?? ''
@@ -74,16 +94,23 @@ export class EditTvShowEpisodeCanonicalDialogComponent implements OnInit {
       this.dialogRef.close({ noChange: true });
       return;
     }
+    const changes = buildTvShowEpisodeCanonicalChangeRequest(this.loaded, this.form.getRawValue());
+    if (Object.keys(changes).length === 0) {
+      this.dialogRef.close({ noChange: true });
+      return;
+    }
     this.isSaving.set(true);
+    this.submitError.set('');
     try {
-      await firstValueFrom(this.curationSubmit.postTvShowEpisode(this.data.episodeId, {
-        imdb: this.form.controls.imdb.value,
-        tvdb: this.form.controls.tvdb.value
-      }));
+      await firstValueFrom(this.curationSubmit.postTvShowEpisode(this.data.episodeId, changes));
       this.dialogRef.close({ updated: true });
     } catch (e) {
       console.error(e);
       this.isSaving.set(false);
+      if (e instanceof HttpErrorResponse && e.status === 400) {
+        this.submitError.set(apiErrorMessage(e) ?? 'Invalid identity URL');
+        return;
+      }
       this.isInError.set(true);
     }
   }

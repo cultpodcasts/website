@@ -53,7 +53,7 @@ describe('CurationSubmitService', () => {
     expect(resp.body?.parentId).toBe('parent-1');
   });
 
-  it('GETs /tvshowepisode/{id} and POSTs IMDb/TheTVDB with curate interceptor', async () => {
+  it('GETs and POSTs /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
     const episodeId = '11111111-1111-1111-1111-111111111111';
     const getPending = firstValueFrom(service.getTvShowEpisode(episodeId));
     const getUrl = new URL('/tvshowepisode/' + episodeId, environment.api).toString();
@@ -64,7 +64,7 @@ describe('CurationSubmitService', () => {
     const dto = await getPending;
     expect(dto.id).toBe(episodeId);
 
-    const body = { imdb: 'https://www.imdb.com/title/tt0000001/', tvdb: '' };
+    const body = { imdb: 'https://www.imdb.com/title/tt0000001/' };
     const postPending = firstValueFrom(service.postTvShowEpisode(episodeId, body));
     const postReq = httpMock.expectOne(getUrl);
     expect(postReq.request.method).toBe('POST');

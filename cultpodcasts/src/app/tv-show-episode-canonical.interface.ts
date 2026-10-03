@@ -6,7 +6,8 @@ export interface TvShowEpisodeCanonicalDto {
   tvdb?: string | null;
 }
 
-export interface TvShowCanonicalChangeRequest {
+/** Azure CanonicalUriPatch: omit = leave stored URI, `''` = clear, absolute URL = set. */
+export interface TvShowEpisodeCanonicalChangeRequest {
   imdb?: string | null;
   tvdb?: string | null;
 }

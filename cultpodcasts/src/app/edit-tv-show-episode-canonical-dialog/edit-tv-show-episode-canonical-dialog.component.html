@@ -7,6 +7,9 @@
     <p id="error">An error occurred</p>
     } @else {
     <p class="episode-title">{{title()}}</p>
+    @if (submitError()) {
+    <p id="submit-error" class="submit-error">{{submitError()}}</p>
+    }
     <form id="edit" [formGroup]="form" (ngSubmit)="onSubmit()">
         <mat-form-field class="full-width">
             <mat-label>IMDb</mat-label>

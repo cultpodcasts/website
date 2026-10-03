@@ -9,7 +9,7 @@ import { PodcastPostResponse } from './podcast-post-response.interface';
 import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
-import { TvShowCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from './tv-show-episode-canonical.interface';
+import { TvShowEpisodeCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from './tv-show-episode-canonical.interface';
 
 /**
  * Shared authenticated API posts used by spinner/send dialogs.
@@ -63,7 +63,7 @@ export class CurationSubmitService {
     });
   }
 
-  postTvShowEpisode(episodeId: string, body: TvShowCanonicalChangeRequest) {
+  postTvShowEpisode(episodeId: string, body: TvShowEpisodeCanonicalChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
     return this.http.post(url, body, {
       context: this.curateContext(),

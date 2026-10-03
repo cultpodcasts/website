@@ -90,6 +90,9 @@ export class PodcastEpisodeComponent {
     this.isLoading.set(!this._parentLoaded);
   }
 
+  /** Route kind for Edit when the search hit omits contentKind (e.g. /tv/ getPlayableById fallback). */
+  @Input() editContentKind?: string;
+
   private _episode = signal<SearchResult | undefined>(undefined);
   private _parentLoaded: boolean = false;
 
@@ -376,7 +379,8 @@ export class PodcastEpisodeComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
-    if (this.episode?.contentKind === 'TvShowEpisode') {
+    const kind = this.editContentKind ?? this.episode?.contentKind;
+    if (kind === 'TvShowEpisode') {
       const identityRef = this.dialog.open<
         EditTvShowEpisodeCanonicalDialogComponent,
         { episodeId: string },
