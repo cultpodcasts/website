@@ -14,7 +14,6 @@ import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
 import { ProfileService } from '../profile.service';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { EditTvShowEpisodeCanonicalDialogComponent } from '../edit-tv-show-episode-canonical-dialog/edit-tv-show-episode-canonical-dialog.component';
 
 function ep(overrides: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -153,20 +152,6 @@ describe('PodcastEpisodeComponent', () => {
     return TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
   }
 
-  it('opens the TV identity dialog for TvShowEpisode', () => {
-    const open = dialogOpen();
-    open.mockReturnValue({ afterClosed: () => of(undefined) });
-    fixture.componentRef.setInput('episode', ep({ id: 'ep-tv', contentKind: 'TvShowEpisode' }));
-    fixture.detectChanges();
-
-    fixture.componentInstance.edit('Nightly', 'ep-tv');
-
-    expect(open).toHaveBeenCalledWith(
-      EditTvShowEpisodeCanonicalDialogComponent,
-      expect.objectContaining({ data: { episodeId: 'ep-tv' } })
-    );
-  });
-
   it('opens the podcast episode dialog for Episode', () => {
     const open = dialogOpen();
     open.mockReturnValue({ afterClosed: () => of(undefined) });
@@ -183,19 +168,17 @@ describe('PodcastEpisodeComponent', () => {
     );
   });
 
-  it('opens the TV identity dialog from editContentKind when search omits contentKind', () => {
+  it('emits curatorEdit instead of opening a dialog when a parent is listening', () => {
     const open = dialogOpen();
-    open.mockReturnValue({ afterClosed: () => of(undefined) });
-    fixture.componentRef.setInput('episode', ep({ id: 'ep-fallback' }));
-    fixture.componentRef.setInput('editContentKind', 'TvShowEpisode');
+    const received: string[] = [];
+    fixture.componentInstance.curatorEdit.subscribe((id) => received.push(id));
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-tv', contentKind: 'TvShowEpisode' }));
     fixture.detectChanges();
 
-    fixture.componentInstance.edit('Nightly', 'ep-fallback');
+    fixture.componentInstance.edit('Nightly', 'ep-tv');
 
-    expect(open).toHaveBeenCalledWith(
-      EditTvShowEpisodeCanonicalDialogComponent,
-      expect.objectContaining({ data: { episodeId: 'ep-fallback' } })
-    );
+    expect(received).toEqual(['ep-tv']);
+    expect(open).not.toHaveBeenCalled();
   });
 
   it('points a TV episode show pill at the TV hub', () => {

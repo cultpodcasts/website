@@ -1,6 +1,6 @@
 @if (isEpisode()) {
   @if (episode(); as ep) {
-  <app-podcast-episode [episode]="ep" [parentLoaded]="true" editContentKind="TvShowEpisode"></app-podcast-episode>
+  <app-podcast-episode [episode]="ep" [parentLoaded]="true" (curatorEdit)="editIdentity($event)"></app-podcast-episode>
   } @else if (isLoading()) {
   <app-site-loading [active]="true" label="Loading episode" />
   @if (showEpisodeSkeleton()) {
