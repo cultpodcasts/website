@@ -8,7 +8,6 @@ import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { EditTvShowEpisodeCanonicalDialogComponent } from '../edit-tv-show-episode-canonical-dialog/edit-tv-show-episode-canonical-dialog.component';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
@@ -29,7 +28,7 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, inject, Input, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
@@ -90,8 +89,16 @@ export class PodcastEpisodeComponent {
     this.isLoading.set(!this._parentLoaded);
   }
 
-  /** Route kind for Edit when the search hit omits contentKind (e.g. /tv/ getPlayableById fallback). */
-  @Input() editContentKind?: string;
+  /**
+   * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
+   * The TV-show-episode shell sets this next to `(curatorEdit)`.
+   */
+  @Input() emitCuratorEdit = false;
+
+  /**
+   * Identity-only curator edit for a parent shell (TV). Unbound by default.
+   */
+  @Output() curatorEdit = new EventEmitter<string>();
 
   private _episode = signal<SearchResult | undefined>(undefined);
   private _parentLoaded: boolean = false;
@@ -379,25 +386,8 @@ export class PodcastEpisodeComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
-    const kind = this.editContentKind ?? this.episode?.contentKind;
-    if (kind === 'TvShowEpisode') {
-      const identityRef = this.dialog.open<
-        EditTvShowEpisodeCanonicalDialogComponent,
-        { episodeId: string },
-        EditEpisodeDialogResponse
-      >(EditTvShowEpisodeCanonicalDialogComponent, {
-        data: { episodeId },
-        disableClose: true,
-        autoFocus: true,
-        width: '90%'
-      });
-      identityRef.afterClosed().subscribe(result => {
-        if (result?.updated) {
-          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-        } else if (result?.noChange) {
-          this.snackBar.open("No change", "Ok", { duration: 3000 });
-        }
-      });
+    if (this.emitCuratorEdit) {
+      this.curatorEdit.emit(episodeId);
       return;
     }
 
