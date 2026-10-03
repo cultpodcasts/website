@@ -52,4 +52,26 @@ describe('CurationSubmitService', () => {
     expect(resp.status).toBe(202);
     expect(resp.body?.parentId).toBe('parent-1');
   });
+
+  it('GETs and POSTs /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
+    const episodeId = '11111111-1111-1111-1111-111111111111';
+    const getPending = firstValueFrom(service.getTvShowEpisode(episodeId));
+    const getUrl = new URL('/tvshowepisode/' + episodeId, environment.api).toString();
+    const getReq = httpMock.expectOne(getUrl);
+    expect(getReq.request.method).toBe('GET');
+    expect(getReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    getReq.flush({ id: episodeId, tvShowId: episodeId, title: 'Item', imdb: null, tvdb: null });
+    const dto = await getPending;
+    expect(dto.id).toBe(episodeId);
+
+    const body = { imdb: 'https://www.imdb.com/title/tt0000001/' };
+    const postPending = firstValueFrom(service.postTvShowEpisode(episodeId, body));
+    const postReq = httpMock.expectOne(getUrl);
+    expect(postReq.request.method).toBe('POST');
+    expect(postReq.request.body).toEqual(body);
+    expect(postReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    postReq.flush(null, { status: 202, statusText: 'Accepted' });
+    const resp = await postPending;
+    expect(resp.status).toBe(202);
+  });
 });

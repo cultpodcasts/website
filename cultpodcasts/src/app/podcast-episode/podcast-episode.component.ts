@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
+import { EditTvShowEpisodeCanonicalDialogComponent } from '../edit-tv-show-episode-canonical-dialog/edit-tv-show-episode-canonical-dialog.component';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
@@ -88,6 +89,9 @@ export class PodcastEpisodeComponent {
     this._parentLoaded = val;
     this.isLoading.set(!this._parentLoaded);
   }
+
+  /** Route kind for Edit when the search hit omits contentKind (e.g. /tv/ getPlayableById fallback). */
+  @Input() editContentKind?: string;
 
   private _episode = signal<SearchResult | undefined>(undefined);
   private _parentLoaded: boolean = false;
@@ -375,6 +379,28 @@ export class PodcastEpisodeComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
+    const kind = this.editContentKind ?? this.episode?.contentKind;
+    if (kind === 'TvShowEpisode') {
+      const identityRef = this.dialog.open<
+        EditTvShowEpisodeCanonicalDialogComponent,
+        { episodeId: string },
+        EditEpisodeDialogResponse
+      >(EditTvShowEpisodeCanonicalDialogComponent, {
+        data: { episodeId },
+        disableClose: true,
+        autoFocus: true,
+        width: '90%'
+      });
+      identityRef.afterClosed().subscribe(result => {
+        if (result?.updated) {
+          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
+        } else if (result?.noChange) {
+          this.snackBar.open("No change", "Ok", { duration: 3000 });
+        }
+      });
+      return;
+    }
+
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
       data: { episodeId: episodeId, podcastIdentifier: podcastName },
       disableClose: true,
