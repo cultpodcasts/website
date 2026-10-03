@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { MatButtonModule } from "@angular/material/button";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -25,6 +26,7 @@ import { connectKindEpisode } from "../kind-episode-page";
 export class TvShowEpisodeComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly page = connectKindEpisode({
     parentHub: (slug) => slug ? ["/tv", slug] : null,
     seoName: (_episode, slug) => slug,
@@ -54,7 +56,7 @@ export class TvShowEpisodeComponent {
       autoFocus: true,
       width: "90%",
     });
-    identityRef.afterClosed().subscribe((result) => {
+    identityRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (result?.updated) {
         this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
       } else if (result?.noChange) {

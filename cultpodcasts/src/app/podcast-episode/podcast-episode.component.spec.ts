@@ -168,9 +168,10 @@ describe('PodcastEpisodeComponent', () => {
     );
   });
 
-  it('emits curatorEdit instead of opening a dialog when a parent is listening', () => {
+  it('emits curatorEdit instead of opening a dialog when emitCuratorEdit is set', () => {
     const open = dialogOpen();
     const received: string[] = [];
+    fixture.componentRef.setInput('emitCuratorEdit', true);
     fixture.componentInstance.curatorEdit.subscribe((id) => received.push(id));
     fixture.componentRef.setInput('episode', ep({ id: 'ep-tv', contentKind: 'TvShowEpisode' }));
     fixture.detectChanges();
@@ -179,6 +180,21 @@ describe('PodcastEpisodeComponent', () => {
 
     expect(received).toEqual(['ep-tv']);
     expect(open).not.toHaveBeenCalled();
+  });
+
+  it('opens the podcast dialog even if curatorEdit has a subscriber when emitCuratorEdit is false', () => {
+    const open = dialogOpen();
+    open.mockReturnValue({ afterClosed: () => of(undefined) });
+    fixture.componentInstance.curatorEdit.subscribe(() => undefined);
+
+    fixture.componentInstance.edit('Show A', 'ep-pod');
+
+    expect(open).toHaveBeenCalledWith(
+      EditEpisodeDialogComponent,
+      expect.objectContaining({
+        data: { episodeId: 'ep-pod', podcastIdentifier: 'Show A' }
+      })
+    );
   });
 
   it('points a TV episode show pill at the TV hub', () => {

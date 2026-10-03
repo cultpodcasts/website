@@ -90,8 +90,13 @@ export class PodcastEpisodeComponent {
   }
 
   /**
-   * When bound (TV-show-episode shell), curator Edit is handled by the parent.
-   * Unbound (podcast episode page): open the podcast episode editor.
+   * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
+   * The TV-show-episode shell sets this next to `(curatorEdit)`.
+   */
+  @Input() emitCuratorEdit = false;
+
+  /**
+   * Identity-only curator edit for a parent shell (TV). Unbound by default.
    */
   @Output() curatorEdit = new EventEmitter<string>();
 
@@ -381,7 +386,7 @@ export class PodcastEpisodeComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
-    if (this.curatorEdit.observed) {
+    if (this.emitCuratorEdit) {
       this.curatorEdit.emit(episodeId);
       return;
     }
