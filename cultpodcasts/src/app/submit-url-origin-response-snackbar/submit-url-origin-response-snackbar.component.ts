@@ -43,7 +43,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     this.existingPodcast = data.existingPodcast;
     this.serviceIconRows = submitEpisodeServiceIconRows(data.response.episodeDetails);
     this.catalogueKindLabel = isCataloguePlayableKind(data.response.contentKind)
-      ? contentKindLabel(data.response.contentKind!)
+      ? contentKindLabel(data.response.contentKind)
       : null;
     this.catalogueOutcomePhrase = catalogueSubmitOutcomePhrase(data.response.episode);
     const episodeDialog = postSubmitEpisodeDialogForActor(data.roles, data.response.episode);

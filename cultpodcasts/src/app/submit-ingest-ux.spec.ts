@@ -309,6 +309,7 @@ describe('canReviewSubmittedEpisode', () => {
 
   it('is false for TvShowEpisode, Film, and NewsReport even when ids look like uuids', () => {
     expect(isCataloguePlayableKind('TvShowEpisode')).toBe(true);
+    expect(isCataloguePlayableKind('Episode')).toBe(false);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'TvShowEpisode')).toBe(false);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'Film')).toBe(false);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'NewsReport')).toBe(false);

@@ -1,3 +1,4 @@
+import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
 import { parseSubmittablePodcastUrl } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
@@ -221,8 +222,12 @@ export function postSubmitEpisodeDialogForActor(
 }
 
 /** Film, TV, and news playables are not the podcast `/episodes/{podcastId}/{episodeId}` review route. */
-export function isCataloguePlayableKind(contentKind: string | null | undefined): boolean {
-  return contentKind === 'TvShowEpisode' || contentKind === 'Film' || contentKind === 'NewsReport';
+export function isCataloguePlayableKind(
+  contentKind: CataloguePlayableKind | string | null | undefined
+): contentKind is Exclude<CataloguePlayableKind, CataloguePlayableKind.Episode> {
+  return contentKind === CataloguePlayableKind.TvShowEpisode
+    || contentKind === CataloguePlayableKind.Film
+    || contentKind === CataloguePlayableKind.NewsReport;
 }
 
 /**
@@ -232,7 +237,7 @@ export function isCataloguePlayableKind(contentKind: string | null | undefined):
 export function canReviewSubmittedEpisode(
   podcastId: string | null | undefined,
   episodeId: string | null | undefined,
-  contentKind?: string | null
+  contentKind?: CataloguePlayableKind | string | null
 ): boolean {
   if (isCataloguePlayableKind(contentKind)) {
     return false;
