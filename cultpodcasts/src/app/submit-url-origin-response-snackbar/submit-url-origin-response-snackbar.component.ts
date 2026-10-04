@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { canReviewSubmittedEpisode, isCataloguePlayableKind, postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
-import { contentKindLabel } from '../content-kind-label';
+import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
 const medium = 15 * 1000;
@@ -33,6 +33,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly existingPodcast: boolean;
   readonly serviceIconRows: SubmitEpisodeServiceIconRow[];
   readonly catalogueKindLabel: string | null;
+  readonly catalogueOutcomePhrase: string;
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -44,6 +45,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     this.catalogueKindLabel = isCataloguePlayableKind(data.response.contentKind)
       ? contentKindLabel(data.response.contentKind!)
       : null;
+    this.catalogueOutcomePhrase = catalogueSubmitOutcomePhrase(data.response.episode);
     const episodeDialog = postSubmitEpisodeDialogForActor(data.roles, data.response.episode);
     const canReview = canReviewSubmittedEpisode(
       data.response.podcastId,

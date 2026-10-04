@@ -1,13 +1,7 @@
 <span matSnackBarLabel>
     @if (catalogueKindLabel) {
     <span>
-        @if (data.response.episode==="Created") {
-        {{catalogueKindLabel}} created.
-        } @else if (data.response.episode === "EpisodeAlreadyExists") {
-        {{catalogueKindLabel}} already exists.
-        } @else {
-        {{catalogueKindLabel}} saved.
-        }
+        {{catalogueKindLabel}} {{catalogueOutcomePhrase}}.
     </span>
     } @else {
     @if (!existingPodcast) {

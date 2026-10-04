@@ -321,6 +321,17 @@ describe('canReviewSubmittedEpisode', () => {
     )).toBe(true);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'Episode')).toBe(true);
   });
+
+  it('is false when only one of the podcast episode ids is present', () => {
+    expect(canReviewSubmittedEpisode(pageId, null)).toBe(false);
+    expect(canReviewSubmittedEpisode(pageId, '')).toBe(false);
+    expect(canReviewSubmittedEpisode(null, otherId)).toBe(false);
+    expect(canReviewSubmittedEpisode('', otherId)).toBe(false);
+  });
+
+  it('is false for Episode kind when both ids are null', () => {
+    expect(canReviewSubmittedEpisode(null, null, 'Episode')).toBe(false);
+  });
 });
 
 describe('postSubmitEpisodeDialog', () => {
