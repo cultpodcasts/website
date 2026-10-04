@@ -202,6 +202,26 @@ Same confirm when the **podcast-page submit dialog** attaches to the page with a
 
 Not a submit-URL entry. They open **after** POST from the origin snackbar (`postSubmitEpisodeDialog`). Add Episode does **not** pick a series. Extra service URLs/images belong on that form.
 
+### Post-submit `contentKind`
+
+Azure may return `contentKind` plus optional podcast Cosmos ids. Vocabulary lives on `catalogue-playable-kind.enum.ts`. **Film** is Film (not Movie). Film is not a parent.
+
+| Predicate | True for | Used for |
+|-----------|----------|----------|
+| `isCataloguePlayableKindValue` | All four playables, **including** `Episode` | Wire membership |
+| `isNonPodcastPlayableKind` | `TvShowEpisode` / `Film` / `NewsReport` (`Episode` is **false**) | Catalogue snackbar copy; block `/episodes/{podcastId}/{episodeId}` Review |
+
+```mermaid
+flowchart TD
+  K[contentKind] --> W{isCataloguePlayableKindValue}
+  W -->|no| Other[parents / Movie / missing]
+  W -->|yes| E{Episode?}
+  E -->|yes| Pod[podcast snackbar and UUID Review]
+  E -->|no| Cat[TV / Film / News copy; no podcast Review]
+```
+
+`canReviewSubmittedEpisode` is false when `isNonPodcastPlayableKind` is true, even if ids look like UUIDs. Catalogue Review via `playableId` + slug is website issue #512 (not this slice).
+
 ## Sequence: Add Podcast, unknown streaming + typed name
 
 ```mermaid
@@ -261,7 +281,8 @@ sequenceDiagram
 
 | Path | Role |
 |------|------|
-| `src/app/submit-ingest-ux.ts` | General drop body, page-drop plan, post-submit dialog kind |
+| `src/app/catalogue-playable-kind.enum.ts` | Four playable wire values; `isCataloguePlayableKindValue` vs `isNonPodcastPlayableKind` |
+| `src/app/submit-ingest-ux.ts` | General drop body, page-drop plan, post-submit dialog kind, podcast Review gate |
 | `src/app/submit-series.util.ts` | Add Podcast Series UI + Save plan + POST body |
 | `src/app/submit-series-conflict.ts` | Name probe, attach, 409 picker, other-series confirm |
 | `src/app/submit-url-contract.ts` | Copied case table from Api `tests/fixtures/submit-url-contract.ts` |

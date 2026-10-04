@@ -1,4 +1,9 @@
 <span matSnackBarLabel>
+    @if (catalogueKindLabel) {
+    <span>
+        {{catalogueKindLabel}} {{catalogueOutcomePhrase}}.
+    </span>
+    } @else {
     @if (!existingPodcast) {
     <span>
         @if (data.response.podcast==="Created") {
@@ -25,6 +30,7 @@
         Episode not created.
         }
     </span>
+    }
     @if (data.response.episodeDetails) {
     <span>
         <span id="service-icons">

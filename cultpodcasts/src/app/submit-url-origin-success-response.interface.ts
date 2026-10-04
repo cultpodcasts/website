@@ -1,3 +1,4 @@
+import { CataloguePlayableKind } from "./catalogue-playable-kind.enum";
 import { SubmitEpisodeDetails } from "./submit-episode-details.interface";
 
 export interface SubmitUrlOriginSuccessResponse {
@@ -5,5 +6,7 @@ export interface SubmitUrlOriginSuccessResponse {
     episodeId?: string | undefined;
     podcast: string;
     podcastId?: string | undefined;
+    contentKind?: CataloguePlayableKind | undefined;
+    playableId?: string | undefined;
     episodeDetails?: SubmitEpisodeDetails;
 }
