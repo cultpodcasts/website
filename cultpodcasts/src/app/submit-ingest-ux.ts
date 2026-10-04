@@ -1,6 +1,7 @@
 import { parseSubmittablePodcastUrl } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
+import { uuidPattern } from './uuid-pattern.regexp';
 
 /**
  * Worker public gate: Auth0 roles with submit backend access (`Submitter`, `Curator`).
@@ -217,4 +218,24 @@ export function postSubmitEpisodeDialogForActor(
     return 'none';
   }
   return postSubmitEpisodeDialog(episode);
+}
+
+/** Film, TV, and news playables are not the podcast `/episodes/{podcastId}/{episodeId}` review route. */
+export function isCataloguePlayableKind(contentKind: string | null | undefined): boolean {
+  return contentKind === 'TvShowEpisode' || contentKind === 'Film' || contentKind === 'NewsReport';
+}
+
+/**
+ * Review / Edit need both podcast Cosmos ids.
+ * Catalogue-kind submit can return Created with contentKind + playableId and neither podcast id.
+ */
+export function canReviewSubmittedEpisode(
+  podcastId: string | null | undefined,
+  episodeId: string | null | undefined,
+  contentKind?: string | null
+): boolean {
+  if (isCataloguePlayableKind(contentKind)) {
+    return false;
+  }
+  return uuidPattern.test(podcastId ?? '') && uuidPattern.test(episodeId ?? '');
 }

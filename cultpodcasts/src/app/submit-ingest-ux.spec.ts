@@ -10,6 +10,8 @@ import {
   podcastPageAttachAfterDialog,
   postSubmitEpisodeDialog,
   postSubmitEpisodeDialogForActor,
+  canReviewSubmittedEpisode,
+  isCataloguePlayableKind,
   shouldCallSubmitUrlLookup,
   shouldCallSubmitUrlPrepare,
   lookupWithPreparedPodcastName
@@ -296,6 +298,28 @@ describe('postSubmitEpisodeDialogForActor', () => {
 
   it('returns add-episode for Curator when episode was Created', () => {
     expect(postSubmitEpisodeDialogForActor(['Curator'], 'Created')).toBe('add-episode');
+  });
+});
+
+describe('canReviewSubmittedEpisode', () => {
+  it('is false when catalogue submit returns Created with null ids, so Review cannot go to null/null', () => {
+    expect(canReviewSubmittedEpisode(null, null)).toBe(false);
+    expect(canReviewSubmittedEpisode(undefined, undefined)).toBe(false);
+  });
+
+  it('is false for TvShowEpisode, Film, and NewsReport even when ids look like uuids', () => {
+    expect(isCataloguePlayableKind('TvShowEpisode')).toBe(true);
+    expect(canReviewSubmittedEpisode(pageId, otherId, 'TvShowEpisode')).toBe(false);
+    expect(canReviewSubmittedEpisode(pageId, otherId, 'Film')).toBe(false);
+    expect(canReviewSubmittedEpisode(pageId, otherId, 'NewsReport')).toBe(false);
+  });
+
+  it('is true when both podcast and episode ids are uuids', () => {
+    expect(canReviewSubmittedEpisode(
+      '52cea3d9-75e6-4a8e-ab3f-458049d7c6d3',
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    )).toBe(true);
+    expect(canReviewSubmittedEpisode(pageId, otherId, 'Episode')).toBe(true);
   });
 });
 

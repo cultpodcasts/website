@@ -5,5 +5,7 @@ export interface SubmitUrlOriginSuccessResponse {
     episodeId?: string | undefined;
     podcast: string;
     podcastId?: string | undefined;
+    contentKind?: string | undefined;
+    playableId?: string | undefined;
     episodeDetails?: SubmitEpisodeDetails;
 }

@@ -9,7 +9,8 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
+import { canReviewSubmittedEpisode, isCataloguePlayableKind, postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
+import { contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
 const medium = 15 * 1000;
@@ -31,6 +32,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly showReviewButton = signal(false);
   readonly existingPodcast: boolean;
   readonly serviceIconRows: SubmitEpisodeServiceIconRow[];
+  readonly catalogueKindLabel: string | null;
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -39,8 +41,16 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse, roles?: readonly string[] }) {
     this.existingPodcast = data.existingPodcast;
     this.serviceIconRows = submitEpisodeServiceIconRows(data.response.episodeDetails);
+    this.catalogueKindLabel = isCataloguePlayableKind(data.response.contentKind)
+      ? contentKindLabel(data.response.contentKind!)
+      : null;
     const episodeDialog = postSubmitEpisodeDialogForActor(data.roles, data.response.episode);
-    if (episodeDialog !== 'none') {
+    const canReview = canReviewSubmittedEpisode(
+      data.response.podcastId,
+      data.response.episodeId,
+      data.response.contentKind
+    );
+    if (episodeDialog !== 'none' && canReview) {
       this.actionText.set("Edit");
       this.showReviewButton.set(true);
       snackBarRef.onAction().subscribe(() => {
@@ -130,6 +140,13 @@ export class SubmitUrlOriginResponseSnackbarComponent {
 
   async review() {
     this.snackBarRef.dismiss();
+    if (!canReviewSubmittedEpisode(
+      this.data.response.podcastId,
+      this.data.response.episodeId,
+      this.data.response.contentKind
+    )) {
+      return;
+    }
     await this.navigateToEpisodeReview(this.data.response.podcastId!, this.data.response.episodeId!);
   }
 
