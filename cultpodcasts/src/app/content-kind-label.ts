@@ -1,12 +1,14 @@
+import { CataloguePlayableKind } from "./catalogue-playable-kind.enum";
+
 export function contentKindLabel(kind: string): string {
   switch (kind) {
-    case "Episode":
+    case CataloguePlayableKind.Episode:
       return "Podcast";
-    case "TvShowEpisode":
+    case CataloguePlayableKind.TvShowEpisode:
       return "TV";
-    case "NewsReport":
+    case CataloguePlayableKind.NewsReport:
       return "News";
-    case "Film":
+    case CataloguePlayableKind.Film:
       return "Film";
     default:
       return kind;

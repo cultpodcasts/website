@@ -1,4 +1,4 @@
-import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
+import { CataloguePlayableKind, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
 import { parseSubmittablePodcastUrl } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 import { SubmitSeriesSelection } from './submit-series.util';
@@ -221,15 +221,6 @@ export function postSubmitEpisodeDialogForActor(
   return postSubmitEpisodeDialog(episode);
 }
 
-/** Film, TV, and news playables are not the podcast `/episodes/{podcastId}/{episodeId}` review route. */
-export function isCataloguePlayableKind(
-  contentKind: CataloguePlayableKind | string | null | undefined
-): contentKind is Exclude<CataloguePlayableKind, CataloguePlayableKind.Episode> {
-  return contentKind === CataloguePlayableKind.TvShowEpisode
-    || contentKind === CataloguePlayableKind.Film
-    || contentKind === CataloguePlayableKind.NewsReport;
-}
-
 /**
  * Review / Edit need both podcast Cosmos ids.
  * Catalogue-kind submit can return Created with contentKind + playableId and neither podcast id.
@@ -239,7 +230,7 @@ export function canReviewSubmittedEpisode(
   episodeId: string | null | undefined,
   contentKind?: CataloguePlayableKind | string | null
 ): boolean {
-  if (isCataloguePlayableKind(contentKind)) {
+  if (isNonPodcastPlayableKind(contentKind)) {
     return false;
   }
   return uuidPattern.test(podcastId ?? '') && uuidPattern.test(episodeId ?? '');

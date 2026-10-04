@@ -11,11 +11,11 @@ import {
   postSubmitEpisodeDialog,
   postSubmitEpisodeDialogForActor,
   canReviewSubmittedEpisode,
-  isCataloguePlayableKind,
   shouldCallSubmitUrlLookup,
   shouldCallSubmitUrlPrepare,
   lookupWithPreparedPodcastName
 } from './submit-ingest-ux';
+import { isCataloguePlayableKindValue, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
 
 const pageId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const otherId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -308,8 +308,9 @@ describe('canReviewSubmittedEpisode', () => {
   });
 
   it('is false for TvShowEpisode, Film, and NewsReport even when ids look like uuids', () => {
-    expect(isCataloguePlayableKind('TvShowEpisode')).toBe(true);
-    expect(isCataloguePlayableKind('Episode')).toBe(false);
+    expect(isNonPodcastPlayableKind('TvShowEpisode')).toBe(true);
+    expect(isNonPodcastPlayableKind('Episode')).toBe(false);
+    expect(isCataloguePlayableKindValue('Episode')).toBe(true);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'TvShowEpisode')).toBe(false);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'Film')).toBe(false);
     expect(canReviewSubmittedEpisode(pageId, otherId, 'NewsReport')).toBe(false);

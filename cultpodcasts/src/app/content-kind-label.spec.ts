@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { CataloguePlayableKind } from "./catalogue-playable-kind.enum";
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from "./content-kind-label";
 
 describe("content kind labels", () => {
   it("names the public kinds", () => {
-    expect(contentKindLabel("Episode")).toBe("Podcast");
-    expect(contentKindLabel("TvShowEpisode")).toBe("TV");
-    expect(contentKindLabel("Film")).toBe("Film");
-    expect(contentKindLabel("NewsReport")).toBe("News");
+    expect(contentKindLabel(CataloguePlayableKind.Episode)).toBe("Podcast");
+    expect(contentKindLabel(CataloguePlayableKind.TvShowEpisode)).toBe("TV");
+    expect(contentKindLabel(CataloguePlayableKind.Film)).toBe("Film");
+    expect(contentKindLabel(CataloguePlayableKind.NewsReport)).toBe("News");
+  });
+
+  it("does not map Movie and leaves unknown kinds unchanged", () => {
+    expect(contentKindLabel("Movie")).toBe("Movie");
+    expect(contentKindLabel("TvShow")).toBe("TvShow");
   });
 });
 

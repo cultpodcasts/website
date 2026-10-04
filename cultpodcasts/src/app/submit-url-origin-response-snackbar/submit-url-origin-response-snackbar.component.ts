@@ -9,7 +9,8 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { canReviewSubmittedEpisode, isCataloguePlayableKind, postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
+import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
@@ -42,7 +43,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse, roles?: readonly string[] }) {
     this.existingPodcast = data.existingPodcast;
     this.serviceIconRows = submitEpisodeServiceIconRows(data.response.episodeDetails);
-    this.catalogueKindLabel = isCataloguePlayableKind(data.response.contentKind)
+    this.catalogueKindLabel = isNonPodcastPlayableKind(data.response.contentKind)
       ? contentKindLabel(data.response.contentKind)
       : null;
     this.catalogueOutcomePhrase = catalogueSubmitOutcomePhrase(data.response.episode);
