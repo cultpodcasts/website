@@ -12,11 +12,9 @@ branch, push is OK — Pages **preview** may build from git; do not run deploy C
 
 ## CQRS (HARD)
 
-Commands change state and return an acknowledgement or a command outcome. They do not return the resource read model. Queries return the read model and change nothing.
+A command changes state and returns an acknowledgement (empty 202) or a command outcome. It does not return the resource read model. A query returns the read model and changes nothing.
 
-Subject and person create/update come back as **202 with no body**. Do not bind an edit form from that response. After 202, GET the resource and bind that body: `GET /subject/{encodeURIComponent(name)}` and `GET /person/{encodeURIComponent(name)}`.
-
-Episode update, podcast failure flags, kind transfer, publish, rename, discovery submit, homepage publish, and search-index run keep their outcome bodies.
+Do not bind UI from an acknowledgement. GET the resource and bind that body. A command response that is the resource read model is a CQRS breach.
 
 Authoritative: `RedditPodcastPoster/Cloud/Api/architecture.md` § CQRS.
 
@@ -128,7 +126,7 @@ Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
 
 ## Version bumps (HARD for PRs)
 
-Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. A newly adopted cross-client contract, such as CQRS, is a **minor** bump. Do this in the same PR before opening or as the last commit before ready-for-review.
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. A new cross-client contract is a **minor** bump. Do this in the same PR before opening or as the last commit before ready-for-review.
 
 ## Cursor Cloud specific instructions
 
