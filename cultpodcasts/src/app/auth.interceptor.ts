@@ -46,7 +46,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     }
   }).pipe(
     catchError(() => of(null)),
-    switchMap((token: string | null) => {
+    switchMap((token) => {
       if (!token) {
         return next(req);
       }

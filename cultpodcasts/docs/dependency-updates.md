@@ -84,16 +84,16 @@ Prefer **`package.json` `overrides`** for transitive CVEs over `npm audit fix --
 
 After changing overrides: `npm install`, then `npm audit` (aim for **0**), then a quick `npm test` / `ng build`.
 
-### Current overrides (Aug 2026) — why they exist
+### Current overrides (Oct 2026)
 
-Pinned in `package.json` (see also the ≥5-day publish rule above):
+None. The Aug 2026 pins were removed with the Angular 22.2.1 update after `npm ls` / `npm audit` showed they were no longer needed:
 
-| Override | Version | Why |
-|----------|---------|-----|
-| `@hono/node-server` | `2.0.11` | Transitive via `@angular/cli` → `@modelcontextprotocol/sdk@1.29.0`, which pulled a vulnerable `@hono/node-server` (`<2.0.5` path traversal; `2.0.0–2.0.9` WebSocket DoS). CLI still pins MCP SDK `1.29.0` through at least `22.1.3`, so upgrading Angular alone does not clear this. |
-| `undici` | `7.29.0` | Transitive via `wrangler@4.118.0` → `miniflare` → `undici@7.28.0` (high CVEs in `7.0.0–7.28.0`). `npm audit fix --force` wanted `wrangler@4.120.0`, which was newer than our ≥5-day / pin policy. |
+| Former override | Why it stays off |
+|-----------------|------------------|
+| `@hono/node-server` `2.0.11` | Not in the installed tree. `@angular/cli` 22.2.1 no longer pulls the vulnerable `@modelcontextprotocol/sdk@1.29.0` adapter (`<2.0.5` path traversal; `2.0.0–2.0.9` WebSocket DoS). |
+| `undici` `7.29.0` | `wrangler@4.146.0` → `miniflare` depends on `undici@7.29.1`, which is outside the `<7.29.1` advisories. Pinning `7.29.0` reintroduced those CVEs. |
 
-These are **temporary security pins**, not preferred long-term dependency management. Flat overrides are used because this app has a single root `package.json` and those packages only appear under CLI/wrangler today.
+These were **temporary security pins**, not preferred long-term dependency management. Flat overrides were used because this app has a single root `package.json` and those packages only appeared under CLI/wrangler.
 
 ### When / how to remove them
 
