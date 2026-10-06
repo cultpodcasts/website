@@ -11,7 +11,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
+import { EditSubjectSendComponent, EditSubjectSendResult } from '../edit-subject-send/edit-subject-send.component';
 import { Flair } from '../flair.interface';
 import { MatSelectModule } from '@angular/material/select';
 import { KeyValuePipe } from '@angular/common';
@@ -22,6 +22,34 @@ import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.ut
 import { ensureHashPrefix, hashPrefixedTagValidator, normalizeHashTagControl } from '../podcast-form.util';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
+
+export interface EditSubjectDialogData {
+  subjectName?: string;
+  create?: boolean;
+  /**
+   * Created subject from a 202 body. When `id` is set, the dialog binds this
+   * entity and does not GET /subject/:name.
+   */
+  subject?: SubjectEntity;
+}
+
+export interface EditSubjectDialogResult {
+  updated?: boolean;
+  subjectName?: string;
+  subject?: SubjectEntity;
+  conflict?: string;
+  noChange?: boolean;
+  closed?: boolean;
+}
+
+/**
+ * Snackbar Edit after create. `subject` must be present on the object so
+ * omitting it is a compile error. The dialog skips the name GET only when `id` is set.
+ */
+export interface EditCreatedSubjectDialogData {
+  subject: SubjectEntity | undefined;
+  subjectName?: string;
+}
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -62,8 +90,8 @@ export class EditSubjectDialogComponent {
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined, subject?: SubjectEntity },
+    private dialogRef: MatDialogRef<EditSubjectDialogComponent, EditSubjectDialogResult>,
+    @Inject(MAT_DIALOG_DATA) public data: EditSubjectDialogData,
     private dialog: MatDialog,
     protected featureSwitchService: FeatureSwitchService,
   ) {
@@ -131,7 +159,12 @@ export class EditSubjectDialogComponent {
             this.isInError.set(true);
           }
         })
-    }).catch(x => {
+    }).catch(() => {
+      if (this.data.subject?.id) {
+        this.bindSubject(this.data.subject);
+        this.isLoading.set(false);
+        return;
+      }
       this.isLoading.set(false);
       this.isInError.set(true);
     });
@@ -232,16 +265,19 @@ export class EditSubjectDialogComponent {
   }
 
   send(id: string, changes: SubjectEntity) {
-    const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true, data: { create: this.create } });
+    const dialogRef = this.dialog.open<EditSubjectSendComponent, { create: boolean }, EditSubjectSendResult>(
+      EditSubjectSendComponent,
+      { disableClose: true, autoFocus: true, data: { create: this.create } }
+    );
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
+      if (result?.updated) {
         this.dialogRef.close({
           updated: true,
           subjectName: result.subject?.name ?? changes.name,
           subject: result.subject
         });
-      } else if (result.conflict) {
+      } else if (result?.conflict) {
         this.conflict = result.conflict;
       }
     });

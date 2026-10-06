@@ -13,7 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
+import { EditSubjectDialogComponent, EditSubjectDialogData, EditSubjectDialogResult } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { SearchResultsFacets } from '../search-results-facets.interface';
 import { FacetState } from '../facet-state.interface';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
@@ -312,19 +312,22 @@ export class SubjectApiComponent {
   }
 
   editSubject() {
-    const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+    const dialogRef = this.dialog.open<EditSubjectDialogComponent, EditSubjectDialogData, EditSubjectDialogResult>(EditSubjectDialogComponent, {
       data: { subjectName: this.subjectName() },
       disableClose: true,
       autoFocus: true,
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
+      if (!result) {
+        return;
+      }
       if (result.updated) {
         let snackBarRef = this.snackBar.open("Subject updated", "Ok", { duration: 10000 });
       } else if (result.conflict) {
         let snackBarRef = this.snackBar.open(`Subject conflicts with '${result.conflict}'`, "Edit", { duration: 10000 });
         snackBarRef.onAction().subscribe(() => {
-          const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+          const dialogRef = this.dialog.open<EditSubjectDialogComponent, EditSubjectDialogData, EditSubjectDialogResult>(EditSubjectDialogComponent, {
             data: { subjectName: result.conflict },
             disableClose: true,
             autoFocus: true,
