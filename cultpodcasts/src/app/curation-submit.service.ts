@@ -1,4 +1,5 @@
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE } from './auth.interceptor';
@@ -10,6 +11,8 @@ import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.inte
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { TvShowEpisodeCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from './tv-show-episode-canonical.interface';
+import { SubjectEntity } from './subject-entity.interface';
+import { SubjectResponse } from './subject-response.interface';
 
 /**
  * Shared authenticated API posts used by spinner/send dialogs.
@@ -87,9 +90,9 @@ export class CurationSubmitService {
     });
   }
 
-  putSubject(body: unknown) {
+  putSubject(body: SubjectEntity): Observable<HttpResponse<SubjectResponse>> {
     const url = new URL(`/subject`, environment.api).toString();
-    return this.http.put(url, body, {
+    return this.http.put<SubjectResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

@@ -7,11 +7,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { SubjectForm } from '../subject-form.interface';
 import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse } from '../subject-response.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { EditSubjectSendComponent } from '../edit-subject-send/edit-subject-send.component';
+import { EditSubjectSendComponent, EditSubjectSendResult } from '../edit-subject-send/edit-subject-send.component';
 import { Flair } from '../flair.interface';
 import { MatSelectModule } from '@angular/material/select';
 import { KeyValuePipe } from '@angular/common';
@@ -22,6 +23,34 @@ import { asEmptyString, asStringArray, emptyGuidIfBlank } from '../form-value.ut
 import { ensureHashPrefix, hashPrefixedTagValidator, normalizeHashTagControl } from '../podcast-form.util';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
+
+export interface EditSubjectDialogData {
+  subjectName?: string;
+  create?: boolean;
+  /**
+   * Created subject from a 202 body. When `id` is set, the dialog binds this
+   * entity and does not GET /subject/:name.
+   */
+  subject?: SubjectResponse & { id: string };
+}
+
+export interface EditSubjectDialogResult {
+  updated?: boolean;
+  subjectName?: string;
+  subject?: SubjectResponse & { id: string };
+  conflict?: string;
+  noChange?: boolean;
+  closed?: boolean;
+}
+
+/**
+ * Snackbar Edit after create. `subject` must be present on the object so
+ * omitting it is a compile error. The dialog skips the name GET only when `id` is set.
+ */
+export interface EditCreatedSubjectDialogData {
+  subject: (SubjectResponse & { id: string }) | undefined;
+  subjectName?: string;
+}
 
 @Component({
   selector: 'app-edit-subject-dialog',
@@ -53,7 +82,7 @@ export class EditSubjectDialogComponent {
     .map(x => x as keyof typeof SubjectType)
 
   form = signal<FormGroup<SubjectForm> | undefined>(undefined);
-  originalSubject: SubjectEntity | undefined;
+  originalSubject: SubjectResponse | SubjectEntity | undefined;
   subjectId: string | undefined;
   create: boolean;
   conflict: string | undefined;
@@ -62,12 +91,12 @@ export class EditSubjectDialogComponent {
   constructor(
     private auth: AuthServiceWrapper,
     private http: HttpClient,
-    private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined },
+    private dialogRef: MatDialogRef<EditSubjectDialogComponent, EditSubjectDialogResult>,
+    @Inject(MAT_DIALOG_DATA) public data: EditSubjectDialogData,
     private dialog: MatDialog,
     protected featureSwitchService: FeatureSwitchService,
   ) {
-    this.subjectName = data.subjectName;
+    this.subjectName = data.subject?.name ?? data.subjectName;
     this.create = data.create || false;
   }
 
@@ -87,25 +116,16 @@ export class EditSubjectDialogComponent {
         .subscribe({
           next: flairs => {
             this.flairs.set(flairs);
-            if (!this.create) {
+            if (this.data.subject?.id) {
+              this.bindSubject(this.data.subject);
+              this.isLoading.set(false);
+            } else if (!this.create) {
               const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
-              this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
+              this.http.get<SubjectResponse>(episodeEndpoint, { headers: headers })
                 .subscribe(
                   {
                     next: resp => {
-                      this.subjectId = resp.id;
-                      this.originalSubject = resp;
-                      this.form.set(new FormGroup<SubjectForm>({
-                        name: new FormControl(resp.name!, { nonNullable: true }),
-                        aliases: new FormControl(resp.aliases, { nonNullable: false }),
-                        associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
-                        subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
-                        enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
-                        hashTag: new FormControl(ensureHashPrefix(resp.hashTag), { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
-                        redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
-                        redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
-                        knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
-                      }));
+                      this.bindSubject(resp);
                       this.isLoading.set(false);
                     },
                     error: e => {
@@ -130,15 +150,42 @@ export class EditSubjectDialogComponent {
               this.isLoading.set(false);
             }
           },
-          error: error => {
+          error: () => {
+            if (this.data.subject?.id) {
+              this.bindSubject(this.data.subject);
+              this.isLoading.set(false);
+              return;
+            }
             this.isLoading.set(false);
             this.isInError.set(true);
           }
         })
-    }).catch(x => {
+    }).catch(() => {
+      if (this.data.subject?.id) {
+        this.bindSubject(this.data.subject);
+        this.isLoading.set(false);
+        return;
+      }
       this.isLoading.set(false);
       this.isInError.set(true);
     });
+  }
+
+  private bindSubject(resp: SubjectResponse) {
+    this.subjectId = resp.id ?? undefined;
+    this.subjectName = resp.name ?? this.subjectName;
+    this.originalSubject = resp;
+    this.form.set(new FormGroup<SubjectForm>({
+      name: new FormControl(resp.name!, { nonNullable: true }),
+      aliases: new FormControl(resp.aliases, { nonNullable: false }),
+      associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
+      subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
+      enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
+      hashTag: new FormControl(ensureHashPrefix(resp.hashTag), { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
+      redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
+      redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
+      knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
+    }));
   }
 
   close() {
@@ -204,7 +251,7 @@ export class EditSubjectDialogComponent {
     return JSON.stringify(a) == JSON.stringify(b);
   }
 
-  getChanges(prev: SubjectEntity, now: SubjectEntity): SubjectEntity {
+  getChanges(prev: SubjectResponse | SubjectEntity, now: SubjectEntity): SubjectEntity {
     var changes: SubjectEntity = {};
     if (this.create) changes.name = now.name;
     if (!this.isSameA(prev.aliases, now.aliases)) changes.aliases = now.aliases;
@@ -219,12 +266,19 @@ export class EditSubjectDialogComponent {
   }
 
   send(id: string, changes: SubjectEntity) {
-    const dialogRef = this.dialog.open(EditSubjectSendComponent, { disableClose: true, autoFocus: true, data: { create: this.create } });
+    const dialogRef = this.dialog.open<EditSubjectSendComponent, { create: boolean }, EditSubjectSendResult>(
+      EditSubjectSendComponent,
+      { disableClose: true, autoFocus: true, data: { create: this.create } }
+    );
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
-      if (result.updated) {
-        this.dialogRef.close({ updated: true, subjectName: changes.name });
-      } else if (result.conflict) {
+      if (result?.updated) {
+        this.dialogRef.close({
+          updated: true,
+          subjectName: result.subject?.name ?? changes.name,
+          subject: result.subject
+        });
+      } else if (result?.conflict) {
         this.conflict = result.conflict;
       }
     });

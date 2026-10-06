@@ -14,7 +14,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from '../submit-dialog-response.interface';
-import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
+import {
+  EditCreatedSubjectDialogData,
+  EditSubjectDialogComponent,
+  EditSubjectDialogData,
+  EditSubjectDialogResult
+} from '../edit-subject-dialog/edit-subject-dialog.component';
 import { FirstLoginNoticeComponent } from '../first-login-notice/first-login-notice.component';
 import { RunSearchIndexerComponent } from '../run-search-indexer/run-search-indexer.component';
 import { PublishHomepageComponent } from '../publish-homepage/publish-homepage.component';
@@ -122,7 +127,7 @@ export class ToolbarComponent {
   }
 
   openSubmitSubject() {
-    const dialogRef = this.dialog.open(EditSubjectDialogComponent, {
+    const dialogRef = this.dialog.open<EditSubjectDialogComponent, EditSubjectDialogData, EditSubjectDialogResult>(EditSubjectDialogComponent, {
       data: { create: true },
       disableClose: true,
       autoFocus: true,
@@ -131,13 +136,19 @@ export class ToolbarComponent {
     dialogRef.afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async result => {
+        if (!result) {
+          return;
+        }
         if (result.updated) {
           const snackBarRef = this.snackBar.open("Subject created", "Edit", { duration: 10000 });
           snackBarRef.onAction()
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
-              this.dialog.open(EditSubjectDialogComponent, {
-                data: { subjectName: result.subjectName },
+              this.dialog.open<EditSubjectDialogComponent, EditCreatedSubjectDialogData, EditSubjectDialogResult>(EditSubjectDialogComponent, {
+                data: {
+                  subjectName: result.subject?.name ?? result.subjectName,
+                  subject: result.subject
+                },
                 disableClose: true,
                 autoFocus: true,
                 width: '90%'
@@ -148,7 +159,7 @@ export class ToolbarComponent {
           snackBarRef.onAction()
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
-              this.dialog.open(EditSubjectDialogComponent, {
+              this.dialog.open<EditSubjectDialogComponent, EditSubjectDialogData, EditSubjectDialogResult>(EditSubjectDialogComponent, {
                 data: { subjectName: result.conflict },
                 disableClose: true,
                 autoFocus: true,
