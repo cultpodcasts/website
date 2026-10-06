@@ -53,6 +53,44 @@ describe('CurationSubmitService', () => {
     expect(resp.body?.parentId).toBe('parent-1');
   });
 
+  it('GETs /subject/{name} and /person/{name} as one encoded path segment', async () => {
+    const name = 'Alpha Beta/Gamma';
+    const subjectPending = firstValueFrom(service.getSubject(name));
+    const subjectUrl = new URL(`/subject/${encodeURIComponent(name)}`, environment.api).toString();
+    const subjectReq = httpMock.expectOne(subjectUrl);
+    expect(subjectReq.request.method).toBe('GET');
+    expect(subjectReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    subjectReq.flush({ id: 'subject-1', name });
+    await subjectPending;
+
+    const personPending = firstValueFrom(service.getPerson(name));
+    const personUrl = new URL(`/person/${encodeURIComponent(name)}`, environment.api).toString();
+    const personReq = httpMock.expectOne(personUrl);
+    expect(personReq.request.method).toBe('GET');
+    expect(personReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    personReq.flush({ id: 'person-1', name });
+    await personPending;
+  });
+
+  it('PUTs /subject and /person as commands with an empty 202 body', async () => {
+    const subjectPending = firstValueFrom(service.putSubject({ name: 'Alpha Beta' }));
+    const subjectReq = httpMock.expectOne(new URL('/subject', environment.api).toString());
+    expect(subjectReq.request.method).toBe('PUT');
+    expect(subjectReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    subjectReq.flush(null, { status: 202, statusText: 'Accepted' });
+    const subjectResp = await subjectPending;
+    expect(subjectResp.status).toBe(202);
+    expect(subjectResp.body).toBeNull();
+
+    const personPending = firstValueFrom(service.putPerson({ name: 'Alpha Beta' }));
+    const personReq = httpMock.expectOne(new URL('/person', environment.api).toString());
+    expect(personReq.request.method).toBe('PUT');
+    personReq.flush(null, { status: 202, statusText: 'Accepted' });
+    const personResp = await personPending;
+    expect(personResp.status).toBe(202);
+    expect(personResp.body).toBeNull();
+  });
+
   it('GETs and POSTs /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
     const episodeId = '11111111-1111-1111-1111-111111111111';
     const getPending = firstValueFrom(service.getTvShowEpisode(episodeId));

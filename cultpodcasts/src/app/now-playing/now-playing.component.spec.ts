@@ -23,6 +23,9 @@ describe('NowPlayingComponent', () => {
   let player: PlayerService;
 
   beforeEach(async () => {
+    // The unit-test runner reuses one TestBed across files. A previous file can leave it
+    // instantiated, and configureTestingModule then throws on the first test in this file.
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [NowPlayingComponent],
       providers: [

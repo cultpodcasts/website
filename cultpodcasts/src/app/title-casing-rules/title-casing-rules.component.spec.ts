@@ -111,13 +111,20 @@ describe('TitleCasingRulesComponent', () => {
     const post = await expectOneSoon(lowerCaseTermsUrl);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({ term: 'and' });
-    post.flush({
+    post.flush(
+      { ...enRules, lowerCaseTerms: ['poison'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(enRulesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       ...enRules,
       lowerCaseTerms: ['of', 'the', 'and'],
     });
 
     await pending;
-    expect(component.currentRules()?.lowerCaseTerms).toContain('and');
+    expect(component.currentRules()?.lowerCaseTerms).toEqual(['of', 'the', 'and']);
 
     component.close();
     expect(dialogRef.close).toHaveBeenCalledWith({ saved: true });
@@ -132,7 +139,14 @@ describe('TitleCasingRulesComponent', () => {
 
     const del = await expectOneSoon(delUrl);
     expect(del.request.method).toBe('DELETE');
-    del.flush({
+    del.flush(
+      { ...enRules, lowerCaseTerms: ['poison'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(enRulesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       ...enRules,
       lowerCaseTerms: ['the'],
     });
@@ -199,7 +213,14 @@ describe('TitleCasingRulesComponent', () => {
 
     const post = await expectOneSoon(lowerCaseTermsUrl);
     expect(post.request.method).toBe('POST');
-    post.flush({
+    post.flush(
+      { ...enRules, lowerCaseTerms: ['poison-post'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const afterPost = await expectOneSoon(enRulesUrl);
+    expect(afterPost.request.method).toBe('GET');
+    afterPost.flush({
       ...enRules,
       lowerCaseTerms: ['of', 'the', 'from'],
     });
@@ -210,12 +231,84 @@ describe('TitleCasingRulesComponent', () => {
     ).toString();
     const del = await expectOneSoon(delUrl);
     expect(del.request.method).toBe('DELETE');
-    del.flush({
+    del.flush(
+      { ...enRules, lowerCaseTerms: ['poison-delete'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const afterDelete = await expectOneSoon(enRulesUrl);
+    expect(afterDelete.request.method).toBe('GET');
+    afterDelete.flush({
       ...enRules,
       lowerCaseTerms: ['the', 'from'],
     });
 
     await pending;
     expect(component.currentRules()?.lowerCaseTerms).toEqual(['the', 'from']);
+  });
+
+  it('promotes a known term and binds the English GET, not the command bodies', async () => {
+    const pending = component.promoteKnownTerm(0);
+
+    const universalGet = await expectOneSoon(universalRulesUrl);
+    expect(universalGet.request.method).toBe('GET');
+    universalGet.flush({
+      language: '*',
+      lowerCaseTerms: [],
+      knownTerms: [],
+      isDefault: false,
+    });
+
+    const postUrl = new URL(
+      `/title-casing-rules/${encodeURIComponent('*')}/known-terms`,
+      environment.api
+    ).toString();
+    const post = await expectOneSoon(postUrl);
+    expect(post.request.method).toBe('POST');
+    post.flush(
+      {
+        language: '*',
+        lowerCaseTerms: [],
+        knownTerms: [{ literal: 'From Command', pattern: 'x' }],
+        isDefault: false,
+      },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const afterPost = await expectOneSoon(universalRulesUrl);
+    expect(afterPost.request.method).toBe('GET');
+    afterPost.flush({
+      language: '*',
+      lowerCaseTerms: [],
+      knownTerms: [{ literal: 'Universal Only', pattern: 'u' }],
+      isDefault: false,
+    });
+
+    const delUrl = new URL(
+      '/title-casing-rules/en/known-terms/BBC',
+      environment.api
+    ).toString();
+    const del = await expectOneSoon(delUrl);
+    expect(component.currentRules()?.knownTerms.map(t => t.literal)).toEqual(['BBC']);
+    expect(del.request.method).toBe('DELETE');
+    del.flush(
+      { ...enRules, knownTerms: [{ literal: 'From Delete', pattern: 'x' }] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const afterDelete = await expectOneSoon(enRulesUrl);
+    expect(afterDelete.request.method).toBe('GET');
+    afterDelete.flush({
+      ...enRules,
+      knownTerms: [],
+    });
+
+    await pending;
+    expect(component.currentRules()?.knownTerms).toEqual([]);
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Promoted “BBC” to Universal.',
+      'Dismiss',
+      expect.objectContaining({ duration: 3000 })
+    );
   });
 });

@@ -27,36 +27,64 @@ export class EditPersonSendComponent {
   }
 
   public submit(personId: string, changes: Person, create: boolean) {
-    const request$ = create
-      ? this.curationSubmit.putPerson(changes)
-      : this.curationSubmit.postPerson(personId, changes);
-
-    request$.subscribe({
-      next: resp => {
-        if (create) {
-          if (resp.status == 202) {
-            this.dialogRef.close({
-              updated: true,
-              person: resp.body,
-              personName: (resp.body as Person)?.name ?? changes.name
-            });
+    if (create) {
+      this.curationSubmit.putPerson(changes).subscribe({
+        next: resp => {
+          if (resp.status != 202) {
+            this.isSending.set(false);
+            this.sendError.set(true);
+            return;
           }
-        } else {
-          this.dialogRef.close({ updated: true, personName: changes.name });
-        }
-      },
+          const name = changes.name;
+          if (!name) {
+            this.isSending.set(false);
+            this.sendError.set(true);
+            return;
+          }
+          this.curationSubmit.getPerson(name).subscribe({
+            next: person => {
+              if (!person?.id) {
+                this.isSending.set(false);
+                this.sendError.set(true);
+                return;
+              }
+              this.dialogRef.close({
+                updated: true,
+                person,
+                personName: person.name || name
+              });
+            },
+            error: () => {
+              this.isSending.set(false);
+              this.sendError.set(true);
+            }
+          });
+        },
+        error: e => this.failCreate(e)
+      });
+      return;
+    }
+
+    this.curationSubmit.postPerson(personId, changes).subscribe({
+      next: () => this.dialogRef.close({ updated: true, personName: changes.name }),
       error: e => {
-        if (create && e.status == 409) {
-          this.isSending.set(false);
-          this.sendError.set(true);
-          this.conflict.set(e.error.conflict);
-        } else {
-          this.isSending.set(false);
-          this.sendError.set(true);
-          console.error(e);
-        }
+        this.isSending.set(false);
+        this.sendError.set(true);
+        console.error(e);
       }
     });
+  }
+
+  private failCreate(e: { status?: number; error?: { conflict?: string } }) {
+    if (e.status == 409) {
+      this.isSending.set(false);
+      this.sendError.set(true);
+      this.conflict.set(e.error?.conflict);
+      return;
+    }
+    this.isSending.set(false);
+    this.sendError.set(true);
+    console.error(e);
   }
 
   close() {

@@ -157,7 +157,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         }
       }));
       token.then(_token => {
-        this.token = _token;
+        this.token = _token ?? "";
         this.getEpisodes();
       }).catch(x => {
         this.isLoading.set(false);

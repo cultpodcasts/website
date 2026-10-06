@@ -93,15 +93,22 @@ export class DiscoveryScheduleComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.put<DiscoverySchedule>(
-          new URL('/discovery-schedule', environment.api).toString(),
-          body,
-          { headers, observe: 'response' }
-        )
+        this.http.put(this.scheduleUrl(), body, { headers, observe: 'response' })
       );
 
-      if (resp.status === 200 && resp.body) {
-        this.apply(resp.body);
+      if (resp.status !== 202) {
+        this.isInError.set(true);
+        this.errorMessage.set('Save failed.');
+        this.isSaving.set(false);
+        return;
+      }
+
+      const loaded = await firstValueFrom(
+        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response' })
+      );
+
+      if (loaded.status === 200 && loaded.body) {
+        this.apply(loaded.body);
         this.isSaving.set(false);
         this.dialogRef.close({ saved: true });
         return;
@@ -133,10 +140,7 @@ export class DiscoveryScheduleComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.get<DiscoverySchedule>(
-          new URL('/discovery-schedule', environment.api).toString(),
-          { headers, observe: 'response' }
-        )
+        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response' })
       );
 
       if (resp.status === 200 && resp.body) {
@@ -152,6 +156,10 @@ export class DiscoveryScheduleComponent {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private scheduleUrl(): string {
+    return new URL('/discovery-schedule', environment.api).toString();
   }
 
   private apply(schedule: DiscoverySchedule) {

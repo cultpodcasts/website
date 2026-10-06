@@ -4,7 +4,6 @@ import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
-import { routes } from '../app.routes';
 import { PodcastComponent } from './podcast.component';
 import { GuidService } from '../guid.service';
 import { EpisodeService } from '../episode.service';
@@ -18,6 +17,15 @@ import { ProfileService } from '../profile.service';
 import { IPageDetails } from '../page-details.interface';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
+
+// This spec checks the podcast page itself. The app route table pulls in every page
+// and the moved-kind guard. Navigation also waits until the app is stable, and
+// afterNextRender on this page does not run until after that navigation, so
+// navigateByUrl can sit until the 5s timeout.
+const routes = [
+  { path: 'podcast/:podcastName', component: PodcastComponent },
+  { path: 'podcast/:podcastName/:query', component: PodcastComponent },
+];
 
 function hit(overrides: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -99,13 +107,14 @@ describe('PodcastComponent', () => {
     }).compileComponents();
 
     const router = TestBed.inject(Router);
-    await router.navigateByUrl(options.path);
     const nav = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const fixture = TestBed.createComponent(PodcastComponent);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    fixture.detectChanges();
+    // The route handler resolves the episode on a microtask. Flush a few turns so the
+    // view shows the episode or the not-found link without waiting on application stability.
+    for (let pass = 0; pass < 5; pass++) {
+      fixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     return { fixture, lookedUp, titles, nav };
   }
 

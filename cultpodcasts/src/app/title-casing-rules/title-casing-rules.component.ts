@@ -175,19 +175,12 @@ export class TitleCasingRulesComponent {
 
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
-        this.http.post<LanguageTitleCasingRulesResponse>(
-          this.lowerCaseTermsUrl(lang),
-          { term },
-          { headers, observe: 'response' }
-        )
+        this.http.post(this.lowerCaseTermsUrl(lang), { term }, { headers, observe: 'response' })
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        this.newLowerCaseTerm = '';
-        this.lowerCaseFilter.set('');
-        return;
-      }
-      throw Object.assign(new Error('Add failed.'), { error: { error: 'Add failed.' } });
+      this.requireAccepted(resp.status, 'Add failed.');
+      await this.bindRulesFromGet(lang, headers);
+      this.newLowerCaseTerm = '';
+      this.lowerCaseFilter.set('');
     });
   }
 
@@ -220,27 +213,16 @@ export class TitleCasingRulesComponent {
     await this.mutate(async headers => {
       // POST replacement first so a failed add cannot leave the old term deleted.
       const postResp = await firstValueFrom(
-        this.http.post<LanguageTitleCasingRulesResponse>(
-          this.lowerCaseTermsUrl(lang),
-          { term },
-          { headers, observe: 'response' }
-        )
+        this.http.post(this.lowerCaseTermsUrl(lang), { term }, { headers, observe: 'response' })
       );
-      if (postResp.status !== 200 || !postResp.body) {
-        throw Object.assign(new Error('Edit failed.'), { error: { error: 'Edit failed.' } });
-      }
+      this.requireAccepted(postResp.status, 'Edit failed.');
+      await this.bindRulesFromGet(lang, headers);
 
       const deleteResp = await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.lowerCaseTermUrl(lang, oldTerm),
-          { headers, observe: 'response' }
-        )
+        this.http.delete(this.lowerCaseTermUrl(lang, oldTerm), { headers, observe: 'response' })
       );
-      if (deleteResp.status === 200 && deleteResp.body) {
-        this.applyLanguageRules(deleteResp.body);
-      } else {
-        this.applyLanguageRules(postResp.body);
-      }
+      this.requireAccepted(deleteResp.status, 'Edit failed.');
+      await this.bindRulesFromGet(lang, headers);
       this.cancelEditLowerCaseTerm();
     }, async () => {
       try {
@@ -273,17 +255,11 @@ export class TitleCasingRulesComponent {
 
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.lowerCaseTermUrl(lang, term),
-          { headers, observe: 'response' }
-        )
+        this.http.delete(this.lowerCaseTermUrl(lang, term), { headers, observe: 'response' })
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        this.cancelEditLowerCaseTerm();
-        return;
-      }
-      throw Object.assign(new Error('Delete failed.'), { error: { error: 'Delete failed.' } });
+      this.requireAccepted(resp.status, 'Delete failed.');
+      await this.bindRulesFromGet(lang, headers);
+      this.cancelEditLowerCaseTerm();
     });
   }
 
@@ -323,16 +299,10 @@ export class TitleCasingRulesComponent {
 
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.knownTermUrl(lang, term.literal),
-          { headers, observe: 'response' }
-        )
+        this.http.delete(this.knownTermUrl(lang, term.literal), { headers, observe: 'response' })
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyLanguageRules(resp.body);
-        return;
-      }
-      throw Object.assign(new Error('Delete failed.'), { error: { error: 'Delete failed.' } });
+      this.requireAccepted(resp.status, 'Delete failed.');
+      await this.bindRulesFromGet(lang, headers);
     });
   }
 
@@ -362,28 +332,22 @@ export class TitleCasingRulesComponent {
       }
 
       const postResp = await firstValueFrom(
-        this.http.post<LanguageTitleCasingRulesResponse>(
+        this.http.post(
           this.knownTermsUrl(UNIVERSAL_LANGUAGE),
           term,
           { headers, observe: 'response' }
         )
       );
-      if (postResp.status !== 200 || !postResp.body) {
-        throw Object.assign(new Error('Promote failed.'), { error: { error: 'Promote failed.' } });
-      }
+      this.requireAccepted(postResp.status, 'Promote failed.');
+      await this.bindRulesFromGet(UNIVERSAL_LANGUAGE, headers);
 
       const englishResp = await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.knownTermUrl('en', term.literal),
-          { headers, observe: 'response' }
-        )
+        this.http.delete(this.knownTermUrl('en', term.literal), { headers, observe: 'response' })
       );
-      if (englishResp.status === 200 && englishResp.body) {
-        this.applyLanguageRules(englishResp.body);
-        this.snackBar.open(`Promoted “${term.literal}” to Universal.`, 'Dismiss', { duration: 3000 });
-        return true;
-      }
-      throw Object.assign(new Error('Promote failed.'), { error: { error: 'Promote failed.' } });
+      this.requireAccepted(englishResp.status, 'Promote failed.');
+      await this.bindRulesFromGet('en', headers);
+      this.snackBar.open(`Promoted “${term.literal}” to Universal.`, 'Dismiss', { duration: 3000 });
+      return true;
     }, async () => {
       try {
         await this.loadLanguageRules('en');
@@ -405,30 +369,20 @@ export class TitleCasingRulesComponent {
 
       // When renaming, POST the new literal first so a failed add cannot drop the old term.
       const resp = await firstValueFrom(
-        this.http.post<LanguageTitleCasingRulesResponse>(
-          this.knownTermsUrl(lang),
-          term,
-          { headers, observe: 'response' }
-        )
+        this.http.post(this.knownTermsUrl(lang), term, { headers, observe: 'response' })
       );
-      if (resp.status !== 200 || !resp.body) {
-        throw Object.assign(new Error('Save known term failed.'), { error: { error: 'Save known term failed.' } });
-      }
+      this.requireAccepted(resp.status, 'Save known term failed.');
+      await this.bindRulesFromGet(lang, headers);
 
       if (literalChanged && previous) {
         const deleteResp = await firstValueFrom(
-          this.http.delete<LanguageTitleCasingRulesResponse>(
+          this.http.delete(
             this.knownTermUrl(lang, previous.literal),
             { headers, observe: 'response' }
           )
         );
-        if (deleteResp.status === 200 && deleteResp.body) {
-          this.applyLanguageRules(deleteResp.body);
-        } else {
-          this.applyLanguageRules(resp.body);
-        }
-      } else {
-        this.applyLanguageRules(resp.body);
+        this.requireAccepted(deleteResp.status, 'Save known term failed.');
+        await this.bindRulesFromGet(lang, headers);
       }
 
       if (!previous) {
@@ -591,6 +545,29 @@ export class TitleCasingRulesComponent {
       }
       throw error;
     }
+  }
+
+  private requireAccepted(status: number, failure: string): void {
+    if (status !== 202) {
+      throw Object.assign(new Error(failure), { error: { error: failure } });
+    }
+  }
+
+  /** Bind the read model for `code` when that language is the one on screen. */
+  private async bindRulesFromGet(code: string, headers: HttpHeaders): Promise<void> {
+    const resp = await firstValueFrom(
+      this.http.get<LanguageTitleCasingRulesResponse>(
+        this.rulesUrl(code),
+        { headers, observe: 'response' }
+      )
+    );
+    if (resp.status !== 200 || !resp.body) {
+      throw Object.assign(new Error('Update failed.'), { error: { error: 'Update failed.' } });
+    }
+    if (code !== this.activeLanguage()) {
+      return;
+    }
+    this.applyLanguageRules(resp.body);
   }
 
   private rulesUrl(code: string): string {

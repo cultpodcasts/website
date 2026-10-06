@@ -10,6 +10,14 @@ branch, push is OK — Pages **preview** may build from git; do not run deploy C
 
 - Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
 
+## CQRS (HARD)
+
+A command changes state and returns an acknowledgement (empty 202) or a command outcome. It does not return the resource read model. A query returns the read model and changes nothing.
+
+Do not bind UI from an acknowledgement. GET the resource and bind that body. A command response that is the resource read model is a CQRS breach.
+
+Authoritative: `RedditPodcastPoster/Cloud/Api/architecture.md` § CQRS.
+
 ## Auth0 roles and permissions
 
 ID-token **roles** (`Curator`, `Submitter`, `Admin`) gate SPA UI; access-token **permissions** (`submit`, `curate`, `admin`) gate the Worker and Azure APIs.
@@ -118,7 +126,7 @@ Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
 
 ## Version bumps (HARD for PRs)
 
-Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. A new cross-client contract is a **minor** bump. Do this in the same PR before opening or as the last commit before ready-for-review.
 
 ## Cursor Cloud specific instructions
 
