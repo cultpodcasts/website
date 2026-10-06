@@ -1,7 +1,7 @@
 import { HttpContextToken, HttpInterceptorFn } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, of, switchMap } from 'rxjs';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { environment } from '../environments/environment';
 
@@ -45,8 +45,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       scope
     }
   }).pipe(
+    map((token) => token ?? null),
     catchError(() => of(null)),
-    switchMap((token: string | null) => {
+    switchMap((token) => {
       if (!token) {
         return next(req);
       }
