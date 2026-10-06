@@ -11,6 +11,7 @@ import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.inte
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { TvShowEpisodeCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from './tv-show-episode-canonical.interface';
+import { Person } from './person.interface';
 import { SubjectEntity } from './subject-entity.interface';
 import { SubjectResponse } from './subject-response.interface';
 
@@ -74,9 +75,16 @@ export class CurationSubmitService {
     });
   }
 
-  putPerson(body: unknown) {
+  getPerson(name: string) {
+    const url = new URL(`/person/${encodeURIComponent(name)}`, environment.api).toString();
+    return this.http.get<Person>(url, {
+      context: this.curateContext()
+    });
+  }
+
+  putPerson(body: unknown): Observable<HttpResponse<null>> {
     const url = new URL(`/person`, environment.api).toString();
-    return this.http.put(url, body, {
+    return this.http.put<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -90,9 +98,16 @@ export class CurationSubmitService {
     });
   }
 
-  putSubject(body: SubjectEntity): Observable<HttpResponse<SubjectResponse>> {
+  getSubject(name: string) {
+    const url = new URL(`/subject/${encodeURIComponent(name)}`, environment.api).toString();
+    return this.http.get<SubjectResponse>(url, {
+      context: this.curateContext()
+    });
+  }
+
+  putSubject(body: SubjectEntity): Observable<HttpResponse<null>> {
     const url = new URL(`/subject`, environment.api).toString();
-    return this.http.put<SubjectResponse>(url, body, {
+    return this.http.put<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

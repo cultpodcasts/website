@@ -28,8 +28,8 @@ export interface EditSubjectDialogData {
   subjectName?: string;
   create?: boolean;
   /**
-   * Created subject from a 202 body. When `id` is set, the dialog binds this
-   * entity and does not GET /subject/:name.
+   * Subject loaded with GET /subject/{name}. When `id` is set, the dialog binds
+   * this read model and does not GET again.
    */
   subject?: SubjectResponse & { id: string };
 }
@@ -44,8 +44,8 @@ export interface EditSubjectDialogResult {
 }
 
 /**
- * Snackbar Edit after create. `subject` must be present on the object so
- * omitting it is a compile error. The dialog skips the name GET only when `id` is set.
+ * Snackbar Edit after create. `subject` is the GET read model. The dialog skips
+ * another name GET only when `id` is set.
  */
 export interface EditCreatedSubjectDialogData {
   subject: (SubjectResponse & { id: string }) | undefined;

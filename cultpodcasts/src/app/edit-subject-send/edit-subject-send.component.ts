@@ -40,13 +40,27 @@ export class EditSubjectSendComponent {
           if (resp.status != 202) {
             return;
           }
-          const subject = subjectResponseWithId(resp.body);
-          if (!subject) {
+          const name = changes.name;
+          if (!name) {
             this.isSending.set(false);
             this.sendError.set(true);
             return;
           }
-          this.dialogRef.close({ updated: true, subject });
+          this.curationSubmit.getSubject(name).subscribe({
+            next: body => {
+              const subject = subjectResponseWithId(body);
+              if (!subject) {
+                this.isSending.set(false);
+                this.sendError.set(true);
+                return;
+              }
+              this.dialogRef.close({ updated: true, subject });
+            },
+            error: () => {
+              this.isSending.set(false);
+              this.sendError.set(true);
+            }
+          });
         },
         error: e => this.fail(e, true)
       });
