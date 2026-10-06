@@ -63,11 +63,11 @@ export class EditSubjectDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<EditSubjectDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined },
+    @Inject(MAT_DIALOG_DATA) public data: { subjectName: string | undefined, create: boolean | undefined, subject?: SubjectEntity },
     private dialog: MatDialog,
     protected featureSwitchService: FeatureSwitchService,
   ) {
-    this.subjectName = data.subjectName;
+    this.subjectName = data.subject?.name ?? data.subjectName;
     this.create = data.create || false;
   }
 
@@ -87,25 +87,16 @@ export class EditSubjectDialogComponent {
         .subscribe({
           next: flairs => {
             this.flairs.set(flairs);
-            if (!this.create) {
+            if (this.data.subject?.id) {
+              this.bindSubject(this.data.subject);
+              this.isLoading.set(false);
+            } else if (!this.create) {
               const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
               this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
                 .subscribe(
                   {
                     next: resp => {
-                      this.subjectId = resp.id;
-                      this.originalSubject = resp;
-                      this.form.set(new FormGroup<SubjectForm>({
-                        name: new FormControl(resp.name!, { nonNullable: true }),
-                        aliases: new FormControl(resp.aliases, { nonNullable: false }),
-                        associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
-                        subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
-                        enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
-                        hashTag: new FormControl(ensureHashPrefix(resp.hashTag), { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
-                        redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
-                        redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
-                        knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
-                      }));
+                      this.bindSubject(resp);
                       this.isLoading.set(false);
                     },
                     error: e => {
@@ -130,7 +121,12 @@ export class EditSubjectDialogComponent {
               this.isLoading.set(false);
             }
           },
-          error: error => {
+          error: () => {
+            if (this.data.subject?.id) {
+              this.bindSubject(this.data.subject);
+              this.isLoading.set(false);
+              return;
+            }
             this.isLoading.set(false);
             this.isInError.set(true);
           }
@@ -139,6 +135,23 @@ export class EditSubjectDialogComponent {
       this.isLoading.set(false);
       this.isInError.set(true);
     });
+  }
+
+  private bindSubject(resp: SubjectEntity) {
+    this.subjectId = resp.id;
+    this.subjectName = resp.name ?? this.subjectName;
+    this.originalSubject = resp;
+    this.form.set(new FormGroup<SubjectForm>({
+      name: new FormControl(resp.name!, { nonNullable: true }),
+      aliases: new FormControl(resp.aliases, { nonNullable: false }),
+      associatedSubjects: new FormControl(resp.associatedSubjects, { nonNullable: false }),
+      subjectType: new FormControl(resp.subjectType ?? SubjectType[SubjectType.Unset], { nonNullable: true }),
+      enrichmentHashTags: new FormControl(resp.enrichmentHashTags, { nonNullable: false }),
+      hashTag: new FormControl(ensureHashPrefix(resp.hashTag), { nonNullable: false, validators: [hashPrefixedTagValidator()] }),
+      redditFlairTemplateId: new FormControl(resp.redditFlairTemplateId, { nonNullable: false }),
+      redditFlareText: new FormControl(resp.redditFlareText, { nonNullable: false }),
+      knownTerms: new FormControl<string[]>(resp.knownTerms ?? [], { nonNullable: true })
+    }));
   }
 
   close() {
@@ -223,7 +236,11 @@ export class EditSubjectDialogComponent {
     dialogRef.componentInstance.submit(id, changes, this.create);
     dialogRef.afterClosed().subscribe(async result => {
       if (result.updated) {
-        this.dialogRef.close({ updated: true, subjectName: changes.name });
+        this.dialogRef.close({
+          updated: true,
+          subjectName: result.subject?.name ?? changes.name,
+          subject: result.subject
+        });
       } else if (result.conflict) {
         this.conflict = result.conflict;
       }

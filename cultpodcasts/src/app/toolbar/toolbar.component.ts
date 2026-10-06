@@ -137,7 +137,10 @@ export class ToolbarComponent {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
               this.dialog.open(EditSubjectDialogComponent, {
-                data: { subjectName: result.subjectName },
+                data: {
+                  subjectName: result.subject?.name ?? result.subjectName,
+                  subject: result.subject
+                },
                 disableClose: true,
                 autoFocus: true,
                 width: '90%'

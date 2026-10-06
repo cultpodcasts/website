@@ -35,7 +35,7 @@ export class EditSubjectSendComponent {
       next: resp => {
         if (create) {
           if (resp.status == 202) {
-            this.dialogRef.close({ updated: true });
+            this.dialogRef.close({ updated: true, subject: resp.body as SubjectEntity });
           }
         } else {
           this.dialogRef.close({ updated: true });
