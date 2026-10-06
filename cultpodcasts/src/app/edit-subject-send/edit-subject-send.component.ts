@@ -1,5 +1,6 @@
 import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
-import { SubjectEntity, subjectEntityWithId } from '../subject-entity.interface';
+import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse, subjectResponseWithId } from '../subject-response.interface';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,7 +8,7 @@ import { CurationSubmitService } from '../curation-submit.service';
 
 export interface EditSubjectSendResult {
   updated?: boolean;
-  subject?: SubjectEntity;
+  subject?: SubjectResponse & { id: string };
   conflict?: string;
 }
 
@@ -33,38 +34,41 @@ export class EditSubjectSendComponent {
   }
 
   public submit(subjectId: string, changes: SubjectEntity, create: boolean) {
-    const request$ = create
-      ? this.curationSubmit.putSubject(changes)
-      : this.curationSubmit.postSubject(subjectId, changes);
-
-    request$.subscribe({
-      next: resp => {
-        if (create) {
-          if (resp.status == 202) {
-            const subject = subjectEntityWithId(resp.body);
-            if (!subject) {
-              this.isSending.set(false);
-              this.sendError.set(true);
-              return;
-            }
-            this.dialogRef.close({ updated: true, subject });
+    if (create) {
+      this.curationSubmit.putSubject(changes).subscribe({
+        next: resp => {
+          if (resp.status != 202) {
+            return;
           }
-        } else {
-          this.dialogRef.close({ updated: true });
-        }
-      },
-      error: e => {
-        if (create && e.status == 409) {
-          this.isSending.set(false);
-          this.sendError.set(true);
-          this.conflict.set(e.error.conflict);
-        } else {
-          this.isSending.set(false);
-          this.sendError.set(true);
-          console.error(e);
-        }
-      }
+          const subject = subjectResponseWithId(resp.body);
+          if (!subject) {
+            this.isSending.set(false);
+            this.sendError.set(true);
+            return;
+          }
+          this.dialogRef.close({ updated: true, subject });
+        },
+        error: e => this.fail(e, true)
+      });
+      return;
+    }
+
+    this.curationSubmit.postSubject(subjectId, changes).subscribe({
+      next: () => this.dialogRef.close({ updated: true }),
+      error: e => this.fail(e, false)
     });
+  }
+
+  private fail(e: { status?: number; error?: { conflict?: string } }, create: boolean) {
+    if (create && e.status == 409) {
+      this.isSending.set(false);
+      this.sendError.set(true);
+      this.conflict.set(e.error?.conflict);
+      return;
+    }
+    this.isSending.set(false);
+    this.sendError.set(true);
+    console.error(e);
   }
 
   close() {

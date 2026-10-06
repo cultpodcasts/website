@@ -4,7 +4,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { CurationSubmitService } from '../curation-submit.service';
-import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse } from '../subject-response.interface';
 import { EditSubjectSendComponent } from './edit-subject-send.component';
 
 describe('EditSubjectSendComponent', () => {
@@ -32,13 +32,28 @@ describe('EditSubjectSendComponent', () => {
     fixture.detectChanges();
   });
 
-  function submitCreate(body: SubjectEntity | null) {
+  function subjectDto(id: string | null): SubjectResponse {
+    return {
+      id,
+      name: 'Alpha Beta',
+      aliases: null,
+      associatedSubjects: null,
+      enrichmentHashTags: null,
+      hashTag: null,
+      redditFlairTemplateId: null,
+      redditFlareText: null,
+      subjectType: null,
+      knownTerms: null,
+    };
+  }
+
+  function submitCreate(body: SubjectResponse | null) {
     putSubject.mockReturnValue(of(new HttpResponse({ status: 202, body })));
     fixture.componentInstance.submit('', { name: 'Alpha Beta' }, true);
   }
 
   it('closes with the created subject when the 202 body has an id', () => {
-    const subject: SubjectEntity = { id: 'subject-1', name: 'Alpha Beta' };
+    const subject = subjectDto('subject-1');
     submitCreate(subject);
 
     expect(putSubject).toHaveBeenCalledWith({ name: 'Alpha Beta' });
@@ -47,7 +62,7 @@ describe('EditSubjectSendComponent', () => {
   });
 
   it('keeps the send dialog open when the 202 body has no id', () => {
-    submitCreate({ name: 'Alpha Beta' });
+    submitCreate(subjectDto(null));
 
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(fixture.componentInstance.sendError()).toBe(true);
@@ -63,7 +78,7 @@ describe('EditSubjectSendComponent', () => {
   });
 
   it('keeps the send dialog open when the 202 id is empty', () => {
-    submitCreate({ id: '', name: 'Alpha Beta' });
+    submitCreate(subjectDto(''));
 
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(fixture.componentInstance.sendError()).toBe(true);

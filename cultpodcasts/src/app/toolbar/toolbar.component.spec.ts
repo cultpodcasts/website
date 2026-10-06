@@ -6,7 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NEVER, Subject, of } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoveryInfoService } from '../discovery-info.service';
-import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse } from '../subject-response.interface';
 import { EditSubjectDialogComponent } from '../edit-subject-dialog/edit-subject-dialog.component';
 import { ToolbarComponent } from './toolbar.component';
 
@@ -16,7 +16,18 @@ describe('ToolbarComponent', () => {
   let snackOpen: ReturnType<typeof vi.fn>;
   let editAction: Subject<void>;
 
-  const created: SubjectEntity = { id: 'subject-1', name: 'Alpha Beta' };
+  const created: SubjectResponse & { id: string } = {
+    id: 'subject-1',
+    name: 'Alpha Beta',
+    aliases: null,
+    associatedSubjects: null,
+    enrichmentHashTags: null,
+    hashTag: null,
+    redditFlairTemplateId: null,
+    redditFlareText: null,
+    subjectType: null,
+    knownTerms: null,
+  };
 
   beforeEach(async () => {
     editAction = new Subject<void>();

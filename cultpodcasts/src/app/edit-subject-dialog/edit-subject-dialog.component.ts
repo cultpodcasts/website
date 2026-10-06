@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { SubjectForm } from '../subject-form.interface';
 import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse } from '../subject-response.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -30,13 +31,13 @@ export interface EditSubjectDialogData {
    * Created subject from a 202 body. When `id` is set, the dialog binds this
    * entity and does not GET /subject/:name.
    */
-  subject?: SubjectEntity;
+  subject?: SubjectResponse & { id: string };
 }
 
 export interface EditSubjectDialogResult {
   updated?: boolean;
   subjectName?: string;
-  subject?: SubjectEntity;
+  subject?: SubjectResponse & { id: string };
   conflict?: string;
   noChange?: boolean;
   closed?: boolean;
@@ -47,7 +48,7 @@ export interface EditSubjectDialogResult {
  * omitting it is a compile error. The dialog skips the name GET only when `id` is set.
  */
 export interface EditCreatedSubjectDialogData {
-  subject: SubjectEntity | undefined;
+  subject: (SubjectResponse & { id: string }) | undefined;
   subjectName?: string;
 }
 
@@ -81,7 +82,7 @@ export class EditSubjectDialogComponent {
     .map(x => x as keyof typeof SubjectType)
 
   form = signal<FormGroup<SubjectForm> | undefined>(undefined);
-  originalSubject: SubjectEntity | undefined;
+  originalSubject: SubjectResponse | SubjectEntity | undefined;
   subjectId: string | undefined;
   create: boolean;
   conflict: string | undefined;
@@ -120,7 +121,7 @@ export class EditSubjectDialogComponent {
               this.isLoading.set(false);
             } else if (!this.create) {
               const episodeEndpoint = new URL(`/subject/${encodeURIComponent(this.subjectName!)}`, environment.api).toString();
-              this.http.get<SubjectEntity>(episodeEndpoint, { headers: headers })
+              this.http.get<SubjectResponse>(episodeEndpoint, { headers: headers })
                 .subscribe(
                   {
                     next: resp => {
@@ -170,8 +171,8 @@ export class EditSubjectDialogComponent {
     });
   }
 
-  private bindSubject(resp: SubjectEntity) {
-    this.subjectId = resp.id;
+  private bindSubject(resp: SubjectResponse) {
+    this.subjectId = resp.id ?? undefined;
     this.subjectName = resp.name ?? this.subjectName;
     this.originalSubject = resp;
     this.form.set(new FormGroup<SubjectForm>({
@@ -250,7 +251,7 @@ export class EditSubjectDialogComponent {
     return JSON.stringify(a) == JSON.stringify(b);
   }
 
-  getChanges(prev: SubjectEntity, now: SubjectEntity): SubjectEntity {
+  getChanges(prev: SubjectResponse | SubjectEntity, now: SubjectEntity): SubjectEntity {
     var changes: SubjectEntity = {};
     if (this.create) changes.name = now.name;
     if (!this.isSameA(prev.aliases, now.aliases)) changes.aliases = now.aliases;

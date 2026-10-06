@@ -6,11 +6,22 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { Observable, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SubjectEntity } from '../subject-entity.interface';
+import { SubjectResponse } from '../subject-response.interface';
 import { EditSubjectDialogComponent, EditSubjectDialogData } from './edit-subject-dialog.component';
 
 const subjectName = 'Alpha Beta';
-const inHandSubject: SubjectEntity = { id: 'subject-1', name: subjectName };
+const inHandSubject: SubjectResponse & { id: string } = {
+  id: 'subject-1',
+  name: subjectName,
+  aliases: null,
+  associatedSubjects: null,
+  enrichmentHashTags: null,
+  hashTag: null,
+  redditFlairTemplateId: null,
+  redditFlareText: null,
+  subjectType: null,
+  knownTerms: null,
+};
 
 describe('EditSubjectDialogComponent', () => {
   let dialogData: EditSubjectDialogData;
