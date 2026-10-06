@@ -161,7 +161,14 @@ describe('LanguageIgnoredSubjectsComponent', () => {
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({ term: 'News' });
     expect(post.request.headers.get('Authorization')).toBe('Bearer test-token');
-    post.flush({
+    post.flush(
+      { ...frRules, ignoredSubjects: ['From Command'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(frRulesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       ...frRules,
       ignoredSubjects: ['Comedy', 'News'],
     });
@@ -184,7 +191,14 @@ describe('LanguageIgnoredSubjectsComponent', () => {
     const del = await expectOneSoon(delUrl);
     expect(del.request.method).toBe('DELETE');
     expect(del.request.headers.get('Authorization')).toBe('Bearer test-token');
-    del.flush({
+    del.flush(
+      { ...frRules, ignoredSubjects: ['From Command'] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(frRulesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       ...frRules,
       ignoredSubjects: [],
     });
@@ -213,7 +227,10 @@ describe('LanguageIgnoredSubjectsComponent', () => {
     await component.deleteIgnoredSubject(0);
 
     const post = await expectOneSoon(frIgnoredSubjectsUrl);
-    post.flush({ ...frRules, ignoredSubjects: ['Comedy', 'News'] });
+    post.flush(null, { status: 202, statusText: 'Accepted' });
+    const reload = await expectOneSoon(frRulesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({ ...frRules, ignoredSubjects: ['Comedy', 'News'] });
     await pending;
     expect(component.isMutating()).toBe(false);
   });

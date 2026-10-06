@@ -111,7 +111,14 @@ describe('SupportedLanguagesComponent', () => {
     const post = await expectOneSoon(languagesUrl);
     expect(post.request.method).toBe('POST');
     expect(post.request.body).toEqual({ name: 'Dutch' });
-    post.flush({
+    post.flush(
+      { languages: [{ code: 'xx', name: 'Command' }] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(languagesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       languages: [
         { code: 'en', name: 'English' },
         { code: 'fr', name: 'French' },
@@ -120,10 +127,30 @@ describe('SupportedLanguagesComponent', () => {
     });
 
     await pending;
-    expect(component.languages().some(l => l.code === 'nl')).toBe(true);
+    expect(component.languages().map(l => l.code)).toEqual(['en', 'fr', 'nl']);
+    expect(component.languages().some(l => l.code === 'xx')).toBe(false);
 
     component.close();
     expect(dialogRef.close).toHaveBeenCalledWith({ saved: true });
+  });
+
+  it('does not bind a supported-languages body when the command is not 202', async () => {
+    component.newName = 'Dutch';
+    const pending = component.addLanguage();
+
+    const post = await expectOneSoon(languagesUrl);
+    post.flush(
+      { languages: [{ code: 'xx', name: 'Command' }] },
+      { status: 200, statusText: 'OK' }
+    );
+
+    await pending;
+    expect(component.languages().map(l => l.code)).toEqual(['en', 'fr']);
+    expect(component.isInError()).toBe(true);
+    expect(httpMock.match(languagesUrl)).toEqual([]);
+
+    component.close();
+    expect(dialogRef.close).toHaveBeenCalledWith({ saved: false });
   });
 
   it('rejects unknown names without calling POST', async () => {
@@ -140,7 +167,14 @@ describe('SupportedLanguagesComponent', () => {
 
     const del = await expectOneSoon(delUrl);
     expect(del.request.method).toBe('DELETE');
-    del.flush({
+    del.flush(
+      { languages: [{ code: 'xx', name: 'Command' }] },
+      { status: 202, statusText: 'Accepted' }
+    );
+
+    const reload = await expectOneSoon(languagesUrl);
+    expect(reload.request.method).toBe('GET');
+    reload.flush({
       languages: [{ code: 'fr', name: 'French' }],
     });
 

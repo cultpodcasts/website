@@ -125,24 +125,28 @@ export class SupportedLanguagesComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.post<SupportedLanguagesResponse>(
-          new URL('/supported-languages', environment.api).toString(),
-          { name },
-          { headers, observe: 'response' }
-        )
+        this.http.post(this.languagesUrl(), { name }, { headers, observe: 'response' })
       );
 
-      if (resp.status === 200 && resp.body) {
-        this.languages.set([...resp.body.languages]);
-        this.newName = '';
-        this.didMutate = true;
-        this.refreshFilteredCultures();
+      if (resp.status !== 202) {
+        this.isInError.set(true);
+        this.errorMessage.set('Add failed.');
         this.isMutating.set(false);
         return;
       }
 
-      this.isInError.set(true);
-      this.errorMessage.set('Add failed.');
+      const languages = await this.fetchLanguages(headers);
+      if (!languages) {
+        this.isInError.set(true);
+        this.errorMessage.set('Add failed.');
+        this.isMutating.set(false);
+        return;
+      }
+
+      this.languages.set(languages);
+      this.newName = '';
+      this.didMutate = true;
+      this.refreshFilteredCultures();
       this.isMutating.set(false);
     } catch (error: any) {
       console.error(error);
@@ -183,22 +187,30 @@ export class SupportedLanguagesComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.delete<SupportedLanguagesResponse>(
+        this.http.delete(
           new URL(`/supported-languages/${encodeURIComponent(lang.code)}`, environment.api).toString(),
           { headers, observe: 'response' }
         )
       );
 
-      if (resp.status === 200 && resp.body) {
-        this.languages.set([...resp.body.languages]);
-        this.didMutate = true;
-        this.refreshFilteredCultures();
+      if (resp.status !== 202) {
+        this.isInError.set(true);
+        this.errorMessage.set('Delete failed.');
         this.isMutating.set(false);
         return;
       }
 
-      this.isInError.set(true);
-      this.errorMessage.set('Delete failed.');
+      const languages = await this.fetchLanguages(headers);
+      if (!languages) {
+        this.isInError.set(true);
+        this.errorMessage.set('Delete failed.');
+        this.isMutating.set(false);
+        return;
+      }
+
+      this.languages.set(languages);
+      this.didMutate = true;
+      this.refreshFilteredCultures();
       this.isMutating.set(false);
     } catch (error: any) {
       console.error(error);
@@ -260,7 +272,7 @@ export class SupportedLanguagesComponent {
       const [languagesResp, culturesResp] = await Promise.all([
         firstValueFrom(
           this.http.get<SupportedLanguagesResponse>(
-            new URL('/supported-languages', environment.api).toString(),
+            this.languagesUrl(),
             { headers, observe: 'response' }
           )
         ),
@@ -306,6 +318,23 @@ export class SupportedLanguagesComponent {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private languagesUrl(): string {
+    return new URL('/supported-languages', environment.api).toString();
+  }
+
+  private async fetchLanguages(headers: HttpHeaders): Promise<SupportedLanguage[] | undefined> {
+    const resp = await firstValueFrom(
+      this.http.get<SupportedLanguagesResponse>(
+        this.languagesUrl(),
+        { headers, observe: 'response' }
+      )
+    );
+    if (resp.status === 200 && resp.body) {
+      return [...resp.body.languages];
+    }
+    return undefined;
   }
 
   private async confirm(title: string, question: string): Promise<boolean> {

@@ -9,7 +9,7 @@ export interface LanguageTitleCasingRules {
   knownTerms: KnownTerm[];
 }
 
-/** GET /title-casing-rules/{lang} and delta mutation responses */
+/** GET /title-casing-rules/{lang}. Commands on this resource acknowledge with 202 and no body. */
 export interface LanguageTitleCasingRulesResponse {
   language: string;
   lowerCaseTerms: string[];

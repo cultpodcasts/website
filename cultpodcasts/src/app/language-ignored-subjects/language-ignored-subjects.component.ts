@@ -121,19 +121,12 @@ export class LanguageIgnoredSubjectsComponent {
 
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
-        this.http.post<LanguageTitleCasingRulesResponse>(
-          this.ignoredSubjectsUrl(lang),
-          { term },
-          { headers, observe: 'response' }
-        )
+        this.http.post(this.ignoredSubjectsUrl(lang), { term }, { headers, observe: 'response' })
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyRules(resp.body);
-        this.newSubject.set('');
-        this.addError.set('');
-        return;
-      }
-      throw Object.assign(new Error('Add failed.'), { error: { error: 'Add failed.' } });
+      this.requireAccepted(resp.status, 'Add failed.');
+      await this.bindIgnoredSubjectsFromGet(lang, headers);
+      this.newSubject.set('');
+      this.addError.set('');
     });
   }
 
@@ -154,16 +147,10 @@ export class LanguageIgnoredSubjectsComponent {
 
     await this.mutate(async headers => {
       const resp = await firstValueFrom(
-        this.http.delete<LanguageTitleCasingRulesResponse>(
-          this.ignoredSubjectUrl(lang, term),
-          { headers, observe: 'response' }
-        )
+        this.http.delete(this.ignoredSubjectUrl(lang, term), { headers, observe: 'response' })
       );
-      if (resp.status === 200 && resp.body) {
-        this.applyRules(resp.body);
-        return;
-      }
-      throw Object.assign(new Error('Delete failed.'), { error: { error: 'Delete failed.' } });
+      this.requireAccepted(resp.status, 'Delete failed.');
+      await this.bindIgnoredSubjectsFromGet(lang, headers);
     });
   }
 
@@ -299,6 +286,25 @@ export class LanguageIgnoredSubjectsComponent {
       this.isInError.set(true);
       this.errorMessage.set('Failed to load ignored subjects.');
     }
+  }
+
+  private requireAccepted(status: number, failure: string): void {
+    if (status !== 202) {
+      throw Object.assign(new Error(failure), { error: { error: failure } });
+    }
+  }
+
+  private async bindIgnoredSubjectsFromGet(code: string, headers: HttpHeaders): Promise<void> {
+    const resp = await firstValueFrom(
+      this.http.get<LanguageTitleCasingRulesResponse>(
+        this.rulesUrl(code),
+        { headers, observe: 'response' }
+      )
+    );
+    if (resp.status !== 200 || !resp.body) {
+      throw Object.assign(new Error('Update failed.'), { error: { error: 'Update failed.' } });
+    }
+    this.applyRules(resp.body);
   }
 
   private applyRules(rules: LanguageTitleCasingRulesResponse) {
