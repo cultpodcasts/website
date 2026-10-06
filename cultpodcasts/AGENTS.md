@@ -10,6 +10,16 @@ branch, push is OK — Pages **preview** may build from git; do not run deploy C
 
 - Rule: [`../.cursor/rules/no-api-website-deploys.mdc`](../.cursor/rules/no-api-website-deploys.mdc)
 
+## CQRS (HARD)
+
+Commands change state and return an acknowledgement or a command outcome. They do not return the resource read model. Queries return the read model and change nothing.
+
+Subject and person create/update come back as **202 with no body**. Do not bind an edit form from that response. After 202, GET the resource and bind that body: `GET /subject/{encodeURIComponent(name)}` and `GET /person/{encodeURIComponent(name)}`.
+
+Episode update, podcast failure flags, kind transfer, publish, rename, discovery submit, homepage publish, and search-index run keep their outcome bodies.
+
+Authoritative: `RedditPodcastPoster/Cloud/Api/architecture.md` § CQRS.
+
 ## Auth0 roles and permissions
 
 ID-token **roles** (`Curator`, `Submitter`, `Admin`) gate SPA UI; access-token **permissions** (`submit`, `curate`, `admin`) gate the Worker and Azure APIs.
@@ -118,7 +128,7 @@ Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
 
 ## Version bumps (HARD for PRs)
 
-Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. Do this in the same PR before opening or as the last commit before ready-for-review.
+Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. A newly adopted cross-client contract, such as CQRS, is a **minor** bump. Do this in the same PR before opening or as the last commit before ready-for-review.
 
 ## Cursor Cloud specific instructions
 
