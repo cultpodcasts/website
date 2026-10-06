@@ -95,25 +95,20 @@ None. The Aug 2026 pins were removed with the Angular 22.2.1 update after `npm l
 
 These were **temporary security pins**, not preferred long-term dependency management. Flat overrides were used because this app has a single root `package.json` and those packages only appeared under CLI/wrangler.
 
-### When / how to remove them
+### After an Angular CLI or Wrangler bump
 
-Re-check after each Angular CLI or Wrangler bump (and periodically via `npm audit`):
+There is no `overrides` block. Do not put one back unless `npm audit` reports the `@hono/node-server` or `undici` advisories again.
+
+Re-check after each Angular CLI or Wrangler bump:
 
 ```bash
-# 1. Temporarily drop the override(s) under test from package.json
-npm install
-npm ls @hono/node-server undici --all
+npm ls undici @hono/node-server --all
 npm audit
 ```
 
-| Remove… | When safe |
-|---------|-----------|
-| `@hono/node-server` override | Installed tree already has `@hono/node-server` ≥ `2.0.10` (or otherwise not flagged) **without** the override — typically after `@angular/cli` moves MCP SDK past `1.29.0` / pulls a fixed hono adapter. |
-| `undici` override | Installed tree already has `undici` ≥ `7.29.0` (or otherwise not flagged) **without** the override — typically after `wrangler` / `miniflare` ship that undici (e.g. wrangler `4.120+` once aged ≥5 days). |
+The undici floor is ≥ `7.29.1`. The lockfile resolves `undici@7.29.1` (`wrangler` → `miniflare`). Pinning `7.29.0` is inside the `<7.29.1` advisories, so that pin must not return.
 
-If `npm audit` is clean and `npm ls` shows fixed versions without overrides, delete the `overrides` block (or the individual keys), run `npm install`, commit the lockfile, and re-run `npm audit` + a smoke test.
-
-Do **not** remove overrides while audit still reports those advisories, or while the only “fix” is `audit fix --force` that breaks framework pins.
+`npm audit fix --force` stays forbidden. It often downgrades `@angular/cli` or jumps `wrangler` outside the ≥5-day pin. If audit names these packages again, add a targeted `overrides` entry for the fixed version, then `npm install` and re-run `npm audit`.
 
 ## TypeScript only
 

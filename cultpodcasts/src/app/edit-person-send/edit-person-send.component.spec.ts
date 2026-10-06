@@ -53,6 +53,17 @@ describe('EditPersonSendComponent', () => {
     expect(fixture.componentInstance.sendError()).toBe(false);
   });
 
+  it('keeps the send dialog open when create is not 202', () => {
+    putPerson.mockReturnValue(of(new HttpResponse({ status: 200, body: commandBody })));
+
+    fixture.componentInstance.submit('', { id: '', name: 'Alpha Beta' }, true);
+
+    expect(getPerson).not.toHaveBeenCalled();
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.sendError()).toBe(true);
+    expect(fixture.componentInstance.isSending()).toBe(false);
+  });
+
   it('keeps the send dialog open when GET fails', () => {
     putPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
     getPerson.mockReturnValue(throwError(() => ({ status: 500 })));

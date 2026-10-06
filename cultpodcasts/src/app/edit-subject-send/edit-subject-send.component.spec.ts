@@ -65,6 +65,19 @@ describe('EditSubjectSendComponent', () => {
     expect(fixture.componentInstance.sendError()).toBe(false);
   });
 
+  it('keeps the send dialog open when create is not 202', () => {
+    putSubject.mockReturnValue(
+      of(new HttpResponse({ status: 200, body: subjectDto('subject-from-command') }))
+    );
+
+    fixture.componentInstance.submit('', { name: 'Alpha Beta' }, true);
+
+    expect(getSubject).not.toHaveBeenCalled();
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.sendError()).toBe(true);
+    expect(fixture.componentInstance.isSending()).toBe(false);
+  });
+
   it('keeps the send dialog open when GET returns no id', () => {
     submitCreate(null, subjectDto(null));
 

@@ -31,6 +31,8 @@ export class EditPersonSendComponent {
       this.curationSubmit.putPerson(changes).subscribe({
         next: resp => {
           if (resp.status != 202) {
+            this.isSending.set(false);
+            this.sendError.set(true);
             return;
           }
           const name = changes.name;
