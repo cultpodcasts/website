@@ -115,17 +115,9 @@ describe('HeroCurationService', () => {
     await rails;
   });
 
-  it('throws HeroCurationConflictError from GET after 409, ignoring the command body', async () => {
+  it('throws HeroCurationConflictError from GET after an empty 409', async () => {
     const pending = service.setHeroCuration(['e1'], 'stale');
-    httpMock.expectOne(url).flush(
-      JSON.stringify({
-        error: 'Conflict',
-        episodeIds: ['from-body'],
-        railSubjects: ['from-body'],
-        updatedAt: 'from-body',
-      }),
-      { status: 409, statusText: 'Conflict' }
-    );
+    httpMock.expectOne(url).flush('', { status: 409, statusText: 'Conflict' });
     await Promise.resolve();
     flushGet({
       episodeIds: ['from-get'],

@@ -21,8 +21,8 @@ interface HeroCurationUpdate {
 /**
  * Homepage curation: hero episode picks and pinned subject rails (Durable Object).
  * GET is public and returns the document. Mutations require curate scope, return
- * 202 with an empty body, and this service then GETs the document. A 409 says the
- * compare-and-swap lost; the current lists and updatedAt come from that GET.
+ * 202 with an empty body, and this service then GETs the document. A 409 is an
+ * empty compare-and-swap loss; the current lists and updatedAt come from that GET.
  *
  * Episode membership:
  * - promote → POST /hero-curation/episodes (append, no CAS)
@@ -110,9 +110,8 @@ export class HeroCurationService {
   }
 
   /**
-   * Command acknowledgement is 202 with an empty body. The returned document is
-   * the following GET. A conflict refreshes the same way and does not read lists
-   * from the command body.
+   * Command acknowledgement is 202 with an empty body. A lost compare-and-swap is
+   * 409 with an empty body. The returned document is the following GET.
    */
   private async commandThenRead(
     method: 'PUT' | 'POST' | 'DELETE',
