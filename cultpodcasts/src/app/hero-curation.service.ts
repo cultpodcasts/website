@@ -20,7 +20,9 @@ interface HeroCurationUpdate {
 
 /**
  * Homepage curation: hero episode picks and pinned subject rails (Durable Object).
- * GET is public; mutations require curate scope.
+ * GET is public and returns the document. Mutations require curate scope, return
+ * 202 with an empty body, and this service then GETs the document. A 409 says the
+ * compare-and-swap lost; the current lists and updatedAt come from that GET.
  *
  * Episode membership:
  * - promote → POST /hero-curation/episodes (append, no CAS)
@@ -33,13 +35,7 @@ export class HeroCurationService {
 
   async getHeroCuration(): Promise<HeroCuration> {
     try {
-      const url = new URL('/hero-curation', environment.api).toString();
-      const curation = await firstValueFrom(this.http.get<HeroCuration>(url));
-      return {
-        episodeIds: curation.episodeIds ?? [],
-        railSubjects: curation.railSubjects ?? [],
-        updatedAt: curation.updatedAt ?? null,
-      };
+      return await this.readHeroCuration();
     } catch (error) {
       console.warn('Hero curation unavailable; using empty curated lists.', error);
       return { episodeIds: [], railSubjects: [], updatedAt: null };
@@ -90,41 +86,60 @@ export class HeroCurationService {
     episodeIds: string[]
   ): Promise<HeroCuration> {
     const url = new URL('/hero-curation/episodes', environment.api).toString();
-    const saved = await firstValueFrom(
-      this.http.request<HeroCuration>(method, url, {
-        body: { episodeIds },
-        context: new HttpContext().set(AUTH_SCOPE, 'curate'),
-      })
-    );
-    return {
-      episodeIds: saved.episodeIds ?? [],
-      railSubjects: saved.railSubjects ?? [],
-      updatedAt: saved.updatedAt ?? null,
-    };
+    return this.commandThenRead(method, url, { episodeIds });
   }
 
   /** Partial update: the worker merges, so hero and rail picks don't clobber each other. */
-  private async put(update: HeroCurationUpdate): Promise<HeroCuration> {
+  private put(update: HeroCurationUpdate): Promise<HeroCuration> {
+    const url = new URL('/hero-curation', environment.api).toString();
+    return this.commandThenRead('PUT', url, update);
+  }
+
+  private async readHeroCuration(bypassCache = false): Promise<HeroCuration> {
+    const url = new URL('/hero-curation', environment.api).toString();
+    const curation = await firstValueFrom(
+      this.http.get<HeroCuration>(url, bypassCache
+        ? { headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } }
+        : undefined)
+    );
+    return {
+      episodeIds: curation.episodeIds ?? [],
+      railSubjects: curation.railSubjects ?? [],
+      updatedAt: curation.updatedAt ?? null,
+    };
+  }
+
+  /**
+   * Command acknowledgement is 202 with an empty body. The returned document is
+   * the following GET. A conflict refreshes the same way and does not read lists
+   * from the command body.
+   */
+  private async commandThenRead(
+    method: 'PUT' | 'POST' | 'DELETE',
+    url: string,
+    body: unknown
+  ): Promise<HeroCuration> {
     try {
-      const url = new URL('/hero-curation', environment.api).toString();
-      const saved = await firstValueFrom(
-        this.http.put<HeroCuration>(url, update, {
+      const response = await firstValueFrom(
+        this.http.request(method, url, {
+          body,
           context: new HttpContext().set(AUTH_SCOPE, 'curate'),
+          observe: 'response',
+          responseType: 'text',
         })
       );
-      return {
-        episodeIds: saved.episodeIds ?? [],
-        railSubjects: saved.railSubjects ?? [],
-        updatedAt: saved.updatedAt ?? null,
-      };
+      if (response.status !== 202) {
+        throw new HttpErrorResponse({
+          status: response.status,
+          statusText: response.statusText,
+          url,
+        });
+      }
+      return await this.readHeroCuration(true);
     } catch (error) {
       if (error instanceof HttpErrorResponse && this.isConflictResponse(error)) {
-        const body = error.error as (Partial<HeroCuration> & { error?: string }) | null;
-        throw new HeroCurationConflictError({
-          episodeIds: body?.episodeIds ?? [],
-          railSubjects: body?.railSubjects ?? [],
-          updatedAt: body?.updatedAt ?? null,
-        });
+        const current = await this.readHeroCuration(true);
+        throw new HeroCurationConflictError(current);
       }
       console.error('Failed to save hero curation.', error);
       throw error;
@@ -135,7 +150,23 @@ export class HeroCurationService {
     if (error.status === 409) {
       return true;
     }
-    const body = error.error as { error?: string } | null;
-    return error.status === 400 && body?.error === 'Conflict';
+    return error.status === 400 && this.errorCode(error) === 'Conflict';
+  }
+
+  /** Command responses use responseType text, so a 400 body may still be a string. */
+  private errorCode(error: HttpErrorResponse): string | undefined {
+    const raw = error.error;
+    if (typeof raw === 'string') {
+      try {
+        return (JSON.parse(raw) as { error?: string }).error;
+      } catch {
+        return undefined;
+      }
+    }
+    if (raw && typeof raw === 'object' && 'error' in raw) {
+      const code = (raw as { error?: unknown }).error;
+      return typeof code === 'string' ? code : undefined;
+    }
+    return undefined;
   }
 }
