@@ -28,7 +28,7 @@ export class EditPersonSendComponent {
 
   public submit(personId: string, changes: Person, create: boolean) {
     if (create) {
-      this.curationSubmit.putPerson(changes).subscribe({
+      this.curationSubmit.createPerson(changes).subscribe({
         next: resp => {
           if (resp.status != 202) {
             this.isSending.set(false);
@@ -65,7 +65,7 @@ export class EditPersonSendComponent {
       return;
     }
 
-    this.curationSubmit.postPerson(personId, changes).subscribe({
+    this.curationSubmit.patchPerson(personId, changes).subscribe({
       next: () => this.dialogRef.close({ updated: true, personName: changes.name }),
       error: e => {
         this.isSending.set(false);

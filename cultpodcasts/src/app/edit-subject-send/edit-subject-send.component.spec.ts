@@ -10,12 +10,12 @@ import { EditSubjectSendComponent } from './edit-subject-send.component';
 describe('EditSubjectSendComponent', () => {
   let fixture: ComponentFixture<EditSubjectSendComponent>;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
-  let putSubject: ReturnType<typeof vi.fn>;
+  let createSubject: ReturnType<typeof vi.fn>;
   let getSubject: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
-    putSubject = vi.fn();
+    createSubject = vi.fn();
     getSubject = vi.fn();
     await TestBed.configureTestingModule({
       imports: [EditSubjectSendComponent],
@@ -25,7 +25,7 @@ describe('EditSubjectSendComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: { create: true } },
         {
           provide: CurationSubmitService,
-          useValue: { putSubject, getSubject, postSubject: vi.fn() },
+          useValue: { createSubject, getSubject, patchSubject: vi.fn() },
         },
       ],
     }).compileComponents();
@@ -50,7 +50,7 @@ describe('EditSubjectSendComponent', () => {
   }
 
   function submitCreate(commandBody: SubjectResponse | null, loaded: SubjectResponse | null) {
-    putSubject.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
+    createSubject.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
     getSubject.mockReturnValue(loaded == null ? throwError(() => ({ status: 500 })) : of(loaded));
     fixture.componentInstance.submit('', { name: 'Alpha Beta' }, true);
   }
@@ -59,14 +59,14 @@ describe('EditSubjectSendComponent', () => {
     const loaded = subjectDto('subject-from-get');
     submitCreate(subjectDto('subject-from-command'), loaded);
 
-    expect(putSubject).toHaveBeenCalledWith({ name: 'Alpha Beta' });
+    expect(createSubject).toHaveBeenCalledWith({ name: 'Alpha Beta' });
     expect(getSubject).toHaveBeenCalledWith('Alpha Beta');
     expect(dialogRef.close).toHaveBeenCalledWith({ updated: true, subject: loaded });
     expect(fixture.componentInstance.sendError()).toBe(false);
   });
 
   it('keeps the send dialog open when create is not 202', () => {
-    putSubject.mockReturnValue(
+    createSubject.mockReturnValue(
       of(new HttpResponse({ status: 200, body: subjectDto('subject-from-command') }))
     );
 

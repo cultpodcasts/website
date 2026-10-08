@@ -102,7 +102,7 @@ export class EditTvShowEpisodeCanonicalDialogComponent implements OnInit {
     this.isSaving.set(true);
     this.submitError.set('');
     try {
-      await firstValueFrom(this.curationSubmit.postTvShowEpisode(this.data.episodeId, changes));
+      await firstValueFrom(this.curationSubmit.patchTvShowEpisode(this.data.episodeId, changes));
       this.dialogRef.close({ updated: true });
     } catch (e) {
       console.error(e);

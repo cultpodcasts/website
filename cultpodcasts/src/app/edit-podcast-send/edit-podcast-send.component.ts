@@ -22,7 +22,7 @@ export class EditPodcastSendComponent {
   }
 
   public submit(podcastId: string, changes: EditPodcastPost) {
-    this.curationSubmit.postPodcast(podcastId, changes).subscribe({
+    this.curationSubmit.patchPodcast(podcastId, changes).subscribe({
       next: resp => {
         this.dialogRef.close({ updated: true, response: resp.body });
       },
