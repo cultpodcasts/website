@@ -6,7 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { BehaviorSubject, of, ReplaySubject } from 'rxjs';
 import { HomepageApiComponent, withHeroLinks } from './homepage-api.component';
 import { HomepageService } from '../homepage.service';
-import { HeroCurationService } from '../hero-curation.service';
+import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SiteService } from '../site.service';
 import { PlayerService } from '../player.service';
@@ -189,6 +189,50 @@ describe('HomepageApiComponent', () => {
     heroCuration.toggleEpisode.mockRejectedValueOnce(new Error('fail'));
     await component.togglePromote(ep('a'));
     expect(component['curatedEpisodeIds']()).toEqual([]);
+  });
+
+  it('binds the conflict document when a rail pin loses compare-and-swap', async () => {
+    roles$.next(['Curator']);
+    const subject = 'PinnedSubject';
+    const episodes = Array.from({ length: SUBJECT_RAIL_MIN_EPISODES }, (_, i) =>
+      ep(`p${i}`, { daysAgo: 0, subjects: [subject] })
+    );
+    apply(episodes, { episodeIds: ['p0'], railSubjects: ['day:0'] });
+    component['curatedUpdatedAt'].set('stale-token');
+    heroCuration.setRailSubjects.mockRejectedValueOnce(
+      new HeroCurationConflictError({
+        episodeIds: ['server-ep'],
+        railSubjects: ['server-subject'],
+        updatedAt: 'fresh-token',
+      })
+    );
+
+    await component.toggleRailPin(subject);
+
+    expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(
+      ['day:0', subject],
+      'stale-token'
+    );
+    expect(component['curatedRailSubjects']()).toEqual(['server-subject']);
+    expect(component['curatedEpisodeIds']()).toEqual(['server-ep']);
+    expect(component['curatedUpdatedAt']()).toBe('fresh-token');
+  });
+
+  it('rolls a rail pin back to the pre-image when persist fails for another reason', async () => {
+    roles$.next(['Curator']);
+    const subject = 'PinnedSubject';
+    const episodes = Array.from({ length: SUBJECT_RAIL_MIN_EPISODES }, (_, i) =>
+      ep(`p${i}`, { daysAgo: 0, subjects: [subject] })
+    );
+    apply(episodes, { episodeIds: ['p0'], railSubjects: ['day:0'] });
+    component['curatedUpdatedAt'].set('stale-token');
+    heroCuration.setRailSubjects.mockRejectedValueOnce(new Error('fail'));
+
+    await component.toggleRailPin(subject);
+
+    expect(component['curatedRailSubjects']()).toEqual(['day:0']);
+    expect(component['curatedEpisodeIds']()).toEqual(['p0']);
+    expect(component['curatedUpdatedAt']()).toBe('stale-token');
   });
 
   it('promotes then demotes an episode for curators', async () => {

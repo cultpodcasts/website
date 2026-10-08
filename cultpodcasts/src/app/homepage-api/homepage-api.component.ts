@@ -26,7 +26,7 @@ import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { startEpisodePlayback } from '../episode-embed';
 import { dateFromKey, dateKey } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
-import { HeroCurationService } from '../hero-curation.service';
+import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { buildHeroSlides, pruneCuratedIdsToWeek } from '../hero-slides';
 import {
   RAIL_DISPLAY_SIZE,
@@ -498,7 +498,11 @@ export class HomepageApiComponent {
       if (saved.railSubjects) {
         this.curatedRailSubjects.set(saved.railSubjects);
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof HeroCurationConflictError) {
+        this.bindConflictDocument(error);
+        return;
+      }
       this.curatedEpisodeIds.set(previous);
       this.curatedUpdatedAt.set(previousUpdatedAt);
     }
@@ -518,10 +522,21 @@ export class HomepageApiComponent {
       if (saved.episodeIds) {
         this.curatedEpisodeIds.set(saved.episodeIds);
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof HeroCurationConflictError) {
+        this.bindConflictDocument(error);
+        return;
+      }
       this.curatedRailSubjects.set(previous);
       this.curatedUpdatedAt.set(previousUpdatedAt);
     }
+  }
+
+  /** Lost compare-and-swap: lists and updatedAt come from the follow-up GET. */
+  private bindConflictDocument(error: HeroCurationConflictError): void {
+    this.curatedEpisodeIds.set(error.current.episodeIds);
+    this.curatedRailSubjects.set(error.current.railSubjects);
+    this.curatedUpdatedAt.set(error.current.updatedAt);
   }
 
   private async fetchCuration(): Promise<void> {
