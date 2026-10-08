@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE, authInterceptor } from './auth.interceptor';
@@ -38,6 +38,18 @@ describe('HeroCurationService', () => {
     httpMock.verify();
   });
 
+  async function flushCommand(req: TestRequest): Promise<void> {
+    req.flush('', { status: 202, statusText: 'Accepted' });
+    await Promise.resolve();
+  }
+
+  function flushGet(body: object): void {
+    const read = httpMock.expectOne(url);
+    expect(read.request.method).toBe('GET');
+    expect(read.request.headers.get('Cache-Control')).toBe('no-cache');
+    read.flush(body);
+  }
+
   it('normalizes missing arrays on GET success', async () => {
     const pending = service.getHeroCuration();
     const req = httpMock.expectOne(url);
@@ -64,7 +76,7 @@ describe('HeroCurationService', () => {
     warn.mockRestore();
   });
 
-  it('PUTs with curate scope and normalizes the response', async () => {
+  it('PUTs with curate scope and loads the document with GET', async () => {
     const pending = service.setHomepageCuration({
       episodeIds: ['a'],
       railSubjects: ['Cult'],
@@ -73,7 +85,9 @@ describe('HeroCurationService', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ episodeIds: ['a'], railSubjects: ['Cult'] });
     expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
-    req.flush({ episodeIds: ['a'], railSubjects: ['Cult'], updatedAt: '2026-01-01' });
+    expect(req.request.responseType).toBe('text');
+    await flushCommand(req);
+    flushGet({ episodeIds: ['a'], railSubjects: ['Cult'], updatedAt: '2026-01-01' });
 
     await expect(pending).resolves.toEqual({
       episodeIds: ['a'],
@@ -86,7 +100,8 @@ describe('HeroCurationService', () => {
     const hero = service.setHeroCuration(['e1'], 't0');
     const heroReq = httpMock.expectOne(url);
     expect(heroReq.request.body).toEqual({ episodeIds: ['e1'], expectedUpdatedAt: 't0' });
-    heroReq.flush({ episodeIds: ['e1'], railSubjects: [] });
+    await flushCommand(heroReq);
+    flushGet({ episodeIds: ['e1'], railSubjects: [], updatedAt: 't1' });
     await hero;
 
     const rails = service.setRailSubjects(['Scientology'], 't1');
@@ -95,45 +110,49 @@ describe('HeroCurationService', () => {
       railSubjects: ['Scientology'],
       expectedUpdatedAt: 't1',
     });
-    railsReq.flush({ episodeIds: [], railSubjects: ['Scientology'] });
+    await flushCommand(railsReq);
+    flushGet({ episodeIds: [], railSubjects: ['Scientology'], updatedAt: 't2' });
     await rails;
   });
 
-  it('throws HeroCurationConflictError on 409', async () => {
+  it('throws HeroCurationConflictError from GET after an empty 409', async () => {
     const pending = service.setHeroCuration(['e1'], 'stale');
-    httpMock.expectOne(url).flush(
-      {
-        error: 'Conflict',
-        episodeIds: ['other'],
-        railSubjects: [],
-        updatedAt: 'newer',
-      },
-      { status: 409, statusText: 'Conflict' }
-    );
+    httpMock.expectOne(url).flush('', { status: 409, statusText: 'Conflict' });
+    await Promise.resolve();
+    flushGet({
+      episodeIds: ['from-get'],
+      railSubjects: ['day:0'],
+      updatedAt: 'from-get',
+    });
     await expect(pending).rejects.toMatchObject({
       name: 'HeroCurationConflictError',
       current: {
-        episodeIds: ['other'],
-        railSubjects: [],
-        updatedAt: 'newer',
+        episodeIds: ['from-get'],
+        railSubjects: ['day:0'],
+        updatedAt: 'from-get',
       },
     });
   });
 
-  it('treats 400 Conflict bodies as CAS conflicts', async () => {
+  it('treats 400 Conflict bodies as CAS conflicts and reloads with GET', async () => {
     const pending = service.setHeroCuration(['e1'], 'stale');
     httpMock.expectOne(url).flush(
-      {
+      JSON.stringify({
         error: 'Conflict',
-        episodeIds: ['other'],
-        railSubjects: [],
-        updatedAt: 'newer',
-      },
+        episodeIds: ['from-body'],
+        updatedAt: 'from-body',
+      }),
       { status: 400, statusText: 'Bad Request' }
     );
+    await Promise.resolve();
+    flushGet({
+      episodeIds: ['from-get'],
+      railSubjects: [],
+      updatedAt: 'from-get',
+    });
     await expect(pending).rejects.toMatchObject({
       name: 'HeroCurationConflictError',
-      current: { updatedAt: 'newer' },
+      current: { episodeIds: ['from-get'], updatedAt: 'from-get' },
     });
   });
 
@@ -144,7 +163,8 @@ describe('HeroCurationService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ episodeIds: ['e2'] });
     expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
-    req.flush({
+    await flushCommand(req);
+    flushGet({
       episodeIds: ['e2', 'e1'],
       railSubjects: ['day:0'],
       updatedAt: 't1',
@@ -163,7 +183,8 @@ describe('HeroCurationService', () => {
     const appendReq = httpMock.expectOne(episodesUrl);
     expect(appendReq.request.method).toBe('POST');
     expect(appendReq.request.body).toEqual({ episodeIds: ['e2'] });
-    appendReq.flush({
+    await flushCommand(appendReq);
+    flushGet({
       episodeIds: ['e2', 'e1'],
       railSubjects: [],
       updatedAt: 't1',
@@ -178,7 +199,8 @@ describe('HeroCurationService', () => {
     const deleteReq = httpMock.expectOne(episodesUrl);
     expect(deleteReq.request.method).toBe('DELETE');
     expect(deleteReq.request.body).toEqual({ episodeIds: ['e2'] });
-    deleteReq.flush({
+    await flushCommand(deleteReq);
+    flushGet({
       episodeIds: ['e1'],
       railSubjects: [],
       updatedAt: 't2',
@@ -196,7 +218,8 @@ describe('HeroCurationService', () => {
     const req = httpMock.expectOne(episodesUrl);
     expect(req.request.method).toBe('DELETE');
     expect(req.request.body).toEqual({ episodeIds: ['e1', 'e2'] });
-    req.flush({
+    await flushCommand(req);
+    flushGet({
       episodeIds: ['e0'],
       railSubjects: ['day:0'],
       updatedAt: 't3',
@@ -206,6 +229,18 @@ describe('HeroCurationService', () => {
       railSubjects: ['day:0'],
       updatedAt: 't3',
     });
+  });
+
+  it('rejects a 200 command body instead of binding it', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const pending = service.setHeroCuration(['e1']);
+    httpMock.expectOne(url).flush(
+      JSON.stringify({ episodeIds: ['from-body'], railSubjects: [], updatedAt: 'from-body' }),
+      { status: 200, statusText: 'OK' }
+    );
+    await expect(pending).rejects.toBeTruthy();
+    httpMock.expectNone(url);
+    err.mockRestore();
   });
 
   it('rethrows when PUT fails', async () => {

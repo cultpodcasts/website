@@ -10,7 +10,7 @@ import { EditPersonSendComponent } from './edit-person-send.component';
 describe('EditPersonSendComponent', () => {
   let fixture: ComponentFixture<EditPersonSendComponent>;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
-  let putPerson: ReturnType<typeof vi.fn>;
+  let createPerson: ReturnType<typeof vi.fn>;
   let getPerson: ReturnType<typeof vi.fn>;
 
   const created: Person = { id: 'person-from-get', name: 'Alpha Beta' };
@@ -18,7 +18,7 @@ describe('EditPersonSendComponent', () => {
 
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
-    putPerson = vi.fn();
+    createPerson = vi.fn();
     getPerson = vi.fn();
     await TestBed.configureTestingModule({
       imports: [EditPersonSendComponent],
@@ -28,7 +28,7 @@ describe('EditPersonSendComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: { create: true } },
         {
           provide: CurationSubmitService,
-          useValue: { putPerson, getPerson, postPerson: vi.fn() },
+          useValue: { createPerson, getPerson, patchPerson: vi.fn() },
         },
       ],
     }).compileComponents();
@@ -38,12 +38,12 @@ describe('EditPersonSendComponent', () => {
   });
 
   it('loads the created person with GET after 202 and ignores the command body', () => {
-    putPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
+    createPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
     getPerson.mockReturnValue(of(created));
 
     fixture.componentInstance.submit('', { id: '', name: 'Alpha Beta' }, true);
 
-    expect(putPerson).toHaveBeenCalledWith({ id: '', name: 'Alpha Beta' });
+    expect(createPerson).toHaveBeenCalledWith({ id: '', name: 'Alpha Beta' });
     expect(getPerson).toHaveBeenCalledWith('Alpha Beta');
     expect(dialogRef.close).toHaveBeenCalledWith({
       updated: true,
@@ -54,7 +54,7 @@ describe('EditPersonSendComponent', () => {
   });
 
   it('keeps the send dialog open when create is not 202', () => {
-    putPerson.mockReturnValue(of(new HttpResponse({ status: 200, body: commandBody })));
+    createPerson.mockReturnValue(of(new HttpResponse({ status: 200, body: commandBody })));
 
     fixture.componentInstance.submit('', { id: '', name: 'Alpha Beta' }, true);
 
@@ -65,7 +65,7 @@ describe('EditPersonSendComponent', () => {
   });
 
   it('keeps the send dialog open when GET fails', () => {
-    putPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
+    createPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: commandBody })));
     getPerson.mockReturnValue(throwError(() => ({ status: 500 })));
 
     fixture.componentInstance.submit('', { id: '', name: 'Alpha Beta' }, true);
@@ -76,7 +76,7 @@ describe('EditPersonSendComponent', () => {
   });
 
   it('keeps the send dialog open when GET returns no id', () => {
-    putPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: null })));
+    createPerson.mockReturnValue(of(new HttpResponse({ status: 202, body: null })));
     getPerson.mockReturnValue(of({ id: '', name: 'Alpha Beta' }));
 
     fixture.componentInstance.submit('', { id: '', name: 'Alpha Beta' }, true);

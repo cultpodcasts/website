@@ -16,7 +16,7 @@ import { SubjectEntity } from './subject-entity.interface';
 import { SubjectResponse } from './subject-response.interface';
 
 /**
- * Shared authenticated API posts used by spinner/send dialogs.
+ * Shared authenticated catalogue writes used by spinner/send dialogs.
  * Bearer token comes from authInterceptor.
  */
 @Injectable({ providedIn: 'root' })
@@ -27,25 +27,17 @@ export class CurationSubmitService {
     return new HttpContext().set(AUTH_SCOPE, 'curate');
   }
 
-  postEpisode(podcastId: string, episodeId: string, changes: EpisodePost) {
+  patchEpisode(podcastId: string, episodeId: string, changes: EpisodePost) {
     const url = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-    return this.http.post<EpisodeChangeResponse>(url, changes, {
+    return this.http.patch<EpisodeChangeResponse>(url, changes, {
       context: this.curateContext(),
       observe: 'response'
     });
   }
 
-  putPodcast(podcastId: string, body: AddPodcastPost | unknown) {
-    const url = new URL(`/podcast/${podcastId}`, environment.api).toString();
-    return this.http.put<PodcastPostResponse>(url, body, {
-      context: this.curateContext(),
-      observe: 'response'
-    });
-  }
-
-  postPodcast(podcastId: string, body: unknown) {
+  patchPodcast(podcastId: string, body: AddPodcastPost | unknown) {
     const url = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
-    return this.http.post<PodcastPostResponse>(url, body, {
+    return this.http.patch<PodcastPostResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -67,9 +59,9 @@ export class CurationSubmitService {
     });
   }
 
-  postTvShowEpisode(episodeId: string, body: TvShowEpisodeCanonicalChangeRequest) {
+  patchTvShowEpisode(episodeId: string, body: TvShowEpisodeCanonicalChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -82,17 +74,17 @@ export class CurationSubmitService {
     });
   }
 
-  putPerson(body: unknown): Observable<HttpResponse<null>> {
+  createPerson(body: unknown): Observable<HttpResponse<null>> {
     const url = new URL(`/person`, environment.api).toString();
-    return this.http.put<null>(url, body, {
+    return this.http.post<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
   }
 
-  postPerson(personId: string, body: unknown) {
+  patchPerson(personId: string, body: unknown) {
     const url = new URL(`/person/${personId}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -105,17 +97,17 @@ export class CurationSubmitService {
     });
   }
 
-  putSubject(body: SubjectEntity): Observable<HttpResponse<null>> {
+  createSubject(body: SubjectEntity): Observable<HttpResponse<null>> {
     const url = new URL(`/subject`, environment.api).toString();
-    return this.http.put<null>(url, body, {
+    return this.http.post<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
   }
 
-  postSubject(subjectId: string, body: unknown) {
+  patchSubject(subjectId: string, body: unknown) {
     const url = new URL(`/subject/${subjectId}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

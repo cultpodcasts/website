@@ -332,9 +332,9 @@ export class TitleCasingRulesComponent {
       }
 
       const postResp = await firstValueFrom(
-        this.http.post(
-          this.knownTermsUrl(UNIVERSAL_LANGUAGE),
-          term,
+        this.http.put(
+          this.knownTermUrl(UNIVERSAL_LANGUAGE, term.literal),
+          { pattern: term.pattern, options: term.options ?? null },
           { headers, observe: 'response' }
         )
       );
@@ -367,9 +367,13 @@ export class TitleCasingRulesComponent {
       const literalChanged = !!previous
         && previous.literal.toLowerCase() !== term.literal.toLowerCase();
 
-      // When renaming, POST the new literal first so a failed add cannot drop the old term.
+      // When renaming, PUT the new literal first so a failed save cannot drop the old term.
       const resp = await firstValueFrom(
-        this.http.post(this.knownTermsUrl(lang), term, { headers, observe: 'response' })
+        this.http.put(
+          this.knownTermUrl(lang, term.literal),
+          { pattern: term.pattern, options: term.options ?? null },
+          { headers, observe: 'response' }
+        )
       );
       this.requireAccepted(resp.status, 'Save known term failed.');
       await this.bindRulesFromGet(lang, headers);
@@ -587,13 +591,6 @@ export class TitleCasingRulesComponent {
   private lowerCaseTermUrl(code: string, term: string): string {
     return new URL(
       `/title-casing-rules/${encodeURIComponent(code)}/lower-case-terms/${encodeURIComponent(term)}`,
-      environment.api
-    ).toString();
-  }
-
-  private knownTermsUrl(code: string): string {
-    return new URL(
-      `/title-casing-rules/${encodeURIComponent(code)}/known-terms`,
       environment.api
     ).toString();
   }

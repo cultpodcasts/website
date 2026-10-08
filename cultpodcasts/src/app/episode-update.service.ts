@@ -18,7 +18,7 @@ export class EpisodeUpdateService {
 
   async updateEpisode(podcastId: string, episodeId: string, changes: EpisodePost): Promise<void> {
     const episodeEndpoint = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-    await firstValueFrom(this.http.post(episodeEndpoint, changes, { context: this.curateContext() }));
+    await firstValueFrom(this.http.patch(episodeEndpoint, changes, { context: this.curateContext() }));
   }
 
   async fetchEpisode(episodeId: string): Promise<ApiEpisode> {

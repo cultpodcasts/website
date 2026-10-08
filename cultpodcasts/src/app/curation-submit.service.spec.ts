@@ -72,26 +72,26 @@ describe('CurationSubmitService', () => {
     await personPending;
   });
 
-  it('PUTs /subject and /person as commands with an empty 202 body', async () => {
-    const subjectPending = firstValueFrom(service.putSubject({ name: 'Alpha Beta' }));
+  it('POSTs /subject and /person as commands with an empty 202 body', async () => {
+    const subjectPending = firstValueFrom(service.createSubject({ name: 'Alpha Beta' }));
     const subjectReq = httpMock.expectOne(new URL('/subject', environment.api).toString());
-    expect(subjectReq.request.method).toBe('PUT');
+    expect(subjectReq.request.method).toBe('POST');
     expect(subjectReq.request.context.get(AUTH_SCOPE)).toBe('curate');
     subjectReq.flush(null, { status: 202, statusText: 'Accepted' });
     const subjectResp = await subjectPending;
     expect(subjectResp.status).toBe(202);
     expect(subjectResp.body).toBeNull();
 
-    const personPending = firstValueFrom(service.putPerson({ name: 'Alpha Beta' }));
+    const personPending = firstValueFrom(service.createPerson({ name: 'Alpha Beta' }));
     const personReq = httpMock.expectOne(new URL('/person', environment.api).toString());
-    expect(personReq.request.method).toBe('PUT');
+    expect(personReq.request.method).toBe('POST');
     personReq.flush(null, { status: 202, statusText: 'Accepted' });
     const personResp = await personPending;
     expect(personResp.status).toBe(202);
     expect(personResp.body).toBeNull();
   });
 
-  it('GETs and POSTs /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
+  it('GETs and PATCHes /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
     const episodeId = '11111111-1111-1111-1111-111111111111';
     const getPending = firstValueFrom(service.getTvShowEpisode(episodeId));
     const getUrl = new URL('/tvshowepisode/' + episodeId, environment.api).toString();
@@ -103,13 +103,37 @@ describe('CurationSubmitService', () => {
     expect(dto.id).toBe(episodeId);
 
     const body = { imdb: 'https://www.imdb.com/title/tt0000001/' };
-    const postPending = firstValueFrom(service.postTvShowEpisode(episodeId, body));
+    const postPending = firstValueFrom(service.patchTvShowEpisode(episodeId, body));
     const postReq = httpMock.expectOne(getUrl);
-    expect(postReq.request.method).toBe('POST');
+    expect(postReq.request.method).toBe('PATCH');
     expect(postReq.request.body).toEqual(body);
     expect(postReq.request.context.get(AUTH_SCOPE)).toBe('curate');
     postReq.flush(null, { status: 202, statusText: 'Accepted' });
     const resp = await postPending;
     expect(resp.status).toBe(202);
+  });
+
+  it('PATCHes /episode/{podcastId}/{episodeId} and /podcast/{id}', async () => {
+    const podcastId = '11111111-1111-1111-1111-111111111111';
+    const episodeId = '22222222-2222-2222-2222-222222222222';
+    const episodeChanges = { guests: ['Guest Name'] };
+    const episodePending = firstValueFrom(service.patchEpisode(podcastId, episodeId, episodeChanges));
+    const episodeUrl = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
+    const episodeReq = httpMock.expectOne(episodeUrl);
+    expect(episodeReq.request.method).toBe('PATCH');
+    expect(episodeReq.request.body).toEqual(episodeChanges);
+    expect(episodeReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    episodeReq.flush(null, { status: 202, statusText: 'Accepted' });
+    expect((await episodePending).status).toBe(202);
+
+    const podcastChanges = { name: 'Renamed Show' };
+    const podcastPending = firstValueFrom(service.patchPodcast(podcastId, podcastChanges));
+    const podcastUrl = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
+    const podcastReq = httpMock.expectOne(podcastUrl);
+    expect(podcastReq.request.method).toBe('PATCH');
+    expect(podcastReq.request.body).toEqual(podcastChanges);
+    expect(podcastReq.request.context.get(AUTH_SCOPE)).toBe('curate');
+    podcastReq.flush(null, { status: 202, statusText: 'Accepted' });
+    expect((await podcastPending).status).toBe(202);
   });
 });

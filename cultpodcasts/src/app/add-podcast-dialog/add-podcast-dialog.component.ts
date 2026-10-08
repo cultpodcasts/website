@@ -307,7 +307,7 @@ export class AddPodcastDialogComponent {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set('Authorization', 'Bearer ' + token);
       const episodeEndpoint = new URL(`/episode/${podcastId}/${this.data.episodeId}`, environment.api).toString();
-      await firstValueFrom(this.http.post(episodeEndpoint, { lang: podcastLang }, { headers }));
+      await firstValueFrom(this.http.patch(episodeEndpoint, { lang: podcastLang }, { headers }));
     } catch (error) {
       console.error('Failed to apply podcast default language to episode.', error);
     }

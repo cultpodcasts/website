@@ -27,7 +27,7 @@ Feature / PR previews build on **`website`** (`*.website-83e.pages.dev`). `old-u
 
 ## Homepage curation (Curator role)
 
-Stored in the API worker `Curated` KV via `GET`/`PUT /hero-curation`:
+Stored in the API worker hero-curation Durable Object. `GET /hero-curation` returns the document. `PUT /hero-curation`, `POST /hero-curation/episodes`, and `DELETE /hero-curation/episodes` return 202 with an empty body; the client reloads with GET. A 409 is an empty compare-and-swap loss:
 
 | Field | UI |
 |-------|----|

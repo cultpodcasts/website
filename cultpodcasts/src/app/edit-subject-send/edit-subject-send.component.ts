@@ -35,7 +35,7 @@ export class EditSubjectSendComponent {
 
   public submit(subjectId: string, changes: SubjectEntity, create: boolean) {
     if (create) {
-      this.curationSubmit.putSubject(changes).subscribe({
+      this.curationSubmit.createSubject(changes).subscribe({
         next: resp => {
           if (resp.status != 202) {
             this.isSending.set(false);
@@ -69,7 +69,7 @@ export class EditSubjectSendComponent {
       return;
     }
 
-    this.curationSubmit.postSubject(subjectId, changes).subscribe({
+    this.curationSubmit.patchSubject(subjectId, changes).subscribe({
       next: () => this.dialogRef.close({ updated: true }),
       error: e => this.fail(e, false)
     });
