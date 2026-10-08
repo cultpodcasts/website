@@ -98,7 +98,7 @@ export class ProfileService {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
       const episodeEndpoint = new URL(`/bookmark/${episodeId}`, environment.api).toString();
-      var resp = await firstValueFrom(this.http.post<any>(episodeEndpoint, null, { headers: headers, observe: 'response' }));
+      var resp = await firstValueFrom(this.http.put<any>(episodeEndpoint, null, { headers: headers, observe: 'response' }));
       if (resp.status != 200) {
         console.error(resp);
       } else {

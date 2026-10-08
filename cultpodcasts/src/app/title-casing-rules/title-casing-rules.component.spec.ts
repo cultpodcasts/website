@@ -174,7 +174,7 @@ describe('TitleCasingRulesComponent', () => {
       'Dismiss',
       expect.objectContaining({ duration: 4000 })
     );
-    expect(httpMock.match(req => req.method === 'POST' || req.method === 'DELETE')).toEqual([]);
+    expect(httpMock.match(req => req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE')).toEqual([]);
 
     component.close();
     expect(dialogRef.close).toHaveBeenCalledWith({ saved: false });
@@ -260,11 +260,11 @@ describe('TitleCasingRulesComponent', () => {
     });
 
     const postUrl = new URL(
-      `/title-casing-rules/${encodeURIComponent('*')}/known-terms`,
+      `/title-casing-rules/${encodeURIComponent('*')}/known-terms/${encodeURIComponent('BBC')}`,
       environment.api
     ).toString();
     const post = await expectOneSoon(postUrl);
-    expect(post.request.method).toBe('POST');
+    expect(post.request.method).toBe('PUT');
     post.flush(
       {
         language: '*',

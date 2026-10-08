@@ -29,7 +29,7 @@ export class CurationSubmitService {
 
   postEpisode(podcastId: string, episodeId: string, changes: EpisodePost) {
     const url = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-    return this.http.post<EpisodeChangeResponse>(url, changes, {
+    return this.http.patch<EpisodeChangeResponse>(url, changes, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -37,7 +37,7 @@ export class CurationSubmitService {
 
   putPodcast(podcastId: string, body: AddPodcastPost | unknown) {
     const url = new URL(`/podcast/${podcastId}`, environment.api).toString();
-    return this.http.put<PodcastPostResponse>(url, body, {
+    return this.http.patch<PodcastPostResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -45,7 +45,7 @@ export class CurationSubmitService {
 
   postPodcast(podcastId: string, body: unknown) {
     const url = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
-    return this.http.post<PodcastPostResponse>(url, body, {
+    return this.http.patch<PodcastPostResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -69,7 +69,7 @@ export class CurationSubmitService {
 
   postTvShowEpisode(episodeId: string, body: TvShowEpisodeCanonicalChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -84,7 +84,7 @@ export class CurationSubmitService {
 
   putPerson(body: unknown): Observable<HttpResponse<null>> {
     const url = new URL(`/person`, environment.api).toString();
-    return this.http.put<null>(url, body, {
+    return this.http.post<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -92,7 +92,7 @@ export class CurationSubmitService {
 
   postPerson(personId: string, body: unknown) {
     const url = new URL(`/person/${personId}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -107,7 +107,7 @@ export class CurationSubmitService {
 
   putSubject(body: SubjectEntity): Observable<HttpResponse<null>> {
     const url = new URL(`/subject`, environment.api).toString();
-    return this.http.put<null>(url, body, {
+    return this.http.post<null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -115,7 +115,7 @@ export class CurationSubmitService {
 
   postSubject(subjectId: string, body: unknown) {
     const url = new URL(`/subject/${subjectId}`, environment.api).toString();
-    return this.http.post(url, body, {
+    return this.http.patch(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

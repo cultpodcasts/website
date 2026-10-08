@@ -72,10 +72,10 @@ describe('CurationSubmitService', () => {
     await personPending;
   });
 
-  it('PUTs /subject and /person as commands with an empty 202 body', async () => {
+  it('POSTs /subject and /person as commands with an empty 202 body', async () => {
     const subjectPending = firstValueFrom(service.putSubject({ name: 'Alpha Beta' }));
     const subjectReq = httpMock.expectOne(new URL('/subject', environment.api).toString());
-    expect(subjectReq.request.method).toBe('PUT');
+    expect(subjectReq.request.method).toBe('POST');
     expect(subjectReq.request.context.get(AUTH_SCOPE)).toBe('curate');
     subjectReq.flush(null, { status: 202, statusText: 'Accepted' });
     const subjectResp = await subjectPending;
@@ -84,14 +84,14 @@ describe('CurationSubmitService', () => {
 
     const personPending = firstValueFrom(service.putPerson({ name: 'Alpha Beta' }));
     const personReq = httpMock.expectOne(new URL('/person', environment.api).toString());
-    expect(personReq.request.method).toBe('PUT');
+    expect(personReq.request.method).toBe('POST');
     personReq.flush(null, { status: 202, statusText: 'Accepted' });
     const personResp = await personPending;
     expect(personResp.status).toBe(202);
     expect(personResp.body).toBeNull();
   });
 
-  it('GETs and POSTs /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
+  it('GETs and PATCHes /tvshowepisode/{id} with AUTH_SCOPE curate', async () => {
     const episodeId = '11111111-1111-1111-1111-111111111111';
     const getPending = firstValueFrom(service.getTvShowEpisode(episodeId));
     const getUrl = new URL('/tvshowepisode/' + episodeId, environment.api).toString();
@@ -105,7 +105,7 @@ describe('CurationSubmitService', () => {
     const body = { imdb: 'https://www.imdb.com/title/tt0000001/' };
     const postPending = firstValueFrom(service.postTvShowEpisode(episodeId, body));
     const postReq = httpMock.expectOne(getUrl);
-    expect(postReq.request.method).toBe('POST');
+    expect(postReq.request.method).toBe('PATCH');
     expect(postReq.request.body).toEqual(body);
     expect(postReq.request.context.get(AUTH_SCOPE)).toBe('curate');
     postReq.flush(null, { status: 202, statusText: 'Accepted' });
