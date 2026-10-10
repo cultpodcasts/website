@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 
 @Component({
@@ -10,6 +11,7 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     SubjectChipComponent,
   ],
   templateUrl: './subjects.component.html',
@@ -22,6 +24,10 @@ export class SubjectsComponent {
 
   @Input()
   showHidden: boolean = false;
+
+  /** Optional per-subject explanation (e.g. why it matched), shown as a tooltip. */
+  @Input()
+  reasons: Record<string, string> | null = null;
 
   @Input()
   stopPropagation: boolean = false;
@@ -43,6 +49,10 @@ export class SubjectsComponent {
     if (this.stopPropagation) {
       $event.stopPropagation();
     }
+  }
+
+  reasonFor(subject: string): string {
+    return this.reasons?.[subject] ?? '';
   }
 
   isSubjectLoading(subject: string): boolean {
