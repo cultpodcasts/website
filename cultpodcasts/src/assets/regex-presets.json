@@ -9,6 +9,10 @@
         {
             "name": "Remove description",
             "pattern": "^.*(?'body')$"
+        },
+        {
+            "name": "remove opening hash tags",
+            "pattern": "^\\s*(?:#[\\w-]+\\s*)+(?'body'.*)\\z"
         }
     ]
 }
