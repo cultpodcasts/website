@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "scripts": {
     "ng": "ng",
     "start": "node ./tools/start-local.mjs",
@@ -31,17 +31,17 @@
     "node": ">=22.22.3"
   },
   "dependencies": {
-    "@angular/cdk": "22.2.1",
-    "@angular/common": "22.2.1",
-    "@angular/compiler": "22.2.1",
-    "@angular/core": "22.2.1",
-    "@angular/forms": "22.2.1",
-    "@angular/material": "22.2.1",
-    "@angular/platform-browser": "22.2.1",
-    "@angular/platform-server": "22.2.1",
-    "@angular/router": "22.2.1",
-    "@angular/service-worker": "22.2.1",
-    "@angular/ssr": "22.2.1",
+    "@angular/cdk": "22.2.2",
+    "@angular/common": "22.2.2",
+    "@angular/compiler": "22.2.2",
+    "@angular/core": "22.2.2",
+    "@angular/forms": "22.2.2",
+    "@angular/material": "22.2.2",
+    "@angular/platform-browser": "22.2.2",
+    "@angular/platform-server": "22.2.2",
+    "@angular/router": "22.2.2",
+    "@angular/service-worker": "22.2.2",
+    "@angular/ssr": "22.2.2",
     "@auth0/auth0-angular": "^2.13.0",
     "country-flag-emoji-polyfill": "^0.1.10",
     "express": "^4.18.2",
@@ -49,18 +49,18 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular/build": "22.2.1",
-    "@angular/cli": "22.2.1",
-    "@angular/compiler-cli": "22.2.1",
-    "@cloudflare/workers-types": "5.20261001.1",
-    "@playwright/test": "1.63.0",
+    "@angular/build": "22.2.2",
+    "@angular/cli": "22.2.2",
+    "@angular/compiler-cli": "22.2.2",
+    "@cloudflare/workers-types": "5.20261010.1",
+    "@playwright/test": "1.64.0",
     "@types/express": "^4.17.17",
-    "@types/node": "26.6.4",
-    "baseline-browser-mapping": "2.11.27",
-    "happy-dom": "20.14.5",
+    "@types/node": "26.6.5",
+    "baseline-browser-mapping": "2.11.28",
+    "happy-dom": "20.14.6",
     "sass": "^1.105.1",
     "typescript": "6.0.3",
     "vitest": "^5.0.3",
-    "wrangler": "4.146.0"
+    "wrangler": "4.149.0"
   }
 }
