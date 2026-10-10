@@ -28,4 +28,26 @@ describe('subjectMatchReasons', () => {
 
     expect(reasons).toEqual({ Cults: 'podcast default subject' });
   });
+
+  it('labels an empty term on a title or description match by field, not as podcast default', () => {
+    expect(subjectMatchReasons([
+      { subject: 'A', term: '', source: 'Title' },
+      { subject: 'B', term: '', source: 'Description' },
+    ])).toEqual({ A: 'matched in title', B: 'matched in description' });
+  });
+
+  it('falls back to the lowercased source for an unknown future source', () => {
+    const reasons = subjectMatchReasons([
+      { subject: 'A', term: 'x', source: 'Transcript' as never },
+    ]);
+
+    expect(reasons?.['A']).toBe('matched "x" in transcript');
+  });
+
+  it('keeps prototype-named subjects as own keys only', () => {
+    const reasons = subjectMatchReasons([{ subject: 'constructor', term: 'x', source: 'Title' }])!;
+
+    expect(reasons['constructor']).toBe('matched "x" in title');
+    expect(reasons['toString']).toBeUndefined();
+  });
 });

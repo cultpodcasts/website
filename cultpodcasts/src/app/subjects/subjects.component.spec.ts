@@ -43,4 +43,25 @@ describe('SubjectsComponent reasons', () => {
     expect(fixture.nativeElement.querySelectorAll('.subject').length).toBe(1);
     expect(all.every(t => t.disabled)).toBe(true);
   });
+
+  it('makes only subjects with a reason keyboard-focusable', async () => {
+    fixture.componentRef.setInput('subjects', ['Scientology', 'NXIVM']);
+    fixture.componentRef.setInput('reasons', { Scientology: 'matched "Hubbard" in title' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const [withReason, withoutReason] = fixture.nativeElement.querySelectorAll('.subject');
+    expect(withReason.getAttribute('tabindex')).toBe('0');
+    expect(withoutReason.hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('does not take tooltip text from the object prototype for subjects like "toString"', async () => {
+    fixture.componentRef.setInput('subjects', ['toString', 'constructor']);
+    fixture.componentRef.setInput('reasons', {});
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(tooltips().every(t => t.disabled)).toBe(true);
+    expect(fixture.nativeElement.querySelector('.subject[tabindex]')).toBeNull();
+  });
 });

@@ -7,9 +7,13 @@ const sourceLabels: Record<SubjectMatch['source'], string> = {
 };
 
 function describe(match: SubjectMatch): string {
-    return match.source === 'PodcastDefault' || !match.term
-        ? 'podcast default subject'
-        : `matched "${match.term}" in ${sourceLabels[match.source] ?? match.source.toLowerCase()}`;
+    if (match.source === 'PodcastDefault') {
+        return 'podcast default subject';
+    }
+    const field = Object.hasOwn(sourceLabels, match.source)
+        ? sourceLabels[match.source]
+        : String(match.source).toLowerCase();
+    return match.term ? `matched "${match.term}" in ${field}` : `matched in ${field}`;
 }
 
 /**
@@ -33,5 +37,10 @@ export function subjectMatchReasons(
         }
         grouped.set(match.subject, reasons);
     }
-    return Object.fromEntries([...grouped].map(([subject, reasons]) => [subject, reasons.join('; ')]));
+    // Null prototype: subjects are free text, so names like "constructor" must not hit Object.prototype.
+    const result: Record<string, string> = Object.create(null);
+    for (const [subject, reasons] of grouped) {
+        result[subject] = reasons.join('; ');
+    }
+    return result;
 }

@@ -52,7 +52,7 @@ export class SubjectsComponent {
   }
 
   reasonFor(subject: string): string {
-    return this.reasons?.[subject] ?? '';
+    return this.reasons && Object.hasOwn(this.reasons, subject) ? this.reasons[subject] : '';
   }
 
   isSubjectLoading(subject: string): boolean {
