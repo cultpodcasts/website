@@ -202,7 +202,7 @@ const streamingIconSvgs = {
 };
 
 const assetEntries = assetIcons.map(([name, file]) => {
-  const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').trim();
+  const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').replace(/\r\n/g, '\n').trim();
   return `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}], // pragma: allowlist secret`;
 });
 
