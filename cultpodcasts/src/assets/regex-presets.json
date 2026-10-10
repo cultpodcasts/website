@@ -13,6 +13,10 @@
         {
             "name": "remove opening hash tags",
             "pattern": "^\\s*(?:#[\\w-]+\\s*)+(?'body'.*)\\z"
+        },
+        {
+            "name": "Remove first line (advert)",
+            "pattern": "^[^\\r\\n]*\\r?\\n\\s*(?'body'.*)\\z"
         }
     ]
 }
