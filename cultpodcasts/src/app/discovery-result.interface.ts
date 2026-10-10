@@ -1,4 +1,5 @@
 import { DiscoveryResultUrls } from "./discovery-result-urls.interface";
+import { SubjectMatch } from "./subject-match.interface";
 
 export interface DiscoveryResult {
     id: string;
@@ -10,6 +11,8 @@ export interface DiscoveryResult {
     released: Date;
     duration: string | undefined;
     subjects: string[];
+    /** Why each subject matched. null = not recorded (older results); [] = recorded, no evidence. */
+    subjectMatches?: SubjectMatch[] | null;
     youTubeViews: number | undefined;
     youTubeChannelMembers: number | undefined;
     containsSyntheticMedia: boolean | null | undefined;

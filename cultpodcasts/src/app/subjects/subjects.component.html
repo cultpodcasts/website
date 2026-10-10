@@ -1,6 +1,8 @@
 @for (subject of subjects; track subject) {
 @if (!subject.startsWith("_") || showHidden) {
-<div class="subject" [class.loading]="isSubjectLoading(subject)" (click)="stopPropagate($event)">
+<div class="subject" [class.loading]="isSubjectLoading(subject)" (click)="stopPropagate($event)"
+    [matTooltip]="reasonFor(subject)" [matTooltipDisabled]="!reasonFor(subject)"
+    [attr.tabindex]="reasonFor(subject) ? 0 : null">
     <app-subject-chip [subject]="subject" />
     @if (editable) {
     <button mat-icon-button type="button" class="remove-btn"

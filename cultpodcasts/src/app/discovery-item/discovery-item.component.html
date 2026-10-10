@@ -68,7 +68,7 @@
                 </div>
                 @if (item.subjects?.length) {
                 <div class="curator-card__subjects">
-                    <app-subjects [subjects]="item.subjects!" [showHidden]="true" [stopPropagation]="true"></app-subjects>
+                    <app-subjects [subjects]="item.subjects!" [reasons]="subjectReasons()" [showHidden]="true" [stopPropagation]="true"></app-subjects>
                 </div>
                 }
                 @if (item.guests?.length) {

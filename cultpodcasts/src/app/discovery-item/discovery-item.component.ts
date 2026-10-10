@@ -30,6 +30,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
+import { subjectMatchReasons } from '../subject-match-reasons';
 
 export interface DiscoveryScoreDisplay {
   label: string;
@@ -68,6 +69,9 @@ export class DiscoveryItemComponent implements OnInit {
   protected readonly submitted = signal(false);
   protected readonly resultsFilter = signal("");
   protected readonly errored = signal(false);
+  protected readonly subjectReasons = computed(() =>
+    subjectMatchReasons(this.result().subjectMatches)
+  );
   protected readonly scoreDisplay = computed(() =>
     this.buildScoreDisplay(this.result().acceptProbability)
   );
