@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  canEditReview, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
+  canEditReview, canRecover, inProgressLabel, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
   isSupervisorRole, mapToComments, commentsToMap, pickDiff, pickState, submissionStatusLabel
 } from './discovery-supervision';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
@@ -60,6 +60,20 @@ describe('discovery supervision helpers', () => {
     expect(canSeeSubmissions(['Curator'])).toBe(false);
   });
 
+  it('blocks every supervisor action while Applying and lets admins recover after 30 minutes', () => {
+    const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z',
+      itemOutcomes: [{ resultId: 'a', state: 'Failed', attempts: 1 }] });
+    expect(canEditReview(applying)).toBe(false);
+    expect(canRetry(applying)).toBe(false);
+    expect(canRelease(applying)).toBe(false);
+    expect(canRecover(applying, true, new Date('2026-10-11T10:31:00Z'))).toBe(true);
+    expect(canRecover(applying, true, new Date('2026-10-11T10:29:00Z'))).toBe(false);
+    expect(canRecover(applying, false, new Date('2026-10-11T12:00:00Z'))).toBe(false);
+    expect(canRecover(detail({ inProgressSince: '2026-10-11T08:00:00Z' }), true, new Date('2026-10-11T12:00:00Z'))).toBe(false);
+    expect(submissionStatusLabel('Applying')).toBe('In progress');
+    expect(inProgressLabel('Retry')).toBe('Retrying failed items');
+  });
+
   it('labels statuses', () => {
     expect(submissionStatusLabel('Pending')).toBe('Awaiting review');
     expect(submissionStatusLabel('PartiallyApplied')).toBe('Partially applied');
@@ -70,10 +84,14 @@ describe('discovery supervision helpers', () => {
       status: 409, error: { message: 'Reports not available', documentIds: ['d1', 'd2'] }
     }))).toBe('Reports not available 2 report(s) are already awaiting review or processed.');
     expect(describeSubmissionError(new HttpErrorResponse({
-      status: 400, error: { message: 'Unknown result ids', ids: ['x'] }
+      status: 400, error: { message: 'Unknown result ids', resultIds: ['x'] }
     }))).toBe('Unknown result ids (1 unknown result id(s)).');
     expect(describeSubmissionError(new HttpErrorResponse({ status: 409, error: null })))
       .toBe('Someone else changed this first. Reload and try again.');
+    expect(describeSubmissionError(new HttpErrorResponse({ status: 409, error: { message: 'Stale etag', documentIds: null } })))
+      .toBe('Stale etag');
+    expect(describeSubmissionError(new HttpErrorResponse({ status: 412, error: null })))
+      .toBe('This submission changed since you loaded it. Reload and try again.');
     expect(describeSubmissionError(new Error('x'))).toBe('Request failed.');
   });
 });

@@ -22,6 +22,15 @@
     @if (d.status === 'Released') {
     <p class="submission-header__meta">Released {{d.releasedAt | date:'d MMM yyyy H:mm'}}@if (d.releaseReason) {: {{d.releaseReason}}}</p>
     }
+    @if (d.status === 'Applying') {
+    <p class="in-progress" role="status">
+      {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
+      Review, apply, retry and release are unavailable until it finishes.
+    </p>
+    @if (recoverable()) {
+    <button matButton="outlined" type="button" class="recover" (click)="recover()" [disabled]="busy()">Recover stuck submission</button>
+    }
+    }
     @if (d.applyError) {
     <p class="supervision-error">{{d.applyError}}</p>
     }

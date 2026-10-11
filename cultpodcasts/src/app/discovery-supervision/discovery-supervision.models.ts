@@ -2,7 +2,7 @@ import { DiscoveryResult } from '../discovery-result.interface';
 import { SubmitDiscoveryItemResult } from '../submit-discovery-item-result.interface';
 
 /** Lifecycle of a supervised discovery submission (Api `discoverySubmissionStatusSchema`). */
-export type DiscoverySubmissionStatus = 'Pending' | 'Applied' | 'PartiallyApplied' | 'ApplyFailed' | 'Released';
+export type DiscoverySubmissionStatus = 'Pending' | 'Applying' | 'Applied' | 'PartiallyApplied' | 'ApplyFailed' | 'Released';
 
 /** A report held for supervisor review (GET /discovery-curation `awaitingReview`). */
 export interface DiscoveryAwaitingReview {
@@ -34,7 +34,12 @@ export interface DiscoverySubmissionSummary {
   abandonedCount?: number | null;
   releasedAt?: string | null;
   releaseReason?: string | null;
+  /** Command currently running (status Applying). */
+  inProgressOperation?: DiscoveryInProgressOperation | null;
+  inProgressSince?: string | null;
 }
+
+export type DiscoveryInProgressOperation = 'Apply' | 'Retry' | 'Release';
 
 export interface DiscoverySubmissionList {
   view: 'supervisor' | 'submitter';
@@ -93,6 +98,8 @@ export interface DiscoverySubmissionDetail {
   itemOutcomes?: DiscoverySubmissionItemOutcome[] | null;
   releasedAt?: string | null;
   releaseReason?: string | null;
+  inProgressOperation?: DiscoveryInProgressOperation | null;
+  inProgressSince?: string | null;
   reports: DiscoverySubmissionReport[];
   history: DiscoverySubmissionHistory[];
 }

@@ -26,6 +26,9 @@
           @if (s.itemCommentCount > 0) { · {{s.itemCommentCount}} item comment(s) }
         </span>
       </a>
+      @if (s.status === 'Applying') {
+      <p class="in-progress" role="status">{{inProgressLabel(s.inProgressOperation)}}@if (s.inProgressSince) { since {{s.inProgressSince | date:'d MMM yyyy H:mm'}}}</p>
+      }
       @if (s.reportComment) {
       <p class="submission-row__comment"><strong>Supervisor:</strong> {{s.reportComment}}</p>
       }

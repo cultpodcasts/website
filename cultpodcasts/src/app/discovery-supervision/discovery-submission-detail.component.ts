@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -15,7 +17,10 @@ import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome } from './discovery-supervision.models';
 import {
   PickState,
+  ADMIN_ROLE,
   canEditReview,
+  canRecover,
+  inProgressLabel,
   canRelease,
   canRetry,
   commentsToMap,
@@ -79,6 +84,13 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   protected readonly lockedEvent: Observable<boolean> = of(true);
   protected readonly unlockedEvent = new BehaviorSubject<boolean>(false);
 
+  private readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
+  protected readonly inProgressLabel = inProgressLabel;
+  protected readonly applying = computed(() => this.detail()?.status === 'Applying');
+  protected readonly recoverable = computed(() => {
+    const d = this.detail();
+    return !!d && canRecover(d, this.roles().includes(ADMIN_ROLE));
+  });
   protected readonly editable = computed(() => {
     const d = this.detail();
     return !!d && canEditReview(d);
@@ -221,6 +233,15 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     await this.run(async () => {
       const resp = await firstValueFrom(this.service.retry(d.id, d.etag, this.abandonIds()));
       this.snackBar.open(`Retry: ${submissionStatusLabel(resp.status)}`, 'Ok', { duration: 8000 });
+    });
+  }
+
+  async recover(): Promise<void> {
+    const d = this.detail();
+    if (!d || !this.recoverable()) return;
+    await this.run(async () => {
+      const resp = await firstValueFrom(this.service.recover(d.id, d.etag));
+      this.snackBar.open(`Recovered: ${submissionStatusLabel(resp.status)}`, 'Ok', { duration: 8000 });
     });
   }
 

@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionList, DiscoverySubmissionSummary } from './discovery-supervision.models';
-import { describeSubmissionError, submissionStatusLabel } from './discovery-supervision';
+import { describeSubmissionError, inProgressLabel, submissionStatusLabel } from './discovery-supervision';
 
 /**
  * Supervised-discovery submission list.
@@ -29,6 +29,7 @@ export class DiscoverySubmissionsListComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly list = signal<DiscoverySubmissionList | null>(null);
   protected readonly statusLabel = submissionStatusLabel;
+  protected readonly inProgressLabel = inProgressLabel;
 
   protected mode(): 'review' | 'mine' {
     return this.route.snapshot.data?.['mode'] === 'review' ? 'review' : 'mine';

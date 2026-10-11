@@ -71,6 +71,14 @@ export class DiscoverySubmissionsService {
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
+  /** Admin: recover a submission stuck in Applying. */
+  recover(id: string, etag: string): Observable<DiscoverySubmissionCommandResponse> {
+    return this.http.post<DiscoverySubmissionCommandResponse>(
+      this.url(`/discovery-submissions/${encodeURIComponent(id)}/recover`),
+      { etag },
+      { context: this.context('admin') });
+  }
+
   /** Admin: free a report stuck as PendingSupervisor with no live submission. */
   releaseReport(documentId: string, reason?: string): Observable<DiscoveryReportReleaseResponse> {
     return this.http.post<DiscoveryReportReleaseResponse>(

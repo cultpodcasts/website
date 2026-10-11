@@ -24,6 +24,9 @@
   color: var(--mat-sys-on-secondary-container, #1d192b)
   &[data-status="Pending"]
     background: var(--mat-sys-tertiary-container, #ffd8e4)
+  &[data-status="Applying"]
+    background: #fff3c4
+    color: #5c4400
   &[data-status="Applied"]
     background: #c8e6c9
     color: #1b5e20
@@ -126,3 +129,7 @@
 
 .history
   margin-top: 24px
+
+.in-progress
+  font-weight: 600
+  color: #5c4400

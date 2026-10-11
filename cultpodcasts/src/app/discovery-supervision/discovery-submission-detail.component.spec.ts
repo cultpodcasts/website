@@ -5,7 +5,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmissionDetailComponent } from './discovery-submission-detail.component';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
@@ -39,8 +40,9 @@ describe('DiscoverySubmissionDetailComponent', () => {
   let fixture: ComponentFixture<DiscoverySubmissionDetailComponent>;
   let service: {
     get: ReturnType<typeof vi.fn>; saveReview: ReturnType<typeof vi.fn>; apply: ReturnType<typeof vi.fn>;
-    retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>;
+    retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; recover: ReturnType<typeof vi.fn>;
   };
+  let roles: BehaviorSubject<string[]>;
 
   async function create(d: DiscoverySubmissionDetail) {
     service.get.mockReturnValue(of(d));
@@ -60,8 +62,10 @@ describe('DiscoverySubmissionDetailComponent', () => {
       saveReview: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Pending', etag: 'e2' })),
       apply: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] })),
       retry: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied' })),
-      release: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Released' }))
+      release: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Released' })),
+      recover: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'ApplyFailed' }))
     };
+    roles = new BehaviorSubject<string[]>(['Supervisor']);
     await TestBed.configureTestingModule({
       imports: [DiscoverySubmissionDetailComponent],
       providers: [
@@ -71,6 +75,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
         { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 's1' }), data: {} } } },
         { provide: DiscoverySubmissionsService, useValue: service },
+        { provide: AuthServiceWrapper, useValue: { roles } },
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } }
       ]
@@ -149,6 +154,29 @@ describe('DiscoverySubmissionDetailComponent', () => {
     button('retry').click();
     await fixture.whenStable();
     expect(service.retry).toHaveBeenCalledWith('s1', 'e1', [B]);
+  });
+
+  it('shows Applying as in progress with every action disabled; admins can recover once stale', async () => {
+    const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2020-01-01T00:00:00Z' });
+    await create(applying);
+    expect(el().querySelector('.in-progress')?.textContent).toContain('Applying');
+    for (const cls of ['apply', 'save-draft', 'retry', 'release', 'recover']) {
+      expect(button(cls)).toBeNull();
+    }
+    expect(el().querySelector('textarea')).toBeNull();
+
+    roles.next(['Admin']);
+    await create(applying);
+    button('recover').click();
+    await fixture.whenStable();
+    expect(service.recover).toHaveBeenCalledWith('s1', 'e1');
+  });
+
+  it('hides recover while an apply is recent', async () => {
+    roles.next(['Admin']);
+    await create(detail({ status: 'Applying', inProgressOperation: 'Retry', inProgressSince: new Date().toISOString() }));
+    expect(button('recover')).toBeNull();
+    expect(el().querySelector('.in-progress')?.textContent).toContain('Retrying failed items');
   });
 
   it('releases the lock with a reason', async () => {

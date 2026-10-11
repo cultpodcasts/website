@@ -32,6 +32,7 @@ export function canSeeSubmissions(roles: readonly string[]): boolean {
 
 const statusLabels: Record<DiscoverySubmissionStatus, string> = {
   Pending: 'Awaiting review',
+  Applying: 'In progress',
   Applied: 'Applied',
   PartiallyApplied: 'Partially applied',
   ApplyFailed: 'Apply failed',
@@ -119,14 +120,33 @@ export function canRelease(detail: DiscoverySubmissionDetail): boolean {
     && !anySucceeded;
 }
 
+/** An Applying submission older than this may be recovered by an admin. */
+export const RECOVER_AFTER_MS = 30 * 60 * 1000;
+
+/** Admin-only: recover a submission stuck in Applying for over 30 minutes. */
+export function canRecover(detail: DiscoverySubmissionDetail, isAdmin: boolean, now: Date = new Date()): boolean {
+  if (!isAdmin || detail.status !== 'Applying' || !detail.inProgressSince) return false;
+  const since = new Date(detail.inProgressSince).getTime();
+  return !Number.isNaN(since) && now.getTime() - since > RECOVER_AFTER_MS;
+}
+
+export function inProgressLabel(op: string | null | undefined): string {
+  switch (op) {
+    case 'Apply': return 'Applying';
+    case 'Retry': return 'Retrying failed items';
+    case 'Release': return 'Releasing';
+  }
+  return 'In progress';
+}
+
 /** Human message for a failed discovery / submission HTTP call. */
 export function describeSubmissionError(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
-    const body = error.error as { message?: string; ids?: string[]; documentIds?: string[] } | null;
+    const body = error.error as { message?: string; ids?: string[] | null; resultIds?: string[] | null; documentIds?: string[] | null } | null;
     const message = typeof body?.message === 'string' && body.message ? body.message : undefined;
     switch (error.status) {
       case 400: {
-        const ids = body?.ids ?? [];
+        const ids = body?.resultIds ?? body?.ids ?? [];
         const suffix = ids.length ? ` (${ids.length} unknown result id(s))` : '';
         return `${message ?? 'The request was rejected'}${suffix}.`;
       }
@@ -139,7 +159,7 @@ export function describeSubmissionError(error: unknown): string {
         const suffix = docs.length ? ` ${docs.length} report(s) are already awaiting review or processed.` : '';
         return `${message ?? 'Someone else changed this first. Reload and try again.'}${suffix}`;
       }
-      case 412:
+      case 412: // legacy; stale etag is now 409
         return 'This submission changed since you loaded it. Reload and try again.';
     }
     return message ?? `Request failed (${error.status || 'network error'}).`;
