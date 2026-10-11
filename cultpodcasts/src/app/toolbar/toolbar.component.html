@@ -32,6 +32,19 @@
             <span> ({{disoveryInfo()!.numberOfResults}})</span>
             }</span>
         </a>
+        @if (isSupervisor()) {
+        <a [routerLink]="['/discovery-review']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">rule</mat-icon>
+          <span>Discovery review@if (discoverySubmissions.pendingCount() > 0) {
+            <span class="review-count" [attr.aria-label]="discoverySubmissions.pendingCount() + ' awaiting review'"> ({{discoverySubmissions.pendingCount()}})</span>
+            }</span>
+        </a>
+        } @else if (isSupervisedCurator()) {
+        <a [routerLink]="['/discovery-submissions']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">pending_actions</mat-icon>
+          <span>My submissions</span>
+        </a>
+        }
         <button type="button" mat-menu-item [matMenuTriggerFor]="profileCurate">
           <mat-icon class="material-symbols-outlined">tune</mat-icon>
           <span>Curate</span>
@@ -110,7 +123,20 @@
           <span> ({{disoveryInfo()!.numberOfResults}})</span>
           }</span>
       </a>
-      <button type="button" mat-menu-item [matMenuTriggerFor]="moreCurate">
+      @if (isSupervisor()) {
+        <a [routerLink]="['/discovery-review']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">rule</mat-icon>
+          <span>Discovery review@if (discoverySubmissions.pendingCount() > 0) {
+            <span class="review-count" [attr.aria-label]="discoverySubmissions.pendingCount() + ' awaiting review'"> ({{discoverySubmissions.pendingCount()}})</span>
+            }</span>
+        </a>
+        } @else if (isSupervisedCurator()) {
+        <a [routerLink]="['/discovery-submissions']" mat-menu-item>
+          <mat-icon class="material-symbols-outlined">pending_actions</mat-icon>
+          <span>My submissions</span>
+        </a>
+        }
+        <button type="button" mat-menu-item [matMenuTriggerFor]="moreCurate">
         <mat-icon class="material-symbols-outlined">tune</mat-icon>
         <span>Curate</span>
       </button>

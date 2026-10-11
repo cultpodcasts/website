@@ -33,6 +33,9 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
 import { submitSeriesFromForm } from '../submit-series.util';
+import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-submissions.service';
+import { canSeeSubmissions, isSupervisorRole, SUPERVISED_CURATOR_ROLE } from '../discovery-supervision/discovery-supervision';
+import { EMPTY, catchError, switchMap, timer } from 'rxjs';
 import {
   runSendPodcastPrepareFlow,
   SendPodcastPrepareOutcome
@@ -72,8 +75,22 @@ export class ToolbarComponent {
    */
   private readonly authChromeReady = signal(false);
 
+  protected readonly discoverySubmissions = inject(DiscoverySubmissionsService);
+  protected readonly isSupervisor = () => isSupervisorRole(this.authRoles());
+  protected readonly isSupervisedCurator = () => this.authRoles().includes(SUPERVISED_CURATOR_ROLE) && !this.isSupervisor();
+  protected readonly canSeeSubmissions = () => canSeeSubmissions(this.authRoles());
+
   constructor() {
-    afterNextRender(() => this.authChromeReady.set(true));
+    afterNextRender(() => {
+      this.authChromeReady.set(true);
+      // Supervisor review-queue badge: poll pendingCount once a minute (browser only).
+      this.auth.roles.pipe(
+        switchMap(roles => isSupervisorRole(roles)
+          ? timer(0, 60000).pipe(switchMap(() => this.discoverySubmissions.list().pipe(catchError(() => EMPTY))))
+          : EMPTY),
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe();
+    });
   }
 
   /** True while Auth0 has a user, or we still have a cached avatar during session restore. */

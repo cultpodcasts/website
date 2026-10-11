@@ -1,0 +1,46 @@
+<section class="curator-page supervision-page">
+  <div class="progress">
+    @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+  </div>
+  <h2>{{title()}}</h2>
+  @if (error(); as message) {
+  <p role="alert" class="supervision-error">{{message}}</p>
+  <button matButton="filled" type="button" (click)="load()">Try again</button>
+  }
+  @if (list(); as l) {
+  @if (l.submissions.length === 0) {
+  <p class="supervision-empty">{{ l.view === 'supervisor' ? 'Nothing to review.' : 'You have no discovery submissions.' }}</p>
+  } @else {
+  <p class="supervision-count">{{l.pendingCount}} {{ l.view === 'supervisor' ? 'awaiting your review' : 'awaiting review' }}</p>
+  <ul class="submission-list">
+    @for (s of l.submissions; track s.id) {
+    <li class="submission-row" [attr.data-submission-id]="s.id" [attr.data-status]="s.status">
+      <a class="submission-row__link" [routerLink]="detailLink(s)">
+        <span class="status-chip" [attr.data-status]="s.status">{{statusLabel(s.status)}}</span>
+        <span class="submission-row__main">
+          Submitted {{s.submittedAt | date:'d MMM yyyy H:mm'}}
+          @if (l.view === 'supervisor') { by {{s.submitterSubject}} }
+          · {{s.discoveryResultsDocumentIds.length}} report(s) · {{s.submitterAcceptedCount}} picked
+          @if (s.itemCommentCount > 0) { · {{s.itemCommentCount}} item comment(s) }
+        </span>
+      </a>
+      @if (s.reportComment) {
+      <p class="submission-row__comment"><strong>Supervisor:</strong> {{s.reportComment}}</p>
+      }
+      @if ((s.failedCount ?? 0) > 0) {
+      <p class="submission-row__failures">{{s.failedCount}} item(s) failed to ingest@if (s.succeededCount) {, {{s.succeededCount}} succeeded}</p>
+      }
+      @if (s.applyError) {
+      <p class="submission-row__failures">{{s.applyError}}</p>
+      }
+      @if (s.status === 'Released' && s.releaseReason) {
+      <p class="submission-row__comment">Released: {{s.releaseReason}}</p>
+      }
+    </li>
+    }
+  </ul>
+  }
+  }
+</section>

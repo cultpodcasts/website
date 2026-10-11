@@ -1,4 +1,6 @@
 import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { DISCOVERY_SUBMIT_SCOPE, describeSubmissionError } from '../discovery-supervision/discovery-supervision';
+import { DiscoverySubmissionHeld } from '../discovery-supervision/discovery-supervision.models';
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -41,7 +43,7 @@ export class DiscoverySubmitComponent {
       var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
+          scope: DISCOVERY_SUBMIT_SCOPE
         }
       }));
       if (token === "") {
@@ -51,20 +53,28 @@ export class DiscoverySubmitComponent {
       headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending.set(true);
-      var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse>>(
-        this.http.post<SubmitDiscoveryResponse>(
+      var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
+        this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
           endpoint,
           { ids: data.documentIds, resultIds: data.resultIds },
           { headers: headers, observe: "response" }
         ));
-      if (resp.status === 200) {
+      if (resp.status === 202) {
+        // Supervised curator: held for supervisor review; nothing was ingested.
+        const held = resp.body as DiscoverySubmissionHeld | null;
         this.isSending.set(false);
-        const podcastEpisodeIds = (resp.body?.results ?? [])
+        this.submitState.update(s => ({ ...s, heldSubmissionId: held?.submissionId ?? '' }));
+        this.discoveryInfoSvc.getDiscoveryInfo();
+        this.close();
+      } else if (resp.status === 200) {
+        this.isSending.set(false);
+        const body = resp.body as SubmitDiscoveryResponse | null;
+        const podcastEpisodeIds = (body?.results ?? [])
           .filter(x => x.podcastId != null && x.episodeId != null)
           .map(x => `${x.podcastId!}/${x.episodeId!}`);
         const uniquePodcastEpisodeIds = [...new Set(podcastEpisodeIds)];
-        if (resp.body?.errorsOccurred) {
-          const erroredItems = resp.body?.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
+        if (body?.errorsOccurred) {
+          const erroredItems = body.results.filter(x => x.message == "Error").map(x => x.discoveryItemId);
           const containsAll = (arr1: string[], arr2: string[]) => arr2.every(arr2Item => arr1.includes(arr2Item))
           const sameMembers = (arr1: string[], arr2: string[]) => containsAll(arr1, arr2) && containsAll(arr2, arr1);
           const allErrored = sameMembers(erroredItems, data.resultIds);
@@ -86,7 +96,7 @@ export class DiscoverySubmitComponent {
       }
     } catch (error) {
       this.isSending.set(false);
-      this.submitState.update(s => ({ ...s, endpointError: true }));
+      this.submitState.update(s => ({ ...s, endpointError: true, errorMessage: describeSubmissionError(error) }));
     }
   }
 

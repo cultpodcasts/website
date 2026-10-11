@@ -35,7 +35,7 @@ export const appConfig: ApplicationConfig = {
       authorizationParams: {
         redirect_uri: authRedirectUri(environment.assetHost),
         audience: 'https://api.cultpodcasts.com/',
-        scope: 'openid profile email offline_access curate admin submit'
+        scope: 'openid profile email offline_access curate admin submit supervise curate:supervised'
       }
     }),
     { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },

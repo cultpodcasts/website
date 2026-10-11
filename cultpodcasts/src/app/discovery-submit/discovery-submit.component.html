@@ -8,6 +8,9 @@
     @if (submitState().endpointError) {
     <div>
         <p>Error submitting discovery</p>
+        @if (submitState().errorMessage) {
+        <p role="alert">{{submitState().errorMessage}}</p>
+        }
     </div>
 
     }

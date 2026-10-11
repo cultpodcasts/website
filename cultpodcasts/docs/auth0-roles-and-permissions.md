@@ -20,11 +20,13 @@ Roles and permissions are assigned in Auth0 (API `https://api.cultpodcasts.com/`
 | **Submitter** | `submit` | URL ingest only — no curation UI |
 | **Curator** | `curate` (often also `submit`) | Discovery, episode/podcast/subject curation |
 | **Admin** | `admin` (often also `curate`) | Operational tools — indexer, homepage publish, title rules, languages, discovery schedule, episode delete |
+| **SupervisedCurator** | `curate` **+** `curate:supervised` | Curator whose discovery submits are held for supervisor review (e.g. the AI discovery user). Also assign **Curator**. |
+| **Supervisor** | `supervise` | Reviews, reworks and applies supervised discovery submissions |
 
 The SPA requests all API scopes at login (`app.config.ts`):
 
 ```text
-openid profile email offline_access curate admin submit
+openid profile email offline_access curate admin submit supervise curate:supervised
 ```
 
 Per-request calls may request a **subset** via `getAccessTokenSilently({ authorizationParams: { scope } })` or the `AUTH_SCOPE` HTTP context token (`auth.interceptor.ts`).
@@ -131,7 +133,7 @@ Operators with destructive or infra-adjacent tools. Often also assigned **Curato
 
 ## OAuth scope request map (SPA)
 
-Default login scopes (`app.config.ts`): `openid profile email offline_access curate admin submit`.
+Default login scopes (`app.config.ts`): `openid profile email offline_access curate admin submit supervise curate:supervised`.
 
 Per-feature token requests:
 
@@ -219,6 +221,50 @@ Any authenticated user with a valid JWT `sub` may use bookmarks. Do not require 
 | **Lookup scope** | `submit-url-lookup.service.ts` — **`submit`**. |
 | **Podcast-page drop / attach** | **`Curator`** only (`canSubmitUrlForPodcast`). Attaching to the page’s catalogue row is curation — requires **`curate`**, not merely **`submit`**. Submitter gets general drop only (`shouldCallSubmitUrlLookup`). |
 | **Series picker** | **`Curator`** only (`showSubmitSeriesPicker`). |
+
+---
+
+## Supervised discovery (Oct 2026)
+
+Discovery submits from supervised curators (e.g. AI discovery users) are **held**, not applied. A report goes `Unprocessed` → `PendingSupervisor` → `Processed`; only a supervisor (or admin) can move a held report to `Processed` (ingest). Supervised users can still edit episodes/podcasts directly with `curate`.
+
+### New permissions (Auth0 API `https://api.cultpodcasts.com/`)
+
+| Permission | Purpose | Worker / Azure gate |
+|------------|---------|---------------------|
+| **`curate:supervised`** | Marks the caller as supervised: `POST /discovery-curation` returns **202** `{ submissionId, status: "Pending" }` and nothing is ingested. Also lets them list/view **their own** submissions. | Azure `DiscoveryCurationController` (hold path); Worker `GET /discovery-submissions[/:id]` |
+| **`supervise`** | Review queue, rework the accepted set, comment, apply, retry/abandon failed items, release a submission's lock. | Worker `GET /discovery-submissions[/:id]`, `PUT …/:id/review`, `POST …/:id/apply|retry|release` (also `admin`) |
+| **`admin`** (existing) | Everything `supervise` can do, plus `POST /discovery-reports/:id/release` for a report stuck as held with no live submission. | |
+
+Supervised users **must keep `curate`** (Worker gates `/discovery-curation` on `curate`).
+
+### New UI roles (ID token `https://api.cultpodcasts.com/roles`)
+
+| Role | Assign with | UI |
+|------|-------------|----|
+| **`SupervisedCurator`** | permissions `curate` + `curate:supervised`; also role **Curator** | `/discovery` (submit shows "Submitted for review"), `/discovery-submissions` (My submissions: status, supervisor report/item comments, ingest failures), toolbar "My submissions" |
+| **`Supervisor`** | permission `supervise` | `/discovery-review` queue (toolbar "Discovery review (n)" badge from `pendingCount`, polled each minute), `/discovery-review/:id` review page |
+| **`Admin`** (existing) | | Same as Supervisor; plus **Release** on held reports in the discovery page's "Awaiting supervisor review" list |
+
+Route guards: `/discovery-review[/:id]` → `["Supervisor","Admin"]`; `/discovery-submissions[/:id]` → `["SupervisedCurator","Supervisor","Admin"]`.
+
+### SPA scopes
+
+| Call | Scope requested |
+|------|-----------------|
+| `POST /discovery-curation` | `curate curate:supervised` (so a supervised token always carries `curate:supervised` even when only `scope` is checked) |
+| `GET /discovery-submissions[/:id]` | `curate:supervised supervise admin` |
+| review / apply / retry / release | `supervise admin` |
+| `POST /discovery-reports/:id/release` | `admin` |
+
+Existing sessions need an **interactive re-login** to pick up the new login scopes (refresh-token scope freeze).
+
+### Auth0 checklist for Jon
+
+1. API `https://api.cultpodcasts.com/` → Permissions: add **`curate:supervised`** and **`supervise`**.
+2. Roles: create **`SupervisedCurator`** (permissions `curate`, `curate:supervised`) and **`Supervisor`** (permission `supervise`). Make sure the roles Action/rule that writes `https://api.cultpodcasts.com/roles` includes them (it emits all assigned role names).
+3. Assign AI discovery users **Curator + SupervisedCurator**. Assign reviewers **Supervisor** (admins already qualify).
+4. Do this on both the production and preview Auth0 tenants/apps if they differ (`auth0-preview-hosts.md`).
 
 ---
 
