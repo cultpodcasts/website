@@ -1,0 +1,142 @@
+<section class="curator-page supervision-page">
+  <div class="progress">
+    @if (isLoading() || busy()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+  </div>
+  <a matButton [routerLink]="[backLink()]" class="back-link">← Back</a>
+
+  @if (error(); as message) {
+  <p role="alert" class="supervision-error">{{message}}</p>
+  }
+
+  @if (detail(); as d) {
+  <header class="submission-header">
+    <h2>Discovery submission</h2>
+    <span class="status-chip" [attr.data-status]="d.status">{{statusLabel(d.status)}}</span>
+    <p class="submission-header__meta">
+      Submitted {{d.submittedAt | date:'d MMM yyyy H:mm'}} by {{d.submitterSubject}}
+      @if (d.supervisorSubject) { · reviewed by {{d.supervisorSubject}} }
+      @if (d.appliedAt) { · applied {{d.appliedAt | date:'d MMM yyyy H:mm'}} }
+    </p>
+    @if (d.status === 'Released') {
+    <p class="submission-header__meta">Released {{d.releasedAt | date:'d MMM yyyy H:mm'}}@if (d.releaseReason) {: {{d.releaseReason}}}</p>
+    }
+    @if (d.status === 'Applying') {
+    <p class="in-progress" role="status">
+      {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
+      Review, apply, retry and release are unavailable until it finishes.
+    </p>
+    @if (recoverable()) {
+    <button matButton="outlined" type="button" class="recover" (click)="recover()" [disabled]="busy()">Recover stuck submission</button>
+    }
+    }
+    @if (d.applyError) {
+    <p class="supervision-error">{{d.applyError}}</p>
+    }
+  </header>
+
+  <section class="pick-summary" aria-label="Picks">
+    <span class="pick-legend" data-pick="kept">{{d.submitterAcceptedResultIds.length}} submitter pick(s)</span>
+    <span class="pick-legend" data-pick="final">{{finalIds().length}} final</span>
+    <span class="pick-legend" data-pick="added">+{{diff().added.length}} added</span>
+    <span class="pick-legend" data-pick="removed">−{{diff().removed.length}} removed</span>
+  </section>
+
+  <section class="report-comment">
+    @if (editable()) {
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Comment on the whole submission</mat-label>
+      <textarea matInput rows="3" maxlength="4000" [value]="reportComment()"
+        (input)="setReportComment($any($event.target).value)"></textarea>
+    </mat-form-field>
+    } @else if (d.reportComment) {
+    <p class="submission-comment"><strong>Supervisor comment:</strong> {{d.reportComment}}</p>
+    }
+  </section>
+
+  @if (editable()) {
+  <div class="supervision-actions">
+    <button matButton="tonal" type="button" (click)="resetToSubmitter()" [disabled]="busy()">Reset to submitter's picks</button>
+    <button matButton="tonal" type="button" class="save-draft" (click)="saveDraft()" [disabled]="busy() || !dirty()">Save draft</button>
+    <button matButton="filled" type="button" class="apply" (click)="apply()" [disabled]="busy()">Apply ({{finalIds().length}})</button>
+  </div>
+  }
+
+  @if (retryable()) {
+  <section class="retry-panel" aria-labelledby="retry-heading">
+    <h3 id="retry-heading">{{failed().length}} item(s) failed to ingest</h3>
+    <p>Retry re-ingests only the failed items. Tick any to abandon instead.</p>
+    <ul>
+      @for (o of failed(); track o.resultId) {
+      <li>
+        <mat-checkbox [checked]="abandonIds().includes(o.resultId)" (change)="toggleAbandon(o.resultId, $event.checked)">
+          Abandon
+        </mat-checkbox>
+        <span class="mono">{{o.resultId}}</span> — {{o.error ?? o.message ?? 'Failed'}} ({{o.attempts}} attempt(s))
+      </li>
+      }
+    </ul>
+    <button matButton="filled" type="button" class="retry" (click)="retry()" [disabled]="busy()">
+      @if (abandonIds().length === failed().length) { Abandon all } @else { Retry failed }
+    </button>
+  </section>
+  }
+
+  @if (releasable()) {
+  <section class="release-panel" aria-labelledby="release-heading">
+    <h3 id="release-heading">Release lock</h3>
+    <p>Puts the reports back to Unprocessed for anyone to curate. Nothing is ingested.</p>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Reason</mat-label>
+      <input matInput maxlength="500" [value]="releaseReason()" (input)="releaseReason.set($any($event.target).value)">
+    </mat-form-field>
+    <button matButton="outlined" type="button" class="release" (click)="release()" [disabled]="busy()">Release</button>
+  </section>
+  }
+
+  <div class="supervision-filter">
+    <mat-button-toggle-group [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
+      <mat-button-toggle value="all">All results</mat-button-toggle>
+      <mat-button-toggle value="picked">Picked, changed or commented</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="curator-card-grid">
+    @for (row of rows(); track row.result.id) {
+    <div class="review-item" [attr.data-pick]="row.pick" [attr.data-result-id]="row.result.id">
+      <div class="review-item__pick" [attr.data-pick]="row.pick">{{pickLabels[row.pick]}}</div>
+      <discovery-item [result]="row.result" [selectedIds]="finalIds()" (changeState)="toggle($event)"
+        [selectedEvent]="editable() ? unlockedEvent : lockedEvent"></discovery-item>
+      @if (row.outcome; as o) {
+      <div class="review-item__outcome" [attr.data-state]="o.state" [attr.role]="o.state === 'Failed' ? 'status' : null">
+        {{o.state}}@if (o.message) { · {{o.message}}}@if (o.error) { — {{o.error}}}
+      </div>
+      }
+      @if (editable()) {
+      <mat-form-field appearance="outline" class="full-width review-item__comment">
+        <mat-label>Comment on this item</mat-label>
+        <textarea matInput rows="2" maxlength="4000" [value]="itemComments()[row.result.id] ?? ''"
+          (input)="setItemComment(row.result.id, $any($event.target).value)"></textarea>
+      </mat-form-field>
+      } @else if (itemComments()[row.result.id]) {
+      <p class="review-item__comment-text"><strong>Supervisor:</strong> {{itemComments()[row.result.id]}}</p>
+      }
+    </div>
+    } @empty {
+    <p>No results to show.</p>
+    }
+  </div>
+
+  @if (d.history.length) {
+  <details class="history">
+    <summary>History</summary>
+    <ol>
+      @for (h of d.history; track $index) {
+      <li>{{h.at | date:'d MMM yyyy H:mm'}} — {{h.action}}@if (h.actorSubject) { ({{h.actorSubject}})}</li>
+      }
+    </ol>
+  </details>
+  }
+  }
+</section>

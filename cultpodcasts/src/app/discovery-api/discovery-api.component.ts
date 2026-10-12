@@ -19,6 +19,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SiteService } from '../site.service';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { DiscoveryAwaitingReview } from '../discovery-supervision/discovery-supervision.models';
+import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-submissions.service';
+import { ADMIN_ROLE, canSeeSubmissions, describeSubmissionError, isSupervisorRole } from '../discovery-supervision/discovery-supervision';
 import {
   armCuratorSnapAfterScroll,
   observeCuratorSnapToolbar,
@@ -37,7 +42,8 @@ const autoHiddenThreshold = 0.05;
     MatButtonToggleModule,
     MatButtonModule,
     MatBadgeModule,
-    DatePipe
+    DatePipe,
+    RouterLink
   ],
   templateUrl: './discovery-api.component.html',
   styleUrl: './discovery-api.component.sass',
@@ -62,6 +68,15 @@ export class DiscoveryApiComponent implements AfterViewInit {
   erroredSubject: Subject<string[]> = new Subject<string[]>();
   resultsFilter = signal<string>("all");
   isInError = signal<boolean>(false);
+  /** Reports held for supervisor review — not curatable here. */
+  awaitingReview = signal<DiscoveryAwaitingReview[]>([]);
+  releasingReportId = signal<string | null>(null);
+
+  private readonly submissions = inject(DiscoverySubmissionsService);
+  protected readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
+  protected readonly isAdmin = () => this.roles().includes(ADMIN_ROLE);
+  protected readonly isSupervisor = () => isSupervisorRole(this.roles());
+  protected readonly canSeeSubmissions = () => canSeeSubmissions(this.roles());
 
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -129,6 +144,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
             this.results.set(resp.results.map(x => this.normalizeResult(x)));
             this.documentIds.set(resp.ids);
             this.hiddenCount.set(resp.hiddenCount ?? 0);
+            this.awaitingReview.set(resp.awaitingReview ?? []);
             const dates = resp.results.map(x => x.released).filter(x => x.getTime).map(x => x.getTime());
             if (dates.length > 0) {
               this.minDate.set(new Date(Math.min(...dates)));
@@ -237,6 +253,22 @@ export class DiscoveryApiComponent implements AfterViewInit {
     dialog
       .afterClosed()
       .subscribe(async result => {
+        if (result?.heldSubmissionId !== undefined) {
+          const submissionId = result.heldSubmissionId;
+          const ref = this.snackBar.open("Submitted for review. A supervisor will check it before anything is added.", submissionId ? "View" : "Ok", { duration: 10000 });
+          if (submissionId) {
+            ref.onAction().subscribe(() => this.router.navigate(["/discovery-submissions", submissionId]));
+          }
+          this.displaySave.set(false);
+          this.submitted.set(true);
+          this.submittedSubject.next(true);
+          this.selectedIds.set([]);
+          this.loadResults(false);
+          return;
+        }
+        if (result?.endpointError && result.errorMessage) {
+          this.snackBar.open(result.errorMessage, "Ok", { duration: 15000 });
+        }
         if (result && !result.endpointError && !result.allErrored) {
           let snackBarMessage = "Discovery Sent!"
           let snackBarDuration = 10000;
@@ -308,6 +340,43 @@ export class DiscoveryApiComponent implements AfterViewInit {
     }
     this.resultsFilter.set(nextFilter);
     this.resultsFilterSubject.next(this.resultsFilter());
+  }
+
+  /** Admin: free a report held with no live submission behind it. */
+  releaseAwaitingReport(report: DiscoveryAwaitingReview) {
+    const dialogRef = this.dialog.open(ConfirmComponent, {
+      data: {
+        question: `Release this held report back to Unprocessed? Use only when no submission is holding it. Nothing will be ingested.`,
+        title: 'Release held report'
+      },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.result !== true) {
+        return;
+      }
+      this.releasingReportId.set(report.id);
+      this.submissions.releaseReport(report.id, 'Released from discovery page by admin').subscribe({
+        next: resp => {
+          this.releasingReportId.set(null);
+          if (resp.status === 'Released') {
+            this.snackBar.open('Report released', 'Ok', { duration: 5000 });
+            this.loadResults(this.includeHidden());
+          } else {
+            this.snackBar.open(resp.message ?? `Not released: ${resp.status}`, 'Ok', { duration: 10000 });
+          }
+        },
+        error: e => {
+          this.releasingReportId.set(null);
+          const body = (e as { error?: { status?: string; submissionIds?: string[] } }).error;
+          const live = body?.submissionIds?.length
+            ? ` It is still held by ${body.submissionIds.length} live submission(s); release the submission from the review page instead.`
+            : '';
+          this.snackBar.open(describeSubmissionError(e) + live, 'Ok', { duration: 15000 });
+        }
+      });
+    });
   }
 
   showHiddenReview() {

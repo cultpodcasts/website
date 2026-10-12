@@ -43,6 +43,29 @@
     }
   </div>
 
+  @if (!isLoading() && !isInError() && awaitingReview().length > 0) {
+  <section class="awaiting-review" aria-labelledby="awaiting-review-heading">
+    <h3 id="awaiting-review-heading">Awaiting supervisor review</h3>
+    <p class="awaiting-review__note">These reports were submitted for review and can't be curated until a supervisor applies or releases them.</p>
+    <ul class="awaiting-review__list">
+      @for (report of awaitingReview(); track report.id) {
+      <li class="awaiting-review__item" [attr.data-report-id]="report.id">
+        <span class="awaiting-review__badge">Awaiting review</span>
+        <span>Discovery from {{report.discoveryBegan | date:'d MMM yyyy H:mm'}} · {{report.resultCount}} result(s)</span>
+        @if (isAdmin()) {
+        <button matButton type="button" class="awaiting-review__release" (click)="releaseAwaitingReport(report)"
+          [disabled]="releasingReportId() === report.id" [attr.aria-label]="'Release held report from ' + (report.discoveryBegan | date:'d MMM yyyy H:mm')">Release</button>
+        }
+      </li>
+      }
+    </ul>
+    @if (isSupervisor()) {
+    <a matButton="tonal" [routerLink]="['/discovery-review']">Open review queue</a>
+    } @else if (canSeeSubmissions()) {
+    <a matButton="tonal" [routerLink]="['/discovery-submissions']">My submissions</a>
+    }
+  </section>
+  }
   @if (!isLoading() && !isInError() && visibleResults().length === 0 && hiddenCount() > 0 && resultsFilter() !== 'hidden') {
   <h3>All pending items are auto-hidden</h3>
   <p class="hidden-cta">Review {{hiddenCount()}} low-confidence result(s) before closing the queue.</p>
