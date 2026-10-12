@@ -52,10 +52,10 @@ describe('DiscoverySubmissionsService', () => {
     service.release('s1', 'e', '  wrong batch ').subscribe();
     expect(http.expectOne(api('/discovery-submissions/s1/release')).request.body).toEqual({ etag: 'e', reason: 'wrong batch' });
 
-    service.recover('s1', 'e').subscribe();
-    const recover = http.expectOne(api('/discovery-submissions/s1/recover'));
-    expect(recover.request.context.get(AUTH_SCOPE)).toBe('admin');
-    expect(recover.request.body).toEqual({ etag: 'e' });
+    service.changeState('s1', 'Pending', 'e', ' crashed ').subscribe();
+    const state = http.expectOne(api('/discovery-submissions/s1/state'));
+    expect(state.request.context.get(AUTH_SCOPE)).toBe('admin');
+    expect(state.request.body).toEqual({ status: 'Pending', etag: 'e', reason: 'crashed' });
 
     service.releaseReport('d1').subscribe();
     const admin = http.expectOne(api('/discovery-reports/d1/release'));

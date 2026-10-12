@@ -27,9 +27,6 @@
       {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
       Review, apply, retry and release are unavailable until it finishes.
     </p>
-    @if (recoverable()) {
-    <button matButton="outlined" type="button" class="recover" (click)="recover()" [disabled]="busy()">Recover stuck submission</button>
-    }
     }
     @if (d.applyError) {
     <p class="supervision-error">{{d.applyError}}</p>
@@ -95,6 +92,26 @@
   </section>
   }
 
+  @if (isAdmin()) {
+  <section class="state-panel" aria-labelledby="state-heading">
+    <h3 id="state-heading">Change state (admin)</h3>
+    <p>Sets the submission status by hand. Reports and item outcomes are not changed.</p>
+    <mat-form-field appearance="outline">
+      <mat-label>New status</mat-label>
+      <mat-select class="state-select" [value]="newStatus()" (selectionChange)="newStatus.set($event.value)">
+        @for (s of settableStatuses; track s) {
+        <mat-option [value]="s">{{s}}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Reason (optional)</mat-label>
+      <input matInput class="state-reason" maxlength="4000" [value]="stateReason()" (input)="stateReason.set($any($event.target).value)">
+    </mat-form-field>
+    <button matButton="outlined" type="button" class="change-state" (click)="changeState()" [disabled]="busy() || !newStatus()">Change state</button>
+  </section>
+  }
+
   <div class="supervision-filter">
     <mat-button-toggle-group [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
       <mat-button-toggle value="all">All results</mat-button-toggle>
@@ -133,7 +150,7 @@
     <summary>History</summary>
     <ol>
       @for (h of d.history; track $index) {
-      <li>{{h.at | date:'d MMM yyyy H:mm'}} — {{h.action}}@if (h.actorSubject) { ({{h.actorSubject}})}</li>
+      <li>{{h.at | date:'d MMM yyyy H:mm'}} — {{historyText(h)}}@if (h.actorSubject) { ({{h.actorSubject}})}</li>
       }
     </ol>
   </details>

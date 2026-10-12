@@ -76,6 +76,10 @@ export interface DiscoverySubmissionHistory {
   at: string;
   actorSubject?: string | null;
   action: string;
+  /** StateChanged only. */
+  fromStatus?: DiscoverySubmissionStatus | null;
+  toStatus?: DiscoverySubmissionStatus | null;
+  reason?: string | null;
 }
 
 export interface DiscoverySubmissionDetail {
