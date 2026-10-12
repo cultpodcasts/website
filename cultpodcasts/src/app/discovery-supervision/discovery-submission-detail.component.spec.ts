@@ -165,6 +165,14 @@ describe('DiscoverySubmissionDetailComponent', () => {
       expect(button(cls)).toBeNull();
     }
     expect(el().querySelector('textarea')).toBeNull();
+    expect(el().querySelector('.in-progress-admin-note')).toBeNull();
+  });
+
+  it('points admins at Change state while Applying', async () => {
+    roles.next(['Admin']);
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z' }));
+    expect(el().querySelector('.in-progress-admin-note')?.textContent).toContain('Change state');
+    expect(button('change-state')).not.toBeNull();
   });
 
   it('lets an admin change state after confirming, then reloads', async () => {

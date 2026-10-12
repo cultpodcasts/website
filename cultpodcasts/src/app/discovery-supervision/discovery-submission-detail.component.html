@@ -27,6 +27,9 @@
       {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
       Review, apply, retry and release are unavailable until it finishes.
     </p>
+    @if (isAdmin()) {
+    <p class="in-progress-admin-note">If it looks stuck, an admin can use the <strong>Change state</strong> panel below to set the status by hand.</p>
+    }
     }
     @if (d.applyError) {
     <p class="supervision-error">{{d.applyError}}</p>
