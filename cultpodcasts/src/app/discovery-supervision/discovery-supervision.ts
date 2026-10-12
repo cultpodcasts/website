@@ -142,11 +142,11 @@ export function inProgressLabel(op: string | null | undefined): string {
 /** Human message for a failed discovery / submission HTTP call. */
 export function describeSubmissionError(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
-    const body = error.error as { message?: string; ids?: string[] | null; resultIds?: string[] | null; documentIds?: string[] | null } | null;
+    const body = error.error as { message?: string; resultIds?: string[] | null; documentIds?: string[] | null } | null;
     const message = typeof body?.message === 'string' && body.message ? body.message : undefined;
     switch (error.status) {
       case 400: {
-        const ids = body?.resultIds ?? body?.ids ?? [];
+        const ids = body?.resultIds ?? [];
         const suffix = ids.length ? ` (${ids.length} unknown result id(s))` : '';
         return `${message ?? 'The request was rejected'}${suffix}.`;
       }
@@ -159,8 +159,6 @@ export function describeSubmissionError(error: unknown): string {
         const suffix = docs.length ? ` ${docs.length} report(s) are already awaiting review or processed.` : '';
         return `${message ?? 'Someone else changed this first. Reload and try again.'}${suffix}`;
       }
-      case 412: // legacy; stale etag is now 409
-        return 'This submission changed since you loaded it. Reload and try again.';
     }
     return message ?? `Request failed (${error.status || 'network error'}).`;
   }

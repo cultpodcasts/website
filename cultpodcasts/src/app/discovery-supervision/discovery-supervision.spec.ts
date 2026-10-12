@@ -90,8 +90,6 @@ describe('discovery supervision helpers', () => {
       .toBe('Someone else changed this first. Reload and try again.');
     expect(describeSubmissionError(new HttpErrorResponse({ status: 409, error: { message: 'Stale etag', documentIds: null } })))
       .toBe('Stale etag');
-    expect(describeSubmissionError(new HttpErrorResponse({ status: 412, error: null })))
-      .toBe('This submission changed since you loaded it. Reload and try again.');
     expect(describeSubmissionError(new Error('x'))).toBe('Request failed.');
   });
 });

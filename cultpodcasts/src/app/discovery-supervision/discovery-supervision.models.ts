@@ -118,7 +118,6 @@ export interface DiscoverySubmissionCommandResponse {
   addedBySupervisorResultIds?: string[] | null;
   removedBySupervisorResultIds?: string[] | null;
   message?: string | null;
-  ids?: string[] | null;
   outcome?: { message: string; errorsOccurred: boolean; results: SubmitDiscoveryItemResult[] } | null;
   itemOutcomes?: DiscoverySubmissionItemOutcome[] | null;
 }
