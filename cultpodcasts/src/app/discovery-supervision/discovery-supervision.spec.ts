@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  canEditReview, canRecover, inProgressLabel, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
+  canEditReview, ADMIN_SETTABLE_STATUSES, historyText, inProgressLabel, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
   isSupervisorRole, mapToComments, commentsToMap, pickDiff, pickState, submissionStatusLabel
 } from './discovery-supervision';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
@@ -60,18 +60,26 @@ describe('discovery supervision helpers', () => {
     expect(canSeeSubmissions(['Curator'])).toBe(false);
   });
 
-  it('blocks every supervisor action while Applying and lets admins recover after 30 minutes', () => {
+  it('blocks every supervisor action while Applying ', () => {
     const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z',
       itemOutcomes: [{ resultId: 'a', state: 'Failed', attempts: 1 }] });
     expect(canEditReview(applying)).toBe(false);
     expect(canRetry(applying)).toBe(false);
     expect(canRelease(applying)).toBe(false);
-    expect(canRecover(applying, true, new Date('2026-10-11T10:31:00Z'))).toBe(true);
-    expect(canRecover(applying, true, new Date('2026-10-11T10:29:00Z'))).toBe(false);
-    expect(canRecover(applying, false, new Date('2026-10-11T12:00:00Z'))).toBe(false);
-    expect(canRecover(detail({ inProgressSince: '2026-10-11T08:00:00Z' }), true, new Date('2026-10-11T12:00:00Z'))).toBe(false);
     expect(submissionStatusLabel('Applying')).toBe('In progress');
     expect(inProgressLabel('Retry')).toBe('Retrying failed items');
+  });
+
+  it('never offers Applying as an admin-settable status', () => {
+    expect([...ADMIN_SETTABLE_STATUSES]).toEqual(['Pending', 'Applied', 'ApplyFailed', 'PartiallyApplied', 'Released']);
+  });
+
+  it('describes StateChanged history with from → to and the reason', () => {
+    expect(historyText({ action: 'StateChanged', fromStatus: 'Applying', toStatus: 'Pending', reason: 'crashed' }))
+      .toBe('State changed Applying → Pending: crashed');
+    expect(historyText({ action: 'StateChanged', fromStatus: 'Applying', toStatus: 'Released', reason: null }))
+      .toBe('State changed Applying → Released');
+    expect(historyText({ action: 'Applied' })).toBe('Applied');
   });
 
   it('labels statuses', () => {

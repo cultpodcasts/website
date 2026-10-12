@@ -8,7 +8,8 @@ import {
   DiscoverySubmissionCommandResponse,
   DiscoverySubmissionDetail,
   DiscoverySubmissionList,
-  DiscoverySubmissionReviewRequest
+  DiscoverySubmissionReviewRequest,
+  DiscoverySubmissionStatus
 } from './discovery-supervision.models';
 import { DISCOVERY_SUBMISSIONS_SCOPE, DISCOVERY_SUPERVISE_SCOPE } from './discovery-supervision';
 
@@ -71,11 +72,11 @@ export class DiscoverySubmissionsService {
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  /** Admin: recover a submission stuck in Applying. */
-  recover(id: string, etag: string): Observable<DiscoverySubmissionCommandResponse> {
+  /** Admin override: set the submission status by hand (reports/outcomes unchanged). */
+  changeState(id: string, status: DiscoverySubmissionStatus, etag: string, reason?: string): Observable<DiscoverySubmissionCommandResponse> {
     return this.http.post<DiscoverySubmissionCommandResponse>(
-      this.url(`/discovery-submissions/${encodeURIComponent(id)}/recover`),
-      { etag },
+      this.url(`/discovery-submissions/${encodeURIComponent(id)}/state`),
+      { status, etag, reason: reason?.trim() || null },
       { context: this.context('admin') });
   }
 

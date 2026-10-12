@@ -120,14 +120,16 @@ export function canRelease(detail: DiscoverySubmissionDetail): boolean {
     && !anySucceeded;
 }
 
-/** An Applying submission older than this may be recovered by an admin. */
-export const RECOVER_AFTER_MS = 30 * 60 * 1000;
+/** Statuses an admin may set via Change state (Jon: never Applying). */
+export const ADMIN_SETTABLE_STATUSES: readonly DiscoverySubmissionStatus[] = ['Pending', 'Applied', 'ApplyFailed', 'PartiallyApplied', 'Released'];
 
-/** Admin-only: recover a submission stuck in Applying for over 30 minutes. */
-export function canRecover(detail: DiscoverySubmissionDetail, isAdmin: boolean, now: Date = new Date()): boolean {
-  if (!isAdmin || detail.status !== 'Applying' || !detail.inProgressSince) return false;
-  const since = new Date(detail.inProgressSince).getTime();
-  return !Number.isNaN(since) && now.getTime() - since > RECOVER_AFTER_MS;
+/** History line text; StateChanged shows `from → to` and the reason. */
+export function historyText(h: { action: string; fromStatus?: string | null; toStatus?: string | null; reason?: string | null }): string {
+  if (h.action === 'StateChanged') {
+    const change = `State changed ${h.fromStatus ?? '?'} → ${h.toStatus ?? '?'}`;
+    return h.reason ? `${change}: ${h.reason}` : change;
+  }
+  return h.action;
 }
 
 export function inProgressLabel(op: string | null | undefined): string {

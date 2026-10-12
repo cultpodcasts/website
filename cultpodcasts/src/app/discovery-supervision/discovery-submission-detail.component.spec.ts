@@ -40,8 +40,9 @@ describe('DiscoverySubmissionDetailComponent', () => {
   let fixture: ComponentFixture<DiscoverySubmissionDetailComponent>;
   let service: {
     get: ReturnType<typeof vi.fn>; saveReview: ReturnType<typeof vi.fn>; apply: ReturnType<typeof vi.fn>;
-    retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; recover: ReturnType<typeof vi.fn>;
+    retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; changeState: ReturnType<typeof vi.fn>;
   };
+  let dialogOpen: ReturnType<typeof vi.fn>;
   let roles: BehaviorSubject<string[]>;
 
   async function create(d: DiscoverySubmissionDetail) {
@@ -63,9 +64,10 @@ describe('DiscoverySubmissionDetailComponent', () => {
       apply: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] })),
       retry: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied' })),
       release: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Released' })),
-      recover: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'ApplyFailed' }))
+      changeState: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Pending' }))
     };
     roles = new BehaviorSubject<string[]>(['Supervisor']);
+    dialogOpen = vi.fn().mockReturnValue({ afterClosed: () => of({ result: true }) });
     await TestBed.configureTestingModule({
       imports: [DiscoverySubmissionDetailComponent],
       providers: [
@@ -76,7 +78,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 's1' }), data: {} } } },
         { provide: DiscoverySubmissionsService, useValue: service },
         { provide: AuthServiceWrapper, useValue: { roles } },
-        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: MatDialog, useValue: { open: dialogOpen } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } }
       ]
     }).compileComponents();
@@ -156,27 +158,58 @@ describe('DiscoverySubmissionDetailComponent', () => {
     expect(service.retry).toHaveBeenCalledWith('s1', 'e1', [B]);
   });
 
-  it('shows Applying as in progress with every action disabled; admins can recover once stale', async () => {
-    const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2020-01-01T00:00:00Z' });
-    await create(applying);
-    expect(el().querySelector('.in-progress')?.textContent).toContain('Applying');
-    for (const cls of ['apply', 'save-draft', 'retry', 'release', 'recover']) {
+  it('shows Applying as in progress with every supervisor action unavailable', async () => {
+    await create(detail({ status: 'Applying', inProgressOperation: 'Retry', inProgressSince: '2026-10-11T10:00:00Z' }));
+    expect(el().querySelector('.in-progress')?.textContent).toContain('Retrying failed items');
+    for (const cls of ['apply', 'save-draft', 'retry', 'release', 'change-state']) {
       expect(button(cls)).toBeNull();
     }
     expect(el().querySelector('textarea')).toBeNull();
-
-    roles.next(['Admin']);
-    await create(applying);
-    button('recover').click();
-    await fixture.whenStable();
-    expect(service.recover).toHaveBeenCalledWith('s1', 'e1');
+    expect(el().querySelector('.in-progress-admin-note')).toBeNull();
   });
 
-  it('hides recover while an apply is recent', async () => {
+  it('points admins at Change state while Applying', async () => {
     roles.next(['Admin']);
-    await create(detail({ status: 'Applying', inProgressOperation: 'Retry', inProgressSince: new Date().toISOString() }));
-    expect(button('recover')).toBeNull();
-    expect(el().querySelector('.in-progress')?.textContent).toContain('Retrying failed items');
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z' }));
+    expect(el().querySelector('.in-progress-admin-note')?.textContent).toContain('Change state');
+    expect(button('change-state')).not.toBeNull();
+  });
+
+  it('lets an admin change state after confirming, then reloads', async () => {
+    roles.next(['Admin']);
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z' }));
+    const component = fixture.componentInstance as unknown as { newStatus: { set(v: string): void } };
+    expect(button('change-state').disabled).toBe(true);
+    component.newStatus.set('Pending');
+    const reason = el().querySelector('input.state-reason') as HTMLInputElement;
+    reason.value = 'Apply crashed';
+    reason.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const loads = service.get.mock.calls.length;
+    button('change-state').click();
+    await fixture.whenStable();
+    expect(dialogOpen).toHaveBeenCalled();
+    expect(service.changeState).toHaveBeenCalledWith('s1', 'Pending', 'e1', 'Apply crashed');
+    expect(service.get.mock.calls.length).toBe(loads + 1);
+  });
+
+  it('does not change state when the admin cancels the confirmation', async () => {
+    roles.next(['Admin']);
+    dialogOpen.mockReturnValue({ afterClosed: () => of({ result: false }) });
+    await create(detail({ status: 'Applied' }));
+    (fixture.componentInstance as unknown as { newStatus: { set(v: string): void } }).newStatus.set('Released');
+    fixture.detectChanges();
+    button('change-state').click();
+    await fixture.whenStable();
+    expect(service.changeState).not.toHaveBeenCalled();
+  });
+
+  it('hides Change state from non-admins and shows StateChanged history', async () => {
+    await create(detail({ history: [
+      { at: '2026-10-11T10:00:00Z', action: 'StateChanged', actorSubject: 'jon', fromStatus: 'Applying', toStatus: 'Pending', reason: 'crashed' }
+    ] }));
+    expect(button('change-state')).toBeNull();
+    expect(el().querySelector('.history')?.textContent).toContain('State changed Applying → Pending: crashed');
   });
 
   it('releases the lock with a reason', async () => {

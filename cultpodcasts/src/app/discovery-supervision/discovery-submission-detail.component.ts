@@ -14,12 +14,16 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { DiscoveryResult } from '../discovery-result.interface';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
-import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome } from './discovery-supervision.models';
+import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome, DiscoverySubmissionStatus } from './discovery-supervision.models';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   PickState,
   ADMIN_ROLE,
   canEditReview,
-  canRecover,
+  ADMIN_SETTABLE_STATUSES,
+  historyText,
   inProgressLabel,
   canRelease,
   canRetry,
@@ -51,7 +55,7 @@ export interface ReviewRow {
   selector: 'app-discovery-submission-detail',
   imports: [
     DatePipe, RouterLink, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
-    MatFormFieldModule, MatInputModule, MatProgressBarModule, DiscoveryItemComponent
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, DiscoveryItemComponent
   ],
   templateUrl: './discovery-submission-detail.component.html',
   styleUrl: './discovery-supervision.sass',
@@ -63,6 +67,7 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly isLoading = signal(true);
@@ -87,10 +92,11 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   private readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
   protected readonly inProgressLabel = inProgressLabel;
   protected readonly applying = computed(() => this.detail()?.status === 'Applying');
-  protected readonly recoverable = computed(() => {
-    const d = this.detail();
-    return !!d && canRecover(d, this.roles().includes(ADMIN_ROLE));
-  });
+  protected readonly isAdmin = computed(() => this.roles().includes(ADMIN_ROLE));
+  protected readonly settableStatuses = ADMIN_SETTABLE_STATUSES;
+  protected readonly historyText = historyText;
+  protected readonly newStatus = signal<DiscoverySubmissionStatus | ''>('');
+  protected readonly stateReason = signal('');
   protected readonly editable = computed(() => {
     const d = this.detail();
     return !!d && canEditReview(d);
@@ -236,12 +242,25 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     });
   }
 
-  async recover(): Promise<void> {
+  /** Admin override with confirmation; reloads after. */
+  async changeState(): Promise<void> {
     const d = this.detail();
-    if (!d || !this.recoverable()) return;
+    const status = this.newStatus();
+    if (!d || !this.isAdmin() || !status) return;
+    const confirmed = await firstValueFrom(this.dialog.open(ConfirmComponent, {
+      data: {
+        title: 'Change submission state',
+        question: `Change this submission from ${d.status} to ${status}? Reports and item outcomes are not changed.`
+      },
+      disableClose: true,
+      autoFocus: true
+    }).afterClosed());
+    if (confirmed?.result !== true) return;
     await this.run(async () => {
-      const resp = await firstValueFrom(this.service.recover(d.id, d.etag));
-      this.snackBar.open(`Recovered: ${submissionStatusLabel(resp.status)}`, 'Ok', { duration: 8000 });
+      const resp = await firstValueFrom(this.service.changeState(d.id, status, d.etag, this.stateReason()));
+      this.newStatus.set('');
+      this.stateReason.set('');
+      this.snackBar.open(`State changed to ${submissionStatusLabel(resp.status)}`, 'Ok', { duration: 8000 });
     });
   }
 
