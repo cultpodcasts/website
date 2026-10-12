@@ -106,6 +106,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   protected readonly inProgressLabel = inProgressLabel;
   protected readonly applying = computed(() => this.detail()?.status === 'Applying');
   protected readonly isAdmin = computed(() => this.roles().includes(ADMIN_ROLE));
+  /** /episodes/:ids is Curator-only, so Review links/actions are offered only to Curators. */
+  protected readonly isCurator = computed(() => this.roles().includes('Curator'));
   protected readonly settableStatuses = ADMIN_SETTABLE_STATUSES;
   protected readonly historyText = historyText;
   protected readonly newStatus = signal<DiscoverySubmissionStatus | ''>('');
@@ -296,7 +298,7 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   /** Run a command, then reload for fresh state/etag; failures are shown and also reload. */
   /** Snackbar with a Review action to the episode edit page when episodes were ingested (mirrors normal discovery submit). */
   private notifyWithReview(message: string, outcomes: DiscoverySubmissionDetail['itemOutcomes']): void {
-    const ids = succeededEpisodeIds(outcomes);
+    const ids = this.isCurator() ? succeededEpisodeIds(outcomes) : [];
     const ref = this.snackBar.open(message, ids.length ? 'Review' : 'Ok', { duration: 10000 });
     if (ids.length) {
       ref.onAction().subscribe(() => this.router.navigate(episodesReviewRoute(ids)));

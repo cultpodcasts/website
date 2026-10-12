@@ -243,6 +243,8 @@ describe('DiscoverySubmissionDetailComponent', () => {
     const E2 = 'eeeeeeee-0000-4000-8000-000000000002';
     const reviewLink = () => el().querySelector('a.review-ingested') as HTMLAnchorElement | null;
 
+    beforeEach(() => roles.next(['Supervisor', 'Curator']));
+
     it('offers a Review action after Apply that opens the ingested episodes for editing', async () => {
       service.apply.mockReturnValue(of({
         submissionId: 's1', status: 'PartiallyApplied', itemOutcomes: [
@@ -308,6 +310,34 @@ describe('DiscoverySubmissionDetailComponent', () => {
     });
   });
 
+  describe('reviewing ingested episodes without the Curator role', () => {
+    const E1 = 'eeeeeeee-0000-4000-8000-000000000001';
+
+    it('gives a non-curator supervisor plain Ok after Apply (episodes page is Curator-only)', async () => {
+      roles.next(['Supervisor']);
+      service.apply.mockReturnValue(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [{ resultId: A, state: 'Succeeded', attempts: 1, episodeId: E1 }] }));
+      await create(detail());
+      button('apply').click();
+      await fixture.whenStable();
+      expect(snackOpen).toHaveBeenCalledWith('Applied', 'Ok', expect.anything());
+    });
+
+    it('gives a non-curator admin plain Ok after Retry', async () => {
+      roles.next(['Admin']);
+      service.retry.mockReturnValue(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [{ resultId: B, state: 'Succeeded', attempts: 2, episodeId: E1 }] }));
+      await create(detail({ status: 'PartiallyApplied', supervisorAcceptedResultIds: [B], itemOutcomes: [{ resultId: B, state: 'Failed', attempts: 1, error: 'x' }] }));
+      button('retry').click();
+      await fixture.whenStable();
+      expect(snackOpen).toHaveBeenCalledWith('Retry: Applied', 'Ok', expect.anything());
+    });
+
+    it('hides the lasting Review link from non-curators', async () => {
+      roles.next(['Supervisor']);
+      await create(detail({ status: 'Applied', itemOutcomes: [{ resultId: A, state: 'Succeeded', attempts: 1, episodeId: E1 }] }));
+      expect(el().querySelector('a.review-ingested')).toBeNull();
+    });
+  });
+
   describe('redesigned layout', () => {
     it('shows friendly subject labels with the raw id only as a tooltip', async () => {
       await create(detail({ status: 'Applied', supervisorSubject: 'google-oauth2|117468924423760161962', appliedAt: '2026-10-12T21:58:00Z' }));
@@ -341,7 +371,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
     });
 
     it('puts the Review button in the header and admin Change state in a collapsed panel after the results', async () => {
-      roles.next(['Admin']);
+      roles.next(['Admin', 'Curator']);
       await create(detail({ status: 'Applied', itemOutcomes: [{ resultId: A, state: 'Succeeded', attempts: 1, episodeId: 'e1' }] }));
       expect(el().querySelector('.submission-header a.review-ingested')).not.toBeNull();
       const panel = el().querySelector('mat-expansion-panel.state-panel') as HTMLElement;

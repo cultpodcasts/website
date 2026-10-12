@@ -15,7 +15,7 @@
     <div class="submission-header__title">
       <h2>Discovery submission</h2>
       <span class="status-chip" [attr.data-status]="d.status">{{statusLabel(d.status)}}</span>
-      @if (ingestedEpisodeIds().length) {
+      @if (isCurator() && ingestedEpisodeIds().length) {
       <a matButton="filled" class="review-ingested submission-header__primary" [routerLink]="ingestedEpisodesRoute()">Review {{ingestedEpisodeIds().length}} ingested episode{{ingestedEpisodeIds().length === 1 ? '' : 's'}}</a>
       }
     </div>
