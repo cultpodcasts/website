@@ -17,6 +17,7 @@ import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome, DiscoverySubmissionStatus } from './discovery-supervision.models';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   PickState,
@@ -30,6 +31,10 @@ import {
   commentsToMap,
   describeSubmissionError,
   failedOutcomes,
+  succeededEpisodeIds,
+  subjectLabel,
+  itemChip,
+  episodesReviewRoute,
   initialFinalIds,
   mapToComments,
   outcomeFor,
@@ -44,6 +49,7 @@ export interface ReviewRow {
   result: DiscoveryResult;
   pick: PickState;
   outcome: DiscoverySubmissionItemOutcome | undefined;
+  chip: ReturnType<typeof itemChip>;
 }
 
 /**
@@ -54,6 +60,7 @@ export interface ReviewRow {
 @Component({
   selector: 'app-discovery-submission-detail',
   imports: [
+    MatExpansionModule,
     DatePipe, RouterLink, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, DiscoveryItemComponent
   ],
@@ -89,7 +96,13 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   protected readonly lockedEvent: Observable<boolean> = of(true);
   protected readonly unlockedEvent = new BehaviorSubject<boolean>(false);
 
-  private readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
+  private readonly auth = inject(AuthServiceWrapper);
+  private readonly roles = toSignal(this.auth.roles, { initialValue: [] as string[] });
+  /** 'you' / 'Google user …1962' style label; full subject goes in a title tooltip. */
+  protected readonly who = (subject: string | null | undefined) => subjectLabel(subject, this.auth.userSubject?.() ?? null);
+  /** Episode name for a result id (retry list), falling back to the id. */
+  protected readonly resultName = (resultId: string) =>
+    this.detail()?.reports.flatMap(r => r.results).find(r => r.id === resultId)?.episodeName ?? resultId;
   protected readonly inProgressLabel = inProgressLabel;
   protected readonly applying = computed(() => this.detail()?.status === 'Applying');
   protected readonly isAdmin = computed(() => this.roles().includes(ADMIN_ROLE));
@@ -113,6 +126,12 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     const d = this.detail();
     return d ? pickDiff(d.submitterAcceptedResultIds, this.finalIds()) : { added: [], removed: [] };
   });
+  /** Episodes ingested by this submission; drives the persistent Review link. */
+  protected readonly ingestedEpisodeIds = computed(() => {
+    const d = this.detail();
+    return d && (d.status === 'Applied' || d.status === 'PartiallyApplied') ? succeededEpisodeIds(d.itemOutcomes) : [];
+  });
+  protected readonly ingestedEpisodesRoute = computed(() => episodesReviewRoute(this.ingestedEpisodeIds()));
   protected readonly failed = computed(() => failedOutcomes(this.detail()?.itemOutcomes));
 
   protected readonly rows = computed<ReviewRow[]>(() => {
@@ -130,7 +149,7 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         if (this.filter() === 'picked' && pick === 'none' && !comments[result.id] && !outcome) {
           continue;
         }
-        rows.push({ reportId: report.id, result: this.normalize(result), pick, outcome });
+        rows.push({ reportId: report.id, result: this.normalize(result), pick, outcome, chip: itemChip(pick, outcome) });
       }
     }
     return rows;
@@ -227,9 +246,9 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       const etag = this.dirty() ? await this.saveReviewInternal(d) : d.etag;
       const resp = await firstValueFrom(this.service.apply(d.id, etag, this.finalIds()));
       const failedCount = (resp.itemOutcomes ?? []).filter(o => o.state === 'Failed').length;
-      this.snackBar.open(
+      this.notifyWithReview(
         resp.status === 'Applied' ? 'Applied' : `${submissionStatusLabel(resp.status)}${failedCount ? `: ${failedCount} item(s) failed` : ''}`,
-        'Ok', { duration: 8000 });
+        resp.itemOutcomes);
     });
   }
 
@@ -238,7 +257,7 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     if (!d || !this.retryable()) return;
     await this.run(async () => {
       const resp = await firstValueFrom(this.service.retry(d.id, d.etag, this.abandonIds()));
-      this.snackBar.open(`Retry: ${submissionStatusLabel(resp.status)}`, 'Ok', { duration: 8000 });
+      this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
     });
   }
 
@@ -275,6 +294,15 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   }
 
   /** Run a command, then reload for fresh state/etag; failures are shown and also reload. */
+  /** Snackbar with a Review action to the episode edit page when episodes were ingested (mirrors normal discovery submit). */
+  private notifyWithReview(message: string, outcomes: DiscoverySubmissionDetail['itemOutcomes']): void {
+    const ids = succeededEpisodeIds(outcomes);
+    const ref = this.snackBar.open(message, ids.length ? 'Review' : 'Ok', { duration: 10000 });
+    if (ids.length) {
+      ref.onAction().subscribe(() => this.router.navigate(episodesReviewRoute(ids)));
+    }
+  }
+
   private async run(command: () => Promise<void>): Promise<void> {
     this.busy.set(true);
     this.error.set(null);

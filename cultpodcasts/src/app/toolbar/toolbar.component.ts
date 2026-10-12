@@ -34,7 +34,7 @@ import { Share } from '../share.interface';
 import { DiscoveryInfoService } from '../discovery-info.service';
 import { submitSeriesFromForm } from '../submit-series.util';
 import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-submissions.service';
-import { canSeeSubmissions, isSupervisorRole, SUPERVISED_CURATOR_ROLE } from '../discovery-supervision/discovery-supervision';
+import { canCurateDiscovery, canSeeSubmissions, isSupervisorRole, SUPERVISED_CURATOR_ROLE } from '../discovery-supervision/discovery-supervision';
 import { EMPTY, catchError, switchMap, timer } from 'rxjs';
 import {
   runSendPodcastPrepareFlow,
@@ -76,6 +76,7 @@ export class ToolbarComponent {
   private readonly authChromeReady = signal(false);
 
   protected readonly discoverySubmissions = inject(DiscoverySubmissionsService);
+  protected readonly canCurate = () => canCurateDiscovery(this.authRoles());
   protected readonly isSupervisor = () => isSupervisorRole(this.authRoles());
   protected readonly isSupervisedCurator = () => this.authRoles().includes(SUPERVISED_CURATOR_ROLE) && !this.isSupervisor();
   protected readonly canSeeSubmissions = () => canSeeSubmissions(this.authRoles());

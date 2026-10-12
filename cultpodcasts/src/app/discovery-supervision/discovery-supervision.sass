@@ -56,30 +56,42 @@
 .submission-row__failures
   color: var(--mat-sys-error, #b3261e)
 
-.submission-header h2
-  display: inline-block
-  margin-right: 12px
+.submission-header__title
+  display: flex
+  flex-wrap: wrap
+  align-items: center
+  gap: 12px
+  h2
+    margin: 0
+
+.submission-header__primary
+  margin-left: auto
+
+.submission-header__meta
+  color: var(--mat-sys-on-surface-variant, inherit)
+
+.who
+  font-weight: 600
+  cursor: help
 
 .pick-summary
   display: flex
   flex-wrap: wrap
-  gap: 8px
+  gap: 6px
   margin: 8px 0 16px
 
 .pick-legend
+  font-size: 12px
   padding: 2px 10px
   border-radius: 999px
-  border: 2px solid transparent
-  &[data-pick="kept"]
-    border-color: #1976d2
-  &[data-pick="final"]
-    border-color: #2e7d32
+  background: var(--mat-sys-surface-container-high, rgba(127,127,127,.15))
+  color: var(--mat-sys-on-surface, inherit)
   &[data-pick="added"]
-    border-color: #2e7d32
-    border-style: dashed
+    background: var(--mat-sys-secondary-container, rgba(46,125,50,.18))
+    color: var(--mat-sys-on-secondary-container, inherit)
   &[data-pick="removed"]
-    border-color: #c62828
-    border-style: dashed
+    background: var(--mat-sys-error-container, rgba(198,40,40,.18))
+    color: var(--mat-sys-on-error-container, inherit)
 
 .supervision-actions, .supervision-filter
   display: flex
@@ -87,45 +99,52 @@
   gap: 8px
   margin: 8px 0 16px
 
-.retry-panel, .release-panel, .state-panel
+.retry-panel, .release-panel
   padding: 12px 16px
   margin: 12px 0
   border-radius: 12px
-  background: var(--mat-sys-surface-container, #f3eff4)
+  background: var(--mat-sys-surface-container, rgba(127,127,127,.1))
+  h3
+    margin-top: 0
+
+.retry-panel ul
+  padding-left: 0
+  list-style: none
+
+.state-panel
+  margin: 24px 0 8px
+  .state-panel__row
+    display: flex
+    flex-wrap: wrap
+    gap: 12px
+  .state-panel__reason
+    flex: 1 1 280px
 
 .review-item
   display: flex
   flex-direction: column
   gap: 6px
-  padding: 6px
-  border-radius: 14px
-  border: 3px solid transparent
-  &[data-pick="kept"]
-    border-color: #1976d2
-  &[data-pick="added"]
-    border-color: #2e7d32
-    border-style: dashed
-  &[data-pick="removed"]
-    border-color: #c62828
-    border-style: dashed
-    opacity: .85
+  &[data-pick="removed"] discovery-item
+    opacity: .6
 
-.review-item__pick
+.review-item__chip
+  align-self: flex-start
   font-size: 12px
   font-weight: 600
-  &[data-pick="added"]
-    color: #2e7d32
-  &[data-pick="removed"]
-    color: #c62828
-  &[data-pick="kept"]
-    color: #1976d2
-
-.review-item__outcome
-  font-size: 13px
-  &[data-state="Failed"]
-    color: var(--mat-sys-error, #b3261e)
-  &[data-state="Succeeded"]
-    color: #2e7d32
+  line-height: 1.4
+  padding: 2px 10px
+  border-radius: 999px
+  background: var(--mat-sys-surface-container-high, rgba(127,127,127,.15))
+  color: var(--mat-sys-on-surface, inherit)
+  &[data-tone="success"]
+    background: rgba(46,125,50,.18)
+    color: light-dark(#1b5e20, #a5d6a7)
+  &[data-tone="added"]
+    background: var(--mat-sys-secondary-container, rgba(25,118,210,.18))
+    color: var(--mat-sys-on-secondary-container, inherit)
+  &[data-tone="removed"], &[data-tone="error"]
+    background: var(--mat-sys-error-container, rgba(198,40,40,.18))
+    color: var(--mat-sys-on-error-container, inherit)
 
 .history
   margin-top: 24px

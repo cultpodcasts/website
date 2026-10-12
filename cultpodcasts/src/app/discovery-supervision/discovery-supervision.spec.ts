@@ -101,3 +101,56 @@ describe('discovery supervision helpers', () => {
     expect(describeSubmissionError(new Error('x'))).toBe('Request failed.');
   });
 });
+
+describe('succeededEpisodeIds / episodesReviewRoute', () => {
+  it('collects distinct episode ids of succeeded outcomes only', async () => {
+    const { succeededEpisodeIds, episodesReviewRoute } = await import('./discovery-supervision');
+    expect(succeededEpisodeIds([
+      { resultId: 'a', state: 'Succeeded', attempts: 1, episodeId: 'e1' },
+      { resultId: 'b', state: 'Failed', attempts: 1, episodeId: 'e2' },
+      { resultId: 'c', state: 'Succeeded', attempts: 1, episodeId: null },
+      { resultId: 'd', state: 'Succeeded', attempts: 1, episodeId: 'e1' },
+      { resultId: 'e', state: 'Abandoned', attempts: 1 }
+    ] as never)).toEqual(['e1']);
+    expect(succeededEpisodeIds(null)).toEqual([]);
+    expect(episodesReviewRoute(['e1', 'e2'])).toEqual(['/episodes', '["e1","e2"]']);
+  });
+});
+
+describe('menu visibility helpers', () => {
+  it('shows Discovery to curators and supervised curators only', async () => {
+    const { canCurateDiscovery } = await import('./discovery-supervision');
+    expect(canCurateDiscovery(['Curator'])).toBe(true);
+    expect(canCurateDiscovery(['SupervisedCurator'])).toBe(true);
+    expect(canCurateDiscovery(['Supervisor'])).toBe(false);
+    expect(canCurateDiscovery([])).toBe(false);
+  });
+
+  it('shows Discovery review to supervisors and admins only', async () => {
+    const { isSupervisorRole } = await import('./discovery-supervision');
+    expect(isSupervisorRole(['Supervisor'])).toBe(true);
+    expect(isSupervisorRole(['Admin'])).toBe(true);
+    expect(isSupervisorRole(['Curator', 'SupervisedCurator'])).toBe(false);
+  });
+});
+
+describe('subjectLabel / itemChip', () => {
+  it('labels subjects without exposing raw ids', async () => {
+    const { subjectLabel } = await import('./discovery-supervision');
+    expect(subjectLabel('google-oauth2|117468924423760161962', 'google-oauth2|117468924423760161962')).toBe('you');
+    expect(subjectLabel('google-oauth2|117468924423760161962')).toBe('Google user …1962');
+    expect(subjectLabel('auth0|6ac8a829530ac245fc494731')).toBe('Auth0 user …4731');
+    expect(subjectLabel('custom|abcdef1234')).toBe('custom …1234');
+    expect(subjectLabel(null)).toBe('unknown');
+  });
+
+  it('combines pick and outcome into one chip', async () => {
+    const { itemChip } = await import('./discovery-supervision');
+    expect(itemChip('kept', { resultId: 'a', state: 'Succeeded', attempts: 1 })).toEqual({ text: 'Kept · Created', tone: 'success' });
+    expect(itemChip('kept', undefined)).toEqual({ text: 'Kept', tone: 'neutral' });
+    expect(itemChip('added', { resultId: 'a', state: 'Succeeded', attempts: 1 })).toEqual({ text: 'Added by supervisor · Created', tone: 'added' });
+    expect(itemChip('removed', undefined)).toEqual({ text: 'Removed', tone: 'removed' });
+    expect(itemChip('kept', { resultId: 'a', state: 'Failed', attempts: 1, error: 'Timeout' })).toEqual({ text: 'Failed: Timeout', tone: 'error' });
+    expect(itemChip('none', undefined)).toBeNull();
+  });
+});

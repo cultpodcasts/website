@@ -42,7 +42,7 @@ export const routes: Routes = [
       { path: '**', component: ContentNotFoundComponent },
     ],
   },
-  { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Discovery" },
+  { path: 'discovery', component: DiscoveryComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator", "SupervisedCurator"] }, title: "Discovery" },
   { path: 'discovery-review', loadComponent: () => import('./discovery-supervision/discovery-submissions-list.component').then(m => m.DiscoverySubmissionsListComponent), canActivate: [hasRoleGuard], data: { roles: ["Supervisor", "Admin"], mode: 'review' }, title: "Discovery Review" },
   { path: 'discovery-review/:id', loadComponent: () => import('./discovery-supervision/discovery-submission-detail.component').then(m => m.DiscoverySubmissionDetailComponent), canActivate: [hasRoleGuard], data: { roles: ["Supervisor", "Admin"] }, title: "Review Discovery Submission" },
   { path: 'discovery-submissions', loadComponent: () => import('./discovery-supervision/discovery-submissions-list.component').then(m => m.DiscoverySubmissionsListComponent), canActivate: [hasRoleGuard], data: { roles: ["SupervisedCurator", "Supervisor", "Admin"], mode: 'mine' }, title: "My Discovery Submissions" },
