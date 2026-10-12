@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -34,9 +34,6 @@ import {
   pickStateLabels,
   submissionStatusLabel
 } from './discovery-supervision';
-
-/** Poll interval while a submission is Applying. */
-export const APPLYING_POLL_MS = 30_000;
 
 export interface ReviewRow {
   reportId: string;
@@ -90,13 +87,10 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   private readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
   protected readonly inProgressLabel = inProgressLabel;
   protected readonly applying = computed(() => this.detail()?.status === 'Applying');
-  /** Ticks while Applying so the 30-minute recover threshold is re-evaluated without a reload. */
-  protected readonly now = signal(new Date());
   protected readonly recoverable = computed(() => {
     const d = this.detail();
-    return !!d && canRecover(d, this.roles().includes(ADMIN_ROLE), this.now());
+    return !!d && canRecover(d, this.roles().includes(ADMIN_ROLE));
   });
-  private pollHandle: ReturnType<typeof setInterval> | undefined;
   protected readonly editable = computed(() => {
     const d = this.detail();
     return !!d && canEditReview(d);
@@ -135,31 +129,6 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     }
     return rows;
   });
-
-  constructor() {
-    // While Applying: every 30s refresh `now` and re-poll so completion and the
-    // recover threshold show up without a manual reload.
-    effect(() => {
-      const applying = this.applying();
-      this.stopPolling();
-      if (applying && isPlatformBrowser(this.platformId)) {
-        this.pollHandle = setInterval(() => {
-          this.now.set(new Date());
-          if (!this.busy() && !this.isLoading()) {
-            void this.load();
-          }
-        }, APPLYING_POLL_MS);
-      }
-    });
-    inject(DestroyRef).onDestroy(() => this.stopPolling());
-  }
-
-  private stopPolling(): void {
-    if (this.pollHandle !== undefined) {
-      clearInterval(this.pollHandle);
-      this.pollHandle = undefined;
-    }
-  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {

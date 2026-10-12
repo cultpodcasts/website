@@ -7,7 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { APPLYING_POLL_MS, DiscoverySubmissionDetailComponent } from './discovery-submission-detail.component';
+import { DiscoverySubmissionDetailComponent } from './discovery-submission-detail.component';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
 
@@ -170,34 +170,6 @@ describe('DiscoverySubmissionDetailComponent', () => {
     button('recover').click();
     await fixture.whenStable();
     expect(service.recover).toHaveBeenCalledWith('s1', 'e1');
-  });
-
-  it('shows recover once the 30-minute threshold passes without a reload, and picks up completion', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
-    try {
-      vi.setSystemTime(new Date('2026-10-12T20:29:00Z'));
-      roles.next(['Admin']);
-      const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-12T20:00:00Z' });
-      await create(applying);
-      expect(button('recover')).toBeNull();
-
-      await vi.advanceTimersByTimeAsync(APPLYING_POLL_MS * 3);
-      await fixture.whenStable();
-      fixture.detectChanges();
-      expect(button('recover')).not.toBeNull();
-      expect(service.get.mock.calls.length).toBeGreaterThan(1);
-
-      service.get.mockReturnValue(of(detail({ status: 'Applied' })));
-      await vi.advanceTimersByTimeAsync(APPLYING_POLL_MS);
-      await fixture.whenStable();
-      fixture.detectChanges();
-      expect(el().querySelector('.in-progress')).toBeNull();
-      const calls = service.get.mock.calls.length;
-      await vi.advanceTimersByTimeAsync(APPLYING_POLL_MS * 2);
-      expect(service.get.mock.calls.length).toBe(calls);
-    } finally {
-      vi.useRealTimers();
-    }
   });
 
   it('hides recover while an apply is recent', async () => {
