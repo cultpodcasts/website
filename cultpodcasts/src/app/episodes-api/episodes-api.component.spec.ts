@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, throwError } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SiteService } from '../site.service';
 import { HeroCurationService } from '../hero-curation.service';
@@ -15,9 +15,13 @@ describe('EpisodesApiComponent (embedded)', () => {
   let http: HttpTestingController;
   let site: { setQuery: ReturnType<typeof vi.fn>; setPodcast: ReturnType<typeof vi.fn>; setSubject: ReturnType<typeof vi.fn> };
   let routeParams: BehaviorSubject<Record<string, string>>;
+  let getToken: ReturnType<typeof vi.fn>;
+  let getHero: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     site = { setQuery: vi.fn(), setPodcast: vi.fn(), setSubject: vi.fn() };
+    getToken = vi.fn(() => of('tok'));
+    getHero = vi.fn(() => Promise.resolve({ episodeIds: [], updatedAt: null }));
     routeParams = new BehaviorSubject<Record<string, string>>({ episodeIds: JSON.stringify(['route-id']) });
     await TestBed.configureTestingModule({
       imports: [EpisodesApiComponent],
@@ -28,9 +32,9 @@ describe('EpisodesApiComponent (embedded)', () => {
         provideHttpClientTesting(),
         { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: ActivatedRoute, useValue: { params: routeParams } },
-        { provide: AuthServiceWrapper, useValue: { roles: of(['Curator']), authService: { getAccessTokenSilently: () => of('tok') } } },
+        { provide: AuthServiceWrapper, useValue: { roles: of(['Curator']), authService: { getAccessTokenSilently: getToken } } },
         { provide: SiteService, useValue: site },
-        { provide: HeroCurationService, useValue: { getHeroCuration: () => Promise.resolve({ episodeIds: [], updatedAt: null }), toggleEpisode: vi.fn() } },
+        { provide: HeroCurationService, useValue: { getHeroCuration: getHero, toggleEpisode: vi.fn() } },
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: MatSnackBar, useValue: { open: vi.fn() } },
       ],
@@ -74,5 +78,74 @@ describe('EpisodesApiComponent (embedded)', () => {
     await flushTicks();
     expect(http.match(r => r.url.includes('/episode/')).map(r => new URL(r.request.url).pathname)).toEqual(['/episode/route-id']);
     expect(site.setQuery).toHaveBeenCalledWith(null);
+  });
+
+  const episodeReqs = () => http.match(r => r.url.includes('/episode/'));
+
+  it('does not refetch or wipe cards when the parent passes the same ids again (new array)', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['e1', 'e2']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    expect(episodeReqs().length).toBe(2);
+    fixture.componentRef.setInput('episodeIds', ['e1', 'e2']);
+    fixture.detectChanges();
+    await flushTicks();
+    expect(episodeReqs().length).toBe(0);
+  });
+
+  it('cancels an in-flight load when the ids change, so a stale response cannot win', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['old']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    const [stale] = episodeReqs();
+    fixture.componentRef.setInput('episodeIds', ['new']);
+    fixture.detectChanges();
+    await flushTicks();
+    expect(stale.cancelled).toBe(true);
+    expect(episodeReqs().map(r => new URL(r.request.url).pathname)).toEqual(['/episode/new']);
+  });
+
+  it('cancels the in-flight load on destroy', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['e1']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    const [req] = episodeReqs();
+    fixture.destroy();
+    expect(req.cancelled).toBe(true);
+  });
+
+  it('Refresh on /episodes reloads only the current ids, once per click, without hero refetch or site reset', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.detectChanges();
+    await flushTicks();
+    episodeReqs();
+    for (let click = 0; click < 3; click++) {
+      fixture.componentInstance.refresh();
+      await flushTicks();
+      expect(episodeReqs().map(r => new URL(r.request.url).pathname)).toEqual(['/episode/route-id']);
+    }
+    expect(getHero).toHaveBeenCalledTimes(1);
+    expect(site.setQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the error state and stops the spinner when the token request fails', async () => {
+    getToken.mockReturnValue(throwError(() => new Error('login_required')));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['e1']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('mat-progress-bar')).toBeNull();
+    expect(Array.from(el.querySelectorAll('button')).some(b => b.textContent?.includes('Try again'))).toBe(true);
+    expect(episodeReqs().length).toBe(0);
   });
 });

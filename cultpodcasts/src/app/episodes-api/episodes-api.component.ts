@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, firstValueFrom, forkJoin, map, Observable, of } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, Observable, of, Subject, switchMap, take } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -44,6 +44,10 @@ import {
 import { HeroCurationService } from '../hero-curation.service';
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
+
+function sameIds(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -102,6 +106,10 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly heroCuration = inject(HeroCurationService);
   private snapOffsetObserver: ResizeObserver | undefined;
+  /** Single cancellable load stream: a newer request (ids change / Refresh) cancels any in-flight one. */
+  private readonly loadRequests = new Subject<string[]>();
+  /** Ids of the last requested load, compared by value to skip identical reloads. */
+  private currentIds: string[] | null = null;
 
   constructor(
     private router: Router,
@@ -115,6 +123,15 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
       this.snapOffsetObserver?.disconnect();
       this.snapOffsetObserver = undefined;
       toggleCuratorSnapClass(false);
+    });
+    this.loadRequests.pipe(
+      switchMap(ids => this.fetchEpisodes(ids)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(episodes => {
+      if (episodes) {
+        this.episodes.set(episodes);
+      }
+      this.isLoading.set(false);
     });
   }
 
@@ -143,8 +160,11 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     });
   }
 
+  /** Reload the current ids only (no new route subscription, hero refetch or site reset). */
   refresh(): void {
-    this.ngOnInit();
+    if (this.currentIds !== null) {
+      this.loadEpisodes(this.currentIds, true);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -154,40 +174,48 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  /** Fetches each episode with a curate token; shared by the /episodes route and embedded use. */
-  protected loadEpisodes(episodeIds: string[]): void {
+  /**
+   * Requests a load of these ids; shared by the /episodes route and embedded use.
+   * Identical ids (by value) are ignored unless `force` (Refresh), so parent reloads don't wipe card edits.
+   */
+  protected loadEpisodes(episodeIds: readonly string[], force = false): void {
+    const ids = [...episodeIds];
+    if (!force && this.currentIds !== null && sameIds(this.currentIds, ids)) {
+      return;
+    }
+    this.currentIds = ids;
+    this.loadRequests.next(ids);
+  }
+
+  /** Token then every episode; any failure (including the token) shows the error state. Emits null on error. */
+  private fetchEpisodes(episodeIds: string[]): Observable<ApiEpisode[] | null> {
     this.isLoading.set(true);
     this.error.set(false);
     this.episodes.set([]);
     if (episodeIds.length === 0) {
-      this.isLoading.set(false);
-      return;
+      return of([]);
     }
-    const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+    return this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: `https://api.cultpodcasts.com/`,
         scope: 'curate'
       }
-    }));
-    token.then(_token => {
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeResponses: Observable<ApiEpisode | null>[] = episodeIds.map(episodeId => {
-        const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-        return this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this));
-      });
-      forkJoin(episodeResponses).subscribe({
-        next: episodes => {
-          this.episodes.set(episodes.filter(x => x != null));
-          this.isLoading.set(false);
-        },
-        error: e => {
-          this.error.set(true);
-          this.isLoading.set(false);
-          console.error(e);
-        }
-      });
-    });
+    }).pipe(
+      take(1),
+      switchMap(token => {
+        const headers = new HttpHeaders().set("Authorization", "Bearer " + token);
+        return forkJoin(episodeIds.map(episodeId => {
+          const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
+          return this.http.get<ApiEpisode>(episodeEndpoint, { headers }).pipe(this.handleRequest(this).bind(this));
+        }));
+      }),
+      map(episodes => episodes.filter((x): x is ApiEpisode => x != null)),
+      catchError(e => {
+        console.error(e);
+        this.error.set(true);
+        return of(null);
+      })
+    );
   }
 
   ngAfterViewInit() {
