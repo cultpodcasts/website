@@ -100,6 +100,12 @@
   </section>
   }
 
+  @if (isCurator() && ingestedEpisodeIds().length) {
+  <section class="ingested-episodes" aria-label="Ingested episodes">
+    <app-episodes-api [episodeIds]="ingestedEpisodeIds()" [embedded]="true" heading="Ingested episodes"></app-episodes-api>
+  </section>
+  }
+
   <div class="supervision-filter">
     <mat-button-toggle-group [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
       <mat-button-toggle value="all">All results</mat-button-toggle>
