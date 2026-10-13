@@ -19,6 +19,10 @@ import { Router } from '@angular/router';
  */
 declare global {
     var __E2E_CURATOR__: boolean | undefined;
+    /** Optional e2e override of the fake user's roles (default ['Curator']). */
+    var __E2E_ROLES__: string[] | undefined;
+    /** Optional e2e override of the fake user's subject (default 'e2e|curator'). */
+    var __E2E_SUB__: string | undefined;
 }
 
 /** Survives reloads so the toolbar can show the avatar while Auth0 restores the session. */
@@ -32,6 +36,8 @@ export class AuthServiceWrapper {
 
     roles: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
     isSignedIn: ReplaySubject<boolean> = new ReplaySubject<boolean>(1);
+    /** Signed-in user's Auth0 subject (null when signed out / unknown). */
+    readonly userSubject = signal<string | null>(null);
 
     /** Avatar to show in the toolbar — seeded from localStorage, cleared when signed out. */
     private readonly _avatarUrl = signal<string | null>(null);
@@ -61,9 +67,9 @@ export class AuthServiceWrapper {
 
         if (typeof globalThis !== 'undefined' && globalThis.__E2E_CURATOR__) {
             const curatorUser = {
-                sub: 'e2e|curator',
+                sub: globalThis.__E2E_SUB__ ?? 'e2e|curator',
                 picture: 'https://example.com/e2e-avatar.png',
-                'https://api.cultpodcasts.com/roles': ['Curator']
+                'https://api.cultpodcasts.com/roles': globalThis.__E2E_ROLES__ ?? ['Curator']
             };
             this.authService = {
                 user$: of(curatorUser),
@@ -78,6 +84,7 @@ export class AuthServiceWrapper {
         if (this.authService.user$) {
             let existingRoles: string[] = [];
             this.authService.user$.subscribe(user => {
+                this.userSubject.set(user?.sub ?? null);
                 if (user?.picture) {
                     this.persistAvatar(user.picture);
                 }

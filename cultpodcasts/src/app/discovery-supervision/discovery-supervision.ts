@@ -11,6 +11,7 @@ export const SUPERVISOR_ROLE = 'Supervisor';
 /** UI role (ID token) for curators whose discovery submits are held for review. */
 export const SUPERVISED_CURATOR_ROLE = 'SupervisedCurator';
 export const ADMIN_ROLE = 'Admin';
+export const CURATOR_ROLE = 'Curator';
 
 /** Access-token scopes for the discovery-submissions read routes (Worker accepts any one). */
 export const DISCOVERY_SUBMISSIONS_SCOPE = 'curate:supervised supervise admin';
@@ -24,6 +25,11 @@ export const DISCOVERY_SUBMIT_SCOPE = 'curate curate:supervised';
 
 export function isSupervisorRole(roles: readonly string[]): boolean {
   return roles.includes(SUPERVISOR_ROLE) || roles.includes(ADMIN_ROLE);
+}
+
+/** Discovery page: full curators and supervised curators (curate / curate:supervised). */
+export function canCurateDiscovery(roles: readonly string[]): boolean {
+  return roles.includes(CURATOR_ROLE) || roles.includes(SUPERVISED_CURATOR_ROLE);
 }
 
 export function canSeeSubmissions(roles: readonly string[]): boolean {
@@ -98,6 +104,60 @@ export function outcomeFor(
 
 export function failedOutcomes(outcomes: readonly DiscoverySubmissionItemOutcome[] | null | undefined): DiscoverySubmissionItemOutcome[] {
   return (outcomes ?? []).filter(o => o.state === 'Failed');
+}
+
+const providerLabels: Record<string, string> = {
+  'auth0': 'Auth0 user',
+  'google-oauth2': 'Google user',
+  'github': 'GitHub user',
+  'windowslive': 'Microsoft user',
+  'apple': 'Apple user'
+};
+
+/**
+ * Friendly label for an Auth0 subject (the API returns only subjects): 'you' for the signed-in user,
+ * otherwise provider + last four characters, e.g. 'Google user …1962'. Full subject belongs in a tooltip.
+ */
+export function subjectLabel(subject: string | null | undefined, currentSubject?: string | null): string {
+  if (!subject) return 'unknown';
+  if (currentSubject && subject === currentSubject) return 'you';
+  const bar = subject.indexOf('|');
+  if (bar < 0) return subject.length > 16 ? `…${subject.slice(-4)}` : subject;
+  const provider = subject.slice(0, bar);
+  const id = subject.slice(bar + 1);
+  return `${providerLabels[provider] ?? provider} …${id.slice(-4)}`;
+}
+
+export type ItemChipTone = 'success' | 'added' | 'removed' | 'error' | 'neutral';
+
+/** One compact status chip per result card, combining pick and ingest outcome. Null = no chip (not picked, nothing happened). */
+export function itemChip(pick: PickState, outcome: DiscoverySubmissionItemOutcome | null | undefined): { text: string; tone: ItemChipTone } | null {
+  if (outcome?.state === 'Failed') {
+    return { text: `Failed: ${outcome.error ?? outcome.message ?? 'unknown error'}`, tone: 'error' };
+  }
+  const suffix = outcome?.state === 'Succeeded' ? ' · Created' : outcome?.state === 'Abandoned' ? ' · Abandoned' : '';
+  switch (pick) {
+    case 'kept': return { text: `Kept${suffix}`, tone: suffix === ' · Created' ? 'success' : 'neutral' };
+    case 'added': return { text: `Added by supervisor${suffix}`, tone: 'added' };
+    case 'removed': return { text: 'Removed', tone: 'removed' };
+    default: return outcome ? { text: outcome.state, tone: 'neutral' } : null;
+  }
+}
+
+/** Distinct episode ids of Succeeded item outcomes, in outcome order. */
+export function succeededEpisodeIds(outcomes: readonly DiscoverySubmissionItemOutcome[] | null | undefined): string[] {
+  const ids: string[] = [];
+  for (const o of outcomes ?? []) {
+    if (o.state === 'Succeeded' && o.episodeId && !ids.includes(o.episodeId)) {
+      ids.push(o.episodeId);
+    }
+  }
+  return ids;
+}
+
+/** Route commands for the episode edit page for the given ids (same shape as normal discovery submit). */
+export function episodesReviewRoute(episodeIds: readonly string[]): string[] {
+  return ['/episodes', JSON.stringify(episodeIds)];
 }
 
 /** Supervisor may edit the review / apply only while Pending. */

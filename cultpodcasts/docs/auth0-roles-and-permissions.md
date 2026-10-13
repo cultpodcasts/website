@@ -236,7 +236,9 @@ Discovery submits from supervised curators (e.g. AI discovery users) are **held*
 | **`supervise`** | Review queue, rework the accepted set, comment, apply, retry/abandon failed items, release a submission's lock. | Worker `GET /discovery-submissions[/:id]`, `PUT …/:id/review`, `POST …/:id/apply|retry|release` (also `admin`) |
 | **`admin`** (existing) | Everything `supervise` can do, plus `POST /discovery-reports/:id/release` for a report stuck as held with no live submission. | |
 
-Supervised users **must keep `curate`** (Worker gates `/discovery-curation` on `curate`).
+Supervised users **must keep `curate`**: the Worker gates `GET`/`POST /discovery-curation` and `GET /discovery-info` (the discovery badge) on `curate`, and Azure `DiscoveryCurationController` requires `curate`. The **SupervisedCurator** role therefore carries both `curate` and `curate:supervised`; `curate:supervised` alone gets **403** on discovery load/submit. **SupervisedCurator** on its own opens `/discovery`: the route guard accepts `Curator` or `SupervisedCurator`. The **Curator** UI role is only needed for `/episodes/:ids` (the Review link below) and the toolbar Curate menu.
+
+The "Review N ingested episodes" button and the Apply/Retry snackbar **Review** action open `/episodes/:ids`, which is Curator-only. They are shown only to users with the **Curator** role; a Supervisor or Admin without Curator gets a plain **Ok** (episodes-page access is not widened).
 
 ### New UI roles (ID token `https://api.cultpodcasts.com/roles`)
 
