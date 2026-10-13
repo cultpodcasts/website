@@ -18,6 +18,7 @@ import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome, DiscoverySub
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   PickState,
@@ -61,6 +62,7 @@ export interface ReviewRow {
 @Component({
   selector: 'app-discovery-submission-detail',
   imports: [
+    EpisodesApiComponent,
     MatExpansionModule,
     DatePipe, RouterLink, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, DiscoveryItemComponent

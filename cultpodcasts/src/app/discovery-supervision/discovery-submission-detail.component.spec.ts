@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { Component, PLATFORM_ID, input, provideZonelessChangeDetection } from '@angular/core';
+import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -34,6 +35,15 @@ function detail(overrides: Partial<DiscoverySubmissionDetail> = {}): DiscoverySu
     history: [{ at: '2026-10-11T10:00:00Z', action: 'Submitted', actorSubject: 'ai-bot' }],
     ...overrides
   };
+}
+
+/** Stands in for the real /episodes card list (its own behaviour is covered in episodes-api.component.spec.ts). */
+@Component({ selector: 'app-episodes-api', template: '<div class="stub-episodes" [attr.data-ids]="ids()"></div>' })
+class StubEpisodesApiComponent {
+  readonly episodeIds = input<readonly string[] | undefined>(undefined);
+  readonly embedded = input(false);
+  readonly heading = input('');
+  protected ids = () => JSON.stringify(this.episodeIds() ?? []);
 }
 
 describe('DiscoverySubmissionDetailComponent', () => {
@@ -85,7 +95,12 @@ describe('DiscoverySubmissionDetailComponent', () => {
         { provide: MatDialog, useValue: { open: dialogOpen } },
         { provide: MatSnackBar, useValue: { open: snackOpen } }
       ]
-    }).compileComponents();
+    })
+      .overrideComponent(DiscoverySubmissionDetailComponent, {
+        remove: { imports: [EpisodesApiComponent] },
+        add: { imports: [StubEpisodesApiComponent] }
+      })
+      .compileComponents();
   });
 
   it('shows every held result with the submitter picks marked and subject-match tooltips intact', async () => {
@@ -379,6 +394,39 @@ describe('DiscoverySubmissionDetailComponent', () => {
       expect(panel.classList.contains('mat-expanded')).toBe(false);
       const grid = el().querySelector('.curator-card-grid') as HTMLElement;
       expect(grid.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  describe('inline episode editing', () => {
+    const E1 = 'eeeeeeee-0000-4000-8000-000000000011';
+    const E2 = 'eeeeeeee-0000-4000-8000-000000000012';
+    const applied = () => detail({
+      status: 'PartiallyApplied', itemOutcomes: [
+        { resultId: A, state: 'Succeeded', attempts: 1, episodeId: E1 },
+        { resultId: B, state: 'Failed', attempts: 1, error: 'x' },
+        { resultId: C, state: 'Succeeded', attempts: 1, episodeId: E2 }
+      ]
+    });
+    const embedded = () => el().querySelector('.ingested-episodes app-episodes-api');
+
+    it('embeds the /episodes card list for the succeeded episodes, for curators', async () => {
+      roles.next(['Curator', 'Supervisor']);
+      await create(applied());
+      expect(embedded()).not.toBeNull();
+      expect(JSON.parse(el().querySelector('.stub-episodes')!.getAttribute('data-ids')!)).toEqual([E1, E2]);
+      expect(el().querySelector('a.review-ingested')).not.toBeNull();
+    });
+
+    it('does not embed episode editing for non-curators', async () => {
+      roles.next(['Supervisor']);
+      await create(applied());
+      expect(embedded()).toBeNull();
+    });
+
+    it('does not embed anything before apply', async () => {
+      roles.next(['Curator', 'Supervisor']);
+      await create(detail());
+      expect(embedded()).toBeNull();
     });
   });
 });

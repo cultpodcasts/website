@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -70,7 +70,14 @@ const sortParamDateDesc: string = "date-desc";
   styleUrl: './episodes-api.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EpisodesApiComponent implements AfterViewInit {
+export class EpisodesApiComponent implements AfterViewInit, OnChanges {
+  /** When set, load these episodes instead of the `:episodeIds` route param (e.g. embedded on /discovery-review/:id). */
+  readonly episodeIdsInput = input<readonly string[] | undefined>(undefined, { alias: 'episodeIds' });
+  /** Embedded in another page: no snap toolbar, no site query/podcast/subject reset, compact heading. */
+  readonly embedded = input<boolean>(false);
+  /** Heading text (defaults to the /episodes page title). */
+  readonly heading = input<string>('Review Episodes');
+
   @ViewChild('curatorToolbar', { static: false }) curatorToolbar: ElementRef<HTMLElement> | undefined;
 
   sortParamDateAsc: string = sortParamDateAsc;
@@ -112,9 +119,11 @@ export class EpisodesApiComponent implements AfterViewInit {
   }
 
   ngOnInit() {
-    this.siteService.setQuery(null);
-    this.siteService.setPodcast(null);
-    this.siteService.setSubject(null);
+    if (!this.embedded()) {
+      this.siteService.setQuery(null);
+      this.siteService.setPodcast(null);
+      this.siteService.setSubject(null);
+    }
 
     if (!isPlatformBrowser(this.platformId)) {
       return;
@@ -122,51 +131,67 @@ export class EpisodesApiComponent implements AfterViewInit {
 
     void this.fetchHeroCuration();
 
-    this.isLoading.set(true);
-    this.error.set(false);
-    this.episodes.set([]);
+    if (this.episodeIdsInput() !== undefined) {
+      this.loadEpisodes([...(this.episodeIdsInput() ?? [])]);
+      return;
+    }
     this.route.params.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(params => {
-      this.isLoading.set(true);
-      var serialisedEpisodeId = params['episodeIds'];
-      let episodeIds: string[] = [];
-      if (serialisedEpisodeId) {
-        episodeIds = JSON.parse(serialisedEpisodeId);
-      }
-      var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
-        authorizationParams: {
-          audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
-        }
-      }));
-      token.then(_token => {
-        let headers: HttpHeaders = new HttpHeaders();
-        headers = headers.set("Authorization", "Bearer " + _token);
+      const serialisedEpisodeId = params['episodeIds'];
+      this.loadEpisodes(serialisedEpisodeId ? JSON.parse(serialisedEpisodeId) : []);
+    });
+  }
 
-        const episodeResponses: Observable<ApiEpisode | null>[] = [];
-        episodeIds.forEach(episodeId => {
-          const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this))
-          episodeResponses.push(get);
-        })
-        forkJoin(episodeResponses).subscribe({
-          next: episodes => {
-            this.episodes.set(episodes.filter(x => x != null));
-            this.isLoading.set(false);
-          },
-          error: e => {
-            this.error.set(true);
-            this.isLoading.set(false);
-            console.error(e);
-          }
-        })
+  refresh(): void {
+    this.ngOnInit();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const change = changes['episodeIdsInput'];
+    if (change && !change.firstChange && isPlatformBrowser(this.platformId)) {
+      this.loadEpisodes([...(this.episodeIdsInput() ?? [])]);
+    }
+  }
+
+  /** Fetches each episode with a curate token; shared by the /episodes route and embedded use. */
+  protected loadEpisodes(episodeIds: string[]): void {
+    this.isLoading.set(true);
+    this.error.set(false);
+    this.episodes.set([]);
+    if (episodeIds.length === 0) {
+      this.isLoading.set(false);
+      return;
+    }
+    const token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
+      authorizationParams: {
+        audience: `https://api.cultpodcasts.com/`,
+        scope: 'curate'
+      }
+    }));
+    token.then(_token => {
+      let headers: HttpHeaders = new HttpHeaders();
+      headers = headers.set("Authorization", "Bearer " + _token);
+      const episodeResponses: Observable<ApiEpisode | null>[] = episodeIds.map(episodeId => {
+        const episodeEndpoint = new URL(`/episode/${episodeId}`, environment.api).toString();
+        return this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest(this).bind(this));
       });
-    })
+      forkJoin(episodeResponses).subscribe({
+        next: episodes => {
+          this.episodes.set(episodes.filter(x => x != null));
+          this.isLoading.set(false);
+        },
+        error: e => {
+          this.error.set(true);
+          this.isLoading.set(false);
+          console.error(e);
+        }
+      });
+    });
   }
 
   ngAfterViewInit() {
-    if (!isPlatformBrowser(this.platformId)) {
+    if (!isPlatformBrowser(this.platformId) || this.embedded()) {
       return;
     }
     this.snapOffsetObserver = observeCuratorSnapToolbar(this.curatorToolbar?.nativeElement);
