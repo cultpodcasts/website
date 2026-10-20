@@ -15,7 +15,10 @@ describe('RegexPresetsService', () => {
     const preset = service.loadRegexPresets().description.find(x => x.name === presetName)!;
     const control = new FormControl<string>('', { nonNullable: true });
 
-    service.applyDescriptionRegexPreset(preset.pattern, control, 'Cultimatum-The Culture of Cults & Human Trafficking');
+    // Synthetic, generated name with regex-significant characters; never real podcast data.
+    const podcastName = `Example Podcast & Co. (${Math.random().toString(36).slice(2, 8)})`;
+
+    service.applyDescriptionRegexPreset(preset.pattern, control, podcastName);
 
     expect(control.value).toBe(preset.pattern);
     expect(control.value).toContain('{episode-title}');
