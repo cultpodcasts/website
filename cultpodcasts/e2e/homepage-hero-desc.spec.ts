@@ -163,6 +163,7 @@ async function expectExpandedFills(page: Page, collapsed: Geo, shot?: string): P
 		const a = document.querySelector(".billboard__actions")!.getBoundingClientRect();
 		// The app's search field (dropped into the hero, or in the sticky chrome row).
 		const search = document.querySelector(".chrome-search")?.getBoundingClientRect();
+		const chromeBar = parseFloat(getComputedStyle(document.querySelector(".billboard")!).getPropertyValue("--site-chrome-bar-h")) || 52;
 		const stats = document.querySelector(".catalogue")?.getBoundingClientRect();
 		// What paints at the card's lower area: the card itself, not the stats strip below the hero.
 		const probeY = c.bottom - 6;
@@ -173,6 +174,8 @@ async function expectExpandedFills(page: Page, collapsed: Geo, shot?: string): P
 		const over = overY === null ? null : document.elementFromPoint(c.left + 12, overY);
 		return {
 			cardTop: c.top, cardBottom: c.bottom, heroBottom: h.bottom, searchBottom: search?.bottom ?? 0,
+			// The card's top limit: below the search field and 12px clear of the sticky chrome row.
+			topLimit: Math.max(search?.bottom ?? 0, chromeBar + 12),
 			titleTop: t.top, actionsBottom: a.bottom,
 			lowerIsCard: !!probe && card.contains(probe),
 			overStats: overY === null ? null : !!over && card.contains(over),
@@ -189,11 +192,12 @@ async function expectExpandedFills(page: Page, collapsed: Geo, shot?: string): P
 	const heroTop = box.heroBottom - g.heroH;
 	const lift = Math.max(0, heroTop + collapsed.cardBottom - (g.vh - 12));
 	const keptTop = heroTop + collapsed.cardTop - lift;
-	if (keptTop >= box.searchBottom) {
+	if (keptTop >= box.topLimit) {
 		expect(Math.abs(box.cardTop - keptTop), "card top moved").toBeLessThanOrEqual(2);
 	} else {
-		// Scrolled under the search / sticky chrome: held just below it instead.
-		expect(box.cardTop - box.searchBottom, "card top not held below the search").toBeLessThanOrEqual(24);
+		// Would sit under the search / sticky chrome: held just below it instead.
+		expect(box.cardTop, "card top above its limit").toBeGreaterThanOrEqual(box.topLimit - 1);
+		expect(box.cardTop - box.topLimit, "card top not held at its limit").toBeLessThanOrEqual(24);
 	}
 	expect(box.titleTop, "title pushed out of view").toBeGreaterThanOrEqual(0);
 	expect(box.cardTop, "expanded card covers the search field").toBeGreaterThanOrEqual(box.searchBottom - 1);
@@ -385,6 +389,70 @@ test.describe("homepage hero description", () => {
 		await toggle(page).click();
 		await expectCollapsedAgain(page, collapsed);
 	});
+
+	// Jon (6e002b7): the card re-fitted to the viewport on every page scroll (changing shape
+	// while the text inside stood still) and collapsed once the hero went behind the header,
+	// with text still on screen. The fit is measured once, when expanding: page scroll then
+	// carries the card like any content: same shape, same inner scroll, never collapsed.
+	for (const vp of [{ name: "1024x460", width: 1024, height: 460 }, { name: "1440x900", width: 1440, height: 900 }]) {
+		test(`${vp.name}: page scroll while expanded moves the card with the page; no re-fit, no collapse`, async ({ page }) => {
+			await page.setViewportSize(vp);
+			await fakeApi(page, VERY_LONG_DESC);
+			await page.goto("/");
+			await expect(toggle(page)).toBeVisible();
+			// Like a reader: scroll until the whole card is just in view.
+			await page.locator(".billboard__content").evaluate((el) => el.scrollIntoView({ block: "end" }));
+			const collapsed = await geometry(page);
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			await expectExpandedFills(page, collapsed);
+			const read = () => page.evaluate(() => {
+				const h = document.querySelector(".billboard")!.getBoundingClientRect();
+				const c = document.querySelector(".billboard__content")!.getBoundingClientRect();
+				const d = document.querySelector<HTMLElement>(".billboard__desc")!;
+				return {
+					scrollY: window.scrollY, cardH: c.height, cardInHero: c.top - h.top, cardBottom: c.bottom,
+					descH: d.clientHeight, descScroll: d.scrollTop, expanded: d.classList.contains("is-expanded")
+				};
+			});
+			// Scroll inside the description first (wheel over the text).
+			const box = (await desc(page).boundingBox())!;
+			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+			await page.mouse.wheel(0, 100);
+			await expect.poll(async () => (await read()).descScroll).toBeGreaterThan(0);
+			const start = await read();
+			expect(start.scrollY, "wheel over the description scrolled the page").toBe(collapsed.scrollY);
+			// Page wheel off to the side, down until the card has left the viewport, then back.
+			await page.mouse.move(vp.width - 30, vp.height / 2);
+			let steps = 0;
+			for (; steps < 12; steps++) {
+				await page.mouse.wheel(0, vp.height / 5);
+				await page.waitForTimeout(150);
+				const now = await read();
+				expect(now.expanded, `collapsed while the card was on screen (step ${steps})`).toBe(true);
+				expect(Math.abs(now.cardH - start.cardH), "card changed shape on page scroll").toBeLessThanOrEqual(1);
+				expect(Math.abs(now.cardInHero - start.cardInHero), "card did not move with the page").toBeLessThanOrEqual(1);
+				expect(now.descScroll, "inner scroll changed on page scroll").toBe(start.descScroll);
+				if (now.cardBottom < 0) {
+					break;
+				}
+			}
+			expect((await read()).scrollY).toBeGreaterThan(start.scrollY);
+			for (let i = 0; i <= steps + 2; i++) {
+				await page.mouse.wheel(0, -vp.height / 5);
+				await page.waitForTimeout(150);
+			}
+			await page.evaluate((y) => window.scrollTo(0, y), start.scrollY);
+			await expect.poll(async () => (await read()).scrollY).toBe(start.scrollY);
+			const back = await read();
+			expect(back.expanded).toBe(true);
+			expect(Math.abs(back.cardH - start.cardH)).toBeLessThanOrEqual(1);
+			expect(back.descScroll).toBe(start.descScroll);
+			await expectToggleVisible(page, "back where it was expanded");
+			await toggle(page).click();
+			await expectCollapsedAgain(page, collapsed);
+		});
+	}
 
 	// Jon: "if I scroll to the bottom and collapse then the box becomes empty".
 	for (const vp of [{ name: "wide", width: 1440, height: 900 }, { name: "mobile", width: 390, height: 844 }]) {

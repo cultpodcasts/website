@@ -119,12 +119,15 @@ export class HomepageHeroComponent {
   protected readonly descLayout = signal<{ heroH: number; descPx: number; shiftPx: number } | null>(null);
   /** Expanded: the description's scrollbar width, so the pinned chevron sits clear of it. */
   protected readonly descScrollbarPx = signal(0);
-  /** Collapsed geometry captured at expand time (hero-relative, so page scroll can re-fit it). */
+  /**
+   * Collapsed geometry captured at expand time, including where the hero was in the viewport
+   * then (`heroTop`): the fit is measured once, so page scroll just moves the expanded card
+   * with the page (no re-fit, no collapse); only a height resize re-fits it.
+   */
   private descExpandMetrics: {
-    heroH: number; cardTop: number; cardBottom: number; nonDesc: number; clearance: number; chrome: number;
+    heroH: number; heroTop: number; cardTop: number; cardBottom: number; nonDesc: number; clearance: number; chrome: number;
     lineH: number; width: number; bottomAnchored: boolean;
   } | null = null;
-  private descScrollFrame = 0;
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -226,17 +229,6 @@ export class HomepageHeroComponent {
           this.layoutExpandedDesc();
         }
       }
-    });
-  };
-
-  /** Page scroll while expanded moves the card against the viewport: keep it filling to the foot. */
-  private readonly onWindowScrollEvent = (): void => {
-    if (!this.descExpandMetrics || this.descScrollFrame) {
-      return;
-    }
-    this.descScrollFrame = requestAnimationFrame(() => {
-      this.descScrollFrame = 0;
-      this.layoutExpandedDesc();
     });
   };
 
@@ -378,7 +370,6 @@ export class HomepageHeroComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
-      window.addEventListener('scroll', this.onWindowScrollEvent, { passive: true });
       // Web fonts swapping in after first paint change how the description wraps.
       let destroyed = false;
       document.fonts?.ready.then(() => {
@@ -394,10 +385,6 @@ export class HomepageHeroComponent {
         this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
         this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
         window.removeEventListener('resize', this.onResizeEvent);
-        window.removeEventListener('scroll', this.onWindowScrollEvent);
-        if (this.descScrollFrame) {
-          cancelAnimationFrame(this.descScrollFrame);
-        }
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
         this.dotsScrollTarget = undefined;
         if (this.resizeFrame) {
@@ -651,6 +638,7 @@ export class HomepageHeroComponent {
     const styles = getComputedStyle(hero);
     this.descExpandMetrics = {
       heroH: heroBox.height,
+      heroTop: heroBox.top,
       cardTop: cardBox.top - heroBox.top,
       cardBottom: cardBox.bottom - heroBox.top,
       // Card minus the description's content box: the expanded height is set on that box.
@@ -668,25 +656,19 @@ export class HomepageHeroComponent {
   }
 
   /**
-   * Expanded geometry from the collapsed metrics and the current viewport (HERO-DSC-002): the
-   * card's bottom sits `margin` above the viewport foot; its top stays where it was collapsed
-   * (lifted by the overhang if the collapsed card already ended below the foot) but never under
-   * the search clearance / sticky chrome. The description takes the rest (at least 3 lines).
-   * Once the hero has scrolled away behind the sticky chrome, collapse instead.
+   * Expanded geometry (HERO-DSC-002), from the collapsed metrics at the moment of expanding and
+   * the viewport height: the card's bottom sits `margin` above the viewport foot; its top stays
+   * where it was collapsed (lifted by the overhang if the collapsed card already ended below the
+   * foot) but never under the search clearance / sticky chrome. The description takes the rest
+   * (at least 3 lines). Hero-relative (inline shift + height), so page scroll carries it along.
    */
   private layoutExpandedDesc(): void {
     const metrics = this.descExpandMetrics;
-    const hero = this.heroDesc()?.nativeElement.closest('.billboard');
-    if (!metrics || !hero) {
+    if (!metrics) {
       return;
     }
     const margin = 12;
-    const heroTop = hero.getBoundingClientRect().top;
-    if (heroTop < 0 && heroTop + metrics.heroH <= metrics.chrome) {
-      this.collapseDesc();
-      this.syncHeroPaused();
-      return;
-    }
+    const heroTop = metrics.heroTop;
     const foot = (window.visualViewport?.height ?? window.innerHeight) - margin;
     const collapsedTop = heroTop + metrics.cardTop;
     const collapsedBottom = heroTop + metrics.cardBottom;

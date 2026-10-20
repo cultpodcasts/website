@@ -1015,23 +1015,38 @@ describe('HomepageHeroComponent', () => {
         expect(descEl().style.height).toBe('66px');
       });
 
-      it('recomputes on page scroll and holds the top below the sticky chrome', () => {
+      it('expanding with the card under the sticky chrome holds its top below it', () => {
         fakeOverflow(true);
-        fakeCollapsed(900, 0, true);
+        fakeCollapsed(900, -250, true);
         expand();
-        relayout(900, -250, true);
         // Collapsed top 50 is under the chrome: top = 58 + 12 = 70; desc = 888 - 70 - 278 = 540.
         expect(descEl().style.height).toBe('540px');
         expect(card().style.transform).toBe('translateY(20px)');
       });
 
-      it('collapses once the hero has scrolled away behind the sticky chrome', () => {
+      it('measures once: page scroll neither re-fits nor collapses (the card moves with the page)', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
-        relayout(900, -700);
-        expect(descEl().classList.contains('is-expanded')).toBe(false);
-        expect(hero().style.height).toBe('');
+        vi.restoreAllMocks();
+        // The hero has scrolled right up behind the chrome.
+        fakeCollapsed(900, -700);
+        window.dispatchEvent(new Event('scroll'));
+        fixture.detectChanges();
+        expect(descEl().classList.contains('is-expanded')).toBe(true);
+        expect(descEl().style.height).toBe('310px');
+        expect(card().style.transform).toBe('translateY(200px)');
+      });
+
+      it('a height-only resize re-fits to the new foot from the expand-time position', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        // Page scrolled since, then the viewport got shorter (mobile URL bar).
+        relayout(800, -300);
+        // Uses heroTop 0 from expanding, not -300: desc = (800 - 12) - 300 - 278 = 210.
+        expect(descEl().style.height).toBe('210px');
+        expect(card().style.transform).toBe('translateY(100px)');
       });
 
       it('collapse restores the exact collapsed layout (no lock, shift, height or scroll offset)', () => {
