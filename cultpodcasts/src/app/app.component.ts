@@ -51,7 +51,8 @@ import { SubmitUrlPrepareService } from './submit-url-prepare.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
-import { homePinScrollY, homeStickTopPx, nextHomeDocked, readHomeDockMetrics } from './home-chrome-dock';
+import { homePinScrollY, nextHomeDocked, readHomeDockMetrics } from './home-chrome-dock';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -412,17 +413,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     this.applySearchGapStyles(search, gap);
   }
 
-  /** Viewport Y where the overlay becomes stuck in the logo row (Sass sticky `top`, from CSS vars). */
-  private homeStickTop(bar: HTMLElement, _search: HTMLElement): number {
-    const shell = bar.closest('#body') ?? bar;
-    const metrics = readHomeDockMetrics(shell, shell, 0);
-    return homeStickTopPx(metrics);
-  }
-
   /** scrollY at which the sticky overlay reaches its in-bar Y (no teleport). */
   private homePinAtScrollY(bar: HTMLElement, search: HTMLElement): number {
     const shell = bar.closest('#body') ?? bar;
-    const slot = search.parentElement ?? search;
+    const slot = search.closest('.chrome-search-slot') ?? search;
     return homePinScrollY(readHomeDockMetrics(shell, slot, window.scrollY));
   }
 
