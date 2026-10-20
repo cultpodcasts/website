@@ -51,6 +51,7 @@ import { SubmitUrlPrepareService } from './submit-url-prepare.service';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
+import { homePinScrollY, homeStickTopPx, nextHomeDocked, readHomeDockMetrics } from './home-chrome-dock';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -361,23 +362,21 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return;
     }
 
-    if (this.homeScrollDocked()) {
-      // Release when in-flow overlay would sit below the stick line (same Y as
-      // the pin) — not at a tiny scroll threshold, which teleports the field.
-      if (y < this.homePinAtScrollY(bar, search) - 2) {
-        this.homeScrollDocked.set(false);
-        this.changeDetector.detectChanges();
-        this.layoutDroppedSearch();
-      } else {
+    // One pin for dock and undock, from the same CSS values the sticky field uses
+    // (CHROME-DOCK-012): measured toolbar height must not move either line.
+    const docked = this.homeScrollDocked();
+    const next = nextHomeDocked(docked, y, this.homePinAtScrollY(bar, search));
+    if (next === docked) {
+      if (docked) {
         this.clearDockedSearchLayout(search);
+      } else {
+        this.layoutDroppedSearch();
       }
       return;
     }
-
-    // Pin when sticky `top` has caught — field is already at in-bar Y.
-    if (search.getBoundingClientRect().top <= this.homeStickTop(bar, search) + 1) {
-      this.homeScrollDocked.set(true);
-      this.changeDetector.detectChanges();
+    this.homeScrollDocked.set(next);
+    this.changeDetector.detectChanges();
+    if (next) {
       this.clearDockedSearchLayout(search);
     } else {
       this.layoutDroppedSearch();
@@ -413,22 +412,18 @@ export class AppComponent implements OnDestroy, AfterViewInit {
     this.applySearchGapStyles(search, gap);
   }
 
-  /** Viewport Y where the overlay becomes stuck in the logo row (matches Sass `top`). */
-  private homeStickTop(bar: HTMLElement, search: HTMLElement): number {
-    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    const searchHeight = Math.min(search.offsetHeight || 48, barHeight - 8);
-    return Math.max(0, (barHeight - searchHeight) / 2);
+  /** Viewport Y where the overlay becomes stuck in the logo row (Sass sticky `top`, from CSS vars). */
+  private homeStickTop(bar: HTMLElement, _search: HTMLElement): number {
+    const shell = bar.closest('#body') ?? bar;
+    const metrics = readHomeDockMetrics(shell, shell, 0);
+    return homeStickTopPx(metrics);
   }
 
-  /** scrollY at which in-flow overlay Y equals `homeStickTop` (no teleport). */
+  /** scrollY at which the sticky overlay reaches its in-bar Y (no teleport). */
   private homePinAtScrollY(bar: HTMLElement, search: HTMLElement): number {
-    const shell = bar.closest('#body');
-    const gapRaw = shell
-      ? getComputedStyle(shell).getPropertyValue('--site-chrome-search-gap')
-      : '';
-    const gap = Number.parseFloat(gapRaw) || 12;
-    const barHeight = Math.max(bar.getBoundingClientRect().height, 52);
-    return barHeight + gap - this.homeStickTop(bar, search);
+    const shell = bar.closest('#body') ?? bar;
+    const slot = search.parentElement ?? search;
+    return homePinScrollY(readHomeDockMetrics(shell, slot, window.scrollY));
   }
 
   /** Home at rest: drop docked inline left/width so CSS can center the overlay. */
