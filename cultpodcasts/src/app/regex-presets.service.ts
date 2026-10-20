@@ -13,6 +13,15 @@ export class RegexPresetsService {
     };
   }
 
+  /**
+   * Resolves the client-side `{podcastName}` placeholder only: a one-off, apply-time,
+   * **unescaped** substitution of the current podcast name, kept for the title preset.
+   *
+   * Server-side description tokens (`{podcast-name}`, `{episode-title}`) are deliberately
+   * left untouched so they reach the Api verbatim, where they are escaped and resolved
+   * per episode (RedditPodcastPoster `docs/description-regex-tokens.md`). Do not resolve
+   * them here, and use them rather than `{podcastName}` in new description presets.
+   */
   resolveRegexPlaceholders(regexValue: string, podcastName: string): string {
     return regexValue.replaceAll("{podcastName}", podcastName);
   }

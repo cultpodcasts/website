@@ -17,6 +17,10 @@
         {
             "name": "Remove first line (advert)",
             "pattern": "^[^\\r\\n]*\\r?\\n\\s*(?'body'.*)\\z"
+        },
+        {
+            "name": "Episode title prefix removal",
+            "pattern": "^\\s*{episode-title}\\s*[-–—:|]?\\s*(?<body>.*)$"
         }
     ]
 }
