@@ -15,6 +15,8 @@ import { startEpisodePlayback } from "../episode-embed";
 import { displayCatalogName } from "../display-catalog-name";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
+import { ActivatedRoute, Router } from "@angular/router";
+import { keepOffered, readSubjectsFromFragment, replaceUrlFragment, subjectsFragment } from "../browse-filter-params";
 
 @Component({
   selector: "app-series-hub",
@@ -49,7 +51,13 @@ export class SeriesHubComponent {
   private readonly scrollDispatcher = inject(ScrollDispatcher);
   private readonly infiniteScrollStrategy = inject(InfiniteScrollStrategy);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private legacyNames = false;
+  /** Subject chips from the URL fragment, applied once the hub-wide subject facets are known. */
+  private pendingSubjects: string[] = [];
+  /** The fragment last read from or written to the URL; the route snapshot lags a pending navigation. */
+  private urlFragment: string | null = null;
   private subjectsFilter = "";
   private page = 1;
   private scrollSubscribed = false;
@@ -70,6 +78,8 @@ export class SeriesHubComponent {
       this.legacyNames = false;
       this.subjects.set([]);
       this.subjectsFilter = "";
+      this.urlFragment = this.route.snapshot?.fragment || null;
+      this.pendingSubjects = readSubjectsFromFragment(this.urlFragment);
       this.page = 1;
       this.load(name, hub, true, true);
     });
@@ -96,6 +106,9 @@ export class SeriesHubComponent {
       }
     ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
+        if (refreshFacets && this.applyPendingSubjects(data.facets)) {
+          return;
+        }
         const count = data.metadata.get("count");
         this.count.set(typeof count === "number" ? count : data.entities.length);
         if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -152,8 +165,8 @@ export class SeriesHubComponent {
     if (this.subjects().length === 0) {
       return;
     }
-    this.subjects.set([]);
-    this.subjectsFilter = "";
+    this.setSubjects([]);
+    this.syncFilterUrl();
     this.load(this.seriesName(), this.hub(), true, false);
   }
 
@@ -162,9 +175,50 @@ export class SeriesHubComponent {
     const next = current.includes(value)
       ? current.filter((s) => s !== value)
       : [...current, value];
+    this.setSubjects(next);
+    this.syncFilterUrl();
+    this.load(this.seriesName(), this.hub(), true, false);
+  }
+
+  private setSubjects(next: string[]): void {
     this.subjects.set(next);
     this.subjectsFilter = subjectsAnySearchIn(next);
+  }
+
+  /**
+   * After the unfiltered first load, select the subject chips from the URL that
+   * this hub offers (unknown ones are dropped and the URL tidied) and load
+   * again. Returns true when it started that load.
+   */
+  private applyPendingSubjects(facets: SearchResultsFacets): boolean {
+    if (this.pendingSubjects.length === 0) {
+      return false;
+    }
+    const requested = this.pendingSubjects;
+    this.pendingSubjects = [];
+    const offered = facets.subjects?.filter(x => !x.value.startsWith("_"));
+    const subjects = keepOffered(requested, offered);
+    if (subjects.length !== requested.length) {
+      this.setSubjects(subjects);
+      this.syncFilterUrl();
+    }
+    if (subjects.length === 0) {
+      return false;
+    }
+    this.facets.set({ subjects: offered });
+    this.setSubjects(subjects);
     this.load(this.seriesName(), this.hub(), true, false);
+    return true;
+  }
+
+  /** Mirror the subject chips into the URL fragment (history replace, no scroll). */
+  private syncFilterUrl(): void {
+    const fragment = subjectsFragment(this.subjects());
+    if (this.urlFragment === fragment) {
+      return;
+    }
+    this.urlFragment = fragment;
+    replaceUrlFragment(this.router, this.route, fragment);
   }
 
   protected playEpisode(episode: SearchDisplayEpisode): void {
