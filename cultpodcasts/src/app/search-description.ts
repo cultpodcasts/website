@@ -1,4 +1,9 @@
-/** Matches RedditPodcastPoster.Search.Constants.DescriptionSize */
+/**
+ * Card-display cap for search descriptions. The search index truncates
+ * descriptions server-side (RedditPodcastPoster.Search.Constants.DescriptionSize,
+ * currently 100); this client cap is independent and only bounds older or
+ * longer documents. Used by search-style cards, not the homepage hero.
+ */
 export const SEARCH_DESCRIPTION_SIZE = 180;
 
 /** Unicode ellipsis (U+2026) — not three ASCII periods. */

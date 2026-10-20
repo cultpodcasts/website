@@ -11,6 +11,7 @@ import {
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -25,7 +26,6 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
-import { formatSearchDescription } from '../search-description';
 import { ViewerLocaleService } from '../viewer-locale';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
@@ -91,6 +91,15 @@ export class HomepageHeroComponent {
   protected readonly heroDotsOverflowStart = signal(false);
   protected readonly heroDotsOverflowEnd = signal(false);
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
+  private static nextDescId = 0;
+  /** `aria-controls` target for the Show more toggle (unique per hero instance). */
+  protected readonly descId = `billboard-desc-${HomepageHeroComponent.nextDescId++}`;
+  /** Description shown in full (clamp removed). Collapses again on slide change. */
+  protected readonly descExpanded = signal(false);
+  /** Collapsed description is cut by the per-layout clamp (browser-measured; false on the server). */
+  protected readonly descOverflows = signal(false);
+  protected readonly showDescToggle = computed(() => this.descOverflows() || this.descExpanded());
+  private readonly heroDesc = viewChild<ElementRef<HTMLElement>>('heroDesc');
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -114,8 +123,12 @@ export class HomepageHeroComponent {
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
 
+  /**
+   * Full description from `/homepage` (not the search-card formatter): the
+   * hero's 3-line CSS clamp (HERO-SCR-002) decides how much shows.
+   */
   protected readonly featuredDesc = computed(() =>
-    formatSearchDescription(this.featured()?.episodeDescription)
+    this.featured()?.episodeDescription?.trim() ?? ''
   );
 
   protected readonly hasFeaturedDesc = computed(() => this.featuredDesc().trim().length > 0);
@@ -176,6 +189,8 @@ export class HomepageHeroComponent {
     this.resizeFrame = requestAnimationFrame(() => {
       this.resizeFrame = 0;
       this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
+      // The clamp is per layout (5/4/3 lines), so a resize can add or remove overflow.
+      this.measureDescOverflow();
     });
   };
 
@@ -211,6 +226,30 @@ export class HomepageHeroComponent {
   };
 
   constructor() {
+    // Collapse the description whenever the featured slide changes.
+    let descSlideId: string | undefined;
+    effect(() => {
+      const id = this.featured()?.id;
+      if (id === descSlideId) {
+        return;
+      }
+      descSlideId = id;
+      untracked(() => {
+        if (this.descExpanded()) {
+          this.descExpanded.set(false);
+          this.syncHeroPaused();
+        }
+      });
+    });
+
+    // Re-measure after the description text or expanded state renders.
+    afterRenderEffect(() => {
+      this.featuredDesc();
+      this.descExpanded();
+      this.heroDesc();
+      this.measureDescOverflow();
+    });
+
     afterRenderEffect(() => {
       const index = this.heroIndex();
       const slideCount = this.slides().length;
@@ -508,7 +547,34 @@ export class HomepageHeroComponent {
       this.heroPaused.set(true);
       return;
     }
-    this.heroPaused.set(this.pointerInside || this.focusInside);
+    // An expanded description is being read: hold the slide until it is collapsed.
+    this.heroPaused.set(this.pointerInside || this.focusInside || this.descExpanded());
+  }
+
+  protected toggleDesc(event?: Event): void {
+    event?.stopPropagation();
+    this.descExpanded.update(expanded => !expanded);
+    this.syncHeroPaused();
+  }
+
+  /**
+   * Browser only: does the collapsed description overflow its line clamp?
+   * While expanded the clamp is off, so keep the current answer (the toggle
+   * must stay to collapse again).
+   */
+  private measureDescOverflow(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const element = this.heroDesc()?.nativeElement;
+    if (!element) {
+      this.descOverflows.set(false);
+      return;
+    }
+    if (this.descExpanded()) {
+      return;
+    }
+    this.descOverflows.set(element.scrollHeight - element.clientHeight > 1);
   }
 
   private scrollActiveHeroDotIntoView(

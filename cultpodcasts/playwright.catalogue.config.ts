@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
 	testDir: "./e2e",
-	testMatch: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts"],
+	testMatch: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts"],
 	fullyParallel: false,
 	retries: 0,
 	reporter: "list",

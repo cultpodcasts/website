@@ -14,7 +14,7 @@ These goals fight each other. **All are required.** Fixes that only optimize one
 
 | Goal | Why | Wrong “fix” |
 |------|-----|----------------|
-| **Stable height when description exists** (HERO-SCR-002) | Short vs long descriptions (1–3 lines) must not collapse the panel mid-autoplay | Always reserve 3 lines of desc height on every slide |
+| **Stable height when description exists** (HERO-SCR-002) | Short vs long descriptions must not collapse the panel mid-autoplay | Stacked layouts reserve the collapsed desc lines (medium 4, mobile 3) plus the Show more row on every slide; wide hugs the docked card |
 | **No blank band when description is absent** (HERO-SCR-004) | Clips / short episodes often have **empty** `episodeDescription` — mobile shows a large black gap between meta and Watch | Empty `<p class="billboard__desc">` with `min-height`, or unconditional `min-height` on `.billboard__copy-body` |
 | **No blank band under short titles** (HERO-SCR-005) | Stacked layout (≤1280) puts the title in normal flow; a 1-line title with a 3-line `min-height` leaves a large gap above the date/meta | `.billboard__title { min-height: calc(1.12em * 3) }` (or similar) on stacked layouts |
 
@@ -25,6 +25,8 @@ These goals fight each other. **All are required.** Fixes that only optimize one
 3. Apply reserved desc min-height **only** under `.billboard__copy-body.has-desc` (and `.billboard__desc` itself).
 4. Title: `line-clamp: 3` as a **ceiling** only — **never** set title `min-height` to N lines. Accept 1–3 line height variance; keep `overflow-anchor: none` (HERO-SCR-001 / 003).
 5. Keep `overflow-anchor: none` on `.billboard` when slides flip between short/long title or has-desc / no-desc.
+6. `featuredDesc` is the **full trimmed** `/homepage` description. Do **not** run it through the search-card formatter (`formatSearchDescription` / `SEARCH_DESCRIPTION_SIZE`); the per-layout desc clamp (HERO-SCR-002) decides how much shows.
+7. **Show more / Show less** (HERO-DSC-001): a real `<button>` (`aria-expanded`, `aria-controls` → the desc `id`) under the description, rendered only when the collapsed text overflows its clamp. Overflow is measured in the browser only (SSR renders no toggle) after render, on window resize and on slide change. Expanding removes the clamp in place and the panel grows (Watch / More info stay in flow below); on mobile (≤700) the expanded text scrolls inside `max-height: 45vh`. While expanded the hero does not auto-advance; any slide change collapses it.
 
 **How to notice in review / QA**
 
@@ -54,7 +56,7 @@ Use these IDs in PR notes and test descriptions.
 | **HERO-SUB-001** | Every public subject (not `_`-prefixed) renders as a chip; no count/row cap in TS, template, or CSS | Yes |
 | **HERO-SUB-002** | Watch/Listen + More info stay **after** the subject chip block in the DOM (stacked medium may show CTAs in a seam above copy via flex `order` — HERO-SCR-006) | Yes (DOM order; geometry when in-flow under chips) |
 | **HERO-SCR-001** | `.billboard` (and dots viewport) set `overflow-anchor: none` | Yes (Sass contract) |
-| **HERO-SCR-002** | When a description exists: title/desc are 3-line clamped; `.billboard__desc` and `.billboard__copy-body.has-desc` reserve min-height so **short** copy does not collapse the panel | Yes (Sass contract) |
+| **HERO-SCR-002** | When a description exists: title is 3-line clamped; desc is clamped per layout via `--hero-desc-lines` (**wide ≥1280: 5**, **medium 701–1280: 4**, **mobile ≤700: 3**). `.billboard__desc`, `.billboard__desc-more` (Show more row) and `.billboard__copy-body.has-desc` reserve that height on stacked layouts so **short** copy does not collapse the panel; wide (docked card) resets them to hug | Yes (Sass contract + e2e) |
 | **HERO-SCR-003** | Changing slide while the page is scrolled must not yank `window.scrollY` | Manual |
 | **HERO-SCR-004** | No description: omit empty desc; omit copy-body when no desc and no subjects; **never** reserve desc `min-height` without `.has-desc` — mobile must not show a blank band above Watch | Yes |
 | **HERO-SCR-005** | Short titles must not reserve empty lines: stacked layout must **not** set `.billboard__title { min-height: N lines }` — meta follows the title tightly | Yes (Sass contract) |
@@ -111,7 +113,7 @@ See **Design tensions** above. Summary:
 |-----------|-----------------|
 | `overflow-anchor: none` | `.billboard`, `.billboard__dots-viewport` |
 | Title clamp 3 (ceiling only) | `.billboard__title` — **no** `min-height` reserving empty lines |
-| Desc clamp 3 + min-height | `.billboard__desc` — **only when rendered** |
+| Desc clamp `--hero-desc-lines` (5 / 4 / 3) + min-height | `.billboard__desc` — **only when rendered** |
 | Reserved copy-body | `.billboard__copy-body.has-desc` only — **not** bare `.billboard__copy-body` |
 | Empty slide | No `.billboard__desc`; no `.billboard__copy-body` if no subjects either |
 | Wide absolute docking / narrow stacked band | media queries in the same Sass file |
@@ -199,7 +201,7 @@ Prefer compiled hero styles under ~16 kB; hard `anyComponentStyle` error budget 
 
 - [ ] **HERO-SCR-004:** mobile / narrow — slide with empty description and no subjects: no large blank band between meta and Watch
 - [ ] **HERO-SCR-005:** mobile / stacked — short title (1 line): date/meta tight under title, not after empty title lines
-- [ ] **HERO-SCR-002:** slide with a 1-line description still keeps actions from jumping up relative to a 3-line description (reserved height when `.has-desc`)
+- [ ] **HERO-SCR-002:** slide with a 1-line description still keeps actions from jumping up relative to a description that fills the clamp (reserved height when `.has-desc`)
 - [ ] HERO-SCR-003: scroll hero partly off-screen; advance; no jump
 - [ ] Long vs short title visually stable; descenders OK
 - [ ] Mobile: swipe vs vertical scroll; CTAs still tappable

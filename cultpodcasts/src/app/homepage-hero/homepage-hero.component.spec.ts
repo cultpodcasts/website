@@ -231,9 +231,10 @@ describe('HomepageHeroComponent', () => {
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__dots-viewport[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__title[\s\S]*?line-clamp:\s*3/);
-    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?line-clamp:\s*3/);
-    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3\)/);
-    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
+    // HERO-SCR-002: desc clamp + reserved height follow the per-layout line count.
+    expect(heroSass).toMatch(/\.billboard__desc\n[\s\S]*?line-clamp:\s*var\(--hero-desc-lines\)/);
+    expect(heroSass).toMatch(/\.billboard__desc\n[\s\S]*?min-height:\s*calc\(1\.45em \* var\(--hero-desc-lines\)\)/);
+    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* var\(--hero-desc-lines\)/);
     expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
     // HERO-CTL-003: dedicated art hover layer (not whole-billboard mouseenter).
@@ -269,15 +270,15 @@ describe('HomepageHeroComponent', () => {
     expect(subjectsSlice).not.toMatch(/line-clamp:/);
   });
 
-  it('truncates featured description for the hero copy panel', () => {
-    const long = 'x'.repeat(300);
+  it('passes the full trimmed featured description to the hero (CSS clamp, not the search-card cap)', () => {
+    const long = `  ${'Synthetic hero sentence number one. '.repeat(15).trim()}  `;
+    expect(long.trim().length).toBeGreaterThan(SEARCH_DESCRIPTION_SIZE);
     fixture.componentRef.setInput('slides', [ep('a', { episodeDescription: long }), ep('b'), ep('c')]);
     fixture.detectChanges();
 
-    const desc = component['featuredDesc']();
-    expect(desc.length).toBeLessThan(long.length);
-    expect(desc.endsWith('…')).toBe(true);
-    expect(desc.startsWith('x'.repeat(SEARCH_DESCRIPTION_SIZE).trim())).toBe(true);
+    expect(component['featuredDesc']()).toBe(long.trim());
+    const rendered = (fixture.nativeElement as HTMLElement).querySelector('.billboard__desc');
+    expect(rendered?.textContent?.trim()).toBe(long.trim());
   });
 
   it('jumps to a slide when its hero dash is clicked', () => {
@@ -758,5 +759,104 @@ describe('HomepageHeroComponent', () => {
 
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
+  });
+  describe('description Show more / Show less', () => {
+    const longDesc = 'Synthetic hero sentence for the show more toggle. '.repeat(12).trim();
+
+    function root(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    function toggle(): HTMLButtonElement | null {
+      return root().querySelector('button.billboard__desc-toggle');
+    }
+
+    /** happy-dom has no layout: fake the clamped box being shorter than its content. */
+    function fakeOverflow(overflowing: boolean): void {
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 100 });
+      Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: overflowing ? 240 : 100 });
+      component['measureDescOverflow']();
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('slides', [ep('a', { episodeDescription: longDesc }), ep('b'), ep('c')]);
+      fixture.detectChanges();
+    });
+
+    it('HERO-SCR-002: clamps 5 lines wide, 4 medium, 3 mobile', () => {
+      expect(heroSass).toMatch(/^\.billboard\n[\s\S]*?--hero-desc-lines:\s*5/m);
+      expect(heroSass).toMatch(/@media screen and \(max-width: 1280px\)\n    \.billboard\n        --hero-desc-lines:\s*4/);
+      expect(heroSass).toMatch(/@media screen and \(max-width: 700px\)\n    \.billboard\n        --hero-desc-lines:\s*3/);
+    });
+
+    it('hides the toggle when the description fits the clamp', () => {
+      fakeOverflow(false);
+      expect(toggle()).toBeNull();
+      // The row is still there so slides keep one height.
+      expect(root().querySelector('.billboard__desc-more')).toBeTruthy();
+    });
+
+    it('shows an accessible Show more button only when the description overflows', () => {
+      fakeOverflow(true);
+      const button = toggle()!;
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      expect(button.textContent?.trim()).toBe('Show more');
+      expect(button.getAttribute('type')).toBe('button');
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(desc.id).toBeTruthy();
+      expect(button.getAttribute('aria-controls')).toBe(desc.id);
+    });
+
+    it('expands in place and pauses rotation, then collapses and resumes', () => {
+      fakeOverflow(true);
+      component['heroPaused'].set(false);
+
+      toggle()!.click();
+      fixture.detectChanges();
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      expect(desc.classList.contains('is-expanded')).toBe(true);
+      expect(desc.textContent).toBe(longDesc);
+      expect(toggle()!.textContent?.trim()).toBe('Show less');
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('true');
+      expect(component['heroPaused']()).toBe(true);
+
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(desc.classList.contains('is-expanded')).toBe(false);
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('false');
+      expect(component['heroPaused']()).toBe(false);
+    });
+
+    it('does not auto-advance while the description is expanded', () => {
+      fakeOverflow(true);
+      vi.useFakeTimers();
+      component['reduceMotion'] = false;
+      component['heroPaused'].set(false);
+      component['heroImageReady'].set(true);
+      component['heroIndex'].set(0);
+      component['lastFeaturedId'] = 'a';
+      toggle()!.click();
+      component['startHeroCycle']();
+
+      vi.advanceTimersByTime(7500 * 2 + 1000);
+      expect(component['heroIndex']()).toBe(0);
+    });
+
+    it('collapses again when the slide changes', () => {
+      fakeOverflow(true);
+      component['reduceMotion'] = true;
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(component['descExpanded']()).toBe(true);
+
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(component['featured']()?.id).toBe('b');
+      expect(component['descExpanded']()).toBe(false);
+      expect(root().querySelector('.billboard__desc')?.classList.contains('is-expanded')).toBe(false);
+    });
   });
 });

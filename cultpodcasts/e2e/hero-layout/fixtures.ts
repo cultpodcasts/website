@@ -106,7 +106,7 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
     : "";
 
   const descHtml = hasDesc
-    ? `<p class="billboard__desc">${escapeHtml(c.episodeDescription)}</p>`
+    ? `<p class="billboard__desc">${escapeHtml(c.episodeDescription)}</p><div class="billboard__desc-more"></div>`
     : "";
 
   const copyBodyHtml = hasCopyBody

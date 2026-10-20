@@ -96,7 +96,16 @@
         @if (hasCopyBody()) {
         <div class="billboard__copy-body" [class.has-desc]="hasFeaturedDesc()">
           @if (hasFeaturedDesc()) {
-          <p class="billboard__desc">{{ featuredDesc() }}</p>
+          <p class="billboard__desc" #heroDesc [id]="descId"
+            [class.is-expanded]="descExpanded()">{{ featuredDesc() }}</p>
+          <!-- Row is always present with a description so slides keep one height (HERO-SCR-002). -->
+          <div class="billboard__desc-more">
+            @if (showDescToggle()) {
+            <button type="button" class="billboard__desc-toggle"
+              [attr.aria-expanded]="descExpanded()" [attr.aria-controls]="descId"
+              (click)="toggleDesc($event)">{{ descExpanded() ? 'Show less' : 'Show more' }}</button>
+            }
+          </div>
           }
           @if (featuredSubjects().length > 0) {
           <div class="billboard__subjects" aria-label="Subjects">
