@@ -805,8 +805,48 @@ describe('HomepageHeroComponent', () => {
       expect(button.textContent?.trim()).toBe('Show more');
       expect(button.getAttribute('type')).toBe('button');
       expect(button.getAttribute('aria-expanded')).toBe('false');
-      expect(desc.id).toBeTruthy();
+      expect(desc.id).toBe('billboard-desc');
       expect(button.getAttribute('aria-controls')).toBe(desc.id);
+      expect(desc.hasAttribute('tabindex')).toBe(false);
+    });
+
+    it('makes the expanded description keyboard-focusable (it can scroll on mobile)', () => {
+      fakeOverflow(true);
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(root().querySelector('.billboard__desc')!.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('re-measures overflow once web fonts are ready', async () => {
+      let resolveFonts!: () => void;
+      const ready = new Promise<void>((resolve) => (resolveFonts = resolve));
+      const original = Object.getOwnPropertyDescriptor(document, 'fonts');
+      Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+      try {
+        const late = TestBed.createComponent(HomepageHeroComponent);
+        late.componentRef.setInput('slides', [ep('a', { episodeDescription: longDesc }), ep('b'), ep('c')]);
+        late.detectChanges();
+        const lateRoot = late.nativeElement as HTMLElement;
+        const desc = lateRoot.querySelector('.billboard__desc') as HTMLElement;
+        expect(lateRoot.querySelector('button.billboard__desc-toggle')).toBeNull();
+
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 100 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 240 });
+        resolveFonts();
+        await ready;
+        await Promise.resolve();
+        late.detectChanges();
+
+        expect(lateRoot.querySelector('button.billboard__desc-toggle')).toBeTruthy();
+        late.componentInstance['stopHeroCycle']();
+        late.destroy();
+      } finally {
+        if (original) {
+          Object.defineProperty(document, 'fonts', original);
+        } else {
+          delete (document as unknown as { fonts?: unknown }).fonts;
+        }
+      }
     });
 
     it('expands in place and pauses rotation, then collapses and resumes', () => {

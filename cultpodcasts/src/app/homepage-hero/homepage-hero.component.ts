@@ -91,9 +91,11 @@ export class HomepageHeroComponent {
   protected readonly heroDotsOverflowStart = signal(false);
   protected readonly heroDotsOverflowEnd = signal(false);
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
-  private static nextDescId = 0;
-  /** `aria-controls` target for the Show more toggle (unique per hero instance). */
-  protected readonly descId = `billboard-desc-${HomepageHeroComponent.nextDescId++}`;
+  /**
+   * `aria-controls` target for the Show more toggle. One hero per page, so a
+   * constant keeps SSR/prerender and client markup identical.
+   */
+  protected readonly descId = 'billboard-desc';
   /** Description shown in full (clamp removed). Collapses again on slide change. */
   protected readonly descExpanded = signal(false);
   /** Collapsed description is cut by the per-layout clamp (browser-measured; false on the server). */
@@ -327,7 +329,15 @@ export class HomepageHeroComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
+      // Web fonts swapping in after first paint change how the description wraps.
+      let destroyed = false;
+      document.fonts?.ready.then(() => {
+        if (!destroyed) {
+          this.measureDescOverflow();
+        }
+      });
       this.destroyRef.onDestroy(() => {
+        destroyed = true;
         this.stopHeroCycle();
         this.clearHeroContentTransition();
         this.clearHeroImageWait();

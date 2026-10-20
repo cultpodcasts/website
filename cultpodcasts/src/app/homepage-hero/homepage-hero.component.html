@@ -97,7 +97,8 @@
         <div class="billboard__copy-body" [class.has-desc]="hasFeaturedDesc()">
           @if (hasFeaturedDesc()) {
           <p class="billboard__desc" #heroDesc [id]="descId"
-            [class.is-expanded]="descExpanded()">{{ featuredDesc() }}</p>
+            [class.is-expanded]="descExpanded()"
+            [attr.tabindex]="descExpanded() ? 0 : null">{{ featuredDesc() }}</p>
           <!-- Row is always present with a description so slides keep one height (HERO-SCR-002). -->
           <div class="billboard__desc-more">
             @if (showDescToggle()) {
