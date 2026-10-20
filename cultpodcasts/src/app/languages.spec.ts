@@ -1,4 +1,9 @@
-import { LanguageDisplayNamesFactory, createLanguageLabeler } from "./languages";
+import {
+  LanguageDisplayNamesFactory,
+  SUPPLEMENTARY_LANGUAGE_NAMES,
+  createLanguageLabeler,
+  languageLabel
+} from "./languages";
 
 /**
  * Simulates a runtime with trimmed ICU data (as in Chromium / workerd): only
@@ -107,5 +112,26 @@ describe("languages", () => {
 
     // Assert
     expect(created).toBe(2);
+  });
+
+  it("gives the same labels from the supplementary names as a runtime with full language data", () => {
+    // Arrange
+    const supplementedCodes = Object.keys(SUPPLEMENTARY_LANGUAGE_NAMES);
+    const trimmedRealIntl: LanguageDisplayNamesFactory = locale => {
+      const lacksLocaleData = supplementedCodes.includes(locale);
+      const real = new Intl.DisplayNames([lacksLocaleData ? "en-US" : locale], { type: "language" });
+      return {
+        of: (code: string) => SUPPLEMENTARY_LANGUAGE_NAMES[code]?.english ? code : real.of(code),
+        resolvedOptions: () => real.resolvedOptions()
+      } as unknown as Intl.DisplayNames;
+    };
+    const trimmedLabel = createLanguageLabeler(trimmedRealIntl);
+
+    // Act
+    const trimmed = supplementedCodes.flatMap(code => [trimmedLabel(code, "en"), trimmedLabel(code, "es")]);
+    const full = supplementedCodes.flatMap(code => [languageLabel(code, "en"), languageLabel(code, "es")]);
+
+    // Assert
+    expect(trimmed).toEqual(full);
   });
 });

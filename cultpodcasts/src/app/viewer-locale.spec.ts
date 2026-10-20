@@ -41,6 +41,10 @@ describe("viewer-locale", () => {
   });
 
   describe("ViewerLocaleService", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it("stays English on the server so rendered HTML matches the first client render", () => {
       // Arrange
       TestBed.configureTestingModule({
