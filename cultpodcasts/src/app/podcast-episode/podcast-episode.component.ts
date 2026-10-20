@@ -33,6 +33,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
+import { ViewerLocaleService } from '../viewer-locale';
 
 interface SubjectRail {
   subject: string;
@@ -65,6 +66,7 @@ const MAX_SUBJECT_RAILS = 4;
 })
 export class PodcastEpisodeComponent {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthServiceWrapper);
@@ -162,7 +164,7 @@ export class PodcastEpisodeComponent {
   );
 
   protected readonly languageFlag = computed(() =>
-    languageFlagBadgeForEpisode(this._episode() ?? {})
+    languageFlagBadgeForEpisode(this._episode() ?? {}, this.viewerLocale)
   );
 
   /** "More from this podcast" rail — other episodes from the same show. */

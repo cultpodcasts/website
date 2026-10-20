@@ -1,20 +1,26 @@
 ---
-description: Keep the baked-in website language lookup synchronized with the backend language allow-list
-globs: "cultpodcasts/src/app/languages.ts,cultpodcasts/src/app/subject-language-filter.ts,cultpodcasts/src/app/subject-language-filter.spec.ts,cultpodcasts/package.json,cultpodcasts/package-lock.json"
+description: Website language labels come from Intl.DisplayNames; no baked-in table to keep in sync with the backend language allow-list
+globs: "cultpodcasts/src/app/languages.ts,cultpodcasts/src/app/viewer-locale.ts,cultpodcasts/src/app/subject-language-filter.ts,cultpodcasts/src/app/language-flag.ts"
 alwaysApply: false
 ---
 
-# Backend and website language-list sync
+# Backend and website language list
 
-The backend list in `RedditPodcastPoster/Class-Libraries/RedditPodcastPoster.ContentPublisher/LanguagesPublisher.cs` (`LanguageNames`) is authoritative. It is published by `Console-Apps/R2Publisher` to the R2 object `languages` and exposed to curators by `GET /languages`.
+The backend supported-languages list (Cosmos `SupportedLanguagesConfig`, edited from the admin
+"Supported languages" dialog and published by `LanguagesPublisher` to the R2 object `languages`,
+exposed to curators by `GET /languages`) is authoritative for which languages can be assigned.
 
-The public website does **not** read that endpoint at runtime. `cultpodcasts/src/app/languages.ts` is compiled into the webapp and used by `cultpodcasts/src/app/subject-language-filter.ts`.
+The public website does **not** read that list. `cultpodcasts/src/app/languages.ts` derives a label
+for any ISO 639 code at runtime with `Intl.DisplayNames`: the name in the visitor's language, then
+the language's own name ("Spanish (Español)" for an English visitor, "Inglés (English)" for a Spanish
+visitor), or a single name when they match. Region subtags fall back to the base language; unknown
+codes show the raw code. The visitor locale comes from `ViewerLocaleService`
+(`cultpodcasts/src/app/viewer-locale.ts`): `navigator.languages[0]` in the browser, the first
+`Accept-Language` tag during per-request SSR (`server.ts`), `en` during prerender.
 
-Whenever `LanguageNames` adds, removes, or renames a language, all of the following are required:
+Adding a language in the admin dialog therefore needs **no website change**.
 
-- [ ] Update `cultpodcasts/src/app/languages.ts` to match every backend language code, English name, and local/endonym name.
-- [ ] Keep `cultpodcasts/src/app/subject-language-filter.spec.ts` green.
-- [ ] Bump the webapp version in `cultpodcasts/package.json` and `cultpodcasts/package-lock.json`.
-- [ ] Merge the website change to the production branch and verify the resulting Cloudflare Pages Git-integration build deploys successfully.
-
-Do not treat publishing the R2 `languages` object as a website release. Until the table is updated and a new webapp build is deployed, new languages appear as raw ISO-code fallbacks on public subject pages.
+- Do not reintroduce a hand-maintained code → name table.
+- Optional: when a newly supported language has a clear representative country, add its flag to
+  `LANGUAGE_FLAG_BY_CODE` in `cultpodcasts/src/app/language-flag.ts` (without one the badge shows the
+  uppercase ISO code, which is acceptable).

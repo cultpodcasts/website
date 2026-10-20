@@ -1,4 +1,3 @@
-import { LANGUAGES } from "./languages";
 import { SearchResultFacet } from "./search-result-facet.interface";
 
 export const ENGLISH_LANGUAGE_VALUE = "__english__";
@@ -177,18 +176,8 @@ export function displayedLanguageOptions(
   return [...facets, ...missing];
 }
 
-export function languageLabel(code: string): string {
-  const normalized = (code ?? "").trim().toLowerCase();
-  // Region subtags (e.g. pt-BR) fall back to the base language entry.
-  const names = LANGUAGES[normalized] ?? LANGUAGES[normalized.split("-")[0]];
-  if (!names) {
-    return code;
-  }
-  if (names.english.toLowerCase() === names.local.toLowerCase()) {
-    return names.english;
-  }
-  return `${names.english} (${names.local})`;
-}
+// Re-exported for existing consumers; names come from Intl.DisplayNames.
+export { languageLabel } from "./languages";
 
 function uniqueCodes(codes: string[]): string[] {
   return [...new Set(codes.map(code => code.trim()).filter(code => !!code))];

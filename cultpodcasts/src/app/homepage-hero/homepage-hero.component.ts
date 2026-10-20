@@ -26,6 +26,7 @@ import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episod
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
 import { formatSearchDescription } from '../search-description';
+import { ViewerLocaleService } from '../viewer-locale';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -64,6 +65,7 @@ export class HomepageHeroComponent {
   readonly play = output<SearchDisplayEpisode>();
 
   private readonly playerService = inject(PlayerService);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -332,7 +334,7 @@ export class HomepageHeroComponent {
   }
 
   protected languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode);
+    return languageFlagBadgeForEpisode(episode, this.viewerLocale);
   }
 
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {

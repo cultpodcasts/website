@@ -40,6 +40,7 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { PlayerService } from '../player.service';
+import { ViewerLocaleService } from '../viewer-locale';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -75,6 +76,7 @@ export class SubjectApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected auth = inject(AuthServiceWrapper);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
@@ -475,7 +477,7 @@ export class SubjectApiComponent {
   }
 
   languageDisplayName(code: string): string {
-    return languageLabel(code);
+    return languageLabel(code, this.viewerLocale);
   }
 
   protected showLanguageSelector = computed(() =>

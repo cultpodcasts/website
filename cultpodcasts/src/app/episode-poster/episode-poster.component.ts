@@ -10,6 +10,7 @@ import { releaseDateLabel } from '../release-label';
 import { pickCardSubject } from '../card-subject';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { PlayerService } from '../player.service';
+import { ViewerLocaleService } from '../viewer-locale';
 
 @Component({
   selector: 'app-episode-poster',
@@ -26,6 +27,7 @@ import { PlayerService } from '../player.service';
 })
 export class EpisodePosterComponent {
   private readonly playerService = inject(PlayerService);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
 
   readonly episode = input.required<SearchDisplayEpisode>();
   readonly playing = input(false);
@@ -88,7 +90,7 @@ export class EpisodePosterComponent {
   });
 
   protected readonly languageBadge = computed((): LanguageFlagBadge | undefined =>
-    languageFlagBadgeForEpisode(this.episode())
+    languageFlagBadgeForEpisode(this.episode(), this.viewerLocale)
   );
 
   protected readonly releaseLabel = computed(() =>
