@@ -230,6 +230,9 @@
 .billboard__content
     position: relative
     z-index: 2
+    // Resolved search clearance (the custom property is an unresolved calc): TS reads
+    // it as the expanded card's top limit (HERO-DSC-002); also keeps scrollIntoView clear.
+    scroll-margin-top: var(--nflx-hero-search-clearance, 140px)
     width: min(640px, 100%)
     pointer-events: auto
     color: var(--nflx-on-media, #fff)
@@ -353,13 +356,14 @@
     overflow: hidden
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Expanded: clamp off, the full text shows and the panel grows in place (buttons
-    // stay in flow below). Never an inner scroll box, in any layout (HERO-DSC-001).
+    // Expanded (HERO-DSC-002): clamp off; TS caps max-height to the viewport and the
+    // text scrolls inside it. The hero keeps its height; the card grows over the art.
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
-        overflow: visible
+        overflow-y: auto
+        overscroll-behavior: contain
         // Spacer at the end of the text: the last line wraps short of the expander,
         // so nothing is hidden once the reader reaches the end.
         &::after
@@ -680,6 +684,11 @@
         // Framed art ends on a clean edge, so no dissolve is needed. Only the
         // pre-measure fallback (art still covering the whole billboard) needs one.
         --hero-copy-fade: 0px
+        // Expanded desc: the hero height is locked, so the art spacer gives way and
+        // the card grows upward over the frame instead of pushing the page down.
+        &.is-desc-expanded::before
+            flex-shrink: 1
+            min-height: 0
         &::before
             content: ''
             flex: 0 0 max(var(--nflx-hero-search-clearance, 140px), var(--hero-band-h))

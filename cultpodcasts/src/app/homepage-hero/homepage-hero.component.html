@@ -1,6 +1,8 @@
 @if (featured(); as feature) {
 <section class="billboard" aria-roledescription="carousel" aria-label="Featured episodes"
   [class.is-paused]="heroPaused()"
+  [class.is-desc-expanded]="descExpanded()"
+  [style.height.px]="descLayout()?.heroH ?? null"
   [class.has-art-aspect]="heroArtAspect() != null"
   [style.--hero-art-aspect]="heroArtAspect() ?? null"
   (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)"
@@ -64,7 +66,8 @@
   <div class="billboard__art-hover" aria-hidden="true"
     (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)"></div>
 
-  <div class="billboard__content" [style.--hero-desc-lines]="descFitLines()">
+  <div class="billboard__content" [style.--hero-desc-lines]="descFitLines()"
+    [style.transform]="descLayout()?.liftPx ? 'translateY(-' + descLayout()!.liftPx + 'px)' : null">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
       <div class="billboard__copy">
         <p class="billboard__eyebrow">
@@ -97,15 +100,18 @@
         <div class="billboard__copy-body" [class.has-desc]="hasFeaturedDesc()">
           @if (hasFeaturedDesc()) {
           <!-- The expander sits on the last visible line (no row of its own), bottom-right
-               of the description box over a short fade (HERO-DSC-001). -->
+               of the description box over a short fade (HERO-DSC-001). Expanded, it stays
+               pinned there, outside the scrolling description (HERO-DSC-002). -->
           <div class="billboard__desc-wrap">
             <p class="billboard__desc" #heroDesc [id]="descId"
               [class.is-expanded]="descExpanded()"
->{{ featuredDesc() }}</p>
+              [style.max-height.px]="descLayout()?.maxPx ?? null"
+              [attr.tabindex]="descExpanded() ? 0 : null">{{ featuredDesc() }}</p>
             @if (showDescToggle()) {
-            <span class="billboard__desc-fade" aria-hidden="true"></span>
+            <span class="billboard__desc-fade" aria-hidden="true" [style.right.px]="descScrollbarPx() || null"></span>
             <!-- Same icon expander as the discovery cards (app-clampable-text). -->
             <button type="button" mat-icon-button class="billboard__desc-toggle"
+              [style.right.px]="descScrollbarPx() || null"
               [attr.aria-label]="descExpanded() ? 'Collapse description' : 'Expand description'"
               [attr.aria-expanded]="descExpanded()" [attr.aria-controls]="descId"
               (click)="toggleDesc($event)">

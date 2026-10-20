@@ -924,17 +924,116 @@ describe('HomepageHeroComponent', () => {
       });
     });
 
-    it('expanded shows the full text: never an inner scroll box, in any layout', () => {
-      expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?line-clamp:\s*none\n\s+overflow:\s*visible/);
-      expect(heroSass).not.toMatch(/45vh/);
-      expect(heroSass).not.toMatch(/--hero-desc-expand-max/);
-      // No scroll container anywhere in the hero styles (was the mobile 45vh / wide capped box).
-      expect(heroSass).not.toMatch(/overflow(-y)?:\s*(auto|scroll)/);
-      fakeOverflow(true);
-      toggle()!.click();
-      fixture.detectChanges();
-      // Not a scroll container any more, so not a tab stop either.
-      expect(root().querySelector('.billboard__desc')!.hasAttribute('tabindex')).toBe(false);
+    describe('HERO-DSC-002: expanded keeps the hero, caps the card at the viewport, scrolls inside', () => {
+      const realInnerHeight = window.innerHeight;
+      afterEach(() => {
+        vi.restoreAllMocks();
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: realInnerHeight });
+      });
+
+      /** Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it; 22px lines; 140px clearance. */
+      function fakeCollapsed(viewportH: number, heroTop = 0): void {
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewportH });
+        const hero = root().querySelector('.billboard') as HTMLElement;
+        const card = root().querySelector('.billboard__content') as HTMLElement;
+        const desc = root().querySelector('.billboard__desc') as HTMLElement;
+        const rect = (top: number, height: number) => ({ top, bottom: top + height, height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+        vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() => rect(heroTop, 720));
+        vi.spyOn(card, 'getBoundingClientRect').mockImplementation(() => rect(heroTop + 300, 388));
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
+        const real = window.getComputedStyle.bind(window);
+        vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+          if (el === hero) {
+            return { getPropertyValue: (n: string) => (n === '--site-chrome-bar-h' ? '58px' : '') } as unknown as CSSStyleDeclaration;
+          }
+          if (el === card) {
+            return { scrollMarginTop: '140px' } as unknown as CSSStyleDeclaration;
+          }
+          if (el === desc) {
+            return { lineHeight: '22px' } as unknown as CSSStyleDeclaration;
+          }
+          return real(el);
+        });
+      }
+
+      const hero = () => root().querySelector('.billboard') as HTMLElement;
+      const card = () => root().querySelector('.billboard__content') as HTMLElement;
+      const descEl = () => root().querySelector('.billboard__desc') as HTMLElement;
+
+      function expand(): void {
+        toggle()!.click();
+        fixture.detectChanges();
+      }
+
+      it('locks the hero height and gives the description the room above the card (no lift when it fits)', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        expect(hero().style.height).toBe('720px');
+        // 688 bottom - 140 clearance - (388 - 110) rest of the card = 270.
+        expect(descEl().style.maxHeight).toBe('270px');
+        expect(card().style.transform).toBe('');
+        expect(hero().classList.contains('is-desc-expanded')).toBe(true);
+      });
+
+      it('lifts the card so its bottom stays 12px above a short viewport', () => {
+        fakeOverflow(true);
+        fakeCollapsed(600);
+        expand();
+        // lift = 688 - (600 - 12) = 100; room = 688 - 100 - 140 - 278 = 170.
+        expect(card().style.transform).toBe('translateY(-100px)');
+        expect(descEl().style.maxHeight).toBe('170px');
+      });
+
+      it('keeps at least 3 lines when there is no room left', () => {
+        fakeOverflow(true);
+        fakeCollapsed(450);
+        expand();
+        expect(descEl().style.maxHeight).toBe('66px');
+      });
+
+      it('re-caps against the sticky chrome when the page scrolls', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        vi.restoreAllMocks();
+        fakeCollapsed(900, -100);
+        component['layoutExpandedDesc']();
+        fixture.detectChanges();
+        // bottom 588; top = max(-100 + 140, 58 + 12) = 70; room = 588 - 70 - 278 = 240.
+        expect(descEl().style.maxHeight).toBe('240px');
+      });
+
+      it('collapse restores the exact collapsed layout (no lock, lift, cap or scroll offset)', () => {
+        fakeOverflow(true);
+        fakeCollapsed(600);
+        expand();
+        descEl().scrollTop = 120;
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(hero().style.height).toBe('');
+        expect(card().style.transform).toBe('');
+        expect(descEl().style.maxHeight).toBe('');
+        expect(descEl().scrollTop).toBe(0);
+        expect(hero().classList.contains('is-desc-expanded')).toBe(false);
+      });
+
+      it('Sass: the expanded description scrolls inside; stacked art spacer gives way instead of the page moving', () => {
+        expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-y:\s*auto\n\s+overscroll-behavior:\s*contain/);
+        expect(heroSass).toMatch(/&\.is-desc-expanded::before\n\s+flex-shrink:\s*1\n\s+min-height:\s*0/);
+        expect(heroSass).toMatch(/scroll-margin-top:\s*var\(--nflx-hero-search-clearance,\s*140px\)/);
+        expect(heroSass).not.toMatch(/45vh/);
+      });
+
+      it('the chevron stays outside the scrolling description', () => {
+        fakeOverflow(true);
+        expand();
+        const button = toggle()!;
+        expect(descEl().contains(button)).toBe(false);
+        expect(button.parentElement?.classList.contains('billboard__desc-wrap')).toBe(true);
+        // A scroll container must be reachable by keyboard (arrow keys scroll it).
+        expect(descEl().getAttribute('tabindex')).toBe('0');
+      });
     });
 
     it('resets the description scroll offset on collapse and on slide change', () => {

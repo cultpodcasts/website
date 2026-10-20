@@ -109,6 +109,19 @@ export class HomepageHeroComponent {
    */
   protected readonly descFitLines = signal<number | null>(null);
   private static readonly wideMinDescLines = 2;
+  /**
+   * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
+   * inline), the card grows upward over the art and is lifted (`liftPx`) so its bottom stays
+   * inside the viewport, and the description scrolls inside `maxPx`. Null while collapsed.
+   */
+  protected readonly descLayout = signal<{ heroH: number; maxPx: number; liftPx: number } | null>(null);
+  /** Expanded: the description's scrollbar width, so the pinned chevron sits clear of it. */
+  protected readonly descScrollbarPx = signal(0);
+  /** Collapsed geometry captured at expand time (hero-relative, so page scroll can re-cap it). */
+  private descExpandMetrics: {
+    heroH: number; cardBottom: number; nonDesc: number; clearance: number; chrome: number; lineH: number; width: number;
+  } | null = null;
+  private descScrollFrame = 0;
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -200,6 +213,27 @@ export class HomepageHeroComponent {
       this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
       // The clamp is per layout (5/4/3 lines), so a resize can add or remove overflow.
       this.measureDescOverflow();
+      // Expanded: a width change reflows the whole card (maybe the layout), so collapse
+      // back to the measured state; a height-only change (mobile URL bar) just re-caps.
+      if (this.descExpandMetrics) {
+        if (window.innerWidth !== this.descExpandMetrics.width) {
+          this.collapseDesc();
+          this.syncHeroPaused();
+        } else {
+          this.layoutExpandedDesc();
+        }
+      }
+    });
+  };
+
+  /** Page scroll while expanded moves the card against the viewport: keep it capped. */
+  private readonly onWindowScrollEvent = (): void => {
+    if (!this.descExpandMetrics || this.descScrollFrame) {
+      return;
+    }
+    this.descScrollFrame = requestAnimationFrame(() => {
+      this.descScrollFrame = 0;
+      this.layoutExpandedDesc();
     });
   };
 
@@ -247,7 +281,7 @@ export class HomepageHeroComponent {
         // A previous slide's description must not carry a scroll offset into this one.
         this.resetDescScroll();
         if (this.descExpanded()) {
-          this.descExpanded.set(false);
+          this.collapseDesc();
           this.syncHeroPaused();
         }
       });
@@ -341,6 +375,7 @@ export class HomepageHeroComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
+      window.addEventListener('scroll', this.onWindowScrollEvent, { passive: true });
       // Web fonts swapping in after first paint change how the description wraps.
       let destroyed = false;
       document.fonts?.ready.then(() => {
@@ -356,6 +391,10 @@ export class HomepageHeroComponent {
         this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
         this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
         window.removeEventListener('resize', this.onResizeEvent);
+        window.removeEventListener('scroll', this.onWindowScrollEvent);
+        if (this.descScrollFrame) {
+          cancelAnimationFrame(this.descScrollFrame);
+        }
         this.dotsScrollTarget?.removeEventListener('scroll', this.onDotsScrollEvent);
         this.dotsScrollTarget = undefined;
         if (this.resizeFrame) {
@@ -575,14 +614,70 @@ export class HomepageHeroComponent {
 
   protected toggleDesc(event?: Event): void {
     event?.stopPropagation();
-    const collapsing = this.descExpanded();
-    this.descExpanded.update(expanded => !expanded);
-    if (collapsing) {
-      // Defensive: a scrolled box re-clamped at its old offset showed blank space
-      // past the text instead of the first lines.
-      this.resetDescScroll();
+    if (this.descExpanded()) {
+      this.collapseDesc();
+    } else {
+      this.captureDescExpandMetrics();
+      this.descExpanded.set(true);
+      this.layoutExpandedDesc();
     }
     this.syncHeroPaused();
+  }
+
+  /** Back to the exact collapsed layout: no lock, lift or cap, first line at the top. */
+  private collapseDesc(): void {
+    this.descExpanded.set(false);
+    this.descExpandMetrics = null;
+    this.descLayout.set(null);
+    this.descScrollbarPx.set(0);
+    // A scrolled box re-clamped at its old offset showed blank space past the text.
+    this.resetDescScroll();
+  }
+
+  /** Browser only, before the expanded state renders: measure the collapsed card. */
+  private captureDescExpandMetrics(): void {
+    const desc = this.heroDesc()?.nativeElement;
+    const card = desc?.closest<HTMLElement>('.billboard__content');
+    const hero = desc?.closest<HTMLElement>('.billboard');
+    if (!isPlatformBrowser(this.platformId) || !desc || !card || !hero) {
+      return;
+    }
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const heroBox = hero.getBoundingClientRect();
+    const cardBox = card.getBoundingClientRect();
+    const styles = getComputedStyle(hero);
+    this.descExpandMetrics = {
+      heroH: heroBox.height,
+      cardBottom: cardBox.bottom - heroBox.top,
+      nonDesc: cardBox.height - desc.clientHeight,
+      // Keep the card below the dropped search and the sticky chrome row. The clearance
+      // custom property is an unresolved calc(); the card's scroll-margin-top resolves it.
+      clearance: px(getComputedStyle(card).scrollMarginTop) || 140,
+      chrome: px(styles.getPropertyValue('--site-chrome-bar-h')) || 52,
+      lineH: px(getComputedStyle(desc).lineHeight),
+      width: window.innerWidth,
+    };
+  }
+
+  /**
+   * Expanded geometry from the collapsed metrics and the current viewport: lift the card
+   * so its bottom stays `margin` above the viewport bottom, keep its top below the search
+   * clearance / sticky chrome, and give the description the rest (at least 3 lines).
+   */
+  private layoutExpandedDesc(): void {
+    const metrics = this.descExpandMetrics;
+    const hero = this.heroDesc()?.nativeElement.closest('.billboard');
+    if (!metrics || !hero) {
+      return;
+    }
+    const margin = 12;
+    const heroTop = hero.getBoundingClientRect().top;
+    const viewportH = window.visualViewport?.height ?? window.innerHeight;
+    const bottom = heroTop + metrics.cardBottom;
+    const lift = Math.max(0, bottom - (viewportH - margin));
+    const top = Math.max(heroTop + metrics.clearance, metrics.chrome + margin);
+    const maxPx = Math.max(metrics.lineH * 3, Math.floor(bottom - lift - top - metrics.nonDesc));
+    this.descLayout.set({ heroH: metrics.heroH, maxPx, liftPx: Math.round(lift) });
   }
 
   private resetDescScroll(): void {
@@ -607,6 +702,8 @@ export class HomepageHeroComponent {
       return;
     }
     if (this.descExpanded()) {
+      // The pinned chevron sits clear of the description's own scrollbar.
+      this.descScrollbarPx.set(Math.max(0, element.offsetWidth - element.clientWidth));
       return;
     }
     this.fitWideDesc(element);
