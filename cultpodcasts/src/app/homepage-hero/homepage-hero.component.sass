@@ -340,8 +340,8 @@
     font-size: var(--hero-desc-font)
 
 .billboard__desc
+    // Font size inherits from .billboard__desc-wrap (--hero-desc-font).
     margin: 0
-    font-size: var(--hero-desc-font)
     line-height: 1.45
     color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
@@ -359,16 +359,13 @@
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
-        max-height: none
         overflow: visible
-
-// Expanded: an inline spacer at the end of the text makes the last line wrap short
-// of the button, so nothing is hidden once the reader reaches the end.
-.billboard__desc.is-expanded.has-toggle::after
-    content: ''
-    display: inline-block
-    width: var(--hero-desc-toggle-room)
-    height: 1px
+        // Spacer at the end of the text: the last line wraps short of the expander,
+        // so nothing is hidden once the reader reaches the end.
+        &::after
+            content: ''
+            display: inline-block
+            width: var(--hero-desc-toggle-room)
 
 // Fades the end of the last visible line under the expander (the art/card behind the
 // copy is near-black in every layout), so the button never sits on legible text.
@@ -393,7 +390,6 @@
     width: 32px
     height: 32px
     padding: 0
-    line-height: 32px
     color: var(--nflx-on-media, #fff)
     background-color: color-mix(in srgb, #000 55%, transparent)
     border: 1px solid #ffffff38
@@ -407,6 +403,9 @@
 .billboard__subjects
     // Do not overflow-clip or max-height — all public chips must show.
     // Contract: docs/homepage-hero.md § Subjects
+    // Above the inline expander's 48px touch target, which overhangs the chip row.
+    position: relative
+    z-index: 1
     display: flex
     flex-wrap: wrap
     gap: 8px
@@ -586,7 +585,9 @@
 .billboard.is-paused .billboard__dot-fill.is-running
     animation-play-state: paused
 
-@media (prefers-reduced-motion: reduce)
+// Reduced motion, and touch / narrow (continuous GPU effects fight dialog
+// compositing): no grain, no Ken Burns, no live pulse.
+@media (prefers-reduced-motion: reduce), screen and (max-width: 900px), (hover: none) and (pointer: coarse)
     .billboard__grain
         display: none
     .billboard__stage.is-kenburns
@@ -596,6 +597,10 @@
         transform: scale(1.05)
     .billboard__stage.has-edge-extend .billboard__stage-motion
         transform: none
+    .billboard__live
+        animation: none
+
+@media (prefers-reduced-motion: reduce)
     .billboard__stage
         transition: none
     .billboard__feature,
@@ -610,19 +615,8 @@
     .billboard__dots-viewport
         scroll-behavior: auto
 
-// Touch / narrow: drop continuous GPU effects that fight dialog compositing.
 @media screen and (max-width: 900px), (hover: none) and (pointer: coarse)
-    .billboard__grain
-        display: none
-    .billboard__stage.is-kenburns
-        .billboard__stage-motion
-            animation: none
-    .billboard__stage-motion
-        transform: scale(1.05)
-    .billboard__stage.has-edge-extend .billboard__stage-motion
-        transform: none
     .billboard__live
-        animation: none
         box-shadow: none
 
 // While a Material dialog holds scroll-lock, freeze any leftover stage motion.
@@ -642,15 +636,11 @@
 // placed there lose on source order. Kept before the max-width:1280 block so
 // the stacked layout still wins at exactly 1280px.
 @media screen and (min-width: 1280px)
-    .billboard
-        // Floor at the old fixed band; grow when the details card needs more
-        // height (ultrawide / short windows) so title + desc + CTAs never clip.
-        height: auto
-        min-height: min(88vh, 720px)
+    // .billboard keeps the base min-height (the band) with no fixed height, so it
+    // grows when the card needs more (ultrawide / short windows / expanded desc).
     .billboard__content
-        // In flow at the flex-end of the hero so card height drives the band.
-        // Negative margins recreate the docked surface overhang past 4vw / 48px.
-        position: relative
+        // In flow (base position: relative) at the flex-end of the hero so card
+        // height drives the band. Negative margins recreate the docked overhang.
         margin-left: -24px
         margin-bottom: -16px
         box-sizing: border-box
@@ -681,8 +671,6 @@
         // Drop the tall viewport min-height — it forced letterboxing around
         // the contain-sized art. Height comes from search clearance + copy.
         min-height: 0
-        // Undo wide fixed band at the shared 1280px breakpoint.
-        height: auto
         // Media frame height, preferring 56.25vw — 16:9 at full width, the aspect
         // ~80% of hero art uses, so it fills the frame exactly. Short-and-wide
         // windows (a non-maximised desktop window) instead reserve ~320px for the
@@ -703,16 +691,14 @@
     // Fixed 16:9 media frame at the top. Mid-width: keep it at top:0 under
     // frosted/transparent chrome; clearance is for copy via ::before. Narrow (≤700)
     // overrides top to sit below the sticky row.
+    // Hover-pause target matches the framed art band so it covers the image only.
     .billboard.has-art-aspect
         .billboard__stages,
         .billboard__grain,
         .billboard__scrim,
-        .billboard__vignette
-            inset: auto
-            top: 0
-            left: 0
-            right: 0
-            bottom: auto
+        .billboard__vignette,
+        .billboard__art-hover
+            inset: 0 0 auto
             width: 100%
             // Fixed height, not the art's aspect: a frame that resized per slide
             // moved the copy (and everything below the hero) on every rotation.
@@ -731,15 +717,9 @@
         width: 100%
         max-width: min(640px, 100%)
         flex: 0 1 auto
-        // Undo wide absolute docking + in-box card padding at the shared 1280px breakpoint.
-        position: relative
-        left: auto
-        bottom: auto
+        // Undo the wide card padding at the shared 1280px breakpoint.
         padding: 8px 0 0
         box-sizing: border-box
-        max-height: none
-        overflow: visible
-        z-index: 2
         &::before
             content: ''
             position: absolute
@@ -769,20 +749,10 @@
         background: linear-gradient(#0007, transparent 22%)
     .billboard__vignette
         background: none
-    // Match the framed art band so hover-pause covers the image only.
-    .billboard.has-art-aspect .billboard__art-hover
-        inset: auto
-        top: 0
-        left: 0
-        right: 0
-        bottom: auto
-        width: 100%
-        height: var(--hero-band-h)
     .billboard__controls
         position: relative
         right: auto
         bottom: auto
-        left: auto
         width: 100%
         max-width: none
         align-items: stretch
@@ -813,14 +783,10 @@
             left: 4vw
             right: 4vw
             width: auto
-            max-width: none
             top: calc(var(--hero-band-h) - 12px)
             transform: translateY(-100%)
             z-index: 3
-            align-items: stretch
         .billboard__pager
-            max-width: none
-            width: 100%
             min-width: 0
 
 @media screen and (max-width: 700px)

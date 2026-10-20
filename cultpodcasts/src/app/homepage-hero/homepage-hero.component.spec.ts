@@ -4,6 +4,7 @@ import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compileString } from 'sass';
 import { HomepageHeroComponent, HomepageHeroSlide } from './homepage-hero.component';
 import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
@@ -224,6 +225,13 @@ describe('HomepageHeroComponent', () => {
     expect(body.classList.contains('has-desc')).toBe(false);
     expect(fixture.nativeElement.querySelector('.billboard__desc')).toBeNull();
     expect(fixture.nativeElement.querySelector('.billboard__subjects')).toBeTruthy();
+  });
+
+  it('compiled component CSS stays under the anyComponentStyle error budget (17 kB in angular.json)', () => {
+    // The production build fails the Cloudflare Pages deploy above 17,000 bytes, and
+    // test:all does not run it. Compressed Sass tracks the build's measure within ~1%.
+    const css = compileString(heroSass, { syntax: 'indented', style: 'compressed' }).css;
+    expect(css.length).toBeLessThan(17_000);
   });
 
   it('HERO-SCR-001/002/005 + HERO-CTL-001/003/004 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
@@ -808,7 +816,7 @@ describe('HomepageHeroComponent', () => {
       expect(heroSass).toMatch(/\.billboard__desc-wrap\n[\s\S]*?position:\s*relative/);
       expect(heroSass).toMatch(/\.billboard__desc-toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
       // Expanded: the last line wraps short of the button.
-      expect(heroSass).toMatch(/\.billboard__desc\.is-expanded\.has-toggle::after[\s\S]*?width:\s*var\(--hero-desc-toggle-room\)/);
+      expect(heroSass).toMatch(/&\.is-expanded\n[\s\S]*?&::after\n[\s\S]*?width:\s*var\(--hero-desc-toggle-room\)/);
       // Stacked reserve no longer adds a 32px expander row.
       expect(heroSass).not.toMatch(/var\(--hero-desc-lines\)\s*\+\s*4[04]px\s*\+\s*32px/);
       expect(heroSass).not.toMatch(/billboard__desc-more/);
@@ -917,10 +925,11 @@ describe('HomepageHeroComponent', () => {
     });
 
     it('expanded shows the full text: never an inner scroll box, in any layout', () => {
-      expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?max-height:\s*none\n\s+overflow:\s*visible/);
+      expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?line-clamp:\s*none\n\s+overflow:\s*visible/);
       expect(heroSass).not.toMatch(/45vh/);
       expect(heroSass).not.toMatch(/--hero-desc-expand-max/);
-      expect(heroSass).not.toMatch(/\.is-expanded[^\n]*\n(\s+[^\n]*\n)*?\s+overflow-y:\s*auto/);
+      // No scroll container anywhere in the hero styles (was the mobile 45vh / wide capped box).
+      expect(heroSass).not.toMatch(/overflow(-y)?:\s*(auto|scroll)/);
       fakeOverflow(true);
       toggle()!.click();
       fixture.detectChanges();
