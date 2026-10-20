@@ -111,15 +111,18 @@ export class HomepageHeroComponent {
   private static readonly wideMinDescLines = 2;
   /**
    * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
-   * inline), the card grows upward over the art and is lifted (`liftPx`) so its bottom stays
-   * inside the viewport, and the description scrolls inside `maxPx`. Null while collapsed.
+   * inline) and the card fills down to the viewport foot, overlaying what follows the hero.
+   * `descPx` is the description's height (it scrolls inside) and `shiftPx` moves the card from
+   * its flow position to its target top (collapsed top, lifted to fit or held below the search
+   * clearance). Null while collapsed.
    */
-  protected readonly descLayout = signal<{ heroH: number; maxPx: number; liftPx: number } | null>(null);
+  protected readonly descLayout = signal<{ heroH: number; descPx: number; shiftPx: number } | null>(null);
   /** Expanded: the description's scrollbar width, so the pinned chevron sits clear of it. */
   protected readonly descScrollbarPx = signal(0);
-  /** Collapsed geometry captured at expand time (hero-relative, so page scroll can re-cap it). */
+  /** Collapsed geometry captured at expand time (hero-relative, so page scroll can re-fit it). */
   private descExpandMetrics: {
-    heroH: number; cardBottom: number; nonDesc: number; clearance: number; chrome: number; lineH: number; width: number;
+    heroH: number; cardTop: number; cardBottom: number; nonDesc: number; clearance: number; chrome: number;
+    lineH: number; width: number; bottomAnchored: boolean;
   } | null = null;
   private descScrollFrame = 0;
 
@@ -214,7 +217,7 @@ export class HomepageHeroComponent {
       // The clamp is per layout (5/4/3 lines), so a resize can add or remove overflow.
       this.measureDescOverflow();
       // Expanded: a width change reflows the whole card (maybe the layout), so collapse
-      // back to the measured state; a height-only change (mobile URL bar) just re-caps.
+      // back to the measured state; a height-only change (mobile URL bar) just re-fits.
       if (this.descExpandMetrics) {
         if (window.innerWidth !== this.descExpandMetrics.width) {
           this.collapseDesc();
@@ -226,7 +229,7 @@ export class HomepageHeroComponent {
     });
   };
 
-  /** Page scroll while expanded moves the card against the viewport: keep it capped. */
+  /** Page scroll while expanded moves the card against the viewport: keep it filling to the foot. */
   private readonly onWindowScrollEvent = (): void => {
     if (!this.descExpandMetrics || this.descScrollFrame) {
       return;
@@ -624,7 +627,7 @@ export class HomepageHeroComponent {
     this.syncHeroPaused();
   }
 
-  /** Back to the exact collapsed layout: no lock, lift or cap, first line at the top. */
+  /** Back to the exact collapsed layout: no lock, shift or height, first line at the top. */
   private collapseDesc(): void {
     this.descExpanded.set(false);
     this.descExpandMetrics = null;
@@ -648,21 +651,28 @@ export class HomepageHeroComponent {
     const styles = getComputedStyle(hero);
     this.descExpandMetrics = {
       heroH: heroBox.height,
+      cardTop: cardBox.top - heroBox.top,
       cardBottom: cardBox.bottom - heroBox.top,
-      nonDesc: cardBox.height - desc.clientHeight,
+      // Card minus the description's content box: the expanded height is set on that box.
+      nonDesc: cardBox.height - (px(getComputedStyle(desc).height) || desc.clientHeight),
       // Keep the card below the dropped search and the sticky chrome row. The clearance
       // custom property is an unresolved calc(); the card's scroll-margin-top resolves it.
       clearance: px(getComputedStyle(card).scrollMarginTop) || 140,
       chrome: px(styles.getPropertyValue('--site-chrome-bar-h')) || 52,
       lineH: px(getComputedStyle(desc).lineHeight),
       width: window.innerWidth,
+      // Wide: the card sits at the flex-end of a row hero, so a taller card grows upward in
+      // flow. Stacked (column) layouts keep its top and grow it downward.
+      bottomAnchored: styles.flexDirection !== 'column',
     };
   }
 
   /**
-   * Expanded geometry from the collapsed metrics and the current viewport: lift the card
-   * so its bottom stays `margin` above the viewport bottom, keep its top below the search
-   * clearance / sticky chrome, and give the description the rest (at least 3 lines).
+   * Expanded geometry from the collapsed metrics and the current viewport (HERO-DSC-002): the
+   * card's bottom sits `margin` above the viewport foot; its top stays where it was collapsed
+   * (lifted by the overhang if the collapsed card already ended below the foot) but never under
+   * the search clearance / sticky chrome. The description takes the rest (at least 3 lines).
+   * Once the hero has scrolled away behind the sticky chrome, collapse instead.
    */
   private layoutExpandedDesc(): void {
     const metrics = this.descExpandMetrics;
@@ -672,12 +682,20 @@ export class HomepageHeroComponent {
     }
     const margin = 12;
     const heroTop = hero.getBoundingClientRect().top;
-    const viewportH = window.visualViewport?.height ?? window.innerHeight;
-    const bottom = heroTop + metrics.cardBottom;
-    const lift = Math.max(0, bottom - (viewportH - margin));
-    const top = Math.max(heroTop + metrics.clearance, metrics.chrome + margin);
-    const maxPx = Math.max(metrics.lineH * 3, Math.floor(bottom - lift - top - metrics.nonDesc));
-    this.descLayout.set({ heroH: metrics.heroH, maxPx, liftPx: Math.round(lift) });
+    if (heroTop < 0 && heroTop + metrics.heroH <= metrics.chrome) {
+      this.collapseDesc();
+      this.syncHeroPaused();
+      return;
+    }
+    const foot = (window.visualViewport?.height ?? window.innerHeight) - margin;
+    const collapsedTop = heroTop + metrics.cardTop;
+    const collapsedBottom = heroTop + metrics.cardBottom;
+    const lift = Math.max(0, collapsedBottom - foot);
+    const top = Math.max(collapsedTop - lift, heroTop + metrics.clearance, metrics.chrome + margin);
+    const descPx = Math.max(Math.ceil(metrics.lineH * 3), Math.floor(foot - top - metrics.nonDesc));
+    const cardH = metrics.nonDesc + descPx;
+    const flowTop = metrics.bottomAnchored ? collapsedBottom - cardH : collapsedTop;
+    this.descLayout.set({ heroH: metrics.heroH, descPx, shiftPx: Math.round(top - flowTop) });
   }
 
   private resetDescScroll(): void {
@@ -715,9 +733,8 @@ export class HomepageHeroComponent {
    * (`min-height`) with the card at its flex-end. A tall card (3-line title + 5 desc lines +
    * chips) used to grow the hero instead, pushing its bottom (card, pager)
    * down and below the fold. Collapsed: pick the most lines (5 → 2) that still fit the band.
-   * Expanded shows the whole description with no inner scroll box: the card grows upward
-   * into the free band space first and the hero grows only if the text still doesn't fit;
-   * collapsing returns to the band. Stacked layouts: no override.
+   * Expanded follows HERO-DSC-002 (band kept, card fills to the viewport foot, desc scrolls
+   * inside); collapsing returns to the band. Stacked layouts: no override.
    */
   private fitWideDesc(desc: HTMLElement): void {
     const billboard = desc.closest<HTMLElement>('.billboard');

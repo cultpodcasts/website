@@ -924,15 +924,18 @@ describe('HomepageHeroComponent', () => {
       });
     });
 
-    describe('HERO-DSC-002: expanded keeps the hero, caps the card at the viewport, scrolls inside', () => {
+    describe('HERO-DSC-002: expanded keeps the hero; the card fills to the viewport foot and scrolls inside', () => {
       const realInnerHeight = window.innerHeight;
       afterEach(() => {
         vi.restoreAllMocks();
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: realInnerHeight });
       });
 
-      /** Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it; 22px lines; 140px clearance. */
-      function fakeCollapsed(viewportH: number, heroTop = 0): void {
+      /**
+       * Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it (so 278px of the card is
+       * not desc); 22px lines; 140px clearance; 58px chrome. Wide (row) hero unless `column`.
+       */
+      function fakeCollapsed(viewportH: number, heroTop = 0, column = false): void {
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewportH });
         const hero = root().querySelector('.billboard') as HTMLElement;
         const card = root().querySelector('.billboard__content') as HTMLElement;
@@ -944,13 +947,16 @@ describe('HomepageHeroComponent', () => {
         const real = window.getComputedStyle.bind(window);
         vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
           if (el === hero) {
-            return { getPropertyValue: (n: string) => (n === '--site-chrome-bar-h' ? '58px' : '') } as unknown as CSSStyleDeclaration;
+            return {
+              flexDirection: column ? 'column' : 'row',
+              getPropertyValue: (n: string) => (n === '--site-chrome-bar-h' ? '58px' : ''),
+            } as unknown as CSSStyleDeclaration;
           }
           if (el === card) {
             return { scrollMarginTop: '140px' } as unknown as CSSStyleDeclaration;
           }
           if (el === desc) {
-            return { lineHeight: '22px' } as unknown as CSSStyleDeclaration;
+            return { lineHeight: '22px', height: '110px' } as unknown as CSSStyleDeclaration;
           }
           return real(el);
         });
@@ -965,46 +971,70 @@ describe('HomepageHeroComponent', () => {
         fixture.detectChanges();
       }
 
-      it('locks the hero height and gives the description the room above the card (no lift when it fits)', () => {
+      function relayout(viewportH: number, heroTop: number, column = false): void {
+        vi.restoreAllMocks();
+        fakeCollapsed(viewportH, heroTop, column);
+        component['layoutExpandedDesc']();
+        fixture.detectChanges();
+      }
+
+      it('wide: locks the hero, keeps the card top and fills down to 12px above the viewport foot', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
         expect(hero().style.height).toBe('720px');
-        // 688 bottom - 140 clearance - (388 - 110) rest of the card = 270.
-        expect(descEl().style.maxHeight).toBe('270px');
-        expect(card().style.transform).toBe('');
+        // desc = (900 - 12) foot - 300 top - 278 rest of the card = 310.
+        expect(descEl().style.height).toBe('310px');
+        // The row hero grows the card upward in flow (top 688 - 588 = 100): move it back to 300.
+        expect(card().style.transform).toBe('translateY(200px)');
         expect(hero().classList.contains('is-desc-expanded')).toBe(true);
       });
 
-      it('lifts the card so its bottom stays 12px above a short viewport', () => {
+      it('stacked: the card already keeps its top in flow, so it only grows', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, 0, true);
+        expand();
+        expect(descEl().style.height).toBe('310px');
+        expect(card().style.transform).toBe('');
+      });
+
+      it('lifts the card when the collapsed card already ends below the viewport foot', () => {
         fakeOverflow(true);
         fakeCollapsed(600);
         expand();
-        // lift = 688 - (600 - 12) = 100; room = 688 - 100 - 140 - 278 = 170.
+        // lift = 688 - 588 = 100 → top 200; desc = 588 - 200 - 278 = 110 (card 388, flow top 300).
         expect(card().style.transform).toBe('translateY(-100px)');
-        expect(descEl().style.maxHeight).toBe('170px');
+        expect(descEl().style.height).toBe('110px');
       });
 
-      it('keeps at least 3 lines when there is no room left', () => {
+      it('keeps at least 3 lines and never goes above the search clearance', () => {
         fakeOverflow(true);
         fakeCollapsed(450);
         expand();
-        expect(descEl().style.maxHeight).toBe('66px');
+        // lift 250 would put the top at 50; held at the 140px clearance; 438 - 140 - 278 < 66.
+        expect(descEl().style.height).toBe('66px');
       });
 
-      it('re-caps against the sticky chrome when the page scrolls', () => {
+      it('recomputes on page scroll and holds the top below the sticky chrome', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, 0, true);
+        expand();
+        relayout(900, -250, true);
+        // Collapsed top 50 is under the chrome: top = 58 + 12 = 70; desc = 888 - 70 - 278 = 540.
+        expect(descEl().style.height).toBe('540px');
+        expect(card().style.transform).toBe('translateY(20px)');
+      });
+
+      it('collapses once the hero has scrolled away behind the sticky chrome', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
-        vi.restoreAllMocks();
-        fakeCollapsed(900, -100);
-        component['layoutExpandedDesc']();
-        fixture.detectChanges();
-        // bottom 588; top = max(-100 + 140, 58 + 12) = 70; room = 588 - 70 - 278 = 240.
-        expect(descEl().style.maxHeight).toBe('240px');
+        relayout(900, -700);
+        expect(descEl().classList.contains('is-expanded')).toBe(false);
+        expect(hero().style.height).toBe('');
       });
 
-      it('collapse restores the exact collapsed layout (no lock, lift, cap or scroll offset)', () => {
+      it('collapse restores the exact collapsed layout (no lock, shift, height or scroll offset)', () => {
         fakeOverflow(true);
         fakeCollapsed(600);
         expand();
@@ -1013,14 +1043,15 @@ describe('HomepageHeroComponent', () => {
         fixture.detectChanges();
         expect(hero().style.height).toBe('');
         expect(card().style.transform).toBe('');
-        expect(descEl().style.maxHeight).toBe('');
+        expect(descEl().style.height).toBe('');
         expect(descEl().scrollTop).toBe(0);
         expect(hero().classList.contains('is-desc-expanded')).toBe(false);
       });
 
-      it('Sass: the expanded description scrolls inside; stacked art spacer gives way instead of the page moving', () => {
+      it('Sass: the expanded description scrolls inside; the card spills over what follows on an opaque surface', () => {
         expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-y:\s*auto\n\s+overscroll-behavior:\s*contain/);
-        expect(heroSass).toMatch(/&\.is-desc-expanded::before\n\s+flex-shrink:\s*1\n\s+min-height:\s*0/);
+        expect(heroSass).toMatch(/\.billboard\.is-desc-expanded\n\s+overflow:\s*visible\n\s+z-index:\s*3\n[\s\S]*?\.billboard__content::before\n\s+height:[^\n]+\n\s+background:\s*#0b0b0b\n/);
+        expect(heroSass).not.toMatch(/is-desc-expanded::before/);
         expect(heroSass).toMatch(/scroll-margin-top:\s*var\(--nflx-hero-search-clearance,\s*140px\)/);
         expect(heroSass).not.toMatch(/45vh/);
       });

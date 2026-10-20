@@ -67,7 +67,7 @@
     (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)"></div>
 
   <div class="billboard__content" [style.--hero-desc-lines]="descFitLines()"
-    [style.transform]="descLayout()?.liftPx ? 'translateY(-' + descLayout()!.liftPx + 'px)' : null">
+    [style.transform]="descLayout()?.shiftPx ? 'translateY(' + descLayout()!.shiftPx + 'px)' : null">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
       <div class="billboard__copy">
         <p class="billboard__eyebrow">
@@ -105,7 +105,7 @@
           <div class="billboard__desc-wrap">
             <p class="billboard__desc" #heroDesc [id]="descId"
               [class.is-expanded]="descExpanded()"
-              [style.max-height.px]="descLayout()?.maxPx ?? null"
+              [style.height.px]="descLayout()?.descPx ?? null"
               [attr.tabindex]="descExpanded() ? 0 : null">{{ featuredDesc() }}</p>
             @if (showDescToggle()) {
             <span class="billboard__desc-fade" aria-hidden="true" [style.right.px]="descScrollbarPx() || null"></span>

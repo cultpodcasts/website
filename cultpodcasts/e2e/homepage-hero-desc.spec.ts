@@ -144,28 +144,57 @@ async function expectToggleVisible(page: Page, when: string): Promise<void> {
 }
 
 /**
- * HERO-DSC-002, expanded: the hero keeps its height, the card bottom stays in the
- * viewport, the description scrolls inside the card, title + Watch/More info stay in
- * view, and the chevron is visible at both ends of the description's scroll.
+ * HERO-DSC-002, expanded: the hero keeps its height and the page does not move; the card
+ * fills down to the viewport foot (within 16px), overlaying whatever follows the hero
+ * (stats strip, rails) without being covered by it; its top stays put (lifted only if the
+ * collapsed card ended below the foot) and below the search field; the description scrolls
+ * inside; title + Watch/More info stay in view; the chevron is visible at both scroll ends.
  */
-async function expectExpandedCapped(page: Page, collapsed: Geo, shot?: string): Promise<void> {
+async function expectExpandedFills(page: Page, collapsed: Geo, shot?: string): Promise<void> {
 	const g = await geometry(page);
 	expect(Math.abs(g.heroH - collapsed.heroH), "expanding changed the hero height").toBeLessThanOrEqual(1);
 	expect(g.scrollY, "expanding scrolled the page").toBe(collapsed.scrollY);
 	const box = await page.evaluate(() => {
 		const d = document.querySelector<HTMLElement>(".billboard__desc")!;
-		const c = document.querySelector(".billboard__content")!.getBoundingClientRect();
+		const card = document.querySelector<HTMLElement>(".billboard__content")!;
+		const c = card.getBoundingClientRect();
+		const h = document.querySelector(".billboard")!.getBoundingClientRect();
 		const t = document.querySelector(".billboard__title")!.getBoundingClientRect();
 		const a = document.querySelector(".billboard__actions")!.getBoundingClientRect();
 		// The app's search field (dropped into the hero, or in the sticky chrome row).
 		const search = document.querySelector(".chrome-search")?.getBoundingClientRect();
+		const stats = document.querySelector(".catalogue")?.getBoundingClientRect();
+		// What paints at the card's lower area: the card itself, not the stats strip below the hero.
+		const probeY = c.bottom - 6;
+		const probe = document.elementFromPoint(c.left + 12, probeY);
+		// And over the stats strip where the card overlays it (if it does here).
+		const overTop = stats ? Math.max(stats.top, h.bottom) : Infinity;
+		const overY = overTop + 2 < c.bottom - 2 ? overTop + 2 : null;
+		const over = overY === null ? null : document.elementFromPoint(c.left + 12, overY);
 		return {
-			cardTop: c.top, searchBottom: search?.bottom ?? 0,
-			cardBottom: c.bottom, titleTop: t.top, actionsBottom: a.bottom,
+			cardTop: c.top, cardBottom: c.bottom, heroBottom: h.bottom, searchBottom: search?.bottom ?? 0,
+			titleTop: t.top, actionsBottom: a.bottom,
+			lowerIsCard: !!probe && card.contains(probe),
+			overStats: overY === null ? null : !!over && card.contains(over),
 			scrollable: d.scrollHeight - d.clientHeight, overflowY: getComputedStyle(d).overflowY
 		};
 	});
-	expect(box.cardBottom, "card runs past the viewport bottom").toBeLessThanOrEqual(g.vh + 1);
+	expect(box.cardBottom, "card runs past the viewport foot").toBeLessThanOrEqual(g.vh + 1);
+	expect(box.cardBottom, "card does not fill down to the viewport foot").toBeGreaterThanOrEqual(g.vh - 16);
+	expect(box.lowerIsCard, "card's lower area is covered").toBe(true);
+	if (box.overStats !== null) {
+		expect(box.overStats, "stats strip paints over the expanded card").toBe(true);
+	}
+	// The top stays where it was collapsed (unless lifted to fit, or held below the search).
+	const heroTop = box.heroBottom - g.heroH;
+	const lift = Math.max(0, heroTop + collapsed.cardBottom - (g.vh - 12));
+	const keptTop = heroTop + collapsed.cardTop - lift;
+	if (keptTop >= box.searchBottom) {
+		expect(Math.abs(box.cardTop - keptTop), "card top moved").toBeLessThanOrEqual(2);
+	} else {
+		// Scrolled under the search / sticky chrome: held just below it instead.
+		expect(box.cardTop - box.searchBottom, "card top not held below the search").toBeLessThanOrEqual(24);
+	}
 	expect(box.titleTop, "title pushed out of view").toBeGreaterThanOrEqual(0);
 	expect(box.cardTop, "expanded card covers the search field").toBeGreaterThanOrEqual(box.searchBottom - 1);
 	expect(box.actionsBottom, "Watch / More info pushed below the viewport").toBeLessThanOrEqual(g.vh + 1);
@@ -205,7 +234,7 @@ async function expectCollapsedAgain(page: Page, collapsed: Geo): Promise<void> {
 
 test.describe("homepage hero description", () => {
 	for (const layout of layouts) {
-		test(`${layout.name}: clamps to ${layout.lines} lines; expanded keeps the hero, caps the card at the viewport and scrolls inside`, async ({ page }) => {
+		test(`${layout.name}: clamps to ${layout.lines} lines; expanded keeps the hero, fills the card to the viewport foot and scrolls inside`, async ({ page }) => {
 			await page.setViewportSize({ width: layout.width, height: layout.height });
 			await fakeApi(page, VERY_LONG_DESC);
 			await page.goto("/");
@@ -234,7 +263,7 @@ test.describe("homepage hero description", () => {
 			await expect(toggle(page).locator("mat-icon")).toHaveText("expand_less");
 			await expect(toggle(page)).toHaveAttribute("aria-expanded", "true");
 			await expect(desc(page)).toHaveClass(/is-expanded/);
-			await expectExpandedCapped(page, collapsed, `hero-${layout.name}`);
+			await expectExpandedFills(page, collapsed, `hero-${layout.name}`);
 
 			// Rotation is held while expanded.
 			await expect(page.locator(".billboard")).toHaveClass(/is-paused/);
@@ -299,12 +328,11 @@ test.describe("homepage hero description", () => {
 			}
 			await toggle(page).click();
 			await expect(desc(page)).toHaveClass(/is-expanded/);
-			await expectExpandedCapped(page, collapsed, c.shot || undefined);
+			await expectExpandedFills(page, collapsed, c.shot || undefined);
 			const expanded = await geometry(page);
-			// The card grows upward from its anchor (wide), staying below the search clearance.
-			expect(Math.abs(expanded.cardBottom - collapsed.cardBottom)).toBeLessThanOrEqual(1);
-			expect(expanded.cardTop).toBeLessThanOrEqual(collapsed.cardTop + 0.5);
-			expect(expanded.cardTop).toBeGreaterThanOrEqual(expanded.clearance - 2);
+			// The card keeps its top (it fits) and grows down past the band, over the stats strip.
+			expect(Math.abs(expanded.cardTop - collapsed.cardTop)).toBeLessThanOrEqual(1);
+			expect(expanded.cardBottom).toBeGreaterThan(collapsed.cardBottom);
 			await toggle(page).click();
 			await expectCollapsedAgain(page, collapsed);
 			expectInBand(await geometry(page), "collapsed again");
@@ -313,6 +341,38 @@ test.describe("homepage hero description", () => {
 
 	// Short window: the collapsed card already ends below the viewport, so expanding lifts
 	// it (over the art) until its bottom and the chevron are back in view.
+	// Jon's case (~1024x460, scrolled so the stats strip shows under the hero): the card
+	// fills to the viewport foot over the strip, rather than stopping at the hero bottom.
+	test("1024x460, stats strip in view: the expanded card fills to the viewport foot over it", async ({ page }) => {
+		await page.setViewportSize({ width: 1024, height: 460 });
+		await fakeApi(page, VERY_LONG_DESC);
+		await page.goto("/");
+		await expect(toggle(page)).toBeVisible();
+		await expect(page.locator(".catalogue")).toBeVisible();
+		// Hero bottom at ~70% of the viewport, the strip below it.
+		await page.evaluate(() => {
+			const h = document.querySelector(".billboard")!.getBoundingClientRect();
+			window.scrollBy(0, h.bottom - window.innerHeight * 0.7);
+		});
+		await expect.poll(() => toggle(page).evaluate((el) => el.getBoundingClientRect().bottom < window.innerHeight)).toBe(true);
+		if (shots) {
+			await page.screenshot({ path: `${shots}/hero-wide-1024x460-collapsed.png` });
+		}
+		const collapsed = await geometry(page);
+		const stripTop = await page.locator(".catalogue").evaluate((el) => el.getBoundingClientRect().top);
+		expect(stripTop, "strip not in view below the hero").toBeLessThan(collapsed.vh - 40);
+		await toggle(page).click();
+		await expect(desc(page)).toHaveClass(/is-expanded/);
+		await expectExpandedFills(page, collapsed, "hero-wide-1024x460");
+		const covered = await page.evaluate(() => {
+			const c = document.querySelector(".billboard__content")!.getBoundingClientRect();
+			return c.bottom - document.querySelector(".catalogue")!.getBoundingClientRect().top;
+		});
+		expect(covered, "card does not overlay the strip").toBeGreaterThan(30);
+		await toggle(page).click();
+		await expectCollapsedAgain(page, collapsed);
+	});
+
 	test("medium, short window: the expanded card is lifted into the viewport", async ({ page }) => {
 		await page.setViewportSize({ width: 900, height: 640 });
 		await fakeApi(page, VERY_LONG_DESC);
@@ -321,7 +381,7 @@ test.describe("homepage hero description", () => {
 		const collapsed = await geometry(page);
 		await toggle(page).click();
 		await expect(desc(page)).toHaveClass(/is-expanded/);
-		await expectExpandedCapped(page, collapsed);
+		await expectExpandedFills(page, collapsed);
 		await toggle(page).click();
 		await expectCollapsedAgain(page, collapsed);
 	});

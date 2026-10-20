@@ -41,10 +41,10 @@
 
 .billboard__scrim
     // Always fade into near-black — never --nflx-bg (cream in light mode washes out on-media copy).
-    background: linear-gradient(85deg, #000f, #000a 38%, #0003 68%, transparent 82%), linear-gradient(to top, #0b0b0b, transparent 45%), linear-gradient(#0009, transparent 22%)
+    background: linear-gradient(85deg, #000f, rgba(0, 0, 0, .67) 38%, rgba(0, 0, 0, .2) 68%, transparent 82%), linear-gradient(to top, #0b0b0b, transparent 45%), linear-gradient(rgba(0, 0, 0, .6), transparent 22%)
 
 .billboard__vignette
-    background: radial-gradient(ellipse at 70% 40%, transparent 20%, #0007)
+    background: radial-gradient(ellipse at 70% 40%, transparent 20%, rgba(0, 0, 0, .47))
 
 // Transparent hit target matching the art frame. Hover pause lives here (and on
 // .billboard__controls), not on the whole billboard — so title/copy does not
@@ -195,9 +195,9 @@
             animation: nflx-ken-burns var(--hero-interval) ease-out forwards
     // Let the left edge blur read through under copy — avoid a solid black slab.
     .billboard__scrim
-        background: linear-gradient(90deg, #000c, #0009 18%, #0005 36%, #0002 52%, transparent 68%), linear-gradient(to top, #0b0b0b, transparent 42%), linear-gradient(#0007, transparent 20%)
+        background: linear-gradient(90deg, rgba(0, 0, 0, .8), rgba(0, 0, 0, .6) 18%, rgba(0, 0, 0, .33) 36%, rgba(0, 0, 0, .13) 52%, transparent 68%), linear-gradient(to top, #0b0b0b, transparent 42%), linear-gradient(rgba(0, 0, 0, .47), transparent 20%)
     .billboard__vignette
-        background: linear-gradient(90deg, #0005, #0002 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, #0005)
+        background: linear-gradient(90deg, rgba(0, 0, 0, .33), rgba(0, 0, 0, .13) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, .33))
     // Full-height art is ~1.78× the hero height, so the left edge fill only reaches
     // under the copy above ~1980px wide. Below that the sharp image sits behind the
     // copy, and type treatment alone cannot save it: artwork frequently carries its
@@ -219,7 +219,7 @@
             border-radius: 14px
             // Short of opaque so a trace of artwork still reads through, while
             // holding ~17:1 against white art — the worst case for white type.
-            background: #0b0b0bed
+            background: rgba(11, 11, 11, .93)
             z-index: 0
             pointer-events: none
     // Keep copy above the card surface once ::before is no longer z-index:-1.
@@ -278,7 +278,7 @@
     height: 8px
     border-radius: 50%
     background: var(--nflx-accent)
-    box-shadow: 0 0 0 0 #e8a23ab3
+    box-shadow: 0 0 0 0 rgba(232, 162, 58, .7)
     animation: nflx-pulse-live 1.8s ease-out infinite
 
 .billboard__title
@@ -290,7 +290,7 @@
     line-height: 1.12
     letter-spacing: -0.025em
     color: var(--nflx-on-media, #fff)
-    text-shadow: 0 4px 40px #000000bf
+    text-shadow: 0 4px 40px rgba(0, 0, 0, .75)
     // Cap overflow; stacked layout reserves 3 lines so the in-flow panel does not
     // jump. Wide docks the card absolutely so height can hug without moving scroll.
     display: -webkit-box
@@ -307,8 +307,8 @@
     gap: 6px
     padding: 2px 10px 2px 8px
     border-radius: 999px
-    background: #ffffff1f
-    border: 1px solid #ffffff38
+    background: rgba(255, 255, 255, .12)
+    border: 1px solid rgba(255, 255, 255, .22)
     color: var(--nflx-on-media, #fff)
     font-size: 0.78rem
     font-weight: 600
@@ -348,7 +348,7 @@
     line-height: 1.45
     color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
-    text-shadow: 0 1px 12px #0000008c
+    text-shadow: 0 1px 12px rgba(0, 0, 0, .55)
     display: -webkit-box
     -webkit-box-orient: vertical
     -webkit-line-clamp: var(--hero-desc-lines)
@@ -356,14 +356,16 @@
     overflow: hidden
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Expanded (HERO-DSC-002): clamp off; TS caps max-height to the viewport and the
-    // text scrolls inside it. The hero keeps its height; the card grows over the art.
+    // Expanded (HERO-DSC-002): clamp off; TS sizes it so the card ends at the viewport
+    // foot and the text scrolls inside. The hero keeps its height.
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
         overflow-y: auto
         overscroll-behavior: contain
+        // TS sets the height; the collapsed min-height (clamp lines) must not inflate it.
+        min-height: 0
         // Spacer at the end of the text: the last line wraps short of the expander,
         // so nothing is hidden once the reader reaches the end.
         &::after
@@ -396,7 +398,7 @@
     padding: 0
     color: var(--nflx-on-media, #fff)
     background-color: color-mix(in srgb, #000 55%, transparent)
-    border: 1px solid #ffffff38
+    border: 1px solid rgba(255, 255, 255, .22)
     box-sizing: border-box
     backdrop-filter: blur(2px)
     .mat-icon
@@ -430,14 +432,14 @@
     color: #000 !important
     font-weight: 700
     padding-inline: 22px
-    box-shadow: 0 8px 28px #00000059
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .35)
     mat-icon
         margin-right: 4px
 
 .billboard__more
-    border-color: #ffffff8c !important
+    border-color: rgba(255, 255, 255, .55) !important
     color: #fff !important
-    background: #2a2a2acc !important
+    background: rgba(42, 42, 42, .8) !important
     font-weight: 600
 
 .billboard__controls
@@ -466,8 +468,8 @@
     height: 36px
     padding: 0 12px
     border-radius: 999px
-    border: 1px solid #ffffff59
-    background: #141414e6
+    border: 1px solid rgba(255, 255, 255, .35)
+    background: rgba(20, 20, 20, .9)
     color: #fff
     font-size: 0.78rem
     font-weight: 600
@@ -486,7 +488,7 @@
         border-color: var(--nflx-accent)
         outline: none
     &--curate
-        border-color: #e8a23a99
+        border-color: rgba(232, 162, 58, .6)
         color: var(--nflx-accent)
 
 .billboard__pager
@@ -502,8 +504,8 @@
     height: 44px
     flex: 0 0 auto
     border-radius: 50%
-    border: 1px solid #ffffff59
-    background: #141414e6
+    border: 1px solid rgba(255, 255, 255, .35)
+    background: rgba(20, 20, 20, .9)
     color: #fff
     display: inline-flex
     align-items: center
@@ -512,7 +514,7 @@
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease
     &:hover
         background: #2a2a2a
-        border-color: #ffffffb3
+        border-color: rgba(255, 255, 255, .7)
         transform: scale(1.05)
 
 .billboard__dots-viewport
@@ -566,9 +568,9 @@
         height: 3px
         margin-top: -1.5px
         border-radius: 2px
-        background: #ffffff47
+        background: rgba(255, 255, 255, .28)
     &.is-active::before
-        background: #ffffff59
+        background: rgba(255, 255, 255, .35)
     &.is-curated::before
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--nflx-accent) 55%, transparent)
 
@@ -656,8 +658,6 @@
     .billboard__desc
         min-height: 0
     // HERO-WID-001: collapsed, the hero stays one band (TS fits the desc lines).
-    // Expanded shows the full text (no inner scroll box): the bottom-anchored card
-    // grows upward into the free band first, then the hero grows (height: auto).
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
@@ -684,11 +684,8 @@
         // Framed art ends on a clean edge, so no dissolve is needed. Only the
         // pre-measure fallback (art still covering the whole billboard) needs one.
         --hero-copy-fade: 0px
-        // Expanded desc: the hero height is locked, so the art spacer gives way and
-        // the card grows upward over the frame instead of pushing the page down.
-        &.is-desc-expanded::before
-            flex-shrink: 1
-            min-height: 0
+        // Expanded: the full-bleed panel runs on through the 12px margin to the viewport foot.
+        --hero-panel-foot: 12px
         &::before
             content: ''
             flex: 0 0 max(var(--nflx-hero-search-clearance, 140px), var(--hero-band-h))
@@ -707,7 +704,9 @@
         .billboard__scrim,
         .billboard__vignette,
         .billboard__art-hover
-            inset: 0 0 auto
+            // Mid/wide ≤1280: top 0, so art can sit under frosted/transparent chrome.
+            // Narrow sets --hero-art-top so it starts flush below the sticky row.
+            inset: var(--hero-art-top, 0) 0 auto
             width: 100%
             // Fixed height, not the art's aspect: a frame that resized per slide
             // moved the copy (and everything below the hero) on every rotation.
@@ -746,7 +745,7 @@
             pointer-events: none
             background: #0b0b0b
     .billboard:not(.has-art-aspect) .billboard__content::before
-        background: linear-gradient(to bottom, #0b0b0b00, #0b0b0bd1 72%, #0b0b0b) no-repeat top / 100% var(--hero-copy-fade), #0b0b0b no-repeat bottom / 100% calc(100% - var(--hero-copy-fade))
+        background: linear-gradient(to bottom, #0b0b0b00, rgba(11, 11, 11, .82) 72%, #0b0b0b) no-repeat top / 100% var(--hero-copy-fade), #0b0b0b no-repeat bottom / 100% calc(100% - var(--hero-copy-fade))
     // Stacked: details panel is in document flow under a fixed art frame.
     // Do NOT reserve 3 title lines with min-height — short titles left a large
     // blank band above meta (HERO-SCR-005). Cap with line-clamp only; rely on
@@ -755,7 +754,7 @@
     // Copy no longer sits on the art, so the only job left is keeping the frosted
     // chrome legible over the top of the frame.
     .billboard__scrim
-        background: linear-gradient(#0007, transparent 22%)
+        background: linear-gradient(rgba(0, 0, 0, .47), transparent 22%)
     .billboard__vignette
         background: none
     .billboard__controls
@@ -804,19 +803,13 @@
         min-height: 0
         padding-bottom: 20px
         gap: 12px
-        // The frame sits below the chrome here, so the copy clears both.
+        // Narrow: art starts flush below the sticky chrome row — not tucked under it —
+        // and the copy clears both.
+        --hero-art-top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
         &::before
-            flex-basis: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px) + var(--hero-band-h))
-            min-height: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px) + var(--hero-band-h))
-    // Narrow: art starts flush below the sticky chrome row — not tucked under it.
-    // (Mid/wide ≤1280 keep top:0 so art can sit under frosted/transparent chrome.)
+            flex-basis: calc(var(--hero-art-top) + var(--hero-band-h))
+            min-height: calc(var(--hero-art-top) + var(--hero-band-h))
     .billboard.has-art-aspect
-        .billboard__stages,
-        .billboard__grain,
-        .billboard__scrim,
-        .billboard__vignette,
-        .billboard__art-hover
-            top: calc(var(--site-chrome-bar-h, 52px) + env(safe-area-inset-top, 0px))
         // Pager/admin sit under the framed art (before title copy), not after CTAs.
         .billboard__controls
             order: 1
@@ -853,3 +846,19 @@
     .billboard__nav
         width: 40px
         height: 40px
+
+// Expanded (HERO-DSC-002): the hero height is locked, so the card spills past it to the
+// viewport foot, over the stats strip / rails (z-index 2), on an opaque surface ending
+// with the card.
+.billboard.is-desc-expanded
+    overflow: visible
+    z-index: 3
+    // Above the in-flow pager/admin it may be lifted over (short stacked windows).
+    .billboard__content
+        z-index: 4
+    // TS sizes the description; the collapsed reserve must not add to it.
+    .billboard__copy-body
+        min-height: 0
+    .billboard__content::before
+        height: calc(100% + var(--hero-copy-fade, 0px) + var(--hero-panel-foot, 0px))
+        background: #0b0b0b
