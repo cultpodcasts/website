@@ -40,6 +40,7 @@ import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
+import { keepOffered, readSubjectsFromFragment, subjectsFragment } from '../browse-filter-params';
 import { displayCatalogName } from '../display-catalog-name';
 import { podcastPageAttachAfterDialog } from '../submit-ingest-ux';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
@@ -88,6 +89,8 @@ export class PodcastApiComponent {
   protected readonly displayCatalogName = displayCatalogName;
   protected subjects = signal<string[]>([]);
   private subjectsFilter: string = "";
+  /** Subject chips from the URL fragment, applied once the podcast-wide subject facets are known. */
+  private pendingSubjects: string[] = [];
   protected isSubsequentLoading = signal<boolean>(false);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
@@ -130,6 +133,9 @@ export class PodcastApiComponent {
           this.facets.set(facetState.searchResultsFacets);
           this.subjects.set(facetState.subjects!);
         }
+      }
+      if (initial) {
+        this.pendingSubjects = readSubjectsFromFragment(this.route.snapshot?.fragment);
       }
       const { params, queryParams } = res;
       this.podcastName.set(params["podcastName"] ?? "");
@@ -182,6 +188,9 @@ export class PodcastApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
+          if (subsequent && this.applyPendingSubjects(data.facets)) {
+            return;
+          }
           const count = data.metadata.get("count");
           this.count.set(count);
           if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -292,7 +301,7 @@ export class PodcastApiComponent {
         params[sortParam] = sort;
       }
     }
-    this.router.navigate([url], { queryParams: params });
+    this.router.navigate([url], { queryParams: params, fragment: subjectsFragment(this.subjects()) ?? undefined });
   }
 
   search() {
@@ -448,9 +457,9 @@ export class PodcastApiComponent {
     if (this.subjects().length === 0) {
       return;
     }
-    this.subjects.set([]);
-    this.subjectsFilter = '';
+    this.setSubjects([]);
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, false);
   }
 
@@ -459,10 +468,57 @@ export class PodcastApiComponent {
     const next = current.includes(value)
       ? current.filter((s) => s !== value)
       : [...current, value];
+    this.setSubjects(next);
+    this.page = 1;
+    this.syncFilterUrl();
+    this.execSearch(true, false);
+  }
+
+  private setSubjects(next: string[]): void {
     this.subjects.set(next);
     this.subjectsFilter = subjectsAnySearchIn(next);
+  }
+
+  /**
+   * After the unfiltered first load, select the subject chips from the URL that
+   * this podcast offers (unknown ones are dropped and the URL tidied) and search
+   * again. Returns true when it started that search.
+   */
+  private applyPendingSubjects(facets: SearchResultsFacets): boolean {
+    if (this.pendingSubjects.length === 0) {
+      return false;
+    }
+    const requested = this.pendingSubjects;
+    this.pendingSubjects = [];
+    const offered = facets.subjects?.filter(x => !x.value.startsWith("_"));
+    const subjects = keepOffered(requested, offered);
+    if (subjects.length !== requested.length) {
+      this.setSubjects(subjects);
+      this.syncFilterUrl();
+    }
+    if (subjects.length === 0) {
+      return false;
+    }
+    this.facets.set({ podcastName: facets.podcastName, subjects: offered });
+    this.setSubjects(subjects);
     this.page = 1;
     this.execSearch(true, false);
+    return true;
+  }
+
+  /** Mirror the subject chips into the URL fragment (history replace, no scroll). */
+  private syncFilterUrl(): void {
+    const fragment = subjectsFragment(this.subjects());
+    if ((this.route.snapshot?.fragment || null) === fragment) {
+      return;
+    }
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParamsHandling: 'preserve',
+      fragment: fragment ?? undefined,
+      replaceUrl: true,
+      scroll: 'manual'
+    });
   }
 
   private adoptLegacyField(error: unknown): boolean {

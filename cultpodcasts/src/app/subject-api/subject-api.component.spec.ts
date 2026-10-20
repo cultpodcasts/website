@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, ActivatedRoute } from '@angular/router';
+import { provideRouter, ActivatedRoute, Params, Router } from '@angular/router';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
@@ -12,6 +12,7 @@ import { SiteService } from '../site.service';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { PlayerService } from '../player.service';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
+import { ALL_LANGUAGES_VALUE, ENGLISH_LANGUAGE_VALUE } from '../subject-language-filter';
 
 interface SearchCall {
   filter?: string;
@@ -39,18 +40,23 @@ describe('SubjectApiComponent', () => {
   let fixture: ComponentFixture<SubjectApiComponent>;
   let calls: SearchCall[];
   let respond: (request: SearchCall) => Observable<unknown>;
+  let queryParams$: BehaviorSubject<Params>;
+  let fragment$: BehaviorSubject<string | null>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     calls = [];
     respond = () => of(searchPage());
+    queryParams$ = new BehaviorSubject<Params>({});
+    fragment$ = new BehaviorSubject<string | null>(null);
     await TestBed.configureTestingModule({
       imports: [SubjectApiComponent],
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { params: of({ subjectName: 'Topic' }), queryParams: of({}) } },
+        { provide: ActivatedRoute, useValue: { params: of({ subjectName: 'Topic' }), queryParams: queryParams$, fragment: fragment$ } },
         { provide: AuthServiceWrapper, useValue: { roles: of([]), isSignedIn: of(false) } },
-        { provide: SiteService, useValue: { setQuery: () => undefined, setPodcast: () => undefined, setSubject: () => undefined, setFilter: () => undefined } },
+        { provide: SiteService, useValue: { setQuery: () => undefined, setPodcast: () => undefined, setSubject: () => undefined, setFilter: () => undefined, getSiteData: () => ({ query: '' }) } },
         { provide: ODataService, useValue: { getEntitiesWithFacets: (_url: string, request: SearchCall) => { calls.push(request); return respond(request); } } },
         { provide: PlayerService, useValue: { episode: () => undefined, mode: () => 'dock', play: () => undefined, isQueuedId: () => false } },
         { provide: ScrollDispatcher, useValue: { scrolled: () => NEVER } },
@@ -61,6 +67,8 @@ describe('SubjectApiComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(SubjectApiComponent);
+    navigate = vi.fn().mockResolvedValue(true);
+    TestBed.inject(Router).navigate = navigate as unknown as Router['navigate'];
   });
 
   function textOf(request: SearchCall): string {
@@ -132,5 +140,186 @@ describe('SubjectApiComponent', () => {
     expect(calls).toHaveLength(1);
     expect(textOf(calls[0])).toContain('seriesName');
     expect(fixture.nativeElement.textContent).toContain('Something went wrong');
+  });
+
+  describe('filters in the URL', () => {
+    function languagePage() {
+      return {
+        metadata: new Map<string, number>([['count', 6]]),
+        entities: [],
+        facets: {
+          seriesName: [{ value: 'Show A', count: 4 }, { value: 'Show B', count: 2 }],
+          subjects: [],
+          lang: [{ value: 'sw', count: 3 }, { value: 'ki', count: 2 }],
+        },
+      };
+    }
+
+    beforeEach(() => {
+      respond = () => of(languagePage());
+    });
+
+    function resultFilter(): string {
+      const results = calls.filter((call) => (call.top ?? 0) > 0);
+      return results.at(-1)?.filter ?? '';
+    }
+
+    function lastFragment(): string | undefined {
+      return navigate.mock.calls.at(-1)?.[1]?.fragment;
+    }
+
+    function activeLanguageChips(): string[] {
+      const facet = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by language"]');
+      return [...(facet?.querySelectorAll('.browse-pill.is-active') ?? [])].map((chip) => chip.textContent!.trim());
+    }
+
+    it('loads the English default with no fragment', () => {
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("(lang eq null or lang eq 'en')");
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('starts from just the clicked language on the first click', () => {
+      fixture.detectChanges();
+      expect(activeLanguageChips()).toEqual(['English']);
+      fixture.componentInstance.toggleLanguage('sw');
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("lang eq 'sw'");
+      expect(resultFilter()).not.toContain('lang eq null');
+      expect(lastFragment()).toBe('lang=sw');
+      expect(navigate.mock.calls.at(-1)?.[0]).toEqual([]);
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: true, scroll: 'manual' });
+      // One active chip, and not English (label text is owned by languageLabel).
+      expect(activeLanguageChips()).toHaveLength(1);
+      expect(activeLanguageChips()).not.toContain('English');
+    });
+
+    it('adds and removes languages after the first click, falling back to All', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage('sw');
+      component.toggleLanguage('ki');
+
+      expect(resultFilter()).toContain("search.in(lang, 'sw,ki', ',')");
+      expect(lastFragment()).toBe('lang=sw,ki');
+
+      component.toggleLanguage('sw');
+      expect(resultFilter()).toContain("lang eq 'ki'");
+      expect(lastFragment()).toBe('lang=ki');
+
+      component.toggleLanguage('ki');
+      expect(resultFilter()).not.toContain('lang');
+      expect(lastFragment()).toBe('lang=all');
+    });
+
+    it('keeps English only when English is clicked first, then adds', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage(ENGLISH_LANGUAGE_VALUE);
+
+      expect(resultFilter()).toContain("(lang eq null or lang eq 'en')");
+      expect(navigate).not.toHaveBeenCalled();
+
+      component.toggleLanguage('sw');
+      expect(resultFilter()).toContain("search.in(lang, 'sw', ',')");
+      expect(resultFilter()).toContain('lang eq null');
+      expect(lastFragment()).toBe('lang=en,sw');
+    });
+
+    it('clears to every show and language, then starts afresh on the next language click', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.togglePodcast('Show A');
+      component.toggleLanguage('sw');
+      expect(lastFragment()).toBe('show=Show A&lang=sw');
+
+      component.clearAllFilters();
+      expect(lastFragment()).toBe('lang=all');
+      expect(resultFilter()).not.toContain('Show A');
+      expect(resultFilter()).not.toContain('lang');
+
+      component.toggleLanguage('ki');
+      expect(resultFilter()).toContain("lang eq 'ki'");
+      expect(lastFragment()).toBe('lang=ki');
+    });
+
+    it('restores languages and shows from a bookmarked fragment and toggles from there', () => {
+      fragment$.next('lang=sw,ki&show=Show A');
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("search.in(seriesName, 'Show A'");
+      expect(resultFilter()).toContain("search.in(lang, 'sw,ki', ',')");
+      expect(navigate).not.toHaveBeenCalled();
+      expect(fixture.nativeElement.textContent).toContain('Show B');
+
+      fixture.componentInstance.toggleLanguage('ki');
+      expect(resultFilter()).toContain("lang eq 'sw'");
+      expect(lastFragment()).toBe('show=Show A&lang=sw');
+    });
+
+    it('ignores unknown shows and malformed languages in the fragment and tidies it', () => {
+      queryParams$.next({ sort: 'date-asc' });
+      fragment$.next('lang=<b>&show=Show A&show=Missing show');
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("search.in(seriesName, 'Show A'");
+      expect(resultFilter()).not.toContain('Missing show');
+      expect(resultFilter()).toContain("(lang eq null or lang eq 'en')");
+      expect(lastFragment()).toBe('show=Show A');
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve' });
+
+      // Malformed lang means untouched: the first click still starts afresh.
+      fixture.componentInstance.toggleLanguage('sw');
+      expect(resultFilter()).toContain("lang eq 'sw'");
+    });
+
+    it('does not reload when the router echoes the URL the page wrote', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleLanguage('sw');
+      const before = calls.length;
+
+      fragment$.next('lang=sw');
+
+      expect(calls.length).toBe(before);
+    });
+
+    it('reloads with restored filters when the fragment is edited or navigated', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleLanguage('sw');
+
+      fragment$.next('lang=all');
+
+      expect(resultFilter()).not.toContain('lang');
+    });
+
+    it('keeps the filters when the sort changes', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleLanguage('sw');
+      fixture.componentInstance.setSort('date-asc');
+
+      expect(navigate.mock.calls.at(-1)).toEqual([
+        ['/subject/Topic'],
+        { queryParams: { sort: 'date-asc' }, fragment: 'lang=sw' },
+      ]);
+    });
+
+    it('removes the fragment when the filters return to the default', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.togglePodcast('Show A');
+      expect(lastFragment()).toBe('show=Show A');
+
+      fixture.componentInstance.togglePodcast('Show A');
+      expect(lastFragment()).toBeUndefined();
+    });
+
+    it('selects only All from the All chip and keeps it bookmarkable', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.selectLanguage(ALL_LANGUAGES_VALUE);
+
+      expect(resultFilter()).not.toContain('lang');
+      expect(lastFragment()).toBe('lang=all');
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideZonelessChangeDetection } from "@angular/core";
-import { provideRouter } from "@angular/router";
+import { ActivatedRoute, provideRouter, Router } from "@angular/router";
 import { of, Subject, throwError } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ScrollDispatcher } from "@angular/cdk/scrolling";
@@ -50,6 +50,13 @@ describe("SeriesHubComponent", () => {
     return createHub(hub);
   }
 
+  let fragment: string | null = null;
+  let navigate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    fragment = null;
+  });
+
   async function createHub(hub: "tv" | "news"): Promise<ComponentFixture<SeriesHubComponent>> {
     scrolled = new Subject<void>();
     TestBed.resetTestingModule();
@@ -65,8 +72,11 @@ describe("SeriesHubComponent", () => {
         },
         { provide: ScrollDispatcher, useValue: { scrolled: () => scrolled.asObservable() } },
         { provide: InfiniteScrollStrategy, useClass: InfiniteScrollStrategy },
+        { provide: ActivatedRoute, useValue: { snapshot: { fragment } } },
       ],
     }).compileComponents();
+    navigate = vi.fn().mockResolvedValue(true);
+    TestBed.inject(Router).navigate = navigate as unknown as Router["navigate"];
     const fixture = TestBed.createComponent(SeriesHubComponent);
     fixture.componentRef.setInput("seriesName", "Nightly");
     fixture.componentRef.setInput("hub", hub);
@@ -185,5 +195,47 @@ describe("SeriesHubComponent", () => {
     expect(oData.getEntitiesWithFacets.mock.calls[1][1].skip).toBeGreaterThan(0);
     expect(oData.getEntitiesWithFacets.mock.calls[1][1].skip).toBe(20);
     expect(oData.getEntitiesWithFacets.mock.calls[1][1].top).toBe(100);
+  });
+  describe("subject chips in the URL fragment", () => {
+    const subjects = [{ value: "Topic X", count: 2 }, { value: "Topic Y", count: 1 }];
+
+    it("writes subject clicks to the fragment with replaceUrl", async () => {
+      const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+      expect(navigate).not.toHaveBeenCalled();
+
+      fixture.componentInstance.toggleSubject("Topic X");
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({
+        fragment: "subject=Topic X",
+        queryParamsHandling: "preserve",
+        replaceUrl: true,
+        scroll: "manual",
+      });
+
+      fixture.componentInstance.toggleSubject("Topic Y");
+      expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe("subject=Topic X&subject=Topic Y");
+    });
+
+    it("restores subjects from a bookmarked fragment after the unfiltered facets load", async () => {
+      fragment = "subject=Topic Y&subject=Missing topic";
+      const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const calls = oData.getEntitiesWithFacets.mock.calls;
+      expect(calls).toHaveLength(2);
+      expect(calls[0][1].filter).toBe(catalogueHubFilter("Nightly", "tv", false));
+      expect(calls[1][1].filter).toContain("Topic Y");
+      expect(calls[1][1].filter).not.toContain("Missing");
+      expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe("subject=Topic Y");
+      expect(fixture.nativeElement.textContent).toContain("Topic X");
+    });
+
+    it("loads once and clears the fragment when no restored subject is offered", async () => {
+      fragment = "subject=Missing topic";
+      await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+
+      expect(oData.getEntitiesWithFacets).toHaveBeenCalledTimes(1);
+      expect(navigate.mock.calls.at(-1)?.[1].fragment).toBeUndefined();
+    });
   });
 });

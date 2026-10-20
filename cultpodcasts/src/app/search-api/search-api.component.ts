@@ -24,6 +24,13 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
 import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
+import { KIND_PARAM, SHOW_PARAM, SUBJECT_PARAM, keepOffered, readParamList, parseFilterFragment, buildFilterFragment, routeStateKey } from '../browse-filter-params';
+
+interface RestoredFilters {
+  podcasts: string[];
+  subjects: string[];
+  kinds: string[];
+}
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -77,6 +84,11 @@ export class SearchApiComponent {
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly contentKindLabel = contentKindLabel;
   private scrollSubscribed = false;
+  /** Chips from the URL, applied once the unfiltered facets for this query are known. */
+  private pendingRestore: RestoredFilters | null = null;
+  private routeParams: Params = {};
+  private routeQueryParams: Params = {};
+  private routeKey: string | null = null;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
@@ -97,14 +109,23 @@ export class SearchApiComponent {
 
   populatePage() {
     combineLatest(
-      [this.route.params, this.route.queryParams],
-      (params: Params, queryParams: Params) => ({
+      [this.route.params, this.route.queryParams, this.route.fragment],
+      (params: Params, queryParams: Params, fragment: string | null) => ({
         params,
         queryParams,
+        fragment,
       })
     ).pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
+    ).subscribe((res: { params: Params; queryParams: Params; fragment: string | null }) => {
+      const key = routeStateKey(res.params, res.queryParams, res.fragment);
+      if (key === this.routeKey) {
+        // This page wrote the URL (filter chip click); state and results are current.
+        return;
+      }
+      this.routeKey = key;
+      this.routeParams = res.params;
+      this.routeQueryParams = res.queryParams;
       const navigation = this.router.currentNavigation();
       let initial = true;
       if (navigation) {
@@ -129,6 +150,7 @@ export class SearchApiComponent {
         this.subjects.set([]);
         this.kinds.set([]);
         this.facets.update(f => ({ ...f, subjects: [], podcastName: [], contentKind: [] }));
+        this.pendingRestore = this.filtersFromUrl(parseFilterFragment(res.fragment));
       }
 
       const { params, queryParams } = res;
@@ -186,6 +208,10 @@ export class SearchApiComponent {
       }).subscribe({
         next: data => {
           const count: number = data.metadata.get("count");
+          this.updateFacets(data.facets, reset, subsequent);
+          if (this.applyPendingRestore()) {
+            return;
+          }
           if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
             this.scrollSubscribed = true;
             this.scrollDispatcher.scrolled().pipe(
@@ -206,21 +232,6 @@ export class SearchApiComponent {
             this.results.update(v => v.concat(data.entities.map(hit => normalizePlayableHit(hit))));
           }
           this.isSubsequentLoading.set(false);
-          if (subsequent) {
-            if (subsequent.podcasts) {
-              this.facets.update(f => ({ ...f, podcastName: data.facets.seriesName ?? data.facets.podcastName }));
-            }
-            if (subsequent.subjects) {
-              this.facets.update(f => ({ ...f, subjects: data.facets.subjects?.filter(x => !x.value.startsWith("_")) }));
-            }
-          } else {
-            if (reset?.podcasts) {
-              this.facets.update(f => ({ ...f, podcastName: data.facets.seriesName ?? data.facets.podcastName }));
-            }
-            if (reset?.subjects) {
-              this.facets.update(f => ({ ...f, subjects: data.facets.subjects }));
-            }
-          }
           let resultsSummary: String = `${count} results`;
           if (count === 0) {
             resultsSummary = `0 results`;
@@ -235,13 +246,6 @@ export class SearchApiComponent {
           }
 
           this.resultsHeading.set(`Found ${resultsSummary} for "${presentableQuery}"`);
-          if (this.contentKindMode === "probing") {
-            this.contentKindMode = "omit";
-            this.kindsFilter = "";
-            this.kinds.set([]);
-          } else if (this.contentKindMode === "include" && !this.kindsFilter && data.facets.contentKind) {
-            this.facets.update(f => ({ ...f, contentKind: data.facets.contentKind }));
-          }
           this.isLoading.set(false);
         },
         error: (e) => {
@@ -262,7 +266,7 @@ export class SearchApiComponent {
     if (sort != sortParamRank) {
       params[sortParam] = sort;
     }
-    this.router.navigate([url], { queryParams: params });
+    this.router.navigate([url], { queryParams: params, fragment: buildFilterFragment(this.filterParams()) ?? undefined });
   }
 
   protected sortLabel = computed(() => {
@@ -283,6 +287,7 @@ export class SearchApiComponent {
     this.subjects.set([]);
     this.subjectsFilter = '';
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { podcasts: true });
   }
 
@@ -291,9 +296,9 @@ export class SearchApiComponent {
     const next = current.includes(value)
       ? current.filter((s) => s !== value)
       : [...current, value];
-    this.subjects.set(next);
-    this.subjectsFilter = subjectsAnySearchIn(next).replace(/^ and /, "");
+    this.setSubjects(next);
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { podcasts: true });
   }
 
@@ -304,6 +309,7 @@ export class SearchApiComponent {
     this.podcasts.set([]);
     this.podcastsFilter = '';
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { subjects: true });
   }
 
@@ -312,11 +318,9 @@ export class SearchApiComponent {
     const next = current.includes(value)
       ? current.filter((p) => p !== value)
       : [...current, value];
-    this.podcasts.set(next);
-    this.podcastsFilter = next.length === 0
-      ? ''
-      : `search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+    this.setPodcasts(next);
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { subjects: true });
   }
 
@@ -328,6 +332,7 @@ export class SearchApiComponent {
     this.podcastsFilter = '';
     this.kindsFilter = '';
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { subjects: true, podcasts: true });
   }
 
@@ -336,11 +341,9 @@ export class SearchApiComponent {
     const next = current.includes(value)
       ? current.filter((k) => k !== value)
       : [...current, value];
-    this.kinds.set(next);
-    this.kindsFilter = next.length === 0
-      ? ''
-      : `search.in(contentKind, '${next.map((k) => k.replaceAll("'", "''")).join('£')}', '£')`;
+    this.setKinds(next);
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { subjects: true, podcasts: true });
   }
 
@@ -351,7 +354,133 @@ export class SearchApiComponent {
     this.kinds.set([]);
     this.kindsFilter = '';
     this.page = 1;
+    this.syncFilterUrl();
     this.execSearch(true, { subjects: true, podcasts: true });
+  }
+
+  private setSubjects(next: string[]): void {
+    this.subjects.set(next);
+    this.subjectsFilter = subjectsAnySearchIn(next).replace(/^ and /, "");
+  }
+
+  private setPodcasts(next: string[]): void {
+    this.podcasts.set(next);
+    this.podcastsFilter = next.length === 0
+      ? ''
+      : `search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+  }
+
+  private setKinds(next: string[]): void {
+    this.kinds.set(next);
+    this.kindsFilter = next.length === 0
+      ? ''
+      : `search.in(contentKind, '${next.map((k) => k.replaceAll("'", "''")).join('£')}', '£')`;
+  }
+
+  private updateFacets(
+    facets: SearchResultsFacets,
+    reset?: { podcasts?: boolean, subjects?: boolean },
+    subsequent?: { podcasts?: boolean, subjects?: boolean }
+  ): void {
+    if (subsequent) {
+      if (subsequent.podcasts) {
+        this.facets.update(f => ({ ...f, podcastName: facets.seriesName ?? facets.podcastName }));
+      }
+      if (subsequent.subjects) {
+        this.facets.update(f => ({ ...f, subjects: facets.subjects?.filter(x => !x.value.startsWith("_")) }));
+      }
+    } else {
+      if (reset?.podcasts) {
+        this.facets.update(f => ({ ...f, podcastName: facets.seriesName ?? facets.podcastName }));
+      }
+      if (reset?.subjects) {
+        this.facets.update(f => ({ ...f, subjects: facets.subjects }));
+      }
+    }
+    if (this.contentKindMode === "probing") {
+      this.contentKindMode = "omit";
+      this.kindsFilter = "";
+      this.kinds.set([]);
+    } else if (this.contentKindMode === "include" && !this.kindsFilter && facets.contentKind) {
+      this.facets.update(f => ({ ...f, contentKind: facets.contentKind }));
+    }
+  }
+
+  private filtersFromUrl(filters: Params): RestoredFilters | null {
+    const restored = {
+      podcasts: readParamList(filters, SHOW_PARAM),
+      subjects: readParamList(filters, SUBJECT_PARAM),
+      kinds: readParamList(filters, KIND_PARAM),
+    };
+    return restored.podcasts.length || restored.subjects.length || restored.kinds.length
+      ? restored
+      : null;
+  }
+
+  /**
+   * After the unfiltered first load has filled the chip lists, select the chips
+   * from the URL that those lists offer (unknown values are ignored and the
+   * URL tidied) and search again. The unfiltered results are never shown.
+   * Returns true when it started that search.
+   */
+  private applyPendingRestore(): boolean {
+    const restore = this.pendingRestore;
+    if (!restore) {
+      return false;
+    }
+    this.pendingRestore = null;
+    const facets = this.facets();
+    const podcasts = keepOffered(restore.podcasts, facets.podcastName);
+    const subjects = keepOffered(restore.subjects, facets.subjects);
+    const kinds = this.contentKindMode === "include" ? keepOffered(restore.kinds, facets.contentKind) : [];
+    const dropped = podcasts.length !== restore.podcasts.length
+      || subjects.length !== restore.subjects.length
+      || kinds.length !== restore.kinds.length;
+    if (podcasts.length === 0 && subjects.length === 0 && kinds.length === 0) {
+      if (dropped) {
+        this.syncFilterUrl();
+      }
+      return false;
+    }
+    this.setPodcasts(podcasts);
+    this.setSubjects(subjects);
+    this.setKinds(kinds);
+    if (dropped) {
+      this.syncFilterUrl();
+    }
+    this.page = 1;
+    this.execSearch(true);
+    return true;
+  }
+
+  private filterParams(): Record<string, string[]> {
+    return {
+      [SHOW_PARAM]: this.podcasts(),
+      [SUBJECT_PARAM]: this.subjects(),
+      [KIND_PARAM]: this.kinds(),
+    };
+  }
+
+  /**
+   * Mirror the filter chips into the URL fragment, keeping path and query.
+   * replaceUrl keeps chip clicks out of the back-button history (use
+   * `replaceUrl: false` to push entries instead); scroll: 'manual' stops the
+   * router scrolling (to the top, or to an anchor) on every click.
+   */
+  private syncFilterUrl(): void {
+    const fragment = buildFilterFragment(this.filterParams());
+    const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
+    if (key === this.routeKey) {
+      return;
+    }
+    this.routeKey = key;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParamsHandling: 'preserve',
+      fragment: fragment ?? undefined,
+      replaceUrl: true,
+      scroll: 'manual'
+    });
   }
 
   isScrolledToBottom(): boolean {
