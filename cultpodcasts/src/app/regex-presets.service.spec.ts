@@ -26,7 +26,7 @@ describe('RegexPresetsService', () => {
       .toBe('^My Pod {episode-title}$');
   });
 
-  it('every description preset is a valid regex once server-side tokens are substituted', () => {
+  it('every description preset compiles as a JS regex after normalising .NET-only syntax (smoke check; .NET validity is covered by RPP DescriptionRegexTokens tests)', () => {
     for (const preset of service.loadRegexPresets().description) {
       const pattern = preset.pattern
         .replaceAll('{episode-title}', 'Title')
