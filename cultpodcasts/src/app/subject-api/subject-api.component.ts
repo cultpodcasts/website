@@ -102,6 +102,8 @@ export class SubjectApiComponent {
   protected selectedLanguageValues = signal<string[]>([ENGLISH_LANGUAGE_VALUE]);
   /** False while the language filter is on its default; the first chip click then starts afresh. */
   private languageTouched = false;
+  /** A `#lang=` selection was just restored; drop codes the subject does not offer. */
+  private pruneRestoredLanguages = false;
   /** Shows from the URL, applied once the subject-wide show facets are known. */
   private pendingShows: string[] = [];
   private routeParams: Params = {};
@@ -296,13 +298,7 @@ export class SubjectApiComponent {
             const scopedTotal = facetData.metadata.get("count") ?? 0;
             // Default English (or any specific language) with 0 hits while other
             // language facets have episodes → widen to All before the results query.
-            const nextChips = reconcileLanguageChipsForPodcasts(
-              this.languageSelection(),
-              availableLanguageChipValues(scopedTotal, langFacets)
-            );
-            if (nextChips) {
-              this.setLanguageSelection(nextChips);
-            }
+            this.reconcileLanguageSelection(availableLanguageChipValues(scopedTotal, langFacets));
             runResults(facetData.facets, scopedTotal);
           },
           error: (e) => {
@@ -418,6 +414,7 @@ export class SubjectApiComponent {
     this.setPodcasts([]);
     this.setLanguageSelection([ALL_LANGUAGES_VALUE]);
     this.languageTouched = true;
+    this.pruneRestoredLanguages = false;
     this.page = 1;
     this.syncFilterUrl();
     this.refreshLanguageFacets({ reconcileSelection: false, thenSearch: true });
@@ -458,13 +455,7 @@ export class SubjectApiComponent {
         this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
 
         if (options?.reconcileSelection) {
-          const nextChips = reconcileLanguageChipsForPodcasts(
-            this.languageSelection(),
-            availableLanguageChipValues(scopedTotal, langFacets)
-          );
-          if (nextChips) {
-            this.setLanguageSelection(nextChips);
-          }
+          this.reconcileLanguageSelection(availableLanguageChipValues(scopedTotal, langFacets));
         }
 
         if (options?.thenSearch) {
@@ -497,12 +488,40 @@ export class SubjectApiComponent {
     this.applyLanguageSelection(selected);
   }
 
+  /**
+   * Fit the language selection to the chips on offer and keep the URL in step.
+   * A selection restored from the URL first drops languages with no chip here
+   * (once, on the first facets after restore). Then, if nothing selected has
+   * episodes, widen to All.
+   */
+  private reconcileLanguageSelection(available: string[]): void {
+    let changed = false;
+    if (this.pruneRestoredLanguages) {
+      this.pruneRestoredLanguages = false;
+      const selected = this.selectedLanguageValues();
+      const kept = selected.filter(value => value === ALL_LANGUAGES_VALUE || available.includes(value));
+      if (kept.length !== selected.length) {
+        this.setLanguageSelection(kept.length ? kept : [ALL_LANGUAGES_VALUE]);
+        changed = true;
+      }
+    }
+    const nextChips = reconcileLanguageChipsForPodcasts(this.languageSelection(), available);
+    if (nextChips) {
+      this.setLanguageSelection(nextChips);
+      changed = true;
+    }
+    if (changed) {
+      this.syncFilterUrl();
+    }
+  }
+
   private setLanguageSelection(selected: string[]): void {
     this.selectedLanguageValues.set(selected);
     this.languageSelection.set(selectionFromChipValues(selected));
   }
 
   private applyLanguageSelection(selected: string[]): void {
+    this.pruneRestoredLanguages = false;
     this.setLanguageSelection(selected);
     this.page = 1;
     this.syncFilterUrl();
@@ -564,6 +583,7 @@ export class SubjectApiComponent {
     this.setLanguageSelection(languages ?? [ENGLISH_LANGUAGE_VALUE]);
     // A language state from the URL is a choice already made, so chips toggle.
     this.languageTouched = languages !== null;
+    this.pruneRestoredLanguages = languages !== null;
     this.setPodcasts([]);
     this.pendingShows = readParamList(filters, SHOW_PARAM);
   }

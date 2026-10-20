@@ -275,6 +275,38 @@ describe('SubjectApiComponent', () => {
       expect(resultFilter()).toContain("lang eq 'sw'");
     });
 
+    it('drops restored languages the subject does not offer and tidies the fragment', () => {
+      fragment$.next('lang=sw,zz');
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("lang eq 'sw'");
+      expect(resultFilter()).not.toContain('zz');
+      expect(lastFragment()).toBe('lang=sw');
+    });
+
+    it('widens to All and says so in the fragment when no restored language is offered', () => {
+      fragment$.next('lang=zz');
+      fixture.detectChanges();
+
+      expect(resultFilter()).not.toContain('lang');
+      expect(lastFragment()).toBe('lang=all');
+    });
+
+    it('updates the fragment when a show change widens the language selection to All', () => {
+      respond = (request) => (request.filter ?? '').includes('Show A') && (request.top ?? 0) === 0
+        ? of({ ...languagePage(), metadata: new Map<string, number>([['count', 3]]), facets: { ...languagePage().facets, lang: [{ value: 'sw', count: 3 }] } })
+        : of(languagePage());
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage('ki');
+      expect(lastFragment()).toBe('lang=ki');
+
+      component.togglePodcast('Show A');
+
+      expect(resultFilter()).not.toContain("lang eq 'ki'");
+      expect(lastFragment()).toBe('show=Show A&lang=all');
+    });
+
     it('does not reload when the router echoes the URL the page wrote', () => {
       fixture.detectChanges();
       fixture.componentInstance.toggleLanguage('sw');
