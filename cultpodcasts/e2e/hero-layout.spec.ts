@@ -160,6 +160,27 @@ for (const vp of viewports) {
       }
     });
 
+    if (vp.layout === "wide") {
+      test("HERO-WID-001: docked card is bottom-anchored and the hero keeps its band", async ({ page }) => {
+        await openCase(page, "short-title-with-desc");
+        const g = await page.evaluate(() => {
+          const hero = document.querySelector<HTMLElement>(".billboard")!;
+          const card = document.querySelector<HTMLElement>(".billboard__content")!;
+          const cs = getComputedStyle(hero);
+          const h = hero.getBoundingClientRect();
+          const c = card.getBoundingClientRect();
+          return {
+            heroH: h.height,
+            band: parseFloat(cs.minHeight),
+            cardBottom: c.bottom - h.top,
+            anchor: h.height - parseFloat(cs.paddingBottom) - parseFloat(getComputedStyle(card).marginBottom),
+          };
+        });
+        expect(g.heroH, "hero grew past its band").toBeLessThanOrEqual(g.band + 1);
+        expect(Math.abs(g.cardBottom - g.anchor), "card not at the hero bottom").toBeLessThanOrEqual(1);
+      });
+    }
+
     test("HERO-SCR-004 + HERO-SUB-002: empty desc with few subjects keeps actions below chips", async ({
       page,
     }) => {

@@ -634,6 +634,13 @@
     // Wide hugs its content (docked card), so no reserved expander row either.
     .billboard__desc-more
         min-height: 0
+    // HERO-WID-001: the hero stays one band and the card stays bottom-anchored.
+    // Expanded text grows the card upward into the free band space (cap set in TS
+    // from the measured gap) and scrolls past that, so the hero never gets taller.
+    .billboard__desc.is-expanded
+        max-height: var(--hero-desc-expand-max, none)
+        overflow-y: auto
+        overscroll-behavior: contain
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.

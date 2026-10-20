@@ -812,6 +812,82 @@ describe('HomepageHeroComponent', () => {
       expect(desc.hasAttribute('tabindex')).toBe(false);
     });
 
+    describe('HERO-WID-001: wide keeps the card bottom-anchored in the hero band', () => {
+      const originalMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+      afterEach(() => {
+        vi.restoreAllMocks();
+        if (originalMatchMedia) {
+          Object.defineProperty(window, 'matchMedia', originalMatchMedia);
+        } else {
+          delete (window as { matchMedia?: unknown }).matchMedia;
+        }
+      });
+
+      /** Fake the wide layout: 720px band, 140/48 padding, -16px overhang, 22px lines, 14 text lines. */
+      function fakeWide(wide: boolean, cardHeight: number): void {
+        Object.defineProperty(window, 'matchMedia', {
+          configurable: true,
+          value: (q: string) => ({ matches: wide && q.includes('1281px'), media: q }),
+        });
+        const real = window.getComputedStyle.bind(window);
+        vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+          const e = el as HTMLElement;
+          if (e.classList.contains('billboard')) {
+            return { minHeight: '720px', paddingTop: '140px', paddingBottom: '48px',
+              getPropertyValue: (n: string) => (n === '--hero-desc-lines' ? '5' : '') } as unknown as CSSStyleDeclaration;
+          }
+          if (e.classList.contains('billboard__content')) {
+            return { marginBottom: '-16px' } as unknown as CSSStyleDeclaration;
+          }
+          if (e.classList.contains('billboard__desc')) {
+            return { lineHeight: '22px' } as unknown as CSSStyleDeclaration;
+          }
+          return real(el);
+        });
+        const desc = root().querySelector('.billboard__desc') as HTMLElement;
+        const card = root().querySelector('.billboard__content') as HTMLElement;
+        const row = root().querySelector('.billboard__desc-more') as HTMLElement;
+        const hero = root().querySelector('.billboard') as HTMLElement;
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 308 });
+        Object.defineProperty(row, 'offsetHeight', { configurable: true, value: 32 });
+        Object.defineProperty(card, 'offsetHeight', { configurable: true, value: cardHeight });
+        Object.defineProperty(hero, 'clientHeight', { configurable: true, value: 720 });
+        component['measureDescOverflow']();
+        fixture.detectChanges();
+      }
+
+      const content = () => root().querySelector('.billboard__content') as HTMLElement;
+      const desc = () => root().querySelector('.billboard__desc') as HTMLElement;
+
+      it('drops collapsed lines (5 → 2) until a tall card fits the band, and caps the expanded height at the free space', () => {
+        // rest = 600 - 110 - 32 = 458; need(n) = 458 + 22n + 32 - 16: 5→584 4→562 3→540 2→518 ≤ 532.
+        fakeWide(true, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        // 2 lines (44) + free (532 - 518 = 14) - 1px safety.
+        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe('57px');
+      });
+
+      it('keeps the Sass 5 lines when the card fits; expanding may use all the band space above it', () => {
+        // need(5) = 400 - 142 + 142 - 16 = 384; free = 532 - 384 = 148.
+        fakeWide(true, 400);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe(`${110 + 148 - 1}px`);
+      });
+
+      it('sets no override on stacked layouts', () => {
+        fakeWide(false, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe('');
+      });
+
+      it('wide Sass caps the expanded description at the measured band space and scrolls', () => {
+        expect(heroSass).toMatch(
+          /\.billboard__desc\.is-expanded\n\s+max-height:\s*var\(--hero-desc-expand-max,\s*none\)\n\s+overflow-y:\s*auto/
+        );
+      });
+    });
+
     it('makes the expanded description keyboard-focusable (it can scroll on mobile)', () => {
       fakeOverflow(true);
       toggle()!.click();

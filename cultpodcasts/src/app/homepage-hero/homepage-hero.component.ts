@@ -102,6 +102,15 @@ export class HomepageHeroComponent {
   protected readonly descOverflows = signal(false);
   protected readonly showDescToggle = computed(() => this.descOverflows() || this.descExpanded());
   private readonly heroDesc = viewChild<ElementRef<HTMLElement>>('heroDesc');
+  /**
+   * Wide only (HERO-WID-001): collapsed desc lines that keep the docked card inside the
+   * hero band, so the hero does not grow and the card stays bottom-anchored. Null = the
+   * Sass default (5). Never below {@link HomepageHeroComponent.wideMinDescLines}.
+   */
+  protected readonly descFitLines = signal<number | null>(null);
+  /** Wide only: expanded desc max height (px), so the card grows upward into free band space, not the hero downward. */
+  protected readonly descExpandMaxPx = signal<number | null>(null);
+  private static readonly wideMinDescLines = 2;
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -248,6 +257,7 @@ export class HomepageHeroComponent {
     afterRenderEffect(() => {
       this.featuredDesc();
       this.descExpanded();
+      this.descFitLines();
       this.heroDesc();
       this.measureDescOverflow();
     });
@@ -584,7 +594,59 @@ export class HomepageHeroComponent {
     if (this.descExpanded()) {
       return;
     }
+    this.fitWideDesc(element);
     this.descOverflows.set(element.scrollHeight - element.clientHeight > 1);
+  }
+
+  /**
+   * Wide (docked card at the bottom of the hero, HERO-WID-001): the hero is a fixed band
+   * (`min-height`) with the card at its flex-end. A tall card (3-line title + 5 desc lines +
+   * expander + chips) used to grow the hero instead, pushing its bottom (card, pager)
+   * down and below the fold. Pick the most collapsed lines (5 → 2) that still fit the band,
+   * and cap the expanded height at the band space above the card so expanding grows the
+   * card upward and the hero never changes height. Stacked layouts: no override.
+   */
+  private fitWideDesc(desc: HTMLElement): void {
+    const billboard = desc.closest<HTMLElement>('.billboard');
+    const card = desc.closest<HTMLElement>('.billboard__content');
+    const wide = typeof window.matchMedia === 'function'
+      && window.matchMedia('(min-width: 1281px)').matches;
+    if (!wide || !billboard || !card) {
+      this.descFitLines.set(null);
+      this.descExpandMaxPx.set(null);
+      return;
+    }
+    const hero = getComputedStyle(billboard);
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const naturalLines = Math.round(px(hero.getPropertyValue('--hero-desc-lines'))) || 5;
+    const lineHeight = px(getComputedStyle(desc).lineHeight);
+    if (lineHeight <= 0) {
+      return;
+    }
+    const padding = px(hero.paddingTop) + px(hero.paddingBottom);
+    const band = px(hero.minHeight) - padding;
+    // The card hangs past the bottom padding by its negative margin (docked overhang).
+    const cardOuter = (height: number) => height + px(getComputedStyle(card).marginBottom);
+    const textLines = Math.round(desc.scrollHeight / lineHeight);
+    const toggleRow = desc.parentElement?.querySelector<HTMLElement>('.billboard__desc-more');
+    const toggleHeight = 32;
+    const rowNow = toggleRow?.offsetHeight ?? 0;
+    // Card height without the description and expander, at any line count.
+    const rest = card.offsetHeight - desc.clientHeight - rowNow;
+    const needFor = (lines: number) => cardOuter(
+      rest + Math.min(textLines, lines) * lineHeight + (textLines > lines ? toggleHeight : 0)
+    );
+    let lines = naturalLines;
+    while (lines > HomepageHeroComponent.wideMinDescLines && needFor(lines) > band + 0.5) {
+      lines--;
+    }
+    this.descFitLines.set(lines === naturalLines ? null : lines);
+    // Band space left above the card once it renders at `lines` (0 when the hero had to grow anyway).
+    const inner = Math.max(band, billboard.clientHeight - padding);
+    const free = Math.max(0, inner - needFor(lines));
+    const collapsedHeight = Math.min(textLines, lines) * lineHeight;
+    // 1px under the gap: fractional line heights must not tip the hero over its band.
+    this.descExpandMaxPx.set(Math.max(lineHeight, Math.floor(collapsedHeight + free - 1)));
   }
 
   private scrollActiveHeroDotIntoView(

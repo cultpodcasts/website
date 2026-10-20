@@ -64,7 +64,7 @@
   <div class="billboard__art-hover" aria-hidden="true"
     (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)"></div>
 
-  <div class="billboard__content">
+  <div class="billboard__content" [style.--hero-desc-lines]="descFitLines()">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
       <div class="billboard__copy">
         <p class="billboard__eyebrow">
@@ -98,6 +98,7 @@
           @if (hasFeaturedDesc()) {
           <p class="billboard__desc" #heroDesc [id]="descId"
             [class.is-expanded]="descExpanded()"
+            [style.--hero-desc-expand-max.px]="descExpandMaxPx()"
             [attr.tabindex]="descExpanded() ? 0 : null">{{ featuredDesc() }}</p>
           <!-- Expander row is always present with a description so slides keep one height (HERO-SCR-002). -->
           <div class="billboard__desc-more">
