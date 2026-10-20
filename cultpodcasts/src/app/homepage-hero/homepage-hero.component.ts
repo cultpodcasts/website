@@ -334,7 +334,7 @@ export class HomepageHeroComponent {
   }
 
   protected languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode, this.viewerLocale);
+    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {

@@ -14,13 +14,15 @@ The public website does **not** read that list. `cultpodcasts/src/app/languages.
 for any ISO 639 code at runtime with `Intl.DisplayNames`: the name in the visitor's language, then
 the language's own name ("Spanish (Español)" for an English visitor, "Inglés (English)" for a Spanish
 visitor), or a single name when they match. Region subtags fall back to the base language; unknown
-codes show the raw code. The visitor locale comes from `ViewerLocaleService`
-(`cultpodcasts/src/app/viewer-locale.ts`): `navigator.languages[0]` in the browser, the first
-`Accept-Language` tag during per-request SSR (`server.ts`), `en` during prerender.
+codes show the raw code. A small CLDR-sourced `SUPPLEMENTARY_LANGUAGE_NAMES` map fills gaps in
+Chromium / Cloudflare workerd's trimmed ICU data only. The visitor locale comes from
+`ViewerLocaleService` (`cultpodcasts/src/app/viewer-locale.ts`): `en` on the server and for the first
+client render (so hydration matches), then `navigator.languages[0]` after the first browser render.
 
 Adding a language in the admin dialog therefore needs **no website change**.
 
-- Do not reintroduce a hand-maintained code → name table.
+- Do not reintroduce a hand-maintained code → name table. If a supported language shows its bare code
+  (or loses its native name) in Chrome, add its CLDR names to `SUPPLEMENTARY_LANGUAGE_NAMES`.
 - Optional: when a newly supported language has a clear representative country, add its flag to
   `LANGUAGE_FLAG_BY_CODE` in `cultpodcasts/src/app/language-flag.ts` (without one the badge shows the
   uppercase ISO code, which is acceptable).

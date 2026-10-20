@@ -134,7 +134,7 @@ export class EpisodePlayerComponent {
   });
 
   protected readonly languageFlag = computed(() =>
-    languageFlagBadgeForEpisode(this.episode() ?? {}, this.viewerLocale)
+    languageFlagBadgeForEpisode(this.episode() ?? {}, this.viewerLocale())
   );
 
   protected readonly displayCatalogName = displayCatalogName;

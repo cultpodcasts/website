@@ -477,7 +477,7 @@ export class SubjectApiComponent {
   }
 
   languageDisplayName(code: string): string {
-    return languageLabel(code, this.viewerLocale);
+    return languageLabel(code, this.viewerLocale());
   }
 
   protected showLanguageSelector = computed(() =>

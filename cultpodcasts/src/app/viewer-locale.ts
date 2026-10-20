@@ -1,38 +1,36 @@
-import { Injectable, InjectionToken, PLATFORM_ID, inject } from "@angular/core";
+import { Injectable, PLATFORM_ID, afterNextRender, inject, signal } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
 import { DEFAULT_VIEWER_LOCALE, normaliseViewerLocale } from "./languages";
 
 /**
- * Viewer locale for server rendering, provided per request by `server.ts`
- * from the first `Accept-Language` tag. Absent during prerender, where
- * labels render in {@link DEFAULT_VIEWER_LOCALE}.
+ * The browser's preferred language: `navigator.languages[0]`, then
+ * `navigator.language`, then English (also when there is no navigator: `null`).
  */
-export const SERVER_VIEWER_LOCALE = new InjectionToken<string>("SERVER_VIEWER_LOCALE");
-
-/** First language tag of an `Accept-Language` header (`es-ES,es;q=0.9` → `es-ES`). */
-export function firstAcceptLanguage(header: string | null | undefined): string | undefined {
-  const first = header?.split(",")[0]?.split(";")[0]?.trim();
-  return first && first !== "*" ? first : undefined;
+export function browserViewerLocale(
+  nav: Pick<Navigator, "languages" | "language"> | null =
+    typeof navigator === "undefined" ? null : navigator
+): string {
+  return normaliseViewerLocale(nav?.languages?.[0] ?? nav?.language ?? DEFAULT_VIEWER_LOCALE);
 }
 
 /**
- * Locale used for language labels. Browser: `navigator.languages[0]` (the same
- * preference the browser sends as `Accept-Language`, so SSR text normally matches
- * at hydration; if not, the bound text is simply updated — text values are not
- * part of hydration's DOM-structure check). Server: {@link SERVER_VIEWER_LOCALE}
- * or the default.
+ * Locale used for language labels.
+ *
+ * Starts as {@link DEFAULT_VIEWER_LOCALE} on every platform, so server-rendered
+ * and prerendered HTML (e.g. homepage episode badges) and the first client
+ * render agree during hydration. In the browser it switches to
+ * {@link browserViewerLocale} after the next render; signal readers then
+ * re-render in the visitor's language. Client-only views (the `@defer`ed search
+ * and subject results with the language chips) render after the switch.
  */
 @Injectable({ providedIn: "root" })
 export class ViewerLocaleService {
-  readonly locale: string;
+  private readonly current = signal(DEFAULT_VIEWER_LOCALE);
+  readonly locale = this.current.asReadonly();
 
   constructor() {
-    const platformId = inject(PLATFORM_ID);
-    if (isPlatformBrowser(platformId) && typeof navigator !== "undefined") {
-      this.locale = normaliseViewerLocale(navigator.languages?.[0] ?? navigator.language);
-    } else {
-      this.locale = normaliseViewerLocale(
-        inject(SERVER_VIEWER_LOCALE, { optional: true }) ?? DEFAULT_VIEWER_LOCALE);
+    if (isPlatformBrowser(inject(PLATFORM_ID))) {
+      afterNextRender(() => this.current.set(browserViewerLocale()));
     }
   }
 }

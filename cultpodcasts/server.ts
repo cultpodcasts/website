@@ -3,7 +3,6 @@ import { RESPONSE_INIT } from "@angular/core";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
-import { SERVER_VIEWER_LOCALE, firstAcceptLanguage } from "./src/app/viewer-locale";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -59,9 +58,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 		url: url.pathname,
 		platformProviders: [
 			{ provide: 'url', useValue: url },
-			{ provide: RESPONSE_INIT, useValue: responseInit },
-			// Language labels render in the visitor's language (first Accept-Language tag).
-			{ provide: SERVER_VIEWER_LOCALE, useValue: firstAcceptLanguage(request.headers.get("Accept-Language")) ?? "en" }
+			{ provide: RESPONSE_INIT, useValue: responseInit }
 		]
 	});
 
@@ -71,11 +68,7 @@ async function workerFetchHandler(request: Request, env: Env) {
 	}
 
 	console.log("rendered SSR");
-	const response = new Response(content, indexResponse);
-	// SSR HTML varies by visitor language (language labels); never let a shared
-	// cache serve one visitor's locale to another.
-	response.headers.append("Vary", "Accept-Language");
-	return response;
+	return new Response(content, indexResponse);
 }
 
 export default {

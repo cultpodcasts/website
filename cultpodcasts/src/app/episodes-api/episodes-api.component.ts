@@ -309,7 +309,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   }
 
   languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode, this.viewerLocale);
+    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   showHeroPromote(episode: ApiEpisode): boolean {

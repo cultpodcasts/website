@@ -90,7 +90,7 @@ export class EpisodePosterComponent {
   });
 
   protected readonly languageBadge = computed((): LanguageFlagBadge | undefined =>
-    languageFlagBadgeForEpisode(this.episode(), this.viewerLocale)
+    languageFlagBadgeForEpisode(this.episode(), this.viewerLocale())
   );
 
   protected readonly releaseLabel = computed(() =>

@@ -1,75 +1,75 @@
-import { PLATFORM_ID } from "@angular/core";
+import { ApplicationRef, PLATFORM_ID } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { SERVER_VIEWER_LOCALE, ViewerLocaleService, firstAcceptLanguage } from "./viewer-locale";
+import { ViewerLocaleService, browserViewerLocale } from "./viewer-locale";
 
 describe("viewer-locale", () => {
-  describe("firstAcceptLanguage", () => {
-    it("takes the first tag without its quality weight", () => {
+  describe("browserViewerLocale", () => {
+    it("uses the first preferred language", () => {
       // Arrange
-      const header = "es-ES;q=1.0,es;q=0.9,en;q=0.8";
+      const nav = { languages: ["es_ES", "en"], language: "en" };
 
       // Act
-      const locale = firstAcceptLanguage(header);
+      const locale = browserViewerLocale(nav);
 
       // Assert
       expect(locale).toBe("es-ES");
     });
 
-    it("has no locale for a missing, empty or wildcard header", () => {
+    it("falls back to the single browser language when there is no list", () => {
       // Arrange
-      const headers = [null, undefined, "", "*"];
+      const nav = { languages: [] as readonly string[], language: "fr" };
 
       // Act
-      const locales = headers.map(firstAcceptLanguage);
+      const locale = browserViewerLocale(nav);
 
       // Assert
-      expect(locales).toEqual([undefined, undefined, undefined, undefined]);
+      expect(locale).toBe("fr");
+    });
+
+    it("falls back to English without a navigator or with an invalid tag", () => {
+      // Arrange
+      const invalid = { languages: ["not a locale!"], language: "" };
+
+      // Act
+      const withoutNavigator = browserViewerLocale(null);
+      const withInvalidTag = browserViewerLocale(invalid);
+
+      // Assert
+      expect(withoutNavigator).toBe("en");
+      expect(withInvalidTag).toBe("en");
     });
   });
 
-  describe("ViewerLocaleService on the server", () => {
-    it("uses the request locale provided for server rendering", () => {
-      // Arrange
-      TestBed.configureTestingModule({
-        providers: [
-          { provide: PLATFORM_ID, useValue: "server" },
-          { provide: SERVER_VIEWER_LOCALE, useValue: "es_ES" }
-        ]
-      });
-
-      // Act
-      const locale = TestBed.inject(ViewerLocaleService).locale;
-
-      // Assert
-      expect(locale).toBe("es-ES");
-    });
-
-    it("uses English when no request locale is provided, as in prerender", () => {
+  describe("ViewerLocaleService", () => {
+    it("stays English on the server so rendered HTML matches the first client render", () => {
       // Arrange
       TestBed.configureTestingModule({
         providers: [{ provide: PLATFORM_ID, useValue: "server" }]
       });
+      const service = TestBed.inject(ViewerLocaleService);
 
       // Act
-      const locale = TestBed.inject(ViewerLocaleService).locale;
+      TestBed.inject(ApplicationRef).tick();
 
       // Assert
-      expect(locale).toBe("en");
+      expect(service.locale()).toBe("en");
     });
-  });
 
-  describe("ViewerLocaleService in the browser", () => {
-    it("uses the browser's preferred language", () => {
+    it("starts English in the browser and switches to the browser language after rendering", () => {
       // Arrange
+      vi.spyOn(navigator, "languages", "get").mockReturnValue(["es-MX"]);
       TestBed.configureTestingModule({
         providers: [{ provide: PLATFORM_ID, useValue: "browser" }]
       });
+      const service = TestBed.inject(ViewerLocaleService);
+      const beforeRender = service.locale();
 
       // Act
-      const locale = TestBed.inject(ViewerLocaleService).locale;
+      TestBed.inject(ApplicationRef).tick();
 
       // Assert
-      expect(locale).toBe(Intl.getCanonicalLocales(navigator.languages?.[0] ?? navigator.language)[0]);
+      expect(beforeRender).toBe("en");
+      expect(service.locale()).toBe("es-MX");
     });
   });
 });

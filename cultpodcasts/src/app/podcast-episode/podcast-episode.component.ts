@@ -164,7 +164,7 @@ export class PodcastEpisodeComponent {
   );
 
   protected readonly languageFlag = computed(() =>
-    languageFlagBadgeForEpisode(this._episode() ?? {}, this.viewerLocale)
+    languageFlagBadgeForEpisode(this._episode() ?? {}, this.viewerLocale())
   );
 
   /** "More from this podcast" rail — other episodes from the same show. */
