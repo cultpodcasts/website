@@ -256,7 +256,7 @@
     // Only reserve desc height when a description is present — empty slides must
     // not leave a blank band (especially on mobile). Contract: docs/homepage-hero.md
     &.has-desc
-        min-height: calc(1.45em * var(--hero-desc-lines) + 44px + 32px)
+        min-height: calc(1.45em * var(--hero-desc-lines) + 44px)
 
 .billboard__eyebrow
     // Sits directly above the podcast pill — the pill carries the gap to the title.
@@ -326,9 +326,22 @@
 .billboard__lang-name
     line-height: 1.2
 
+// Positioning box for the inline expander: shrinks to the description's width so
+// the button lands at the end of the text column, not the far edge of the card.
+.billboard__desc-wrap
+    --hero-desc-font: 1.05rem
+    // Room the expander takes at the end of the last visible line (button + fade lead-in).
+    --hero-desc-toggle-room: calc(32px + 1.25em)
+    position: relative
+    width: fit-content
+    max-width: 100%
+    // The 32px button overhangs the last line by ~4px; keep it clear of the chips.
+    margin: 0 0 8px
+    font-size: var(--hero-desc-font)
+
 .billboard__desc
-    margin: 0 0 4px
-    font-size: 1.05rem
+    margin: 0
+    font-size: var(--hero-desc-font)
     line-height: 1.45
     color: var(--nflx-on-media-muted, #e8e8e8)
     max-width: 36em
@@ -340,26 +353,43 @@
     overflow: hidden
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Expanded: clamp off, the panel grows in place (buttons stay in flow below).
+    // Expanded: clamp off, the full text shows and the panel grows in place (buttons
+    // stay in flow below). Never an inner scroll box, in any layout (HERO-DSC-001).
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
+        max-height: none
+        overflow: visible
 
-// Holds the description expander. Present whenever there is a description
-// (stacked layouts reserve its height) so slides with and without overflow match.
-// Right-aligned under the text, like the discovery card expander.
-.billboard__desc-more
-    display: flex
-    justify-content: flex-end
-    max-width: 36em
-    min-height: 32px
-    margin-bottom: 8px
+// Expanded: an inline spacer at the end of the text makes the last line wrap short
+// of the button, so nothing is hidden once the reader reaches the end.
+.billboard__desc.is-expanded.has-toggle::after
+    content: ''
+    display: inline-block
+    width: var(--hero-desc-toggle-room)
+    height: 1px
+
+// Fades the end of the last visible line under the expander (the art/card behind the
+// copy is near-black in every layout), so the button never sits on legible text.
+.billboard__desc-fade
+    position: absolute
+    right: 0
+    bottom: 0
+    width: var(--hero-desc-toggle-room)
+    height: 1.45em
+    background: linear-gradient(90deg, #0b0b0b00, #0b0b0b 1.1em)
+    pointer-events: none
 
 // Same icon button as app-clampable-text (discovery cards): 32px hit target,
 // 20px expand_more / expand_less icon, translucent blurred backing. The backing
 // is dark here (like the pager chevrons) because the hero sits on artwork.
+// Inline on the last visible line (HERO-DSC-001): bottom-right of the description
+// box, centred on that line. mat-icon-button keeps its 48px touch target.
 .billboard__desc-toggle
+    position: absolute
+    right: 0
+    bottom: calc((1.45 * var(--hero-desc-font) - 32px) / 2)
     width: 32px
     height: 32px
     padding: 0
@@ -631,16 +661,9 @@
     .billboard__copy-body,
     .billboard__desc
         min-height: 0
-    // Wide hugs its content (docked card), so no reserved expander row either.
-    .billboard__desc-more
-        min-height: 0
-    // HERO-WID-001: the hero stays one band and the card stays bottom-anchored.
-    // Expanded text grows the card upward into the free band space (cap set in TS
-    // from the measured gap) and scrolls past that, so the hero never gets taller.
-    .billboard__desc.is-expanded
-        max-height: var(--hero-desc-expand-max, none)
-        overflow-y: auto
-        overscroll-behavior: contain
+    // HERO-WID-001: collapsed, the hero stays one band (TS fits the desc lines).
+    // Expanded shows the full text (no inner scroll box): the bottom-anchored card
+    // grows upward into the free band first, then the hero grows (height: auto).
 
 // Below ~1280px the left feature actions and right admin/pager share the same
 // bottom band and collide; pull controls into flow under the copy.
@@ -837,15 +860,9 @@
         font-size: clamp(1.85rem, 7vw, 2.6rem)
         margin-bottom: 10px
     .billboard__copy-body.has-desc
-        min-height: calc(1.45em * var(--hero-desc-lines) + 40px + 32px)
-    .billboard__desc
-        font-size: 0.98rem
-        // Expanded on a phone: scroll inside a cap rather than push Watch/More info
-        // a whole screen down.
-        &.is-expanded
-            max-height: 45vh
-            overflow-y: auto
-            overscroll-behavior: contain
+        min-height: calc(1.45em * var(--hero-desc-lines) + 40px)
+    .billboard__desc-wrap
+        --hero-desc-font: 0.98rem
     .billboard__actions
         flex-direction: column
         align-items: stretch

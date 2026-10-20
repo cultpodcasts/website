@@ -108,8 +108,6 @@ export class HomepageHeroComponent {
    * Sass default (5). Never below {@link HomepageHeroComponent.wideMinDescLines}.
    */
   protected readonly descFitLines = signal<number | null>(null);
-  /** Wide only: expanded desc max height (px), so the card grows upward into free band space, not the hero downward. */
-  protected readonly descExpandMaxPx = signal<number | null>(null);
   private static readonly wideMinDescLines = 2;
 
   protected readonly displayCatalogName = displayCatalogName;
@@ -246,6 +244,8 @@ export class HomepageHeroComponent {
       }
       descSlideId = id;
       untracked(() => {
+        // A previous slide's description must not carry a scroll offset into this one.
+        this.resetDescScroll();
         if (this.descExpanded()) {
           this.descExpanded.set(false);
           this.syncHeroPaused();
@@ -575,8 +575,21 @@ export class HomepageHeroComponent {
 
   protected toggleDesc(event?: Event): void {
     event?.stopPropagation();
+    const collapsing = this.descExpanded();
     this.descExpanded.update(expanded => !expanded);
+    if (collapsing) {
+      // Defensive: a scrolled box re-clamped at its old offset showed blank space
+      // past the text instead of the first lines.
+      this.resetDescScroll();
+    }
     this.syncHeroPaused();
+  }
+
+  private resetDescScroll(): void {
+    const element = this.heroDesc()?.nativeElement;
+    if (element) {
+      element.scrollTop = 0;
+    }
   }
 
   /**
@@ -603,10 +616,11 @@ export class HomepageHeroComponent {
   /**
    * Wide (docked card at the bottom of the hero, HERO-WID-001): the hero is a fixed band
    * (`min-height`) with the card at its flex-end. A tall card (3-line title + 5 desc lines +
-   * expander + chips) used to grow the hero instead, pushing its bottom (card, pager)
-   * down and below the fold. Pick the most collapsed lines (5 → 2) that still fit the band,
-   * and cap the expanded height at the band space above the card so expanding grows the
-   * card upward and the hero never changes height. Stacked layouts: no override.
+   * chips) used to grow the hero instead, pushing its bottom (card, pager)
+   * down and below the fold. Collapsed: pick the most lines (5 → 2) that still fit the band.
+   * Expanded shows the whole description with no inner scroll box: the card grows upward
+   * into the free band space first and the hero grows only if the text still doesn't fit;
+   * collapsing returns to the band. Stacked layouts: no override.
    */
   private fitWideDesc(desc: HTMLElement): void {
     const billboard = desc.closest<HTMLElement>('.billboard');
@@ -615,7 +629,6 @@ export class HomepageHeroComponent {
       && window.matchMedia('(min-width: 1281px)').matches;
     if (!wide || !billboard || !card) {
       this.descFitLines.set(null);
-      this.descExpandMaxPx.set(null);
       return;
     }
     const hero = getComputedStyle(billboard);
@@ -630,25 +643,15 @@ export class HomepageHeroComponent {
     // The card hangs past the bottom padding by its negative margin (docked overhang).
     const cardOuter = (height: number) => height + px(getComputedStyle(card).marginBottom);
     const textLines = Math.round(desc.scrollHeight / lineHeight);
-    const toggleRow = desc.parentElement?.querySelector<HTMLElement>('.billboard__desc-more');
-    const toggleHeight = 32;
-    const rowNow = toggleRow?.offsetHeight ?? 0;
-    // Card height without the description and expander, at any line count.
-    const rest = card.offsetHeight - desc.clientHeight - rowNow;
-    const needFor = (lines: number) => cardOuter(
-      rest + Math.min(textLines, lines) * lineHeight + (textLines > lines ? toggleHeight : 0)
-    );
+    // Card height without the description. The expander sits inline on the last
+    // visible line (HERO-DSC-001), so it adds no height of its own.
+    const rest = card.offsetHeight - desc.clientHeight;
+    const needFor = (lines: number) => cardOuter(rest + Math.min(textLines, lines) * lineHeight);
     let lines = naturalLines;
     while (lines > HomepageHeroComponent.wideMinDescLines && needFor(lines) > band + 0.5) {
       lines--;
     }
     this.descFitLines.set(lines === naturalLines ? null : lines);
-    // Band space left above the card once it renders at `lines` (0 when the hero had to grow anyway).
-    const inner = Math.max(band, billboard.clientHeight - padding);
-    const free = Math.max(0, inner - needFor(lines));
-    const collapsedHeight = Math.min(textLines, lines) * lineHeight;
-    // 1px under the gap: fractional line heights must not tip the hero over its band.
-    this.descExpandMaxPx.set(Math.max(lineHeight, Math.floor(collapsedHeight + free - 1)));
   }
 
   private scrollActiveHeroDotIntoView(

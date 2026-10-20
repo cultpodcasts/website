@@ -87,6 +87,37 @@ async function overlapsActions(page: Page): Promise<boolean> {
 	});
 }
 
+/** Expanded: every line is rendered in the box (no inner scroll), and the box is not clipped by the hero. */
+async function expectFullTextShown(page: Page): Promise<void> {
+	const r = await desc(page).evaluate((el) => {
+		const d = el.getBoundingClientRect();
+		const h = document.querySelector(".billboard")!.getBoundingClientRect();
+		const style = getComputedStyle(el);
+		return {
+			overflow: el.scrollHeight - el.clientHeight,
+			overflowY: style.overflowY,
+			inside: d.top >= h.top - 1 && d.bottom <= h.bottom + 1
+		};
+	});
+	expect(r.overflow, "expanded description still scrolls").toBeLessThanOrEqual(1);
+	expect(r.overflowY).not.toBe("auto");
+	expect(r.inside, "expanded description clipped by the hero").toBe(true);
+}
+
+/** Toggle vs the description box: centre against the last visible line, right edge against the text column. */
+async function inlineToggle(page: Page): Promise<{ centreOffset: number; rightOffset: number }> {
+	return page.evaluate(() => {
+		const d = document.querySelector<HTMLElement>(".billboard__desc")!;
+		const r = d.getBoundingClientRect();
+		const t = document.querySelector(".billboard__desc-toggle")!.getBoundingClientRect();
+		const line = parseFloat(getComputedStyle(d).lineHeight);
+		return {
+			centreOffset: (t.top + t.bottom) / 2 - (r.bottom - line / 2),
+			rightOffset: t.right - r.right
+		};
+	});
+}
+
 test.describe("homepage hero description", () => {
 	for (const layout of layouts) {
 		test(`${layout.name}: clamps to ${layout.lines} lines, the expander expands in place and pauses rotation`, async ({ page }) => {
@@ -101,6 +132,10 @@ test.describe("homepage hero description", () => {
 			const controls = await toggle(page).getAttribute("aria-controls");
 			expect(controls).toBe(await desc(page).getAttribute("id"));
 			expect(await overlapsActions(page)).toBe(false);
+			// HERO-DSC-001: inline on the last visible line, right edge of the text column (no extra row).
+			const inline = await inlineToggle(page);
+			expect(Math.abs(inline.centreOffset), "toggle not centred on the last line").toBeLessThanOrEqual(3);
+			expect(Math.abs(inline.rightOffset), "toggle not at the end of the text column").toBeLessThanOrEqual(1);
 			const dir = process.env.HERO_SCREENS_DIR;
 			if (dir) {
 				await page.locator(".billboard").screenshot({ path: `${dir}/hero-${layout.name}-collapsed.png` });
@@ -118,11 +153,8 @@ test.describe("homepage hero description", () => {
 			await expect(desc(page)).toHaveClass(/is-expanded/);
 			expect((await desc(page).boundingBox())!.height).toBeGreaterThan(collapsedHeight);
 			expect(await overlapsActions(page)).toBe(false);
-			if (layout.name === "mobile") {
-				// Phone: expanded text scrolls inside a cap instead of pushing Watch a screen down.
-				const box = (await desc(page).boundingBox())!;
-				expect(box.height).toBeLessThanOrEqual(layout.height * 0.45 + 1);
-			}
+			// Expanded = the whole description, never an inner scroll box (any layout).
+			await expectFullTextShown(page);
 			// Rotation is held while expanded.
 			await expect(page.locator(".billboard")).toHaveClass(/is-paused/);
 			const title = await page.locator(".billboard__title").textContent();
@@ -150,24 +182,25 @@ test.describe("homepage hero description", () => {
 		await fakeApi(page, SHORT_DESC);
 		await page.goto("/");
 		await expect(desc(page)).toHaveText(SHORT_DESC);
-		await expect(page.locator(".billboard__desc-more")).toHaveCount(1);
+		await expect(page.locator(".billboard__desc-wrap")).toHaveCount(1);
 		await expect(toggle(page)).toHaveCount(0);
 	});
 
 	/**
 	 * HERO-WID-001: on wide the hero is one band (min(88vh, 720px)) with the card
-	 * bottom-anchored at its flex-end. A tall card (3-line title, long description,
-	 * expander, chips) must not grow the hero (that pushed the card top into the
-	 * search clearance and the hero bottom below the fold); expanding grows the card
-	 * upward and scrolls past the band, never taller.
+	 * bottom-anchored at its flex-end. Collapsed, a tall card (3-line title, long
+	 * description, chips) must not grow the hero (that pushed the card top into the
+	 * search clearance and the hero bottom below the fold). Expanded shows the full
+	 * description with no inner scroll box: the card grows upward first, then the hero
+	 * may grow; collapsing returns to the band exactly.
 	 */
 	const LONG_TITLE = "An invented episode title that runs long enough to wrap onto three full lines here";
+	const TWO_LINE_TITLE = "An invented episode title that wraps onto two lines";
 	const CHIPS = ["Invented subject one", "Invented subject two", "Invented subject three", "Invented four"];
-	type Geo = { heroH: number; band: number; cardTop: number; cardBottom: number; anchor: number; clearance: number; descScrolls: boolean };
+	type Geo = { heroH: number; band: number; cardTop: number; cardBottom: number; anchor: number; clearance: number };
 	const geometry = (page: Page): Promise<Geo> => page.evaluate(() => {
 		const hero = document.querySelector<HTMLElement>(".billboard")!;
 		const card = document.querySelector<HTMLElement>(".billboard__content")!;
-		const d = document.querySelector<HTMLElement>(".billboard__desc")!;
 		const cs = getComputedStyle(hero);
 		const h = hero.getBoundingClientRect();
 		const c = card.getBoundingClientRect();
@@ -178,54 +211,89 @@ test.describe("homepage hero description", () => {
 			cardBottom: c.bottom - h.top,
 			// Card bottom when anchored: hero bottom - bottom padding + docked overhang (negative margin).
 			anchor: h.height - parseFloat(cs.paddingBottom) - parseFloat(getComputedStyle(card).marginBottom),
-			clearance: parseFloat(cs.paddingTop),
-			descScrolls: d.scrollHeight - d.clientHeight > 1
+			clearance: parseFloat(cs.paddingTop)
 		};
 	});
 
-	for (const vp of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
-		test(`HERO-WID-001 @ ${vp.width}x${vp.height}: tall card stays bottom-anchored; hero keeps its band collapsed and expanded`, async ({ page }) => {
-			await page.setViewportSize(vp);
-			await fakeApi(page, LONG_DESC, LONG_TITLE, CHIPS);
+	function expectInBand(g: Geo, what: string): void {
+		expect(g.heroH, `${what}: hero not back to its band`).toBeLessThanOrEqual(g.band + 1);
+		expect(Math.abs(g.cardBottom - g.anchor), `${what}: card not bottom-anchored`).toBeLessThanOrEqual(1);
+		expect(g.cardTop, `${what}: card pushed into the search clearance`).toBeGreaterThanOrEqual(g.clearance - 2);
+	}
+
+	for (const c of [
+		{ name: "tall card (3-line title)", title: LONG_TITLE, vp: { width: 1440, height: 900 }, shot: "hero-wide-anchored-tall-card" },
+		{ name: "tall card (3-line title)", title: LONG_TITLE, vp: { width: 1920, height: 1080 }, shot: "" },
+		{ name: "2-line title", title: TWO_LINE_TITLE, vp: { width: 1440, height: 900 }, shot: "hero-wide-2line" }
+	]) {
+		test(`HERO-WID-001 @ ${c.vp.width}x${c.vp.height}, ${c.name}: collapsed keeps the band; expanded shows the full text, growing upward first`, async ({ page }) => {
+			await page.setViewportSize(c.vp);
+			await fakeApi(page, LONG_DESC, c.title, CHIPS);
 			await page.goto("/");
 			await expect(toggle(page)).toBeVisible();
-			const before = await geometry(page);
-			expect(before.heroH, "hero grew past its band").toBeLessThanOrEqual(before.band + 1);
-			expect(Math.abs(before.cardBottom - before.anchor), "card not bottom-anchored").toBeLessThanOrEqual(1);
-			expect(before.cardTop, "card pushed into the search clearance").toBeGreaterThanOrEqual(before.clearance - 2);
+			const collapsed = await geometry(page);
+			expectInBand(collapsed, "collapsed");
 			expect(await lineCount(page)).toBeGreaterThanOrEqual(2);
-			if (process.env.HERO_SCREENS_DIR && vp.width === 1440) {
-				await page.locator(".billboard").screenshot({ path: `${process.env.HERO_SCREENS_DIR}/hero-wide-anchored-tall-card.png` });
+			const dir = process.env.HERO_SCREENS_DIR;
+			if (dir && c.shot) {
+				await page.locator(".billboard").screenshot({ path: `${dir}/${c.shot}-collapsed.png` });
 			}
 
 			await toggle(page).click();
 			await expect(desc(page)).toHaveClass(/is-expanded/);
-			const after = await geometry(page);
-			expect(after.heroH, "expanding grew the hero").toBeLessThanOrEqual(before.band + 1);
-			expect(Math.abs(after.cardBottom - before.cardBottom), "expanding moved the anchored bottom").toBeLessThanOrEqual(1);
-			expect(after.cardTop).toBeLessThanOrEqual(before.cardTop + 0.5);
-			expect(after.descScrolls, "the rest of the text should scroll inside the band").toBe(true);
+			await expectFullTextShown(page);
+			const expanded = await geometry(page);
+			// Upward first: the card top rises to the clearance before the hero grows.
+			expect(expanded.cardTop).toBeLessThanOrEqual(collapsed.cardTop + 0.5);
+			expect(expanded.cardTop).toBeGreaterThanOrEqual(expanded.clearance - 2);
+			if (expanded.heroH > collapsed.band + 1) {
+				expect(expanded.cardTop, "hero grew before the card used the free space above it").toBeLessThanOrEqual(expanded.clearance + 2);
+			}
+			// Still anchored to the (possibly taller) hero bottom.
+			expect(Math.abs(expanded.cardBottom - expanded.anchor)).toBeLessThanOrEqual(1);
 			expect(await overlapsActions(page)).toBe(false);
+			if (dir && c.shot) {
+				await page.locator(".billboard").screenshot({ path: `${dir}/${c.shot}-expanded.png` });
+			}
+
+			await toggle(page).click();
+			await expect(desc(page)).not.toHaveClass(/is-expanded/);
+			const back = await geometry(page);
+			expectInBand(back, "collapsed again");
+			expect(Math.abs(back.heroH - collapsed.heroH)).toBeLessThanOrEqual(1);
+			expect(Math.abs(back.cardTop - collapsed.cardTop)).toBeLessThanOrEqual(1);
 		});
 	}
 
-	test("HERO-WID-001: short title keeps 5 lines; expanding grows the card upward, not the hero", async ({ page }) => {
-		await page.setViewportSize({ width: 1440, height: 900 });
-		await fakeApi(page, LONG_DESC, "Invented short title");
-		await page.goto("/");
-		await expect(toggle(page)).toBeVisible();
-		expect(await lineCount(page)).toBe(5);
-		const before = await geometry(page);
-		expect(before.heroH).toBeLessThanOrEqual(before.band + 1);
-		await toggle(page).click();
-		await expect(desc(page)).toHaveClass(/is-expanded/);
-		const after = await geometry(page);
-		expect(after.heroH).toBeLessThanOrEqual(before.band + 1);
-		expect(Math.abs(after.cardBottom - before.cardBottom)).toBeLessThanOrEqual(1);
-		expect(after.cardTop).toBeLessThan(before.cardTop - 20);
-		expect(after.cardTop).toBeGreaterThanOrEqual(after.clearance - 2);
-		if (process.env.HERO_SCREENS_DIR) {
-			await page.locator(".billboard").screenshot({ path: `${process.env.HERO_SCREENS_DIR}/hero-wide-anchored-expanded.png` });
-		}
-	});
+	// Jon: "if I scroll to the bottom and collapse then the box becomes empty".
+	for (const vp of [{ name: "wide", width: 1440, height: 900 }, { name: "mobile", width: 390, height: 844 }]) {
+		test(`${vp.name}: scroll to the end of the expanded text, collapse, and the first line is back in the clamp`, async ({ page }) => {
+			await page.setViewportSize(vp);
+			await fakeApi(page, LONG_DESC, TWO_LINE_TITLE, CHIPS);
+			await page.goto("/");
+			await expect(toggle(page)).toBeVisible();
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			// Scroll as a reader would: wheel over the text to its end, and push the box too.
+			const box = (await desc(page).boundingBox())!;
+			await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+			await page.mouse.wheel(0, 2_000);
+			await desc(page).evaluate((el) => { el.scrollTop = el.scrollHeight; });
+			await page.waitForTimeout(200);
+			await toggle(page).click();
+			await expect(desc(page)).not.toHaveClass(/is-expanded/);
+			const first = await desc(page).evaluate((el) => {
+				const text = el.firstChild!;
+				const range = document.createRange();
+				range.setStart(text, 0);
+				range.setEnd(text, 1);
+				const r = range.getBoundingClientRect();
+				const d = el.getBoundingClientRect();
+				return { scrollTop: el.scrollTop, offset: r.top - d.top, line: parseFloat(getComputedStyle(el).lineHeight) };
+			});
+			expect(first.scrollTop).toBe(0);
+			expect(first.offset, "first line not at the top of the clamp").toBeGreaterThanOrEqual(-1);
+			expect(first.offset).toBeLessThanOrEqual(first.line);
+		});
+	}
 });

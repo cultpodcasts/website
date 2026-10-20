@@ -96,13 +96,15 @@
         @if (hasCopyBody()) {
         <div class="billboard__copy-body" [class.has-desc]="hasFeaturedDesc()">
           @if (hasFeaturedDesc()) {
-          <p class="billboard__desc" #heroDesc [id]="descId"
-            [class.is-expanded]="descExpanded()"
-            [style.--hero-desc-expand-max.px]="descExpandMaxPx()"
-            [attr.tabindex]="descExpanded() ? 0 : null">{{ featuredDesc() }}</p>
-          <!-- Expander row is always present with a description so slides keep one height (HERO-SCR-002). -->
-          <div class="billboard__desc-more">
+          <!-- The expander sits on the last visible line (no row of its own), bottom-right
+               of the description box over a short fade (HERO-DSC-001). -->
+          <div class="billboard__desc-wrap">
+            <p class="billboard__desc" #heroDesc [id]="descId"
+              [class.is-expanded]="descExpanded()"
+              [class.has-toggle]="showDescToggle()"
+>{{ featuredDesc() }}</p>
             @if (showDescToggle()) {
+            <span class="billboard__desc-fade" aria-hidden="true"></span>
             <!-- Same icon expander as the discovery cards (app-clampable-text). -->
             <button type="button" mat-icon-button class="billboard__desc-toggle"
               [attr.aria-label]="descExpanded() ? 'Collapse description' : 'Expand description'"

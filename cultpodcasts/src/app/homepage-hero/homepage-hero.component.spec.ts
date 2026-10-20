@@ -794,8 +794,24 @@ describe('HomepageHeroComponent', () => {
     it('hides the toggle when the description fits the clamp', () => {
       fakeOverflow(false);
       expect(toggle()).toBeNull();
-      // The row is still there so slides keep one height.
-      expect(root().querySelector('.billboard__desc-more')).toBeTruthy();
+      expect(root().querySelector('.billboard__desc-fade')).toBeNull();
+      // No expander row at all: the description's reserved lines keep slides one height.
+      expect(root().querySelector('.billboard__desc-more')).toBeNull();
+    });
+
+    it('HERO-DSC-001: the expander sits inline on the last visible line (no row of its own)', () => {
+      fakeOverflow(true);
+      const wrap = root().querySelector('.billboard__desc-wrap')!;
+      expect(wrap.querySelector('.billboard__desc')).toBeTruthy();
+      expect(wrap.querySelector('button.billboard__desc-toggle')).toBeTruthy();
+      expect(wrap.querySelector('.billboard__desc-fade')?.getAttribute('aria-hidden')).toBe('true');
+      expect(heroSass).toMatch(/\.billboard__desc-wrap\n[\s\S]*?position:\s*relative/);
+      expect(heroSass).toMatch(/\.billboard__desc-toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
+      // Expanded: the last line wraps short of the button.
+      expect(heroSass).toMatch(/\.billboard__desc\.is-expanded\.has-toggle::after[\s\S]*?width:\s*var\(--hero-desc-toggle-room\)/);
+      // Stacked reserve no longer adds a 32px expander row.
+      expect(heroSass).not.toMatch(/var\(--hero-desc-lines\)\s*\+\s*4[04]px\s*\+\s*32px/);
+      expect(heroSass).not.toMatch(/billboard__desc-more/);
     });
 
     it('shows the discovery-style icon expander only when the description overflows', () => {
@@ -846,11 +862,9 @@ describe('HomepageHeroComponent', () => {
         });
         const desc = root().querySelector('.billboard__desc') as HTMLElement;
         const card = root().querySelector('.billboard__content') as HTMLElement;
-        const row = root().querySelector('.billboard__desc-more') as HTMLElement;
         const hero = root().querySelector('.billboard') as HTMLElement;
         Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
         Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 308 });
-        Object.defineProperty(row, 'offsetHeight', { configurable: true, value: 32 });
         Object.defineProperty(card, 'offsetHeight', { configurable: true, value: cardHeight });
         Object.defineProperty(hero, 'clientHeight', { configurable: true, value: 720 });
         component['measureDescOverflow']();
@@ -860,19 +874,28 @@ describe('HomepageHeroComponent', () => {
       const content = () => root().querySelector('.billboard__content') as HTMLElement;
       const desc = () => root().querySelector('.billboard__desc') as HTMLElement;
 
-      it('drops collapsed lines (5 → 2) until a tall card fits the band, and caps the expanded height at the free space', () => {
-        // rest = 600 - 110 - 32 = 458; need(n) = 458 + 22n + 32 - 16: 5→584 4→562 3→540 2→518 ≤ 532.
+      it('drops collapsed lines (5 → 2) until a tall card fits the band', () => {
+        // rest = 600 - 110 = 490 (inline expander: no row); need(n) = 490 + 22n - 16: 5→584 4→562 3→540 2→518 ≤ 532.
         fakeWide(true, 600);
         expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
-        // 2 lines (44) + free (532 - 518 = 14) - 1px safety.
-        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe('57px');
       });
 
-      it('keeps the Sass 5 lines when the card fits; expanding may use all the band space above it', () => {
-        // need(5) = 400 - 142 + 142 - 16 = 384; free = 532 - 384 = 148.
+      it('keeps the Sass 5 lines when the card fits', () => {
+        // need(5) = 400 - 110 + 110 - 16 = 384 ≤ 532.
         fakeWide(true, 400);
         expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
-        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe(`${110 + 148 - 1}px`);
+      });
+
+      it('keeps the collapsed fit while expanded, so collapsing returns to the band', () => {
+        fakeWide(true, 600);
+        toggle()!.click();
+        fixture.detectChanges();
+        component['measureDescOverflow']();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
       });
 
       it('re-fits on a slide change even when the description text is the same', () => {
@@ -890,21 +913,37 @@ describe('HomepageHeroComponent', () => {
       it('sets no override on stacked layouts', () => {
         fakeWide(false, 600);
         expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
-        expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe('');
-      });
-
-      it('wide Sass caps the expanded description at the measured band space and scrolls', () => {
-        expect(heroSass).toMatch(
-          /\.billboard__desc\.is-expanded\n\s+max-height:\s*var\(--hero-desc-expand-max,\s*none\)\n\s+overflow-y:\s*auto/
-        );
       });
     });
 
-    it('makes the expanded description keyboard-focusable (it can scroll on mobile)', () => {
+    it('expanded shows the full text: never an inner scroll box, in any layout', () => {
+      expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?max-height:\s*none\n\s+overflow:\s*visible/);
+      expect(heroSass).not.toMatch(/45vh/);
+      expect(heroSass).not.toMatch(/--hero-desc-expand-max/);
+      expect(heroSass).not.toMatch(/\.is-expanded[^\n]*\n(\s+[^\n]*\n)*?\s+overflow-y:\s*auto/);
       fakeOverflow(true);
       toggle()!.click();
       fixture.detectChanges();
-      expect(root().querySelector('.billboard__desc')!.getAttribute('tabindex')).toBe('0');
+      // Not a scroll container any more, so not a tab stop either.
+      expect(root().querySelector('.billboard__desc')!.hasAttribute('tabindex')).toBe(false);
+    });
+
+    it('resets the description scroll offset on collapse and on slide change', () => {
+      fakeOverflow(true);
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      toggle()!.click();
+      fixture.detectChanges();
+      desc.scrollTop = 180;
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(desc.scrollTop).toBe(0);
+      desc.scrollTop = 90;
+      expect(desc.scrollTop).toBe(90);
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(component['featured']()?.id).toBe('b');
+      expect(desc.scrollTop).toBe(0);
     });
 
     it('re-measures overflow once web fonts are ready', async () => {
