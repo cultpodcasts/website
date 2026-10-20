@@ -256,7 +256,7 @@
     // Only reserve desc height when a description is present — empty slides must
     // not leave a blank band (especially on mobile). Contract: docs/homepage-hero.md
     &.has-desc
-        min-height: calc(1.45em * var(--hero-desc-lines) + 44px + 28px)
+        min-height: calc(1.45em * var(--hero-desc-lines) + 44px + 32px)
 
 .billboard__eyebrow
     // Sits directly above the podcast pill — the pill carries the gap to the title.
@@ -340,37 +340,39 @@
     overflow: hidden
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Show more: clamp off, the panel grows in place (buttons stay in flow below).
+    // Expanded: clamp off, the panel grows in place (buttons stay in flow below).
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
 
-// Holds the Show more / Show less toggle. Present whenever there is a description
+// Holds the description expander. Present whenever there is a description
 // (stacked layouts reserve its height) so slides with and without overflow match.
+// Right-aligned under the text, like the discovery card expander.
 .billboard__desc-more
-    min-height: 28px
+    display: flex
+    justify-content: flex-end
+    max-width: 36em
+    min-height: 32px
     margin-bottom: 8px
 
+// Same icon button as app-clampable-text (discovery cards): 32px hit target,
+// 20px expand_more / expand_less icon, translucent blurred backing. The backing
+// is dark here (like the pager chevrons) because the hero sits on artwork.
 .billboard__desc-toggle
-    appearance: none
-    border: 0
-    background: none
-    padding: 2px 0
-    font: inherit
-    font-size: 0.9rem
-    font-weight: 700
-    letter-spacing: 0.02em
-    color: var(--nflx-accent)
-    cursor: pointer
-    text-decoration: underline
-    text-underline-offset: 3px
-    &:hover
-        color: var(--nflx-on-media, #fff)
-    &:focus-visible
-        outline: 2px solid var(--nflx-accent)
-        outline-offset: 2px
-        border-radius: 2px
+    width: 32px
+    height: 32px
+    padding: 0
+    line-height: 32px
+    color: var(--nflx-on-media, #fff)
+    background-color: color-mix(in srgb, #000 55%, transparent)
+    border: 1px solid #ffffff38
+    box-sizing: border-box
+    backdrop-filter: blur(2px)
+    .mat-icon
+        font-size: 20px
+        width: 20px
+        height: 20px
 
 .billboard__subjects
     // Do not overflow-clip or max-height — all public chips must show.
@@ -629,7 +631,7 @@
     .billboard__copy-body,
     .billboard__desc
         min-height: 0
-    // Wide hugs its content (docked card), so no reserved toggle row either.
+    // Wide hugs its content (docked card), so no reserved expander row either.
     .billboard__desc-more
         min-height: 0
 
@@ -828,7 +830,7 @@
         font-size: clamp(1.85rem, 7vw, 2.6rem)
         margin-bottom: 10px
     .billboard__copy-body.has-desc
-        min-height: calc(1.45em * var(--hero-desc-lines) + 40px + 28px)
+        min-height: calc(1.45em * var(--hero-desc-lines) + 40px + 32px)
     .billboard__desc
         font-size: 0.98rem
         // Expanded on a phone: scroll inside a cap rather than push Watch/More info

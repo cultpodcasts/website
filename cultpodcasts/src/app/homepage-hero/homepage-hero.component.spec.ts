@@ -760,7 +760,7 @@ describe('HomepageHeroComponent', () => {
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
   });
-  describe('description Show more / Show less', () => {
+  describe('description expander', () => {
     const longDesc = 'Synthetic hero sentence for the show more toggle. '.repeat(12).trim();
 
     function root(): HTMLElement {
@@ -798,11 +798,13 @@ describe('HomepageHeroComponent', () => {
       expect(root().querySelector('.billboard__desc-more')).toBeTruthy();
     });
 
-    it('shows an accessible Show more button only when the description overflows', () => {
+    it('shows the discovery-style icon expander only when the description overflows', () => {
       fakeOverflow(true);
       const button = toggle()!;
       const desc = root().querySelector('.billboard__desc') as HTMLElement;
-      expect(button.textContent?.trim()).toBe('Show more');
+      expect(button.querySelector('mat-icon')?.textContent?.trim()).toBe('expand_more');
+      expect(button.getAttribute('aria-label')).toBe('Expand description');
+      expect(button.textContent).not.toMatch(/Show (more|less)/);
       expect(button.getAttribute('type')).toBe('button');
       expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(desc.id).toBe('billboard-desc');
@@ -858,7 +860,8 @@ describe('HomepageHeroComponent', () => {
       const desc = root().querySelector('.billboard__desc') as HTMLElement;
       expect(desc.classList.contains('is-expanded')).toBe(true);
       expect(desc.textContent).toBe(longDesc);
-      expect(toggle()!.textContent?.trim()).toBe('Show less');
+      expect(toggle()!.querySelector('mat-icon')?.textContent?.trim()).toBe('expand_less');
+      expect(toggle()!.getAttribute('aria-label')).toBe('Collapse description');
       expect(toggle()!.getAttribute('aria-expanded')).toBe('true');
       expect(component['heroPaused']()).toBe(true);
 

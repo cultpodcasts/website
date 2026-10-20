@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Homepage hero description: per-layout clamp, Show more / Show less, and
+ * Homepage hero description: per-layout clamp, the icon expander, and
  * rotation paused while expanded. Real app (ng serve), faked /homepage.
  * Made-up shows, titles and descriptions only.
  *
@@ -40,6 +40,12 @@ async function fakeApi(page: Page, description: string): Promise<void> {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
 		if (url.startsWith("http://127.0.0.1:4173")) {
+			await route.continue();
+			return;
+		}
+		// Screenshots only: load the real web/icon fonts so the shots match production.
+		// Test runs stay offline (icons then render as their ligature names).
+		if (process.env.HERO_SCREENS_DIR && /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url)) {
 			await route.continue();
 			return;
 		}
@@ -83,12 +89,13 @@ async function overlapsActions(page: Page): Promise<boolean> {
 
 test.describe("homepage hero description", () => {
 	for (const layout of layouts) {
-		test(`${layout.name}: clamps to ${layout.lines} lines, Show more expands in place and pauses rotation`, async ({ page }) => {
+		test(`${layout.name}: clamps to ${layout.lines} lines, the expander expands in place and pauses rotation`, async ({ page }) => {
 			await page.setViewportSize({ width: layout.width, height: layout.height });
 			await fakeApi(page, LONG_DESC);
 			await page.goto("/");
 			await expect(desc(page)).toBeVisible();
-			await expect(toggle(page)).toHaveText("Show more");
+			await expect(toggle(page)).toHaveAttribute("aria-label", "Expand description");
+			await expect(toggle(page).locator("mat-icon")).toHaveText("expand_more");
 			expect(await lineCount(page)).toBe(layout.lines);
 			await expect(toggle(page)).toHaveAttribute("aria-expanded", "false");
 			const controls = await toggle(page).getAttribute("aria-controls");
@@ -105,7 +112,8 @@ test.describe("homepage hero description", () => {
 			// (focus inside the hero pauses it too). The pointer stays on the copy, which
 			// is not a hover-pause target (HERO-CTL-003).
 			await toggle(page).evaluate((el) => (el as HTMLElement).blur());
-			await expect(toggle(page)).toHaveText("Show less");
+			await expect(toggle(page)).toHaveAttribute("aria-label", "Collapse description");
+			await expect(toggle(page).locator("mat-icon")).toHaveText("expand_less");
 			await expect(toggle(page)).toHaveAttribute("aria-expanded", "true");
 			await expect(desc(page)).toHaveClass(/is-expanded/);
 			expect((await desc(page).boundingBox())!.height).toBeGreaterThan(collapsedHeight);
@@ -133,11 +141,11 @@ test.describe("homepage hero description", () => {
 			await page.locator("button.billboard__nav--next").click();
 			await expect(page.locator(".billboard__title")).not.toHaveText(title!);
 			await expect(desc(page)).not.toHaveClass(/is-expanded/);
-			await expect(toggle(page)).toHaveText("Show more");
+			await expect(toggle(page)).toHaveAttribute("aria-label", "Expand description");
 		});
 	}
 
-	test("no Show more when the description fits the clamp", async ({ page }) => {
+	test("no expander when the description fits the clamp", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await fakeApi(page, SHORT_DESC);
 		await page.goto("/");

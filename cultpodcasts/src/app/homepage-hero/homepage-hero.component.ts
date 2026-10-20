@@ -92,7 +92,7 @@ export class HomepageHeroComponent {
   protected readonly heroDotsOverflowEnd = signal(false);
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
   /**
-   * `aria-controls` target for the Show more toggle. One hero per page, so a
+   * `aria-controls` target for the description expander. One hero per page, so a
    * constant keeps SSR/prerender and client markup identical.
    */
   protected readonly descId = 'billboard-desc';
