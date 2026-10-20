@@ -1,4 +1,4 @@
-import { Params } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import {
   ALL_LANGUAGES_VALUE,
   ENGLISH_LANGUAGE_VALUE,
@@ -143,4 +143,19 @@ export function readSubjectsFromFragment(fragment: string | null | undefined): s
 /** `#subject=…` for the given subject chips, or null for none. */
 export function subjectsFragment(subjects: string[]): string | null {
   return buildFilterFragment({ [SUBJECT_PARAM]: subjects });
+}
+
+/**
+ * Write the filter fragment, keeping path and query. replaceUrl keeps chip
+ * clicks out of the back-button history; scroll: 'manual' stops the router
+ * scrolling (to the top, or to an anchor) on every click.
+ */
+export function replaceUrlFragment(router: Router, route: ActivatedRoute, fragment: string | null): void {
+  router.navigate([], {
+    relativeTo: route,
+    queryParamsHandling: 'preserve',
+    fragment: fragment ?? undefined,
+    replaceUrl: true,
+    scroll: 'manual'
+  });
 }

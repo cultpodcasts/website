@@ -40,7 +40,7 @@ import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
-import { keepOffered, readSubjectsFromFragment, subjectsFragment } from '../browse-filter-params';
+import { keepOffered, readSubjectsFromFragment, replaceUrlFragment, subjectsFragment } from '../browse-filter-params';
 import { displayCatalogName } from '../display-catalog-name';
 import { podcastPageAttachAfterDialog } from '../submit-ingest-ux';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
@@ -91,6 +91,8 @@ export class PodcastApiComponent {
   private subjectsFilter: string = "";
   /** Subject chips from the URL fragment, applied once the podcast-wide subject facets are known. */
   private pendingSubjects: string[] = [];
+  /** The fragment last read from or written to the URL; the route snapshot lags a pending navigation. */
+  private urlFragment: string | null = null;
   protected isSubsequentLoading = signal<boolean>(false);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
@@ -135,7 +137,10 @@ export class PodcastApiComponent {
         }
       }
       if (initial) {
-        this.pendingSubjects = readSubjectsFromFragment(this.route.snapshot?.fragment);
+        // Start from podcast-wide facets; chips come back from the fragment.
+        this.setSubjects([]);
+        this.urlFragment = this.route.snapshot?.fragment || null;
+        this.pendingSubjects = readSubjectsFromFragment(this.urlFragment);
       }
       const { params, queryParams } = res;
       this.podcastName.set(params["podcastName"] ?? "");
@@ -509,16 +514,11 @@ export class PodcastApiComponent {
   /** Mirror the subject chips into the URL fragment (history replace, no scroll). */
   private syncFilterUrl(): void {
     const fragment = subjectsFragment(this.subjects());
-    if ((this.route.snapshot?.fragment || null) === fragment) {
+    if (this.urlFragment === fragment) {
       return;
     }
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParamsHandling: 'preserve',
-      fragment: fragment ?? undefined,
-      replaceUrl: true,
-      scroll: 'manual'
-    });
+    this.urlFragment = fragment;
+    replaceUrlFragment(this.router, this.route, fragment);
   }
 
   private adoptLegacyField(error: unknown): boolean {

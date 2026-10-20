@@ -215,6 +215,15 @@ describe("SeriesHubComponent", () => {
       expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe("subject=Topic X&subject=Topic Y");
     });
 
+    it("clears the fragment when a chip is toggled on and off before the router settles", async () => {
+      const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+
+      fixture.componentInstance.toggleSubject("Topic X");
+      fixture.componentInstance.toggleSubject("Topic X");
+
+      expect(navigate.mock.calls.map(call => call[1].fragment)).toEqual(["subject=Topic X", undefined]);
+    });
+
     it("restores subjects from a bookmarked fragment after the unfiltered facets load", async () => {
       fragment = "subject=Topic Y&subject=Missing topic";
       const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));

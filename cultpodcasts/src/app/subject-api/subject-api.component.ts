@@ -41,7 +41,8 @@ import {
   readParamList,
   routeStateKey,
   buildFilterFragment,
-  parseFilterFragment
+  parseFilterFragment,
+  replaceUrlFragment
 } from '../browse-filter-params';
 import { nextLanguageChipValues } from '../language-chip-click';
 import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
@@ -603,12 +604,7 @@ export class SubjectApiComponent {
     };
   }
 
-  /**
-   * Mirror the filter chips into the URL fragment, keeping path and query.
-   * replaceUrl keeps chip clicks out of the back-button history (use
-   * `replaceUrl: false` to push entries instead); scroll: 'manual' stops the
-   * router scrolling (to the top, or to an anchor) on every click.
-   */
+  /** Mirror the filter chips into the URL fragment (history replace, path and query kept). */
   private syncFilterUrl(): void {
     const fragment = buildFilterFragment(this.filterParams());
     const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
@@ -616,12 +612,6 @@ export class SubjectApiComponent {
       return;
     }
     this.routeKey = key;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParamsHandling: 'preserve',
-      fragment: fragment ?? undefined,
-      replaceUrl: true,
-      scroll: 'manual'
-    });
+    replaceUrlFragment(this.router, this.route, fragment);
   }
 }

@@ -24,7 +24,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
 import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
-import { KIND_PARAM, SHOW_PARAM, SUBJECT_PARAM, keepOffered, readParamList, parseFilterFragment, buildFilterFragment, routeStateKey } from '../browse-filter-params';
+import { KIND_PARAM, SHOW_PARAM, SUBJECT_PARAM, keepOffered, replaceUrlFragment, readParamList, parseFilterFragment, buildFilterFragment, routeStateKey } from '../browse-filter-params';
 
 interface RestoredFilters {
   podcasts: string[];
@@ -461,12 +461,7 @@ export class SearchApiComponent {
     };
   }
 
-  /**
-   * Mirror the filter chips into the URL fragment, keeping path and query.
-   * replaceUrl keeps chip clicks out of the back-button history (use
-   * `replaceUrl: false` to push entries instead); scroll: 'manual' stops the
-   * router scrolling (to the top, or to an anchor) on every click.
-   */
+  /** Mirror the filter chips into the URL fragment (history replace, path and query kept). */
   private syncFilterUrl(): void {
     const fragment = buildFilterFragment(this.filterParams());
     const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
@@ -474,13 +469,7 @@ export class SearchApiComponent {
       return;
     }
     this.routeKey = key;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParamsHandling: 'preserve',
-      fragment: fragment ?? undefined,
-      replaceUrl: true,
-      scroll: 'manual'
-    });
+    replaceUrlFragment(this.router, this.route, fragment);
   }
 
   isScrolledToBottom(): boolean {

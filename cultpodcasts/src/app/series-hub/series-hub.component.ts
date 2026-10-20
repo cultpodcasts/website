@@ -16,7 +16,7 @@ import { displayCatalogName } from "../display-catalog-name";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
 import { ActivatedRoute, Router } from "@angular/router";
-import { keepOffered, readSubjectsFromFragment, subjectsFragment } from "../browse-filter-params";
+import { keepOffered, readSubjectsFromFragment, replaceUrlFragment, subjectsFragment } from "../browse-filter-params";
 
 @Component({
   selector: "app-series-hub",
@@ -56,6 +56,8 @@ export class SeriesHubComponent {
   private legacyNames = false;
   /** Subject chips from the URL fragment, applied once the hub-wide subject facets are known. */
   private pendingSubjects: string[] = [];
+  /** The fragment last read from or written to the URL; the route snapshot lags a pending navigation. */
+  private urlFragment: string | null = null;
   private subjectsFilter = "";
   private page = 1;
   private scrollSubscribed = false;
@@ -76,7 +78,8 @@ export class SeriesHubComponent {
       this.legacyNames = false;
       this.subjects.set([]);
       this.subjectsFilter = "";
-      this.pendingSubjects = readSubjectsFromFragment(this.route.snapshot?.fragment);
+      this.urlFragment = this.route.snapshot?.fragment || null;
+      this.pendingSubjects = readSubjectsFromFragment(this.urlFragment);
       this.page = 1;
       this.load(name, hub, true, true);
     });
@@ -211,16 +214,11 @@ export class SeriesHubComponent {
   /** Mirror the subject chips into the URL fragment (history replace, no scroll). */
   private syncFilterUrl(): void {
     const fragment = subjectsFragment(this.subjects());
-    if ((this.route.snapshot?.fragment || null) === fragment) {
+    if (this.urlFragment === fragment) {
       return;
     }
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParamsHandling: "preserve",
-      fragment: fragment ?? undefined,
-      replaceUrl: true,
-      scroll: "manual",
-    });
+    this.urlFragment = fragment;
+    replaceUrlFragment(this.router, this.route, fragment);
   }
 
   protected playEpisode(episode: SearchDisplayEpisode): void {

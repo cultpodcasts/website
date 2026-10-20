@@ -190,6 +190,29 @@ describe('PodcastApiComponent', () => {
       expect(component.subjects()).toEqual(['Topic Y']);
     });
 
+    it('clears the fragment when a chip is toggled on and off before the router settles', () => {
+      fixture.detectChanges();
+
+      fixture.componentInstance.toggleSubject('Topic X');
+      fixture.componentInstance.toggleSubject('Topic X');
+
+      expect(navigate.mock.calls.map(call => call[1].fragment)).toEqual(['subject=Topic X', undefined]);
+    });
+
+    it('reloads from podcast-wide facets after a sort change, then reapplies the chips from the fragment', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleSubject('Topic X');
+      const before = calls.length;
+
+      routeSnapshot.fragment = 'subject=Topic X';
+      routeParams.next({ podcastName: 'Show A' });
+
+      expect(calls.slice(before).map(call => call.filter)).toEqual([
+        "(seriesName eq 'Show A')",
+        expect.stringContaining('Topic X'),
+      ]);
+    });
+
     it('searches once and clears the fragment when no restored subject is offered', () => {
       routeSnapshot.fragment = 'subject=Missing topic';
       fixture.detectChanges();
