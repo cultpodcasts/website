@@ -253,8 +253,10 @@ export class HomepageHeroComponent {
       });
     });
 
-    // Re-measure after the description text or expanded state renders.
+    // Re-measure after the slide, its description or the expanded state renders. The wide
+    // fit (HERO-WID-001) depends on the whole card (title lines, chips), not just the text.
     afterRenderEffect(() => {
+      this.featured();
       this.featuredDesc();
       this.descExpanded();
       this.descFitLines();

@@ -875,6 +875,18 @@ describe('HomepageHeroComponent', () => {
         expect(desc().style.getPropertyValue('--hero-desc-expand-max')).toBe(`${110 + 148 - 1}px`);
       });
 
+      it('re-fits on a slide change even when the description text is the same', () => {
+        fakeWide(true, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        // Same description, shorter card (e.g. a 1-line title): the fit must be recomputed.
+        Object.defineProperty(content(), 'offsetHeight', { configurable: true, value: 400 });
+        fixture.componentRef.setInput('slides', [ep('z', { episodeDescription: longDesc, episodeTitle: 'Short' })]);
+        fixture.detectChanges();
+        TestBed.tick();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+      });
+
       it('sets no override on stacked layouts', () => {
         fakeWide(false, 600);
         expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
