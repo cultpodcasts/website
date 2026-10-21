@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, Page, test } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
 
 const id = "00112233-4455-4677-8899-aabbccddeeff";
@@ -38,7 +38,9 @@ function documentsForFilter(filter: string) {
 test.beforeEach(async ({ page }) => {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		// Screenshot runs (SERIES_HUB_SCREENSHOTS) load the real icon/text fonts; tests never need them.
+		if (url.startsWith("http://127.0.0.1:4173") ||
+			(process.env["SERIES_HUB_SCREENSHOTS"] && /fonts\.(googleapis|gstatic)\.com/.test(url))) {
 			await route.continue();
 			return;
 		}
@@ -87,5 +89,139 @@ test.describe("catalogue pages with a faked search API", () => {
 		await expect(page).toHaveURL(new RegExp(`/podcast/${encodeURIComponent("Show")}/${shortId}`));
 		await expect(page.getByText("Part")).toBeVisible();
 		await expect(page.getByText("Episode not found")).toHaveCount(0);
+	});
+});
+
+const outletId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+/** Set SERIES_HUB_SCREENSHOTS=dir to save the open menus as PNGs (PR evidence only). */
+const screenshotDir = process.env["SERIES_HUB_SCREENSHOTS"];
+
+async function signInAs(page: Page, roles: string[]): Promise<void> {
+	await page.addInitScript((r) => {
+		(globalThis as { __E2E_CURATOR__?: boolean }).__E2E_CURATOR__ = true;
+		(globalThis as { __E2E_ROLES__?: string[] }).__E2E_ROLES__ = r;
+	}, roles);
+}
+
+async function openHubMenu(page: Page) {
+	await page.locator("app-series-hub-menu #sort").click();
+	const menu = page.getByRole("menu");
+	await expect(menu).toBeVisible();
+	return menu;
+}
+
+test.describe("news and TV hub menu", () => {
+	test("curator + admin get Edit, Submit Url and Rename alongside sort on a news hub", async ({ page }) => {
+		await signInAs(page, ["Curator", "Admin"]);
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		const menu = await openHubMenu(page);
+		await expect(menu.getByRole("menuitem")).toHaveText([
+			/Edit News Outlet/,
+			/Submit Url for News Outlet/,
+			/Rename News Outlet/,
+			/Newest first/,
+			/Oldest first/
+		]);
+		if (screenshotDir) {
+			await page.screenshot({ path: `${screenshotDir}/news-hub-menu-curator-admin.png` });
+		}
+	});
+
+	test("anonymous visitors only get the sort items on a TV hub", async ({ page }) => {
+		await page.goto(`/tv/${encodeURIComponent("Nightly")}`);
+		await expect(page.getByText("Part")).toBeVisible();
+		const menu = await openHubMenu(page);
+		await expect(menu.getByRole("menuitem")).toHaveText([/Newest first/, /Oldest first/]);
+		if (screenshotDir) {
+			await page.screenshot({ path: `${screenshotDir}/tv-hub-menu-anonymous.png` });
+		}
+	});
+
+	test("Oldest first reloads the hub with release asc", async ({ page }) => {
+		await page.goto(`/tv/${encodeURIComponent("Nightly")}`);
+		await expect(page.getByText("Part")).toBeVisible();
+		const ordered = page.waitForRequest((r) =>
+			r.method() === "POST" && r.url().includes("/search") && r.postDataJSON()?.orderby === "release asc");
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Oldest first/ }).click();
+		await ordered;
+		await expect(page.locator("app-series-hub-menu #sort")).toContainText("Oldest first");
+	});
+
+	test("Submit Url for News Outlet sends the URL to the outlet by id, not as a podcast", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		let submitBody: Record<string, unknown> | undefined;
+		await page.route("**/newsorganisation/Desk", (route) =>
+			route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id: outletId, name: "Desk" }) }));
+		await page.route("**/submit", async (route) => {
+			submitBody = route.request().postDataJSON();
+			await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+		});
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Submit Url for News Outlet/ }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Submit URL for News Outlet" })).toBeVisible();
+		await expect(dialog.locator("#submit-target")).toHaveText("News Outlet: Desk");
+		await dialog.getByPlaceholder("Podcast Url").fill("https://www.youtube.com/watch?v=abc123def45");
+		await expect(page.getByRole("menu")).toHaveCount(0);
+		if (screenshotDir) {
+			await page.screenshot({ path: `${screenshotDir}/news-hub-submit-dialog.png` });
+		}
+		await dialog.getByRole("button", { name: "Save" }).click();
+		await expect.poll(() => submitBody).toBeDefined();
+		expect(submitBody).toEqual({
+			url: "https://www.youtube.com/watch?v=abc123def45",
+			parentKind: "NewsOrganisation",
+			parentId: outletId,
+			parentName: "Desk"
+		});
+	});
+
+	test("admin Rename posts the new name to the TV show rename route", async ({ page }) => {
+		await signInAs(page, ["Curator", "Admin"]);
+		let renameBody: Record<string, unknown> | undefined;
+		await page.route("**/tvshow/name/Nightly", async (route) => {
+			renameBody = route.request().postDataJSON();
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ indexState: "Executed" }) });
+		});
+		await page.goto(`/tv/${encodeURIComponent("Nightly")}`);
+		await expect(page.getByText("Part")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Rename TV Show/ }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await dialog.locator("#newCatalogueParentName").fill("Nightly Two");
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect.poll(() => renameBody).toEqual({ newName: "Nightly Two" });
+		await expect(page.getByText('TV Show name changed to "Nightly Two". Index updated.')).toBeVisible();
+	});
+
+	test("Edit loads the outlet and PATCHes only the changed field by id", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		let patchBody: Record<string, unknown> | undefined;
+		await page.route("**/newsorganisation/Desk", (route) =>
+			route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ id: outletId, name: "Desk", publisher: "Desk Media", twitterHandle: "@desk" })
+			}));
+		await page.route(`**/newsorganisation/${outletId}`, async (route) => {
+			patchBody = route.request().postDataJSON();
+			await route.fulfill({ status: 202, body: "" });
+		});
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Edit News Outlet/ }).click();
+		const dialog = page.locator("mat-dialog-container");
+		const publisher = dialog.getByLabel("Publisher");
+		await expect(publisher).toHaveValue("Desk Media");
+		await expect(dialog.getByLabel("IMDb URL")).toHaveCount(0);
+		await expect(page.getByRole("menu")).toHaveCount(0);
+		if (screenshotDir) {
+			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog.png` });
+		}
+		await publisher.fill("Desk Media Group");
+		await dialog.getByRole("button", { name: "Save" }).click();
+		await expect.poll(() => patchBody).toEqual({ publisher: "Desk Media Group" });
+		await expect(page.getByText("News Outlet updated")).toBeVisible();
 	});
 });

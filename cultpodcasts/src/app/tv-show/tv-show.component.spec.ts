@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { DeferBlockState } from '@angular/core/testing';
@@ -18,6 +19,7 @@ describe('TvShowComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: AuthServiceWrapper, useValue: { roles: of([]) } },
         { provide: ActivatedRoute, useValue: { params: of({ slug: 'Nightly' }), fragment: of(null), snapshot: { params: { slug: 'Nightly' }, queryParams: {}, fragment: null } } },
         {
           provide: ODataService,

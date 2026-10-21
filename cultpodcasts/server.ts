@@ -3,6 +3,7 @@ import { RESPONSE_INIT } from "@angular/core";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
+import { isCatalogueHubPath, renamedSeriesRedirect } from "./src/app/kv-redirect";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -16,21 +17,10 @@ async function workerFetchHandler(request: Request, env: Env) {
 	const url = new URL(request.url);
 
 	console.log("render SSR", url.href);
-	const podcastPrefix = "/podcast/";
-	if (url.pathname.startsWith(podcastPrefix)) {
-		const podcast = url.pathname.split("/")[2];
-		const newPodcastName = await env.redirects.get(decodeURIComponent(podcast));
-		if (newPodcastName) {
-			const targetPath =
-				podcastPrefix +
-				newPodcastName +
-				url.pathname.substring(podcast.length + podcastPrefix.length);
-			const target = new URL(
-				targetPath,
-				new URL("/", url))
-			console.log("redirect", url, target);
-			return Response.redirect(target, 301);
-		}
+	const redirectTarget = await renamedSeriesRedirect(url, env.redirects);
+	if (redirectTarget) {
+		console.log("redirect", url, redirectTarget);
+		return Response.redirect(redirectTarget, 301);
 	}
 
 	// Bootstrap SSR from the empty CSR shell — NOT prerendered `/` index.html.
@@ -47,7 +37,9 @@ async function workerFetchHandler(request: Request, env: Env) {
 	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
 	// Privacy/terms are prerendered (SSG) and excluded in _routes.json so CF Pages
 	// serves static HTML — this Worker path must not re-render those URLs.
-	if (isAuthClientOnlyPath(url.pathname)) {
+	// /news/* and /tv/* reach the Worker only for the rename redirect above; they were
+	// client-rendered from the static fallback before, so keep them client-rendered.
+	if (isAuthClientOnlyPath(url.pathname) || isCatalogueHubPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
 	}

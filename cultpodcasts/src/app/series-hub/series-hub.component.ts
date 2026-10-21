@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked } from "@angular/core";
 import { Location } from "@angular/common";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { skip } from "rxjs";
@@ -18,6 +18,7 @@ import { displayCatalogName } from "../display-catalog-name";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
 import { ActivatedRoute, Router } from "@angular/router";
+import { SeriesHubMenuComponent, SeriesHubSort, seriesHubSortNewest } from "../series-hub-menu/series-hub-menu.component";
 import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, subjectsFragment, writeUrlFragment } from "../browse-filter-params";
 
 @Component({
@@ -27,6 +28,7 @@ import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, s
     SiteLoadingComponent,
     BrowseLoadingSkeletonComponent,
     BrowseFacetScrollerDirective,
+    SeriesHubMenuComponent,
   ],
   templateUrl: "./series-hub.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +44,8 @@ export class SeriesHubComponent {
   protected readonly error = signal("");
   protected readonly facets = signal<SearchResultsFacets>({});
   protected readonly subjects = signal<string[]>([]);
+  /** Newest / oldest first from the hub menu. Not kept in the URL (the podcast page does the same). */
+  protected readonly sort = signal<SeriesHubSort>(seriesHubSortNewest);
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly playerService = inject(PlayerService);
   protected readonly itemNoun = computed(() => this.hub() === "news" ? "report" : "episode");
@@ -134,7 +138,7 @@ export class SeriesHubComponent {
         skip: this.infiniteScrollStrategy.getSkip(this.page),
         top: this.infiniteScrollStrategy.getTake(this.page),
         facets: ["subjects,count:1000,sort:count"],
-        orderby: "release desc",
+        orderby: untracked(this.sort),
       }
     ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
@@ -191,6 +195,11 @@ export class SeriesHubComponent {
         this.isSubsequentLoading.set(false);
       },
     });
+  }
+
+  protected setSort(sort: SeriesHubSort): void {
+    this.sort.set(sort);
+    this.load(this.seriesName(), this.hub(), true, false);
   }
 
   clearSubjects(): void {

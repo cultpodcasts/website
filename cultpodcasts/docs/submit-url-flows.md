@@ -137,6 +137,16 @@ flowchart TD
   L -->|same / unknown / ambiguous / error| Spage
 ```
 
+### Submit to this news outlet or TV show
+
+```mermaid
+flowchart TD
+  H["Hub menu: Submit Url for News Outlet / TV Show"] --> D["Submit dialog (URL only, target shown)"]
+  D --> G["GET /newsorganisation/{name} or /tvshow/{name}"]
+  G -->|404 / 409 ids / error| Stop[Do not send]
+  G -->|200 id| P["POST { url, parentKind, parentId, parentName }"]
+```
+
 ### After a successful POST
 
 ```mermaid
@@ -197,6 +207,23 @@ Homepage (and share-target). Overlay: *Drop episode link to submit* (never the t
 4. Always POST `{ url, podcastId }` of the **page**. Lookup never replaces the page id. Ambiguous lookup does not open the 409 picker.
 
 Same confirm when the **podcast-page submit dialog** attaches to the page with an empty Series field.
+
+### Submit to this news outlet or TV show (hub menu)
+
+**Curator only**, behind `environment.catalogueParentCuration.submit` (off in staging/production until RPP accepts a parent target). `/news/{name}` and `/tv/{name}` only.
+
+1. The submit dialog opens in URL-only mode, titled *Submit URL for News Outlet* / *TV Show*, with the target shown under the URL (`SubmitPodcastDialogData.target`).
+2. `probeParentByName(hub, name)`: `GET /newsorganisation/{name}` or `/tvshow/{name}` (curate). 200 gives the id. 404, a 409 guid array, or any other error sends nothing and shows a snackbar.
+3. `POST /submit` with `submitParentPostBody`: `{ url, parentKind: "NewsOrganisation" | "TvShow", parentId, parentName }`. **No `podcastId` / `podcastName`**, and a 409 never opens the podcast name picker.
+
+Contract asked of RPP `SubmitUrl` (Worker forwards the body unchanged):
+
+- Parent fields present → attach to that news outlet / TV show by `parentId` (`parentName` is a check and a log aid). Never create a podcast.
+- 200 with the usual SubmitUrl response (`contentKind` `NewsReport` / `TvShowEpisode`, playable id). Existing URL → the usual already-exists result.
+- 404 when `parentId` is not a `parentKind` row; 400 for an unknown `parentKind` or both parent and podcast fields.
+- Worker follow-up: `hasSeriesAttachTarget` should count the parent fields as an attach target.
+
+Until then Azure ignores the unknown fields, and a YouTube URL with no podcast match would create a new podcast. That is why the item is flagged off in production.
 
 ### Add Episode / Edit Episode
 
@@ -293,6 +320,8 @@ sequenceDiagram
 | `src/app/send-podcast/` | `POST /submit` + 409 retry |
 | `src/app/app.component.ts` | Drop overlay |
 | `src/app/podcast-api/` | Page submit dialog attach |
+| `src/app/series-hub-menu/` | News / TV hub menu: submit to the outlet or show, edit, rename |
+| `src/app/submit-parent-target.interface.ts` | `{ parentKind, parentId, parentName }` POST target |
 | `src/app/submit-url-origin-response-snackbar/` | Created / Enriched / already exists → episode dialogs |
 
 ## Overlay layout

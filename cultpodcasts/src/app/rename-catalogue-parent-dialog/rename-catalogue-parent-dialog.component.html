@@ -1,0 +1,40 @@
+<h2 mat-dialog-title>Rename {{ label }}</h2>
+<form #renameForm="ngForm" (ngSubmit)="onSubmit()">
+  <mat-dialog-content>
+    @if (isSending()) {
+    <mat-spinner class="rename-parent__spinner" mode="indeterminate"></mat-spinner>
+    } @else {
+    @if (conflict()) {
+    <p id="error">That name is already used by another {{ label.toLowerCase() }}.</p>
+    } @else if (ambiguous()) {
+    <p id="error">More than one {{ label.toLowerCase() }} has this name.</p>
+    } @else if (notFound()) {
+    <p id="error">{{ label }} not found.</p>
+    } @else if (isInError()) {
+    <p id="error">An error occurred</p>
+    }
+    <p>Rename "{{ data.name }}" to</p>
+    <mat-form-field class="rename-parent__field">
+      <mat-label>New name</mat-label>
+      <input matInput type="text" id="newCatalogueParentName" required [(ngModel)]="newName" name="newName"
+        #newNameField="ngModel" (keyup)="checkControl(newNameField)">
+      @if (newNameField.invalid && (newNameField.dirty || newNameField.touched)) {
+      <mat-error>
+        @if (newNameField.hasError('required')) {
+        A new name is required.
+        }
+        @if (newNameField.hasError('unsafe')) {
+        Names cannot contain "/".
+        }
+      </mat-error>
+      }
+    </mat-form-field>
+    <p class="rename-parent__hint">The old /{{ data.hub }}/… address will redirect to the new name.</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-raised-button type="button" (click)="close()">Close</button>
+    <button mat-raised-button type="submit" [disabled]="renameForm.invalid || isSending()">Submit</button>
+  </mat-dialog-actions>
+</form>

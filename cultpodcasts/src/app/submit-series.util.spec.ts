@@ -5,11 +5,13 @@ import {
   showSubmitSeriesPicker,
   submitDialogResult,
   submitEpisodePostBody,
+  submitParentPostBody,
   submitLookupReadyForSave,
   submitSaveReady,
   submitSeriesFromForm,
   submitSeriesUiFromLookup
 } from './submit-series.util';
+import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
 describe('showSubmitSeriesPicker', () => {
   it('shows Series picker only for the Curator role, because attaching or naming a series is curator work', () => {
@@ -256,5 +258,23 @@ describe('submitDialogResult', () => {
       url,
       podcast: undefined
     });
+  });
+});
+
+describe('submitParentPostBody', () => {
+  it('targets the news outlet / TV show and never sends podcastId or podcastName', () => {
+    const body = submitParentPostBody(new URL('https://www.youtube.com/watch?v=abc123def45'), {
+      parentKind: CatalogueParentKind.NewsOrganisation,
+      parentId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      parentName: 'Desk'
+    });
+    expect(body).toEqual({
+      url: 'https://www.youtube.com/watch?v=abc123def45',
+      parentKind: CatalogueParentKind.NewsOrganisation,
+      parentId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      parentName: 'Desk'
+    });
+    expect('podcastId' in body).toBe(false);
+    expect('podcastName' in body).toBe(false);
   });
 });

@@ -452,19 +452,25 @@ test.describe("homepage hero description", () => {
 		test(`${layout.name}: title links to the episode page; Add to Queue is rounded like Watch; the episode page button keeps its shape (HERO-TTL-001)`, async ({ page }) => {
 			await page.setViewportSize({ width: layout.width, height: layout.height });
 			await fakeApi(page, LONG_DESC, undefined, undefined, ALL_SERVICES);
-			const first = homepage(LONG_DESC, undefined, undefined, ALL_SERVICES).recentEpisodes[0];
+			const episodes = homepage(LONG_DESC, undefined, undefined, ALL_SERVICES).recentEpisodes;
+			const episodeHref = (e: (typeof episodes)[number]) => `/podcast/${encodeURIComponent(e.podcastName)}/${e.id}`;
 			// The episode page looks its episode up by id (registered last, so it wins for /search).
 			await page.route("**/search", async (route) => {
 				const filter = String(route.request().postDataJSON()?.filter ?? "");
-				const hit = filter.includes(`id eq '${first.id}'`) ? [{ ...first, seriesName: first.podcastName, contentKind: "Episode" }] : [];
+				const match = episodes.find((e) => filter.includes(`id eq '${e.id}'`));
+				const hit = match ? [{ ...match, seriesName: match.podcastName, contentKind: "Episode" }] : [];
 				await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ value: hit }) });
 			});
 			await page.goto("/");
 
+			// The first slide rotates with a 3-hour time bucket (buildAutofillPool), so read which
+			// episode the hero shows instead of assuming recentEpisodes[0].
 			const link = page.locator("h1.billboard__title > a.billboard__title-link");
-			const href = `/podcast/${encodeURIComponent(first.podcastName)}/${first.id}`;
-			await expect(link).toHaveAttribute("href", href);
-			await expect(link).toHaveText(first.episodeTitle);
+			await expect(link).toHaveAttribute("href", /^\/podcast\//);
+			const href = (await link.getAttribute("href")) ?? "";
+			const first = episodes.find((e) => episodeHref(e) === href);
+			expect(first, href).toBeDefined();
+			await expect(link).toHaveText(first!.episodeTitle);
 			const look = await link.evaluate((a) => {
 				const own = getComputedStyle(a), h1 = getComputedStyle(a.parentElement!);
 				return { color: own.color, h1Color: h1.color, decoration: own.textDecorationLine };

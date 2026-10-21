@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { DeferBlockState } from '@angular/core/testing';
@@ -18,6 +19,7 @@ describe('NewsOrganisationComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: AuthServiceWrapper, useValue: { roles: of([]) } },
         { provide: ActivatedRoute, useValue: { params: of({ slug: 'Desk' }), fragment: of(null), snapshot: { params: { slug: 'Desk' }, queryParams: {}, fragment: null } } },
         {
           provide: ODataService,

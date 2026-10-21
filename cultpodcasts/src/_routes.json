@@ -4,6 +4,8 @@
 		"/",
 		"/content/*",
 		"/podcast/*",
+		"/news/*",
+		"/tv/*",
 		"/subject/*",
 		"/search/*",
 		"/outgoingEpisodes",
