@@ -259,3 +259,48 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.getByText("News Outlet updated")).toBeVisible();
 	});
 });
+
+test.describe("news report page carousels link with short ids", () => {
+	const relatedNews = "11111111-2222-4333-8444-555555555555";
+	const relatedTv = "66666666-7777-4888-8999-aaaaaaaaaaaa";
+	const relatedFilm = "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff";
+
+	test("More from the outlet and the subject rail use prefixed short ids, never raw guids", async ({ page }) => {
+		const doc = (docId: string, kind: string, title: string, parent: string) => ({
+			...documentFor(kind, title, parent),
+			id: docId,
+			subjects: ["Synthetic Subject"]
+		});
+		await page.route("**/search", async (route) => {
+			if (route.request().method() !== "POST") {
+				await route.fallback();
+				return;
+			}
+			const filter = String(route.request().postDataJSON()?.filter ?? "");
+			let value: unknown[] = [];
+			if (filter.includes("id ne") && filter.includes("subjects/any")) {
+				value = [doc(relatedTv, "TvShowEpisode", "Synthetic Tv Part", "Nightly"), doc(relatedFilm, "Film", "Synthetic Film", "")];
+			} else if (filter.includes("id ne")) {
+				value = [doc(relatedNews, "NewsReport", "Synthetic Follow Up", "Desk")];
+			} else if (filter.includes("eq 'Desk'") || filter.includes(id)) {
+				value = [doc(id, "NewsReport", "Bulletin", "Desk")];
+			}
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ value }) });
+		});
+
+		const shortId = guids.toCatalogueShortId(id, "NewsReport");
+		await page.goto(`/news/Desk/${shortId}`);
+		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
+		await expect(page.getByText("Synthetic Follow Up").first()).toBeVisible();
+		await expect(page.getByText("Synthetic Film").first()).toBeVisible();
+
+		const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => a.getAttribute("href") ?? ""));
+		expect(hrefs).toContain(`/news/Desk/${guids.toCatalogueShortId(relatedNews, "NewsReport")}`);
+		expect(hrefs).toContain(`/tv/Nightly/${guids.toCatalogueShortId(relatedTv, "TvShowEpisode")}`);
+		expect(hrefs).toContain(`/film/Synthetic%20Film/${guids.toCatalogueShortId(relatedFilm, "Film")}`);
+		for (const raw of [id, relatedNews, relatedTv, relatedFilm]) {
+			expect(hrefs.filter(h => h.includes(raw))).toEqual([]);
+		}
+		await expect(page).toHaveURL(new RegExp(`/news/Desk/${shortId}$`));
+	});
+});
