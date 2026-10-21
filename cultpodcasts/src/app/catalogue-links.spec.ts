@@ -11,6 +11,9 @@ import {
   movedKindRedirect,
   movedSeriesHubPath,
   newsReportPageCommands,
+  podcastEpisodePageCommands,
+  podcastEpisodeShortIdRedirect,
+  podcastEpisodeShortPageId,
   samePath,
   tvShowEpisodePageCommands
 } from "./catalogue-links";
@@ -45,8 +48,8 @@ describe("catalogue links", () => {
     expect(catalogueParentLink(news)).toEqual(["/news", "Show"]);
   });
 
-  it("keeps a podcast episode on /podcast/", () => {
-    expect(cataloguePlayableLink(item)).toEqual(["/podcast", "Show", id]);
+  it("keeps a podcast episode on /podcast/ with its unprefixed short id", () => {
+    expect(cataloguePlayableLink(item)).toEqual(["/podcast", "Show", guids.toBase64(id)]);
     expect(catalogueParentLink(item)).toEqual(["/podcast", "Show"]);
     expect(movedKindRedirect(`/podcast/Show/${id}`, { ...item, contentKind: "Episode" }, guids)).toBeNull();
   });
@@ -145,8 +148,38 @@ describe("catalogue links", () => {
       expect(catalogueShortPageId("", "Film")).toBe("");
     });
 
-    it("keeps podcast episode links unchanged", () => {
-      expect(cataloguePlayableLink({ ...item, contentKind: "Episode" })).toEqual(["/podcast", "Show", id]);
+    it("links podcast episodes (Episode or no kind) by the unprefixed 22-char short id", () => {
+      const short = guids.toBase64(id);
+      expect(short).toHaveLength(22);
+      expect(cataloguePlayableLink({ ...item, contentKind: "Episode" })).toEqual(["/podcast", "Show", short]);
+      expect(cataloguePlayableLink(item)).toEqual(["/podcast", "Show", short]);
+      expect(podcastEpisodePageCommands("Show", id)).toEqual(["/podcast", "Show", short]);
+      expect(guids.parseCatalogueShortId(short)).toEqual({ id, contentKind: null });
+    });
+
+    it("leaves non-guid podcast episode ids untouched", () => {
+      expect(podcastEpisodeShortPageId("id-1")).toBe("id-1");
+      expect(podcastEpisodeShortPageId("")).toBe("");
+    });
+  });
+
+  describe("podcast episode GUID redirect", () => {
+    it("moves a full GUID URL to the short id once", () => {
+      const short = guids.toBase64(id);
+      expect(podcastEpisodeShortIdRedirect(`/podcast/Show/${id}`, "Show", id)).toBe(`/podcast/Show/${short}`);
+      expect(podcastEpisodeShortIdRedirect(`/podcast/Show/${short}`, "Show", short)).toBeNull();
+    });
+
+    it("encodes the podcast name and never loops when it has reserved characters", () => {
+      const name = "Law & Order: Pod, $ @";
+      const target = podcastEpisodeShortIdRedirect(`/podcast/Law%20&%20Order:%20Pod,%20$%20@/${id}`, name, id)!;
+      expect(target).toBe(`/podcast/${encodeURIComponent(name)}/${guids.toBase64(id)}`);
+      expect(podcastEpisodeShortIdRedirect(target, name, guids.toBase64(id))).toBeNull();
+    });
+
+    it("ignores search terms, short ids, and a missing podcast name", () => {
+      expect(podcastEpisodeShortIdRedirect("/podcast/Show/cults", "Show", "cults")).toBeNull();
+      expect(podcastEpisodeShortIdRedirect(`/podcast//${id}`, "", id)).toBeNull();
     });
   });
 

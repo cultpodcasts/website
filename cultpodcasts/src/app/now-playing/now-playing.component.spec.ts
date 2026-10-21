@@ -4,6 +4,7 @@ import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { NowPlayingComponent } from './now-playing.component';
 import { PlayerService } from '../player.service';
 import { SearchResult } from '../search-result.interface';
+import { GuidService } from '../guid.service';
 
 function ep(overrides: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -65,5 +66,17 @@ describe('NowPlayingComponent', () => {
     player.play(ep({ contentKind: 'Episode', podcastName: 'Show' }), { mode: 'dock' });
     fixture.detectChanges();
     expect(showLink()?.getAttribute('href')).toBe('/podcast/Show');
+  });
+
+  it('links "Episode page" for a podcast episode by its short id, not the raw guid', () => {
+    const guid = '00112233-4455-4677-8899-aabbccddeeff';
+    player.play(ep({ id: guid, contentKind: 'Episode', podcastName: 'Show', youtubeId: undefined }), { mode: 'dock' });
+    fixture.detectChanges();
+    const page = Array.from(fixture.nativeElement.querySelectorAll('a[href]') as NodeListOf<HTMLAnchorElement>)
+      .find(a => a.textContent?.includes('Episode page'));
+    expect(page?.getAttribute('href')).toBe(`/podcast/Show/${new GuidService().toBase64(guid)}`);
+    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]') as NodeListOf<HTMLAnchorElement>)
+      .map(a => a.getAttribute('href') ?? '');
+    expect(hrefs.some(h => h.includes(guid))).toBe(false);
   });
 });

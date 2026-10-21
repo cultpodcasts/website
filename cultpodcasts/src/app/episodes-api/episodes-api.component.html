@@ -91,7 +91,7 @@
             <div class="curator-card__main">
                 <mat-card-header>
                     <mat-card-title>
-                        <a [routerLink]="['/podcast', result.podcastName, result.id]"
+                        <a [routerLink]="episodePageLink(result)"
                             [innerHTML]="result.displayTitle"></a>
                     </mat-card-title>
                     <mat-card-subtitle>

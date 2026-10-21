@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { GuidService } from "../src/app/guid.service";
 
 /**
  * Homepage hero description: per-layout clamp, the icon expander, and
@@ -453,7 +454,7 @@ test.describe("homepage hero description", () => {
 			await page.setViewportSize({ width: layout.width, height: layout.height });
 			await fakeApi(page, LONG_DESC, undefined, undefined, ALL_SERVICES);
 			const episodes = homepage(LONG_DESC, undefined, undefined, ALL_SERVICES).recentEpisodes;
-			const episodeHref = (e: (typeof episodes)[number]) => `/podcast/${encodeURIComponent(e.podcastName)}/${e.id}`;
+			const episodeHref = (e: (typeof episodes)[number]) => `/podcast/${encodeURIComponent(e.podcastName)}/${new GuidService().toBase64(e.id)}`;
 			// The episode page looks its episode up by id (registered last, so it wins for /search).
 			await page.route("**/search", async (route) => {
 				const filter = String(route.request().postDataJSON()?.filter ?? "");

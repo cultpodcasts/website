@@ -23,7 +23,7 @@ import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-ep
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
-import { applyTransferredPodcastKindClose } from '../catalogue-links';
+import { applyTransferredPodcastKindClose, podcastEpisodePageCommands } from '../catalogue-links';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.component";
@@ -97,6 +97,10 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   protected updatingSubjectName = signal<string | null>(null);
   protected addingGuest = signal<Record<string, string>>({});
   protected readonly curatedEpisodeIds = signal<string[]>([]);
+  /** Episode page by short id, so the click does not take the GUID 301. */
+  protected episodePageLink(episode: ApiEpisode): string[] {
+    return podcastEpisodePageCommands(episode.podcastName ?? "", episode.id);
+  }
   protected readonly curatedUpdatedAt = signal<string | null>(null);
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 

@@ -5,39 +5,55 @@ import { firstValueFrom } from "rxjs";
 import { EpisodeService } from "./episode.service";
 import { GuidService } from "./guid.service";
 import { episodeIdFromRouteQuery } from "./playable-route";
-import { movedKindRedirect, movedSeriesHubPath } from "./catalogue-links";
+import { movedKindRedirect, movedSeriesHubPath, podcastEpisodeShortIdRedirect } from "./catalogue-links";
 import { ODataService } from "./odata.service";
 import { environment } from "./../environments/environment";
 import { SearchResult } from "./search-result.interface";
 import { isUnknownSearchFieldError, normalizePlayableHit, transferredSeriesHubFilter } from "./playable-search-hit";
 
-/** Old /podcast/ links for a moved Film, TV episode, news report, or transferred series leave before the podcast page renders. */
+/**
+ * Old /podcast/ links for a moved Film, TV episode, news report, or transferred series leave before
+ * the podcast page renders. A podcast episode opened by its full GUID moves to its short id once
+ * (SSR 301, client replace); a lookup failure does not block that canonical move.
+ */
 export const redirectMovedKind: CanActivateFn = async (route, state) => {
   const guids = inject(GuidService);
   const episodes = inject(EpisodeService);
   const router = inject(Router);
   const oData = inject(ODataService);
   const responseInit = inject(RESPONSE_INIT, { optional: true });
-  const episodeId = episodeIdFromRouteQuery(guids, route.paramMap.get("query") ?? "");
+  const query = route.paramMap.get("query") ?? "";
+  const episodeId = episodeIdFromRouteQuery(guids, query);
   const name = route.paramMap.get("podcastName") ?? "";
+  let target: string | null = null;
   try {
-    const target = episodeId
+    target = episodeId
       ? await playableTarget(episodes, guids, state.url, episodeId, name)
       : await seriesTarget(oData, state.url, name);
-    if (!target) {
-      return true;
-    }
-    if (responseInit) {
-      responseInit.status = 301;
-      const headers = new Headers(responseInit.headers);
-      headers.set("Location", target);
-      responseInit.headers = headers;
-    }
-    return router.parseUrl(target);
   } catch {
+    target = null;
+  }
+  target ??= episodeId ? withQueryString(podcastEpisodeShortIdRedirect(state.url, name, query), state.url) : null;
+  if (!target) {
     return true;
   }
+  if (responseInit) {
+    responseInit.status = 301;
+    const headers = new Headers(responseInit.headers);
+    headers.set("Location", target);
+    responseInit.headers = headers;
+  }
+  return router.parseUrl(target);
 };
+
+/** Keep `?…#…` from the old URL on the canonical podcast episode redirect. */
+function withQueryString(target: string | null, currentUrl: string): string | null {
+  if (!target) {
+    return null;
+  }
+  const tail = currentUrl.search(/[?#]/);
+  return tail < 0 ? target : target + currentUrl.slice(tail);
+}
 
 async function playableTarget(
   episodes: EpisodeService,

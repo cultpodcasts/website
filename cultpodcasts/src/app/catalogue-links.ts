@@ -17,6 +17,31 @@ export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEp
   return id && GUID.test(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
 }
 
+/**
+ * Podcast episode page id: the unprefixed 22-char short id (the s.cultpodcasts.com key, and what
+ * the podcast page's GUID URL 301s to). Anything that is not a GUID passes through unchanged.
+ */
+export function podcastEpisodeShortPageId(id: string): string {
+  return id && GUID.test(id) ? shortIds.toBase64(id) : id;
+}
+
+export function podcastEpisodePageCommands(podcastName: string, id: string): string[] {
+  return ["/podcast", podcastName, podcastEpisodeShortPageId(id)];
+}
+
+/**
+ * Old `/podcast/{name}/{guid}` links: the short-id URL for the same page, or null when the query
+ * is not a full GUID (already a short id, or a podcast search term) or the path is already there.
+ * Moved Film, TV, and News ids are handled first by movedKindRedirect.
+ */
+export function podcastEpisodeShortIdRedirect(currentPath: string, podcastName: string, query: string): string | null {
+  if (!podcastName || !query || !GUID.test(query)) {
+    return null;
+  }
+  const target = `/podcast/${encodeURIComponent(podcastName)}/${shortIds.toBase64(query)}`;
+  return samePath(currentPath, target) ? null : target;
+}
+
 export function filmPageCommands(title: string, id: string): string[] {
   return ["/film", title, catalogueShortPageId(id, "Film")];
 }
@@ -39,7 +64,7 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
     case "NewsReport":
       return newsReportPageCommands(item.podcastName, item.id);
     default:
-      return ["/podcast", item.podcastName, item.id];
+      return podcastEpisodePageCommands(item.podcastName, item.id);
   }
 }
 
