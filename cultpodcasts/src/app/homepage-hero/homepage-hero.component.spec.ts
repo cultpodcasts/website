@@ -4,6 +4,7 @@ import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compileString } from 'sass';
 import { HomepageHeroComponent, HomepageHeroSlide } from './homepage-hero.component';
 import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
@@ -226,14 +227,22 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.nativeElement.querySelector('.billboard__subjects')).toBeTruthy();
   });
 
+  it('compiled component CSS stays under the anyComponentStyle error budget (17 kB in angular.json)', () => {
+    // The production build fails the Cloudflare Pages deploy above 17,000 bytes, and
+    // test:all does not run it. Compressed Sass tracks the build's measure within ~1%.
+    const css = compileString(heroSass, { syntax: 'indented', style: 'compressed' }).css;
+    expect(css.length).toBeLessThan(17_000);
+  });
+
   it('HERO-SCR-001/002/005 + HERO-CTL-001/003/004 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
     // Layout bugs often land in CSS; assert the source contracts stay present.
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__dots-viewport[\s\S]*?overflow-anchor:\s*none/);
     expect(heroSass).toMatch(/\.billboard__title[\s\S]*?line-clamp:\s*3/);
-    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?line-clamp:\s*3/);
-    expect(heroSass).toMatch(/\.billboard__desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3\)/);
-    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* 3/);
+    // HERO-SCR-002: desc clamp + reserved height follow the per-layout line count.
+    expect(heroSass).toMatch(/\.billboard__desc\n[\s\S]*?line-clamp:\s*var\(--hero-desc-lines\)/);
+    expect(heroSass).toMatch(/\.billboard__desc\n[\s\S]*?min-height:\s*calc\(1\.45em \* var\(--hero-desc-lines\)\)/);
+    expect(heroSass).toMatch(/\.billboard__copy-body[\s\S]*?&\.has-desc[\s\S]*?min-height:\s*calc\(1\.45em \* var\(--hero-desc-lines\)/);
     expect(heroSass).toMatch(/\.billboard__stages,[\s\S]*?pointer-events:\s*none/);
     expect(heroSass).toMatch(/\.billboard[\s\S]*?touch-action:\s*pan-y/);
     // HERO-CTL-003: dedicated art hover layer (not whole-billboard mouseenter).
@@ -269,15 +278,15 @@ describe('HomepageHeroComponent', () => {
     expect(subjectsSlice).not.toMatch(/line-clamp:/);
   });
 
-  it('truncates featured description for the hero copy panel', () => {
-    const long = 'x'.repeat(300);
+  it('passes the full trimmed featured description to the hero (CSS clamp, not the search-card cap)', () => {
+    const long = `  ${'Synthetic hero sentence number one. '.repeat(15).trim()}  `;
+    expect(long.trim().length).toBeGreaterThan(SEARCH_DESCRIPTION_SIZE);
     fixture.componentRef.setInput('slides', [ep('a', { episodeDescription: long }), ep('b'), ep('c')]);
     fixture.detectChanges();
 
-    const desc = component['featuredDesc']();
-    expect(desc.length).toBeLessThan(long.length);
-    expect(desc.endsWith('…')).toBe(true);
-    expect(desc.startsWith('x'.repeat(SEARCH_DESCRIPTION_SIZE).trim())).toBe(true);
+    expect(component['featuredDesc']()).toBe(long.trim());
+    const rendered = (fixture.nativeElement as HTMLElement).querySelector('.billboard__desc');
+    expect(rendered?.textContent?.trim()).toBe(long.trim());
   });
 
   it('jumps to a slide when its hero dash is clicked', () => {
@@ -758,5 +767,483 @@ describe('HomepageHeroComponent', () => {
 
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
+  });
+  describe('HERO-SVC-001: service links on the hero card', () => {
+    const root = () => fixture.nativeElement as HTMLElement;
+    const links = () => Array.from(root().querySelectorAll<HTMLAnchorElement>('.billboard__actions app-episode-links a'));
+    function show(slide: HomepageHeroSlide): void {
+      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
+      fixture.detectChanges();
+    }
+
+    it('reuses the episode page component in the action row, after Watch and More info, without share', () => {
+      const actions = root().querySelector('.billboard__actions')!;
+      const host = actions.querySelector('app-episode-links.billboard__services');
+      expect(host).toBeTruthy();
+      expect(actions.lastElementChild).toBe(host);
+      expect(host!.querySelector('button')).toBeNull();
+    });
+
+    it('shows every service the episode has, in the episode page order, labels and link behaviour', () => {
+      show(ep('a', {
+        ids: undefined,
+        services: {
+          internetArchive: { url: 'https://archive.org/details/invented-a' },
+          bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m000inv1' },
+          apple: { url: 'https://podcasts.apple.com/gb/podcast/invented/id1?i=2' },
+          spotify: { url: 'https://open.spotify.com/episode/inventedA' },
+          youtube: { url: 'https://www.youtube.com/watch?v=inventedA' },
+        },
+      }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual([
+        'YouTube', 'Spotify', 'Apple Podcasts', 'BBC Sounds', 'Internet Archive',
+      ]);
+      expect(links().map((a) => a.href)).toEqual([
+        'https://www.youtube.com/watch?v=inventedA',
+        'https://open.spotify.com/episode/inventedA',
+        'https://podcasts.apple.com/gb/podcast/invented/id1?i=2',
+        'https://www.bbc.co.uk/sounds/play/m000inv1',
+        'https://archive.org/details/invented-a',
+      ]);
+      for (const a of links()) {
+        expect(a.target).toBe('_blank');
+        expect(a.rel).toBe('noopener noreferrer');
+      }
+      // Apple uses the shared Apple mark, the rest the registered service icons.
+      expect(links()[2].querySelector('app-apple-podcasts-svg')).toBeTruthy();
+      expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('spotify');
+    });
+
+    it('shows nothing for services the episode does not have', () => {
+      show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/onlyA' } } }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['Spotify']);
+      show(ep('a', { ids: undefined, services: undefined }));
+      expect(links()).toHaveLength(0);
+    });
+
+    it('follows the current slide', () => {
+      show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/a' } } }));
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(links().map((a) => a.href)).toEqual(['https://www.youtube.com/watch?v=b']);
+    });
+  });
+
+  describe('description expander', () => {
+    const longDesc = 'Synthetic hero sentence for the show more toggle. '.repeat(12).trim();
+
+    function root(): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    function toggle(): HTMLButtonElement | null {
+      return root().querySelector('button.billboard__desc-toggle');
+    }
+
+    /** happy-dom has no layout: fake the clamped box being shorter than its content. */
+    function fakeOverflow(overflowing: boolean): void {
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 100 });
+      Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: overflowing ? 240 : 100 });
+      component['measureDescOverflow']();
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('slides', [ep('a', { episodeDescription: longDesc }), ep('b'), ep('c')]);
+      fixture.detectChanges();
+    });
+
+    it('HERO-SCR-002: clamps 5 lines wide, 4 medium, 3 mobile', () => {
+      expect(heroSass).toMatch(/^\.billboard\n[\s\S]*?--hero-desc-lines:\s*5/m);
+      expect(heroSass).toMatch(/@media screen and \(max-width: 1280px\)\n    \.billboard\n        --hero-desc-lines:\s*4/);
+      expect(heroSass).toMatch(/@media screen and \(max-width: 700px\)\n    \.billboard\n        --hero-desc-lines:\s*3/);
+    });
+
+    it('hides the toggle when the description fits the clamp', () => {
+      fakeOverflow(false);
+      expect(toggle()).toBeNull();
+      expect(root().querySelector('.billboard__desc-fade')).toBeNull();
+      // No expander row at all: the description's reserved lines keep slides one height.
+      expect(root().querySelector('.billboard__desc-more')).toBeNull();
+    });
+
+    it('HERO-DSC-001: the expander sits inline on the last visible line (no row of its own)', () => {
+      fakeOverflow(true);
+      const wrap = root().querySelector('.billboard__desc-wrap')!;
+      expect(wrap.querySelector('.billboard__desc')).toBeTruthy();
+      expect(wrap.querySelector('button.billboard__desc-toggle')).toBeTruthy();
+      expect(wrap.querySelector('.billboard__desc-fade')?.getAttribute('aria-hidden')).toBe('true');
+      expect(heroSass).toMatch(/\.billboard__desc-wrap\n[\s\S]*?position:\s*relative/);
+      expect(heroSass).toMatch(/\.billboard__desc-toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
+      // Expanded: the last line wraps short of the button.
+      expect(heroSass).toMatch(/&\.is-expanded\n[\s\S]*?&::after\n[\s\S]*?width:\s*var\(--hero-desc-toggle-room\)/);
+      // Stacked reserve no longer adds a 32px expander row.
+      expect(heroSass).not.toMatch(/var\(--hero-desc-lines\)\s*\+\s*4[04]px\s*\+\s*32px/);
+      expect(heroSass).not.toMatch(/billboard__desc-more/);
+    });
+
+    it('shows the discovery-style icon expander only when the description overflows', () => {
+      fakeOverflow(true);
+      const button = toggle()!;
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      expect(button.querySelector('mat-icon')?.textContent?.trim()).toBe('expand_more');
+      expect(button.getAttribute('aria-label')).toBe('Expand description');
+      expect(button.textContent).not.toMatch(/Show (more|less)/);
+      expect(button.getAttribute('type')).toBe('button');
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(desc.id).toBe('billboard-desc');
+      expect(button.getAttribute('aria-controls')).toBe(desc.id);
+      expect(desc.hasAttribute('tabindex')).toBe(false);
+    });
+
+    describe('HERO-WID-001: wide keeps the card bottom-anchored in the hero band', () => {
+      const originalMatchMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+      afterEach(() => {
+        vi.restoreAllMocks();
+        if (originalMatchMedia) {
+          Object.defineProperty(window, 'matchMedia', originalMatchMedia);
+        } else {
+          delete (window as { matchMedia?: unknown }).matchMedia;
+        }
+      });
+
+      /** Fake the wide layout: 720px band, 140/48 padding, -16px overhang, 22px lines, 14 text lines. */
+      function fakeWide(wide: boolean, cardHeight: number): void {
+        Object.defineProperty(window, 'matchMedia', {
+          configurable: true,
+          value: (q: string) => ({ matches: wide && q.includes('1281px'), media: q }),
+        });
+        const real = window.getComputedStyle.bind(window);
+        vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+          const e = el as HTMLElement;
+          if (e.classList.contains('billboard')) {
+            return { minHeight: '720px', paddingTop: '140px', paddingBottom: '48px',
+              getPropertyValue: (n: string) => (n === '--hero-desc-lines' ? '5' : '') } as unknown as CSSStyleDeclaration;
+          }
+          if (e.classList.contains('billboard__content')) {
+            return { marginBottom: '-16px' } as unknown as CSSStyleDeclaration;
+          }
+          if (e.classList.contains('billboard__desc')) {
+            return { lineHeight: '22px' } as unknown as CSSStyleDeclaration;
+          }
+          return real(el);
+        });
+        const desc = root().querySelector('.billboard__desc') as HTMLElement;
+        const card = root().querySelector('.billboard__content') as HTMLElement;
+        const hero = root().querySelector('.billboard') as HTMLElement;
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 308 });
+        Object.defineProperty(card, 'offsetHeight', { configurable: true, value: cardHeight });
+        Object.defineProperty(hero, 'clientHeight', { configurable: true, value: 720 });
+        component['measureDescOverflow']();
+        fixture.detectChanges();
+      }
+
+      const content = () => root().querySelector('.billboard__content') as HTMLElement;
+      const desc = () => root().querySelector('.billboard__desc') as HTMLElement;
+
+      it('drops collapsed lines (5 → 2) until a tall card fits the band', () => {
+        // rest = 600 - 110 = 490 (inline expander: no row); need(n) = 490 + 22n - 16: 5→584 4→562 3→540 2→518 ≤ 532.
+        fakeWide(true, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+      });
+
+      it('keeps the Sass 5 lines when the card fits', () => {
+        // need(5) = 400 - 110 + 110 - 16 = 384 ≤ 532.
+        fakeWide(true, 400);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+      });
+
+      it('keeps the collapsed fit while expanded, so collapsing returns to the band', () => {
+        fakeWide(true, 600);
+        toggle()!.click();
+        fixture.detectChanges();
+        component['measureDescOverflow']();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+      });
+
+      it('re-fits on a slide change even when the description text is the same', () => {
+        fakeWide(true, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        // Same description, shorter card (e.g. a 1-line title): the fit must be recomputed.
+        Object.defineProperty(content(), 'offsetHeight', { configurable: true, value: 400 });
+        fixture.componentRef.setInput('slides', [ep('z', { episodeDescription: longDesc, episodeTitle: 'Short' })]);
+        fixture.detectChanges();
+        TestBed.tick();
+        fixture.detectChanges();
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+      });
+
+      it('sets no override on stacked layouts', () => {
+        fakeWide(false, 600);
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
+      });
+    });
+
+    describe('HERO-DSC-002: expanded keeps the hero and the card top; the description grows by the gap, within [max(6 lines, 30vh), 60vh]', () => {
+      const realInnerHeight = window.innerHeight;
+      afterEach(() => {
+        vi.restoreAllMocks();
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: realInnerHeight });
+      });
+
+      /**
+       * Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it (C), 22px lines (L);
+       * full text `fullPx` tall. Wide (row) hero unless `column`.
+       */
+      function fakeCollapsed(viewportH: number, heroTop = 0, column = false, fullPx = 3000): void {
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewportH });
+        const hero = root().querySelector('.billboard') as HTMLElement;
+        const card = root().querySelector('.billboard__content') as HTMLElement;
+        const desc = root().querySelector('.billboard__desc') as HTMLElement;
+        const rect = (top: number, height: number) => ({ top, bottom: top + height, height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+        vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() => rect(heroTop, 720));
+        vi.spyOn(card, 'getBoundingClientRect').mockImplementation(() => rect(heroTop + 300, 388));
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: fullPx });
+        const real = window.getComputedStyle.bind(window);
+        vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+          if (el === hero) {
+            return { flexDirection: column ? 'column' : 'row', getPropertyValue: () => '' } as unknown as CSSStyleDeclaration;
+          }
+          if (el === desc) {
+            return { lineHeight: '22px', height: '110px', paddingTop: '0px', paddingBottom: '0px' } as unknown as CSSStyleDeclaration;
+          }
+          return real(el);
+        });
+      }
+
+      const hero = () => root().querySelector('.billboard') as HTMLElement;
+      const card = () => root().querySelector('.billboard__content') as HTMLElement;
+      const descEl = () => root().querySelector('.billboard__desc') as HTMLElement;
+
+      function expand(): void {
+        toggle()!.click();
+        fixture.detectChanges();
+      }
+
+      function relayout(viewportH: number, heroTop: number, column = false): void {
+        vi.restoreAllMocks();
+        fakeCollapsed(viewportH, heroTop, column);
+        component['layoutExpandedDesc']();
+        fixture.detectChanges();
+      }
+
+      it('gap below the minimum: grows by max(6 lines, 30vh), past the foot; wide keeps the top', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        expect(hero().style.height).toBe('720px');
+        // G = 888 - 688 = 200 < minGrow = max(132, 270) = 270 → 110 + 270.
+        expect(descEl().style.height).toBe('380px');
+        // The row hero grows the card upward in flow; shifted down by the growth, the top stays.
+        expect(card().style.transform).toBe('translateY(270px)');
+        expect(hero().classList.contains('is-desc-expanded')).toBe(true);
+      });
+
+      it('stacked: the card keeps its top in flow, so no shift', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, 0, true);
+        expand();
+        expect(descEl().style.height).toBe('380px');
+        expect(card().style.transform).toBe('');
+      });
+
+      it("card bottom at the foot (Jon's mobile case): still grows by the minimum, never moves up", () => {
+        fakeOverflow(true);
+        fakeCollapsed(700, 0, true);
+        expand();
+        // G = 688 - 688 = 0 → minGrow = max(132, 210) = 210.
+        expect(descEl().style.height).toBe('320px');
+        expect(card().style.transform).toBe('');
+      });
+
+      it('gap between the bounds: fills to the viewport foot', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, -200);
+        expand();
+        // Card bottom at 488: G = 888 - 488 = 400 (270 ≤ G ≤ 540) → 110 + 400.
+        expect(descEl().style.height).toBe('510px');
+      });
+
+      it('tall gap: capped at 60vh of growth, so collapsing never needs a long scroll', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, -500);
+        expand();
+        // G = 888 - 188 = 700 > maxGrow = 540 → 110 + 540.
+        expect(descEl().style.height).toBe('650px');
+      });
+
+      it('short text shows in full (no scroller), with a line for the end spacer', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, 0, false, 150);
+        expand();
+        // full = 150 + 22 = 172 < 110 + 270.
+        expect(descEl().style.height).toBe('172px');
+        expect(card().style.transform).toBe('translateY(62px)');
+      });
+
+      it('measures once: page scroll neither re-sizes nor collapses (the card moves with the page)', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        vi.restoreAllMocks();
+        fakeCollapsed(900, -700);
+        window.dispatchEvent(new Event('scroll'));
+        fixture.detectChanges();
+        expect(descEl().classList.contains('is-expanded')).toBe(true);
+        expect(descEl().style.height).toBe('380px');
+        expect(card().style.transform).toBe('translateY(270px)');
+      });
+
+      it('a height-only resize re-sizes from the expand-time position', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        // Page scrolled since, then the viewport got shorter (mobile URL bar).
+        relayout(800, -300);
+        // Card bottom 688 at expand: G = 788 - 688 = 100 < minGrow = max(132, 240) → 110 + 240.
+        expect(descEl().style.height).toBe('350px');
+      });
+
+      it('collapse restores the exact collapsed layout (no lock, shift, height or scroll offset)', () => {
+        fakeOverflow(true);
+        fakeCollapsed(600);
+        expand();
+        descEl().scrollTop = 120;
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(hero().style.height).toBe('');
+        expect(card().style.transform).toBe('');
+        expect(descEl().style.height).toBe('');
+        expect(descEl().scrollTop).toBe(0);
+        expect(hero().classList.contains('is-desc-expanded')).toBe(false);
+      });
+
+      it('Sass: the expanded description scrolls inside; the card spills over what follows on an opaque surface', () => {
+        expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-y:\s*auto\n\s+overscroll-behavior:\s*contain/);
+        expect(heroSass).toMatch(/\.billboard\.is-desc-expanded\n\s+overflow:\s*visible\n\s+z-index:\s*3\n[\s\S]*?\.billboard__content::before\n\s+height:[^\n]+\n\s+background:\s*#0b0b0b\n/);
+        expect(heroSass).not.toMatch(/is-desc-expanded::before/);
+        expect(heroSass).toMatch(/scroll-margin-top:\s*var\(--nflx-hero-search-clearance,\s*140px\)/);
+        expect(heroSass).not.toMatch(/45vh/);
+      });
+
+      it('the chevron stays outside the scrolling description', () => {
+        fakeOverflow(true);
+        expand();
+        const button = toggle()!;
+        expect(descEl().contains(button)).toBe(false);
+        expect(button.parentElement?.classList.contains('billboard__desc-wrap')).toBe(true);
+        // A scroll container must be reachable by keyboard (arrow keys scroll it).
+        expect(descEl().getAttribute('tabindex')).toBe('0');
+      });
+    });
+
+    it('resets the description scroll offset on collapse and on slide change', () => {
+      fakeOverflow(true);
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      toggle()!.click();
+      fixture.detectChanges();
+      desc.scrollTop = 180;
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(desc.scrollTop).toBe(0);
+      desc.scrollTop = 90;
+      expect(desc.scrollTop).toBe(90);
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(component['featured']()?.id).toBe('b');
+      expect(desc.scrollTop).toBe(0);
+    });
+
+    it('re-measures overflow once web fonts are ready', async () => {
+      let resolveFonts!: () => void;
+      const ready = new Promise<void>((resolve) => (resolveFonts = resolve));
+      const original = Object.getOwnPropertyDescriptor(document, 'fonts');
+      Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+      try {
+        const late = TestBed.createComponent(HomepageHeroComponent);
+        late.componentRef.setInput('slides', [ep('a', { episodeDescription: longDesc }), ep('b'), ep('c')]);
+        late.detectChanges();
+        const lateRoot = late.nativeElement as HTMLElement;
+        const desc = lateRoot.querySelector('.billboard__desc') as HTMLElement;
+        expect(lateRoot.querySelector('button.billboard__desc-toggle')).toBeNull();
+
+        Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 100 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 240 });
+        resolveFonts();
+        await ready;
+        await Promise.resolve();
+        late.detectChanges();
+
+        expect(lateRoot.querySelector('button.billboard__desc-toggle')).toBeTruthy();
+        late.componentInstance['stopHeroCycle']();
+        late.destroy();
+      } finally {
+        if (original) {
+          Object.defineProperty(document, 'fonts', original);
+        } else {
+          delete (document as unknown as { fonts?: unknown }).fonts;
+        }
+      }
+    });
+
+    it('expands in place and pauses rotation, then collapses and resumes', () => {
+      fakeOverflow(true);
+      component['heroPaused'].set(false);
+
+      toggle()!.click();
+      fixture.detectChanges();
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      expect(desc.classList.contains('is-expanded')).toBe(true);
+      expect(desc.textContent).toBe(longDesc);
+      expect(toggle()!.querySelector('mat-icon')?.textContent?.trim()).toBe('expand_less');
+      expect(toggle()!.getAttribute('aria-label')).toBe('Collapse description');
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('true');
+      expect(component['heroPaused']()).toBe(true);
+
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(desc.classList.contains('is-expanded')).toBe(false);
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('false');
+      expect(component['heroPaused']()).toBe(false);
+    });
+
+    it('does not auto-advance while the description is expanded', () => {
+      fakeOverflow(true);
+      vi.useFakeTimers();
+      component['reduceMotion'] = false;
+      component['heroPaused'].set(false);
+      component['heroImageReady'].set(true);
+      component['heroIndex'].set(0);
+      component['lastFeaturedId'] = 'a';
+      toggle()!.click();
+      component['startHeroCycle']();
+
+      vi.advanceTimersByTime(7500 * 2 + 1000);
+      expect(component['heroIndex']()).toBe(0);
+    });
+
+    it('collapses again when the slide changes', () => {
+      fakeOverflow(true);
+      component['reduceMotion'] = true;
+      toggle()!.click();
+      fixture.detectChanges();
+      expect(component['descExpanded']()).toBe(true);
+
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(component['featured']()?.id).toBe('b');
+      expect(component['descExpanded']()).toBe(false);
+      expect(root().querySelector('.billboard__desc')?.classList.contains('is-expanded')).toBe(false);
+    });
   });
 });

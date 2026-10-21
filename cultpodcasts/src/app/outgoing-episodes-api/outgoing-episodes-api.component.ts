@@ -48,6 +48,7 @@ import {
 import { HeroCurationService } from '../hero-curation.service';
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
+import { ViewerLocaleService } from '../viewer-locale';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -104,6 +105,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
@@ -249,7 +251,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   }
 
   languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode);
+    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   showHeroPromote(episode: ApiEpisode): boolean {

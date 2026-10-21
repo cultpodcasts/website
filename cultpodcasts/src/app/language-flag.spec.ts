@@ -41,6 +41,44 @@ describe('language-flag', () => {
     expect(yiddish?.label).toContain('Yiddish');
   });
 
+  it('maps Kikuyu to Kenya with a readable label', () => {
+    // Arrange
+    const code = 'ki';
+
+    // Act
+    const badge = languageFlagBadge(code);
+
+    // Assert
+    expect(badge?.flag).toBe('🇰🇪');
+    expect(badge?.isCode).toBe(false);
+    expect(badge?.label).toBe('Kikuyu (Gikuyu)');
+  });
+
+  it('labels a language without a country flag by name, not just its code', () => {
+    // Arrange
+    const code = 'ti';
+
+    // Act
+    const badge = languageFlagBadge(code);
+
+    // Assert
+    expect(badge?.flag).toBe('TI');
+    expect(badge?.isCode).toBe(true);
+    expect(badge?.label).toBe('Tigrinya (ትግርኛ)');
+  });
+
+  it('labels the badge in the viewer language', () => {
+    // Arrange
+    const episode = { language: 'fr' };
+
+    // Act
+    const badge = languageFlagBadgeForEpisode(episode, 'es');
+
+    // Assert
+    expect(badge?.flag).toBe('🇫🇷');
+    expect(badge?.label).toBe('Francés (Français)');
+  });
+
   it('omits English and empty codes', () => {
     expect(languageFlagBadge('en')).toBeUndefined();
     expect(languageFlagBadge('en-GB')).toBeUndefined();

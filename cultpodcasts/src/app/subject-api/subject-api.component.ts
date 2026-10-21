@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
@@ -32,6 +33,20 @@ import {
   shouldShowLanguageSelector
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
+import {
+  LANG_PARAM,
+  SHOW_PARAM,
+  decodeLanguageParam,
+  encodeLanguageParam,
+  keepOffered,
+  readParamList,
+  routeStateKey,
+  buildFilterFragment,
+  parseFilterFragment,
+  writeUrlFragment,
+  FragmentHistory
+} from '../browse-filter-params';
+import { nextLanguageChipValues } from '../language-chip-click';
 import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
@@ -40,6 +55,7 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { PlayerService } from '../player.service';
+import { ViewerLocaleService } from '../viewer-locale';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -75,6 +91,7 @@ export class SubjectApiComponent {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected auth = inject(AuthServiceWrapper);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
@@ -85,12 +102,22 @@ export class SubjectApiComponent {
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
   protected selectedLanguageValues = signal<string[]>([ENGLISH_LANGUAGE_VALUE]);
+  /** False while the language filter is on its default; the first chip click then starts afresh. */
+  private languageTouched = false;
+  /** A `#lang=` selection was just restored; drop codes the subject does not offer. */
+  private pruneRestoredLanguages = false;
+  /** Shows from the URL, applied once the subject-wide show facets are known. */
+  private pendingShows: string[] = [];
+  private routeParams: Params = {};
+  private routeQueryParams: Params = {};
+  private routeKey: string | null = null;
   protected languageOptions = signal<SearchResultFacet[]>([]);
   protected englishLanguageCount = signal<number>(0);
   readonly englishLanguageValue = ENGLISH_LANGUAGE_VALUE;
   readonly allLanguagesValue = ALL_LANGUAGES_VALUE;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
   protected facets = signal<SearchResultsFacets>({});
   protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
@@ -115,14 +142,24 @@ export class SubjectApiComponent {
 
   populatePage() {
     combineLatest(
-      [this.route.params, this.route.queryParams],
-      (params: Params, queryParams: Params) => ({
+      [this.route.params, this.route.queryParams, this.route.fragment],
+      (params: Params, queryParams: Params, fragment: string | null) => ({
         params,
         queryParams,
+        fragment,
       })
     ).pipe(
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
+    ).subscribe((res: { params: Params; queryParams: Params; fragment: string | null }) => {
+      const { params, queryParams } = res;
+      const key = routeStateKey(params, queryParams, res.fragment);
+      if (key === this.routeKey) {
+        // This page wrote the URL (filter chip click); state and results are current.
+        return;
+      }
+      this.routeKey = key;
+      this.routeParams = params;
+      this.routeQueryParams = queryParams;
       const navigation = this.router.currentNavigation();
       let initial = true;
       if (navigation) {
@@ -133,7 +170,9 @@ export class SubjectApiComponent {
           this.podcasts.set(facetState.podcasts!);
         }
       }
-      const { params, queryParams } = res;
+      if (initial) {
+        this.restoreFiltersFromUrl(parseFilterFragment(res.fragment));
+      }
       this.subjectName.set(params["subjectName"]);
       this.isLoading.set(true);
       this.query.set(params["query"] ?? "");
@@ -255,17 +294,14 @@ export class SubjectApiComponent {
           orderby: sort
         }).subscribe({
           next: facetData => {
+            if (this.applyPendingShows(facetData.facets)) {
+              return;
+            }
             const langFacets = facetData.facets.lang ?? [];
             const scopedTotal = facetData.metadata.get("count") ?? 0;
             // Default English (or any specific language) with 0 hits while other
             // language facets have episodes → widen to All before the results query.
-            const nextChips = reconcileLanguageChipsForPodcasts(
-              this.languageSelection(),
-              availableLanguageChipValues(scopedTotal, langFacets)
-            );
-            if (nextChips) {
-              this.setLanguageSelection(nextChips);
-            }
+            this.reconcileLanguageSelection(availableLanguageChipValues(scopedTotal, langFacets));
             runResults(facetData.facets, scopedTotal);
           },
           error: (e) => {
@@ -300,7 +336,7 @@ export class SubjectApiComponent {
         params[sortParam] = sort;
       }
     }
-    this.router.navigate([url], { queryParams: params });
+    this.router.navigate([url], { queryParams: params, fragment: buildFilterFragment(this.filterParams()) ?? undefined });
   }
 
   search() {
@@ -355,9 +391,9 @@ export class SubjectApiComponent {
     if (this.podcasts().length === 0) {
       return;
     }
-    this.podcasts.set([]);
-    this.podcastFilter = '';
+    this.setPodcasts([]);
     this.page = 1;
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
@@ -366,19 +402,24 @@ export class SubjectApiComponent {
     const next = current.includes(value)
       ? current.filter((p) => p !== value)
       : [...current, value];
-    this.podcasts.set(next);
-    this.podcastFilter = next.length === 0
-      ? ''
-      : ` and search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+    this.setPodcasts(next);
     this.page = 1;
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
+  /**
+   * Clear filters keeps its meaning: every show, every language (`?lang=all`,
+   * so a bookmark matches). From All the next language click is just that
+   * language, the same fresh start as from the untouched default.
+   */
   clearAllFilters(): void {
-    this.podcasts.set([]);
-    this.podcastFilter = '';
+    this.setPodcasts([]);
     this.setLanguageSelection([ALL_LANGUAGES_VALUE]);
+    this.languageTouched = true;
+    this.pruneRestoredLanguages = false;
     this.page = 1;
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: false, thenSearch: true });
   }
 
@@ -417,13 +458,7 @@ export class SubjectApiComponent {
         this.englishLanguageCount.set(englishFacetCount(scopedTotal, langFacets));
 
         if (options?.reconcileSelection) {
-          const nextChips = reconcileLanguageChipsForPodcasts(
-            this.languageSelection(),
-            availableLanguageChipValues(scopedTotal, langFacets)
-          );
-          if (nextChips) {
-            this.setLanguageSelection(nextChips);
-          }
+          this.reconcileLanguageSelection(availableLanguageChipValues(scopedTotal, langFacets));
         }
 
         if (options?.thenSearch) {
@@ -445,22 +480,42 @@ export class SubjectApiComponent {
   }
 
   selectLanguage(value: string): void {
+    this.languageTouched = true;
     this.applyLanguageSelection([value]);
   }
 
+  /** First click on the untouched default picks just that language; later clicks add/remove. */
   toggleLanguage(value: string): void {
-    let selected = this.selectedLanguageValues().filter(
-      (v) => v !== ALL_LANGUAGES_VALUE
-    );
-    if (selected.includes(value)) {
-      selected = selected.filter((v) => v !== value);
-    } else {
-      selected = [...selected, value];
-    }
-    if (selected.length === 0) {
-      selected = [ALL_LANGUAGES_VALUE];
-    }
+    const selected = nextLanguageChipValues(this.selectedLanguageValues(), value, this.languageTouched);
+    this.languageTouched = true;
     this.applyLanguageSelection(selected);
+  }
+
+  /**
+   * Fit the language selection to the chips on offer and keep the URL in step.
+   * A selection restored from the URL first drops languages with no chip here
+   * (once, on the first facets after restore). Then, if nothing selected has
+   * episodes, widen to All.
+   */
+  private reconcileLanguageSelection(available: string[]): void {
+    let changed = false;
+    if (this.pruneRestoredLanguages) {
+      this.pruneRestoredLanguages = false;
+      const selected = this.selectedLanguageValues();
+      const kept = selected.filter(value => value === ALL_LANGUAGES_VALUE || available.includes(value));
+      if (kept.length !== selected.length) {
+        this.setLanguageSelection(kept.length ? kept : [ALL_LANGUAGES_VALUE]);
+        changed = true;
+      }
+    }
+    const nextChips = reconcileLanguageChipsForPodcasts(this.languageSelection(), available);
+    if (nextChips) {
+      this.setLanguageSelection(nextChips);
+      changed = true;
+    }
+    if (changed) {
+      this.syncFilterUrl();
+    }
   }
 
   private setLanguageSelection(selected: string[]): void {
@@ -469,13 +524,15 @@ export class SubjectApiComponent {
   }
 
   private applyLanguageSelection(selected: string[]): void {
+    this.pruneRestoredLanguages = false;
     this.setLanguageSelection(selected);
     this.page = 1;
+    this.syncFilterUrl('push');
     this.execSearch(true, false);
   }
 
   languageDisplayName(code: string): string {
-    return languageLabel(code);
+    return languageLabel(code, this.viewerLocale());
   }
 
   protected showLanguageSelector = computed(() =>
@@ -514,5 +571,77 @@ export class SubjectApiComponent {
 
   isQueuedId(id: string): boolean {
     return this.playerService.isQueuedId(id);
+  }
+
+  private setPodcasts(next: string[]): void {
+    this.podcasts.set(next);
+    this.podcastFilter = next.length === 0
+      ? ''
+      : ` and search.in(${playableSeriesField(this.legacyNames)}, '${next.map((p) => p.replaceAll("'", "''")).join('£')}', '£')`;
+  }
+
+  /** Language chips and shows from `#lang=` / `#show=`; anything missing is the default. */
+  private restoreFiltersFromUrl(filters: Params): void {
+    const languages = decodeLanguageParam(filters[LANG_PARAM]);
+    this.setLanguageSelection(languages ?? [ENGLISH_LANGUAGE_VALUE]);
+    // A language state from the URL is a choice already made, so chips toggle.
+    this.languageTouched = languages !== null;
+    this.pruneRestoredLanguages = languages !== null;
+    this.setPodcasts([]);
+    this.pendingShows = readParamList(filters, SHOW_PARAM);
+  }
+
+  /**
+   * Applies shows restored from the URL against the subject-wide show facets.
+   * Show chips stay subject-wide; language facets are re-scoped to the shows.
+   * Unknown shows are dropped and the URL tidied. Returns true when it took
+   * over loading the page.
+   */
+  private applyPendingShows(facets: SearchResultsFacets): boolean {
+    if (this.pendingShows.length === 0) {
+      return false;
+    }
+    const requested = this.pendingShows;
+    this.pendingShows = [];
+    const showFacets = facets.seriesName ?? facets.podcastName;
+    const shows = keepOffered(requested, showFacets);
+    if (shows.length === 0) {
+      this.syncFilterUrl();
+      return false;
+    }
+    this.facets.set({
+      podcastName: showFacets,
+      subjects: facets.subjects?.filter(x => !x.value.startsWith("_")),
+      lang: facets.lang
+    });
+    this.setPodcasts(shows);
+    if (shows.length !== requested.length) {
+      this.syncFilterUrl();
+    }
+    this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
+    return true;
+  }
+
+  private filterParams(): Record<string, string | string[] | null> {
+    return {
+      [SHOW_PARAM]: this.podcasts(),
+      [LANG_PARAM]: this.languageTouched ? encodeLanguageParam(this.selectedLanguageValues()) : null,
+    };
+  }
+
+  /**
+   * Mirror the filter chips into the URL fragment (path and query kept). A
+   * user's filter change pushes a history entry so Back/Forward step through
+   * selections (populatePage restores each from its fragment); restoring or
+   * tidying the URL replaces. Unchanged state writes nothing.
+   */
+  private syncFilterUrl(history: FragmentHistory = 'replace'): void {
+    const fragment = buildFilterFragment(this.filterParams());
+    const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
+    if (key === this.routeKey) {
+      return;
+    }
+    this.routeKey = key;
+    writeUrlFragment(this.router, this.route, this.location, fragment, history);
   }
 }

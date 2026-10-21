@@ -23,6 +23,7 @@ import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { displayCatalogName } from '../display-catalog-name';
+import { ViewerLocaleService } from '../viewer-locale';
 
 interface YouTubePlayerLike {
   destroy(): void;
@@ -70,6 +71,7 @@ const DOCK_HEIGHT_CSS_VAR = '--flix-dock-height';
 })
 export class EpisodePlayerComponent {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly playerService = inject(PlayerService);
@@ -132,7 +134,7 @@ export class EpisodePlayerComponent {
   });
 
   protected readonly languageFlag = computed(() =>
-    languageFlagBadgeForEpisode(this.episode() ?? {})
+    languageFlagBadgeForEpisode(this.episode() ?? {}, this.viewerLocale())
   );
 
   protected readonly displayCatalogName = displayCatalogName;

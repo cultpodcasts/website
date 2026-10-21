@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { AppComponent } from './app.component';
 import { routes } from './app.routes';
+import { homeStickTopPx } from './home-chrome-dock';
 import { isAuthClientOnlyPath } from './auth-client-only-path';
 import { ContentComponent } from './content/content.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
@@ -136,7 +137,9 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(appHtml).toMatch(/fillHeaderSearchGap/);
     const proto = AppComponent.prototype as unknown as Record<string, unknown>;
     expect(typeof proto['layoutDroppedSearch']).toBe('function');
-    expect(typeof proto['homeStickTop']).toBe('function');
+    // Stick line comes from CSS vars via home-chrome-dock (CHROME-DOCK-012), not measured heights.
+    expect(proto['homeStickTop']).toBeUndefined();
+    expect(homeStickTopPx({ barHeight: 58, searchHeight: 48 })).toBe(5);
     expect(typeof proto['homePinAtScrollY']).toBe('function');
     expect(typeof proto['clearDockedSearchLayout']).toBe('function');
     expect(proto['layoutHomeDockedSearch']).toBeUndefined();

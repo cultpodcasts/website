@@ -91,15 +91,20 @@ export function buildChromeSearchLayoutDocument(shell: ChromeSearchShell = "home
   const isBrowse = body.classList.contains("browse-shell");
   let docked = isBrowse;
 
-  function stickTop() {
-    const barH = Math.max(bar.getBoundingClientRect().height, 52);
-    const searchH = Math.min(search.offsetHeight || 48, barH - 8);
-    return Math.max(0, (barH - searchH) / 2);
+  // Mirrors src/app/home-chrome-dock.ts (CHROME-DOCK-012): one pin from the CSS
+  // variables for both dock and undock, with hysteresis between.
+  function cssPx(name, fallback) {
+    const value = parseFloat(getComputedStyle(body).getPropertyValue(name));
+    return Number.isFinite(value) ? value : fallback;
   }
 
   function pinAtScrollY() {
-    const gap = parseFloat(getComputedStyle(body).getPropertyValue("--site-chrome-search-gap")) || 12;
-    return bar.getBoundingClientRect().height + gap - stickTop();
+    const barH = cssPx("--site-chrome-bar-h", 58);
+    const gap = cssPx("--site-chrome-search-gap", 12);
+    const searchH = cssPx("--nflx-search-h", 48);
+    const slot = search.parentElement;
+    const slotTop = slot.getBoundingClientRect().top + window.scrollY;
+    return slotTop + barH + gap - Math.max(0, (barH - searchH) / 2);
   }
 
   function setDocked(next) {
@@ -112,14 +117,10 @@ export function buildChromeSearchLayoutDocument(shell: ChromeSearchShell = "home
       return;
     }
     const y = window.scrollY;
-    if (docked) {
-      if (y < pinAtScrollY() - 2) {
-        setDocked(false);
-      }
-      return;
-    }
-    if (search.getBoundingClientRect().top <= stickTop() + 1) {
-      setDocked(true);
+    const pin = pinAtScrollY();
+    const next = docked ? y >= pin - 3 : y >= pin - 1;
+    if (next !== docked) {
+      setDocked(next);
     }
   }
 

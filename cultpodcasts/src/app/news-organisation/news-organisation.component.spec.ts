@@ -18,7 +18,7 @@ describe('NewsOrganisationComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { params: of({ slug: 'Desk' }), snapshot: { params: { slug: 'Desk' } } } },
+        { provide: ActivatedRoute, useValue: { params: of({ slug: 'Desk' }), fragment: of(null), snapshot: { params: { slug: 'Desk' }, queryParams: {}, fragment: null } } },
         {
           provide: ODataService,
           useValue: {

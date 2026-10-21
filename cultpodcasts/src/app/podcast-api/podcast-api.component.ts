@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
-import { Observable } from 'rxjs';
+import { Observable, skip } from 'rxjs';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
@@ -40,6 +41,7 @@ import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
+import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, subjectsFragment, writeUrlFragment } from '../browse-filter-params';
 import { displayCatalogName } from '../display-catalog-name';
 import { podcastPageAttachAfterDialog } from '../submit-ingest-ux';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
@@ -88,11 +90,18 @@ export class PodcastApiComponent {
   protected readonly displayCatalogName = displayCatalogName;
   protected subjects = signal<string[]>([]);
   private subjectsFilter: string = "";
+  /** Subject chips from the URL fragment, applied once the podcast-wide subject facets are known. */
+  private pendingSubjects: string[] = [];
+  /** The fragment last read from or written to the URL; the route snapshot lags a pending navigation. */
+  private urlFragment: string | null = null;
+  /** Path and query (no fragment) of the loaded page, to tell Back/Forward between filters from a new page. */
+  private pathKey = '';
   protected isSubsequentLoading = signal<boolean>(false);
   private scrollSubscribed = false;
   private destroyRef = inject(DestroyRef);
   private readonly untilDestroyed = takeUntilDestroyed() as <T>(source: Observable<T>) => Observable<T>;
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
@@ -121,6 +130,7 @@ export class PodcastApiComponent {
     ).pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: { params: Params; queryParams: Params }) => {
+      this.pathKey = routePathKey(res.params, res.queryParams);
       const navigation = this.router.currentNavigation();
       let initial = true;
       if (navigation) {
@@ -130,6 +140,12 @@ export class PodcastApiComponent {
           this.facets.set(facetState.searchResultsFacets);
           this.subjects.set(facetState.subjects!);
         }
+      }
+      this.urlFragment = this.route.snapshot?.fragment || null;
+      if (initial) {
+        // Start from podcast-wide facets; chips come back from the fragment.
+        this.setSubjects([]);
+        this.pendingSubjects = readSubjectsFromFragment(this.urlFragment);
       }
       const { params, queryParams } = res;
       this.podcastName.set(params["podcastName"] ?? "");
@@ -157,6 +173,32 @@ export class PodcastApiComponent {
       this.siteService.setFilter(this.filter);
       this.execSearch(initial, initial);
     });
+    // skip(1): the current fragment is the page load's; later ones are Back/Forward or echoes.
+    this.route.fragment.pipe(
+      skip(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(fragment => this.restoreFromFragment(fragment || null));
+  }
+
+  /**
+   * Back/Forward between filter states on this page: the path and query are
+   * unchanged and the fragment is not the one this page last wrote, so select
+   * the chips it names and search again, as on first load. A fragment that
+   * arrives with a new path or query is left to populatePage.
+   */
+  private restoreFromFragment(fragment: string | null): void {
+    if (fragment === this.urlFragment) {
+      return;
+    }
+    const snapshot = this.route.snapshot;
+    if (!snapshot || routePathKey(snapshot.params, snapshot.queryParams) !== this.pathKey) {
+      return;
+    }
+    this.urlFragment = fragment;
+    this.setSubjects([]);
+    this.pendingSubjects = readSubjectsFromFragment(fragment);
+    this.page = 1;
+    this.execSearch(true, true);
   }
 
   execSearch(reset: boolean, subsequent: boolean) {
@@ -182,6 +224,9 @@ export class PodcastApiComponent {
         orderby: sort
       }).subscribe({
         next: data => {
+          if (subsequent && this.applyPendingSubjects(data.facets)) {
+            return;
+          }
           const count = data.metadata.get("count");
           this.count.set(count);
           if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -292,7 +337,7 @@ export class PodcastApiComponent {
         params[sortParam] = sort;
       }
     }
-    this.router.navigate([url], { queryParams: params });
+    this.router.navigate([url], { queryParams: params, fragment: subjectsFragment(this.subjects()) ?? undefined });
   }
 
   search() {
@@ -448,9 +493,9 @@ export class PodcastApiComponent {
     if (this.subjects().length === 0) {
       return;
     }
-    this.subjects.set([]);
-    this.subjectsFilter = '';
+    this.setSubjects([]);
     this.page = 1;
+    this.syncFilterUrl('push');
     this.execSearch(true, false);
   }
 
@@ -459,10 +504,56 @@ export class PodcastApiComponent {
     const next = current.includes(value)
       ? current.filter((s) => s !== value)
       : [...current, value];
+    this.setSubjects(next);
+    this.page = 1;
+    this.syncFilterUrl('push');
+    this.execSearch(true, false);
+  }
+
+  private setSubjects(next: string[]): void {
     this.subjects.set(next);
     this.subjectsFilter = subjectsAnySearchIn(next);
+  }
+
+  /**
+   * After the unfiltered first load, select the subject chips from the URL that
+   * this podcast offers (unknown ones are dropped and the URL tidied) and search
+   * again. Returns true when it started that search.
+   */
+  private applyPendingSubjects(facets: SearchResultsFacets): boolean {
+    if (this.pendingSubjects.length === 0) {
+      return false;
+    }
+    const requested = this.pendingSubjects;
+    this.pendingSubjects = [];
+    const offered = facets.subjects?.filter(x => !x.value.startsWith("_"));
+    const subjects = keepOffered(requested, offered);
+    if (subjects.length !== requested.length) {
+      this.setSubjects(subjects);
+      this.syncFilterUrl();
+    }
+    if (subjects.length === 0) {
+      return false;
+    }
+    this.facets.set({ podcastName: facets.podcastName, subjects: offered });
+    this.setSubjects(subjects);
     this.page = 1;
     this.execSearch(true, false);
+    return true;
+  }
+
+  /**
+   * Mirror the subject chips into the URL fragment (no scroll). A chip click
+   * pushes a history entry so Back/Forward step through selections; tidying
+   * the URL replaces. Unchanged state writes nothing.
+   */
+  private syncFilterUrl(history: FragmentHistory = 'replace'): void {
+    const fragment = subjectsFragment(this.subjects());
+    if (this.urlFragment === fragment) {
+      return;
+    }
+    this.urlFragment = fragment;
+    writeUrlFragment(this.router, this.route, this.location, fragment, history);
   }
 
   private adoptLegacyField(error: unknown): boolean {

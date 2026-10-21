@@ -1,3 +1,4 @@
+import { EpisodeLinksComponent } from '../episode-links/episode-links.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,6 +12,7 @@ import {
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -25,7 +27,7 @@ import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
-import { formatSearchDescription } from '../search-description';
+import { ViewerLocaleService } from '../viewer-locale';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -35,7 +37,7 @@ export interface HomepageHeroSlide extends HomepageEpisode {
 
 @Component({
   selector: 'app-homepage-hero',
-  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, EpisodeLinksComponent],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +66,7 @@ export class HomepageHeroComponent {
   readonly play = output<SearchDisplayEpisode>();
 
   private readonly playerService = inject(PlayerService);
+  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -89,6 +92,46 @@ export class HomepageHeroComponent {
   protected readonly heroDotsOverflowStart = signal(false);
   protected readonly heroDotsOverflowEnd = signal(false);
   private readonly heroDotsViewport = viewChild<ElementRef<HTMLElement>>('heroDotsViewport');
+  /**
+   * `aria-controls` target for the description expander. One hero per page, so a
+   * constant keeps SSR/prerender and client markup identical.
+   */
+  protected readonly descId = 'billboard-desc';
+  /** Description shown in full (clamp removed). Collapses again on slide change. */
+  protected readonly descExpanded = signal(false);
+  /** Collapsed description is cut by the per-layout clamp (browser-measured; false on the server). */
+  protected readonly descOverflows = signal(false);
+  protected readonly showDescToggle = computed(() => this.descOverflows() || this.descExpanded());
+  private readonly heroDesc = viewChild<ElementRef<HTMLElement>>('heroDesc');
+  /**
+   * Wide only (HERO-WID-001): collapsed desc lines that keep the docked card inside the
+   * hero band, so the hero does not grow and the card stays bottom-anchored. Null = the
+   * Sass default (5). Never below {@link HomepageHeroComponent.wideMinDescLines}.
+   */
+  protected readonly descFitLines = signal<number | null>(null);
+  private static readonly wideMinDescLines = 2;
+  /**
+   * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
+   * inline) and the card grows downward from its collapsed top, overlaying what follows the hero.
+   * `descPx` is the description's height (it scrolls inside past that) and `shiftPx` keeps the
+   * card's top where it was (the wide card is bottom-anchored in flow). Null while collapsed.
+   */
+  protected readonly descLayout = signal<{ heroH: number; descPx: number; shiftPx: number } | null>(null);
+  /** Expanded: the description's scrollbar width, so the pinned chevron sits clear of it. */
+  protected readonly descScrollbarPx = signal(0);
+  /**
+   * Collapsed geometry captured at expand time, including where the card's bottom was in the
+   * viewport then (`cardBottomVp`): the size is measured once, so page scroll just moves the
+   * expanded card with the page (no re-fit, no collapse); only a height resize re-sizes it.
+   */
+  private descExpandMetrics: {
+    heroH: number; cardBottomVp: number; descH: number; fullH: number; lineH: number; width: number;
+    bottomAnchored: boolean;
+  } | null = null;
+  /** HERO-DSC-002 growth bounds: at least max(6 lines, 30vh), at most 60vh, past the collapsed text. */
+  private static readonly descMinGrowLines = 6;
+  private static readonly descMinGrowVh = 0.3;
+  private static readonly descMaxGrowVh = 0.6;
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -112,8 +155,12 @@ export class HomepageHeroComponent {
     return ep ? episodeImageUrl(ep)?.toString() : undefined;
   });
 
+  /**
+   * Full description from `/homepage` (not the search-card formatter): the
+   * hero's 3-line CSS clamp (HERO-SCR-002) decides how much shows.
+   */
   protected readonly featuredDesc = computed(() =>
-    formatSearchDescription(this.featured()?.episodeDescription)
+    this.featured()?.episodeDescription?.trim() ?? ''
   );
 
   protected readonly hasFeaturedDesc = computed(() => this.featuredDesc().trim().length > 0);
@@ -174,6 +221,18 @@ export class HomepageHeroComponent {
     this.resizeFrame = requestAnimationFrame(() => {
       this.resizeFrame = 0;
       this.scrollActiveHeroDotIntoView(this.heroIndex(), 'auto');
+      // The clamp is per layout (5/4/3 lines), so a resize can add or remove overflow.
+      this.measureDescOverflow();
+      // Expanded: a width change reflows the whole card (maybe the layout), so collapse
+      // back to the measured state; a height-only change (mobile URL bar) just re-fits.
+      if (this.descExpandMetrics) {
+        if (window.innerWidth !== this.descExpandMetrics.width) {
+          this.collapseDesc();
+          this.syncHeroPaused();
+        } else {
+          this.layoutExpandedDesc();
+        }
+      }
     });
   };
 
@@ -209,6 +268,35 @@ export class HomepageHeroComponent {
   };
 
   constructor() {
+    // Collapse the description whenever the featured slide changes.
+    let descSlideId: string | undefined;
+    effect(() => {
+      const id = this.featured()?.id;
+      if (id === descSlideId) {
+        return;
+      }
+      descSlideId = id;
+      untracked(() => {
+        // A previous slide's description must not carry a scroll offset into this one.
+        this.resetDescScroll();
+        if (this.descExpanded()) {
+          this.collapseDesc();
+          this.syncHeroPaused();
+        }
+      });
+    });
+
+    // Re-measure after the slide, its description or the expanded state renders. The wide
+    // fit (HERO-WID-001) depends on the whole card (title lines, chips), not just the text.
+    afterRenderEffect(() => {
+      this.featured();
+      this.featuredDesc();
+      this.descExpanded();
+      this.descFitLines();
+      this.heroDesc();
+      this.measureDescOverflow();
+    });
+
     afterRenderEffect(() => {
       const index = this.heroIndex();
       const slideCount = this.slides().length;
@@ -286,7 +374,15 @@ export class HomepageHeroComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResizeEvent, { passive: true });
+      // Web fonts swapping in after first paint change how the description wraps.
+      let destroyed = false;
+      document.fonts?.ready.then(() => {
+        if (!destroyed) {
+          this.measureDescOverflow();
+        }
+      });
       this.destroyRef.onDestroy(() => {
+        destroyed = true;
         this.stopHeroCycle();
         this.clearHeroContentTransition();
         this.clearHeroImageWait();
@@ -332,7 +428,7 @@ export class HomepageHeroComponent {
   }
 
   protected languageFlag(episode: HomepageEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode);
+    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   playEpisode(episode: HomepageEpisode | SearchDisplayEpisode, event?: Event): void {
@@ -506,7 +602,155 @@ export class HomepageHeroComponent {
       this.heroPaused.set(true);
       return;
     }
-    this.heroPaused.set(this.pointerInside || this.focusInside);
+    // An expanded description is being read: hold the slide until it is collapsed.
+    this.heroPaused.set(this.pointerInside || this.focusInside || this.descExpanded());
+  }
+
+  protected toggleDesc(event?: Event): void {
+    event?.stopPropagation();
+    if (this.descExpanded()) {
+      this.collapseDesc();
+    } else {
+      this.captureDescExpandMetrics();
+      this.descExpanded.set(true);
+      this.layoutExpandedDesc();
+    }
+    this.syncHeroPaused();
+  }
+
+  /** Back to the exact collapsed layout: no lock, shift or height, first line at the top. */
+  private collapseDesc(): void {
+    this.descExpanded.set(false);
+    this.descExpandMetrics = null;
+    this.descLayout.set(null);
+    this.descScrollbarPx.set(0);
+    // A scrolled box re-clamped at its old offset showed blank space past the text.
+    this.resetDescScroll();
+  }
+
+  /** Browser only, before the expanded state renders: measure the collapsed card. */
+  private captureDescExpandMetrics(): void {
+    const desc = this.heroDesc()?.nativeElement;
+    const card = desc?.closest<HTMLElement>('.billboard__content');
+    const hero = desc?.closest<HTMLElement>('.billboard');
+    if (!isPlatformBrowser(this.platformId) || !desc || !card || !hero) {
+      return;
+    }
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const heroBox = hero.getBoundingClientRect();
+    const cardBox = card.getBoundingClientRect();
+    const styles = getComputedStyle(hero);
+    const descStyles = getComputedStyle(desc);
+    // The description's content box: the expanded height is set on it.
+    const descH = px(descStyles.height) || desc.clientHeight;
+    const lineH = px(descStyles.lineHeight);
+    const padY = px(descStyles.paddingTop) + px(descStyles.paddingBottom);
+    this.descExpandMetrics = {
+      heroH: heroBox.height,
+      cardBottomVp: cardBox.bottom,
+      descH,
+      // Whole text (the clamped box still reports it as scrollHeight), plus a line for the
+      // expanded end spacer that keeps the last line clear of the chevron.
+      fullH: Math.max(descH, desc.scrollHeight - padY + lineH),
+      lineH,
+      width: window.innerWidth,
+      // Wide: the card sits at the flex-end of a row hero, so a taller card grows upward in
+      // flow. Stacked (column) layouts keep its top and grow it downward.
+      bottomAnchored: styles.flexDirection !== 'column',
+    };
+  }
+
+  /**
+   * Expanded size (HERO-DSC-002), measured once at expand time (and on resize): the card's top
+   * never moves; the description grows by the gap G from the card's bottom to the viewport foot
+   * (less a 12px margin), but always by at least max(6 lines, 30vh), so it grows noticeably even
+   * at the foot, and by at most 60vh, so the chevron is never a long scroll away. Short text just
+   * shows in full; the rest scrolls inside. Hero-relative, so page scroll carries it along.
+   */
+  private layoutExpandedDesc(): void {
+    const metrics = this.descExpandMetrics;
+    if (!metrics) {
+      return;
+    }
+    const viewportH = window.visualViewport?.height ?? window.innerHeight;
+    const gap = viewportH - 12 - metrics.cardBottomVp;
+    const minGrow = Math.max(HomepageHeroComponent.descMinGrowLines * metrics.lineH, HomepageHeroComponent.descMinGrowVh * viewportH);
+    const maxGrow = HomepageHeroComponent.descMaxGrowVh * viewportH;
+    const grow = Math.min(Math.max(minGrow, gap), maxGrow);
+    const descPx = Math.floor(Math.min(metrics.fullH, metrics.descH + grow));
+    // Wide: the card is bottom-anchored in flow and would grow upward; shift it back down.
+    const shiftPx = metrics.bottomAnchored ? Math.round(descPx - metrics.descH) : 0;
+    this.descLayout.set({ heroH: metrics.heroH, descPx, shiftPx });
+  }
+
+  private resetDescScroll(): void {
+    const element = this.heroDesc()?.nativeElement;
+    if (element) {
+      element.scrollTop = 0;
+    }
+  }
+
+  /**
+   * Browser only: does the collapsed description overflow its line clamp?
+   * While expanded the clamp is off, so keep the current answer (the toggle
+   * must stay to collapse again).
+   */
+  private measureDescOverflow(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const element = this.heroDesc()?.nativeElement;
+    if (!element) {
+      this.descOverflows.set(false);
+      return;
+    }
+    if (this.descExpanded()) {
+      // The pinned chevron sits clear of the description's own scrollbar.
+      this.descScrollbarPx.set(Math.max(0, element.offsetWidth - element.clientWidth));
+      return;
+    }
+    this.fitWideDesc(element);
+    this.descOverflows.set(element.scrollHeight - element.clientHeight > 1);
+  }
+
+  /**
+   * Wide (docked card at the bottom of the hero, HERO-WID-001): the hero is a fixed band
+   * (`min-height`) with the card at its flex-end. A tall card (3-line title + 5 desc lines +
+   * chips) used to grow the hero instead, pushing its bottom (card, pager)
+   * down and below the fold. Collapsed: pick the most lines (5 → 2) that still fit the band.
+   * Expanded follows HERO-DSC-002 (band kept, card grows down from its top, desc scrolls
+   * inside); collapsing returns to the band. Stacked layouts: no override.
+   */
+  private fitWideDesc(desc: HTMLElement): void {
+    const billboard = desc.closest<HTMLElement>('.billboard');
+    const card = desc.closest<HTMLElement>('.billboard__content');
+    const wide = typeof window.matchMedia === 'function'
+      && window.matchMedia('(min-width: 1281px)').matches;
+    if (!wide || !billboard || !card) {
+      this.descFitLines.set(null);
+      return;
+    }
+    const hero = getComputedStyle(billboard);
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const naturalLines = Math.round(px(hero.getPropertyValue('--hero-desc-lines'))) || 5;
+    const lineHeight = px(getComputedStyle(desc).lineHeight);
+    if (lineHeight <= 0) {
+      return;
+    }
+    const padding = px(hero.paddingTop) + px(hero.paddingBottom);
+    const band = px(hero.minHeight) - padding;
+    // The card hangs past the bottom padding by its negative margin (docked overhang).
+    const cardOuter = (height: number) => height + px(getComputedStyle(card).marginBottom);
+    const textLines = Math.round(desc.scrollHeight / lineHeight);
+    // Card height without the description. The expander sits inline on the last
+    // visible line (HERO-DSC-001), so it adds no height of its own.
+    const rest = card.offsetHeight - desc.clientHeight;
+    const needFor = (lines: number) => cardOuter(rest + Math.min(textLines, lines) * lineHeight);
+    let lines = naturalLines;
+    while (lines > HomepageHeroComponent.wideMinDescLines && needFor(lines) > band + 0.5) {
+      lines--;
+    }
+    this.descFitLines.set(lines === naturalLines ? null : lines);
   }
 
   private scrollActiveHeroDotIntoView(

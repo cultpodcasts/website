@@ -25,6 +25,10 @@ export class EpisodeLinksComponent {
   @Input()
   episode: HomepageEpisode | SearchResult | undefined;
 
+  /** Episode page: trailing share button. The homepage hero shows the service links only. */
+  @Input()
+  showShare = true;
+
   get serviceLinks() {
     if (!this.episode) {
       return [];

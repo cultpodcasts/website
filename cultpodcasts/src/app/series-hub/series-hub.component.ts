@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from "@angular/core";
+import { Location } from "@angular/common";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { skip } from "rxjs";
 import { ScrollDispatcher } from "@angular/cdk/scrolling";
 import { ODataService } from "../odata.service";
 import { environment } from "../../environments/environment";
@@ -15,6 +17,8 @@ import { startEpisodePlayback } from "../episode-embed";
 import { displayCatalogName } from "../display-catalog-name";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
+import { ActivatedRoute, Router } from "@angular/router";
+import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, subjectsFragment, writeUrlFragment } from "../browse-filter-params";
 
 @Component({
   selector: "app-series-hub",
@@ -49,7 +53,16 @@ export class SeriesHubComponent {
   private readonly scrollDispatcher = inject(ScrollDispatcher);
   private readonly infiniteScrollStrategy = inject(InfiniteScrollStrategy);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
   private legacyNames = false;
+  /** Subject chips from the URL fragment, applied once the hub-wide subject facets are known. */
+  private pendingSubjects: string[] = [];
+  /** The fragment last read from or written to the URL; the route snapshot lags a pending navigation. */
+  private urlFragment: string | null = null;
+  /** Path and query (no fragment) of the loaded hub, to tell Back/Forward between filters from a new page. */
+  private pathKey = "";
   private subjectsFilter = "";
   private page = 1;
   private scrollSubscribed = false;
@@ -70,9 +83,38 @@ export class SeriesHubComponent {
       this.legacyNames = false;
       this.subjects.set([]);
       this.subjectsFilter = "";
+      const snapshot = this.route.snapshot;
+      this.pathKey = snapshot ? routePathKey(snapshot.params, snapshot.queryParams) : "";
+      this.urlFragment = snapshot?.fragment || null;
+      this.pendingSubjects = readSubjectsFromFragment(this.urlFragment);
       this.page = 1;
       this.load(name, hub, true, true);
     });
+    // skip(1): the current fragment is the page load's; later ones are Back/Forward or echoes.
+    this.route.fragment.pipe(
+      skip(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(fragment => this.restoreFromFragment(fragment || null));
+  }
+
+  /**
+   * Back/Forward between filter states on this hub: the path and query are
+   * unchanged and the fragment is not the one this hub last wrote, so select
+   * the chips it names and load again, as on first load. A fragment that
+   * arrives with a new path or query is left to the load effect.
+   */
+  private restoreFromFragment(fragment: string | null): void {
+    if (!this.loadedKey || fragment === this.urlFragment) {
+      return;
+    }
+    const snapshot = this.route.snapshot;
+    if (!snapshot || routePathKey(snapshot.params, snapshot.queryParams) !== this.pathKey) {
+      return;
+    }
+    this.urlFragment = fragment;
+    this.setSubjects([]);
+    this.pendingSubjects = readSubjectsFromFragment(fragment);
+    this.load(this.seriesName(), this.hub(), true, true);
   }
 
   private load(name: string, hub: "tv" | "news", reset: boolean, refreshFacets: boolean): void {
@@ -96,6 +138,9 @@ export class SeriesHubComponent {
       }
     ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
+        if (refreshFacets && this.applyPendingSubjects(data.facets)) {
+          return;
+        }
         const count = data.metadata.get("count");
         this.count.set(typeof count === "number" ? count : data.entities.length);
         if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -152,8 +197,8 @@ export class SeriesHubComponent {
     if (this.subjects().length === 0) {
       return;
     }
-    this.subjects.set([]);
-    this.subjectsFilter = "";
+    this.setSubjects([]);
+    this.syncFilterUrl("push");
     this.load(this.seriesName(), this.hub(), true, false);
   }
 
@@ -162,9 +207,54 @@ export class SeriesHubComponent {
     const next = current.includes(value)
       ? current.filter((s) => s !== value)
       : [...current, value];
+    this.setSubjects(next);
+    this.syncFilterUrl("push");
+    this.load(this.seriesName(), this.hub(), true, false);
+  }
+
+  private setSubjects(next: string[]): void {
     this.subjects.set(next);
     this.subjectsFilter = subjectsAnySearchIn(next);
+  }
+
+  /**
+   * After the unfiltered first load, select the subject chips from the URL that
+   * this hub offers (unknown ones are dropped and the URL tidied) and load
+   * again. Returns true when it started that load.
+   */
+  private applyPendingSubjects(facets: SearchResultsFacets): boolean {
+    if (this.pendingSubjects.length === 0) {
+      return false;
+    }
+    const requested = this.pendingSubjects;
+    this.pendingSubjects = [];
+    const offered = facets.subjects?.filter(x => !x.value.startsWith("_"));
+    const subjects = keepOffered(requested, offered);
+    if (subjects.length !== requested.length) {
+      this.setSubjects(subjects);
+      this.syncFilterUrl();
+    }
+    if (subjects.length === 0) {
+      return false;
+    }
+    this.facets.set({ subjects: offered });
+    this.setSubjects(subjects);
     this.load(this.seriesName(), this.hub(), true, false);
+    return true;
+  }
+
+  /**
+   * Mirror the subject chips into the URL fragment (no scroll). A chip click
+   * pushes a history entry so Back/Forward step through selections; tidying
+   * the URL replaces. Unchanged state writes nothing.
+   */
+  private syncFilterUrl(history: FragmentHistory = "replace"): void {
+    const fragment = subjectsFragment(this.subjects());
+    if (this.urlFragment === fragment) {
+      return;
+    }
+    this.urlFragment = fragment;
+    writeUrlFragment(this.router, this.route, this.location, fragment, history);
   }
 
   protected playEpisode(episode: SearchDisplayEpisode): void {

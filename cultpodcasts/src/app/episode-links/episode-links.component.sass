@@ -6,3 +6,7 @@
     height: var(--mdc-icon-button-state-layer-size, 40px)
 #episodelinks
     display: contents
+// Icons take the host's text colour (white on the episode hero and the homepage hero card,
+// both always dark) instead of the theme's on-surface colour.
+.mat-mdc-icon-button
+    color: inherit

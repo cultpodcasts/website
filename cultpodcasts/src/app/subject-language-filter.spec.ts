@@ -184,26 +184,119 @@ describe("subject-language-filter", () => {
   });
 
   describe("languageLabel", () => {
-    it("shows English name with local name when they differ", () => {
-      expect(languageLabel("es")).toBe("Spanish (Español)");
-      expect(languageLabel("de")).toBe("German (Deutsch)");
-      expect(languageLabel("fr")).toBe("French (Français)");
-      expect(languageLabel("ro")).toBe("Romanian (Română)");
+    it("names the language for an English viewer, then in its own language", () => {
+      // Arrange
+      const codes = ["es", "de", "fr", "ro", "cs"];
+
+      // Act
+      const labels = codes.map(code => languageLabel(code, "en"));
+
+      // Assert
+      expect(labels).toEqual([
+        "Spanish (Español)",
+        "German (Deutsch)",
+        "French (Français)",
+        "Romanian (Română)",
+        "Czech (Čeština)"
+      ]);
     });
 
-    it("shows the name once when English and local names match", () => {
-      expect(languageLabel("en")).toBe("English");
-      expect(languageLabel("af")).toBe("Afrikaans");
+    it("uses English for the viewer when no viewer locale is given", () => {
+      // Arrange
+      const code = "es";
+
+      // Act
+      const label = languageLabel(code);
+
+      // Assert
+      expect(label).toBe("Spanish (Español)");
     });
 
-    it("resolves region subtags to the base language entry", () => {
-      expect(languageLabel("pt-BR")).toBe("Portuguese (Português)");
+    it("names the language in a Spanish viewer's language, capitalised", () => {
+      // Arrange
+      const codes = ["en", "fr"];
+
+      // Act
+      const labels = codes.map(code => languageLabel(code, "es"));
+
+      // Assert
+      expect(labels).toEqual(["Inglés (English)", "Francés (Français)"]);
     });
 
-    it("falls back to the raw code for unknown codes", () => {
-      expect(languageLabel("zz")).toBe("zz");
-      expect(languageLabel("not a lang code!")).toBe("not a lang code!");
-      expect(languageLabel("")).toBe("");
+    it("shows a single name when the viewer's name and the native name match", () => {
+      // Arrange
+      const englishForEnglishViewer = { code: "en", viewer: "en" };
+      const spanishForSpanishViewer = { code: "es", viewer: "es-MX" };
+
+      // Act
+      const english = languageLabel(englishForEnglishViewer.code, englishForEnglishViewer.viewer);
+      const spanish = languageLabel(spanishForSpanishViewer.code, spanishForSpanishViewer.viewer);
+      const afrikaans = languageLabel("af", "en");
+
+      // Assert
+      expect(english).toBe("English");
+      expect(spanish).toBe("Español");
+      expect(afrikaans).toBe("Afrikaans");
+    });
+
+    it("names a language that is not in any hand-written list", () => {
+      // Arrange
+      const code = "ki";
+
+      // Act
+      const label = languageLabel(code, "en");
+
+      // Assert
+      expect(label).toBe("Kikuyu (Gikuyu)");
+    });
+
+    it("resolves region subtags to the base language", () => {
+      // Arrange
+      const codes = ["pt-BR", "pt_BR", "PT"];
+
+      // Act
+      const labels = codes.map(code => languageLabel(code, "en"));
+
+      // Assert
+      expect(labels).toEqual([
+        "Portuguese (Português)",
+        "Portuguese (Português)",
+        "Portuguese (Português)"
+      ]);
+    });
+
+    it("falls back to English when the viewer locale is not a valid tag", () => {
+      // Arrange
+      const viewer = "not a locale!";
+
+      // Act
+      const label = languageLabel("ti", viewer);
+
+      // Assert
+      expect(label).toBe("Tigrinya (ትግርኛ)");
+    });
+
+    it("returns the same label when asked again", () => {
+      // Arrange
+      const first = languageLabel("de", "es");
+
+      // Act
+      const second = languageLabel("de", "es");
+
+      // Assert
+      expect(second).toBe(first);
+      expect(second).toBe("Alemán (Deutsch)");
+    });
+
+    it("falls back to the raw code when the language cannot be named", () => {
+      // Arrange
+      const codes = ["zz", "not a lang code!", ""];
+
+      // Act
+      const labels = codes.map(code => languageLabel(code, "en"));
+
+      // Assert
+      expect(labels).toEqual(["zz", "not a lang code!", ""]);
     });
   });
 });

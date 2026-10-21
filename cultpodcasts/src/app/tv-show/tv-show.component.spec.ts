@@ -18,7 +18,7 @@ describe('TvShowComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { params: of({ slug: 'Nightly' }), snapshot: { params: { slug: 'Nightly' } } } },
+        { provide: ActivatedRoute, useValue: { params: of({ slug: 'Nightly' }), fragment: of(null), snapshot: { params: { slug: 'Nightly' }, queryParams: {}, fragment: null } } },
         {
           provide: ODataService,
           useValue: {

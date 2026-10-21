@@ -1,4 +1,4 @@
-import { languageLabel } from './subject-language-filter';
+import { DEFAULT_VIEWER_LOCALE, languageLabel } from './languages';
 
 /**
  * Well-known country flag for a language (representative country, not
@@ -91,6 +91,7 @@ const LANGUAGE_FLAG_BY_CODE: Record<string, string> = {
   // African
   af: '🇿🇦',
   sw: '🇰🇪',
+  ki: '🇰🇪',
 };
 
 export interface LanguageFlagBadge {
@@ -130,7 +131,8 @@ export function episodeLanguageCode(episode: {
  * Undefined when missing/English.
  */
 export function languageFlagBadge(
-  code: string | null | undefined
+  code: string | null | undefined,
+  viewerLocale: string = DEFAULT_VIEWER_LOCALE
 ): LanguageFlagBadge | undefined {
   if (!code?.trim() || isEnglishLanguageCode(code)) {
     return undefined;
@@ -145,7 +147,7 @@ export function languageFlagBadge(
     return {
       code: trimmed,
       flag,
-      label: languageLabel(trimmed),
+      label: languageLabel(trimmed, viewerLocale),
       isCode: false
     };
   }
@@ -156,14 +158,17 @@ export function languageFlagBadge(
   return {
     code: trimmed,
     flag: base.toUpperCase(),
-    label: languageLabel(trimmed),
+    label: languageLabel(trimmed, viewerLocale),
     isCode: true
   };
 }
 
-export function languageFlagBadgeForEpisode(episode: {
-  language?: string | null;
-  lang?: string | null;
-}): LanguageFlagBadge | undefined {
-  return languageFlagBadge(episodeLanguageCode(episode));
+export function languageFlagBadgeForEpisode(
+  episode: {
+    language?: string | null;
+    lang?: string | null;
+  },
+  viewerLocale: string = DEFAULT_VIEWER_LOCALE
+): LanguageFlagBadge | undefined {
+  return languageFlagBadge(episodeLanguageCode(episode), viewerLocale);
 }
