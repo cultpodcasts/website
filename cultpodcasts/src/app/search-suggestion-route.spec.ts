@@ -27,16 +27,16 @@ describe('search suggestion route and icon', () => {
     });
 
     it('keeps podcast and subject paths unchanged', () => {
-        expect(suggestionCommands(s({ type: 'podcast', value: 'Synthetic Pod' }))
+        expect(suggestionCommands(s({ type: 'podcast', value: 'Synthetic Pod' })))
             .toEqual(['/podcast/Synthetic Pod']);
-        expect(suggestionCommands(s({ type: 'subject', value: 'Synthetic Topic' }))
+        expect(suggestionCommands(s({ type: 'subject', value: 'Synthetic Topic' })))
             .toEqual(['/subject/Synthetic Topic']);
     });
 
     it('sends TV shows to /tv/{name} and news outlets to /news/{name}', () => {
-        expect(suggestionCommands(s({ type: 'tvShow', value: 'Synthetic Nightly' }))
+        expect(suggestionCommands(s({ type: 'tvShow', value: 'Synthetic Nightly' })))
             .toEqual(['/tv', 'Synthetic Nightly']);
-        expect(suggestionCommands(s({ type: 'newsOrganisation', value: 'Synthetic Desk' }))
+        expect(suggestionCommands(s({ type: 'newsOrganisation', value: 'Synthetic Desk' })))
             .toEqual(['/news', 'Synthetic Desk']);
     });
 
@@ -48,9 +48,9 @@ describe('search suggestion route and icon', () => {
     });
 
     it('falls back to /search/{name} for a film with no id or a malformed id', () => {
-        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film' }))
+        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film' })))
             .toEqual(['/search', 'Synthetic Film']);
-        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: 'not-a-guid' }))
+        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: 'not-a-guid' })))
             .toEqual(['/search', 'Synthetic Film']);
     });
 
