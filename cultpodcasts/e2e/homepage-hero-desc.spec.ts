@@ -352,10 +352,10 @@ test.describe("homepage hero description", () => {
 				expect(l.rel).toBe("noopener noreferrer");
 			}
 			// Inside the card, clear of the description / chevron, and (except stacked mobile
-			// buttons) on the same row as More info.
+			// buttons) on the same row as Add to Queue.
 			const geo = await page.evaluate(() => {
 				const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
-				const host = r(".billboard__services"), more = r(".billboard__more"), card = r(".billboard__content");
+				const host = r(".billboard__services"), more = r(".billboard__queue"), card = r(".billboard__content");
 				return { host: { top: host.top, bottom: host.bottom, left: host.left, right: host.right }, more: { top: more.top, bottom: more.bottom }, card: { left: card.left, right: card.right }, vw: window.innerWidth };
 			});
 			expect(geo.host.right).toBeLessThanOrEqual(Math.min(geo.card.right, geo.vw) + 1);
@@ -379,12 +379,74 @@ test.describe("homepage hero description", () => {
 		});
 	}
 
+	for (const layout of layouts) {
+		test(`${layout.name}: Add to Queue instead of More info, beside Watch and the service links (HERO-QUE-001)`, async ({ page }) => {
+			await page.setViewportSize({ width: layout.width, height: layout.height });
+			await fakeApi(page, LONG_DESC, undefined, undefined, ALL_SERVICES);
+			await page.goto("/");
+			const queue = page.locator(".billboard__actions .billboard__queue button");
+			await expect(queue).toBeVisible();
+			await expect(page.locator(".billboard__more")).toHaveCount(0);
+			await expect(page.locator(".billboard").getByText("More info")).toHaveCount(0);
+			await expect(queue).toHaveAccessibleName("Add to queue");
+			await expect(queue).toContainText("Add to Queue");
+
+			const geo = await page.evaluate(() => {
+				const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+				const play = r(".billboard__play"), q = r(".billboard__queue"), svc = r(".billboard__services"), card = r(".billboard__content");
+				return { play: { top: play.top, bottom: play.bottom, left: play.left, right: play.right, width: play.width }, q: { top: q.top, bottom: q.bottom, left: q.left, right: q.right, width: q.width }, svc: { top: svc.top, bottom: svc.bottom }, card: { right: card.right }, vw: window.innerWidth };
+			});
+			expect(geo.q.right).toBeLessThanOrEqual(Math.min(geo.card.right, geo.vw) + 1);
+			if (layout.name === "mobile") {
+				// Stacked full-width buttons: Add to Queue under Watch, same width, links below.
+				expect(geo.q.top).toBeGreaterThanOrEqual(geo.play.bottom - 1);
+				expect(Math.abs(geo.q.width - geo.play.width)).toBeLessThan(2);
+				expect(geo.svc.top).toBeGreaterThanOrEqual(geo.q.bottom - 1);
+			} else {
+				// One row: Watch, Add to Queue, service links.
+				const mid = (geo.q.top + geo.q.bottom) / 2;
+				expect(mid).toBeGreaterThan(geo.play.top);
+				expect(mid).toBeLessThan(geo.play.bottom);
+				expect(geo.q.left).toBeGreaterThan(geo.play.right);
+				const svcMid = (geo.svc.top + geo.svc.bottom) / 2;
+				expect(svcMid).toBeGreaterThan(geo.q.top);
+				expect(svcMid).toBeLessThan(geo.q.bottom);
+			}
+			expect(await overlapsActions(page)).toBe(false);
+			if (shots) {
+				await page.locator(".billboard__actions").scrollIntoViewIfNeeded();
+				await page.screenshot({ path: `${shots}/hero-${layout.name}-queue.png` });
+			}
+
+			// Works like the episode page: the episode joins the player's queue (Up next).
+			await queue.click();
+			await expect(queue).toHaveAccessibleName("Remove from queue");
+			await expect(queue).toContainText("Queued");
+			await expect(page.getByRole("button", { name: "Up next, 1 queued" })).toBeVisible();
+			if (shots) {
+				await page.screenshot({ path: `${shots}/hero-${layout.name}-queued.png` });
+			}
+			await queue.click();
+			await expect(queue).toContainText("Add to Queue");
+			await expect(page.getByRole("button", { name: /^Up next, \d+ queued$/ })).toHaveCount(0);
+		});
+	}
+
+	test("no Add to Queue when the episode only plays outbound (HERO-QUE-001)", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, SHORT_DESC, undefined, undefined, { bbcSounds: ALL_SERVICES.bbcSounds });
+		await page.goto("/");
+		await expect(page.locator(".billboard__play")).toBeVisible();
+		await expect(page.locator(".billboard__queue button")).toHaveCount(0);
+	});
+
 	test("no service links when the episode has none (HERO-SVC-001)", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await fakeApi(page, SHORT_DESC, undefined, undefined, null);
 		await page.goto("/");
-		await expect(page.locator(".billboard__more")).toBeVisible();
+		await expect(page.locator("a.billboard__play")).toBeVisible();
 		await expect(serviceLinks(page)).toHaveCount(0);
+		await expect(page.locator(".billboard__queue button")).toHaveCount(0);
 	});
 
 	test("only the services the episode has (HERO-SVC-001)", async ({ page }) => {

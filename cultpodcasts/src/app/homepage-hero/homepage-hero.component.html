@@ -144,10 +144,8 @@
           {{ playLabel(feature) }}
         </a>
         }
-        <a mat-stroked-button class="billboard__more"
-          [routerLink]="feature.playableLink">
-          More info
-        </a>
+        <!-- HERO-QUE-001: the episode page's Add to Queue toggle (shown only when the episode embeds). -->
+        <app-queue-button class="billboard__queue" [episode]="feature" />
         <!-- HERO-SVC-001: the episode page's service links (Spotify, Apple, YouTube, BBC, …). -->
         <app-episode-links class="billboard__services" [episode]="feature" [showShare]="false" />
       </div>

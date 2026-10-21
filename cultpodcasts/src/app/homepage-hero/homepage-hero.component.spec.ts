@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection, signal } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +74,19 @@ describe('HomepageHeroComponent', () => {
   let component: HomepageHeroComponent;
   let originalImage: typeof Image;
 
+  // Minimal in-memory queue with the PlayerService surface the hero and app-queue-button use.
+  const queuedIds = signal<string[]>([]);
+  const player = {
+    episode: () => undefined,
+    play: () => undefined,
+    isQueuedId: (id: string | undefined) => !!id && queuedIds().includes(id),
+    toggleQueue: vi.fn((episode: { id: string }) => queuedIds.update((ids) =>
+      ids.includes(episode.id) ? ids.filter((id) => id !== episode.id) : [...ids, episode.id])),
+  };
+
   beforeEach(async () => {
+    queuedIds.set([]);
+    player.toggleQueue.mockClear();
     originalImage = globalThis.Image;
     globalThis.Image = ImmediateImage as unknown as typeof Image;
 
@@ -84,7 +96,7 @@ describe('HomepageHeroComponent', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: PLATFORM_ID, useValue: 'browser' },
-        { provide: PlayerService, useValue: { episode: () => undefined, play: () => undefined } },
+        { provide: PlayerService, useValue: player },
       ],
     }).compileComponents();
 
@@ -109,8 +121,15 @@ describe('HomepageHeroComponent', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('a.hero-pill')).toBeNull();
-    const more = root.querySelector('a.billboard__more') as HTMLAnchorElement;
-    expect(more.getAttribute('href')).toBe('/film/One%20Off/a');
+    expect(root.querySelector('button.billboard__play')).toBeTruthy();
+    expect(root.querySelector('.billboard__more')).toBeNull();
+
+    // With nothing to play in-app or outbound, Watch links to the episode page.
+    film.services = undefined;
+    film.ids = undefined;
+    fixture.componentRef.setInput('slides', [{ ...film }, ep('b'), ep('c')]);
+    fixture.detectChanges();
+    expect((root.querySelector('a.billboard__play') as HTMLAnchorElement).getAttribute('href')).toBe('/film/One%20Off/a');
   });
 
   it('starts on the first slide', () => {
@@ -172,7 +191,7 @@ describe('HomepageHeroComponent', () => {
     expect(chips.length).toBe(12);
   });
 
-  it('HERO-SUB-002: keeps Watch/More info actions below the subject chips', () => {
+  it('HERO-SUB-002: keeps the Watch / Add to Queue actions below the subject chips', () => {
     const many = Array.from({ length: 8 }, (_, i) => `Topic ${i + 1}`);
     fixture.componentRef.setInput('slides', [
       ep('a', { subjects: many }),
@@ -768,6 +787,61 @@ describe('HomepageHeroComponent', () => {
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
   });
+  describe('HERO-QUE-001: Add to Queue replaces More info', () => {
+    const root = () => fixture.nativeElement as HTMLElement;
+    const queueButton = () => root().querySelector<HTMLButtonElement>('.billboard__actions app-queue-button button');
+    function show(slide: HomepageHeroSlide): void {
+      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
+      fixture.detectChanges();
+    }
+
+    it('has no More info link', () => {
+      expect(root().querySelector('.billboard__more')).toBeNull();
+      expect(root().textContent).not.toContain('More info');
+    });
+
+    it('sits between Watch and the service links', () => {
+      const actions = Array.from(root().querySelector('.billboard__actions')!.children);
+      const known = ['billboard__play', 'billboard__queue', 'billboard__services'];
+      expect(actions.map((el) => known.find((name) => el.classList.contains(name)))).toEqual([
+        'billboard__play', 'billboard__queue', 'billboard__services',
+      ]);
+    });
+
+    it('toggles the featured episode in the player queue, like the episode page', () => {
+      expect(queueButton()!.getAttribute('aria-label')).toBe('Add to queue');
+      expect(queueButton()!.textContent).toContain('Add to Queue');
+
+      queueButton()!.click();
+      fixture.detectChanges();
+      expect(player.toggleQueue).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
+      expect(queueButton()!.getAttribute('aria-label')).toBe('Remove from queue');
+      expect(queueButton()!.textContent).toContain('Queued');
+      expect(queueButton()!.classList).toContain('is-queued');
+
+      queueButton()!.click();
+      fixture.detectChanges();
+      expect(queueButton()!.textContent).toContain('Add to Queue');
+    });
+
+    it('follows the current slide', () => {
+      queuedIds.set(['b']);
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(queueButton()!.textContent).toContain('Queued');
+    });
+
+    it('is hidden when the episode cannot play in-app (outbound or nothing to play)', () => {
+      show(ep('a', { ids: undefined, services: { bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m000inv1' } } }));
+      expect(root().querySelector('.billboard__play')).toBeTruthy();
+      expect(queueButton()).toBeNull();
+
+      show(ep('a', { ids: undefined, services: undefined }));
+      expect(queueButton()).toBeNull();
+    });
+  });
+
   describe('HERO-SVC-001: service links on the hero card', () => {
     const root = () => fixture.nativeElement as HTMLElement;
     const links = () => Array.from(root().querySelectorAll<HTMLAnchorElement>('.billboard__actions app-episode-links a'));
@@ -776,7 +850,7 @@ describe('HomepageHeroComponent', () => {
       fixture.detectChanges();
     }
 
-    it('reuses the episode page component in the action row, after Watch and More info, without share', () => {
+    it('reuses the episode page component in the action row, after Watch and Add to Queue, without share', () => {
       const actions = root().querySelector('.billboard__actions')!;
       const host = actions.querySelector('app-episode-links.billboard__services');
       expect(host).toBeTruthy();

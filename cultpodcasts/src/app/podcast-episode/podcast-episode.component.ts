@@ -25,7 +25,8 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
 import { displayCatalogName } from '../display-catalog-name';
 import { releaseDateLabel } from '../release-label';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
-import { canEmbedEpisode, canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
+import { QueueButtonComponent } from '../queue-button/queue-button.component';
+import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
@@ -56,6 +57,7 @@ const MAX_SUBJECT_RAILS = 4;
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
     SubjectChipComponent,
+    QueueButtonComponent,
     SearchDescriptionPipe
   ],
   templateUrl: './podcast-episode.component.html',
@@ -121,19 +123,10 @@ export class PodcastEpisodeComponent {
     return ep ? canPlayEpisode(ep) : false;
   });
 
-  protected readonly queueable = computed(() => {
-    const ep = this._episode();
-    return ep ? canEmbedEpisode(ep) : false;
-  });
-
   protected readonly playLabel = computed(() => {
     const ep = this._episode();
     return ep ? playActionLabel(ep) : 'Listen';
   });
-
-  protected readonly queued = computed(() =>
-    this.playerService.isQueuedId(this._episode()?.id)
-  );
 
   protected readonly duration = computed(() => {
     const ep = this._episode();
@@ -375,13 +368,6 @@ export class PodcastEpisodeComponent {
     const ep = episode ?? this._episode();
     if (ep) {
       startEpisodePlayback(ep, (playable) => this.playerService.play(playable));
-    }
-  }
-
-  toggleQueue(): void {
-    const ep = this._episode();
-    if (ep && canEmbedEpisode(ep)) {
-      this.playerService.toggleQueue(ep);
     }
   }
 
