@@ -8,8 +8,14 @@ import {
   reviewPlayableLink,
   catalogueParentLink,
   cataloguePlayableLink,
+  catalogueShareUrl,
+  catalogueShortPageId,
+  filmPageCommands,
   movedKindRedirect,
-  movedSeriesHubPath
+  movedSeriesHubPath,
+  newsReportPageCommands,
+  samePath,
+  tvShowEpisodePageCommands
 } from "./catalogue-links";
 
 describe("catalogue links", () => {
@@ -26,19 +32,19 @@ describe("catalogue links", () => {
 
   it("links a film to /film/ and gives it no parent", () => {
     const film = { ...item, contentKind: "Film", podcastName: "Studio" };
-    expect(cataloguePlayableLink(film)).toEqual(["/film", "One Off", id]);
+    expect(cataloguePlayableLink(film)).toEqual(["/film", "One Off", guids.toCatalogueShortId(id, "Film")]);
     expect(catalogueParentLink(film)).toBeNull();
   });
 
   it("links a TV episode under its show", () => {
     const tv = { ...item, contentKind: "TvShowEpisode" };
-    expect(cataloguePlayableLink(tv)).toEqual(["/tv", "Show", id]);
+    expect(cataloguePlayableLink(tv)).toEqual(["/tv", "Show", guids.toCatalogueShortId(id, "TvShowEpisode")]);
     expect(catalogueParentLink(tv)).toEqual(["/tv", "Show"]);
   });
 
   it("links a news report under its organisation", () => {
     const news = { ...item, contentKind: "NewsReport" };
-    expect(cataloguePlayableLink(news)).toEqual(["/news", "Show", id]);
+    expect(cataloguePlayableLink(news)).toEqual(["/news", "Show", guids.toCatalogueShortId(id, "NewsReport")]);
     expect(catalogueParentLink(news)).toEqual(["/news", "Show"]);
   });
 
@@ -108,6 +114,79 @@ describe("catalogue links", () => {
     expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "TvShowEpisode")).toBe(`/tv/${encodeURIComponent("Show A")}`);
     expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "Episode")).toBeNull();
     expect(movedSeriesHubPath(`/news/${encodeURIComponent("Show A")}`, "Show A", "NewsReport")).toBeNull();
+  });
+
+  describe("short page ids", () => {
+    it("uses the kind-prefixed short id for film, TV, and news pages and never the raw guid", () => {
+      const film = filmPageCommands("One Off", id);
+      const tv = tvShowEpisodePageCommands("Show", id);
+      const news = newsReportPageCommands("Desk", id);
+      expect(film).toEqual(["/film", "One Off", guids.toCatalogueShortId(id, "Film")]);
+      expect(tv).toEqual(["/tv", "Show", guids.toCatalogueShortId(id, "TvShowEpisode")]);
+      expect(news).toEqual(["/news", "Desk", guids.toCatalogueShortId(id, "NewsReport")]);
+      for (const commands of [film, tv, news]) {
+        expect(commands[2]).not.toMatch(/^[0-9a-f]{8}-/i);
+        expect(commands[2]).not.toBe(id);
+        expect(guids.parseCatalogueShortId(commands[2])?.id).toBe(id);
+      }
+      expect(guids.parseCatalogueShortId(film[2])?.contentKind).toBe("Film");
+      expect(guids.parseCatalogueShortId(tv[2])?.contentKind).toBe("TvShowEpisode");
+      expect(guids.parseCatalogueShortId(news[2])?.contentKind).toBe("NewsReport");
+    });
+
+    it("builds exactly the path the moved-kind redirect expects, so a card click has no 301 hop", () => {
+      for (const kind of ["Film", "TvShowEpisode", "NewsReport"] as const) {
+        const episode = { ...item, contentKind: kind, podcastName: "Law & Order: SVU" };
+        const commands = cataloguePlayableLink(episode);
+        const path = `${commands[0]}/${encodeURIComponent(commands[1])}/${commands[2]}`;
+        expect(movedKindRedirect(path, episode, guids)).toBeNull();
+      }
+    });
+
+    it("leaves non-guid ids untouched", () => {
+      expect(catalogueShortPageId("not-a-guid", "NewsReport")).toBe("not-a-guid");
+      expect(catalogueShortPageId("", "Film")).toBe("");
+    });
+
+    it("keeps podcast episode links unchanged", () => {
+      expect(cataloguePlayableLink({ ...item, contentKind: "Episode" })).toEqual(["/podcast", "Show", id]);
+    });
+  });
+
+  describe("samePath", () => {
+    it("treats router-style and encodeURIComponent-style slugs as the same path", () => {
+      expect(samePath("/tv/Law%20&%20Order:%20SVU/abc", `/tv/${encodeURIComponent("Law & Order: SVU")}/abc`)).toBe(true);
+      expect(samePath("/news/A%2CB/abc?x=1#top", "/news/A,B/abc")).toBe(true);
+      expect(samePath("/news/Desk/abc", "/news/Desk/abd")).toBe(false);
+    });
+
+    it("does not loop a TV episode whose show name has reserved characters", () => {
+      const episode = { ...item, contentKind: "TvShowEpisode", podcastName: "Law & Order" };
+      const short = guids.toCatalogueShortId(id, "TvShowEpisode");
+      expect(movedKindRedirect(`/tv/Law%20&%20Order/${short}`, episode, guids)).toBeNull();
+      expect(movedKindRedirect(`/tv/Law%20&%20Order/${id}`, episode, guids))
+        .toBe(`/tv/${encodeURIComponent("Law & Order")}/${short}`);
+    });
+  });
+
+  describe("share urls", () => {
+    const origin = "https://example.test";
+    const shortner = "https://s.example.test";
+
+    it("shares film, TV, and news as their own page with the prefixed short id", () => {
+      expect(catalogueShareUrl({ ...item, contentKind: "NewsReport", podcastName: "A & B" }, origin, shortner))
+        .toBe(`${origin}/news/A%20%26%20B/${guids.toCatalogueShortId(id, "NewsReport")}`);
+      expect(catalogueShareUrl({ ...item, contentKind: "TvShowEpisode" }, origin, shortner))
+        .toBe(`${origin}/tv/Show/${guids.toCatalogueShortId(id, "TvShowEpisode")}`);
+      expect(catalogueShareUrl({ ...item, contentKind: "Film" }, origin, shortner))
+        .toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+    });
+
+    it("keeps podcast episodes on the 22-character shortener key", () => {
+      const url = catalogueShareUrl({ ...item, contentKind: "Episode" }, origin, shortner);
+      expect(url).toBe(`${shortner}/${guids.toBase64(id)}`);
+      expect(guids.toBase64(id)).toHaveLength(22);
+    });
   });
 });
 

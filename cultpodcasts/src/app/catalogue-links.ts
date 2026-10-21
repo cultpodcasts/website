@@ -5,18 +5,56 @@ import { SearchResult } from "./search-result.interface";
 
 type CatalogueItem = HomepageEpisode | SearchResult;
 
+const shortIds = new GuidService();
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Film, TV, and news page ids use the kind-prefixed short id (the same one shares and the
+ * moved-kind 301 use), so links land on the page's own URL with no redirect hop.
+ * Anything that is not a GUID passes through unchanged.
+ */
+export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEpisode" | "NewsReport"): string {
+  return id && GUID.test(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
+}
+
+export function filmPageCommands(title: string, id: string): string[] {
+  return ["/film", title, catalogueShortPageId(id, "Film")];
+}
+
+export function tvShowEpisodePageCommands(show: string, id: string): string[] {
+  return ["/tv", show, catalogueShortPageId(id, "TvShowEpisode")];
+}
+
+export function newsReportPageCommands(organisation: string, id: string): string[] {
+  return ["/news", organisation, catalogueShortPageId(id, "NewsReport")];
+}
+
 /** Mixed lists choose a card with these paths. Podcast pages do not call this. */
 export function cataloguePlayableLink(item: CatalogueItem): string[] {
   switch (item.contentKind) {
     case "Film":
-      return ["/film", item.episodeTitle, item.id];
+      return filmPageCommands(item.episodeTitle, item.id);
     case "TvShowEpisode":
-      return ["/tv", item.podcastName, item.id];
+      return tvShowEpisodePageCommands(item.podcastName, item.id);
     case "NewsReport":
-      return ["/news", item.podcastName, item.id];
+      return newsReportPageCommands(item.podcastName, item.id);
     default:
       return ["/podcast", item.podcastName, item.id];
   }
+}
+
+/**
+ * Share link. Podcast episodes keep the s.cultpodcasts.com short link (its KV key is the
+ * unprefixed 22-char id). Film, TV, and news link straight to their own page with the prefixed
+ * short id: the shortener only accepts 22-char keys, so a prefixed short link there is a 404
+ * (same choice as RPP's CataloguePlayableSiteLink for social posts).
+ */
+export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string {
+  if (item.contentKind === "Film" || item.contentKind === "TvShowEpisode" || item.contentKind === "NewsReport") {
+    const [root, slug, id] = cataloguePlayableLink(item);
+    return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+  }
+  return `${shortner}/${shortIds.toBase64(item.id)}`;
 }
 
 /**
@@ -173,8 +211,7 @@ export function movedSeriesHubPath(
     return null;
   }
   const target = `/${root}/${encodeURIComponent(seriesName)}`;
-  const here = decodeURI(currentPath.split("?")[0]);
-  return here === decodeURI(target) ? null : target;
+  return samePath(currentPath, target) ? null : target;
 }
 
 /** Podcast page stays put. A guid stored as Film, TV, or News leaves for that path. */
@@ -191,6 +228,25 @@ export function movedKindRedirect(
   if (!target) {
     return null;
   }
-  const here = decodeURI(currentPath.split("?")[0]);
-  return here === decodeURI(target) ? null : target;
+  return samePath(currentPath, target) ? null : target;
+}
+
+/**
+ * Router URLs leave `& @ : $ ,` unescaped while encodeURIComponent escapes them, and decodeURI
+ * does not undo those escapes. Compare fully decoded segments so a slug such as "Law & Order"
+ * is seen as already on its target and never loops through 301s.
+ */
+export function samePath(a: string, b: string): boolean {
+  return normalisePath(a) === normalisePath(b);
+}
+
+function normalisePath(path: string): string {
+  const bare = path.split("#")[0].split("?")[0].replace(/\/+$/, "");
+  return bare.split("/").map(segment => {
+    try {
+      return decodeURIComponent(segment);
+    } catch {
+      return segment;
+    }
+  }).join("/");
 }
