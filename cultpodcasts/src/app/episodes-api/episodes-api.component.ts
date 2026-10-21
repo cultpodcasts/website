@@ -23,7 +23,8 @@ import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-ep
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
-import { applyTransferredPodcastKindClose } from '../catalogue-links';
+import { applyTransferredPodcastKindClose, reviewParentLink, reviewPlayableLink } from '../catalogue-links';
+import { GuidService } from '../guid.service';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.component";
@@ -107,6 +108,10 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   private readonly platformId = inject(PLATFORM_ID);
   private readonly heroCuration = inject(HeroCurationService);
+  private readonly guids = inject(GuidService);
+  /** Row title link by kind (/podcast, /news, /tv, /film); needs `contentKind` from GET /episode/{id}. */
+  protected readonly playableLink = (episode: ApiEpisode) => reviewPlayableLink(episode, this.guids);
+  protected readonly parentLink = reviewParentLink;
   private snapOffsetObserver: ResizeObserver | undefined;
   /** Single cancellable load stream: a newer request (ids change / Refresh) cancels any in-flight one. */
   private readonly loadRequests = new Subject<string[]>();

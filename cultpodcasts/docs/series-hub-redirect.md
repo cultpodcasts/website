@@ -36,7 +36,38 @@ The edit dialog uses the podcast edit dialog's tabbed layout and styles (`mat-ta
 | Meta | Publisher, description, language (the podcast dialog's `/languages` select; "No Language" sends blank), search terms |
 | Identity (TV only) | IMDb and TheTVDB URLs |
 
-Later edit screens for news reports, TV episodes and films should follow the episode edit dialog's layout in the same way.
+## News report and TV episode edit
+
+The news report and TV episode pages render `PodcastEpisodeComponent` with `emitCuratorEdit`, so the curator
+**Edit Episode** item opens `EditNewsReportDialogComponent` / `EditTvShowEpisodeDialogComponent` instead of the
+podcast Edit Episode dialog (which calls the podcast-only `GET /episode/{podcast}/{id}`). The same dialogs open from
+the submit snackbar's **Edit**.
+
+| Call | Purpose |
+|------|---------|
+| `GET /newsreport/{id}` or `/tvshowepisode/{id}` (curate) | Playable fields, parent id/name, and IMDb / TheTVDB for TV |
+| `GET /subjects`, `/people`, `/languages` | Same lookups as the podcast Edit Episode dialog |
+| `GET /newsorganisation/{parentId}` or `/tvshow/{parentId}` | Parent default subject, hoisted in the subject select (best-effort) |
+| `PATCH /newsreport/{id}` or `/tvshowepisode/{id}` (curate) | Only the changed fields (`PlayableFieldsChangeRequest`); 202 |
+
+Both dialogs share `PlayableEditFieldsComponent` (the tab group) and `PlayableEditDialogBase` (load / save), laid out
+like the podcast Edit Episode dialog:
+
+| Tab | Fields |
+|-----|--------|
+| Details | Parent (read-only), title (required), description |
+| Flags | Posted (behind the `redditPost` switch), Tweeted, Bluesky remove (`unBluesky`), Ignored, Removed, Explicit |
+| Meta | Release (date), duration (`h:mm:ss`), subjects, search terms, hash tag, language (English = unset, sends `""`) |
+| Guests | Guest select, Add person / Edit person |
+| Identity (TV only) | IMDb and TheTVDB URLs (omit = unchanged, `""` clears). Replaces the old identity-only dialog |
+
+There are no Urls / Images tabs: the playable PATCH does not edit service links. Parents are not renamed here.
+
+On these pages the curator menu has no **Post Episode** (it is podcast-only), and the search bar is not scoped to the
+outlet / show: a search goes to `/search/{term}`. The `/episodes/{ids}` review page links rows by `contentKind`
+(`/news`, `/tv`, `/film` with the short id); it needs `GET /episode/{id}` to return `contentKind` for other kinds.
+
+Film edit is not wired yet.
 
 There is no Index item: there is no indexer endpoint for a news outlet or TV show yet.
 

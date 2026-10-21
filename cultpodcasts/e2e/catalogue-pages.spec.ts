@@ -1,6 +1,9 @@
 import { expect, Page, test } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
 
+/** Dev server origin (playwright.catalogue.config.ts, CATALOGUE_E2E_PORT). */
+const appOrigin = `http://127.0.0.1:${process.env["CATALOGUE_E2E_PORT"] ?? "4173"}`;
+
 const id = "00112233-4455-4677-8899-aabbccddeeff";
 const guids = new GuidService();
 
@@ -39,7 +42,7 @@ test.beforeEach(async ({ page }) => {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
 		// Screenshot runs (SERIES_HUB_SCREENSHOTS) load the real icon/text fonts; tests never need them.
-		if (url.startsWith("http://127.0.0.1:4173") ||
+		if (url.startsWith(appOrigin) ||
 			(process.env["SERIES_HUB_SCREENSHOTS"] && /fonts\.(googleapis|gstatic)\.com/.test(url))) {
 			await route.continue();
 			return;

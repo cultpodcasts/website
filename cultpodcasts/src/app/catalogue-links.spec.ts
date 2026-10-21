@@ -3,6 +3,9 @@ import { GuidService } from "./guid.service";
 import {
   applyTransferredPodcastKindClose,
   catalogueParentHubCommands,
+  cataloguePlayableCommands,
+  reviewParentLink,
+  reviewPlayableLink,
   catalogueParentLink,
   cataloguePlayableLink,
   movedKindRedirect,
@@ -105,5 +108,47 @@ describe("catalogue links", () => {
     expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "TvShowEpisode")).toBe(`/tv/${encodeURIComponent("Show A")}`);
     expect(movedSeriesHubPath("/podcast/Show%20A", "Show A", "Episode")).toBeNull();
     expect(movedSeriesHubPath(`/news/${encodeURIComponent("Show A")}`, "Show A", "NewsReport")).toBeNull();
+  });
+});
+
+describe('cataloguePlayableCommands', () => {
+  const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  const guids = new GuidService();
+
+  it('routes news reports and TV episodes under their parent hub by short id', () => {
+    expect(cataloguePlayableCommands('NewsReport', 'Desk', id, guids)).toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);
+    expect(cataloguePlayableCommands('TvShowEpisode', 'Nightly', id, guids)).toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
+  });
+
+  it('is null without a parent name or id, and for films and podcast episodes', () => {
+    expect(cataloguePlayableCommands('NewsReport', '', id, guids)).toBeNull();
+    expect(cataloguePlayableCommands('NewsReport', 'Desk', undefined, guids)).toBeNull();
+    expect(cataloguePlayableCommands('Film', 'One Off', id, guids)).toBeNull();
+    expect(cataloguePlayableCommands('Episode', 'Show', id, guids)).toBeNull();
+  });
+});
+
+describe('review page row links', () => {
+  const guids = new GuidService();
+  const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  it('keeps /podcast/{name}/{guid} for podcast episodes and rows without a contentKind', () => {
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show' }, guids)).toEqual(['/podcast', 'Show', id]);
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show', contentKind: 'Episode' }, guids)).toEqual(['/podcast', 'Show', id]);
+    expect(reviewParentLink({ podcastName: 'Show' })).toEqual(['/podcast', 'Show']);
+  });
+
+  it('uses the kind hub and the short base-64 id for news, TV and film', () => {
+    expect(reviewPlayableLink({ id, title: 'Bulletin', podcastName: 'Desk', contentKind: 'NewsReport' }, guids))
+      .toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Nightly', contentKind: 'TvShowEpisode' }, guids))
+      .toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
+    expect(reviewPlayableLink({ id, title: 'One Off', contentKind: 'Film' }, guids))
+      .toEqual(['/film', 'One Off', guids.toCatalogueShortId(id, 'Film')]);
+    expect(reviewParentLink({ podcastName: 'Desk', contentKind: 'NewsReport' })).toEqual(['/news', 'Desk']);
+    expect(reviewParentLink({ podcastName: 'Nightly', contentKind: 'TvShowEpisode' })).toEqual(['/tv', 'Nightly']);
+    expect(reviewParentLink({ podcastName: 'x', contentKind: 'Film' })).toBeNull();
+    expect(reviewParentLink({ contentKind: 'NewsReport' })).toBeNull();
   });
 });

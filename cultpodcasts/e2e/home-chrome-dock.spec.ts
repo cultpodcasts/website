@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** Dev server origin (playwright.catalogue.config.ts, CATALOGUE_E2E_PORT). */
+const appOrigin = `http://127.0.0.1:${process.env["CATALOGUE_E2E_PORT"] ?? "4173"}`;
+
 /**
  * CHROME-DOCK-012: on the wide homepage the frosted (docked) header must not
  * flip dark → transparent → dark while scrolling across the dock line.
@@ -35,7 +38,7 @@ function homepage() {
 async function fakeApi(page: Page): Promise<void> {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		if (url.startsWith(appOrigin)) {
 			await route.continue();
 			return;
 		}

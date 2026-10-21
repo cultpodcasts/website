@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** Dev server origin (playwright.catalogue.config.ts, CATALOGUE_E2E_PORT). */
+const appOrigin = `http://127.0.0.1:${process.env["CATALOGUE_E2E_PORT"] ?? "4173"}`;
+
 /**
  * Bookmarkable browse filters: chip state lives in the URL fragment.
  * Real routes (ng serve), faked search. Made-up shows and episodes only.
@@ -75,7 +78,7 @@ function search(filter: string, top: number) {
 test.beforeEach(async ({ page }) => {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		if (url.startsWith(appOrigin)) {
 			await route.continue();
 			return;
 		}

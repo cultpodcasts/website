@@ -19,6 +19,68 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
   }
 }
 
+/**
+ * Route for a news report or TV episode from its kind, parent name and guid, with the short base-64 id
+ * the site links use. Null for podcast episodes, films and a missing parent name or id.
+ */
+export function cataloguePlayableCommands(
+  kind: string | null | undefined,
+  parentName: string | null | undefined,
+  playableId: string | null | undefined,
+  guids: GuidService
+): string[] | null {
+  if (!parentName || !playableId) {
+    return null;
+  }
+  switch (kind) {
+    case "TvShowEpisode":
+      return ["/tv", parentName, guids.toCatalogueShortId(playableId, kind)];
+    case "NewsReport":
+      return ["/news", parentName, guids.toCatalogueShortId(playableId, kind)];
+    default:
+      return null;
+  }
+}
+
+/**
+ * Review page (/episodes/:ids) row title link, by kind: /podcast/{name}/{guid} for podcast episodes (and
+ * rows without a contentKind), /news|/tv/{parent}/{short id}, /film/{title}/{short id}.
+ */
+export function reviewPlayableLink(
+  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null },
+  guids: GuidService
+): string[] {
+  const shortId = () => guids.toCatalogueShortId(episode.id, episode.contentKind);
+  switch (episode.contentKind) {
+    case "Film":
+      return ["/film", episode.title, shortId()];
+    case "TvShowEpisode":
+      return ["/tv", episode.podcastName ?? "", shortId()];
+    case "NewsReport":
+      return ["/news", episode.podcastName ?? "", shortId()];
+    default:
+      return ["/podcast", episode.podcastName ?? "", episode.id];
+  }
+}
+
+/** Review page row parent link: the podcast, outlet or show hub. Null for films (no parent) or no name. */
+export function reviewParentLink(episode: { podcastName?: string | null; contentKind?: string | null }): string[] | null {
+  const name = episode.podcastName;
+  if (!name) {
+    return null;
+  }
+  switch (episode.contentKind) {
+    case "Film":
+      return null;
+    case "TvShowEpisode":
+      return ["/tv", name];
+    case "NewsReport":
+      return ["/news", name];
+    default:
+      return ["/podcast", name];
+  }
+}
+
 /** Film has no parent. TV and news hubs use the parent name. */
 export function catalogueParentLink(item: CatalogueItem | undefined): string[] | null {
   if (!item) {

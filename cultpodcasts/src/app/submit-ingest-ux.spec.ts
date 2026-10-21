@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { submitEpisodePostBody } from './submit-series.util';
 import {
+  submittedCataloguePlayableReview,
   generalDropSeries,
   generalDropSeriesForActor,
   pageDropConfirmAccepted,
@@ -307,7 +308,7 @@ describe('canReviewSubmittedEpisode', () => {
     expect(canReviewSubmittedEpisode(undefined, undefined)).toBe(false);
   });
 
-  it('is false for TvShowEpisode, Film, and NewsReport even when ids look like uuids', () => {
+  it('is false for TvShowEpisode, Film, and NewsReport even when ids look like uuids (they use submittedCataloguePlayableReview)', () => {
     expect(isNonPodcastPlayableKind('TvShowEpisode')).toBe(true);
     expect(isNonPodcastPlayableKind('Episode')).toBe(false);
     expect(isCataloguePlayableKindValue('Episode')).toBe(true);
@@ -349,5 +350,30 @@ describe('postSubmitEpisodeDialog', () => {
   it('does not open an episode form for other submit outcomes', () => {
     expect(postSubmitEpisodeDialog('Ignored')).toBe('none');
     expect(postSubmitEpisodeDialog(undefined)).toBe('none');
+  });
+});
+
+describe('submittedCataloguePlayableReview', () => {
+  const created = (contentKind: string, episode = 'Created') =>
+    ({ episode, podcast: 'NotCreated', contentKind, playableId: otherId });
+
+  it('gives a Curator Review + Edit for a created, enriched or existing news report or TV episode', () => {
+    for (const outcome of ['Created', 'Enriched', 'EpisodeAlreadyExists']) {
+      expect(submittedCataloguePlayableReview(['Curator'], created('NewsReport', outcome)))
+        .toEqual({ kind: 'NewsReport', playableId: otherId });
+      expect(submittedCataloguePlayableReview(['Curator'], created('TvShowEpisode', outcome)))
+        .toEqual({ kind: 'TvShowEpisode', playableId: otherId });
+    }
+  });
+
+  it('is null for Submitters, other outcomes, missing or invalid playable ids, films and podcast episodes', () => {
+    expect(submittedCataloguePlayableReview(['Submitter'], created('NewsReport'))).toBeNull();
+    expect(submittedCataloguePlayableReview(undefined, created('NewsReport'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], created('NewsReport', 'Ignored'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], { ...created('NewsReport'), playableId: undefined })).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], { ...created('NewsReport'), playableId: 'not-a-guid' })).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], created('Film'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], created('Episode'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], undefined)).toBeNull();
   });
 });

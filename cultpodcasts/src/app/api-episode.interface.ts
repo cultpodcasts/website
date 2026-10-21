@@ -11,6 +11,8 @@ export interface ApiEpisode {
     displayTitle?: string;
     podcastId?: string;
     podcastName?: string;
+    /** Playable kind (Episode / TvShowEpisode / NewsReport / Film). Absent from older APIs = podcast episode. */
+    contentKind?: string | null;
     description: string;
     displayDescription?: string;
     posted: boolean;

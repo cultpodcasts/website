@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -10,12 +10,24 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
-import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor } from '../submit-ingest-ux';
+import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
+import { cataloguePlayableCommands } from '../catalogue-links';
+import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
+import { GuidService } from '../guid.service';
+import { EditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
 const medium = 15 * 1000;
 const long = 30 * 1000;
+
+export interface SubmitUrlOriginResponseSnackbarData {
+  existingPodcast: boolean;
+  response: SubmitUrlOriginSuccessResponse;
+  roles?: readonly string[];
+  /** Hub submit: the outlet / show the URL was sent to, so Review needs no lookup. */
+  parentName?: string;
+}
 
 @Component({
   selector: 'app-submit-url-origin-response-snackbar',
@@ -35,12 +47,16 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly serviceIconRows: SubmitEpisodeServiceIconRow[];
   readonly catalogueKindLabel: string | null;
   readonly catalogueOutcomePhrase: string;
+  /** News report / TV episode Review + Edit target (Curator, playable guid, created or existing). */
+  readonly cataloguePlayable: { kind: EditableCataloguePlayableKind; playableId: string } | null;
+  private readonly parents = inject(CataloguePlayableParentService);
+  private readonly guids = inject(GuidService);
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
     public snackBarRef: MatSnackBarRef<SubmitUrlOriginResponseSnackbarComponent>,
-    @Inject(MAT_SNACK_BAR_DATA) public data: { existingPodcast: boolean, response: SubmitUrlOriginSuccessResponse, roles?: readonly string[] }) {
+    @Inject(MAT_SNACK_BAR_DATA) public data: SubmitUrlOriginResponseSnackbarData) {
     this.existingPodcast = data.existingPodcast;
     this.serviceIconRows = submitEpisodeServiceIconRows(data.response.episodeDetails);
     this.catalogueKindLabel = isNonPodcastPlayableKind(data.response.contentKind)
@@ -53,7 +69,13 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       data.response.episodeId,
       data.response.contentKind
     );
-    if (episodeDialog !== 'none' && canReview) {
+    this.cataloguePlayable = submittedCataloguePlayableReview(data.roles, data.response);
+    const catalogue = this.cataloguePlayable;
+    if (catalogue) {
+      this.actionText.set("Edit");
+      this.showReviewButton.set(true);
+      snackBarRef.onAction().subscribe(() => this.editSubmittedPlayable(catalogue.kind, catalogue.playableId));
+    } else if (episodeDialog !== 'none' && canReview) {
       this.actionText.set("Edit");
       this.showReviewButton.set(true);
       snackBarRef.onAction().subscribe(() => {
@@ -143,6 +165,10 @@ export class SubmitUrlOriginResponseSnackbarComponent {
 
   async review() {
     this.snackBarRef.dismiss();
+    if (this.cataloguePlayable) {
+      await this.navigateToPlayableReview(this.cataloguePlayable.kind, this.cataloguePlayable.playableId);
+      return;
+    }
     if (!canReviewSubmittedEpisode(
       this.data.response.podcastId,
       this.data.response.episodeId,
@@ -156,5 +182,28 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   private async navigateToEpisodeReview(podcastId: string, episodeId: string) {
     const id = JSON.stringify([`${podcastId}/${episodeId}`]);
     await this.router.navigate(["/episodes", id])
+  }
+
+  /** News report / TV episode: open its edit dialog, then offer Review on the playable page. */
+  editSubmittedPlayable(kind: EditableCataloguePlayableKind, playableId: string) {
+    openCataloguePlayableEditDialog(this.dialog, kind, playableId).afterClosed().subscribe(result => {
+      const message = playableEditResultMessage(kind, result);
+      if (!message) {
+        return;
+      }
+      const ref = this.snackBar.open(message, "Review", { duration: result?.updated ? long : medium });
+      ref.onAction().subscribe(async () =>
+        await this.navigateToPlayableReview(kind, playableId, result?.parentName ?? undefined));
+    });
+  }
+
+  private async navigateToPlayableReview(kind: EditableCataloguePlayableKind, playableId: string, knownParent?: string) {
+    const parentName = this.data.parentName || knownParent || await this.parents.parentName(kind, playableId);
+    const commands = cataloguePlayableCommands(kind, parentName, playableId, this.guids);
+    if (!commands) {
+      this.snackBar.open("Could not find the page for this item", "Ok", { duration: 5000 });
+      return;
+    }
+    await this.router.navigate(commands);
   }
 }

@@ -1,0 +1,173 @@
+@let f = form();
+<mat-tab-group class="playable-edit-tabs">
+    <mat-tab label="Details">
+        <label class="parent">
+            <span>{{parentLabel()}}:</span>
+            <p id="parent-name">{{parentName()}}</p>
+        </label>
+        <mat-form-field class="full-width">
+            <mat-label>Title</mat-label>
+            <input type="text" [formControl]="f.controls.title" matInput>
+            @if (f.controls.title.hasError('required')) {
+            <mat-error>A title is required</mat-error>
+            }
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea [formControl]="f.controls.description" matInput cdkTextareaAutosize
+                cdkAutosizeMaxRows="5"></textarea>
+        </mat-form-field>
+    </mat-tab>
+    <mat-tab label="Flags">
+        <div class="flags">
+            @if (featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
+            <mat-checkbox [formControl]="f.controls.posted">Posted</mat-checkbox>
+            }
+            <mat-checkbox [formControl]="f.controls.tweeted">Tweeted</mat-checkbox>
+            @if (blueskyPosted()) {
+            <div class="bluesky-flag">
+                <span>Bluesky post</span>
+                @if (!pendingUnBluesky()) {
+                <button type="button" matButton="text" (click)="markRemoveBlueskyPost()">Remove</button>
+                } @else {
+                <span class="bluesky-flag__pending">Will remove on save</span>
+                <button type="button" matButton="text" (click)="cancelRemoveBlueskyPost()">Undo</button>
+                }
+            </div>
+            } @else {
+            <div class="bluesky-flag bluesky-flag--idle">Not posted to Bluesky</div>
+            }
+            <mat-checkbox [formControl]="f.controls.ignored">Ignored</mat-checkbox>
+            <mat-checkbox [formControl]="f.controls.removed">Removed</mat-checkbox>
+            <mat-checkbox [formControl]="f.controls.explicit">Explicit</mat-checkbox>
+        </div>
+    </mat-tab>
+    <mat-tab label="Meta">
+        <mat-form-field class="full-width">
+            <mat-label>Release</mat-label>
+            <input type="date" [formControl]="f.controls.release" matInput>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Duration</mat-label>
+            <input type="text" [formControl]="f.controls.duration" matInput placeholder="h:mm:ss">
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Subjects</mat-label>
+            <mat-select [formControl]="f.controls.subjects" multiple [sortComparator]="noCompareFunction"
+                (selectionChange)="regroupSubjects()" (openedChange)="onSubjectsOpenChange($event)"
+                (keydown)="onSubjectsKeydown($event)">
+                @if (typingFilter && subjectsFilterTerm().length > 0) {
+                <mat-option disabled>{{subjectsFilterTerm()}}</mat-option>
+                <mat-divider></mat-divider>
+                }
+                @for (subject of selectedSubjects(); track subject) {
+                <mat-option [value]="subject">{{subject}}</mat-option>
+                }
+                @if (hoistedSubjects().length > 0) {
+                @if (selectedSubjects().length > 0) {
+                <mat-divider></mat-divider>
+                }
+                @for (subject of hoistedSubjects(); track subject) {
+                <mat-option [value]="subject">{{subject}}</mat-option>
+                }
+                }
+                @if (otherSubjects().length > 0) {
+                @if (selectedSubjects().length > 0 || hoistedSubjects().length > 0) {
+                <mat-divider></mat-divider>
+                }
+                @for (subject of otherSubjects(); track subject) {
+                <mat-option [value]="subject">{{subject}}</mat-option>
+                }
+                }
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Search Terms</mat-label>
+            <input type="text" [formControl]="f.controls.searchTerms" matInput>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Hash Tag</mat-label>
+            <input type="text" [formControl]="f.controls.hashTag" matInput placeholder="#tag1 #tag2"
+                (blur)="normalizeHashTag()">
+            @if (f.controls.hashTag.hasError('hashPrefixedTag')) {
+            <mat-error>Each tag must start with #</mat-error>
+            }
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>Language</mat-label>
+            <mat-select [formControl]="f.controls.lang">
+                @for (language of languages() | keyvalue:null; track language.key) {
+                <mat-option [value]="language.key">{{language.value}}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </mat-tab>
+    <mat-tab label="Guests">
+        <mat-form-field class="full-width">
+            <mat-label>Guests</mat-label>
+            <mat-select [formControl]="f.controls.guests" multiple [sortComparator]="noCompareFunction"
+                (selectionChange)="regroupGuests()" (openedChange)="onGuestsOpenChange($event)"
+                (keydown)="onGuestsKeydown($event)">
+                @if (typingFilter && guestsFilterTerm().length > 0) {
+                <mat-option disabled>{{guestsFilterTerm()}}</mat-option>
+                <mat-divider></mat-divider>
+                }
+                @for (person of selectedGuests(); track person.id) {
+                <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
+                }
+                @if (otherPeople().length > 0) {
+                @if (selectedGuests().length > 0) {
+                <mat-divider></mat-divider>
+                }
+                @for (person of otherPeople(); track person.id) {
+                <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
+                }
+                }
+            </mat-select>
+        </mat-form-field>
+        <div class="guest-actions">
+            <button type="button" matButton="text" (click)="openAddPerson()">Add person</button>
+        </div>
+        @if (selectedGuests().length > 0) {
+        <div class="guest-list">
+            <span>Selected:</span>
+            @for (person of selectedGuests(); track person.id) {
+            <div class="guest-row">
+                <span>{{personLabel(person)}}</span>
+                <button type="button" matButton="text" (click)="openEditPerson(person)">Edit</button>
+            </div>
+            }
+        </div>
+        }
+    </mat-tab>
+    @if (identity() && f.controls.imdb && f.controls.tvdb) {
+    <mat-tab label="Identity">
+        <mat-form-field class="full-width">
+            <mat-label>IMDb</mat-label>
+            <input type="text" [formControl]="f.controls.imdb" matInput>
+            <button type="button" matIconButton matSuffix aria-label="Open IMDb URL"
+                [disabled]="!hasNonEmptyUrlValue(f.controls.imdb.value)"
+                (click)="openExternalUrl(f.controls.imdb.value)">
+                <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button type="button" matIconButton matSuffix aria-label="Remove IMDb URL"
+                [disabled]="!hasNonEmptyUrlValue(f.controls.imdb.value)" (click)="clearField(f.controls.imdb)">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-form-field>
+        <mat-form-field class="full-width">
+            <mat-label>TheTVDB</mat-label>
+            <input type="text" [formControl]="f.controls.tvdb" matInput>
+            <button type="button" matIconButton matSuffix aria-label="Open TheTVDB URL"
+                [disabled]="!hasNonEmptyUrlValue(f.controls.tvdb.value)"
+                (click)="openExternalUrl(f.controls.tvdb.value)">
+                <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB URL"
+                [disabled]="!hasNonEmptyUrlValue(f.controls.tvdb.value)" (click)="clearField(f.controls.tvdb)">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-form-field>
+    </mat-tab>
+    }
+</mat-tab-group>

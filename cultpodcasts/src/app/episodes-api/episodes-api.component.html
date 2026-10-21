@@ -91,14 +91,16 @@
             <div class="curator-card__main">
                 <mat-card-header>
                     <mat-card-title>
-                        <a [routerLink]="['/podcast', result.podcastName, result.id]"
+                        <a [routerLink]="playableLink(result)"
                             [innerHTML]="result.displayTitle"></a>
                     </mat-card-title>
+                    @if (parentLink(result); as parent) {
                     <mat-card-subtitle>
-                        <a [routerLink]="['/podcast', result.podcastName]">
+                        <a [routerLink]="parent">
                             {{result.podcastName}}
                         </a>
                     </mat-card-subtitle>
+                    }
                     <mat-card-subtitle class="curator-card__meta">
                         <span>{{result.release | date:'d MMM yyyy H:mm'}}
                             [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</span>
