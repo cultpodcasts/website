@@ -204,6 +204,11 @@ test.describe("news and TV hub menu", () => {
 				contentType: "application/json",
 				body: JSON.stringify({ id: outletId, name: "Desk", publisher: "Desk Media", twitterHandle: "@desk" })
 			}));
+		// Same /subjects and /languages lookups as the podcast edit dialog.
+		await page.route("**/subjects", (route) =>
+			route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ name: "Politics" }, { name: "Sport" }]) }));
+		await page.route("**/languages", (route) =>
+			route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ en: "English", fr: "French" }) }));
 		await page.route(`**/newsorganisation/${outletId}`, async (route) => {
 			patchBody = route.request().postDataJSON();
 			await route.fulfill({ status: 202, body: "" });
@@ -220,16 +225,37 @@ test.describe("news and TV hub menu", () => {
 		if (screenshotDir) {
 			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog.png` });
 		}
+		await dialog.getByRole("tab", { name: "Subjects" }).click();
+		await dialog.getByRole("combobox", { name: "Default Subject" }).click();
+		await page.getByRole("option", { name: "Politics" }).click();
+		await dialog.getByRole("combobox", { name: "Ignored Subjects" }).click();
+		await page.getByRole("option", { name: "Sport" }).click();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+		if (screenshotDir) {
+			await page.waitForTimeout(600); // let the tab slide finish
+			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog-subjects.png` });
+		}
 		await dialog.getByRole("tab", { name: "Meta" }).click();
 		const publisher = dialog.getByLabel("Publisher");
 		await expect(publisher).toHaveValue("Desk Media");
 		await publisher.fill("Desk Media Group");
+		const language = dialog.getByRole("combobox", { name: "Language" });
+		await expect(language).toHaveText("No Language");
+		await language.click();
+		await page.getByRole("option", { name: "French" }).click();
 		if (screenshotDir) {
 			await page.waitForTimeout(600); // let the tab slide finish
 			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog-meta.png` });
 		}
 		await dialog.getByRole("button", { name: "Save" }).click();
-		await expect.poll(() => patchBody).toEqual({ youTubeChannelId: "UCaaaaaaaaaaaaaaaaaaaaaa", publisher: "Desk Media Group" });
+		await expect.poll(() => patchBody).toEqual({
+			youTubeChannelId: "UCaaaaaaaaaaaaaaaaaaaaaa",
+			publisher: "Desk Media Group",
+			defaultSubject: "Politics",
+			ignoredSubjects: ["Sport"],
+			language: "fr"
+		});
 		await expect(page.getByText("News Outlet updated")).toBeVisible();
 	});
 });

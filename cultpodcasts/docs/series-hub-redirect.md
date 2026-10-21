@@ -31,9 +31,9 @@ The edit dialog uses the podcast edit dialog's tabbed layout and styles (`mat-ta
 |-----|--------|
 | Details | Spotify Id, Apple Id (blank sends `nullAppleId: true`), YouTube channel id, YouTube playlist id (+ read-only previous playlist ids) |
 | Flags | Removed (confirm dialog: every report / episode is hidden) |
-| Subjects | Default subject, ignored subjects, ignored associated subjects, known terms |
+| Subjects | Default subject and ignored subjects (the podcast dialog's `/subjects` selects with typing filter), ignored associated subjects, known terms |
 | Social | Twitter, Bluesky, hashtags, enrichment hashtags |
-| Meta | Publisher, description, language, search terms |
+| Meta | Publisher, description, language (the podcast dialog's `/languages` select; "No Language" sends blank), search terms |
 | Identity (TV only) | IMDb and TheTVDB URLs |
 
 Later edit screens for news reports, TV episodes and films should follow the episode edit dialog's layout in the same way.

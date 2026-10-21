@@ -57,11 +57,30 @@
             <mat-tab label="Subjects">
                 <mat-form-field class="full-width">
                     <mat-label>Default Subject</mat-label>
-                    <input type="text" name="defaultSubject" [(ngModel)]="m.defaultSubject" matInput>
+                    <mat-select name="defaultSubject" [(ngModel)]="m.defaultSubject"
+                        (openedChange)="onDefaultSubjectDropdownOpenChange($event)"
+                        (keydown)="onDefaultSubjectDropdownKeydown($event)">
+                        @if (enableDesktopSubjectTypingFilter && defaultSubjectFilterTerm().length > 0) {
+                        <mat-option disabled>{{defaultSubjectFilterTerm()}}</mat-option>
+                        }
+                        <mat-option [value]="''">No Subject</mat-option>
+                        @for (subject of filteredDefaultSubjects(); track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
-                    <mat-label>Ignored Subjects (comma separated)</mat-label>
-                    <input type="text" name="ignoredSubjects" [(ngModel)]="m.ignoredSubjects" matInput>
+                    <mat-label>Ignored Subjects</mat-label>
+                    <mat-select name="ignoredSubjects" [(ngModel)]="m.ignoredSubjects" multiple
+                        [sortComparator]="noCompareFunction" (openedChange)="onIgnoredSubjectsDropdownOpenChange($event)"
+                        (keydown)="onIgnoredSubjectsDropdownKeydown($event)">
+                        @if (enableDesktopSubjectTypingFilter && ignoredSubjectsFilterTerm().length > 0) {
+                        <mat-option disabled>{{ignoredSubjectsFilterTerm()}}</mat-option>
+                        }
+                        @for (subject of filteredIgnoredSubjects(); track subject) {
+                        <mat-option [value]="subject">{{subject}}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Ignored Associated Subjects (comma separated)</mat-label>
@@ -100,8 +119,12 @@
                     <textarea name="description" [(ngModel)]="m.description" matInput cdkTextareaAutosize></textarea>
                 </mat-form-field>
                 <mat-form-field class="full-width">
-                    <mat-label>Language (blank = English)</mat-label>
-                    <input type="text" name="language" [(ngModel)]="m.language" matInput>
+                    <mat-label>Language</mat-label>
+                    <mat-select name="language" [(ngModel)]="m.language">
+                        @for (language of languages() | keyvalue:null; track language.key) {
+                        <mat-option [value]="language.key">{{language.value}}</mat-option>
+                        }
+                    </mat-select>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Search Terms</mat-label>

@@ -74,6 +74,18 @@ export class CurationSubmitService {
     });
   }
 
+  /** Subject names for the subject selects (same endpoint as the podcast edit dialog). */
+  getSubjects() {
+    const url = new URL('/subjects', environment.api).toString();
+    return this.http.get<{ name: string }[]>(url, { context: this.curateContext() });
+  }
+
+  /** Language code → name map for the language select (same endpoint as the podcast edit dialog). */
+  getLanguages() {
+    const url = new URL('/languages', environment.api).toString();
+    return this.http.get<Record<string, string>>(url, { context: this.curateContext() });
+  }
+
   /** GET a news outlet / TV show by guid or route-form name (curate). */
   getCatalogueParent(hub: CatalogueHub, identifier: string) {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(identifier)}`, environment.api).toString();

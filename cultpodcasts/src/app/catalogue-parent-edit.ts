@@ -1,10 +1,14 @@
 import { CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
+import { episodeLanguageFormValue } from "./language-options.util";
 
-/** Editable text fields, in form order. Lists are edited as comma-separated text. */
+/**
+ * Editable text fields, in form order. `defaultSubject` is a subject select ("" = No Subject).
+ * `language` (select, "unset" = English) and `ignoredSubjects` (multi-select) are handled on their own,
+ * like the podcast edit dialog; the other lists are edited as comma-separated text.
+ */
 export const catalogueParentTextFields = [
   "publisher",
   "description",
-  "language",
   "twitterHandle",
   "blueskyHandle",
   "hashTag",
@@ -15,7 +19,6 @@ export const catalogueParentTextFields = [
 export const catalogueParentListFields = [
   "enrichmentHashTags",
   "knownTerms",
-  "ignoredSubjects",
   "ignoredAssociatedSubjects"
 ] as const;
 
@@ -30,11 +33,35 @@ type TextField =
   | typeof catalogueParentServiceIdFields[number];
 type ListField = typeof catalogueParentListFields[number];
 
-/** `appleId` is edited as text so a blank field can mean "clear". */
+/**
+ * `appleId` is edited as text so a blank field can mean "clear". `language` is a language-select key
+ * ("unset" = English, stored blank). `ignoredSubjects` is the multi-select value.
+ */
 export type CatalogueParentEditModel = Record<TextField, string> & Record<ListField, string> & {
   removed: boolean;
   appleId: string;
+  language: string;
+  ignoredSubjects: string[];
 };
+
+/** Language-select key for the API value: blank or English → "unset", like the episode language picker. */
+export function catalogueParentLanguageFormValue(language: string | null | undefined): string {
+  return episodeLanguageFormValue(language);
+}
+
+function sameList(before: readonly string[], after: readonly string[]): boolean {
+  return before.length === after.length && before.every((value, i) => value === after[i]);
+}
+
+/**
+ * Subject-select options in the podcast dialog's order: the current values first, then the rest
+ * of the subjects. Current values missing from the subjects list are kept so they stay selected.
+ */
+export function subjectOptions(current: readonly string[], subjects: readonly string[]): string[] {
+  const head = current.filter((value) => value.length > 0);
+  const seen = new Set(head);
+  return [...head, ...subjects.filter((name) => !seen.has(name))];
+}
 
 const appleIdPattern = /^\d+$/;
 
@@ -58,7 +85,9 @@ export function textToList(text: string): string[] {
 export function catalogueParentEditModel(dto: CatalogueParentDto): CatalogueParentEditModel {
   const model = {
     removed: dto.removed === true,
-    appleId: dto.appleId == null ? "" : String(dto.appleId)
+    appleId: dto.appleId == null ? "" : String(dto.appleId),
+    language: catalogueParentLanguageFormValue(dto.language),
+    ignoredSubjects: [...(dto.ignoredSubjects ?? [])]
   } as CatalogueParentEditModel;
   for (const field of [...catalogueParentTextFields, ...tvShowIdentityFields, ...catalogueParentServiceIdFields]) {
     model[field] = (dto[field] ?? "").toString();
@@ -75,7 +104,8 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
 }
 
 /**
- * Only the fields the curator changed. A cleared string is sent as "" and a cleared list as [],
+ * Only the fields the curator changed. A cleared string is sent as "" and a cleared list as [];
+ * "No Subject" is "" and English ("unset") is language "",
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` text is ignored here; the dialog blocks Save on it.
  */
@@ -98,9 +128,15 @@ export function catalogueParentChanges(
   for (const field of catalogueParentListFields) {
     const before = original[field] ?? [];
     const after = textToList(edited[field]);
-    if (before.length !== after.length || before.some((value, i) => value !== after[i])) {
+    if (!sameList(before, after)) {
       changes[field] = after;
     }
+  }
+  if (!sameList(original.ignoredSubjects ?? [], edited.ignoredSubjects)) {
+    changes.ignoredSubjects = [...edited.ignoredSubjects];
+  }
+  if (catalogueParentLanguageFormValue(original.language) !== edited.language) {
+    changes.language = edited.language === "unset" ? "" : edited.language;
   }
   const appleText = edited.appleId.trim();
   const appleBefore = original.appleId ?? null;

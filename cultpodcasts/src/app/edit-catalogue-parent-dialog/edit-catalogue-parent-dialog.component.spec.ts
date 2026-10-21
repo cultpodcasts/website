@@ -11,7 +11,12 @@ import { CatalogueParentEditModel } from '../catalogue-parent-edit';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-type Internals = { model(): CatalogueParentEditModel | null; save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
+type Internals = {
+  model(): CatalogueParentEditModel | null;
+  defaultSubjects(): string[];
+  filteredIgnoredSubjects(): string[];
+  languages(): Record<string, string>;
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
@@ -19,6 +24,8 @@ describe('EditCatalogueParentDialogComponent', () => {
   let confirmAnswer: { result: boolean } | undefined;
   const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
   const patchUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
+  const subjectsUrl = new URL('/subjects', environment.api).toString();
+  const languagesUrl = new URL('/languages', environment.api).toString();
 
   beforeEach(async () => {
     close = vi.fn();
@@ -61,6 +68,13 @@ describe('EditCatalogueParentDialogComponent', () => {
     }
   }
 
+  /** The dialog loads the show, `/subjects` and `/languages` together, like the podcast edit dialog. */
+  async function loadWith(show: object, subjects = [{ name: 'Arts' }, { name: 'Sport' }], languages: Record<string, string> = { en: 'English', fr: 'French' }) {
+    (await expectSoon(getUrl)).flush(show);
+    (await expectSoon(subjectsUrl)).flush(subjects);
+    (await expectSoon(languagesUrl)).flush(languages);
+  }
+
   function create(): Internals {
     const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
     fixture.detectChanges();
@@ -69,7 +83,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('loads by name, PATCHes only the changed fields by id, and closes on 202', async () => {
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', publisher: 'Net', tvdb: 'https://thetvdb.com/series/x' });
+    await loadWith({ id: showId, name: 'Nightly', publisher: 'Net', tvdb: 'https://thetvdb.com/series/x' });
     await settle();
     const model = dialog.model()!;
     model.publisher = 'Network Two';
@@ -85,7 +99,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('closes with noChange and sends nothing when unchanged', async () => {
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly' });
+    await loadWith({ id: showId, name: 'Nightly' });
     await settle();
     await dialog.save();
     expect(close).toHaveBeenCalledWith({ noChange: true });
@@ -93,6 +107,9 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('shows not found on 404 and offers no form', async () => {
     const dialog = create();
+    // Answer the lookups sent alongside first, so none is left open or cancelled mid-flight.
+    (await expectSoon(subjectsUrl)).flush([]);
+    (await expectSoon(languagesUrl)).flush({});
     (await expectSoon(getUrl)).flush(null, { status: 404, statusText: 'Not Found' });
     await settle();
     expect(dialog.notFound()).toBe(true);
@@ -101,7 +118,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('PATCHes a YouTube channel id and clears the Apple id with nullAppleId', async () => {
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', appleId: 55 });
+    await loadWith({ id: showId, name: 'Nightly', appleId: 55 });
     await settle();
     const model = dialog.model()!;
     model.youTubeChannelId = 'UCcccccccccccccccccccccc';
@@ -116,7 +133,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('blocks Save on a non-numeric Apple id', async () => {
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly' });
+    await loadWith({ id: showId, name: 'Nightly' });
     await settle();
     dialog.model()!.appleId = 'abc';
     await dialog.save();
@@ -127,7 +144,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   it('asks before removing, and sends nothing when the curator says No', async () => {
     confirmAnswer = { result: false };
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: false });
+    await loadWith({ id: showId, name: 'Nightly', removed: false });
     await settle();
     dialog.model()!.removed = true;
     await dialog.save();
@@ -138,7 +155,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('PATCHes removed after Yes, and restores without asking', async () => {
     const dialog = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: false });
+    await loadWith({ id: showId, name: 'Nightly', removed: false });
     await settle();
     dialog.model()!.removed = true;
     const done = dialog.save();
@@ -149,7 +166,7 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(confirmOpen).toHaveBeenCalledTimes(1);
 
     const restore = create();
-    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: true });
+    await loadWith({ id: showId, name: 'Nightly', removed: true });
     await settle();
     restore.model()!.removed = false;
     const restored = restore.save();
@@ -158,5 +175,24 @@ describe('EditCatalogueParentDialogComponent', () => {
     restoreReq.flush(null, { status: 202, statusText: 'Accepted' });
     await restored;
     expect(confirmOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the podcast dialog subject and language selects and PATCHes picked values', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly', defaultSubject: 'Gone', ignoredSubjects: ['Sport'], language: null });
+    await settle();
+    expect(dialog.defaultSubjects()).toEqual(['Gone', 'Arts', 'Sport']);
+    expect(dialog.filteredIgnoredSubjects()).toEqual(['Sport', 'Arts']);
+    expect(dialog.languages()).toEqual({ unset: 'No Language', fr: 'French' });
+    const model = dialog.model()!;
+    expect(model.language).toBe('unset');
+    model.defaultSubject = 'Arts';
+    model.ignoredSubjects = ['Sport', 'Arts'];
+    model.language = 'fr';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ defaultSubject: 'Arts', ignoredSubjects: ['Sport', 'Arts'], language: 'fr' });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
   });
 });

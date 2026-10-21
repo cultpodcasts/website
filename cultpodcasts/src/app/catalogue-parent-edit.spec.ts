@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, removesCatalogueParent, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -27,7 +27,7 @@ describe('catalogueParentChanges', () => {
     model.twitterHandle = '';
     model.description = '  New text ';
     model.knownTerms = '';
-    model.ignoredSubjects = 'One, Two ,';
+    model.ignoredSubjects = ['One', 'Two'];
     model.removed = true;
     expect(catalogueParentChanges(outlet, model, false)).toEqual({
       twitterHandle: '',
@@ -52,6 +52,37 @@ describe('catalogueParentChanges', () => {
 
   it('splits comma lists and drops blanks', () => {
     expect(textToList(' a, ,b ,')).toEqual(['a', 'b']);
+  });
+});
+
+describe('subject and language selects', () => {
+  const tagged: CatalogueParentDto = { ...outlet, defaultSubject: 'Politics', ignoredSubjects: ['Sport'], language: 'fr' };
+
+  it('maps blank / English language to "unset" and sends nothing when untouched', () => {
+    expect(catalogueParentEditModel(outlet).language).toBe('unset');
+    expect(catalogueParentEditModel({ ...outlet, language: 'en-GB' }).language).toBe('unset');
+    expect(catalogueParentChanges(tagged, catalogueParentEditModel(tagged), false)).toEqual({});
+  });
+
+  it('sends a picked language, and "" when set back to English', () => {
+    const model = catalogueParentEditModel(outlet);
+    model.language = 'de';
+    expect(catalogueParentChanges(outlet, model, false)).toEqual({ language: 'de' });
+    const back = catalogueParentEditModel(tagged);
+    back.language = 'unset';
+    expect(catalogueParentChanges(tagged, back, false)).toEqual({ language: '' });
+  });
+
+  it('sends "" for No Subject and the multi-select value for ignored subjects', () => {
+    const model = catalogueParentEditModel(tagged);
+    model.defaultSubject = '';
+    model.ignoredSubjects = ['Sport', 'Weather'];
+    expect(catalogueParentChanges(tagged, model, false)).toEqual({ defaultSubject: '', ignoredSubjects: ['Sport', 'Weather'] });
+  });
+
+  it('lists current subjects first, then the rest, keeping unknown current values', () => {
+    expect(subjectOptions(['Gone', 'Sport'], ['Arts', 'Sport', 'Weather'])).toEqual(['Gone', 'Sport', 'Arts', 'Weather']);
+    expect(subjectOptions([''], ['Arts'])).toEqual(['Arts']);
   });
 });
 

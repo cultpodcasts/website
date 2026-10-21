@@ -7,9 +7,11 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from "@angu
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatSelectModule } from "@angular/material/select";
 import { MatTabsModule } from "@angular/material/tabs";
 import { TextFieldModule } from "@angular/cdk/text-field";
-import { firstValueFrom } from "rxjs";
+import { KeyValuePipe } from "@angular/common";
+import { firstValueFrom, forkJoin } from "rxjs";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { CatalogueParentDto } from "../catalogue-parent.interface";
 import {
@@ -17,10 +19,14 @@ import {
   catalogueParentChanges,
   catalogueParentEditModel,
   isValidAppleIdText,
-  removesCatalogueParent
+  removesCatalogueParent,
+  subjectOptions
 } from "../catalogue-parent-edit";
 import { ConfirmComponent } from "../confirm/confirm.component";
 import { CurationSubmitService } from "../curation-submit.service";
+import { buildPodcastLanguageOptions } from "../language-options.util";
+import { filterSubjectsByTerm, noCompareFunction } from "../podcast-form.util";
+import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 
 export interface EditCatalogueParentDialogData {
   hub: CatalogueHub;
@@ -36,17 +42,20 @@ export interface EditCatalogueParentDialogResponse {
 /**
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids), Flags, Subjects, Social, Meta, and Identity for TV. Rename is a separate admin dialog.
+ * Default/ignored subjects and language use the podcast dialog's selects (`/subjects`, `/languages`, typing filter).
  */
 @Component({
   selector: "app-edit-catalogue-parent-dialog",
   imports: [
     FormsModule,
+    KeyValuePipe,
     MatButtonModule,
     MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
     MatTabsModule,
     TextFieldModule
   ],
@@ -72,6 +81,13 @@ export class EditCatalogueParentDialogComponent {
   protected readonly appleIdInvalid = signal(false);
   protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
+  protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
+  protected readonly noCompareFunction = noCompareFunction;
+  protected readonly defaultSubjects = signal<string[]>([]);
+  protected readonly ignoredSubjects = signal<string[]>([]);
+  protected readonly defaultSubjectFilterTerm = signal("");
+  protected readonly ignoredSubjectsFilterTerm = signal("");
+  protected readonly languages = signal<Record<string, string>>({});
   private original: CatalogueParentDto | null = null;
 
   constructor() {
@@ -80,9 +96,20 @@ export class EditCatalogueParentDialogComponent {
 
   private async load(): Promise<void> {
     try {
-      const dto = await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, this.data.name));
+      const resp = await firstValueFrom(
+        forkJoin({
+          dto: this.curation.getCatalogueParent(this.data.hub, this.data.name),
+          subjects: this.curation.getSubjects(),
+          languages: this.curation.getLanguages()
+        })
+      );
+      const dto = resp.dto;
+      const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
       this.model.set(catalogueParentEditModel(dto));
+      this.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
+      this.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
+      this.languages.set(buildPodcastLanguageOptions(resp.languages));
       this.playlistHistory.set(dto.youTubePlaylistIdHistory ?? []);
     } catch (error) {
       const status = error instanceof HttpErrorResponse ? error.status : 0;
@@ -140,6 +167,35 @@ export class EditCatalogueParentDialogComponent {
         .afterClosed()
     );
     return (closed as { result?: boolean } | undefined)?.result === true;
+  }
+
+  protected onDefaultSubjectDropdownOpenChange(opened: boolean): void {
+    if (!opened) {
+      this.defaultSubjectFilterTerm.set("");
+    }
+  }
+
+  protected onIgnoredSubjectsDropdownOpenChange(opened: boolean): void {
+    if (!opened) {
+      this.ignoredSubjectsFilterTerm.set("");
+    }
+  }
+
+  protected onDefaultSubjectDropdownKeydown(event: KeyboardEvent): void {
+    applySubjectFilterKey(event, this.defaultSubjectFilterTerm, this.enableDesktopSubjectTypingFilter);
+  }
+
+  protected onIgnoredSubjectsDropdownKeydown(event: KeyboardEvent): void {
+    applySubjectFilterKey(event, this.ignoredSubjectsFilterTerm, this.enableDesktopSubjectTypingFilter);
+  }
+
+  protected filteredDefaultSubjects(): string[] {
+    return filterSubjectsByTerm(this.defaultSubjects(), this.defaultSubjectFilterTerm());
+  }
+
+  protected filteredIgnoredSubjects(): string[] {
+    const selected = new Set(this.model()?.ignoredSubjects ?? []);
+    return filterKeepingSelectedInOrder(this.ignoredSubjects(), this.ignoredSubjectsFilterTerm(), selected);
   }
 
   protected close(): void {
