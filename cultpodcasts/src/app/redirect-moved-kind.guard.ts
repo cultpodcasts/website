@@ -15,6 +15,9 @@ import { isUnknownSearchFieldError, normalizePlayableHit, transferredSeriesHubFi
  * Old /podcast/ links for a moved Film, TV episode, news report, or transferred series leave before
  * the podcast page renders. A podcast episode opened by its full GUID moves to its short id once
  * (SSR 301, client replace); a lookup failure does not block that canonical move.
+ * The GUID path still looks the id up first: an id that moved to Film, TV, or News then takes one
+ * 301 straight to its page instead of two (GUID → podcast short id → kind page). Old GUID links
+ * are rare, so the extra search call is the cheaper side of that trade.
  */
 export const redirectMovedKind: CanActivateFn = async (route, state) => {
   const guids = inject(GuidService);
