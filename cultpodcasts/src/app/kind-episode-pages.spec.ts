@@ -252,4 +252,43 @@ describe('kind episode pages', () => {
     expect(fixture.nativeElement.textContent).toContain('One Off');
     expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
   });
+
+  it('still opens a news report from a full guid and moves it to the short id (SSR 301)', async () => {
+    const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+    const { lookedUp, fixture } = await render(NewsReportComponent, {
+      path: `/news/Desk/${id}`,
+      params: { slug: 'Desk', query: id },
+      episode: hit({ contentKind: 'NewsReport', podcastName: 'Desk', episodeTitle: 'Bulletin' }),
+      platform: 'server',
+      responseInit,
+    });
+    expect(lookedUp).toEqual([{ episodeId: id, name: 'Desk', kind: 'NewsReport' }]);
+    expect(responseInit.status).toBe(301);
+    expect(responseInit.headers.get('Location')).toBe(`/news/Desk/${guids.toCatalogueShortId(id, 'NewsReport')}`);
+    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+  });
+
+  it('still opens a TV episode from a full guid in the browser and replaces it with the short id', async () => {
+    const { lookedUp, nav } = await render(TvShowEpisodeComponent, {
+      path: `/tv/Nightly/${id}`,
+      params: { slug: 'Nightly', query: id },
+      episode: hit({ contentKind: 'TvShowEpisode', podcastName: 'Nightly', episodeTitle: 'Part' }),
+    });
+    expect(lookedUp).toEqual([{ episodeId: id, name: 'Nightly', kind: 'TvShowEpisode' }]);
+    expect(String(nav.mock.calls[0][0])).toBe(`/tv/Nightly/${guids.toCatalogueShortId(id, 'TvShowEpisode')}`);
+  });
+
+  it('does not redirect a short-id news page whose organisation name has reserved characters', async () => {
+    const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+    const shortId = guids.toCatalogueShortId(id, 'NewsReport');
+    const { fixture, nav } = await render(NewsReportComponent, {
+      path: `/news/A%20&%20B:%20News/${shortId}`,
+      params: { slug: 'A & B: News', query: shortId },
+      episode: hit({ contentKind: 'NewsReport', podcastName: 'A & B: News', episodeTitle: 'Bulletin' }),
+      responseInit,
+    });
+    expect(nav).not.toHaveBeenCalled();
+    expect(responseInit.status).toBeUndefined();
+    expect(fixture.nativeElement.textContent).toContain('Bulletin');
+  });
 });

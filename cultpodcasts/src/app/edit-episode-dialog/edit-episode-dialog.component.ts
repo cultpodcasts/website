@@ -59,7 +59,7 @@ import { normalizeHashTagControl } from '../podcast-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { GuidService } from '../guid.service';
+import { filmPageCommands } from '../catalogue-links';
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { MoveEpisodeToFilmDialogClose, MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 
@@ -132,7 +132,6 @@ export class EditEpisodeDialogComponent {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private snackBar: MatSnackBar,
-    private guids: GuidService,
   ) {
     this.episodeId = data.episodeId;
     this.podcastIdentifier = data.podcastIdentifier;
@@ -219,10 +218,7 @@ export class EditEpisodeDialogComponent {
         }
         this.dialogRef.close({ movedToFilm: true, podcastId: this.podcastId });
         this.snackBar.open("Moved to film", "Ok", { duration: 10000 });
-        const path = this.guids.movedPlayablePath(result.name, result.filmId, "Film");
-        if (path) {
-          this.router.navigateByUrl(path);
-        }
+        this.router.navigate(filmPageCommands(result.name, result.filmId));
       });
   }
 
