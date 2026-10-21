@@ -83,6 +83,17 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     errorSpy.mockRestore();
   });
 
+  it('warns that unsaved editor changes are discarded only when the editor is dirty', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('.unsaved')).toBeNull();
+
+    const dirty = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    dirty.componentInstance.data = { ...data, hasUnsavedChanges: true };
+    dirty.detectChanges();
+
+    expect((dirty.nativeElement as HTMLElement).querySelector('.unsaved')?.textContent).toContain('discarded');
+  });
+
   it('maps 400 to the server error text and other failures to a retry hint', () => {
     expect(moveErrorMessage(new HttpErrorResponse({ status: 400, error: { error: 'A removed episode cannot be moved to a film' } })))
       .toBe('A removed episode cannot be moved to a film');

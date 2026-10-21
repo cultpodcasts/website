@@ -5,6 +5,9 @@
         This removes the episode from its podcast and makes it a film. The film keeps the episode id,
         links, subjects and posted state. The podcast stays. Old episode links redirect to the film.
     </p>
+    @if (data.hasUnsavedChanges) {
+    <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
+    }
     <mat-form-field class="full-width">
         <mat-label>Film title</mat-label>
         <input type="text" matInput [formControl]="title" [readonly]="isSending()">

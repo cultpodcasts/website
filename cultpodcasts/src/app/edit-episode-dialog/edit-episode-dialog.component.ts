@@ -207,7 +207,8 @@ export class EditEpisodeDialogComponent {
     const data: MoveEpisodeToFilmDialogData = {
       podcastId: this.podcastId,
       episodeId: this.episodeId,
-      episodeTitle: this.originalEpisode.title
+      episodeTitle: this.originalEpisode.title,
+      hasUnsavedChanges: this.form()?.dirty ?? false
     };
     this.dialog.open<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogData, MoveEpisodeToFilmDialogClose>(
       MoveEpisodeToFilmDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })

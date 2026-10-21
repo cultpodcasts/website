@@ -15,6 +15,8 @@ export interface MoveEpisodeToFilmDialogData {
   podcastId: string;
   episodeId: string;
   episodeTitle: string;
+  /** The editor has unsaved changes, which moving discards. */
+  hasUnsavedChanges?: boolean;
 }
 
 export interface MoveEpisodeToFilmDialogClose {
