@@ -25,6 +25,8 @@ import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose, reviewParentLink, reviewPlayableLink } from '../catalogue-links';
 import { GuidService } from '../guid.service';
+import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 import { EpisodeImageComponent } from "../episode-image/episode-image.component";
 import { SubjectsComponent } from "../subjects/subjects.component";
 import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.component";
@@ -265,6 +267,29 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
         return b.release.getTime() - a.release.getTime();
       }));
     }
+  }
+
+  /** Podcast episode rows (no contentKind, or `Episode`): publish, delete and podcast menu items are podcast-only. */
+  protected readonly isPodcastRow = (episode: ApiEpisode) => !isNonPodcastPlayableKind(episode.contentKind);
+  /** News report / TV episode rows edit through their own dialogs (PATCH /newsreport or /tvshowepisode). */
+  protected readonly hasEditDialog = (episode: ApiEpisode) =>
+    this.isPodcastRow(episode) || isEditableCataloguePlayableKind(episode.contentKind);
+
+  editRow(episode: ApiEpisode) {
+    const kind = episode.contentKind;
+    if (isEditableCataloguePlayableKind(kind)) {
+      openCataloguePlayableEditDialog(this.dialog, kind, episode.id).afterClosed().subscribe(async result => {
+        const message = playableEditResultMessage(kind, result);
+        if (message) {
+          this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+        }
+        if (result?.updated) {
+          await this.refreshEpisode(episode.id);
+        }
+      });
+      return;
+    }
+    this.edit(episode.podcastId!, episode.id);
   }
 
   edit(podcastId: string, episodeId: string) {
@@ -528,6 +553,11 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     if (this.isUpdating(episode.id)) {
       return;
     }
+    if (!this.isPodcastRow(episode)) {
+      // POST /episode/publish is podcast-only.
+      this.snackBar.open("Tweeting from here is only for podcast episodes", "Ok", { duration: 5000 });
+      return;
+    }
     if (!episode.podcastId) {
       this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
       return;
@@ -577,6 +607,11 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     }
     const previous = episode.bluesky == true;
     const next = !previous;
+    if (next && !this.isPodcastRow(episode)) {
+      // POST /episode/publish is podcast-only; removing a post (unBluesky) works for every kind.
+      this.snackBar.open("Posting to Bluesky from here is only for podcast episodes", "Ok", { duration: 5000 });
+      return;
+    }
     episode.bluesky = next;
     this.refreshEpisodesSignal();
     this.runEpisodeUpdate(

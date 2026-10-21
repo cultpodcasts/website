@@ -43,29 +43,37 @@ export function cataloguePlayableCommands(
 }
 
 /**
- * Review page (/episodes/:ids) row title link, by kind: /podcast/{name}/{guid} for podcast episodes (and
- * rows without a contentKind), /news|/tv/{parent}/{short id}, /film/{title}/{short id}.
+ * Review page (/episodes/:ids) row title link. Uses the API's ready-made `path` when present (GET /episode/{id} for
+ * every kind, RPP #1063 / Api #179); otherwise the podcast link `/podcast/{name}/{guid}`, or, for a row that has a
+ * `contentKind` but no `path`, /news|/tv/{parent}/{short id} and /film/{title}/{short id}.
  */
 export function reviewPlayableLink(
-  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null },
+  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null },
   guids: GuidService
-): string[] {
+): string | string[] {
+  if (episode.path?.startsWith("/")) {
+    // Already site-encoded: as a string, routerLink parses it as a URL instead of encoding it again.
+    return episode.path;
+  }
   const shortId = () => guids.toCatalogueShortId(episode.id, episode.contentKind);
+  const parent = episode.parentName ?? episode.podcastName ?? "";
   switch (episode.contentKind) {
     case "Film":
-      return ["/film", episode.title, shortId()];
+      return ["/film", episode.slug ?? episode.podcastName ?? episode.title, shortId()];
     case "TvShowEpisode":
-      return ["/tv", episode.podcastName ?? "", shortId()];
+      return ["/tv", parent, shortId()];
     case "NewsReport":
-      return ["/news", episode.podcastName ?? "", shortId()];
+      return ["/news", parent, shortId()];
     default:
       return ["/podcast", episode.podcastName ?? "", episode.id];
   }
 }
 
 /** Review page row parent link: the podcast, outlet or show hub. Null for films (no parent) or no name. */
-export function reviewParentLink(episode: { podcastName?: string | null; contentKind?: string | null }): string[] | null {
-  const name = episode.podcastName;
+export function reviewParentLink(
+  episode: { podcastName?: string | null; parentName?: string | null; contentKind?: string | null }
+): string[] | null {
+  const name = episode.parentName ?? episode.podcastName;
   if (!name) {
     return null;
   }

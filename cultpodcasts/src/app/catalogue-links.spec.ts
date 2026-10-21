@@ -139,6 +139,19 @@ describe('review page row links', () => {
     expect(reviewParentLink({ podcastName: 'Show' })).toEqual(['/podcast', 'Show']);
   });
 
+  it('uses the API path as-is when GET /episode/{id} returns one', () => {
+    expect(reviewPlayableLink({ id, title: 'Bulletin', contentKind: 'NewsReport', path: '/news/NBC%20News/bqqq' }, guids))
+      .toBe('/news/NBC%20News/bqqq');
+  });
+
+  it('prefers parentName / slug from the API for the fallback and parent links', () => {
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'x', parentName: 'Nightly', contentKind: 'TvShowEpisode' }, guids))
+      .toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
+    expect(reviewPlayableLink({ id, title: 'One Off (2020)', slug: 'One Off', contentKind: 'Film' }, guids))
+      .toEqual(['/film', 'One Off', guids.toCatalogueShortId(id, 'Film')]);
+    expect(reviewParentLink({ podcastName: 'x', parentName: 'Desk', contentKind: 'NewsReport' })).toEqual(['/news', 'Desk']);
+  });
+
   it('uses the kind hub and the short base-64 id for news, TV and film', () => {
     expect(reviewPlayableLink({ id, title: 'Bulletin', podcastName: 'Desk', contentKind: 'NewsReport' }, guids))
       .toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);

@@ -64,8 +64,15 @@ like the podcast Edit Episode dialog:
 There are no Urls / Images tabs: the playable PATCH does not edit service links. Parents are not renamed here.
 
 On these pages the curator menu has no **Post Episode** (it is podcast-only), and the search bar is not scoped to the
-outlet / show: a search goes to `/search/{term}`. The `/episodes/{ids}` review page links rows by `contentKind`
-(`/news`, `/tv`, `/film` with the short id); it needs `GET /episode/{id}` to return `contentKind` for other kinds.
+outlet / show: a search goes to `/search/{term}`.
+
+The `/episodes/{ids}` review page reads the optional `contentKind`, `parentId`, `parentName`, `slug` and `path` from
+`GET /episode/{id}` (RPP #1063 / Api #179). Rows link to `path` when it is set; otherwise they build `/news`, `/tv` or
+`/film` with the short id from `contentKind`, and fall back to the `/podcast` link when there is no `contentKind`.
+Saves from that page go to the kind's route: `PATCH /newsreport/{id}`, `/tvshowepisode/{id}` or `/film/{id}`
+(`PATCH /episode/{podcastId}/{id}` is podcast-only). The row menu opens the news / TV edit dialog. Post Episode,
+tweet / Bluesky post, Edit / Index Podcast and Delete are only shown or allowed on podcast rows, because
+`/episode/publish` is podcast-only.
 
 Film edit is not wired yet.
 
