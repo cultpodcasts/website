@@ -88,4 +88,56 @@ describe('SearchSuggestionsService', () => {
         expect(results.every(r => r.type === 'podcast')).toBe(true);
         expect(results.some(r => r.type === 'subject')).toBe(false);
     });
+
+    describe('catalogue kinds (TV, news, film)', () => {
+        const filmA = '00112233-4455-4677-8899-aabbccddeeff';
+        const filmB = '11112233-4455-4677-8899-aabbccddeeff';
+        const kindsCorpus: SuggestionsCorpus = {
+            generatedAtUtc: '2026-10-21T00:00:00Z',
+            entries: [
+                { type: 'tvShow', canonical: 'Synthetic Nightly', searchText: 'synthetic nightly' },
+                { type: 'newsOrganisation', canonical: 'Synthetic Desk', searchText: 'synthetic desk' },
+                { type: 'film', canonical: 'Synthetic Film', searchText: 'synthetic film', id: filmA },
+                { type: 'film', canonical: 'Synthetic Film', searchText: 'synthetic film', id: filmB },
+                { type: 'film', canonical: 'Synthetic Film No Id', searchText: 'synthetic film no id' },
+                { type: 'podcast', canonical: 'Synthetic Pod', searchText: 'synthetic pod' }
+            ]
+        };
+
+        it('returns TV, news and film rows with their kind', async () => {
+            const pending = service.suggest('synthetic', 20);
+            httpMock.expectOne(suggestionsUrl).flush(kindsCorpus);
+            const results = await pending;
+            expect(results.map(r => r.type).sort()).toEqual(
+                ['film', 'film', 'film', 'newsOrganisation', 'podcast', 'tvShow']);
+        });
+
+        it('keeps two same-name films apart by id and carries the id through', async () => {
+            const pending = service.suggest('synthetic film', 20, 'film');
+            httpMock.expectOne(suggestionsUrl).flush(kindsCorpus);
+            const results = await pending;
+            const named = results.filter(r => r.value === 'Synthetic Film');
+            expect(named.map(r => r.itemId).sort()).toEqual([filmA, filmB]);
+        });
+
+        it('tolerates a film row without an id', async () => {
+            const pending = service.suggest('no id', 20);
+            httpMock.expectOne(suggestionsUrl).flush(kindsCorpus);
+            const results = await pending;
+            expect(results).toEqual([expect.objectContaining({ type: 'film', value: 'Synthetic Film No Id' })]);
+            expect(results[0].itemId).toBeUndefined();
+            expect('id' in results[0]).toBe(false);
+        });
+
+        it('passes an unknown future kind through instead of dropping the corpus', async () => {
+            const pending = service.suggest('future', 20);
+            httpMock.expectOne(suggestionsUrl).flush({
+                generatedAtUtc: '2026-10-21T00:00:00Z',
+                entries: [{ type: 'person', canonical: 'Future Kind', searchText: 'future kind' }]
+            });
+            const results = await pending;
+            expect(results.length).toBe(1);
+            expect(results[0].value).toBe('Future Kind');
+        });
+    });
 });

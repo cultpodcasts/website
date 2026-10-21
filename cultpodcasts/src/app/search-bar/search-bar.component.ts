@@ -24,6 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { displayCatalogName } from '../display-catalog-name';
 import { subjectColor } from '../subject-color';
+import { suggestionCommands, suggestionIcon, suggestionKindLabel } from '../search-suggestion-route';
 
 const SUGGESTION_DEBOUNCE_MS = 150;
 
@@ -48,6 +49,8 @@ const SUGGESTION_DEBOUNCE_MS = 150;
 
 export class SearchBarComponent {
   protected readonly SearchBoxMode = SearchBoxMode;
+  protected readonly suggestionIcon = suggestionIcon;
+  protected readonly suggestionKindLabel = suggestionKindLabel;
   protected readonly searchChip = signal<string | null>(null);
   protected readonly searchBoxMode = signal(SearchBoxMode.Default);
   protected readonly suggestions = signal<Suggestion[]>([]);
@@ -192,11 +195,7 @@ export class SearchBarComponent {
     if (this.searchBox) {
       this.searchBox.nativeElement.value = '';
     }
-    if (suggestion.type === 'podcast') {
-      this.router.navigate(['/podcast/' + suggestion.value]);
-    } else {
-      this.router.navigate(['/subject/' + suggestion.value]);
-    }
+    this.router.navigate(suggestionCommands(suggestion, this.guidService));
   }
 
   search = (input: HTMLInputElement) => {
