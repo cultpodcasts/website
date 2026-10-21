@@ -189,12 +189,12 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     this.loadRequests.next(ids);
   }
 
-  /** Token then every episode; any failure (including the token) shows the error state. Emits null on error. */
   /** Episode page by short id, so the click does not take the GUID 301. */
   protected episodePageLink(episode: ApiEpisode): string[] {
     return podcastEpisodePageCommands(episode.podcastName ?? "", episode.id);
   }
 
+  /** Token then every episode; any failure (including the token) shows the error state. Emits null on error. */
   private fetchEpisodes(episodeIds: string[]): Observable<ApiEpisode[] | null> {
     this.isLoading.set(true);
     this.error.set(false);
