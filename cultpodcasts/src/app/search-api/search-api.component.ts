@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
@@ -24,7 +25,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindLabel } from '../content-kind-label';
 import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField, subjectsAnySearchIn } from '../playable-search-hit';
 import { PlayerService } from '../player.service';
-import { KIND_PARAM, SHOW_PARAM, SUBJECT_PARAM, keepOffered, replaceUrlFragment, readParamList, parseFilterFragment, buildFilterFragment, routeStateKey } from '../browse-filter-params';
+import { KIND_PARAM, SHOW_PARAM, SUBJECT_PARAM, keepOffered, writeUrlFragment, FragmentHistory, readParamList, parseFilterFragment, buildFilterFragment, routeStateKey } from '../browse-filter-params';
 
 interface RestoredFilters {
   podcasts: string[];
@@ -91,6 +92,7 @@ export class SearchApiComponent {
   private routeKey: string | null = null;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
   protected auth = inject(AuthServiceWrapper);
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
 
@@ -287,7 +289,7 @@ export class SearchApiComponent {
     this.subjects.set([]);
     this.subjectsFilter = '';
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { podcasts: true });
   }
 
@@ -298,7 +300,7 @@ export class SearchApiComponent {
       : [...current, value];
     this.setSubjects(next);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { podcasts: true });
   }
 
@@ -309,7 +311,7 @@ export class SearchApiComponent {
     this.podcasts.set([]);
     this.podcastsFilter = '';
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { subjects: true });
   }
 
@@ -320,7 +322,7 @@ export class SearchApiComponent {
       : [...current, value];
     this.setPodcasts(next);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { subjects: true });
   }
 
@@ -332,7 +334,7 @@ export class SearchApiComponent {
     this.podcastsFilter = '';
     this.kindsFilter = '';
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { subjects: true, podcasts: true });
   }
 
@@ -343,7 +345,7 @@ export class SearchApiComponent {
       : [...current, value];
     this.setKinds(next);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { subjects: true, podcasts: true });
   }
 
@@ -354,7 +356,7 @@ export class SearchApiComponent {
     this.kinds.set([]);
     this.kindsFilter = '';
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, { subjects: true, podcasts: true });
   }
 
@@ -461,15 +463,20 @@ export class SearchApiComponent {
     };
   }
 
-  /** Mirror the filter chips into the URL fragment (history replace, path and query kept). */
-  private syncFilterUrl(): void {
+  /**
+   * Mirror the filter chips into the URL fragment (path and query kept). A
+   * user's filter change pushes a history entry so Back/Forward step through
+   * selections (populatePage restores each from its fragment); restoring or
+   * tidying the URL replaces. Unchanged state writes nothing.
+   */
+  private syncFilterUrl(history: FragmentHistory = 'replace'): void {
     const fragment = buildFilterFragment(this.filterParams());
     const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
     if (key === this.routeKey) {
       return;
     }
     this.routeKey = key;
-    replaceUrlFragment(this.router, this.route, fragment);
+    writeUrlFragment(this.router, this.route, this.location, fragment, history);
   }
 
   isScrolledToBottom(): boolean {

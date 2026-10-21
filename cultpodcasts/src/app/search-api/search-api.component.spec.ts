@@ -207,14 +207,14 @@ describe('SearchApiComponent', () => {
       expect(navigate).not.toHaveBeenCalled();
     });
 
-    it('writes chip clicks to the fragment with replaceUrl, keeping the query string', () => {
+    it('writes each chip click to the fragment as a new history entry, keeping the query string', () => {
       queryParams$.next({ sort: 'date-asc', page: '2' });
       fixture.detectChanges();
       const component = fixture.componentInstance;
 
       component.togglePodcast('Show A');
       expect(lastFragment()).toBe('show=Show A');
-      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: true, scroll: 'manual' });
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: false, scroll: 'manual' });
 
       component.toggleSubject('Topic X');
       component.toggleKind('Film');
@@ -222,6 +222,38 @@ describe('SearchApiComponent', () => {
 
       component.clearAllFilters();
       expect(lastFragment()).toBeUndefined();
+      // Each click pushes; clearing to no fragment is pushed by duplicating the
+      // filtered entry first (see writeUrlFragment), so the router call replaces.
+      expect(navigate.mock.calls.map(([, extras]) => extras.replaceUrl)).toEqual([false, false, false, true]);
+
+      // Nothing left to clear: no duplicate entry.
+      component.clearAllFilters();
+      component.clearPodcasts();
+      expect(navigate).toHaveBeenCalledTimes(4);
+    });
+
+    it('restores each earlier selection on Back and the later one on Forward', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance as unknown as SearchApiComponent & { podcasts: () => string[]; subjects: () => string[] };
+      component.togglePodcast('Show A');
+      component.toggleSubject('Topic X');
+      expect(lastFragment()).toBe('show=Show A&subject=Topic X');
+      navigate.mockClear();
+
+      fragment$.next('show=Show A');
+      expect(component.podcasts()).toEqual(['Show A']);
+      expect(component.subjects()).toEqual([]);
+      expect(calls.at(-1)?.filter).toContain("search.in(seriesName, 'Show A'");
+      expect(calls.at(-1)?.filter).not.toContain('Topic X');
+
+      fragment$.next(null);
+      expect(component.podcasts()).toEqual([]);
+      expect(calls.at(-1)?.filter ?? '').toBe('');
+
+      fragment$.next('show=Show A&subject=Topic X');
+      expect(component.subjects()).toEqual(['Topic X']);
+      expect(calls.at(-1)?.filter).toContain('Topic X');
+      expect(navigate).not.toHaveBeenCalled();
     });
 
     it('restores shows, subjects and kinds from a bookmarked fragment', () => {
@@ -247,6 +279,7 @@ describe('SearchApiComponent', () => {
       expect(calls[1].filter).toContain("search.in(seriesName, 'Show A'");
       expect(calls[1].filter).not.toContain('Missing');
       expect(lastFragment()).toBe('show=Show A');
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ replaceUrl: true });
     });
 
     it('searches once and tidies the URL when nothing in it is offered', () => {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { provideZonelessChangeDetection } from "@angular/core";
 import { ActivatedRoute, provideRouter, Router } from "@angular/router";
-import { of, Subject, throwError } from "rxjs";
+import { BehaviorSubject, of, Subject, throwError } from "rxjs";
 import { HttpErrorResponse } from "@angular/common/http";
 import { ScrollDispatcher } from "@angular/cdk/scrolling";
 import { SeriesHubComponent } from "./series-hub.component";
@@ -52,6 +52,8 @@ describe("SeriesHubComponent", () => {
 
   let fragment: string | null = null;
   let navigate: ReturnType<typeof vi.fn>;
+  let routeSnapshot: { fragment: string | null; params: Record<string, string>; queryParams: Record<string, string> };
+  let routeFragment: BehaviorSubject<string | null>;
 
   beforeEach(() => {
     fragment = null;
@@ -59,6 +61,8 @@ describe("SeriesHubComponent", () => {
 
   async function createHub(hub: "tv" | "news"): Promise<ComponentFixture<SeriesHubComponent>> {
     scrolled = new Subject<void>();
+    routeSnapshot = { fragment, params: { slug: "Nightly" }, queryParams: {} };
+    routeFragment = new BehaviorSubject<string | null>(fragment);
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [SeriesHubComponent],
@@ -72,7 +76,7 @@ describe("SeriesHubComponent", () => {
         },
         { provide: ScrollDispatcher, useValue: { scrolled: () => scrolled.asObservable() } },
         { provide: InfiniteScrollStrategy, useClass: InfiniteScrollStrategy },
-        { provide: ActivatedRoute, useValue: { snapshot: { fragment } } },
+        { provide: ActivatedRoute, useValue: { snapshot: routeSnapshot, fragment: routeFragment.asObservable() } },
       ],
     }).compileComponents();
     navigate = vi.fn().mockResolvedValue(true);
@@ -199,7 +203,7 @@ describe("SeriesHubComponent", () => {
   describe("subject chips in the URL fragment", () => {
     const subjects = [{ value: "Topic X", count: 2 }, { value: "Topic Y", count: 1 }];
 
-    it("writes subject clicks to the fragment with replaceUrl", async () => {
+    it("writes subject clicks to the fragment as new history entries", async () => {
       const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
       expect(navigate).not.toHaveBeenCalled();
 
@@ -207,12 +211,53 @@ describe("SeriesHubComponent", () => {
       expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({
         fragment: "subject=Topic X",
         queryParamsHandling: "preserve",
-        replaceUrl: true,
+        replaceUrl: false,
         scroll: "manual",
       });
 
       fixture.componentInstance.toggleSubject("Topic Y");
       expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe("subject=Topic X&subject=Topic Y");
+    });
+
+    /** Browser Back/Forward: the router updates the snapshot, then emits the fragment. */
+    function travelTo(next: string | null): void {
+      routeSnapshot.fragment = next;
+      routeFragment.next(next);
+    }
+
+    it("restores each selection on Back and Forward without writing history", async () => {
+      const fixture = await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+      const hub = fixture.componentInstance as unknown as SeriesHubComponent & { subjects: () => string[] };
+      hub.toggleSubject("Topic X");
+      hub.toggleSubject("Topic Y");
+      travelTo("subject=Topic X&subject=Topic Y");
+      navigate.mockClear();
+      const calls = oData.getEntitiesWithFacets.mock.calls;
+      const before = calls.length;
+      expect(before).toBe(3);
+
+      travelTo("subject=Topic X");
+      expect(hub.subjects()).toEqual(["Topic X"]);
+      expect(calls.at(-1)?.[1].filter).toContain("Topic X");
+      expect(calls.at(-1)?.[1].filter).not.toContain("Topic Y");
+
+      travelTo(null);
+      expect(hub.subjects()).toEqual([]);
+      expect(calls.at(-1)?.[1].filter).toBe(catalogueHubFilter("Nightly", "tv", false));
+
+      travelTo("subject=Topic Y");
+      expect(hub.subjects()).toEqual(["Topic Y"]);
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it("ignores a fragment that arrives with a new page", async () => {
+      await renderWithSearch(vi.fn().mockReturnValue(of(page({ subjects }))));
+      const before = oData.getEntitiesWithFacets.mock.calls.length;
+
+      routeSnapshot.params = { slug: "Other" };
+      travelTo("subject=Topic X");
+
+      expect(oData.getEntitiesWithFacets.mock.calls.length).toBe(before);
     });
 
     it("clears the fragment when a chip is toggled on and off before the router settles", async () => {
@@ -235,7 +280,7 @@ describe("SeriesHubComponent", () => {
       expect(calls[0][1].filter).toBe(catalogueHubFilter("Nightly", "tv", false));
       expect(calls[1][1].filter).toContain("Topic Y");
       expect(calls[1][1].filter).not.toContain("Missing");
-      expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe("subject=Topic Y");
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ fragment: "subject=Topic Y", replaceUrl: true });
       expect(fixture.nativeElement.textContent).toContain("Topic X");
     });
 

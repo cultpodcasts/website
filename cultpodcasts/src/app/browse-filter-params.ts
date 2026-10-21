@@ -1,4 +1,5 @@
 import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import {
   ALL_LANGUAGES_VALUE,
   ENGLISH_LANGUAGE_VALUE,
@@ -146,16 +147,49 @@ export function subjectsFragment(subjects: string[]): string | null {
 }
 
 /**
- * Write the filter fragment, keeping path and query. replaceUrl keeps chip
- * clicks out of the back-button history; scroll: 'manual' stops the router
- * scrolling (to the top, or to an anchor) on every click.
+ * How a filter fragment write lands in browser history: `push` for a filter
+ * the user changed (Back returns to the previous selection), `replace` for
+ * restoring or tidying the URL (initial load, dropped unknown values,
+ * reconciled chips) so it adds no entry of its own.
  */
-export function replaceUrlFragment(router: Router, route: ActivatedRoute, fragment: string | null): void {
+export type FragmentHistory = 'push' | 'replace';
+
+/**
+ * Write the filter fragment, keeping path and query. scroll: 'manual' stops
+ * the router scrolling (to the top, or to an anchor) on every chip click.
+ * Callers skip the write when the fragment is unchanged, so no duplicate
+ * history entries are pushed.
+ *
+ * The router always replaces when the new URL equals the current one without
+ * its hash (Location.isCurrentPathEqualTo ignores the hash), so a push that
+ * removes the fragment would overwrite the filtered entry. Then the current
+ * entry is duplicated first and the router replaces the copy.
+ */
+export function writeUrlFragment(
+  router: Router,
+  route: ActivatedRoute,
+  location: Location,
+  fragment: string | null,
+  history: FragmentHistory
+): void {
+  let replaceUrl = history === 'replace';
+  if (!replaceUrl && !fragment) {
+    const current = location.path(true);
+    if (current !== location.path(false)) {
+      location.go(current, '', location.getState());
+    }
+    replaceUrl = true;
+  }
   router.navigate([], {
     relativeTo: route,
     queryParamsHandling: 'preserve',
     fragment: fragment ?? undefined,
-    replaceUrl: true,
+    replaceUrl,
     scroll: 'manual'
   });
+}
+
+/** The route's path and query without the fragment, to tell Back/Forward between filter states from leaving the page. */
+export function routePathKey(params: Params, queryParams: Params): string {
+  return routeStateKey(params, queryParams, null);
 }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
@@ -42,7 +43,8 @@ import {
   routeStateKey,
   buildFilterFragment,
   parseFilterFragment,
-  replaceUrlFragment
+  writeUrlFragment,
+  FragmentHistory
 } from '../browse-filter-params';
 import { nextLanguageChipValues } from '../language-chip-click';
 import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
@@ -115,6 +117,7 @@ export class SubjectApiComponent {
   readonly allLanguagesValue = ALL_LANGUAGES_VALUE;
   private destroyRef = inject(DestroyRef);
   private route = inject(ActivatedRoute);
+  private location = inject(Location);
   protected facets = signal<SearchResultsFacets>({});
   protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
@@ -390,7 +393,7 @@ export class SubjectApiComponent {
     }
     this.setPodcasts([]);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
@@ -401,7 +404,7 @@ export class SubjectApiComponent {
       : [...current, value];
     this.setPodcasts(next);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
   }
 
@@ -416,7 +419,7 @@ export class SubjectApiComponent {
     this.languageTouched = true;
     this.pruneRestoredLanguages = false;
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.refreshLanguageFacets({ reconcileSelection: false, thenSearch: true });
   }
 
@@ -524,7 +527,7 @@ export class SubjectApiComponent {
     this.pruneRestoredLanguages = false;
     this.setLanguageSelection(selected);
     this.page = 1;
-    this.syncFilterUrl();
+    this.syncFilterUrl('push');
     this.execSearch(true, false);
   }
 
@@ -626,14 +629,19 @@ export class SubjectApiComponent {
     };
   }
 
-  /** Mirror the filter chips into the URL fragment (history replace, path and query kept). */
-  private syncFilterUrl(): void {
+  /**
+   * Mirror the filter chips into the URL fragment (path and query kept). A
+   * user's filter change pushes a history entry so Back/Forward step through
+   * selections (populatePage restores each from its fragment); restoring or
+   * tidying the URL replaces. Unchanged state writes nothing.
+   */
+  private syncFilterUrl(history: FragmentHistory = 'replace'): void {
     const fragment = buildFilterFragment(this.filterParams());
     const key = routeStateKey(this.routeParams, this.routeQueryParams, fragment);
     if (key === this.routeKey) {
       return;
     }
     this.routeKey = key;
-    replaceUrlFragment(this.router, this.route, fragment);
+    writeUrlFragment(this.router, this.route, this.location, fragment, history);
   }
 }

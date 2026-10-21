@@ -6,8 +6,12 @@ import {
   buildFilterFragment,
   parseFilterFragment,
   readParamList,
-  routeStateKey
+  routePathKey,
+  routeStateKey,
+  writeUrlFragment
 } from './browse-filter-params';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 describe('browse-filter-params', () => {
   it('gives no lang param for the English default', () => {
@@ -95,5 +99,57 @@ describe('browse-filter-params', () => {
   it('keeps only values the facets offer', () => {
     expect(keepOffered(['Show A', 'Gone'], [{ value: 'Show A' }, { value: 'Show B' }])).toEqual(['Show A']);
     expect(keepOffered(['Show A'], undefined)).toEqual([]);
+  });
+
+  function fakeLocation(current: string) {
+    return {
+      path: (includeHash = false) => includeHash ? current : current.split('#')[0],
+      getState: () => ({ navigationId: 3 }),
+      go: vi.fn(),
+    };
+  }
+
+  it('pushes a user filter change and replaces a restore or tidy, never scrolling', () => {
+    const navigate = vi.fn().mockResolvedValue(true);
+    const router = { navigate } as unknown as Router;
+    const route = {} as ActivatedRoute;
+    const location = fakeLocation('/subject/Topic');
+
+    writeUrlFragment(router, route, location as unknown as Location, 'lang=sw', 'push');
+    writeUrlFragment(router, route, location as unknown as Location, 'lang=ki', 'replace');
+
+    expect(navigate.mock.calls).toEqual([
+      [[], { relativeTo: route, queryParamsHandling: 'preserve', fragment: 'lang=sw', replaceUrl: false, scroll: 'manual' }],
+      [[], { relativeTo: route, queryParamsHandling: 'preserve', fragment: 'lang=ki', replaceUrl: true, scroll: 'manual' }],
+    ]);
+    expect(location.go).not.toHaveBeenCalled();
+  });
+
+  it('keeps the filtered entry when a pushed change removes the fragment', () => {
+    // The router would replace here (same path once the hash is ignored), so
+    // the current entry is duplicated and the router replaces the copy.
+    const navigate = vi.fn().mockResolvedValue(true);
+    const location = fakeLocation('/search/part?sort=rank#show=Show%20B');
+
+    writeUrlFragment({ navigate } as unknown as Router, {} as ActivatedRoute, location as unknown as Location, null, 'push');
+
+    expect(location.go).toHaveBeenCalledWith('/search/part?sort=rank#show=Show%20B', '', { navigationId: 3 });
+    expect(navigate.mock.calls[0][1]).toMatchObject({ fragment: undefined, replaceUrl: true, scroll: 'manual' });
+  });
+
+  it('adds no entry when the fragment is removed and the URL has none yet', () => {
+    const navigate = vi.fn().mockResolvedValue(true);
+    const location = fakeLocation('/search/part');
+
+    writeUrlFragment({ navigate } as unknown as Router, {} as ActivatedRoute, location as unknown as Location, null, 'push');
+    writeUrlFragment({ navigate } as unknown as Router, {} as ActivatedRoute, fakeLocation('/x#a=b') as unknown as Location, null, 'replace');
+
+    expect(location.go).not.toHaveBeenCalled();
+    expect(navigate.mock.calls.map(([, extras]) => extras.replaceUrl)).toEqual([true, true]);
+  });
+
+  it('keys the path and query alone, so only a fragment change keeps the same page', () => {
+    expect(routePathKey({ q: 'x' }, { sort: 'rank' })).toBe(routeStateKey({ q: 'x' }, { sort: ['rank'] }, null));
+    expect(routePathKey({ q: 'x' }, {})).not.toBe(routePathKey({ q: 'y' }, {}));
   });
 });

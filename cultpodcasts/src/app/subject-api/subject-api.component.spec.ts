@@ -190,7 +190,8 @@ describe('SubjectApiComponent', () => {
       expect(resultFilter()).not.toContain('lang eq null');
       expect(lastFragment()).toBe('lang=sw');
       expect(navigate.mock.calls.at(-1)?.[0]).toEqual([]);
-      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: true, scroll: 'manual' });
+      // A user's filter change is its own history entry (Back returns to it).
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: false, scroll: 'manual' });
       // One active chip, and not English (label text is owned by languageLabel).
       expect(activeLanguageChips()).toHaveLength(1);
       expect(activeLanguageChips()).not.toContain('English');
@@ -268,7 +269,8 @@ describe('SubjectApiComponent', () => {
       expect(resultFilter()).not.toContain('Missing show');
       expect(resultFilter()).toContain("(lang eq null or lang eq 'en')");
       expect(lastFragment()).toBe('show=Show A');
-      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve' });
+      // Tidying the URL replaces: no history entry of its own.
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ queryParamsHandling: 'preserve', replaceUrl: true });
 
       // Malformed lang means untouched: the first click still starts afresh.
       fixture.componentInstance.toggleLanguage('sw');
@@ -282,6 +284,8 @@ describe('SubjectApiComponent', () => {
       expect(resultFilter()).toContain("lang eq 'sw'");
       expect(resultFilter()).not.toContain('zz');
       expect(lastFragment()).toBe('lang=sw');
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(navigate.mock.calls[0][1]).toMatchObject({ replaceUrl: true });
     });
 
     it('widens to All and says so in the fragment when no restored language is offered', () => {
@@ -305,6 +309,93 @@ describe('SubjectApiComponent', () => {
 
       expect(resultFilter()).not.toContain("lang eq 'ki'");
       expect(lastFragment()).toBe('show=Show A&lang=all');
+    });
+
+    it('pushes the user change, then replaces it when a show change widens the language to All', () => {
+      respond = (request) => (request.filter ?? '').includes('Show A') && (request.top ?? 0) === 0
+        ? of({ ...languagePage(), metadata: new Map<string, number>([['count', 3]]), facets: { ...languagePage().facets, lang: [{ value: 'sw', count: 3 }] } })
+        : of(languagePage());
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage('ki');
+      navigate.mockClear();
+
+      component.togglePodcast('Show A');
+
+      expect(navigate.mock.calls.map(([, extras]) => [extras.fragment, extras.replaceUrl])).toEqual([
+        ['show=Show A&lang=ki', false],
+        ['show=Show A&lang=all', true],
+      ]);
+    });
+
+    it('pushes no history entry when a filter action leaves the state unchanged', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.clearAllFilters();
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(navigate.mock.calls[0][1]).toMatchObject({ fragment: 'lang=all', replaceUrl: false });
+
+      component.clearAllFilters();
+      component.selectLanguage(ALL_LANGUAGES_VALUE);
+      component.clearPodcasts();
+
+      expect(navigate).toHaveBeenCalledTimes(1);
+    });
+
+    it('restores each earlier selection on Back and the later one on Forward', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage('sw');
+      component.toggleLanguage('ki');
+      expect(lastFragment()).toBe('lang=sw,ki');
+      navigate.mockClear();
+
+      // Back: the router emits the previous entry's fragment.
+      fragment$.next('lang=sw');
+      fixture.detectChanges();
+      expect(resultFilter()).toContain("lang eq 'sw'");
+      expect(resultFilter()).not.toContain('ki');
+      expect(activeLanguageChips()).toHaveLength(1);
+
+      // Back to the first entry: the untouched English default.
+      fragment$.next(null);
+      fixture.detectChanges();
+      expect(resultFilter()).toContain("(lang eq null or lang eq 'en')");
+      expect(activeLanguageChips()).toEqual(['English']);
+
+      // Forward again.
+      fragment$.next('lang=sw');
+      fixture.detectChanges();
+      expect(resultFilter()).toContain("lang eq 'sw'");
+
+      // Restoring never writes history of its own.
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('treats the restored default as untouched, so the next click starts afresh', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.toggleLanguage('sw');
+      fragment$.next(null);
+
+      component.toggleLanguage('ki');
+
+      expect(resultFilter()).toContain("lang eq 'ki'");
+      expect(resultFilter()).not.toContain('lang eq null');
+      expect(lastFragment()).toBe('lang=ki');
+    });
+
+    it('restores shows on Back and clears them on Forward to a selection without shows', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      component.togglePodcast('Show A');
+      expect(lastFragment()).toBe('show=Show A');
+
+      fragment$.next(null);
+      expect(resultFilter()).not.toContain('Show A');
+
+      fragment$.next('show=Show A');
+      expect(resultFilter()).toContain("search.in(seriesName, 'Show A'");
     });
 
     it('does not reload when the router echoes the URL the page wrote', () => {

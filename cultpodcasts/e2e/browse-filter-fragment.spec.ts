@@ -101,7 +101,7 @@ const swahili = /Swahili|^\s*sw\s*$/;
 const kikuyu = /Kikuyu|^\s*ki\s*$/;
 
 test.describe("browse filters in the URL fragment", () => {
-	test("first language click picks just that language, later clicks add, all without new history entries", async ({ page }) => {
+	test("first language click picks just that language, later clicks add, each as its own history entry", async ({ page }) => {
 		await page.goto("/subject/Topic");
 		await expect(page.getByText("Alpha english part")).toBeVisible();
 		await expect(pill(languageFacet(page), /^\s*English\s*$/)).toHaveClass(/is-active/);
@@ -116,7 +116,70 @@ test.describe("browse filters in the URL fragment", () => {
 		await pill(languageFacet(page), kikuyu).click();
 		await expect(page).toHaveURL(/#lang=sw,ki$/);
 		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
-		expect(await page.evaluate(() => history.length)).toBe(historyLength);
+		expect(await page.evaluate(() => history.length)).toBe(historyLength + 2);
+	});
+
+	test("Back and Forward step through subject filter selections, then Back leaves the page", async ({ page }) => {
+		await page.goto("/search/part");
+		await expect(page.getByText("Alpha english part")).toBeVisible();
+		await page.goto("/subject/Topic");
+		await expect(page.getByText("Alpha english part")).toBeVisible();
+		// Survives only while the app is not reloaded.
+		await page.evaluate(() => { (window as unknown as { __sameDocument: boolean }).__sameDocument = true; });
+		const historyLength = await page.evaluate(() => history.length);
+		const english = pill(languageFacet(page), /^\s*English\s*$/);
+
+		await pill(languageFacet(page), swahili).click();
+		await expect(page).toHaveURL(/\/subject\/Topic#lang=sw$/);
+		await expect(page.getByText("Alpha swahili part")).toBeVisible();
+		await pill(languageFacet(page), kikuyu).click();
+		await expect(page).toHaveURL(/#lang=sw,ki$/);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+		expect(await page.evaluate(() => history.length)).toBe(historyLength + 2);
+
+		await page.goBack();
+		await expect(page).toHaveURL(/\/subject\/Topic#lang=sw$/);
+		await expect(pill(languageFacet(page), swahili)).toHaveClass(/is-active/);
+		await expect(pill(languageFacet(page), kikuyu)).not.toHaveClass(/is-active/);
+		await expect(page.getByText("Alpha swahili part")).toBeVisible();
+		await expect(page.getByText("Beta kikuyu part")).toHaveCount(0);
+
+		await page.goBack();
+		await expect(page).toHaveURL(/\/subject\/Topic$/);
+		await expect(english).toHaveClass(/is-active/);
+		await expect(pill(languageFacet(page), swahili)).not.toHaveClass(/is-active/);
+		await expect(page.getByText("Alpha english part")).toBeVisible();
+		await expect(page.getByText("Alpha swahili part")).toHaveCount(0);
+
+		await page.goForward();
+		await expect(page).toHaveURL(/#lang=sw$/);
+		await expect(pill(languageFacet(page), swahili)).toHaveClass(/is-active/);
+		await expect(page.getByText("Alpha swahili part")).toBeVisible();
+		await expect(page.getByText("Alpha english part")).toHaveCount(0);
+
+		await page.goForward();
+		await expect(page).toHaveURL(/#lang=sw,ki$/);
+		await expect(pill(languageFacet(page), kikuyu)).toHaveClass(/is-active/);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+		expect(await page.evaluate(() => (window as unknown as { __sameDocument?: boolean }).__sameDocument)).toBe(true);
+
+		await page.goBack();
+		await page.goBack();
+		await expect(page).toHaveURL(/\/subject\/Topic$/);
+		await expect(page.getByText("Alpha english part")).toBeVisible();
+		await page.goBack();
+		await expect(page).toHaveURL(/\/search\/part$/);
+	});
+
+	test("tidying an invalid fragment on load adds no history entry", async ({ page }) => {
+		await page.goto("/search/part");
+		await expect(page.getByText("Alpha english part")).toBeVisible();
+		await page.goto("/subject/Topic#lang=zz&show=Missing%20show");
+		await expect(page).toHaveURL(/\/subject\/Topic#lang=all$/);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+
+		await page.goBack();
+		await expect(page).toHaveURL(/\/search\/part$/);
 	});
 
 	test("a bookmarked subject URL restores show and language chips", async ({ page }) => {
@@ -142,6 +205,17 @@ test.describe("browse filters in the URL fragment", () => {
 		await page.getByRole("button", { name: "Clear filters" }).click();
 		await expect(page).toHaveURL(/\/search\/part$/);
 		await expect(page.getByText("Alpha english part")).toBeVisible();
+
+		// Clear filters is a filter change too: Back brings the show chip back.
+		await page.goBack();
+		await expect(page).toHaveURL(/\/search\/part#show=Show%20B$/);
+		await expect(pill(showFacet(page), /Show B/)).toHaveClass(/is-active/);
+		await expect(page.getByText("Alpha english part")).toHaveCount(0);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+
+		await page.goForward();
+		await expect(page).toHaveURL(/\/search\/part$/);
+		await expect(page.getByText("Alpha english part")).toBeVisible();
 	});
 
 	test("podcast page subject chips go to the fragment and a bookmark restores them", async ({ page }) => {
@@ -153,7 +227,25 @@ test.describe("browse filters in the URL fragment", () => {
 		await expect(page).toHaveURL(/\/podcast\/Show%20B#subject=Other%20topic$/);
 		await expect(page.getByText("Beta kikuyu part")).toHaveCount(0);
 		await expect(page.getByText("Beta swahili part")).toBeVisible();
-		expect(await page.evaluate(() => history.length)).toBe(historyLength);
+		expect(await page.evaluate(() => history.length)).toBe(historyLength + 1);
+
+		await page.goBack();
+		await expect(page).toHaveURL(/\/podcast\/Show%20B$/);
+		await expect(pill(subjectFacet(page), /Other topic/)).not.toHaveClass(/is-active/);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+
+		await page.goForward();
+		await expect(page).toHaveURL(/#subject=Other%20topic$/);
+		await expect(pill(subjectFacet(page), /Other topic/)).toHaveClass(/is-active/);
+		await expect(page.getByText("Beta kikuyu part")).toHaveCount(0);
+
+		// Clearing back to no fragment is still its own entry.
+		await page.getByRole("button", { name: "Clear filters" }).click();
+		await expect(page).toHaveURL(/\/podcast\/Show%20B$/);
+		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+		await page.goBack();
+		await expect(page).toHaveURL(/#subject=Other%20topic$/);
+		await expect(page.getByText("Beta kikuyu part")).toHaveCount(0);
 
 		await page.reload();
 		await expect(page.getByText("Beta swahili part")).toBeVisible();

@@ -43,21 +43,23 @@ describe('PodcastApiComponent', () => {
   let calls: SearchCall[];
   let script: Array<'unknown' | 'server' | 'ok'>;
   let routeParams: BehaviorSubject<Record<string, string>>;
-  let routeSnapshot: { fragment: string | null };
+  let routeSnapshot: { fragment: string | null; params: Record<string, string>; queryParams: Record<string, string> };
+  let routeFragment: BehaviorSubject<string | null>;
   let facetsPage: ReturnType<typeof searchPage>;
 
   beforeEach(async () => {
     calls = [];
     script = ['ok'];
     routeParams = new BehaviorSubject<Record<string, string>>({ podcastName: 'Show A' });
-    routeSnapshot = { fragment: null };
+    routeSnapshot = { fragment: null, params: { podcastName: 'Show A' }, queryParams: {} };
+    routeFragment = new BehaviorSubject<string | null>(null);
     facetsPage = searchPage();
     await TestBed.configureTestingModule({
       imports: [PodcastApiComponent],
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { params: routeParams.asObservable(), queryParams: of({}), snapshot: routeSnapshot } },
+        { provide: ActivatedRoute, useValue: { params: routeParams.asObservable(), queryParams: of({}), fragment: routeFragment.asObservable(), snapshot: routeSnapshot } },
         { provide: AuthServiceWrapper, useValue: { roles: of([]), isSignedIn: of(false) } },
         { provide: SiteService, useValue: { setQuery: () => undefined, setPodcast: () => undefined, setSubject: () => undefined, setFilter: () => undefined, getSiteData: () => ({ query: '' }) } },
         {
@@ -157,7 +159,7 @@ describe('PodcastApiComponent', () => {
       TestBed.inject(Router).navigate = navigate as unknown as Router['navigate'];
     });
 
-    it('writes subject clicks to the fragment with replaceUrl and keeps them on sort', () => {
+    it('writes subject clicks to the fragment as new history entries and keeps them on sort', () => {
       fixture.detectChanges();
       expect(navigate).not.toHaveBeenCalled();
 
@@ -165,7 +167,7 @@ describe('PodcastApiComponent', () => {
       expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({
         fragment: 'subject=Topic X',
         queryParamsHandling: 'preserve',
-        replaceUrl: true,
+        replaceUrl: false,
         scroll: 'manual',
       });
 
@@ -178,16 +180,59 @@ describe('PodcastApiComponent', () => {
 
     it('restores subjects from a bookmarked fragment after the unfiltered facets load', () => {
       routeSnapshot.fragment = 'subject=Topic Y&subject=Missing topic';
+      routeFragment.next(routeSnapshot.fragment);
       fixture.detectChanges();
 
       expect(calls).toHaveLength(2);
       expect(calls[0].filter).toBe("(seriesName eq 'Show A')");
       expect(calls[1].filter).toContain('Topic Y');
       expect(calls[1].filter).not.toContain('Missing');
-      expect(navigate.mock.calls.at(-1)?.[1].fragment).toBe('subject=Topic Y');
+      expect(navigate.mock.calls.at(-1)?.[1]).toMatchObject({ fragment: 'subject=Topic Y', replaceUrl: true });
       const component = fixture.componentInstance as unknown as { facets: () => { subjects?: { value: string }[] }; subjects: () => string[] };
       expect(component.facets().subjects?.map(subject => subject.value)).toEqual(['Topic X', 'Topic Y']);
       expect(component.subjects()).toEqual(['Topic Y']);
+    });
+
+    /** Browser Back/Forward: the router updates the snapshot, then emits the fragment. */
+    function travelTo(fragment: string | null): void {
+      routeSnapshot.fragment = fragment;
+      routeFragment.next(fragment);
+    }
+
+    it('restores each selection on Back and Forward without writing history', () => {
+      fixture.detectChanges();
+      const component = fixture.componentInstance as unknown as { subjects: () => string[] } & PodcastApiComponent;
+      component.toggleSubject('Topic X');
+      component.toggleSubject('Topic Y');
+      travelTo('subject=Topic X&subject=Topic Y');
+      navigate.mockClear();
+      calls.length = 0;
+
+      travelTo('subject=Topic X');
+      expect(component.subjects()).toEqual(['Topic X']);
+      expect(calls.at(-1)?.filter).toContain('Topic X');
+      expect(calls.at(-1)?.filter).not.toContain('Topic Y');
+
+      travelTo(null);
+      expect(component.subjects()).toEqual([]);
+      expect(calls.at(-1)?.filter).toBe("(seriesName eq 'Show A')");
+
+      travelTo('subject=Topic X');
+      expect(component.subjects()).toEqual(['Topic X']);
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('ignores the echo of its own write and a fragment that arrives with a new podcast', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleSubject('Topic X');
+      const before = calls.length;
+
+      travelTo('subject=Topic X');
+      expect(calls.length).toBe(before);
+
+      routeSnapshot.params = { podcastName: 'Show B' };
+      travelTo('subject=Topic Y');
+      expect(calls.length).toBe(before);
     });
 
     it('clears the fragment when a chip is toggled on and off before the router settles', () => {
@@ -205,6 +250,7 @@ describe('PodcastApiComponent', () => {
       const before = calls.length;
 
       routeSnapshot.fragment = 'subject=Topic X';
+      routeFragment.next(routeSnapshot.fragment);
       routeParams.next({ podcastName: 'Show A' });
 
       expect(calls.slice(before).map(call => call.filter)).toEqual([
@@ -215,6 +261,7 @@ describe('PodcastApiComponent', () => {
 
     it('searches once and clears the fragment when no restored subject is offered', () => {
       routeSnapshot.fragment = 'subject=Missing topic';
+      routeFragment.next(routeSnapshot.fragment);
       fixture.detectChanges();
 
       expect(calls).toHaveLength(1);
