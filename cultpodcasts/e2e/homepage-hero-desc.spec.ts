@@ -388,7 +388,8 @@ test.describe("homepage hero description", () => {
 			await expect(queue).toBeVisible();
 			await expect(page.locator(".billboard__more")).toHaveCount(0);
 			await expect(page.locator(".billboard").getByText("More info")).toHaveCount(0);
-			await expect(queue).toHaveAccessibleName("Add to queue");
+			await expect(queue).toHaveAccessibleName("Add to Queue");
+			await expect(queue).toHaveAttribute("aria-pressed", "false");
 			await expect(queue).toContainText("Add to Queue");
 
 			const geo = await page.evaluate(() => {
@@ -420,14 +421,29 @@ test.describe("homepage hero description", () => {
 
 			// Works like the episode page: the episode joins the player's queue (Up next).
 			await queue.click();
-			await expect(queue).toHaveAccessibleName("Remove from queue");
+			await expect(queue).toHaveAccessibleName("Queued");
+			await expect(queue).toHaveAttribute("aria-pressed", "true");
 			await expect(queue).toContainText("Queued");
 			await expect(page.getByRole("button", { name: "Up next, 1 queued" })).toBeVisible();
 			if (shots) {
 				await page.screenshot({ path: `${shots}/hero-${layout.name}-queued.png` });
 			}
-			await queue.click();
+			// A mouse click does not leave the hero paused (focus released, like the pager).
+			await expect(queue).not.toBeFocused();
+			await page.mouse.move(1, layout.height - 1);
+			await expect(page.locator(".billboard")).not.toHaveClass(/is-paused/);
+
+			// Keyboard: Tab onto the Queued button shows a real focus ring (not just the
+			// accent border it already has), and Enter keeps focus and the pause.
+			await page.locator(".billboard__play").focus();
+			await page.keyboard.press("Tab");
+			await expect(queue).toBeFocused();
+			const ring = await queue.evaluate((b) => ({ style: getComputedStyle(b).outlineStyle, width: getComputedStyle(b).outlineWidth }));
+			expect(ring).toEqual({ style: "solid", width: "2px" });
+			await page.keyboard.press("Enter");
 			await expect(queue).toContainText("Add to Queue");
+			await expect(queue).toBeFocused();
+			await expect(page.locator(".billboard")).toHaveClass(/is-paused/);
 			await expect(page.getByRole("button", { name: /^Up next, \d+ queued$/ })).toHaveCount(0);
 		});
 	}

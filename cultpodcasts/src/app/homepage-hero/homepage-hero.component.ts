@@ -1,5 +1,5 @@
 import { EpisodeLinksComponent } from '../episode-links/episode-links.component';
-import { QueueButtonComponent } from '../queue-button/queue-button.component';
+import { QueueButtonComponent, QueueToggle } from '../queue-button/queue-button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -589,6 +589,20 @@ export class HomepageHeroComponent {
    * via focusin. Blur and clear focus-pause so the dwell timer / dash fill can run
    * again once the pointer leaves (hover pause still applies while the pointer is inside).
    */
+  /**
+   * A mouse/touch click focuses the queue button, which would hold the pause via
+   * focusin until the next click elsewhere (like the pager). Release it; keyboard
+   * activation keeps focus, and so the pause, while the user is in the row.
+   */
+  protected onQueueToggled(toggle: QueueToggle): void {
+    if (!toggle.pointer) {
+      return;
+    }
+    toggle.button?.blur();
+    this.focusInside = false;
+    this.syncHeroPaused();
+  }
+
   private releasePagerFocus(event?: Event): void {
     const target = event?.currentTarget;
     if (target instanceof HTMLElement) {

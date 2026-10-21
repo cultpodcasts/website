@@ -39,14 +39,16 @@ describe('QueueButtonComponent', () => {
 
   it('adds and removes an embeddable episode, with the episode page labels and icons', () => {
     render(embeddable);
-    expect(button()!.getAttribute('aria-label')).toBe('Add to queue');
+    // Toggle semantics: the visible text is the name, aria-pressed the state (Label in Name).
+    expect(button()!.hasAttribute('aria-label')).toBe(false);
+    expect(button()!.getAttribute('aria-pressed')).toBe('false');
     expect(button()!.textContent).toContain('playlist_add');
     expect(button()!.textContent).toContain('Add to Queue');
 
     button()!.click();
     fixture.detectChanges();
     expect(player.toggleQueue).toHaveBeenCalledWith(embeddable);
-    expect(button()!.getAttribute('aria-label')).toBe('Remove from queue');
+    expect(button()!.getAttribute('aria-pressed')).toBe('true');
     expect(button()!.textContent).toContain('playlist_add_check');
     expect(button()!.textContent).toContain('Queued');
     expect(button()!.classList).toContain('is-queued');
@@ -62,6 +64,21 @@ describe('QueueButtonComponent', () => {
     fixture.componentRef.setInput('shape', 'pill');
     fixture.detectChanges();
     expect(button()!.classList).toContain('queue-button--pill');
+  });
+
+  it('emits each toggle with the new state and whether it came from a pointer', () => {
+    render(embeddable);
+    const events: { queued: boolean; pointer: boolean; button: HTMLButtonElement | null }[] = [];
+    fixture.componentInstance.toggled.subscribe((e) => events.push(e));
+
+    button()!.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    button()!.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+
+    expect(events.map(({ queued, pointer }) => ({ queued, pointer }))).toEqual([
+      { queued: true, pointer: true },
+      { queued: false, pointer: false },
+    ]);
+    expect(events[0].button).toBe(button());
   });
 
   it('does not let the click reach a surrounding link or swipe handler', () => {

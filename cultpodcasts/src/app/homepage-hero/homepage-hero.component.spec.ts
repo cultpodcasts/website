@@ -812,14 +812,29 @@ describe('HomepageHeroComponent', () => {
     });
 
     it('is a separate link from the show pill and the description expander', () => {
+      fixture.componentRef.setInput('slides', [
+        ep('a', { episodeDescription: 'Synthetic long hero description sentence. '.repeat(12).trim() }), ep('b'), ep('c'),
+      ]);
+      fixture.detectChanges();
+      // happy-dom has no layout: fake the clamped description overflowing so the expander renders.
+      const desc = root().querySelector('.billboard__desc') as HTMLElement;
+      Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 100 });
+      Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: 240 });
+      component['measureDescOverflow']();
+      fixture.detectChanges();
+
       const pill = root().querySelector('a.hero-pill') as HTMLAnchorElement;
+      const toggle = root().querySelector('button.billboard__desc-toggle') as HTMLButtonElement;
       expect(pill.getAttribute('href')).toBe('/podcast/Show%20a');
+      expect(toggle).toBeTruthy();
       expect(pill.contains(titleLink())).toBe(false);
-      expect(titleLink()!.querySelector('button, a')).toBeNull();
-      const toggle = root().querySelector('.billboard__desc-toggle');
-      if (toggle) {
-        expect(titleLink()!.contains(toggle)).toBe(false);
-      }
+      expect(titleLink()!.contains(pill)).toBe(false);
+      expect(titleLink()!.contains(toggle)).toBe(false);
+      expect(toggle.closest('a')).toBeNull();
+      // Expanding still works and does not navigate.
+      toggle.click();
+      fixture.detectChanges();
+      expect(component['descExpanded']()).toBe(true);
     });
 
     it('keeps the title look in the Sass contract: inherited colour, no underline until hover / focus', () => {
@@ -858,19 +873,48 @@ describe('HomepageHeroComponent', () => {
     });
 
     it('toggles the featured episode in the player queue, like the episode page', () => {
-      expect(queueButton()!.getAttribute('aria-label')).toBe('Add to queue');
+      expect(queueButton()!.getAttribute('aria-pressed')).toBe('false');
       expect(queueButton()!.textContent).toContain('Add to Queue');
 
       queueButton()!.click();
       fixture.detectChanges();
       expect(player.toggleQueue).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
-      expect(queueButton()!.getAttribute('aria-label')).toBe('Remove from queue');
+      expect(queueButton()!.getAttribute('aria-pressed')).toBe('true');
       expect(queueButton()!.textContent).toContain('Queued');
       expect(queueButton()!.classList).toContain('is-queued');
 
       queueButton()!.click();
       fixture.detectChanges();
       expect(queueButton()!.textContent).toContain('Add to Queue');
+    });
+
+    it('releases the hover/focus pause after a pointer click, like the pager', () => {
+      const actions = root().querySelector('.billboard__actions') as HTMLElement;
+      actions.dispatchEvent(new MouseEvent('mouseenter'));
+      queueButton()!.focus();
+      root().querySelector('section.billboard')!.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      expect(component['heroPaused']()).toBe(true);
+
+      // Mouse click: detail 1.
+      queueButton()!.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+      actions.dispatchEvent(new MouseEvent('mouseleave'));
+      fixture.detectChanges();
+
+      expect(player.toggleQueue).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).not.toBe(queueButton());
+      expect(component['heroPaused']()).toBe(false);
+    });
+
+    it('keeps focus and the pause after keyboard activation', () => {
+      queueButton()!.focus();
+      root().querySelector('section.billboard')!.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      // Enter / Space on a button fires click with detail 0.
+      queueButton()!.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+      fixture.detectChanges();
+
+      expect(player.toggleQueue).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(queueButton());
+      expect(component['heroPaused']()).toBe(true);
     });
 
     it('follows the current slide', () => {

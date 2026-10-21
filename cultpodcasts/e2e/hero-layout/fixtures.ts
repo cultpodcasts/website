@@ -133,7 +133,7 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
       <div class="billboard__copy">
         <p class="billboard__eyebrow"><span class="billboard__live" aria-hidden="true"></span> Now featuring</p>
         <p class="hero-show"><span class="hero-pill">${escapeHtml(c.podcastName)}</span></p>
-        <h1 class="billboard__title">${escapeHtml(c.episodeTitle)}</h1>
+        <h1 class="billboard__title"><a class="billboard__title-link" href="#">${escapeHtml(c.episodeTitle)}</a></h1>
         <p class="hero-meta">
           <span>${escapeHtml(c.releaseLabel)}</span>
           <span class="hero-meta__dot" aria-hidden="true">·</span>
@@ -143,7 +143,7 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
       </div>
       <div class="billboard__actions">
         <button type="button" class="billboard__play">Watch</button>
-        <a class="billboard__more" href="#">More info</a>
+        <app-queue-button class="billboard__queue"><button type="button" class="queue-button queue-button--pill" aria-pressed="false">Add to Queue</button></app-queue-button>
       </div>
     </div>
   </div>

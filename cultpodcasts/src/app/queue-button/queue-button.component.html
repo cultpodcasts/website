@@ -1,6 +1,7 @@
 @if (queueable()) {
+<!-- A toggle: the visible text is the name ("Add to Queue" / "Queued"), aria-pressed the state. -->
 <button type="button" class="queue-button" [class.is-queued]="queued()" [class.queue-button--pill]="shape() === 'pill'"
-  [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggle($event)">
+  [attr.aria-pressed]="queued()" (click)="toggle($event)">
   <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
   {{ queued() ? 'Queued' : 'Add to Queue' }}
 </button>
