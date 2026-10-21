@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 import { SearchDisplayEpisode } from "../search-result-links";
 import { EpisodePosterComponent } from "../episode-poster/episode-poster.component";
+import { newsReportPageCommands } from "../catalogue-links";
 
 @Component({
   selector: "app-news-report-card",
@@ -19,7 +20,7 @@ export class NewsReportCardComponent {
   readonly play = output<SearchDisplayEpisode>();
   protected get playable(): string[] {
     const item = this.episode();
-    return ["/news", item.podcastName, item.id];
+    return newsReportPageCommands(item.podcastName, item.id);
   }
   protected get parent(): string[] {
     return ["/news", this.episode().podcastName];

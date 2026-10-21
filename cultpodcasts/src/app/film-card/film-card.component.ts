@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 import { SearchDisplayEpisode } from "../search-result-links";
 import { EpisodePosterComponent } from "../episode-poster/episode-poster.component";
+import { filmPageCommands } from "../catalogue-links";
 
 @Component({
   selector: "app-film-card",
@@ -18,6 +19,6 @@ export class FilmCardComponent {
   readonly play = output<SearchDisplayEpisode>();
   protected get playable(): string[] {
     const item = this.episode();
-    return ["/film", item.episodeTitle, item.id];
+    return filmPageCommands(item.episodeTitle, item.id);
   }
 }
