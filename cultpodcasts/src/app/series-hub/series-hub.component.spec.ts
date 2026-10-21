@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { AuthServiceWrapper } from "../auth-service-wrapper.class";
 import { provideZonelessChangeDetection } from "@angular/core";
 import { ActivatedRoute, provideRouter, Router } from "@angular/router";
 import { BehaviorSubject, of, Subject, throwError } from "rxjs";
@@ -69,6 +70,7 @@ describe("SeriesHubComponent", () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: AuthServiceWrapper, useValue: { roles: of([]) } },
         { provide: ODataService, useValue: oData },
         {
           provide: PlayerService,
@@ -146,6 +148,22 @@ describe("SeriesHubComponent", () => {
     expect(fixture.nativeElement.textContent).toContain("Nightly has 1 report found by CultPodcasts.com");
     expect(fixture.nativeElement.textContent).toContain("Subjects");
     expect(fixture.nativeElement.textContent).toContain("World");
+  });
+
+  it("orders newest first, then reloads oldest first from the hub menu with the subject filter kept", async () => {
+    const fixture = await render("news");
+    expect(oData.getEntitiesWithFacets.mock.calls[0][1].orderby).toBe("release desc");
+    expect(fixture.nativeElement.querySelector("app-series-hub-menu #sort")?.textContent).toContain("Newest first");
+    fixture.componentInstance.toggleSubject("World");
+    const menu = fixture.debugElement.query((el) => el.name === "app-series-hub-menu");
+    menu.componentInstance.sort.set("release asc");
+    menu.triggerEventHandler("sortChange", "release asc");
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const last = oData.getEntitiesWithFacets.mock.calls.at(-1)?.[1];
+    expect(last.orderby).toBe("release asc");
+    expect(last.filter).toContain("subjects/any");
+    expect(last.skip).toBe(0);
   });
 
   it("narrows the hub filter on toggleSubject without refreshing facets", async () => {

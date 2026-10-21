@@ -22,6 +22,15 @@ export class EpisodeService {
     return await firstValueFrom(this.http.get<IPageDetails>(url));
   }
 
+  /**
+   * SSR meta for a news outlet / TV show hub: Api `GET /pagedetails/{news|tv}/{name}` (Api #175).
+   * Same name encoding as the episode call ("'" pre-encoded as %27). 400 when the hub has no items.
+   */
+  public async getHubPageDetailsViaApi(hub: "news" | "tv", name: string): Promise<IPageDetails | undefined> {
+    const url = new URL(`/pagedetails/${hub}/${encodeURIComponent(name.replaceAll("'", "%27"))}`, environment.api).toString();
+    return await firstValueFrom(this.http.get<IPageDetails>(url));
+  }
+
   public async GetEpisodeDetailsFromApi(
     episodeId: string,
     podcastName: string,

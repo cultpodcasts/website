@@ -5,11 +5,19 @@ import { AUTH_SCOPE } from './auth.interceptor';
 import { environment } from './../environments/environment';
 import { parseAmbiguousPodcastIds } from './parse-ambiguous-podcast-ids';
 import { Podcast } from './podcast.interface';
+import { CatalogueHub, hubApiRoot } from './catalogue-hub';
 
 export type SubmitSeriesProbe =
   | { kind: 'unique'; podcast: Podcast }
   | { kind: 'missing' }
   | { kind: 'conflict'; ids: string[]; podcasts: Podcast[] }
+  | { kind: 'error' };
+
+/** A news outlet / TV show looked up by name for a hub submit. */
+export type SubmitParentProbe =
+  | { kind: 'unique'; id: string; name: string }
+  | { kind: 'missing' }
+  | { kind: 'conflict'; ids: string[] }
   | { kind: 'error' };
 
 @Injectable({ providedIn: 'root' })
@@ -48,6 +56,39 @@ export class SubmitSeriesResolveService {
           return { kind: 'error' };
         }
         return { kind: 'conflict', ids, podcasts };
+      }
+      return { kind: 'error' };
+    }
+  }
+
+  /**
+   * GET /newsorganisation/{name} or /tvshow/{name} (curate). The Worker forwards Azure's 200 DTO,
+   * 404, and 409 `["guid", …]` for an ambiguous route-form name.
+   */
+  async probeParentByName(hub: CatalogueHub, name: string): Promise<SubmitParentProbe> {
+    const term = name.trim();
+    if (!term) {
+      return { kind: 'error' };
+    }
+    const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(term)}`, environment.api).toString();
+    try {
+      const parent = await firstValueFrom(
+        this.http.get<{ id?: string; name?: string }>(url, { context: this.curateContext() })
+      );
+      if (!parent?.id) {
+        return { kind: 'error' };
+      }
+      return { kind: 'unique', id: parent.id, name: parent.name || term };
+    } catch (error) {
+      if (!(error instanceof HttpErrorResponse)) {
+        return { kind: 'error' };
+      }
+      if (error.status === 404) {
+        return { kind: 'missing' };
+      }
+      if (error.status === 409) {
+        const ids = parseAmbiguousPodcastIds(error.error);
+        return ids ? { kind: 'conflict', ids } : { kind: 'error' };
       }
       return { kind: 'error' };
     }

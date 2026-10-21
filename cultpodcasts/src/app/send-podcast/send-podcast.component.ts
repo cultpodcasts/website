@@ -14,7 +14,7 @@ import { SubmitUrlOriginResponse } from "../submit-url-origin-response.interface
 import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
 import { resolveSubmitNameConflict } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
-import { submitEpisodePostBody } from '../submit-series.util';
+import { submitEpisodePostBody, submitParentPostBody } from '../submit-series.util';
 
 @Component({
   selector: 'app-send-podcast',
@@ -74,7 +74,9 @@ export class SendPodcastComponent {
 
     if (url) {
       this.beginBusy();
-      const body = submitEpisodePostBody(url, { podcastId: data.podcastId, podcastName: data.podcastName });
+      const body = data.parent
+        ? submitParentPostBody(url, data.parent)
+        : submitEpisodePostBody(url, { podcastId: data.podcastId, podcastName: data.podcastName });
       let headers: HttpHeaders = new HttpHeaders();
       if (this.isAuthenticated() || localStorage.getItem("hasLoggedIn")) {
         let token: string | undefined;
@@ -106,7 +108,7 @@ export class SendPodcastComponent {
         }
         this.close();
       } catch (error) {
-        if (!data.podcastId && error instanceof HttpErrorResponse && error.status === 409) {
+        if (!data.parent && !data.podcastId && error instanceof HttpErrorResponse && error.status === 409) {
           this.isSending.set(false);
           const conflict = await resolveSubmitNameConflict(
             this.seriesResolve,

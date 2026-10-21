@@ -14,6 +14,13 @@ import { TvShowEpisodeCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from '
 import { Person } from './person.interface';
 import { SubjectEntity } from './subject-entity.interface';
 import { SubjectResponse } from './subject-response.interface';
+import { CatalogueHub, hubApiRoot } from './catalogue-hub';
+import {
+  CatalogueParentChangeRequest,
+  CatalogueParentDto,
+  CatalogueParentRenameRequest,
+  CatalogueParentRenameResponse
+} from './catalogue-parent.interface';
 
 /**
  * Shared authenticated catalogue writes used by spinner/send dialogs.
@@ -63,6 +70,43 @@ export class CurationSubmitService {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
     return this.http.patch(url, body, {
       context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Subject names for the subject selects (same endpoint as the podcast edit dialog). */
+  getSubjects() {
+    const url = new URL('/subjects', environment.api).toString();
+    return this.http.get<{ name: string }[]>(url, { context: this.curateContext() });
+  }
+
+  /** Language code → name map for the language select (same endpoint as the podcast edit dialog). */
+  getLanguages() {
+    const url = new URL('/languages', environment.api).toString();
+    return this.http.get<Record<string, string>>(url, { context: this.curateContext() });
+  }
+
+  /** GET a news outlet / TV show by guid or route-form name (curate). */
+  getCatalogueParent(hub: CatalogueHub, identifier: string) {
+    const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(identifier)}`, environment.api).toString();
+    return this.http.get<CatalogueParentDto>(url, { context: this.curateContext() });
+  }
+
+  /** PATCH a news outlet / TV show by guid (curate): 202, empty body. */
+  patchCatalogueParent(hub: CatalogueHub, id: string, body: CatalogueParentChangeRequest) {
+    const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(id)}`, environment.api).toString();
+    return this.http.patch(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Admin rename (separate from the edit PATCH). The KV redirect `news/{old}` / `tv/{old}` is written by Azure. */
+  renameCatalogueParent(hub: CatalogueHub, identifier: string, newName: string) {
+    const url = new URL(`/${hubApiRoot(hub)}/name/${encodeURIComponent(identifier)}`, environment.api).toString();
+    const body: CatalogueParentRenameRequest = { newName };
+    return this.http.post<CatalogueParentRenameResponse>(url, body, {
+      context: new HttpContext().set(AUTH_SCOPE, 'admin'),
       observe: 'response'
     });
   }

@@ -1,4 +1,8 @@
+@if (fixedTarget; as target) {
+<h2 mat-dialog-title>Submit URL for {{ target.label }}</h2>
+} @else {
 <h2 mat-dialog-title>Add Podcast</h2>
+}
 
 <mat-dialog-content [formGroup]="form">
 
@@ -11,6 +15,10 @@
         <mat-error>Unrecognised podcast URL</mat-error>
         }
     </mat-form-field>
+
+    @if (fixedTarget; as target) {
+    <p class="known-series" id="submit-target">{{ target.label }}: {{ target.name }}</p>
+    }
 
     @if (isCurator() && seriesUi() === 'readonly') {
     <p class="known-series">Series: {{ knownSeriesName() }}</p>

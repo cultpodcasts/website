@@ -1,9 +1,7 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActivatedRoute } from "@angular/router";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { SeriesHubComponent } from "../series-hub/series-hub.component";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
-import { SeoService } from "../seo.service";
+import { connectCatalogueHubSeo } from "../catalogue-hub-seo";
 
 @Component({
   selector: "app-news-organisation",
@@ -12,16 +10,10 @@ import { SeoService } from "../seo.service";
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewsOrganisationComponent {
-  protected readonly slug = signal("");
-  private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly seo = inject(SeoService);
+  private readonly hubSeo = connectCatalogueHubSeo("news");
+  protected readonly slug = this.hubSeo.slug;
 
   ngOnInit(): void {
-    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
-      const slug = params["slug"] ?? "";
-      this.slug.set(slug);
-      this.seo.AddMetaTags({ title: slug });
-    });
+    this.hubSeo.start();
   }
 }

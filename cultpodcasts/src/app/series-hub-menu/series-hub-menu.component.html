@@ -1,0 +1,36 @@
+@if (visible()) {
+<button type="button" class="browse-sort" [matMenuTriggerFor]="hubMenu" id="sort">
+  {{ triggerLabel() }}
+  <mat-icon>arrow_drop_down</mat-icon>
+</button>
+}
+<mat-menu #hubMenu="matMenu">
+  @if (showEdit()) {
+  <button mat-menu-item id="edit" (click)="edit()">
+    <mat-icon>edit</mat-icon>
+    <span>Edit {{ label() }}</span>
+  </button>
+  }
+  @if (showSubmit()) {
+  <button mat-menu-item id="submit-url-for-parent" (click)="submitUrl()">
+    <mat-icon>add</mat-icon>
+    <span>Submit Url for {{ label() }}</span>
+  </button>
+  }
+  @if (showRename()) {
+  <button mat-menu-item id="rename" (click)="rename()">
+    <mat-icon>arrow_right_alt</mat-icon>
+    <span>Rename {{ label() }}</span>
+  </button>
+  }
+  @if (sortable()) {
+  <button mat-menu-item id="datedesc" (click)="setSort('release desc')" [class.selected]="sort() === 'release desc'">
+    <mat-icon>arrow_downward</mat-icon>
+    <span>Newest first</span>
+  </button>
+  <button mat-menu-item id="dateasc" (click)="setSort('release asc')" [class.selected]="sort() === 'release asc'">
+    <mat-icon>arrow_upward</mat-icon>
+    <span>Oldest first</span>
+  </button>
+  }
+</mat-menu>

@@ -41,6 +41,8 @@ const URL_LOOKUP_TIMEOUT_MS = 15_000;
 
 export interface SubmitPodcastDialogData {
   attachToPage?: boolean;
+  /** Hub submit (URL capture only): show the fixed news outlet / TV show target, e.g. "News Outlet: NBC News". */
+  target?: { label: string; name: string };
 }
 
 @Component({
@@ -75,6 +77,7 @@ export class SubmitPodcastComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogData = inject<SubmitPodcastDialogData | null>(MAT_DIALOG_DATA, { optional: true });
   private readonly urlCaptureOnly = this.dialogData?.attachToPage === true;
+  protected readonly fixedTarget = this.urlCaptureOnly ? this.dialogData?.target : undefined;
   /** Re-runs lookup when Auth0 roles arrive after the URL was already typed. */
   private readonly urlLookupTrigger = new Subject<string>();
 

@@ -27,7 +27,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
-import { filterKeepingSelectedInOrder } from '../subject-filter.util';
+import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
@@ -67,8 +67,7 @@ import {
   styleUrl: './edit-podcast-dialog.component.sass'
 })
 export class EditPodcastDialogComponent {
-  readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
-    && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  readonly enableDesktopSubjectTypingFilter: boolean = isDesktopSubjectTypingEnabled();
   protected readonly noCompareFunction = noCompareFunction;
 
   podcastName: string;
@@ -342,32 +341,7 @@ export class EditPodcastDialogComponent {
   }
 
   applyFilterKey(event: KeyboardEvent, filterTerm: WritableSignal<string>) {
-    if (!this.enableDesktopSubjectTypingFilter) {
-      return;
-    }
-    if (event.ctrlKey || event.altKey || event.metaKey) {
-      return;
-    }
-
-    if (event.key === 'Backspace') {
-      const value = filterTerm();
-      if (value.length > 0) {
-        filterTerm.set(value.substring(0, value.length - 1));
-      }
-      event.preventDefault();
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      filterTerm.set('');
-      event.preventDefault();
-      return;
-    }
-
-    if (event.key.length === 1) {
-      filterTerm.set(filterTerm() + event.key);
-      event.preventDefault();
-    }
+    applySubjectFilterKey(event, filterTerm, this.enableDesktopSubjectTypingFilter);
   }
 
 }

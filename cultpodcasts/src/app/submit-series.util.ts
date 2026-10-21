@@ -2,6 +2,7 @@ import { SimplePodcast } from './simple-podcast.interface';
 import { Suggestion } from './search-suggestions.interface';
 import { SubmittablePodcastUrlKind } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
+import { SubmitParentTarget } from './submit-parent-target.interface';
 
 export interface SubmitSeriesSelection {
   podcastId: string | undefined;
@@ -178,5 +179,23 @@ export function submitEpisodePostBody(url: URL, series: SubmitSeriesSelection): 
     url: url.href,
     podcastId: series.podcastId,
     podcastName: series.podcastName
+  };
+}
+
+/**
+ * POST /submit body for a hub submit. No podcastId / podcastName: a parent target must never fall back
+ * to the podcast name attach (which creates a podcast when the name is unknown).
+ */
+export function submitParentPostBody(url: URL, parent: SubmitParentTarget): {
+  url: string;
+  parentKind: SubmitParentTarget["parentKind"];
+  parentId: string;
+  parentName: string;
+} {
+  return {
+    url: url.href,
+    parentKind: parent.parentKind,
+    parentId: parent.parentId,
+    parentName: parent.parentName
   };
 }
