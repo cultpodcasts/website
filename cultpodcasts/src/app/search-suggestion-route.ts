@@ -1,8 +1,6 @@
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
-import { catalogueParentHubCommands, filmPageCommands } from './catalogue-links';
+import { catalogueParentHubCommands, filmPageCommands, isGuid } from './catalogue-links';
 import { Suggestion } from './search-suggestions.interface';
-
-const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Material icon ligature per suggestion kind. Unknown kinds use the search icon. */
 export function suggestionIcon(type: string): string {
@@ -59,7 +57,7 @@ export function suggestionCommands(suggestion: Suggestion): string[] {
       return catalogueParentHubCommands(CatalogueParentKind.NewsOrganisation, suggestion.value)
         ?? searchCommands(suggestion);
     case 'film':
-      if (suggestion.itemId && GUID_PATTERN.test(suggestion.itemId) && suggestion.value) {
+      if (isGuid(suggestion.itemId) && suggestion.value) {
         return filmPageCommands(suggestion.value, suggestion.itemId);
       }
       return searchCommands(suggestion);
