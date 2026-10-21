@@ -8,6 +8,19 @@ import { EpisodePublishResponse } from './episode-publish-response.interface';
 import { PostEpisodeModel } from './post-episode-model.interface';
 import { AUTH_SCOPE } from './auth.interceptor';
 
+/**
+ * The review page's inline edits (subjects, guests, ignored / removed / tweeted, unBluesky, language) in the
+ * playable PATCH shape: same names except the episode `lang` is `language`. Service URLs / images are not sent.
+ */
+export function toPlayableChanges(changes: EpisodePost): Record<string, unknown> {
+  const { lang, urls: _urls, images: _images, services: _services, ...rest } = changes as EpisodePost & Record<string, unknown>;
+  const body: Record<string, unknown> = { ...rest };
+  if (lang !== undefined) {
+    body['language'] = lang;
+  }
+  return body;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -27,7 +40,31 @@ export class EpisodeUpdateService {
     return this.normalizeEpisode(episode);
   }
 
+  /**
+   * News / TV / film rows (GET /episode/{id} returns `contentKind` for every kind) PATCH their own route:
+   * PATCH /episode only edits podcast episodes.
+   */
+  playablePatchPath(episode: Pick<ApiEpisode, 'id' | 'contentKind'>): string | null {
+    const id = encodeURIComponent(episode.id);
+    switch (episode.contentKind) {
+      case 'NewsReport':
+        return `/newsreport/${id}`;
+      case 'TvShowEpisode':
+        return `/tvshowepisode/${id}`;
+      case 'Film':
+        return `/film/${id}`;
+      default:
+        return null;
+    }
+  }
+
   async applyAndRefresh(episode: ApiEpisode, changes: EpisodePost): Promise<ApiEpisode> {
+    const playablePath = this.playablePatchPath(episode);
+    if (playablePath) {
+      const endpoint = new URL(playablePath, environment.api).toString();
+      await firstValueFrom(this.http.patch(endpoint, toPlayableChanges(changes), { context: this.curateContext() }));
+      return this.fetchEpisode(episode.id);
+    }
     const podcastId = episode.podcastId;
     if (!podcastId) {
       throw new Error('Episode podcastId is required for updates.');

@@ -223,7 +223,8 @@ export function postSubmitEpisodeDialogForActor(
 
 /**
  * Review / Edit need both podcast Cosmos ids.
- * Catalogue-kind submit can return Created with contentKind + playableId and neither podcast id.
+ * Catalogue-kind submit can return Created with contentKind + playableId and neither podcast id;
+ * news / TV use `submittedCataloguePlayableReview` instead.
  */
 export function canReviewSubmittedEpisode(
   podcastId: string | null | undefined,
@@ -234,4 +235,29 @@ export function canReviewSubmittedEpisode(
     return false;
   }
   return uuidPattern.test(podcastId ?? '') && uuidPattern.test(episodeId ?? '');
+}
+
+/**
+ * News report / TV episode submit (hub or toolbar): Review + Edit when a Curator gets a playable guid back
+ * with Created, Enriched or EpisodeAlreadyExists. Film and podcast episodes return null.
+ */
+export function submittedCataloguePlayableReview(
+  roles: readonly string[] | null | undefined,
+  response: { episode?: string; contentKind?: string | null; playableId?: string | null } | null | undefined
+): { kind: CataloguePlayableKind.NewsReport | CataloguePlayableKind.TvShowEpisode; playableId: string } | null {
+  if (!response || !roles?.includes('Curator')) {
+    return null;
+  }
+  const kind = response.contentKind;
+  if (kind !== CataloguePlayableKind.NewsReport && kind !== CataloguePlayableKind.TvShowEpisode) {
+    return null;
+  }
+  if (postSubmitEpisodeDialog(response.episode) === 'none') {
+    return null;
+  }
+  const playableId = response.playableId ?? '';
+  if (!uuidPattern.test(playableId)) {
+    return null;
+  }
+  return { kind, playableId };
 }

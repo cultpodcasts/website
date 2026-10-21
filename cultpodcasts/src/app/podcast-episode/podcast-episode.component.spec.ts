@@ -197,6 +197,26 @@ describe('PodcastEpisodeComponent', () => {
     );
   });
 
+  it('hides Post Episode (podcast-only publish) for news, TV and film, and keeps it for podcast episodes', () => {
+    const canPost = () => (fixture.componentInstance as unknown as { canPostEpisode(): boolean }).canPostEpisode();
+    expect(canPost()).toBe(true);
+    for (const contentKind of ['NewsReport', 'TvShowEpisode', 'Film']) {
+      fixture.componentRef.setInput('episode', ep({ contentKind }));
+      expect(canPost()).toBe(false);
+    }
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'Episode' }));
+    expect(canPost()).toBe(true);
+  });
+
+  it('scopes the search bar to the podcast only on /podcast/ routes, not on news / TV slug routes', () => {
+    const setPodcast = vi.spyOn(TestBed.inject(SiteService), 'setPodcast');
+    routeParams.next({ slug: 'NBC News', query: 'x' });
+    expect(setPodcast).toHaveBeenLastCalledWith(null);
+    routeParams.next({ podcastName: 'Show A', query: 'x' });
+    expect(setPodcast).toHaveBeenLastCalledWith('Show A');
+    routeParams.next({ podcastName: 'Show A' });
+  });
+
   it('points a TV episode show pill at the TV hub', () => {
     fixture.componentRef.setInput('episode', ep({ contentKind: 'TvShowEpisode', podcastName: 'Nightly' }));
     fixture.detectChanges();

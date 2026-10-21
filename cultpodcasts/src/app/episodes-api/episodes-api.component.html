@@ -53,20 +53,26 @@
                 (promoteToggle)="togglePromote(result)" />
         </div>
         }
+        @if (hasEditDialog(result)) {
         <button mat-icon-button type="button" class="curator-card__overflow" [matMenuTriggerFor]="menu"
             aria-label="Episode actions">
             <mat-icon>more_vert</mat-icon>
         </button>
+        }
         <mat-menu #menu="matMenu">
-            <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
+            @if (hasEditDialog(result)) {
+            <button mat-menu-item (click)="editRow(result)">
                 <mat-icon>edit</mat-icon>
                 <span>Edit Episode</span>
             </button>
+            }
+            @if (isPodcastRow(result)) {
             <button mat-menu-item (click)="post(result.podcastId!, result.id)">
                 <mat-icon>send</mat-icon>
                 <span>Post Episode</span>
             </button>
-            @if (authRoles().includes("Curator") && result.podcastName) {
+            }
+            @if (authRoles().includes("Curator") && result.podcastName && isPodcastRow(result)) {
             <button mat-menu-item id="edit" (click)="editPodcast({ podcastName: result.podcastName, podcastId: result.podcastId, episodeId: result.id })">
                 <mat-icon>edit</mat-icon>
                 <span>Edit Podcast</span>
@@ -76,7 +82,7 @@
                 <span>Index Podcast</span>
             </button>
             }
-            @if (authRoles().includes("Admin")) {
+            @if (authRoles().includes("Admin") && isPodcastRow(result)) {
             <button [disabled]="result.tweeted" mat-menu-item
                 (click)="delete(result.podcastId!, result.id)">
                 <mat-icon>delete</mat-icon>
@@ -91,14 +97,16 @@
             <div class="curator-card__main">
                 <mat-card-header>
                     <mat-card-title>
-                        <a [routerLink]="['/podcast', result.podcastName, result.id]"
+                        <a [routerLink]="playableLink(result)"
                             [innerHTML]="result.displayTitle"></a>
                     </mat-card-title>
+                    @if (parentLink(result); as parent) {
                     <mat-card-subtitle>
-                        <a [routerLink]="['/podcast', result.podcastName]">
+                        <a [routerLink]="parent">
                             {{result.podcastName}}
                         </a>
                     </mat-card-subtitle>
+                    }
                     <mat-card-subtitle class="curator-card__meta">
                         <span>{{result.release | date:'d MMM yyyy H:mm'}}
                             [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</span>

@@ -33,6 +33,7 @@ import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetec
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
+import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -95,12 +96,12 @@ export class PodcastEpisodeComponent {
 
   /**
    * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
-   * The TV-show-episode shell sets this next to `(curatorEdit)`.
+   * The news report and TV-show-episode shells set this next to `(curatorEdit)`.
    */
   @Input() emitCuratorEdit = false;
 
   /**
-   * Identity-only curator edit for a parent shell (TV). Unbound by default.
+   * Curator edit for a parent shell (news report / TV episode dialog). Unbound by default.
    */
   @Output() curatorEdit = new EventEmitter<string>();
 
@@ -114,6 +115,8 @@ export class PodcastEpisodeComponent {
     return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
   });
   protected readonly displayCatalogName = displayCatalogName;
+  /** Post Episode (podcast-only GET /episode/{podcast}/{id} + publish) is hidden for news, TV and film. */
+  protected readonly canPostEpisode = computed(() => !isNonPodcastPlayableKind(this._episode()?.contentKind));
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
@@ -268,7 +271,9 @@ export class PodcastEpisodeComponent {
       const { params } = res;
       this.podcastName.set(params["podcastName"] ?? params["slug"] ?? "");
       this.siteService.setQuery(null);
-      this.siteService.setPodcast(this.podcastName());
+      // Podcast-scoped search only on /podcast/ routes. News / TV pages (`slug`) use normal site search:
+      // /podcast/{outlet}/{term} would redirect to the hub and drop the term.
+      this.siteService.setPodcast(params["podcastName"] ? this.podcastName() : null);
       this.siteService.setSubject(null);
     });
   }
