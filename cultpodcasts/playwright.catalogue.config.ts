@@ -1,9 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-
-/** CATALOGUE_E2E_PORT moves the dev server off 4173 when another checkout is already serving there. */
-const port = process.env["CATALOGUE_E2E_PORT"] ?? "4173";
-const origin = `http://127.0.0.1:${port}`;
-
+import { catalogueE2eOrigin as origin, catalogueE2ePort as port } from "./e2e/catalogue-origin";
 
 /**
  * Real routes, faked search. No Auth0, Cosmos, or public API.

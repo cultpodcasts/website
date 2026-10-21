@@ -1,7 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-
-/** Dev server origin (playwright.catalogue.config.ts, CATALOGUE_E2E_PORT). */
-const appOrigin = `http://127.0.0.1:${process.env["CATALOGUE_E2E_PORT"] ?? "4173"}`;
+import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * Bookmarkable browse filters: chip state lives in the URL fragment.

@@ -196,15 +196,15 @@ describe('cataloguePlayableCommands', () => {
   const guids = new GuidService();
 
   it('routes news reports and TV episodes under their parent hub by short id', () => {
-    expect(cataloguePlayableCommands('NewsReport', 'Desk', id, guids)).toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);
-    expect(cataloguePlayableCommands('TvShowEpisode', 'Nightly', id, guids)).toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
+    expect(cataloguePlayableCommands('NewsReport', 'Desk', id)).toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);
+    expect(cataloguePlayableCommands('TvShowEpisode', 'Nightly', id)).toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
   });
 
   it('is null without a parent name or id, and for films and podcast episodes', () => {
-    expect(cataloguePlayableCommands('NewsReport', '', id, guids)).toBeNull();
-    expect(cataloguePlayableCommands('NewsReport', 'Desk', undefined, guids)).toBeNull();
-    expect(cataloguePlayableCommands('Film', 'One Off', id, guids)).toBeNull();
-    expect(cataloguePlayableCommands('Episode', 'Show', id, guids)).toBeNull();
+    expect(cataloguePlayableCommands('NewsReport', '', id)).toBeNull();
+    expect(cataloguePlayableCommands('NewsReport', 'Desk', undefined)).toBeNull();
+    expect(cataloguePlayableCommands('Film', 'One Off', id)).toBeNull();
+    expect(cataloguePlayableCommands('Episode', 'Show', id)).toBeNull();
   });
 });
 
@@ -213,30 +213,30 @@ describe('review page row links', () => {
   const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
   it('keeps /podcast/{name}/{guid} for podcast episodes and rows without a contentKind', () => {
-    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show' }, guids)).toEqual(['/podcast', 'Show', id]);
-    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show', contentKind: 'Episode' }, guids)).toEqual(['/podcast', 'Show', id]);
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show' })).toEqual(['/podcast', 'Show', id]);
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Show', contentKind: 'Episode' })).toEqual(['/podcast', 'Show', id]);
     expect(reviewParentLink({ podcastName: 'Show' })).toEqual(['/podcast', 'Show']);
   });
 
   it('uses the API path as-is when GET /episode/{id} returns one', () => {
-    expect(reviewPlayableLink({ id, title: 'Bulletin', contentKind: 'NewsReport', path: '/news/NBC%20News/bqqq' }, guids))
+    expect(reviewPlayableLink({ id, title: 'Bulletin', contentKind: 'NewsReport', path: '/news/NBC%20News/bqqq' }))
       .toBe('/news/NBC%20News/bqqq');
   });
 
   it('prefers parentName / slug from the API for the fallback and parent links', () => {
-    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'x', parentName: 'Nightly', contentKind: 'TvShowEpisode' }, guids))
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'x', parentName: 'Nightly', contentKind: 'TvShowEpisode' }))
       .toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
-    expect(reviewPlayableLink({ id, title: 'One Off (2020)', slug: 'One Off', contentKind: 'Film' }, guids))
+    expect(reviewPlayableLink({ id, title: 'One Off (2020)', slug: 'One Off', contentKind: 'Film' }))
       .toEqual(['/film', 'One Off', guids.toCatalogueShortId(id, 'Film')]);
     expect(reviewParentLink({ podcastName: 'x', parentName: 'Desk', contentKind: 'NewsReport' })).toEqual(['/news', 'Desk']);
   });
 
   it('uses the kind hub and the short base-64 id for news, TV and film', () => {
-    expect(reviewPlayableLink({ id, title: 'Bulletin', podcastName: 'Desk', contentKind: 'NewsReport' }, guids))
+    expect(reviewPlayableLink({ id, title: 'Bulletin', podcastName: 'Desk', contentKind: 'NewsReport' }))
       .toEqual(['/news', 'Desk', guids.toCatalogueShortId(id, 'NewsReport')]);
-    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Nightly', contentKind: 'TvShowEpisode' }, guids))
+    expect(reviewPlayableLink({ id, title: 'Part', podcastName: 'Nightly', contentKind: 'TvShowEpisode' }))
       .toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
-    expect(reviewPlayableLink({ id, title: 'One Off', contentKind: 'Film' }, guids))
+    expect(reviewPlayableLink({ id, title: 'One Off', contentKind: 'Film' }))
       .toEqual(['/film', 'One Off', guids.toCatalogueShortId(id, 'Film')]);
     expect(reviewParentLink({ podcastName: 'Desk', contentKind: 'NewsReport' })).toEqual(['/news', 'Desk']);
     expect(reviewParentLink({ podcastName: 'Nightly', contentKind: 'TvShowEpisode' })).toEqual(['/tv', 'Nightly']);

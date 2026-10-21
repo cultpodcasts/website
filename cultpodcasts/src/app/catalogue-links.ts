@@ -64,17 +64,16 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
 export function cataloguePlayableCommands(
   kind: string | null | undefined,
   parentName: string | null | undefined,
-  playableId: string | null | undefined,
-  guids: GuidService
+  playableId: string | null | undefined
 ): string[] | null {
   if (!parentName || !playableId) {
     return null;
   }
   switch (kind) {
     case "TvShowEpisode":
-      return ["/tv", parentName, guids.toCatalogueShortId(playableId, kind)];
+      return tvShowEpisodePageCommands(parentName, playableId);
     case "NewsReport":
-      return ["/news", parentName, guids.toCatalogueShortId(playableId, kind)];
+      return newsReportPageCommands(parentName, playableId);
     default:
       return null;
   }
@@ -86,22 +85,20 @@ export function cataloguePlayableCommands(
  * `contentKind` but no `path`, /news|/tv/{parent}/{short id} and /film/{title}/{short id}.
  */
 export function reviewPlayableLink(
-  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null },
-  guids: GuidService
+  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null }
 ): string | string[] {
   if (episode.path?.startsWith("/")) {
     // Already site-encoded: as a string, routerLink parses it as a URL instead of encoding it again.
     return episode.path;
   }
-  const shortId = () => guids.toCatalogueShortId(episode.id, episode.contentKind);
   const parent = episode.parentName ?? episode.podcastName ?? "";
   switch (episode.contentKind) {
     case "Film":
-      return ["/film", episode.slug ?? episode.podcastName ?? episode.title, shortId()];
+      return filmPageCommands(episode.slug ?? episode.podcastName ?? episode.title, episode.id);
     case "TvShowEpisode":
-      return ["/tv", parent, shortId()];
+      return tvShowEpisodePageCommands(parent, episode.id);
     case "NewsReport":
-      return ["/news", parent, shortId()];
+      return newsReportPageCommands(parent, episode.id);
     default:
       return ["/podcast", episode.podcastName ?? "", episode.id];
   }

@@ -13,7 +13,6 @@ import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
 import { cataloguePlayableCommands } from '../catalogue-links';
 import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
-import { GuidService } from '../guid.service';
 import { EditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
@@ -50,7 +49,6 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   /** News report / TV episode Review + Edit target (Curator, playable guid, created or existing). */
   readonly cataloguePlayable: { kind: EditableCataloguePlayableKind; playableId: string } | null;
   private readonly parents = inject(CataloguePlayableParentService);
-  private readonly guids = inject(GuidService);
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -199,7 +197,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
 
   private async navigateToPlayableReview(kind: EditableCataloguePlayableKind, playableId: string, knownParent?: string) {
     const parentName = this.data.parentName || knownParent || await this.parents.parentName(kind, playableId);
-    const commands = cataloguePlayableCommands(kind, parentName, playableId, this.guids);
+    const commands = cataloguePlayableCommands(kind, parentName, playableId);
     if (!commands) {
       this.snackBar.open("Could not find the page for this item", "Ok", { duration: 5000 });
       return;
