@@ -56,6 +56,14 @@ describe('QueueButtonComponent', () => {
     expect(button()!.textContent).toContain('Add to Queue');
   });
 
+  it('keeps the square episode-page shape by default and rounds only when asked', () => {
+    render(embeddable);
+    expect(button()!.classList).not.toContain('queue-button--pill');
+    fixture.componentRef.setInput('shape', 'pill');
+    fixture.detectChanges();
+    expect(button()!.classList).toContain('queue-button--pill');
+  });
+
   it('does not let the click reach a surrounding link or swipe handler', () => {
     render(embeddable);
     const outer = vi.fn();

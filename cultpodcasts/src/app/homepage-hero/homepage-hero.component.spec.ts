@@ -787,6 +787,51 @@ describe('HomepageHeroComponent', () => {
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
   });
+  describe('HERO-TTL-001: the title links to the episode page', () => {
+    const root = () => fixture.nativeElement as HTMLElement;
+    const titleLink = () => root().querySelector<HTMLAnchorElement>('h1.billboard__title > a.billboard__title-link');
+
+    it('links the title text to the slide episode page (More info target)', () => {
+      expect(titleLink()!.getAttribute('href')).toBe('/podcast/Show%20a/a');
+      expect(titleLink()!.textContent?.trim()).toBe('Episode a');
+      expect(root().querySelector('h1.billboard__title')!.textContent?.trim()).toBe('Episode a');
+    });
+
+    it('uses the film / series path the homepage gives, on every slide', () => {
+      const film = ep('f', { contentKind: 'Film', episodeTitle: 'One Off' });
+      film.playableLink = ['/film', 'One Off', 'f'];
+      film.parentLink = null;
+      fixture.componentRef.setInput('slides', [film, ep('b'), ep('c')]);
+      fixture.detectChanges();
+      expect(titleLink()!.getAttribute('href')).toBe('/film/One%20Off/f');
+
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(titleLink()!.getAttribute('href')).toBe('/podcast/Show%20b/b');
+    });
+
+    it('is a separate link from the show pill and the description expander', () => {
+      const pill = root().querySelector('a.hero-pill') as HTMLAnchorElement;
+      expect(pill.getAttribute('href')).toBe('/podcast/Show%20a');
+      expect(pill.contains(titleLink())).toBe(false);
+      expect(titleLink()!.querySelector('button, a')).toBeNull();
+      const toggle = root().querySelector('.billboard__desc-toggle');
+      if (toggle) {
+        expect(titleLink()!.contains(toggle)).toBe(false);
+      }
+    });
+
+    it('keeps the title look in the Sass contract: inherited colour, no underline until hover / focus', () => {
+      const css = compileString(heroSass, { syntax: 'indented' }).css;
+      const rule = css.match(/\.billboard__title-link\s*\{([^}]*)\}/)?.[1] ?? '';
+      expect(rule).toContain('color: inherit');
+      expect(rule).toContain('text-decoration: none');
+      expect(css).toMatch(/\.billboard__title-link:hover\s*\{[^}]*text-decoration: underline/);
+      expect(css).toMatch(/\.billboard__title-link:focus-visible\s*\{[^}]*text-decoration: underline/);
+    });
+  });
+
   describe('HERO-QUE-001: Add to Queue replaces More info', () => {
     const root = () => fixture.nativeElement as HTMLElement;
     const queueButton = () => root().querySelector<HTMLButtonElement>('.billboard__actions app-queue-button button');
@@ -798,6 +843,10 @@ describe('HomepageHeroComponent', () => {
     it('has no More info link', () => {
       expect(root().querySelector('.billboard__more')).toBeNull();
       expect(root().textContent).not.toContain('More info');
+    });
+
+    it('uses the rounded hero shape', () => {
+      expect(queueButton()!.classList).toContain('queue-button--pill');
     });
 
     it('sits between Watch and the service links', () => {

@@ -426,6 +426,18 @@
     position: relative
     z-index: 1
 
+// HERO-TTL-001: keeps the title's look; underline on hover / keyboard focus
+// (focus: accent and thicker; the clamped title clips outlines).
+.billboard__title-link
+    color: inherit
+    text-decoration: none
+    text-underline-offset: .12em
+    &:hover
+        text-decoration: underline .05em
+    &:focus-visible
+        outline: none
+        text-decoration: underline .08em var(--nflx-accent)
+
 .billboard__play
     background: #fff !important
     color: #000 !important

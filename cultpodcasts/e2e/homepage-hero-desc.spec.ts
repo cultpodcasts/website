@@ -432,6 +432,73 @@ test.describe("homepage hero description", () => {
 		});
 	}
 
+	for (const layout of layouts.filter((l) => l.name !== "medium")) {
+		test(`${layout.name}: title links to the episode page; Add to Queue is rounded like Watch; the episode page button keeps its shape (HERO-TTL-001)`, async ({ page }) => {
+			await page.setViewportSize({ width: layout.width, height: layout.height });
+			await fakeApi(page, LONG_DESC, undefined, undefined, ALL_SERVICES);
+			const first = homepage(LONG_DESC, undefined, undefined, ALL_SERVICES).recentEpisodes[0];
+			// The episode page looks its episode up by id (registered last, so it wins for /search).
+			await page.route("**/search", async (route) => {
+				const filter = String(route.request().postDataJSON()?.filter ?? "");
+				const hit = filter.includes(`id eq '${first.id}'`) ? [{ ...first, seriesName: first.podcastName, contentKind: "Episode" }] : [];
+				await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ value: hit }) });
+			});
+			await page.goto("/");
+
+			const link = page.locator("h1.billboard__title > a.billboard__title-link");
+			const href = `/podcast/${encodeURIComponent(first.podcastName)}/${first.id}`;
+			await expect(link).toHaveAttribute("href", href);
+			await expect(link).toHaveText(first.episodeTitle);
+			const look = await link.evaluate((a) => {
+				const own = getComputedStyle(a), h1 = getComputedStyle(a.parentElement!);
+				return { color: own.color, h1Color: h1.color, decoration: own.textDecorationLine };
+			});
+			expect(look.color).toBe(look.h1Color);
+			expect(look.decoration).toBe("none");
+			await link.hover();
+			await expect.poll(() => link.evaluate((a) => getComputedStyle(a).textDecorationLine)).toBe("underline");
+			// Keyboard: reachable by Tab from the show pill, with a visible focus ring.
+			await page.locator("a.hero-pill").focus();
+			await page.keyboard.press("Tab");
+			await expect(link).toBeFocused();
+			// Focus indicator: accent underline (an outline would be clipped by the 3-line clamp).
+			const focusLook = await link.evaluate((a) => ({ line: getComputedStyle(a).textDecorationLine, color: getComputedStyle(a).textDecorationColor, text: getComputedStyle(a).color }));
+			expect(focusLook.line).toBe("underline");
+			expect(focusLook.color).not.toBe(focusLook.text);
+			await page.mouse.move(0, 0);
+
+			const shape = await page.evaluate(() => {
+				const q = document.querySelector(".billboard__queue button") as HTMLElement;
+				const w = document.querySelector(".billboard__play") as HTMLElement;
+				return { radius: parseFloat(getComputedStyle(q).borderTopLeftRadius), h: q.getBoundingClientRect().height, watchH: w.getBoundingClientRect().height };
+			});
+			expect(shape.radius).toBeGreaterThanOrEqual(shape.h / 2 - 0.5);
+			expect(Math.abs(shape.h - shape.watchH), JSON.stringify(shape)).toBeLessThanOrEqual(2);
+			if (shots) {
+				await page.locator(".billboard__actions").scrollIntoViewIfNeeded();
+				await page.screenshot({ path: `${shots}/hero-${layout.name}-title-link-focus.png` });
+				await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+				await page.screenshot({ path: `${shots}/hero-${layout.name}-title-link.png` });
+			}
+
+			// Enter on the focused title opens the episode page; its Add to Queue keeps the 4px outline.
+			await link.focus();
+			await page.keyboard.press("Enter");
+			await expect(page).toHaveURL(new RegExp(`${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+			const episodeQueue = page.locator("app-queue-button.episode-hero__queue button");
+			await expect(episodeQueue).toBeVisible();
+			await expect(episodeQueue).toContainText("Add to Queue");
+			// The episode page's pre-hero look: 4px outline, 9px 16px padding, 40px tall, translucent dark fill.
+			expect(await episodeQueue.evaluate((b) => {
+				const cs = getComputedStyle(b);
+				return { radius: cs.borderTopLeftRadius, padding: cs.padding, height: Math.round(b.getBoundingClientRect().height), border: cs.borderTopColor, bg: cs.backgroundColor };
+			})).toEqual({ radius: "4px", padding: "9px 16px", height: 40, border: "rgba(255, 255, 255, 0.45)", bg: "rgba(20, 20, 20, 0.55)" });
+			if (shots) {
+				await page.screenshot({ path: `${shots}/episode-${layout.name}-queue.png` });
+			}
+		});
+	}
+
 	test("no Add to Queue when the episode only plays outbound (HERO-QUE-001)", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await fakeApi(page, SHORT_DESC, undefined, undefined, { bbcSounds: ALL_SERVICES.bbcSounds });

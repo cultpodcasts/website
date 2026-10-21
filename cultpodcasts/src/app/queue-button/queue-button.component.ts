@@ -13,58 +13,17 @@ import { canEmbedEpisode } from '../episode-embed';
  */
 @Component({
   selector: 'app-queue-button',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatIconModule],
-  template: `
-    @if (queueable()) {
-    <button type="button" class="queue-button" [class.is-queued]="queued()"
-      [attr.aria-label]="queued() ? 'Remove from queue' : 'Add to queue'" (click)="toggle($event)">
-      <mat-icon>{{ queued() ? 'playlist_add_check' : 'playlist_add' }}</mat-icon>
-      {{ queued() ? 'Queued' : 'Add to Queue' }}
-    </button>
-    }
-  `,
-  styles: `
-    :host
-      display: inline-flex
-    :host(:empty)
-      display: none
-    .queue-button
-      flex: 1 1 auto
-      display: inline-flex
-      align-items: center
-      justify-content: center
-      gap: 6px
-      margin: 0
-      padding: 9px 16px
-      border: 1px solid rgba(255, 255, 255, 0.45)
-      border-radius: 4px
-      background: rgba(20, 20, 20, 0.55)
-      color: #fff
-      font: inherit
-      font-size: 0.92rem
-      font-weight: 600
-      cursor: pointer
-      backdrop-filter: blur(8px)
-      mat-icon
-        font-size: 20px
-        width: 20px
-        height: 20px
-      &:hover,
-      &:focus-visible
-        border-color: var(--nflx-accent)
-        color: var(--nflx-accent)
-        outline: none
-      &.is-queued
-        border-color: var(--nflx-accent)
-        background: rgba(232, 162, 58, 0.18)
-        color: var(--nflx-accent)
-  `,
+  templateUrl: './queue-button.component.html',
+  styleUrl: './queue-button.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueueButtonComponent {
   private readonly playerService = inject(PlayerService);
 
   readonly episode = input.required<SearchDisplayEpisode>();
+  /** `square` (default): the episode page's 4px outline. `pill`: rounded, for the homepage hero. */
+  readonly shape = input<'square' | 'pill'>('square');
 
   protected readonly queueable = computed(() => canEmbedEpisode(this.episode()));
   protected readonly queued = computed(() => this.playerService.isQueuedId(this.episode().id));
