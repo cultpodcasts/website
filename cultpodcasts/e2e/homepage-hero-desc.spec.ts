@@ -24,7 +24,8 @@ const PNG = Buffer.from(
 	"base64"
 );
 
-function homepage(description: string, title?: string, subjects = ["Invented subject"]) {
+type Services = Record<string, { url: string }> | null;
+function homepage(description: string, title?: string, subjects = ["Invented subject"], services?: Services) {
 	const now = Date.now();
 	const recentEpisodes = Array.from({ length: 4 }, (_, i) => ({
 		id: `00000000-0000-4000-8000-00000000000${i + 1}`,
@@ -33,15 +34,16 @@ function homepage(description: string, title?: string, subjects = ["Invented sub
 		episodeDescription: description,
 		release: new Date(now - (i + 1) * 3_600_000).toISOString(),
 		duration: "01:02:03",
-		services: { youtube: { url: `https://www.youtube.com/watch?v=synthetic${i}` } },
-		ids: { youtube: `synthetic${i}` },
+		...(services === undefined
+			? { services: { youtube: { url: `https://www.youtube.com/watch?v=synthetic${i}` } }, ids: { youtube: `synthetic${i}` } }
+			: services === null ? {} : { services }),
 		subjects,
 		image: `https://img.example.test/hero-${i}.png`
 	}));
 	return { recentEpisodes, episodeCount: recentEpisodes.length, totalDuration: "4:00:00" };
 }
 
-async function fakeApi(page: Page, description: string, title?: string, subjects?: string[]): Promise<void> {
+async function fakeApi(page: Page, description: string, title?: string, subjects?: string[], services?: Services): Promise<void> {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
 		if (url.startsWith("http://127.0.0.1:4173")) {
@@ -59,7 +61,7 @@ async function fakeApi(page: Page, description: string, title?: string, subjects
 			return;
 		}
 		if (new URL(url).pathname === "/homepage") {
-			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(homepage(description, title, subjects)) });
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(homepage(description, title, subjects, services)) });
 			return;
 		}
 		await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
@@ -289,6 +291,79 @@ test.describe("homepage hero description", () => {
 			expect(await desc(page).evaluate((el) => el.scrollTop)).toBe(0);
 		});
 	}
+
+	// HERO-SVC-001: the episode page's service links sit in the action row on every layout.
+	const ALL_SERVICES = {
+		internetArchive: { url: "https://archive.org/details/invented-hero" },
+		bbcSounds: { url: "https://www.bbc.co.uk/sounds/play/m000inv9" },
+		apple: { url: "https://podcasts.apple.com/gb/podcast/invented/id1?i=9" },
+		spotify: { url: "https://open.spotify.com/episode/inventedHero" },
+		youtube: { url: "https://www.youtube.com/watch?v=inventedHero" }
+	};
+	const serviceLinks = (page: Page) => page.locator(".billboard__actions app-episode-links a");
+	for (const layout of [...layouts, { name: "1024x460", width: 1024, height: 460, lines: 4 }]) {
+		test(`${layout.name}: service links for the episode's services, in the action row (HERO-SVC-001)`, async ({ page }) => {
+			await page.setViewportSize({ width: layout.width, height: layout.height });
+			await fakeApi(page, VERY_LONG_DESC, undefined, undefined, ALL_SERVICES);
+			await page.goto("/");
+			await expect(serviceLinks(page)).toHaveCount(5);
+			const links = await serviceLinks(page).evaluateAll((els) => els.map((a) => ({
+				label: a.getAttribute("aria-label"), href: (a as HTMLAnchorElement).href,
+				target: a.getAttribute("target"), rel: a.getAttribute("rel")
+			})));
+			expect(links.map((l) => l.label)).toEqual(["YouTube", "Spotify", "Apple Podcasts", "BBC Sounds", "Internet Archive"]);
+			expect(links.map((l) => l.href)).toEqual([
+				ALL_SERVICES.youtube.url, ALL_SERVICES.spotify.url, ALL_SERVICES.apple.url,
+				ALL_SERVICES.bbcSounds.url, ALL_SERVICES.internetArchive.url
+			]);
+			for (const l of links) {
+				expect(l.target).toBe("_blank");
+				expect(l.rel).toBe("noopener noreferrer");
+			}
+			// Inside the card, clear of the description / chevron, and (except stacked mobile
+			// buttons) on the same row as More info.
+			const geo = await page.evaluate(() => {
+				const r = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+				const host = r(".billboard__services"), more = r(".billboard__more"), card = r(".billboard__content");
+				return { host: { top: host.top, bottom: host.bottom, left: host.left, right: host.right }, more: { top: more.top, bottom: more.bottom }, card: { left: card.left, right: card.right }, vw: window.innerWidth };
+			});
+			expect(geo.host.right).toBeLessThanOrEqual(Math.min(geo.card.right, geo.vw) + 1);
+			if (layout.name !== "mobile") {
+				const mid = (geo.host.top + geo.host.bottom) / 2;
+				expect(mid, "service links wrapped onto their own row").toBeGreaterThan(geo.more.top);
+				expect(mid).toBeLessThan(geo.more.bottom);
+			}
+			expect(await overlapsActions(page)).toBe(false);
+			if (shots) {
+				await page.locator(".billboard__actions").scrollIntoViewIfNeeded();
+				await page.screenshot({ path: `${shots}/hero-${layout.name}-services-collapsed.png` });
+			}
+			// Expanded still fills to the foot with the chevron visible, links and all.
+			await page.locator(".billboard__content").evaluate((el) => el.scrollIntoView({ block: "end" }));
+			const collapsed = await geometry(page);
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			await expectExpandedFills(page, collapsed, shots ? `hero-${layout.name}-services` : undefined);
+			await expect(serviceLinks(page)).toHaveCount(5);
+		});
+	}
+
+	test("no service links when the episode has none (HERO-SVC-001)", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, SHORT_DESC, undefined, undefined, null);
+		await page.goto("/");
+		await expect(page.locator(".billboard__more")).toBeVisible();
+		await expect(serviceLinks(page)).toHaveCount(0);
+	});
+
+	test("only the services the episode has (HERO-SVC-001)", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, SHORT_DESC, undefined, undefined, { spotify: ALL_SERVICES.spotify });
+		await page.goto("/");
+		await expect(serviceLinks(page)).toHaveCount(1);
+		await expect(serviceLinks(page).first()).toHaveAttribute("aria-label", "Spotify");
+		await expect(serviceLinks(page).first()).toHaveAttribute("href", ALL_SERVICES.spotify.url);
+	});
 
 	test("no expander when the description fits the clamp", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });

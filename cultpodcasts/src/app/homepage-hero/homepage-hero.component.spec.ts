@@ -768,6 +768,68 @@ describe('HomepageHeroComponent', () => {
     vi.advanceTimersByTime(7500 + 500);
     expect(component['heroIndex']()).toBe(0);
   });
+  describe('HERO-SVC-001: service links on the hero card', () => {
+    const root = () => fixture.nativeElement as HTMLElement;
+    const links = () => Array.from(root().querySelectorAll<HTMLAnchorElement>('.billboard__actions app-episode-links a'));
+    function show(slide: HomepageHeroSlide): void {
+      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
+      fixture.detectChanges();
+    }
+
+    it('reuses the episode page component in the action row, after Watch and More info, without share', () => {
+      const actions = root().querySelector('.billboard__actions')!;
+      const host = actions.querySelector('app-episode-links.billboard__services');
+      expect(host).toBeTruthy();
+      expect(actions.lastElementChild).toBe(host);
+      expect(host!.querySelector('button')).toBeNull();
+    });
+
+    it('shows every service the episode has, in the episode page order, labels and link behaviour', () => {
+      show(ep('a', {
+        ids: undefined,
+        services: {
+          internetArchive: { url: 'https://archive.org/details/invented-a' },
+          bbcSounds: { url: 'https://www.bbc.co.uk/sounds/play/m000inv1' },
+          apple: { url: 'https://podcasts.apple.com/gb/podcast/invented/id1?i=2' },
+          spotify: { url: 'https://open.spotify.com/episode/inventedA' },
+          youtube: { url: 'https://www.youtube.com/watch?v=inventedA' },
+        },
+      }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual([
+        'YouTube', 'Spotify', 'Apple Podcasts', 'BBC Sounds', 'Internet Archive',
+      ]);
+      expect(links().map((a) => a.href)).toEqual([
+        'https://www.youtube.com/watch?v=inventedA',
+        'https://open.spotify.com/episode/inventedA',
+        'https://podcasts.apple.com/gb/podcast/invented/id1?i=2',
+        'https://www.bbc.co.uk/sounds/play/m000inv1',
+        'https://archive.org/details/invented-a',
+      ]);
+      for (const a of links()) {
+        expect(a.target).toBe('_blank');
+        expect(a.rel).toBe('noopener noreferrer');
+      }
+      // Apple uses the shared Apple mark, the rest the registered service icons.
+      expect(links()[2].querySelector('app-apple-podcasts-svg')).toBeTruthy();
+      expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('spotify');
+    });
+
+    it('shows nothing for services the episode does not have', () => {
+      show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/onlyA' } } }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['Spotify']);
+      show(ep('a', { ids: undefined, services: undefined }));
+      expect(links()).toHaveLength(0);
+    });
+
+    it('follows the current slide', () => {
+      show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/a' } } }));
+      component['reduceMotion'] = true;
+      (root().querySelectorAll('button.billboard__dot')[1] as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(links().map((a) => a.href)).toEqual(['https://www.youtube.com/watch?v=b']);
+    });
+  });
+
   describe('description expander', () => {
     const longDesc = 'Synthetic hero sentence for the show more toggle. '.repeat(12).trim();
 

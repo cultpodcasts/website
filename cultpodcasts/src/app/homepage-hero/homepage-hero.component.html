@@ -148,6 +148,8 @@
           [routerLink]="feature.playableLink">
           More info
         </a>
+        <!-- HERO-SVC-001: the episode page's service links (Spotify, Apple, YouTube, BBC, …). -->
+        <app-episode-links class="billboard__services" [episode]="feature" [showShare]="false" />
       </div>
     </div>
   </div>

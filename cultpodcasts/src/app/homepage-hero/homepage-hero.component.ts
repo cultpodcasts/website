@@ -1,3 +1,4 @@
+import { EpisodeLinksComponent } from '../episode-links/episode-links.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -36,7 +37,7 @@ export interface HomepageHeroSlide extends HomepageEpisode {
 
 @Component({
   selector: 'app-homepage-hero',
-  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, EpisodeLinksComponent],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
