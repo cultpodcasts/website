@@ -210,7 +210,7 @@ Same confirm when the **podcast-page submit dialog** attaches to the page with a
 
 ### Submit to this news outlet or TV show (hub menu)
 
-**Curator only**, behind `environment.catalogueParentCuration.submit`. It stays off in staging/production until [RPP #1054](https://github.com/cultpodcasts/RedditPodcastPoster/pull/1054) (SubmitUrl accepts this parent target) is deployed. `/news/{name}` and `/tv/{name}` only.
+**Curator only**, behind `environment.catalogueParentCuration.submit`. It is on in every environment now that [RPP #1054](https://github.com/cultpodcasts/RedditPodcastPoster/pull/1054) (SubmitUrl accepts this parent target) and the Worker change (Api #176) are merged. `/news/{name}` and `/tv/{name}` only.
 
 1. The submit dialog opens in URL-only mode, titled *Submit URL for News Outlet* / *TV Show*, with the target shown under the URL (`SubmitPodcastDialogData.target`).
 2. `probeParentByName(hub, name)`: `GET /newsorganisation/{name}` or `/tvshow/{name}` (curate). 200 gives the id. 404, a 409 guid array, or any other error sends nothing and shows a snackbar.
@@ -223,7 +223,7 @@ Contract asked of RPP `SubmitUrl` in [#1054](https://github.com/cultpodcasts/Red
 - 404 when `parentId` is not a `parentKind` row; 400 for an unknown `parentKind` or both parent and podcast fields.
 - Worker follow-up (Api repo, `src/submit.ts`): `hasSeriesAttachTarget` must count `parentKind` / `parentId` as an attach target, in step with #1054.
 
-Until then Azure ignores the unknown fields, and a YouTube URL with no podcast match would create a new podcast. That is why the item is flagged off in production.
+Without that backend Azure ignores the unknown fields, and a YouTube URL with no podcast match would create a new podcast. That is why the item had to stay flagged off until #1054 was live.
 
 ### Add Episode / Edit Episode
 

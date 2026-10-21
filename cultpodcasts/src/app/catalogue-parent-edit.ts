@@ -3,7 +3,7 @@ import { episodeLanguageFormValue } from "./language-options.util";
 
 /**
  * Editable text fields, in form order. `defaultSubject` is a subject select ("" = No Subject).
- * `language` (select, "unset" = English) and `ignoredSubjects` (multi-select) are handled on their own,
+ * `language` (select, "unset" = the "No Language" option) and `ignoredSubjects` (multi-select) are handled on their own,
  * like the podcast edit dialog; the other lists are edited as comma-separated text.
  */
 export const catalogueParentTextFields = [
@@ -35,7 +35,7 @@ type ListField = typeof catalogueParentListFields[number];
 
 /**
  * `appleId` is edited as text so a blank field can mean "clear". `language` is a language-select key
- * ("unset" = English, stored blank). `ignoredSubjects` is the multi-select value.
+ * ("unset" = the "No Language" option, stored blank). `ignoredSubjects` is the multi-select value.
  */
 export type CatalogueParentEditModel = Record<TextField, string> & Record<ListField, string> & {
   removed: boolean;
@@ -44,7 +44,7 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   ignoredSubjects: string[];
 };
 
-/** Language-select key for the API value: blank or English → "unset", like the episode language picker. */
+/** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
 export function catalogueParentLanguageFormValue(language: string | null | undefined): string {
   return episodeLanguageFormValue(language);
 }
@@ -105,7 +105,7 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
 
 /**
  * Only the fields the curator changed. A cleared string is sent as "" and a cleared list as [];
- * "No Subject" is "" and English ("unset") is language "",
+ * "No Subject" is "" and "No Language" ("unset") is language "",
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` text is ignored here; the dialog blocks Save on it.
  */

@@ -36,7 +36,7 @@ export type SeriesHubSort = typeof seriesHubSortNewest | typeof seriesHubSortOld
 /**
  * Sort + curator menu for /news/{name} and /tv/{name}, mirroring the podcast page menu.
  * Curator: Edit, Submit URL for this outlet/show. Admin: Rename. Each curation item is behind
- * `environment.catalogueParentCuration` until its backend is live.
+ * a switch in `environment.catalogueParentCuration` (on in all environments).
  */
 @Component({
   selector: "app-series-hub-menu",

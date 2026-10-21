@@ -40,7 +40,7 @@ Later edit screens for news reports, TV episodes and films should follow the epi
 
 There is no Index item: there is no indexer endpoint for a news outlet or TV show yet.
 
-Flags are on in dev/local and off in staging/production until the backend for each item is live. The empty hub ("There were no results") shows a **Curate** trigger with only the curation items, so a curator can still submit to an outlet with no reports yet.
+Flags are on in every environment (dev, local, staging and production) now that each item's backend is live. Set one to `false` to hide that item. The empty hub ("There were no results") shows a **Curate** trigger with only the curation items, so a curator can still submit to an outlet with no reports yet.
 
 ## Renamed hub redirect
 
