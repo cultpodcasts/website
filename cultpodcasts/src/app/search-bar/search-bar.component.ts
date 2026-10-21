@@ -195,7 +195,7 @@ export class SearchBarComponent {
     if (this.searchBox) {
       this.searchBox.nativeElement.value = '';
     }
-    this.router.navigate(suggestionCommands(suggestion, this.guidService));
+    this.router.navigate(suggestionCommands(suggestion));
   }
 
   search = (input: HTMLInputElement) => {

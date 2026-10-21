@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { environment } from './../../environments/environment';
 import { formatDate } from '@angular/common';
-import { GuidService } from '../guid.service';
+import { catalogueShareUrl } from '../catalogue-links';
 import { MatButtonModule } from '@angular/material/button';
 import { HomepageEpisode } from "../homepage-episode.interface";
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
@@ -44,8 +44,6 @@ export class EpisodeLinksComponent {
     });
   }
 
-  constructor(private guidService: GuidService) { }
-
   share(item: HomepageEpisode | SearchResult) {
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
@@ -55,11 +53,10 @@ export class EpisodeLinksComponent {
       duration = duration.substring(1);
     }
     description = description + " [" + duration + "]";
-    const shortGuid = this.guidService.toCatalogueShortId(item.id, "contentKind" in item ? item.contentKind : undefined);
     const share: ShareData = {
       title: item.episodeTitle,
       text: description,
-      url: `${environment.shortner}/${shortGuid}`
+      url: catalogueShareUrl(item, window.location.origin, environment.shortner)
     };
     window.navigator.share(share);
   }

@@ -1,6 +1,5 @@
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
-import { catalogueParentHubCommands } from './catalogue-links';
-import { GuidService } from './guid.service';
+import { catalogueParentHubCommands, filmPageCommands } from './catalogue-links';
 import { Suggestion } from './search-suggestions.interface';
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -44,10 +43,10 @@ export function suggestionKindLabel(type: string): string {
 /**
  * Router commands for a picked suggestion.
  * Podcast → /podcast/{name}; subject → /subject/{name}; TV → /tv/{name};
- * news → /news/{name}; film → /film/{name}/{shortId} (needs a guid id).
- * Unknown kinds, or a film without a usable id, fall back to /search/{name}.
+ * news → /news/{name}; film → /film/{name}/{Film-prefixed short id} via filmPageCommands
+ * (never the raw guid). Unknown kinds, or a film without a guid id, fall back to /search/{name}.
  */
-export function suggestionCommands(suggestion: Suggestion, guids: GuidService): string[] {
+export function suggestionCommands(suggestion: Suggestion): string[] {
   switch (suggestion.type) {
     case 'podcast':
       return ['/podcast/' + suggestion.value];
@@ -61,7 +60,7 @@ export function suggestionCommands(suggestion: Suggestion, guids: GuidService): 
         ?? searchCommands(suggestion);
     case 'film':
       if (suggestion.itemId && GUID_PATTERN.test(suggestion.itemId) && suggestion.value) {
-        return ['/film', suggestion.value, guids.toCatalogueShortId(suggestion.itemId, 'Film')];
+        return filmPageCommands(suggestion.value, suggestion.itemId);
       }
       return searchCommands(suggestion);
     default:

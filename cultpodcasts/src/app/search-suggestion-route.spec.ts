@@ -27,34 +27,35 @@ describe('search suggestion route and icon', () => {
     });
 
     it('keeps podcast and subject paths unchanged', () => {
-        expect(suggestionCommands(s({ type: 'podcast', value: 'Synthetic Pod' }), guids))
+        expect(suggestionCommands(s({ type: 'podcast', value: 'Synthetic Pod' }))
             .toEqual(['/podcast/Synthetic Pod']);
-        expect(suggestionCommands(s({ type: 'subject', value: 'Synthetic Topic' }), guids))
+        expect(suggestionCommands(s({ type: 'subject', value: 'Synthetic Topic' }))
             .toEqual(['/subject/Synthetic Topic']);
     });
 
     it('sends TV shows to /tv/{name} and news outlets to /news/{name}', () => {
-        expect(suggestionCommands(s({ type: 'tvShow', value: 'Synthetic Nightly' }), guids))
+        expect(suggestionCommands(s({ type: 'tvShow', value: 'Synthetic Nightly' }))
             .toEqual(['/tv', 'Synthetic Nightly']);
-        expect(suggestionCommands(s({ type: 'newsOrganisation', value: 'Synthetic Desk' }), guids))
+        expect(suggestionCommands(s({ type: 'newsOrganisation', value: 'Synthetic Desk' }))
             .toEqual(['/news', 'Synthetic Desk']);
     });
 
     it('sends a film to /film/{name}/{shortId} using the Film-prefixed short id', () => {
-        const commands = suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: filmId }), guids);
+        const commands = suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: filmId }));
         expect(commands).toEqual(['/film', 'Synthetic Film', guids.toCatalogueShortId(filmId, 'Film')]);
+        expect(commands[2]).not.toBe(filmId);
         expect(guids.parseCatalogueShortId(commands[2])).toEqual({ id: filmId, contentKind: 'Film' });
     });
 
     it('falls back to /search/{name} for a film with no id or a malformed id', () => {
-        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film' }), guids))
+        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film' }))
             .toEqual(['/search', 'Synthetic Film']);
-        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: 'not-a-guid' }), guids))
+        expect(suggestionCommands(s({ type: 'film', value: 'Synthetic Film', itemId: 'not-a-guid' }))
             .toEqual(['/search', 'Synthetic Film']);
     });
 
     it('falls back to /search/{name} for an unknown kind', () => {
         const unknown = { type: 'person', value: 'Future Kind', label: 'Future Kind' } as unknown as Suggestion;
-        expect(suggestionCommands(unknown, guids)).toEqual(['/search', 'Future Kind']);
+        expect(suggestionCommands(unknown)).toEqual(['/search', 'Future Kind']);
     });
 });

@@ -82,7 +82,7 @@ node scripts/flatten-search-suggestions.mjs path\to\nested.json out\search-sugge
 | `subject` | `sell` | `/subject/:name` |
 | `tvShow` | `live_tv` | `/tv/:name` |
 | `newsOrganisation` | `newspaper` | `/news/:name` |
-| `film` | `movie` | `/film/:name/:shortId` (Film-prefixed short id from `id`) |
+| `film` | `movie` | `/film/:name/:shortId` via `filmPageCommands` (Film-prefixed short id from `id`, never the raw guid) |
 | film with no or a bad `id`, or an unknown kind | `search` (unknown) / `movie` (film) | `/search/:name` |
 
 - Free text → `/search/:query`.
