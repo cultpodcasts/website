@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Edit News Report</h2>
+
+<mat-dialog-content>
+    @if (isLoading()) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (isInError()) {
+    <p id="error">An error occurred</p>
+    } @else if (form(); as f) {
+    @if (submitError()) {
+    <p id="submit-error" class="submit-error">{{submitError()}}</p>
+    }
+    <form id="edit" [formGroup]="f" (ngSubmit)="onSubmit()">
+        <app-playable-edit-fields [form]="f" parentLabel="News Outlet" [parentName]="parentName()"
+            [subjectNames]="subjectNames()" [defaultSubject]="defaultSubject()" [people]="people()"
+            [languages]="languages()" [blueskyPosted]="blueskyPosted()" [(pendingUnBluesky)]="pendingUnBluesky"
+            [identity]="identity"></app-playable-edit-fields>
+    </form>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button matButton="text" (click)="close()" [disabled]="isSaving()">Close</button>
+    <button matButton="filled" [disabled]="!form() || !form()!.valid || isSaving()" (click)="onSubmit()">Submit</button>
+</mat-dialog-actions>

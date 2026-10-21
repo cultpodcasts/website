@@ -46,10 +46,12 @@
           <mat-icon>edit</mat-icon>
           <span>Edit Episode</span>
         </button>
+        @if (canPostEpisode()) {
         <button mat-menu-item (click)="post(episode.podcastName, episode.id)">
           <mat-icon>send</mat-icon>
           <span>Post Episode</span>
         </button>
+        }
       </mat-menu>
       }
     </div>

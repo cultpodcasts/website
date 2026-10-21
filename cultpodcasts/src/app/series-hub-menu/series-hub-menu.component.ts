@@ -27,7 +27,10 @@ import { parseSubmitDialogUrl } from "../submit-ingest-ux";
 import { SubmitParentTarget } from "../submit-parent-target.interface";
 import { SubmitPodcastComponent, SubmitPodcastDialogData } from "../submit-podcast/submit-podcast.component";
 import { SubmitSeriesResolveService } from "../submit-series-resolve.service";
-import { SubmitUrlOriginResponseSnackbarComponent } from "../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component";
+import {
+  SubmitUrlOriginResponseSnackbarComponent,
+  SubmitUrlOriginResponseSnackbarData
+} from "../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component";
 
 export const seriesHubSortNewest = "release desc";
 export const seriesHubSortOldest = "release asc";
@@ -166,7 +169,12 @@ export class SeriesHubMenuComponent {
         if (result.originResponse?.success != null) {
           this.snackBar.openFromComponent(SubmitUrlOriginResponseSnackbarComponent, {
             duration: 10000,
-            data: { existingPodcast: true, response: result.originResponse.success, roles: this.authRoles() }
+            data: {
+              existingPodcast: true,
+              response: result.originResponse.success,
+              roles: this.authRoles(),
+              parentName: parent.parentName
+            } satisfies SubmitUrlOriginResponseSnackbarData
           });
         } else {
           this.snackBar.open(`Sent to ${parent.parentName}`, "Ok", { duration: 3000 });

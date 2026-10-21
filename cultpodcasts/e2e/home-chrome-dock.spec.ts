@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * CHROME-DOCK-012: on the wide homepage the frosted (docked) header must not
@@ -35,7 +36,7 @@ function homepage() {
 async function fakeApi(page: Page): Promise<void> {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		if (url.startsWith(appOrigin)) {
 			await route.continue();
 			return;
 		}
