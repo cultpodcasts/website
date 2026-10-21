@@ -1,90 +1,133 @@
 <h2 mat-dialog-title>Edit {{ label }}</h2>
 
 <mat-dialog-content>
-  @if (isLoading() || isSending()) {
-  <mat-spinner class="edit-parent__spinner" mode="indeterminate"></mat-spinner>
-  } @else if (isInError()) {
-  @if (notFound()) {
-  <p id="error">{{ label }} not found.</p>
-  } @else if (conflict()) {
-  <p id="error">More than one {{ label.toLowerCase() }} has this name.</p>
-  } @else {
-  <p id="error">An error occurred</p>
-  }
-  } @else if (model(); as m) {
-  <p class="edit-parent__name">{{ data.name }}</p>
-  @if (saveError()) {
-  <p class="edit-parent__error" role="alert">Saving failed. Nothing was changed.</p>
-  }
-  <form class="edit-parent__form" id="edit-parent" (ngSubmit)="save()">
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Publisher</mat-label>
-      <input matInput name="publisher" [(ngModel)]="m.publisher">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field edit-parent__field--wide">
-      <mat-label>Description</mat-label>
-      <textarea matInput name="description" rows="3" [(ngModel)]="m.description"></textarea>
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Language (blank = English)</mat-label>
-      <input matInput name="language" [(ngModel)]="m.language">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Twitter handle</mat-label>
-      <input matInput name="twitterHandle" [(ngModel)]="m.twitterHandle">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Bluesky handle</mat-label>
-      <input matInput name="blueskyHandle" [(ngModel)]="m.blueskyHandle">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Hashtag</mat-label>
-      <input matInput name="hashTag" [(ngModel)]="m.hashTag">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Enrichment hashtags (comma separated)</mat-label>
-      <input matInput name="enrichmentHashTags" [(ngModel)]="m.enrichmentHashTags">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Search terms</mat-label>
-      <input matInput name="searchTerms" [(ngModel)]="m.searchTerms">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Known terms (comma separated)</mat-label>
-      <input matInput name="knownTerms" [(ngModel)]="m.knownTerms">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Default subject</mat-label>
-      <input matInput name="defaultSubject" [(ngModel)]="m.defaultSubject">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Ignored subjects (comma separated)</mat-label>
-      <input matInput name="ignoredSubjects" [(ngModel)]="m.ignoredSubjects">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>Ignored associated subjects (comma separated)</mat-label>
-      <input matInput name="ignoredAssociatedSubjects" [(ngModel)]="m.ignoredAssociatedSubjects">
-    </mat-form-field>
-    @if (isTv) {
-    <mat-form-field class="edit-parent__field">
-      <mat-label>IMDb URL</mat-label>
-      <input matInput name="imdb" type="url" [(ngModel)]="m.imdb">
-    </mat-form-field>
-    <mat-form-field class="edit-parent__field">
-      <mat-label>TheTVDB URL</mat-label>
-      <input matInput name="tvdb" type="url" [(ngModel)]="m.tvdb">
-    </mat-form-field>
+    @if (isLoading() || isSending()) {
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (isInError()) {
+    @if (notFound()) {
+    <p id="error">{{ label }} not found.</p>
+    } @else if (conflict()) {
+    <p id="error">More than one {{ label.toLowerCase() }} has this name.</p>
+    } @else {
+    <p id="error">An error occurred</p>
     }
-    <mat-checkbox name="removed" [(ngModel)]="m.removed">
-      Removed (also removes every {{ data.hub === 'news' ? 'report' : 'episode' }})
-    </mat-checkbox>
-  </form>
-  }
+    } @else if (model(); as m) {
+    <p>{{ data.name }}</p>
+    @if (saveError()) {
+    <p id="error" role="alert">Saving failed. Nothing was changed.</p>
+    }
+    <form id="edit" (ngSubmit)="save()">
+        <mat-tab-group>
+            <mat-tab label="Details">
+                <mat-form-field class="full-width">
+                    <mat-label>Spotify Id</mat-label>
+                    <input type="text" name="spotifyId" [(ngModel)]="m.spotifyId" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Apple Id</mat-label>
+                    <input type="text" inputmode="numeric" name="appleId" [(ngModel)]="m.appleId"
+                        (ngModelChange)="appleIdInvalid.set(false)" matInput>
+                    @if (appleIdInvalid()) {
+                    <mat-hint id="apple-id-error" class="invalid">Apple Id must be a number (blank clears it).</mat-hint>
+                    }
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>YouTube Id</mat-label>
+                    <input type="text" name="youTubeChannelId" placeholder="UC…" [(ngModel)]="m.youTubeChannelId" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>YouTube Playlist Id</mat-label>
+                    <input type="text" name="youTubePlaylistId" [(ngModel)]="m.youTubePlaylistId" matInput>
+                </mat-form-field>
+                @if (playlistHistory().length > 0) {
+                <p class="hint">Previous playlist ids:
+                    @for (old of playlistHistory(); track old.id + old.replacedAt) {
+                    <span class="history-item">{{ old.id }} ({{ old.replacedAt.slice(0, 10) }})</span>
+                    }
+                </p>
+                }
+                <p class="hint">URL submission files an episode under this {{ label.toLowerCase() }} when its channel or show matches these ids.</p>
+            </mat-tab>
+            <mat-tab label="Flags">
+                <div class="flags">
+                    <mat-checkbox name="removed" [(ngModel)]="m.removed">Removed</mat-checkbox>
+                    <p class="hint">Removing hides every {{ itemNoun.slice(0, -1) }}. You'll be asked to confirm.</p>
+                </div>
+            </mat-tab>
+            <mat-tab label="Subjects">
+                <mat-form-field class="full-width">
+                    <mat-label>Default Subject</mat-label>
+                    <input type="text" name="defaultSubject" [(ngModel)]="m.defaultSubject" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Ignored Subjects (comma separated)</mat-label>
+                    <input type="text" name="ignoredSubjects" [(ngModel)]="m.ignoredSubjects" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Ignored Associated Subjects (comma separated)</mat-label>
+                    <textarea name="ignoredAssociatedSubjects" [(ngModel)]="m.ignoredAssociatedSubjects" matInput></textarea>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Known Terms (comma separated)</mat-label>
+                    <input type="text" name="knownTerms" [(ngModel)]="m.knownTerms" matInput>
+                </mat-form-field>
+            </mat-tab>
+            <mat-tab label="Social">
+                <mat-form-field class="full-width">
+                    <mat-label>Twitter Handle</mat-label>
+                    <input type="text" name="twitterHandle" placeholder="@handle1 @handle2" [(ngModel)]="m.twitterHandle" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Bluesky Handle</mat-label>
+                    <input type="text" name="blueskyHandle" placeholder="@handle.bsky.social" [(ngModel)]="m.blueskyHandle" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Hash Tags</mat-label>
+                    <input type="text" name="hashTag" placeholder="#tag1 #tag2" [(ngModel)]="m.hashTag" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Enrichment Hash Tags (comma separated)</mat-label>
+                    <textarea name="enrichmentHashTags" [(ngModel)]="m.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
+                </mat-form-field>
+            </mat-tab>
+            <mat-tab label="Meta">
+                <mat-form-field class="full-width">
+                    <mat-label>Publisher</mat-label>
+                    <input type="text" name="publisher" [(ngModel)]="m.publisher" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Description</mat-label>
+                    <textarea name="description" [(ngModel)]="m.description" matInput cdkTextareaAutosize></textarea>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Language (blank = English)</mat-label>
+                    <input type="text" name="language" [(ngModel)]="m.language" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Search Terms</mat-label>
+                    <input type="text" name="searchTerms" [(ngModel)]="m.searchTerms" matInput>
+                </mat-form-field>
+            </mat-tab>
+            @if (isTv) {
+            <mat-tab label="Identity">
+                <mat-form-field class="full-width">
+                    <mat-label>IMDb URL</mat-label>
+                    <input type="url" name="imdb" [(ngModel)]="m.imdb" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>TheTVDB URL</mat-label>
+                    <input type="url" name="tvdb" [(ngModel)]="m.tvdb" matInput>
+                </mat-form-field>
+            </mat-tab>
+            }
+        </mat-tab-group>
+    </form>
+    }
 </mat-dialog-content>
 
 <mat-dialog-actions>
-  <button mat-raised-button type="button" (click)="close()">Close</button>
-  @if (model() && !isInError()) {
-  <button mat-raised-button type="submit" form="edit-parent" [disabled]="isSending()">Save</button>
-  }
+    <button mat-raised-button type="button" (click)="close()">Close</button>
+    @if (model() && !isInError()) {
+    <button mat-raised-button type="submit" form="edit" [disabled]="isSending()">Save</button>
+    }
 </mat-dialog-actions>

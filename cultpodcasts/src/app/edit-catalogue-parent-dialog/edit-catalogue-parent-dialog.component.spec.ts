@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
@@ -11,15 +11,19 @@ import { CatalogueParentEditModel } from '../catalogue-parent-edit';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-type Internals = { model(): CatalogueParentEditModel | null; save(): Promise<void>; notFound(): boolean; saveError(): boolean };
+type Internals = { model(): CatalogueParentEditModel | null; save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
+  let confirmOpen: ReturnType<typeof vi.fn>;
+  let confirmAnswer: { result: boolean } | undefined;
   const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
   const patchUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
 
   beforeEach(async () => {
     close = vi.fn();
+    confirmAnswer = { result: true };
+    confirmOpen = vi.fn(() => ({ afterClosed: () => of(confirmAnswer) }));
     await TestBed.configureTestingModule({
       imports: [EditCatalogueParentDialogComponent],
       providers: [
@@ -30,7 +34,10 @@ describe('EditCatalogueParentDialogComponent', () => {
         { provide: MatDialogRef, useValue: { close } },
         { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
       ]
-    }).compileComponents();
+    })
+      // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
+      .overrideProvider(MatDialog, { useValue: { open: (...args: unknown[]) => (confirmOpen as unknown as (...a: unknown[]) => unknown)(...args) } })
+      .compileComponents();
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
@@ -90,5 +97,66 @@ describe('EditCatalogueParentDialogComponent', () => {
     await settle();
     expect(dialog.notFound()).toBe(true);
     expect(dialog.model()).toBeNull();
+  });
+
+  it('PATCHes a YouTube channel id and clears the Apple id with nullAppleId', async () => {
+    const dialog = create();
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', appleId: 55 });
+    await settle();
+    const model = dialog.model()!;
+    model.youTubeChannelId = 'UCcccccccccccccccccccccc';
+    model.appleId = '';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ youTubeChannelId: 'UCcccccccccccccccccccccc', nullAppleId: true });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
+  });
+
+  it('blocks Save on a non-numeric Apple id', async () => {
+    const dialog = create();
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.model()!.appleId = 'abc';
+    await dialog.save();
+    expect(dialog.appleIdInvalid()).toBe(true);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('asks before removing, and sends nothing when the curator says No', async () => {
+    confirmAnswer = { result: false };
+    const dialog = create();
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: false });
+    await settle();
+    dialog.model()!.removed = true;
+    await dialog.save();
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
+    expect(confirmOpen.mock.calls[0][1].data.question).toContain('all of its episodes will be hidden');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('PATCHes removed after Yes, and restores without asking', async () => {
+    const dialog = create();
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: false });
+    await settle();
+    dialog.model()!.removed = true;
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ removed: true });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
+
+    const restore = create();
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', removed: true });
+    await settle();
+    restore.model()!.removed = false;
+    const restored = restore.save();
+    const restoreReq = await expectSoon(patchUrl);
+    expect(restoreReq.request.body).toEqual({ removed: false });
+    restoreReq.flush(null, { status: 202, statusText: 'Accepted' });
+    await restored;
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
   });
 });

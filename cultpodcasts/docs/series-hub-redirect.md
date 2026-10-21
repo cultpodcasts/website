@@ -20,10 +20,23 @@ The hub toolbar has the same menu as the podcast page (`SeriesHubMenuComponent`)
 
 | Item | Who | Calls | Flag (`environment.catalogueParentCuration`) |
 |------|-----|-------|------|
-| Edit News Outlet / Edit TV Show | Curator | `GET` then `PATCH /newsorganisation/{id}` or `/tvshow/{id}` (curate). Only changed fields are sent; rename is not in this form | `edit` |
+| Edit News Outlet / Edit TV Show | Curator | `GET` then `PATCH /newsorganisation/{id}` or `/tvshow/{id}` (curate). Only changed fields are sent; rename is not in this form. Saving `Removed` asks for confirmation first | `edit` |
 | Submit Url for News Outlet / TV Show | Curator | `GET /{root}/{name}` for the id, then `POST /submit { url, parentKind, parentId, parentName }`. See [Submit URL flows](submit-url-flows.md#submit-to-this-news-outlet-or-tv-show) | `submit` |
 | Rename News Outlet / TV Show | Admin | `POST /newsorganisation/name/{name}` or `/tvshow/name/{name}` with `{ newName }` (admin scope) | `rename` |
 | Newest first / Oldest first | Everyone | Search `orderby` `release desc` / `release asc` | always |
+
+The edit dialog uses the podcast edit dialog's tabbed layout and styles (`mat-tab-group`, full-width fields):
+
+| Tab | Fields |
+|-----|--------|
+| Details | Spotify Id, Apple Id (blank sends `nullAppleId: true`), YouTube channel id, YouTube playlist id (+ read-only previous playlist ids) |
+| Flags | Removed (confirm dialog: every report / episode is hidden) |
+| Subjects | Default subject, ignored subjects, ignored associated subjects, known terms |
+| Social | Twitter, Bluesky, hashtags, enrichment hashtags |
+| Meta | Publisher, description, language, search terms |
+| Identity (TV only) | IMDb and TheTVDB URLs |
+
+Later edit screens for news reports, TV episodes and films should follow the episode edit dialog's layout in the same way.
 
 There is no Index item: there is no indexer endpoint for a news outlet or TV show yet.
 
@@ -37,4 +50,23 @@ An admin rename makes RPP write KV `news/{old}` or `tv/{old}` → `{new}` in the
 - Exact hub paths only. `/news/{old}/{id}`, `/tv/{old}/{id}` and `/film/…` are not redirected.
 - Podcast redirects are unchanged: KV key `{old}`, the rest of the path kept.
 
-`_routes.json` sends `/news/*` and `/tv/*` to the Worker for this. With no redirect, those paths get the CSR shell (no SSR), as they were client-rendered from the static fallback before.
+`_routes.json` sends `/news/*` and `/tv/*` to the Worker. Before this they fell through to the prerendered homepage (wrong meta, homepage `ng-state`).
+
+## Server render and meta
+
+`/news/*` and `/tv/*` are server-rendered like `/podcast/*`:
+
+```mermaid
+flowchart TD
+  R["/news/{name} or /tv/{name}"] --> K{"KV news/{name} or tv/{name}?"}
+  K -->|yes| M[301 to the new name]
+  K -->|no| S["SSR: connectCatalogueHubSeo"]
+  S --> P["GET Api /pagedetails/{news|tv}/{name}"]
+  P -->|200| T["title, description, og/twitter image"]
+  P -->|400 / error| F["title = name"]
+  I["/news/{name}/{id} or /tv/{name}/{id}"] --> E["SSR: kind-episode-page, /pagedetails/{name}/{id}"]
+```
+
+- Hubs: `connectCatalogueHubSeo` (`src/app/catalogue-hub-seo.ts`) calls Api #175's `/pagedetails/{news|tv}/{name}` on the server. The list itself stays in the client `@defer`, so the server renders the loading placeholder.
+- Report / episode pages already had the server page-details branch in `kind-episode-page.ts`; it now runs.
+- `/film/*` is not routed to the Worker yet.

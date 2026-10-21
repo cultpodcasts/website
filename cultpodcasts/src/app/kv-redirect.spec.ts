@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCatalogueHubPath, RedirectLookup, renamedSeriesRedirect } from './kv-redirect';
+import { RedirectLookup, renamedSeriesRedirect } from './kv-redirect';
 
 function store(entries: Record<string, string>): RedirectLookup & { keys: string[] } {
   const keys: string[] = [];
@@ -20,6 +20,12 @@ describe('renamedSeriesRedirect', () => {
     const target = await renamedSeriesRedirect(new URL(`${origin}/podcast/Old%20Show/episode-1`), kv);
     expect(kv.keys).toEqual(['Old Show']);
     expect(target?.pathname).toBe('/podcast/New%20Show/episode-1');
+  });
+
+  it('returns null for a malformed podcast escape instead of throwing', async () => {
+    const kv = store({});
+    await expect(renamedSeriesRedirect(new URL(`${origin}/podcast/%E0/episode`), kv)).resolves.toBeNull();
+    expect(kv.keys).toEqual([]);
   });
 
   it('returns null for a podcast with no KV entry', async () => {
@@ -58,15 +64,5 @@ describe('renamedSeriesRedirect', () => {
     expect(await renamedSeriesRedirect(new URL(`${origin}/news/Loop`), kv)).toBeNull();
     expect(await renamedSeriesRedirect(new URL(`${origin}/tv/Slash`), kv)).toBeNull();
     expect(await renamedSeriesRedirect(new URL(`${origin}/news/%E0%A4%A`), kv)).toBeNull();
-  });
-});
-
-describe('isCatalogueHubPath', () => {
-  it('matches /news/ and /tv/ paths only', () => {
-    expect(isCatalogueHubPath('/news/Desk')).toBe(true);
-    expect(isCatalogueHubPath('/tv/Nightly/ep')).toBe(true);
-    expect(isCatalogueHubPath('/film/Movie')).toBe(false);
-    expect(isCatalogueHubPath('/newsletter')).toBe(false);
-    expect(isCatalogueHubPath('/podcast/Show')).toBe(false);
   });
 });

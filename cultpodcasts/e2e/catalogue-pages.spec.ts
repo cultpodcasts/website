@@ -195,7 +195,7 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.getByText('TV Show name changed to "Nightly Two". Index updated.')).toBeVisible();
 	});
 
-	test("Edit loads the outlet and PATCHes only the changed field by id", async ({ page }) => {
+	test("Edit (tabbed like the podcast edit) loads the outlet and PATCHes only the changed fields by id", async ({ page }) => {
 		await signInAs(page, ["Curator"]);
 		let patchBody: Record<string, unknown> | undefined;
 		await page.route("**/newsorganisation/Desk", (route) =>
@@ -212,16 +212,24 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.getByText("Bulletin")).toBeVisible();
 		await (await openHubMenu(page)).getByRole("menuitem", { name: /Edit News Outlet/ }).click();
 		const dialog = page.locator("mat-dialog-container");
-		const publisher = dialog.getByLabel("Publisher");
-		await expect(publisher).toHaveValue("Desk Media");
-		await expect(dialog.getByLabel("IMDb URL")).toHaveCount(0);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta"]);
+		const channel = dialog.getByLabel("YouTube Id");
+		await expect(channel).toHaveValue("");
 		await expect(page.getByRole("menu")).toHaveCount(0);
+		await channel.fill("UCaaaaaaaaaaaaaaaaaaaaaa");
 		if (screenshotDir) {
 			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog.png` });
 		}
+		await dialog.getByRole("tab", { name: "Meta" }).click();
+		const publisher = dialog.getByLabel("Publisher");
+		await expect(publisher).toHaveValue("Desk Media");
 		await publisher.fill("Desk Media Group");
+		if (screenshotDir) {
+			await page.waitForTimeout(600); // let the tab slide finish
+			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog-meta.png` });
+		}
 		await dialog.getByRole("button", { name: "Save" }).click();
-		await expect.poll(() => patchBody).toEqual({ publisher: "Desk Media Group" });
+		await expect.poll(() => patchBody).toEqual({ youTubeChannelId: "UCaaaaaaaaaaaaaaaaaaaaaa", publisher: "Desk Media Group" });
 		await expect(page.getByText("News Outlet updated")).toBeVisible();
 	});
 });

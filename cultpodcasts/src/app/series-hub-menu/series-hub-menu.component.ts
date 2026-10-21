@@ -78,7 +78,7 @@ export class SeriesHubMenuComponent {
     this.dialog
       .open<EditCatalogueParentDialogComponent, EditCatalogueParentDialogData, EditCatalogueParentDialogResponse>(
         EditCatalogueParentDialogComponent,
-        { data: { hub: this.hub(), name: this.seriesName() }, disableClose: true, autoFocus: true, width: "720px", maxWidth: "95vw" }
+        { data: { hub: this.hub(), name: this.seriesName() }, disableClose: true, autoFocus: true, width: "90%" }
       )
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))

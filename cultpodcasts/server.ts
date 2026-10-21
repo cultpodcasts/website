@@ -3,7 +3,7 @@ import { RESPONSE_INIT } from "@angular/core";
 import { KVNamespace, R2Bucket } from '@cloudflare/workers-types';
 import bootstrap from "./src/main.server";
 import { isAuthClientOnlyPath } from "./src/app/auth-client-only-path";
-import { isCatalogueHubPath, renamedSeriesRedirect } from "./src/app/kv-redirect";
+import { renamedSeriesRedirect } from "./src/app/kv-redirect";
 
 interface Env {
 	ASSETS: { fetch: typeof fetch };
@@ -37,9 +37,9 @@ async function workerFetchHandler(request: Request, env: Env) {
 	// Serve the empty app shell and let the browser do CSR after Auth0 restores.
 	// Privacy/terms are prerendered (SSG) and excluded in _routes.json so CF Pages
 	// serves static HTML — this Worker path must not re-render those URLs.
-	// /news/* and /tv/* reach the Worker only for the rename redirect above; they were
-	// client-rendered from the static fallback before, so keep them client-rendered.
-	if (isAuthClientOnlyPath(url.pathname) || isCatalogueHubPath(url.pathname)) {
+	// /news/* and /tv/* SSR like /podcast/*: hubs set meta from Api /pagedetails/{news|tv}/{name},
+	// report/episode pages from /pagedetails/{name}/{id} (kind-episode-page.ts).
+	if (isAuthClientOnlyPath(url.pathname)) {
 		console.log("CSR shell (skip SSR)", url.pathname);
 		return new Response(document, indexResponse);
 	}

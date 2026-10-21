@@ -7,11 +7,6 @@ const podcastPrefix = "/podcast/";
 /** Exact hub paths only: /news/{name} or /tv/{name}, optional trailing slash. Not /{hub}/{name}/{id}, not /film/. */
 const hubPath = /^\/(news|tv)\/([^/]+)\/?$/;
 
-/** Hubs served by the Worker (see _routes.json). They stay client-rendered: the Worker only adds the rename redirect. */
-export function isCatalogueHubPath(pathname: string): boolean {
-  return pathname.startsWith("/news/") || pathname.startsWith("/tv/");
-}
-
 /**
  * 301 target for a renamed series, or null.
  * - /podcast/{old}[/…] uses KV key `{old}` and keeps the rest of the path (unchanged behaviour).
@@ -20,7 +15,13 @@ export function isCatalogueHubPath(pathname: string): boolean {
 export async function renamedSeriesRedirect(url: URL, redirects: RedirectLookup): Promise<URL | null> {
   if (url.pathname.startsWith(podcastPrefix)) {
     const podcast = url.pathname.split("/")[2];
-    const newPodcastName = await redirects.get(decodeURIComponent(podcast));
+    let podcastName: string;
+    try {
+      podcastName = decodeURIComponent(podcast);
+    } catch {
+      return null;
+    }
+    const newPodcastName = await redirects.get(podcastName);
     if (!newPodcastName) {
       return null;
     }

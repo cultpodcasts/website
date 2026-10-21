@@ -170,6 +170,18 @@ export function submitSeriesFromForm(podcast: SubmitSeriesFormValue): SubmitSeri
 }
 
 /** POST /submit always includes the episode url; 409 is a name collision for that same url. */
+export function submitEpisodePostBody(url: URL, series: SubmitSeriesSelection): {
+  url: string;
+  podcastId: string | undefined;
+  podcastName: string | undefined;
+} {
+  return {
+    url: url.href,
+    podcastId: series.podcastId,
+    podcastName: series.podcastName
+  };
+}
+
 /**
  * POST /submit body for a hub submit. No podcastId / podcastName: a parent target must never fall back
  * to the podcast name attach (which creates a podcast when the name is unknown).
@@ -185,17 +197,5 @@ export function submitParentPostBody(url: URL, parent: SubmitParentTarget): {
     parentKind: parent.parentKind,
     parentId: parent.parentId,
     parentName: parent.parentName
-  };
-}
-
-export function submitEpisodePostBody(url: URL, series: SubmitSeriesSelection): {
-  url: string;
-  podcastId: string | undefined;
-  podcastName: string | undefined;
-} {
-  return {
-    url: url.href,
-    podcastId: series.podcastId,
-    podcastName: series.podcastName
   };
 }

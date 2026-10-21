@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, removesCatalogueParent, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -52,6 +52,54 @@ describe('catalogueParentChanges', () => {
 
   it('splits comma lists and drops blanks', () => {
     expect(textToList(' a, ,b ,')).toEqual(['a', 'b']);
+  });
+});
+
+describe('service ids', () => {
+  const withIds: CatalogueParentDto = {
+    ...outlet,
+    youTubeChannelId: 'UCaaaaaaaaaaaaaaaaaaaaaa',
+    youTubePlaylistId: 'PLold',
+    spotifyId: 'spot1',
+    appleId: 123456
+  };
+
+  it('leaves unchanged ids out', () => {
+    expect(catalogueParentChanges(withIds, catalogueParentEditModel(withIds), false)).toEqual({});
+  });
+
+  it('sends a set channel id on an outlet with no ids', () => {
+    const model = catalogueParentEditModel(outlet);
+    model.youTubeChannelId = ' UCbbbbbbbbbbbbbbbbbbbbbb ';
+    expect(catalogueParentChanges(outlet, model, false)).toEqual({ youTubeChannelId: 'UCbbbbbbbbbbbbbbbbbbbbbb' });
+  });
+
+  it('sends changed ids and "" for cleared string ids', () => {
+    const model = catalogueParentEditModel(withIds);
+    model.youTubePlaylistId = 'PLnew';
+    model.spotifyId = '';
+    model.appleId = '987';
+    expect(catalogueParentChanges(withIds, model, true)).toEqual({ youTubePlaylistId: 'PLnew', spotifyId: '', appleId: 987 });
+  });
+
+  it('clears appleId with nullAppleId, and sends nothing for a blank id that was already unset', () => {
+    const model = catalogueParentEditModel(withIds);
+    model.appleId = '  ';
+    expect(catalogueParentChanges(withIds, model, false)).toEqual({ nullAppleId: true });
+    expect(catalogueParentChanges(outlet, catalogueParentEditModel(outlet), false)).toEqual({});
+  });
+
+  it('validates the apple id text', () => {
+    expect(isValidAppleIdText('')).toBe(true);
+    expect(isValidAppleIdText(' 42 ')).toBe(true);
+    expect(isValidAppleIdText('id42')).toBe(false);
+    expect(isValidAppleIdText('4.2')).toBe(false);
+  });
+
+  it('flags only a removal as needing confirmation', () => {
+    expect(removesCatalogueParent({ removed: true })).toBe(true);
+    expect(removesCatalogueParent({ removed: false })).toBe(false);
+    expect(removesCatalogueParent({ publisher: 'x' })).toBe(false);
   });
 });
 
