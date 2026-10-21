@@ -298,4 +298,15 @@ describe('PodcastEpisodeComponent', () => {
     expect(filters[0]).toContain('seriesName');
     expect(rails().morePodcastEpisodes()).toEqual([]);
   });
+
+  it('shows the shared Add to Queue button in its square episode-page shape (not the hero pill)', () => {
+    const button = query('app-queue-button.episode-hero__queue button');
+    expect(button).toBeTruthy();
+    expect(button!.getAttribute('aria-pressed')).toBe('false');
+    expect(button!.hasAttribute('aria-label')).toBe(false);
+    expect(button!.textContent).toContain('Add to Queue');
+    expect(button!.classList).not.toContain('queue-button--pill');
+    const actions = query('.episode-hero__actions')!;
+    expect(actions.querySelector('.episode-hero__play')!.compareDocumentPosition(button!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

@@ -81,7 +81,8 @@
           </a>
           }
         </p>
-        <h1 class="billboard__title">{{ feature.episodeTitle }}</h1>
+        <!-- HERO-TTL-001: the title opens the episode page (where More info used to go). -->
+        <h1 class="billboard__title"><a class="billboard__title-link" [routerLink]="feature.playableLink">{{ feature.episodeTitle }}</a></h1>
         <p class="hero-meta">
           @if (releaseLabel(feature); as release) {
           <span>{{ release }}</span>
@@ -144,10 +145,8 @@
           {{ playLabel(feature) }}
         </a>
         }
-        <a mat-stroked-button class="billboard__more"
-          [routerLink]="feature.playableLink">
-          More info
-        </a>
+        <!-- HERO-QUE-001: the episode page's Add to Queue toggle (shown only when the episode embeds). -->
+        <app-queue-button class="billboard__queue" [episode]="feature" shape="pill" (toggled)="onQueueToggled($event)" />
         <!-- HERO-SVC-001: the episode page's service links (Spotify, Apple, YouTube, BBC, …). -->
         <app-episode-links class="billboard__services" [episode]="feature" [showShare]="false" />
       </div>

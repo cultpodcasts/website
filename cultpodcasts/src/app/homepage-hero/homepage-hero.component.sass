@@ -239,7 +239,7 @@
 .billboard__feature
     display: flex
     flex-direction: column
-    // Keep Listen / More info below every subject chip row.
+    // Keep Listen / Add to Queue below every subject chip row.
     gap: 14px
     opacity: 1
     transition: opacity 0.55s cubic-bezier(0.33, 0.1, 0.25, 1)
@@ -426,6 +426,18 @@
     position: relative
     z-index: 1
 
+// HERO-TTL-001: keeps the title's look; underline on hover / keyboard focus
+// (focus: accent and thicker; the clamped title clips outlines).
+.billboard__title-link
+    color: inherit
+    text-decoration: none
+    text-underline-offset: .12em
+    &:hover
+        text-decoration: underline .05em
+    &:focus-visible
+        outline: none
+        text-decoration: underline .08em var(--nflx-accent)
+
 .billboard__play
     background: #fff !important
     color: #000 !important
@@ -434,12 +446,6 @@
     box-shadow: 0 8px 28px rgba(0, 0, 0, .35)
     mat-icon
         margin-right: 4px
-
-.billboard__more
-    border-color: rgba(255, 255, 255, .55) !important
-    color: #fff !important
-    background: rgba(42, 42, 42, .8) !important
-    font-weight: 600
 
 .billboard__controls
     position: absolute
@@ -770,7 +776,7 @@
         max-width: none
         width: 100%
 
-// Stacked medium: pager stays on the art (HERO-CTL-004); Watch/More info sit in
+// Stacked medium: pager stays on the art (HERO-CTL-004); Watch/Add to Queue sit in
 // an in-flow seam under the frame (HERO-SCR-006) so they never clash with dashes.
 // min-height keeps short landscape on the phone in-flow panel.
 @media screen and (max-width: 1280px) and (min-width: 701px) and (min-height: 600px)

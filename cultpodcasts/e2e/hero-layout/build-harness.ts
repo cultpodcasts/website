@@ -10,6 +10,7 @@ const heroSassPath = join(
   "homepage-hero",
   "homepage-hero.component.sass"
 );
+const queueButtonSassPath = join(process.cwd(), "src", "app", "queue-button", "queue-button.component.sass");
 const stylesPath = join(process.cwd(), "src", "styles.scss");
 
 /** Compile real hero component Sass for light-DOM harness (rewrite :host). */
@@ -17,6 +18,10 @@ export function compileHeroLayoutCss(): string {
   const heroCss = sass.compile(heroSassPath, { style: "expanded" }).css
     .replaceAll(":host-context(.cdk-global-scrollblock)", ".cdk-global-scrollblock .hero-layout-host")
     .replaceAll(":host", ".hero-layout-host");
+  // The shared Add to Queue button (HERO-QUE-001), scoped to its host tag.
+  const queueButtonCss = sass.compile(queueButtonSassPath, { style: "expanded" }).css
+    .replace(/:host\(([^)]*)\)/g, "app-queue-button$1")
+    .replaceAll(":host", "app-queue-button");
 
   const tokenCss = `
 .hero-layout-root {
@@ -60,7 +65,7 @@ export function compileHeroLayoutCss(): string {
     /* optional */
   }
 
-  return `${tokenCss}\n${stylesSnippet}\n${heroCss}`;
+  return `${tokenCss}\n${stylesSnippet}\n${heroCss}\n${queueButtonCss}`;
 }
 
 export function buildHeroLayoutDocument(c: HeroLayoutCase): string {

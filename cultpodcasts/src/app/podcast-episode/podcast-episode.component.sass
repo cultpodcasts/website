@@ -337,35 +337,6 @@
     mat-icon
         margin-right: 4px
 
-.episode-hero__queue
-    display: inline-flex
-    align-items: center
-    gap: 6px
-    margin: 0
-    padding: 9px 16px
-    border: 1px solid rgba(255, 255, 255, 0.45)
-    border-radius: 4px
-    background: rgba(20, 20, 20, 0.55)
-    color: #fff
-    font: inherit
-    font-size: 0.92rem
-    font-weight: 600
-    cursor: pointer
-    backdrop-filter: blur(8px)
-    mat-icon
-        font-size: 20px
-        width: 20px
-        height: 20px
-    &:hover,
-    &:focus-visible
-        border-color: var(--nflx-accent)
-        color: var(--nflx-accent)
-        outline: none
-    &.is-queued
-        border-color: var(--nflx-accent)
-        background: rgba(232, 162, 58, 0.18)
-        color: var(--nflx-accent)
-
 .episode-hero__links
     display: inline-flex
     align-items: center
@@ -418,6 +389,5 @@
         --rail-poster-w: 68vw
     .episode-hero__actions
         align-items: stretch
-    .episode-hero__play,
-    .episode-hero__queue
+    .episode-hero__play
         justify-content: center

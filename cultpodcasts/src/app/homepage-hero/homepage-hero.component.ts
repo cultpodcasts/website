@@ -1,4 +1,5 @@
 import { EpisodeLinksComponent } from '../episode-links/episode-links.component';
+import { QueueButtonComponent, QueueToggle } from '../queue-button/queue-button.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -37,7 +38,7 @@ export interface HomepageHeroSlide extends HomepageEpisode {
 
 @Component({
   selector: 'app-homepage-hero',
-  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, EpisodeLinksComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, EpisodeLinksComponent, QueueButtonComponent],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -584,15 +585,29 @@ export class HomepageHeroComponent {
   }
 
   /**
+   * A mouse/touch click focuses the queue button, which would hold the pause via
+   * focusin until the next click elsewhere (like the pager). Release it; keyboard
+   * activation keeps focus, and so the pause, while the user is in the row.
+   */
+  protected onQueueToggled(toggle: QueueToggle): void {
+    if (toggle.pointer) {
+      this.releaseFocusPause(toggle.button);
+    }
+  }
+
+  /**
    * Mouse clicks leave focus on the chevron/dash, which kept the hero paused forever
    * via focusin. Blur and clear focus-pause so the dwell timer / dash fill can run
    * again once the pointer leaves (hover pause still applies while the pointer is inside).
    */
   private releasePagerFocus(event?: Event): void {
     const target = event?.currentTarget;
-    if (target instanceof HTMLElement) {
-      target.blur();
-    }
+    this.releaseFocusPause(target instanceof HTMLElement ? target : null);
+  }
+
+  /** Blur the clicked control and drop the focus-pause (hover pause is unaffected). */
+  private releaseFocusPause(el?: HTMLElement | null): void {
+    el?.blur();
     this.focusInside = false;
     this.syncHeroPaused();
   }
