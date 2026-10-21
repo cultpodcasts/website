@@ -986,7 +986,7 @@ describe('HomepageHeroComponent', () => {
       });
     });
 
-    describe('HERO-DSC-002: expanded keeps the hero; the card fills to the viewport foot and scrolls inside', () => {
+    describe('HERO-DSC-002: expanded keeps the hero and the card top; the description grows by the gap, within [max(6 lines, 30vh), 60vh]', () => {
       const realInnerHeight = window.innerHeight;
       afterEach(() => {
         vi.restoreAllMocks();
@@ -994,10 +994,10 @@ describe('HomepageHeroComponent', () => {
       });
 
       /**
-       * Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it (so 278px of the card is
-       * not desc); 22px lines; 140px clearance; 58px chrome. Wide (row) hero unless `column`.
+       * Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it (C), 22px lines (L);
+       * full text `fullPx` tall. Wide (row) hero unless `column`.
        */
-      function fakeCollapsed(viewportH: number, heroTop = 0, column = false): void {
+      function fakeCollapsed(viewportH: number, heroTop = 0, column = false, fullPx = 3000): void {
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewportH });
         const hero = root().querySelector('.billboard') as HTMLElement;
         const card = root().querySelector('.billboard__content') as HTMLElement;
@@ -1006,19 +1006,14 @@ describe('HomepageHeroComponent', () => {
         vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() => rect(heroTop, 720));
         vi.spyOn(card, 'getBoundingClientRect').mockImplementation(() => rect(heroTop + 300, 388));
         Object.defineProperty(desc, 'clientHeight', { configurable: true, value: 110 });
+        Object.defineProperty(desc, 'scrollHeight', { configurable: true, value: fullPx });
         const real = window.getComputedStyle.bind(window);
         vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
           if (el === hero) {
-            return {
-              flexDirection: column ? 'column' : 'row',
-              getPropertyValue: (n: string) => (n === '--site-chrome-bar-h' ? '58px' : ''),
-            } as unknown as CSSStyleDeclaration;
-          }
-          if (el === card) {
-            return { scrollMarginTop: '140px' } as unknown as CSSStyleDeclaration;
+            return { flexDirection: column ? 'column' : 'row', getPropertyValue: () => '' } as unknown as CSSStyleDeclaration;
           }
           if (el === desc) {
-            return { lineHeight: '22px', height: '110px' } as unknown as CSSStyleDeclaration;
+            return { lineHeight: '22px', height: '110px', paddingTop: '0px', paddingBottom: '0px' } as unknown as CSSStyleDeclaration;
           }
           return real(el);
         });
@@ -1040,75 +1035,81 @@ describe('HomepageHeroComponent', () => {
         fixture.detectChanges();
       }
 
-      it('wide: locks the hero, keeps the card top and fills down to 12px above the viewport foot', () => {
+      it('gap below the minimum: grows by max(6 lines, 30vh), past the foot; wide keeps the top', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
         expect(hero().style.height).toBe('720px');
-        // desc = (900 - 12) foot - 300 top - 278 rest of the card = 310.
-        expect(descEl().style.height).toBe('310px');
-        // The row hero grows the card upward in flow (top 688 - 588 = 100): move it back to 300.
-        expect(card().style.transform).toBe('translateY(200px)');
+        // G = 888 - 688 = 200 < minGrow = max(132, 270) = 270 → 110 + 270.
+        expect(descEl().style.height).toBe('380px');
+        // The row hero grows the card upward in flow; shifted down by the growth, the top stays.
+        expect(card().style.transform).toBe('translateY(270px)');
         expect(hero().classList.contains('is-desc-expanded')).toBe(true);
       });
 
-      it('stacked: the card already keeps its top in flow, so it only grows', () => {
+      it('stacked: the card keeps its top in flow, so no shift', () => {
         fakeOverflow(true);
         fakeCollapsed(900, 0, true);
         expand();
-        expect(descEl().style.height).toBe('310px');
+        expect(descEl().style.height).toBe('380px');
         expect(card().style.transform).toBe('');
       });
 
-      it('lifts the card when the collapsed card already ends below the viewport foot', () => {
+      it("card bottom at the foot (Jon's mobile case): still grows by the minimum, never moves up", () => {
         fakeOverflow(true);
-        fakeCollapsed(600);
+        fakeCollapsed(700, 0, true);
         expand();
-        // lift = 688 - 588 = 100 → top 200; desc = 588 - 200 - 278 = 110 (card 388, flow top 300).
-        expect(card().style.transform).toBe('translateY(-100px)');
-        expect(descEl().style.height).toBe('110px');
+        // G = 688 - 688 = 0 → minGrow = max(132, 210) = 210.
+        expect(descEl().style.height).toBe('320px');
+        expect(card().style.transform).toBe('');
       });
 
-      it('keeps at least 3 lines and never goes above the search clearance', () => {
+      it('gap between the bounds: fills to the viewport foot', () => {
         fakeOverflow(true);
-        fakeCollapsed(450);
+        fakeCollapsed(900, -200);
         expand();
-        // lift 250 would put the top at 50; held at the 140px clearance; 438 - 140 - 278 < 66.
-        expect(descEl().style.height).toBe('66px');
+        // Card bottom at 488: G = 888 - 488 = 400 (270 ≤ G ≤ 540) → 110 + 400.
+        expect(descEl().style.height).toBe('510px');
       });
 
-      it('expanding with the card under the sticky chrome holds its top below it', () => {
+      it('tall gap: capped at 60vh of growth, so collapsing never needs a long scroll', () => {
         fakeOverflow(true);
-        fakeCollapsed(900, -250, true);
+        fakeCollapsed(900, -500);
         expand();
-        // Collapsed top 50 is under the chrome: top = 58 + 12 = 70; desc = 888 - 70 - 278 = 540.
-        expect(descEl().style.height).toBe('540px');
-        expect(card().style.transform).toBe('translateY(20px)');
+        // G = 888 - 188 = 700 > maxGrow = 540 → 110 + 540.
+        expect(descEl().style.height).toBe('650px');
       });
 
-      it('measures once: page scroll neither re-fits nor collapses (the card moves with the page)', () => {
+      it('short text shows in full (no scroller), with a line for the end spacer', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900, 0, false, 150);
+        expand();
+        // full = 150 + 22 = 172 < 110 + 270.
+        expect(descEl().style.height).toBe('172px');
+        expect(card().style.transform).toBe('translateY(62px)');
+      });
+
+      it('measures once: page scroll neither re-sizes nor collapses (the card moves with the page)', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
         vi.restoreAllMocks();
-        // The hero has scrolled right up behind the chrome.
         fakeCollapsed(900, -700);
         window.dispatchEvent(new Event('scroll'));
         fixture.detectChanges();
         expect(descEl().classList.contains('is-expanded')).toBe(true);
-        expect(descEl().style.height).toBe('310px');
-        expect(card().style.transform).toBe('translateY(200px)');
+        expect(descEl().style.height).toBe('380px');
+        expect(card().style.transform).toBe('translateY(270px)');
       });
 
-      it('a height-only resize re-fits to the new foot from the expand-time position', () => {
+      it('a height-only resize re-sizes from the expand-time position', () => {
         fakeOverflow(true);
         fakeCollapsed(900);
         expand();
         // Page scrolled since, then the viewport got shorter (mobile URL bar).
         relayout(800, -300);
-        // Uses heroTop 0 from expanding, not -300: desc = (800 - 12) - 300 - 278 = 210.
-        expect(descEl().style.height).toBe('210px');
-        expect(card().style.transform).toBe('translateY(100px)');
+        // Card bottom 688 at expand: G = 788 - 688 = 100 < minGrow = max(132, 240) → 110 + 240.
+        expect(descEl().style.height).toBe('350px');
       });
 
       it('collapse restores the exact collapsed layout (no lock, shift, height or scroll offset)', () => {

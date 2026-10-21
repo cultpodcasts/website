@@ -230,8 +230,7 @@
 .billboard__content
     position: relative
     z-index: 2
-    // Resolved search clearance (the custom property is an unresolved calc): TS reads
-    // it as the expanded card's top limit (HERO-DSC-002); also keeps scrollIntoView clear.
+    // Keeps scrollIntoView (focus, tests) clear of the dropped search.
     scroll-margin-top: var(--nflx-hero-search-clearance, 140px)
     width: min(640px, 100%)
     pointer-events: auto
@@ -356,8 +355,8 @@
     overflow: hidden
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Expanded (HERO-DSC-002): clamp off; TS sizes it so the card ends at the viewport
-    // foot and the text scrolls inside. The hero keeps its height.
+    // Expanded (HERO-DSC-002): clamp off; TS sizes it (grow to the viewport foot, at least
+    // max(6 lines, 30vh), at most 60vh) and the rest scrolls inside. The hero keeps its height.
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
@@ -847,13 +846,12 @@
         width: 40px
         height: 40px
 
-// Expanded (HERO-DSC-002): the hero height is locked, so the card spills past it to the
-// viewport foot, over the stats strip / rails (z-index 2), on an opaque surface ending
+// Expanded (HERO-DSC-002): the hero height is locked, so the card spills past it, over the stats strip / rails (z-index 2), on an opaque surface ending
 // with the card.
 .billboard.is-desc-expanded
     overflow: visible
     z-index: 3
-    // Above the in-flow pager/admin it may be lifted over (short stacked windows).
+    // Over the in-flow pager/admin it grows across (short stacked windows: they sit below it).
     .billboard__content
         z-index: 4
     // TS sizes the description; the collapsed reserve must not add to it.
