@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, UrlTree } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, Subject, switchMap, take } from 'rxjs';
@@ -110,7 +110,12 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly heroCuration = inject(HeroCurationService);
   /** Row title link by kind (/podcast, /news, /tv, /film); needs `contentKind` from GET /episode/{id}. Podcast episodes use the short id, so the click does not take the GUID 301. */
-  protected readonly playableLink = (episode: ApiEpisode) => reviewPlayableLink(episode);
+  protected readonly playableLink = (episode: ApiEpisode): string[] | UrlTree => {
+    const link = reviewPlayableLink(episode);
+    // The API `path` is already percent-encoded (e.g. /film/One%20Off/…). A plain string routerLink is split into
+    // segments and encoded again (%2520), so parse it into a UrlTree, which routerLink uses as-is.
+    return typeof link === 'string' ? this.router.parseUrl(link) : link;
+  };
   protected readonly parentLink = reviewParentLink;
   private snapOffsetObserver: ResizeObserver | undefined;
   /** Single cancellable load stream: a newer request (ids change / Refresh) cancels any in-flight one. */
@@ -269,7 +274,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
 
   /** Podcast episode rows (no contentKind, or `Episode`): publish, delete and podcast menu items are podcast-only. */
   protected readonly isPodcastRow = (episode: ApiEpisode) => !isNonPodcastPlayableKind(episode.contentKind);
-  /** News report / TV episode rows edit through their own dialogs (PATCH /newsreport or /tvshowepisode). */
+  /** News report / TV episode / film rows edit through their own dialogs (PATCH /newsreport, /tvshowepisode or /film). */
   protected readonly hasEditDialog = (episode: ApiEpisode) =>
     this.isPodcastRow(episode) || isEditableCataloguePlayableKind(episode.contentKind);
 

@@ -157,11 +157,15 @@ flowchart LR
   AE -->|new series| AP[Add Podcast defaults]
   SB -->|News / TV, Curator| CR["Review: /news or /tv/{parent}/{short id}"]
   SB -->|News / TV, Curator| CE[Edit News Report / Edit TV Episode]
+  SB -->|Film, Curator| FR["Review: /film/{name}/{Film short id}"]
+  SB -->|Film, Curator| FE[Edit Film]
 ```
 
 News reports and TV episodes (`contentKind` `NewsReport` / `TvShowEpisode`) get **Review** + **Edit** when the
 actor is a Curator, `playableId` is a guid, and the outcome is Created, Enriched or EpisodeAlreadyExists
-(`submittedCataloguePlayableReview`). Film still shows only Ok.
+(`submittedCataloguePlayableReview`). Films (`Film`) get the same **Review** + **Edit**: Edit opens the Edit Film
+dialog (PATCH `/film/{id}`, never a title: renames are admin-only), and Review goes to `/film/{name}/{Film short id}`,
+where the name is the film's own (from the dialog, else `GET /film/{id}`, else search), never the hub's.
 
 - **Review** goes to `/news/{outlet}/{short id}` or `/tv/{show}/{short id}` (`cataloguePlayableCommands`, base-64 short id of `playableId`). The hub
   menu passes the outlet / show name to the snackbar. The toolbar path has no parent name, so

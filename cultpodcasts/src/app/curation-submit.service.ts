@@ -12,6 +12,8 @@ import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.in
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
 import {
+  FilmApiDto,
+  FilmChangeRequest,
   NewsReportChangeRequest,
   NewsReportDto,
   PlayableChangeResponse,
@@ -103,6 +105,21 @@ export class CurationSubmitService {
 
   patchTvShowEpisode(episodeId: string, body: TvShowEpisodeChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
+    return this.http.patch<PlayableChangeResponse | null>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Curator GET of a film by guid: publisher fields (name, publisher, …), playable fields and IMDb. */
+  getFilm(filmId: string) {
+    const url = new URL(`/film/${encodeURIComponent(filmId)}`, environment.api).toString();
+    return this.http.get<FilmApiDto>(url, { context: this.curateContext() });
+  }
+
+  /** PATCH only the changed film fields (never `title`; renames are admin-only): 202 with the episode-style body. */
+  patchFilm(filmId: string, body: FilmChangeRequest) {
+    const url = new URL(`/film/${encodeURIComponent(filmId)}`, environment.api).toString();
     return this.http.patch<PlayableChangeResponse | null>(url, body, {
       context: this.curateContext(),
       observe: 'response'

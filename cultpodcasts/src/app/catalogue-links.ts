@@ -88,8 +88,9 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
 }
 
 /**
- * Route for a news report or TV episode from its kind, parent name and guid, with the short base-64 id
- * the site links use. Null for podcast episodes, films and a missing parent name or id.
+ * Route for a news report, TV episode or film from its kind, parent name (for a film, the film's own name,
+ * which is its page slug) and guid, with the kind-prefixed short id the site links use. Null for podcast
+ * episodes and a missing name or id.
  */
 export function cataloguePlayableCommands(
   kind: string | null | undefined,
@@ -104,6 +105,8 @@ export function cataloguePlayableCommands(
       return tvShowEpisodePageCommands(parentName, playableId);
     case "NewsReport":
       return newsReportPageCommands(parentName, playableId);
+    case "Film":
+      return filmPageCommands(parentName, playableId);
     default:
       return null;
   }
@@ -118,7 +121,8 @@ export function reviewPlayableLink(
   episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null }
 ): string | string[] {
   if (episode.path?.startsWith("/")) {
-    // Already site-encoded: as a string, routerLink parses it as a URL instead of encoding it again.
+    // Already site-encoded (e.g. /film/One%20Off/…). Callers must `router.parseUrl` it: bound as a plain string,
+    // routerLink splits it into segments and encodes them again (%2520).
     return episode.path;
   }
   const parent = episode.parentName ?? episode.podcastName ?? "";

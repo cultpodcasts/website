@@ -2,6 +2,8 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { episodeLanguageFormValue } from './language-options.util';
 import { ensureHashPrefix, hashPrefixedTagValidator } from './podcast-form.util';
 import {
+  FilmChangeRequest,
+  FilmDto,
   PlayableFieldsChangeRequest,
   PlayableFieldsDto,
   TvShowEpisodeChangeRequest,
@@ -12,7 +14,8 @@ import { buildTvShowEpisodeCanonicalChangeRequest } from './tv-show-episode-cano
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
  * `EpisodeForm` where the field exists there, so the shared tabs read like the episode editor.
- * `imdb` / `tvdb` are only present on the TV form (Identity tab).
+ * `imdb` / `tvdb` are only present on the TV form (Identity tab); the film form has `imdb` (no TheTVDB) and
+ * `publisher`, and its `title` (the film name) is disabled: the film PATCH cannot rename.
  */
 export interface PlayableEditForm {
   title: FormControl<string>;
@@ -34,7 +37,11 @@ export interface PlayableEditForm {
   guests: FormControl<string[]>;
   imdb?: FormControl<string>;
   tvdb?: FormControl<string>;
+  publisher?: FormControl<string>;
 }
+
+/** Film release: a year `yyyy` or a calendar date `yyyy-MM-dd` (anything else is a 400 from the film PATCH). */
+export const filmReleasePattern = /^\d{4}(-\d{2}-\d{2})?$/;
 
 /** json-url.interceptor turns absolute URL strings in API bodies into `URL` objects. */
 function uriText(value: string | URL | null | undefined): string {
@@ -43,7 +50,19 @@ function uriText(value: string | URL | null | undefined): string {
 
 export type PlayableEditFormValue = ReturnType<FormGroup<PlayableEditForm>['getRawValue']>;
 
-export function buildPlayableEditForm(dto: PlayableFieldsDto, options: { identity?: boolean } = {}): FormGroup<PlayableEditForm> {
+/**
+ * Which playable the shared edit form is for: `news` (playable fields only), `tv` (plus IMDb + TheTVDB) or `film`
+ * (plus IMDb and publisher, with a read-only name and a year-or-date release). One value drives the form, the
+ * dialog base and the shared tabs, so there are no flags that can contradict each other.
+ */
+export type PlayableEditVariant = 'news' | 'tv' | 'film';
+
+/** The Identity tab (IMDb, plus TheTVDB for TV) shows for TV and film. */
+export function playableEditHasIdentity(variant: PlayableEditVariant): boolean {
+  return variant !== 'news';
+}
+
+export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableEditVariant = 'news'): FormGroup<PlayableEditForm> {
   const controls: PlayableEditForm = {
     title: new FormControl(dto.title ?? '', { nonNullable: true, validators: [Validators.required] }),
     description: new FormControl(dto.description ?? '', { nonNullable: true }),
@@ -63,7 +82,15 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, options: { identit
     lang: new FormControl(episodeLanguageFormValue(dto.language), { nonNullable: true }),
     guests: new FormControl<string[]>([...(dto.guests ?? [])], { nonNullable: true })
   };
-  if (options.identity) {
+  if (variant === 'film') {
+    const film = dto as FilmDto;
+    // Read-only name: no required marker, and never part of validity or the PATCH.
+    controls.title.clearValidators();
+    controls.title.disable();
+    controls.release.addValidators(Validators.pattern(filmReleasePattern));
+    controls.imdb = new FormControl(uriText(film.imdb), { nonNullable: true });
+    controls.publisher = new FormControl(film.publisher ?? '', { nonNullable: true });
+  } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
     controls.imdb = new FormControl(uriText(tv.imdb), { nonNullable: true });
     controls.tvdb = new FormControl(uriText(tv.tvdb), { nonNullable: true });
@@ -125,4 +152,24 @@ export function tvShowEpisodeChanges(
   if (identity.imdb != null) changes.imdb = identity.imdb;
   if (identity.tvdb != null) changes.tvdb = identity.tvdb;
   return changes;
+}
+
+/**
+ * Film PATCH body: the changed playable fields without `title` (the film PATCH has none; renames are admin-only),
+ * plus `publisher` (`''` clears) and the IMDb identity (omit / `''` clear / URL set).
+ */
+export function filmChanges(
+  previous: FilmDto,
+  next: PlayableEditFormValue,
+  pendingUnBluesky = false
+): FilmChangeRequest {
+  const { title: _title, ...changes }: PlayableFieldsChangeRequest = playableFieldsChanges(previous, next, pendingUnBluesky);
+  const film: FilmChangeRequest = changes;
+  const publisher = (next.publisher ?? '').trim();
+  if (next.publisher !== undefined && publisher !== (previous.publisher ?? '').trim()) film.publisher = publisher;
+  if (next.imdb !== undefined) {
+    const identity = buildTvShowEpisodeCanonicalChangeRequest({ imdb: uriText(previous.imdb) }, { imdb: next.imdb });
+    if (identity.imdb != null) film.imdb = identity.imdb;
+  }
+  return film;
 }

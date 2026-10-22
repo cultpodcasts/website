@@ -1,8 +1,6 @@
 @if (isEpisode()) {
   @if (episode(); as ep) {
-  <article class="kind-episode">
-    <h1>{{ ep.episodeTitle }}</h1>
-  </article>
+  <app-podcast-episode [episode]="ep" [parentLoaded]="true" [emitCuratorEdit]="true" (curatorEdit)="editFilm($event)"></app-podcast-episode>
   } @else if (isLoading()) {
   <app-site-loading [active]="true" label="Loading episode" />
   @if (showEpisodeSkeleton()) {

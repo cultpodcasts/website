@@ -357,22 +357,25 @@ describe('submittedCataloguePlayableReview', () => {
   const created = (contentKind: string, episode = 'Created') =>
     ({ episode, podcast: 'NotCreated', contentKind, playableId: otherId });
 
-  it('gives a Curator Review + Edit for a created, enriched or existing news report or TV episode', () => {
+  it('gives a Curator Review + Edit for a created, enriched or existing news report, TV episode or film', () => {
     for (const outcome of ['Created', 'Enriched', 'EpisodeAlreadyExists']) {
       expect(submittedCataloguePlayableReview(['Curator'], created('NewsReport', outcome)))
         .toEqual({ kind: 'NewsReport', playableId: otherId });
       expect(submittedCataloguePlayableReview(['Curator'], created('TvShowEpisode', outcome)))
         .toEqual({ kind: 'TvShowEpisode', playableId: otherId });
+      expect(submittedCataloguePlayableReview(['Curator'], created('Film', outcome)))
+        .toEqual({ kind: 'Film', playableId: otherId });
     }
   });
 
-  it('is null for Submitters, other outcomes, missing or invalid playable ids, films and podcast episodes', () => {
+  it('is null for Submitters, other outcomes, missing or invalid playable ids and podcast episodes', () => {
     expect(submittedCataloguePlayableReview(['Submitter'], created('NewsReport'))).toBeNull();
     expect(submittedCataloguePlayableReview(undefined, created('NewsReport'))).toBeNull();
     expect(submittedCataloguePlayableReview(['Curator'], created('NewsReport', 'Ignored'))).toBeNull();
     expect(submittedCataloguePlayableReview(['Curator'], { ...created('NewsReport'), playableId: undefined })).toBeNull();
     expect(submittedCataloguePlayableReview(['Curator'], { ...created('NewsReport'), playableId: 'not-a-guid' })).toBeNull();
-    expect(submittedCataloguePlayableReview(['Curator'], created('Film'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Submitter'], created('Film'))).toBeNull();
+    expect(submittedCataloguePlayableReview(['Curator'], created('Film', 'Ignored'))).toBeNull();
     expect(submittedCataloguePlayableReview(['Curator'], created('Episode'))).toBeNull();
     expect(submittedCataloguePlayableReview(['Curator'], undefined)).toBeNull();
   });
