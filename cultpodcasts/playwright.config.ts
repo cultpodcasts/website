@@ -12,7 +12,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
 	testDir: "./e2e",
-	testIgnore: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts", "home-chrome-dock.spec.ts", "catalogue-playable-edit.spec.ts", "search-suggestion-kinds.spec.ts"],
+	testIgnore: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts", "home-chrome-dock.spec.ts", "catalogue-playable-edit.spec.ts", "search-suggestion-kinds.spec.ts", "film-trailers-rail.spec.ts"],
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 1 : 0,

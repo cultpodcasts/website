@@ -1,4 +1,5 @@
-import { displayDuration, parseFilmTrailerTokens } from './film-trailer';
+import { displayDuration, FILM_TRAILER_CONTENT_KIND, filmTrailerEpisode, filmTrailerUrl, parseFilmTrailerTokens } from './film-trailer';
+import { episodeImageUrl } from './search-result-links';
 
 describe('parseFilmTrailerTokens', () => {
   it('parses duration|url|title tokens in order', () => {
@@ -37,5 +38,37 @@ describe('displayDuration', () => {
     expect(displayDuration('01:02:03')).toBe('1:02:03');
     expect(displayDuration('1.02:00:00')).toBe('26:00:00');
     expect(displayDuration('not a duration')).toBe('');
+  });
+});
+
+describe('filmTrailerEpisode', () => {
+  const [youtube, iplayer, other] = parseFilmTrailerTokens([
+    '00:02:11.9910000|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser',
+    '00:01:00|https://www.bbc.co.uk/iplayer/episode/synthetic02|Synthetic iPlayer Clip',
+    '00:00:30|https://synthetic-video.example/v/3|Synthetic Elsewhere',
+  ]);
+
+  it('makes a FilmTrailer card with a per-film, per-position id and the token duration', () => {
+    const episode = filmTrailerEpisode(youtube, 'film-a', 0);
+
+    expect(episode.id).toBe('film-a:trailer:0');
+    expect(filmTrailerEpisode(youtube, 'film-b', 0).id).not.toBe(episode.id);
+    expect(episode.contentKind).toBe(FILM_TRAILER_CONTENT_KIND);
+    expect(episode.episodeTitle).toBe('Synthetic Teaser');
+    expect(episode.duration).toBe('00:02:11.9910000');
+    expect(episode.podcastName).toBe('');
+  });
+
+  it('files the URL under its service key so YouTube gets a thumbnail and iPlayer an outbound Watch', () => {
+    expect(Object.keys(filmTrailerEpisode(youtube, 'f', 0).services ?? {})).toEqual(['youtube']);
+    expect(episodeImageUrl(filmTrailerEpisode(youtube, 'f', 0))?.href)
+      .toBe('https://i.ytimg.com/vi/synthetic01/hqdefault.jpg');
+    expect(Object.keys(filmTrailerEpisode(iplayer, 'f', 1).services ?? {})).toEqual(['bbcIplayer']);
+    expect(Object.keys(filmTrailerEpisode(other, 'f', 2).services ?? {})).toEqual(['syntheticvideoexample']);
+  });
+
+  it('gives back the trailer URL for the card title', () => {
+    expect(filmTrailerUrl(filmTrailerEpisode(other, 'f', 2))).toBe('https://synthetic-video.example/v/3');
+    expect(filmTrailerUrl({})).toBeUndefined();
   });
 });

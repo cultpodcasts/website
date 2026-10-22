@@ -1,15 +1,8 @@
-@if (links().length > 0) {
-<section class="film-trailers" aria-labelledby="film-trailers-heading">
-  <h2 id="film-trailers-heading">Trailers</h2>
-  <ul>
-    @for (link of links(); track $index) {
-    <li>
-      <a [href]="link.url.href" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
-      @if (link.duration) {
-      <span class="duration">{{ link.duration }}</span>
-      }
-    </li>
-    }
-  </ul>
-</section>
+@if (episodes().length > 0) {
+<app-episode-rail class="film-trailers"
+  title="Trailers"
+  [episodes]="episodes()"
+  [displayTitle]="true"
+  [playingEpisodeId]="playingEpisodeId()"
+  (play)="play($event)" />
 }

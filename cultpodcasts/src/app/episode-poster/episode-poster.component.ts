@@ -49,6 +49,11 @@ export class EpisodePosterComponent {
    * kindIcon. Ignored when the card has a parent link.
    */
   readonly kindLabel = input<string | undefined>(undefined);
+  /**
+   * An outside page (http/https) the title, and the artwork when nothing plays, open in a new tab instead of a site
+   * route. For items with no page of their own (film trailers). Takes precedence over titleLink.
+   */
+  readonly externalHref = input<string | undefined>(undefined);
   /** undefined keeps the podcast parent. null hides the parent line. */
   readonly showLink = input<readonly string[] | null | undefined>(undefined);
   protected readonly playableLink = computed(() => this.titleLink() ?? playableCommands(this.episode()));

@@ -19,6 +19,14 @@
   </button>
   }
 </button>
+} @else if (externalHref(); as href) {
+<a class="episode-poster__art" [href]="href" target="_blank" rel="noopener noreferrer">
+  @if (imageUrl(); as src) {
+  <img [src]="src" [alt]="episode().episodeTitle" loading="lazy" />
+  } @else {
+  <div class="episode-poster__placeholder" aria-hidden="true"></div>
+  }
+</a>
 } @else {
 <a class="episode-poster__art" [routerLink]="playableLink()">
   @if (imageUrl(); as src) {
@@ -66,6 +74,11 @@
     }
   </div>
   }
+  @if (externalHref(); as href) {
+  <a class="episode-poster__titles" [href]="href" target="_blank" rel="noopener noreferrer">
+    <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
+  </a>
+  } @else {
   <a class="episode-poster__titles" [routerLink]="playableLink()">
     @if (titleAsHtml()) {
     <span class="episode-poster__episode" [innerHTML]="episode().episodeTitle"></span>
@@ -73,6 +86,7 @@
     <span class="episode-poster__episode">{{ episode().episodeTitle }}</span>
     }
   </a>
+  }
   @if (showShow() && parentLink(); as parent) {
   <p class="episode-poster__byline">
     <a class="episode-poster__show" [routerLink]="parent">
