@@ -21,5 +21,10 @@ export interface HomepageEpisode {
   image: URL | undefined;
   /** Non-English IETF tag when present; omitted/undefined means English. */
   language?: string;
+  /**
+   * `NewsReport`, `TvShowEpisode` or `Film`; absent (or `Episode`) for a podcast episode (RPP homepage
+   * publisher). For the other kinds `podcastName` is the news outlet or TV show (a film's own name) and `id`
+   * is the playable GUID: links go through cataloguePlayableLink / catalogueParentLink (short ids).
+   */
   contentKind?: string | null;
 }

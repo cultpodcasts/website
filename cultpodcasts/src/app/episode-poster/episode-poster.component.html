@@ -76,8 +76,20 @@
   @if (showShow() && parentLink(); as parent) {
   <p class="episode-poster__byline">
     <a class="episode-poster__show" [routerLink]="parent">
+      @if (kindIcon(); as icon) {
+      <mat-icon class="episode-poster__kind-icon" aria-hidden="true">{{ icon }}</mat-icon>
+      }
       {{ displayCatalogName(episode().podcastName) }}
     </a>
+  </p>
+  } @else if (showShow() && kindLabel(); as label) {
+  <p class="episode-poster__byline">
+    <span class="episode-poster__show episode-poster__show--kind">
+      @if (kindIcon(); as icon) {
+      <mat-icon class="episode-poster__kind-icon" aria-hidden="true">{{ icon }}</mat-icon>
+      }
+      {{ label }}
+    </span>
   </p>
   }
   @if (subject(); as subject) {

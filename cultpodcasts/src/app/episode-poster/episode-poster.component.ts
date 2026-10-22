@@ -42,6 +42,13 @@ export class EpisodePosterComponent {
   readonly titleAsHtml = input(false);
   /** When set, replaces the podcast episode URL. */
   readonly titleLink = input<readonly string[] | undefined>(undefined);
+  /** Material icon before the parent name for TV, news and film cards (contentKindIcon). */
+  readonly kindIcon = input<string | undefined>(undefined);
+  /**
+   * Byline text when there is no parent to link to (a film has none): shown as plain text with
+   * kindIcon. Ignored when the card has a parent link.
+   */
+  readonly kindLabel = input<string | undefined>(undefined);
   /** undefined keeps the podcast parent. null hides the parent line. */
   readonly showLink = input<readonly string[] | null | undefined>(undefined);
   protected readonly playableLink = computed(() => this.titleLink() ?? playableCommands(this.episode()));

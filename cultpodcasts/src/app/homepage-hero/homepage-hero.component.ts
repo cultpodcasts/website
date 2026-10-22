@@ -27,6 +27,7 @@ import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
+import { contentKindIcon, contentKindLabel } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -135,6 +136,15 @@ export class HomepageHeroComponent {
   private static readonly descMaxGrowVh = 0.6;
 
   protected readonly displayCatalogName = displayCatalogName;
+
+  /** TV / news / film icon in the parent pill (undefined for a podcast episode). */
+  protected kindIcon(slide: HomepageEpisode): string | undefined {
+    return contentKindIcon(slide.contentKind);
+  }
+
+  protected kindLabel(slide: HomepageEpisode): string {
+    return slide.contentKind ? contentKindLabel(slide.contentKind) : '';
+  }
 
   private readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 

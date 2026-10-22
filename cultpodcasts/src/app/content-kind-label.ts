@@ -15,6 +15,23 @@ export function contentKindLabel(kind: string): string {
   }
 }
 
+/**
+ * Material icon for a non-podcast playable, the same icons search suggestions use (TV `live_tv`,
+ * news `newspaper`, film `movie`). Undefined for a podcast episode or an absent/unknown kind.
+ */
+export function contentKindIcon(kind: string | null | undefined): string | undefined {
+  switch (kind) {
+    case CataloguePlayableKind.TvShowEpisode:
+      return "live_tv";
+    case CataloguePlayableKind.NewsReport:
+      return "newspaper";
+    case CataloguePlayableKind.Film:
+      return "movie";
+    default:
+      return undefined;
+  }
+}
+
 /** Catalogue snackbar verb after POST /submit. Unknown outcomes stay “saved”. */
 export function catalogueSubmitOutcomePhrase(episode: string | undefined): string {
   switch (episode) {

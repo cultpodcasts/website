@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CataloguePlayableKind } from "./catalogue-playable-kind.enum";
-import { catalogueSubmitOutcomePhrase, contentKindLabel } from "./content-kind-label";
+import { catalogueSubmitOutcomePhrase, contentKindIcon, contentKindLabel } from "./content-kind-label";
 
 describe("content kind labels", () => {
   it("names the public kinds", () => {
@@ -33,5 +33,20 @@ describe("catalogueSubmitOutcomePhrase", () => {
     expect(`${contentKindLabel("TvShowEpisode")} ${catalogueSubmitOutcomePhrase("Created")}.`).toBe("TV created.");
     expect(`${contentKindLabel("Film")} ${catalogueSubmitOutcomePhrase("Enriched")}.`).toBe("Film enriched.");
     expect(`${contentKindLabel("NewsReport")} ${catalogueSubmitOutcomePhrase("Ignored")}.`).toBe("News ignored.");
+  });
+});
+
+describe("contentKindIcon", () => {
+  it("uses the search-suggestion icons for TV, news and film", () => {
+    expect(contentKindIcon(CataloguePlayableKind.TvShowEpisode)).toBe("live_tv");
+    expect(contentKindIcon(CataloguePlayableKind.NewsReport)).toBe("newspaper");
+    expect(contentKindIcon(CataloguePlayableKind.Film)).toBe("movie");
+  });
+
+  it("has no icon for podcast episodes, an absent kind or an unknown kind", () => {
+    expect(contentKindIcon(CataloguePlayableKind.Episode)).toBeUndefined();
+    expect(contentKindIcon(undefined)).toBeUndefined();
+    expect(contentKindIcon(null)).toBeUndefined();
+    expect(contentKindIcon("Movie")).toBeUndefined();
   });
 });

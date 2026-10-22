@@ -77,8 +77,17 @@
         <p class="hero-show">
           @if (feature.parentLink; as parent) {
           <a class="hero-pill" [routerLink]="parent">
+            @if (kindIcon(feature); as icon) {
+            <mat-icon class="hero-pill__icon" aria-hidden="true">{{ icon }}</mat-icon>
+            }
             {{ displayCatalogName(feature.podcastName) }}
           </a>
+          } @else if (kindIcon(feature); as icon) {
+          <!-- A film has no parent page: a plain "Film" pill with its icon. -->
+          <span class="hero-pill hero-pill--static">
+            <mat-icon class="hero-pill__icon" aria-hidden="true">{{ icon }}</mat-icon>
+            {{ kindLabel(feature) }}
+          </span>
           }
         </p>
         <!-- HERO-TTL-001: the title opens the episode page (where More info used to go). -->

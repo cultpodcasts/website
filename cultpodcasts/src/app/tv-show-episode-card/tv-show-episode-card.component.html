@@ -1,3 +1,5 @@
 <app-episode-poster [episode]="episode()" [playing]="playing()" [queued]="queued()"
   [titleAsHtml]="titleAsHtml()" [showRelease]="showRelease()" [excludeSubject]="excludeSubject()"
-  [titleLink]="playable" [showLink]="parent" (play)="play.emit($event)" />
+  [titleLink]="playable" [showLink]="parent" [kindIcon]="kindIcon"
+  [showPromote]="showPromote()" [promoted]="promoted()"
+  (play)="play.emit($event)" (promoteToggle)="promoteToggle.emit($event)" />
