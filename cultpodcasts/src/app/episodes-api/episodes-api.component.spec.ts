@@ -11,6 +11,7 @@ import { SiteService } from '../site.service';
 import { HeroCurationService } from '../hero-curation.service';
 import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
 import { EpisodesApiComponent } from './episodes-api.component';
+import { GuidService } from '../guid.service';
 
 describe('EpisodesApiComponent (embedded)', () => {
   let http: HttpTestingController;
@@ -192,5 +193,24 @@ describe('EpisodesApiComponent (embedded)', () => {
     expect(snackBar.open).toHaveBeenCalledWith('Film updated', 'Ok', expect.anything());
     await flushTicks();
     expect(episodeReqs().map(r => new URL(r.request.url).pathname)).toEqual([`/episode/${filmId}`]);
+  });
+
+  it('links each reviewed episode to its page by the short id, never the raw guid', async () => {
+    const guid = '00112233-4455-4677-8899-aabbccddeeff';
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', [guid]);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    http.expectOne(r => r.url.endsWith(`/episode/${guid}`)).flush({
+      id: guid, title: 'Synthetic Part', podcastName: 'Synthetic Pod', description: '', posted: false, tweeted: false,
+      ignored: false, removed: false, explicit: false, release: '2026-01-02T00:00:00Z', duration: '00:10:00', subjects: [],
+    });
+    await flushTicks();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const hrefs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a[href]')).map(a => a.getAttribute('href') ?? '');
+    expect(hrefs).toContain(`/podcast/Synthetic%20Pod/${new GuidService().toBase64(guid)}`);
+    expect(hrefs.filter(h => h.includes(guid))).toEqual([]);
   });
 });

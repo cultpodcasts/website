@@ -109,7 +109,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   private readonly platformId = inject(PLATFORM_ID);
   private readonly heroCuration = inject(HeroCurationService);
-  /** Row title link by kind (/podcast, /news, /tv, /film); needs `contentKind` from GET /episode/{id}. */
+  /** Row title link by kind (/podcast, /news, /tv, /film); needs `contentKind` from GET /episode/{id}. Podcast episodes use the short id, so the click does not take the GUID 301. */
   protected readonly playableLink = (episode: ApiEpisode): string[] | UrlTree => {
     const link = reviewPlayableLink(episode);
     // The API `path` is already percent-encoded (e.g. /film/One%20Off/…). A plain string routerLink is split into

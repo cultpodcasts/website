@@ -10,6 +10,7 @@ import { PodcastPostResponse } from './podcast-post-response.interface';
 import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
+import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
 import {
   FilmApiDto,
   FilmChangeRequest,
@@ -62,6 +63,18 @@ export class CurationSubmitService {
     const url = new URL(`/podcast/${encodeURIComponent(podcastId)}/kind`, environment.api).toString();
     const body: PodcastKindTransferRequest = { targetKind: targetKind };
     return this.http.post<PodcastKindTransferResponse>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Moves one podcast episode into a new Film with the same id. */
+  postEpisodeToFilm(podcastId: string, episodeId: string, title: string | null) {
+    const url = new URL(
+      `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/film`,
+      environment.api).toString();
+    const body: EpisodeFilmMoveRequest = title ? { title: title } : {};
+    return this.http.post<EpisodeFilmMoveResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

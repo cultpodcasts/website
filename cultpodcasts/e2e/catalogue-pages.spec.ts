@@ -305,3 +305,103 @@ test.describe("news report page carousels link with short ids", () => {
 		await expect(page).toHaveURL(new RegExp(`/news/Desk/${shortId}$`));
 	});
 });
+
+test.describe("podcast episode links use the short id", () => {
+	const ids = ["11111111-2222-4333-8444-555555555555", "66666666-7777-4888-8999-aaaaaaaaaaaa"];
+	const episodeDoc = (docId: string, title: string) => ({
+		...documentFor("Episode", title, "Synthetic Pod"),
+		id: docId,
+		subjects: ["Synthetic Subject"]
+	});
+	const isGuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+	async function fakeEpisodes(page: Page) {
+		await page.route("**/search", async (route) => {
+			if (route.request().method() !== "POST") {
+				await route.fallback();
+				return;
+			}
+			const filter = String(route.request().postDataJSON()?.filter ?? "");
+			const all = [episodeDoc(ids[0], "Synthetic First"), episodeDoc(ids[1], "Synthetic Second")];
+			const byId = all.filter(doc => filter.includes(`id eq '${doc.id}'`));
+			const value = byId.length ? byId : filter.includes("id eq") ? [] : all;
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ "@odata.count": value.length, value })
+			});
+		});
+	}
+
+	async function episodeHrefs(page: Page): Promise<string[]> {
+		const hrefs = await page.locator("a[href]").evaluateAll(as => as.map(a => a.getAttribute("href") ?? ""));
+		return hrefs.filter(h => h.startsWith("/podcast/"));
+	}
+
+	for (const path of ["/podcast/Synthetic%20Pod", "/search/Synthetic", "/subject/Synthetic%20Subject"]) {
+		test(`${path} links each podcast episode by its 22-char short id and never a raw guid`, async ({ page }) => {
+			await fakeEpisodes(page);
+			await page.goto(path);
+			await expect(page.getByText("Synthetic First").first()).toBeVisible();
+			const hrefs = await episodeHrefs(page);
+			for (const docId of ids) {
+				expect(hrefs).toContain(`/podcast/Synthetic%20Pod/${guids.toBase64(docId)}`);
+			}
+			expect(hrefs.filter(h => isGuid.test(h))).toEqual([]);
+		});
+	}
+
+	test("an old full-guid podcast episode URL 301s once to the short id and opens the episode", async ({ page }) => {
+		await fakeEpisodes(page);
+		const shortUrl = `/podcast/Synthetic%20Pod/${guids.toBase64(ids[0])}`;
+		const guidUrl = `/podcast/Synthetic%20Pod/${ids[0]}`;
+
+		const response = await page.goto(guidUrl);
+		await expect(page).toHaveURL(new RegExp(`${shortUrl}$`));
+		await expect(page.getByText("Synthetic First").first()).toBeVisible();
+		await expect(page.getByText("Episode not found")).toHaveCount(0);
+
+		// Exactly one hop: the GUID request answered 301 with the short id, and nothing before it.
+		const hop = response!.request().redirectedFrom();
+		expect(hop, "GUID URL should be redirected").not.toBeNull();
+		expect(new URL(hop!.url()).pathname).toBe(guidUrl);
+		expect((await hop!.response())!.status()).toBe(301);
+		expect(hop!.redirectedFrom()).toBeNull();
+		expect(new URL(response!.url()).pathname).toBe(shortUrl);
+		expect(response!.status()).toBe(200);
+
+		// The short-id page does not redirect again (no loop) once the browser app takes over.
+		await page.waitForTimeout(500);
+		expect(new URL(page.url()).pathname).toBe(shortUrl);
+	});
+
+	test("an in-app link to an old full-guid podcast episode URL replaces itself with the short id", async ({ page }) => {
+		await fakeEpisodes(page);
+		const shortUrl = `/podcast/Synthetic%20Pod/${guids.toBase64(ids[0])}`;
+		await page.goto("/search/Synthetic");
+		await expect(page.getByText("Synthetic First").first()).toBeVisible();
+		const before = await page.evaluate(() => history.length);
+
+		// Client-side navigation to the old GUID path (history entry + popstate, as the router sees a back/forward or pasted in-app URL).
+		await page.evaluate((target) => {
+			const a = document.createElement("a");
+			a.href = target;
+			a.textContent = "old link";
+			a.addEventListener("click", (e) => {
+				e.preventDefault();
+				history.pushState(null, "", target);
+				window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+			});
+			document.body.appendChild(a);
+			a.click();
+		}, `/podcast/Synthetic%20Pod/${ids[0]}`);
+
+		await expect(page).toHaveURL(new RegExp(`${shortUrl}$`));
+		await expect(page.getByText("Synthetic First").first()).toBeVisible();
+		await expect(page.getByText("Episode not found")).toHaveCount(0);
+		// The GUID entry was replaced by the short id rather than adding a second entry.
+		expect(await page.evaluate(() => history.length)).toBe(before + 1);
+		await page.goBack();
+		await expect(page).toHaveURL(/\/search\/Synthetic$/);
+	});
+});

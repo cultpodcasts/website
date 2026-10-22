@@ -54,8 +54,10 @@ describe('catalogue card hrefs', () => {
     expect(links.some(h => h.includes(id))).toBe(false);
   });
 
-  it('keeps podcast episode cards on the guid path', async () => {
+  it('links a podcast episode card with its unprefixed short id, never the raw guid', async () => {
     const links = await hrefs(item('Episode', 'Show', 'Ep'));
-    expect(links).toContain(`/podcast/Show/${id}`);
+    expect(links).toContain(`/podcast/Show/${guids.toBase64(id)}`);
+    expect(links).toContain('/podcast/Show');
+    expect(links.some(h => h.includes(id))).toBe(false);
   });
 });

@@ -8,13 +8,43 @@ type CatalogueItem = HomepageEpisode | SearchResult;
 const shortIds = new GuidService();
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** True when `id` is a canonical 8-4-4-4-12 GUID (any case). */
+export function isGuid(id: string | null | undefined): id is string {
+  return !!id && GUID.test(id);
+}
+
 /**
  * Film, TV, and news page ids use the kind-prefixed short id (the same one shares and the
  * moved-kind 301 use), so links land on the page's own URL with no redirect hop.
  * Anything that is not a GUID passes through unchanged.
  */
 export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEpisode" | "NewsReport"): string {
-  return id && GUID.test(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
+  return isGuid(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
+}
+
+/**
+ * Podcast episode page id: the unprefixed 22-char short id (the s.cultpodcasts.com key, and what
+ * the podcast page's GUID URL 301s to). Anything that is not a GUID passes through unchanged.
+ */
+export function podcastEpisodeShortPageId(id: string): string {
+  return id && GUID.test(id) ? shortIds.toBase64(id) : id;
+}
+
+export function podcastEpisodePageCommands(podcastName: string, id: string): string[] {
+  return ["/podcast", podcastName, podcastEpisodeShortPageId(id)];
+}
+
+/**
+ * Old `/podcast/{name}/{guid}` links: the short-id URL for the same page, or null when the query
+ * is not a full GUID (already a short id, or a podcast search term) or the path is already there.
+ * Moved Film, TV, and News ids are handled first by movedKindRedirect.
+ */
+export function podcastEpisodeShortIdRedirect(currentPath: string, podcastName: string, query: string): string | null {
+  if (!podcastName || !query || !GUID.test(query)) {
+    return null;
+  }
+  const target = `/podcast/${encodeURIComponent(podcastName)}/${shortIds.toBase64(query)}`;
+  return samePath(currentPath, target) ? null : target;
 }
 
 export function filmPageCommands(title: string, id: string): string[] {
@@ -39,7 +69,7 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
     case "NewsReport":
       return newsReportPageCommands(item.podcastName, item.id);
     default:
-      return ["/podcast", item.podcastName, item.id];
+      return podcastEpisodePageCommands(item.podcastName, item.id);
   }
 }
 
@@ -104,7 +134,8 @@ export function reviewPlayableLink(
     case "NewsReport":
       return newsReportPageCommands(parent, episode.id);
     default:
-      return ["/podcast", episode.podcastName ?? "", episode.id];
+      // Short id, so the click does not take the GUID 301.
+      return podcastEpisodePageCommands(episode.podcastName ?? "", episode.id);
   }
 }
 
