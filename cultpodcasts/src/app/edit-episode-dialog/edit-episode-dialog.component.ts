@@ -57,6 +57,11 @@ import {
 } from '../episode-form.util';
 import { normalizeHashTagControl } from '../podcast-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { filmPageCommands } from '../catalogue-links';
+import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
+import { MoveEpisodeToFilmDialogClose, MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -115,6 +120,7 @@ export class EditEpisodeDialogComponent {
   originalEpisode: ApiEpisode | undefined;
   podcastDefaultSubject: string | null = null;
   podcastId: string = "";
+  protected readonly canMoveToFilm = environment.catalogueParentCuration.edit;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -124,6 +130,8 @@ export class EditEpisodeDialogComponent {
     private dialog: MatDialog,
     protected featureSwitchService: FeatureSwitchService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
+    private snackBar: MatSnackBar,
   ) {
     this.episodeId = data.episodeId;
     this.podcastIdentifier = data.podcastIdentifier;
@@ -188,6 +196,31 @@ export class EditEpisodeDialogComponent {
       this.isLoading.set(false);
       this.isInError.set(true);
     }
+  }
+
+  /** Curator: move this one episode into a new Film, then open the film page by its short id. */
+  moveToFilm() {
+    if (!this.podcastId || !this.originalEpisode) {
+      return;
+    }
+    const data: MoveEpisodeToFilmDialogData = {
+      podcastId: this.podcastId,
+      episodeId: this.episodeId,
+      episodeTitle: this.originalEpisode.title,
+      release: this.originalEpisode.release,
+      hasUnsavedChanges: this.form()?.dirty ?? false
+    };
+    this.dialog.open<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogData, MoveEpisodeToFilmDialogClose>(
+      MoveEpisodeToFilmDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
+      .afterClosed()
+      .subscribe(result => {
+        if (!result?.moved || !result.filmId || !result.name) {
+          return;
+        }
+        this.dialogRef.close({ movedToFilm: true, podcastId: this.podcastId });
+        this.snackBar.open("Moved to film", "Ok", { duration: 10000 });
+        this.router.navigate(filmPageCommands(result.name, result.filmId));
+      });
   }
 
   close() {

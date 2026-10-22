@@ -53,6 +53,23 @@ describe('CurationSubmitService', () => {
     expect(resp.body?.parentId).toBe('parent-1');
   });
 
+  it('POSTs /episode/{podcastId}/{episodeId}/film with the title, or {} without one', async () => {
+    const pending = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', 'Synthetic Film'));
+    const expected = new URL('/episode/podcast-1/episode-1/film', environment.api).toString();
+    const req = httpMock.expectOne(expected);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ title: 'Synthetic Film' });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ filmId: 'episode-1', name: 'Synthetic Film' }, { status: 202, statusText: 'Accepted' });
+    expect((await pending).body?.name).toBe('Synthetic Film');
+
+    const untitled = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', null));
+    const untitledReq = httpMock.expectOne(expected);
+    expect(untitledReq.request.body).toEqual({});
+    untitledReq.flush({ filmId: 'episode-1' }, { status: 202, statusText: 'Accepted' });
+    await untitled;
+  });
+
   it('GETs /subject/{name} and /person/{name} as one encoded path segment', async () => {
     const name = 'Alpha Beta/Gamma';
     const subjectPending = firstValueFrom(service.getSubject(name));
