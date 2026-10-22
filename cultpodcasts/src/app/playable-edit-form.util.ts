@@ -11,12 +11,14 @@ import {
 } from './playable-edit.interface';
 import { buildTvShowEpisodeCanonicalChangeRequest } from './tv-show-episode-canonical.util';
 import { resolveServiceKey } from './service-catalog';
+import { externalIdValidator, parseImdbId, parseTmdbId } from './external-id.util';
 
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
  * `EpisodeForm` where the field exists there, so the shared tabs read like the episode editor.
- * `imdb` / `tvdb` are only present on the TV form (Identity tab); the film form has `imdb` (no TheTVDB) and
- * `publisher`, and its `title` (the film name) is disabled: the film PATCH cannot rename.
+ * `imdb` / `tvdb` (page URLs) are only present on the TV form (Identity tab); the film form has the `imdbId` /
+ * `tmdbId` ids instead (no URL field: the id is the source of truth and links are built from it) and `publisher`,
+ * and its `title` (the film name) is disabled: the film PATCH cannot rename.
  */
 export interface PlayableEditForm {
   title: FormControl<string>;
@@ -39,9 +41,9 @@ export interface PlayableEditForm {
   imdb?: FormControl<string>;
   tvdb?: FormControl<string>;
   publisher?: FormControl<string>;
-  /** Film: IMDb title id (`tt…`); blank clears. */
+  /** Film: IMDb title id (`tt…`; a pasted IMDb URL is accepted and condensed); blank clears. */
   imdbId?: FormControl<string>;
-  /** Film: TMDB id as digits; blank clears. */
+  /** Film: TMDB movie id as digits (a pasted TMDB movie URL is accepted and condensed); blank clears. */
   tmdbId?: FormControl<string>;
   /** Film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL. */
   links?: FormArray<FormControl<string>>;
@@ -51,8 +53,7 @@ export interface PlayableEditForm {
 
 export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
 
-/** IMDb title id: `tt` + 7–10 digits (the film PATCH rejects anything else). */
-export const imdbIdPattern = /^tt\d{7,10}$/;
+export { imdbIdPattern } from './external-id.util';
 
 /**
  * A film link must be an absolute http(s) URL whose service key resolves (a known service, else a key derived from the
@@ -134,6 +135,17 @@ function uriText(value: string | URL | null | undefined): string {
   return value == null ? '' : value.toString();
 }
 
+/**
+ * The film's IMDb id for the form: the stored `imdbId`, else the id in a legacy `imdb` page URL (films saved before
+ * the id field existed), so the one IMDb field shows what the film is linked to. Saving then stores that id.
+ */
+export function filmImdbIdText(film: Pick<FilmDto, 'imdb' | 'imdbId'>): string {
+  if (film.imdbId) {
+    return film.imdbId;
+  }
+  return parseImdbId(uriText(film.imdb)) || '';
+}
+
 export type PlayableEditFormValue = ReturnType<FormGroup<PlayableEditForm>['getRawValue']>;
 
 /**
@@ -174,15 +186,14 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.title.clearValidators();
     controls.title.disable();
     controls.release.addValidators(Validators.pattern(filmReleasePattern));
-    controls.imdb = new FormControl(uriText(film.imdb), { nonNullable: true });
     controls.publisher = new FormControl(film.publisher ?? '', { nonNullable: true });
-    controls.imdbId = new FormControl(film.imdbId ?? '', {
+    controls.imdbId = new FormControl(filmImdbIdText(film), {
       nonNullable: true,
-      validators: [Validators.pattern(imdbIdPattern)]
+      validators: [externalIdValidator('imdb')]
     });
     controls.tmdbId = new FormControl(film.tmdbId ? String(film.tmdbId) : '', {
       nonNullable: true,
-      validators: [Validators.pattern(/^\d*$/)]
+      validators: [externalIdValidator('tmdb-movie')]
     });
     const existingLinks = filmExistingLinks(film.services);
     const existingUrls = new Set(existingLinks.keys());
@@ -259,7 +270,8 @@ export function tvShowEpisodeChanges(
 
 /**
  * Film PATCH body: the changed playable fields without `title` (the film PATCH has none; renames are admin-only),
- * plus `publisher` (`''` clears) and the IMDb identity (omit / `''` clear / URL set).
+ * plus `publisher` (`''` clears), `imdbId` (`''` clears) and `tmdbId` (`0` clears). A pasted page URL still in the box
+ * is condensed to its id here too. The legacy `imdb` page URL is never sent: links are built from the id.
  */
 export function filmChanges(
   previous: FilmDto,
@@ -270,17 +282,14 @@ export function filmChanges(
   const film: FilmChangeRequest = changes;
   const publisher = (next.publisher ?? '').trim();
   if (next.publisher !== undefined && publisher !== (previous.publisher ?? '').trim()) film.publisher = publisher;
-  if (next.imdb !== undefined) {
-    const identity = buildTvShowEpisodeCanonicalChangeRequest({ imdb: uriText(previous.imdb) }, { imdb: next.imdb });
-    if (identity.imdb != null) film.imdb = identity.imdb;
-  }
   if (next.imdbId !== undefined) {
-    const imdbId = next.imdbId.trim();
-    if (imdbId !== (previous.imdbId ?? '')) film.imdbId = imdbId;
+    const imdbId = parseImdbId(next.imdbId);
+    if (imdbId !== null && imdbId !== (previous.imdbId ?? '')) film.imdbId = imdbId;
   }
   if (next.tmdbId !== undefined) {
-    const tmdbId = next.tmdbId.trim() === '' ? 0 : Number(next.tmdbId.trim());
-    if (tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
+    const tmdbText = parseTmdbId(next.tmdbId, 'movie');
+    const tmdbId = tmdbText ? Number(tmdbText) : 0;
+    if (tmdbText !== null && tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
   }
   if (next.links !== undefined) {
     const services = filmServiceChanges(previous.services, next.links);

@@ -113,16 +113,26 @@ describe('EditFilmDialogComponent', () => {
     const form = dialog.form()!;
     expect(form.controls.title.disabled).toBe(true);
     expect(form.controls.publisher?.value).toBe('Example Pictures');
-    // json-url.interceptor would hand a URL object; the form always holds text.
-    expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
+    // Identity holds the ids only: no IMDb URL field.
+    expect(form.controls.imdb).toBeUndefined();
+    expect(form.controls.imdbId?.value).toBe('tt0000002');
     expect(form.controls.tvdb).toBeUndefined();
     expect(form.controls.release.value).toBe('1999');
     expect(form.valid).toBe(true);
   });
 
-  it('turns a URL-object IMDb value into text before the form uses it', async () => {
-    const dialog = await load({ ...synthetic, imdb: new URL('https://www.imdb.com/title/tt0000003/') });
-    expect(dialog.form()!.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000003/');
+  it('seeds the IMDb id from a legacy URL-object IMDb value when the film has no id', async () => {
+    const dialog = await load({ ...synthetic, imdbId: null, imdb: new URL('https://www.imdb.com/title/tt0000003/') });
+    expect(dialog.form()!.controls.imdbId?.value).toBe('tt0000003');
+  });
+
+  it('holds the IMDb / TMDB ids and no IMDb URL control (the rendered tab is covered by the catalogue e2e)', async () => {
+    const dialog = await load({ ...synthetic, tmdbId: 1234 });
+    const form = dialog.form()!;
+    expect(form.controls.imdb).toBeUndefined();
+    expect(form.controls.imdbId?.value).toBe('tt0000002');
+    expect(form.controls.tmdbId?.value).toBe('1234');
+    expect(form.valid).toBe(true);
   });
 
   it('PATCHes film/{id} with only the changed fields, never a title, and closes with the film name', async () => {
@@ -134,8 +144,7 @@ describe('EditFilmDialogComponent', () => {
       release: '1999-05-01',
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
-      tweeted: false,
-      imdb: ''
+      tweeted: false
     });
     dialog.pendingUnBluesky.set(true);
     const saving = dialog.onSubmit();
@@ -146,8 +155,7 @@ describe('EditFilmDialogComponent', () => {
       unBluesky: true,
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
-      publisher: 'Other Pictures',
-      imdb: ''
+      publisher: 'Other Pictures'
     });
     expect('title' in patch.request.body).toBe(false);
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });

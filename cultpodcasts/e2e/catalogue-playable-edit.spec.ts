@@ -318,10 +318,37 @@ test.describe("film curator edit", () => {
 		await expect(page.getByRole("listbox")).toHaveCount(0);
 		await shot(page, "film-edit-guests");
 		await dialog.getByRole("tab", { name: "Identity" }).click();
-		const imdb = dialog.getByRole("textbox", { name: "IMDb", exact: true });
-		await expect(imdb).toHaveValue("https://www.imdb.com/title/tt0000002/");
+		// The id is the source of truth: no IMDb URL field, and each populated id links to its page.
+		await expect(dialog.getByRole("textbox", { name: "IMDb", exact: true })).toHaveCount(0);
 		await expect(dialog.getByRole("textbox", { name: "TheTVDB" })).toHaveCount(0);
-		await imdb.fill("https://www.imdb.com/title/tt0000009/");
+		const imdbId = dialog.getByRole("textbox", { name: "IMDb id" });
+		await expect(imdbId).toHaveValue("tt0000002");
+		const imdbLink = dialog.getByRole("link", { name: "Open on IMDb" });
+		await expect(imdbLink).toHaveAttribute("href", "https://www.imdb.com/title/tt0000002/");
+		await expect(imdbLink).toHaveAttribute("target", "_blank");
+		await expect(imdbLink).toHaveAttribute("rel", /noopener/);
+		const tmdbId = dialog.getByRole("textbox", { name: "TMDB id" });
+		await expect(tmdbId).toHaveValue("");
+		await expect(dialog.getByRole("link", { name: "Open on TMDB" })).toHaveCount(0);
+		// A pasted IMDb URL condenses to the id at once.
+		await imdbId.fill("");
+		await imdbId.evaluate((input) => {
+			const data = new DataTransfer();
+			data.setData("text", "https://m.imdb.com/title/tt0000009/?ref_=synthetic");
+			input.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, cancelable: true, bubbles: true }));
+		});
+		await expect(imdbId).toHaveValue("tt0000009");
+		await expect(imdbLink).toHaveAttribute("href", "https://www.imdb.com/title/tt0000009/");
+		// The wrong kind of TMDB URL is an error, not a save.
+		await tmdbId.fill("https://www.themoviedb.org/tv/1234-a-synthetic-show");
+		await tmdbId.blur();
+		await expect(dialog.getByText("Enter a TMDB movie id or a themoviedb.org/movie URL")).toBeVisible();
+		await expect(dialog.getByRole("button", { name: "Submit" })).toBeDisabled();
+		// A typed TMDB movie URL condenses on blur.
+		await tmdbId.fill("https://www.themoviedb.org/movie/1234-a-synthetic-film?language=en-GB");
+		await tmdbId.blur();
+		await expect(tmdbId).toHaveValue("1234");
+		await expect(dialog.getByRole("link", { name: "Open on TMDB" })).toHaveAttribute("href", "https://www.themoviedb.org/movie/1234");
 		await shot(page, "film-edit-identity");
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({
@@ -331,7 +358,8 @@ test.describe("film curator edit", () => {
 			subjects: ["Arts", "Film"],
 			guests: ["Ann Example", "Bob Sample"],
 			publisher: "Other Pictures",
-			imdb: "https://www.imdb.com/title/tt0000009/"
+			imdbId: "tt0000009",
+			tmdbId: 1234
 		});
 		await expect(page.getByText("Film updated")).toBeVisible();
 		expect(podcastEpisodeGet).toBe(false);

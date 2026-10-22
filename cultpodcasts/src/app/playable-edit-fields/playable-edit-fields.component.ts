@@ -15,6 +15,7 @@ import { firstValueFrom } from 'rxjs';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import { CurationSubmitService } from '../curation-submit.service';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
+import { ExternalIdFieldComponent } from '../external-id-field/external-id-field.component';
 import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
 import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
 import {
@@ -38,7 +39,7 @@ import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
  * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) for the `tv` and `film` variants.
  * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
- * adds the IMDb / TMDB ids to Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
+ * has the IMDb / TMDB ids (no IMDb URL field; a pasted URL condenses to the id) in Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
  * Urls / Images tabs: their PATCH does not edit service links.
  */
 @Component({
@@ -56,6 +57,7 @@ import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject
     MatInputModule,
     MatSelectModule,
     MatTabsModule,
+    ExternalIdFieldComponent,
     FilmLinksEditComponent,
     FilmTrailersEditComponent
   ],
@@ -78,7 +80,7 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly pendingUnBluesky = model(false);
   /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
   readonly variant = input<PlayableEditVariant>('news');
-  /** TV / film: the Identity tab (IMDb; TheTVDB shows when the form has `tvdb`). */
+  /** TV / film: the Identity tab (TV: IMDb + TheTVDB URLs; film: IMDb + TMDB ids). */
   protected readonly identity = computed(() => playableEditHasIdentity(this.variant()));
   /** Film: read-only Name (renames are admin-only), Publisher, no parent row, year-or-date release. */
   protected readonly film = computed(() => this.variant() === 'film');

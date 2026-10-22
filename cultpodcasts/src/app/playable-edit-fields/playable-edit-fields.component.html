@@ -165,8 +165,9 @@
         </div>
         }
     </mat-tab>
-    @if (identity() && f.controls.imdb) {
+    @if (identity()) {
     <mat-tab label="Identity">
+        @if (f.controls.imdb) {
         <mat-form-field class="full-width">
             <mat-label>IMDb</mat-label>
             <input type="text" [formControl]="f.controls.imdb" matInput>
@@ -180,23 +181,12 @@
                 <mat-icon>clear</mat-icon>
             </button>
         </mat-form-field>
+        }
         @if (f.controls.imdbId) {
-        <mat-form-field class="full-width">
-            <mat-label>IMDb id</mat-label>
-            <input type="text" [formControl]="f.controls.imdbId" matInput placeholder="tt1234567">
-            @if (f.controls.imdbId.hasError('pattern')) {
-            <mat-error>tt followed by 7 to 10 digits</mat-error>
-            }
-        </mat-form-field>
+        <app-external-id-field [control]="f.controls.imdbId" kind="imdb"></app-external-id-field>
         }
         @if (f.controls.tmdbId) {
-        <mat-form-field class="full-width">
-            <mat-label>TMDB id</mat-label>
-            <input type="text" inputmode="numeric" [formControl]="f.controls.tmdbId" matInput>
-            @if (f.controls.tmdbId.hasError('pattern')) {
-            <mat-error>Digits only</mat-error>
-            }
-        </mat-form-field>
+        <app-external-id-field [control]="f.controls.tmdbId" kind="tmdb-movie"></app-external-id-field>
         }
         @if (f.controls.tvdb) {
         <mat-form-field class="full-width">

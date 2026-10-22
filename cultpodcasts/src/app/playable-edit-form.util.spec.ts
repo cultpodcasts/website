@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, filmImdbIdText, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -126,6 +126,7 @@ describe('playable edit form', () => {
         name: 'One Off',
         publisher: 'Example Pictures',
         imdb: new URL('https://www.imdb.com/title/tt0000002/'),
+        imdbId: 'tt0000002',
         release: '1999',
         ...overrides
       };
@@ -140,11 +141,12 @@ describe('playable edit form', () => {
       expect(buildPlayableEditForm(film(), 'film').controls.tvdb).toBeUndefined();
     });
 
-    it('builds a film form: disabled title, publisher, IMDb text (no TheTVDB), year-or-date release', () => {
-      const form = buildPlayableEditForm(film(), 'film');
+    it('builds a film form: disabled title, publisher, IMDb id only (no IMDb URL, no TheTVDB), year-or-date release', () => {
+      const form = buildPlayableEditForm(film({ imdbId: 'tt0000002' }), 'film');
       expect(form.controls.title.disabled).toBe(true);
       expect(form.controls.publisher?.value).toBe('Example Pictures');
-      expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
+      expect(form.controls.imdb).toBeUndefined();
+      expect(form.controls.imdbId?.value).toBe('tt0000002');
       expect(form.controls.tvdb).toBeUndefined();
       expect(form.valid).toBe(true);
       form.controls.release.setValue('1999-05-01');
@@ -153,26 +155,38 @@ describe('playable edit form', () => {
       expect(form.controls.release.hasError('pattern')).toBe(true);
     });
 
-    it('never sends title; sends publisher (trimmed, empty clears) and the IMDb patch', () => {
-      const previous = film();
+    it('never sends title or the legacy IMDb URL; sends publisher (trimmed, empty clears)', () => {
+      const previous = film({ imdbId: 'tt0000002' });
       const form = buildPlayableEditForm(previous, 'film');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
       form.controls.title.setValue('Something else');
       form.controls.publisher!.setValue('  ');
-      form.controls.imdb!.setValue('https://www.imdb.com/title/tt0000009/');
-      expect(filmChanges(previous, form.getRawValue())).toEqual({
-        publisher: '',
-        imdb: 'https://www.imdb.com/title/tt0000009/'
-      });
+      form.controls.imdbId!.setValue('tt0000009');
+      const changes = filmChanges(previous, form.getRawValue());
+      expect(changes).toEqual({ publisher: '', imdbId: 'tt0000009' });
+      expect('imdb' in changes).toBe(false);
     });
 
-    it('leaves IMDb alone when it only differs by whitespace, and clears it with an empty string', () => {
-      const previous = film();
+    it('seeds the IMDb id from a legacy IMDb URL when the film has no id, and saving stores it', () => {
+      const previous = film({ imdbId: null });
       const form = buildPlayableEditForm(previous, 'film');
-      form.controls.imdb!.setValue(' https://www.imdb.com/title/tt0000002/ ');
+      expect(form.controls.imdbId!.value).toBe('tt0000002');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: 'tt0000002' });
+      expect(filmImdbIdText({ imdb: 'https://www.imdb.com/name/nm0000001/', imdbId: null })).toBe('');
+      expect(filmImdbIdText({ imdb: null, imdbId: null })).toBe('');
+      expect(filmImdbIdText({ imdb: new URL('https://www.imdb.com/title/tt0000003/'), imdbId: 'tt0000004' })).toBe('tt0000004');
+    });
+
+    it('condenses pasted IMDb / TMDB page URLs left in the boxes to their ids', () => {
+      const previous = film({ imdbId: 'tt0000002', tmdbId: 7 });
+      const form = buildPlayableEditForm(previous, 'film');
+      form.controls.imdbId!.setValue('https://m.imdb.com/title/tt0000009/?ref_=synthetic');
+      form.controls.tmdbId!.setValue('https://www.themoviedb.org/movie/42-synthetic-film?language=en-GB');
+      expect(form.valid).toBe(true);
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: 'tt0000009', tmdbId: 42 });
+      form.controls.imdbId!.setValue('https://www.imdb.com/title/tt0000002/');
+      form.controls.tmdbId!.setValue(' 7 ');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
-      form.controls.imdb!.setValue('');
-      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdb: '' });
     });
 
     it('sends the IMDb id (blank clears) and the TMDB id (blank sends 0 to clear), and validates both', () => {
@@ -188,8 +202,13 @@ describe('playable edit form', () => {
       expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: '', tmdbId: 0 });
       form.controls.imdbId!.setValue('nm0000001');
       form.controls.tmdbId!.setValue('-3');
-      expect(form.controls.imdbId!.hasError('pattern')).toBe(true);
-      expect(form.controls.tmdbId!.hasError('pattern')).toBe(true);
+      expect(form.controls.imdbId!.hasError('externalId')).toBe(true);
+      expect(form.controls.tmdbId!.hasError('externalId')).toBe(true);
+      expect(form.valid).toBe(false);
+      // Invalid text is never sent (the dialog will not submit an invalid form either).
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.tmdbId!.setValue('https://www.themoviedb.org/tv/42-synthetic-show');
+      expect(form.controls.tmdbId!.hasError('externalId')).toBe(true);
     });
 
     it('patches links per service: a new URL files under its service, a removed one clears its key, an unchanged one is not sent', () => {

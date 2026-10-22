@@ -54,7 +54,10 @@ export interface FilmDto extends PlayableFieldsDto {
   /** Network / label / brand attribution. */
   publisher?: string | null;
   defaultSubject?: string | null;
-  /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
+  /**
+   * Legacy IMDb page URL (absolute URLs arrive as `URL` objects, json-url.interceptor). Read only to seed the id for
+   * films saved before `imdbId` existed; the website never edits or sends it.
+   */
   imdb?: string | URL | null;
   imdbId?: string | null;
   tmdbId?: number | null;
@@ -96,12 +99,11 @@ export interface TvShowEpisodeChangeRequest extends PlayableFieldsChangeRequest 
 
 /**
  * PATCH `film/{id}` (RPP `FilmChangeRequest`): the playable fields a film has, `publisher` (`''` clears) and the
- * IMDb identity URI (omit = leave, `''` = clear, absolute URL = set). Never `title`: the film PATCH has no title
- * (renames go through the admin rename screen).
+ * IMDb / TMDB ids. Never `title`: the film PATCH has no title (renames go through the admin rename screen). The
+ * website never sends the legacy `imdb` page URL: the id is the source of truth and the page link is built from it.
  */
 export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'title'> {
   publisher?: string;
-  imdb?: string;
   /** IMDb title id `tt` + 7–10 digits; `''` clears. */
   imdbId?: string;
   /** TMDB movie id; `0` clears. */
