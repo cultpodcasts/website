@@ -33,7 +33,7 @@ import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetec
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
-import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { isFilmKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -111,7 +111,7 @@ export class PodcastEpisodeComponent {
   podcastName = signal("");
   protected readonly showName = computed(() => this._episode()?.podcastName || this.podcastName());
   /** A film has no parent: no hero pill, no "More from" rail, no /podcast/{slug} fallback (the slug is the film name). */
-  protected readonly isFilm = computed(() => this._episode()?.contentKind === "Film");
+  protected readonly isFilm = computed(() => isFilmKind(this._episode()?.contentKind));
   protected readonly parentLink = computed(() => {
     const ep = this._episode();
     if (this.isFilm()) {
@@ -326,7 +326,7 @@ export class PodcastEpisodeComponent {
     this.subjectRails.set([]);
 
     const escape = (value: string) => value.replaceAll("'", "''");
-    if (episode.contentKind !== "Film") {
+    if (!isFilmKind(episode.contentKind)) {
       this.loadMoreFromShow(episode, podcastName, "seriesName");
     }
 

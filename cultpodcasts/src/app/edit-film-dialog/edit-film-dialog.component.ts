@@ -29,8 +29,7 @@ export interface EditFilmDialogData {
 export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, FilmChangeRequest> {
   readonly data = inject<EditFilmDialogData>(MAT_DIALOG_DATA);
   protected readonly hub = null;
-  protected readonly identity = true;
-  protected override readonly film = true;
+  protected readonly variant = 'film' as const;
 
   protected playableId(): string {
     return this.data.filmId;

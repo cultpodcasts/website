@@ -298,9 +298,12 @@ test.describe("film curator edit", () => {
 		await dialog.getByRole("tab", { name: "Meta" }).click();
 		const release = dialog.getByRole("textbox", { name: "Release" });
 		await expect(release).toHaveValue("1999");
+		// The accepted formats show as a hint (a placeholder would only appear on focus); the error replaces it.
+		await expect(dialog.getByText("Year (yyyy) or date (yyyy-mm-dd)")).toBeVisible();
 		await release.fill("May 1999");
 		await release.blur();
 		await expect(dialog.getByText("A year (yyyy) or a date (yyyy-mm-dd)")).toBeVisible();
+		await expect(dialog.getByText("Year (yyyy) or date (yyyy-mm-dd)")).toBeHidden();
 		await expect(dialog.getByRole("button", { name: "Submit" })).toBeDisabled();
 		await release.fill("1999-05-01");
 		await dialog.getByRole("combobox", { name: "Subjects" }).click();

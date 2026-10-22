@@ -9,7 +9,7 @@ import { mergeEpisodeSubjects } from './episode-form.util';
 import { buildEpisodeLanguageOptions } from './language-options.util';
 import { Person } from './person.interface';
 import { Subject } from './subject.interface';
-import { buildPlayableEditForm, PlayableEditForm, PlayableEditFormValue } from './playable-edit-form.util';
+import { buildPlayableEditForm, PlayableEditForm, PlayableEditFormValue, PlayableEditVariant } from './playable-edit-form.util';
 import {
   EditPlayableDialogResponse,
   PlayableChangeResponse,
@@ -58,9 +58,8 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
 
   /** Parent hub for the default-subject lookup; null for films (no parent). */
   protected abstract readonly hub: CatalogueHub | null;
-  protected abstract readonly identity: boolean;
-  /** Film form: read-only title (name), publisher, IMDb only, year-or-date release. */
-  protected readonly film: boolean = false;
+  /** News, TV (IMDb + TheTVDB) or film (IMDb, publisher, read-only name, year-or-date release). */
+  protected abstract readonly variant: PlayableEditVariant;
   protected abstract playableId(): string;
   protected abstract load(id: string): Observable<TDto>;
   protected abstract patch(id: string, changes: TChange): Observable<HttpResponse<PlayableChangeResponse | null>>;
@@ -95,7 +94,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
       this.languages.set(buildEpisodeLanguageOptions(resp.languages ?? {}));
       this.blueskyPosted.set(!!resp.dto.blueskyPosted);
       this.pendingUnBluesky.set(false);
-      this.form.set(buildPlayableEditForm(resp.dto, { identity: this.identity, film: this.film }));
+      this.form.set(buildPlayableEditForm(resp.dto, this.variant));
       this.isLoading.set(false);
     } catch (e) {
       console.error(e);

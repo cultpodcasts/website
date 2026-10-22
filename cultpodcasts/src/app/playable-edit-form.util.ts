@@ -50,14 +50,19 @@ function uriText(value: string | URL | null | undefined): string {
 
 export type PlayableEditFormValue = ReturnType<FormGroup<PlayableEditForm>['getRawValue']>;
 
-export interface PlayableEditFormOptions {
-  /** TV: IMDb + TheTVDB controls. */
-  identity?: boolean;
-  /** Film: IMDb (no TheTVDB) + publisher, read-only title, year-or-date release. */
-  film?: boolean;
+/**
+ * Which playable the shared edit form is for: `news` (playable fields only), `tv` (plus IMDb + TheTVDB) or `film`
+ * (plus IMDb and publisher, with a read-only name and a year-or-date release). One value drives the form, the
+ * dialog base and the shared tabs, so there are no flags that can contradict each other.
+ */
+export type PlayableEditVariant = 'news' | 'tv' | 'film';
+
+/** The Identity tab (IMDb, plus TheTVDB for TV) shows for TV and film. */
+export function playableEditHasIdentity(variant: PlayableEditVariant): boolean {
+  return variant !== 'news';
 }
 
-export function buildPlayableEditForm(dto: PlayableFieldsDto, options: PlayableEditFormOptions = {}): FormGroup<PlayableEditForm> {
+export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableEditVariant = 'news'): FormGroup<PlayableEditForm> {
   const controls: PlayableEditForm = {
     title: new FormControl(dto.title ?? '', { nonNullable: true, validators: [Validators.required] }),
     description: new FormControl(dto.description ?? '', { nonNullable: true }),
@@ -77,7 +82,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, options: PlayableE
     lang: new FormControl(episodeLanguageFormValue(dto.language), { nonNullable: true }),
     guests: new FormControl<string[]>([...(dto.guests ?? [])], { nonNullable: true })
   };
-  if (options.film) {
+  if (variant === 'film') {
     const film = dto as FilmDto;
     // Read-only name: no required marker, and never part of validity or the PATCH.
     controls.title.clearValidators();
@@ -85,7 +90,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, options: PlayableE
     controls.release.addValidators(Validators.pattern(filmReleasePattern));
     controls.imdb = new FormControl(uriText(film.imdb), { nonNullable: true });
     controls.publisher = new FormControl(film.publisher ?? '', { nonNullable: true });
-  } else if (options.identity) {
+  } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
     controls.imdb = new FormControl(uriText(tv.imdb), { nonNullable: true });
     controls.tvdb = new FormControl(uriText(tv.tvdb), { nonNullable: true });

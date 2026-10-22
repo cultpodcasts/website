@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, model, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, model, OnInit, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -28,14 +28,14 @@ import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { Person } from '../person.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
-import { PlayableEditForm } from '../playable-edit-form.util';
+import { PlayableEditForm, playableEditHasIdentity, PlayableEditVariant } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
 
 /**
  * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
- * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) when `identity` is set.
- * `film` swaps the parent row and Title for a read-only Name plus Publisher, and takes a year-or-date release. There are no Urls / Images
+ * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) for the `tv` and `film` variants.
+ * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, and takes a year-or-date release. There are no Urls / Images
  * tabs: the playable PATCH does not edit service links.
  */
 @Component({
@@ -71,10 +71,12 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly languages = input<Record<string, string>>({});
   readonly blueskyPosted = input(false);
   readonly pendingUnBluesky = model(false);
-  /** TV / film: show the Identity tab (needs the `imdb` control; TheTVDB shows when `tvdb` exists). */
-  readonly identity = input(false);
+  /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
+  readonly variant = input<PlayableEditVariant>('news');
+  /** TV / film: the Identity tab (IMDb; TheTVDB shows when the form has `tvdb`). */
+  protected readonly identity = computed(() => playableEditHasIdentity(this.variant()));
   /** Film: read-only Name (renames are admin-only), Publisher, no parent row, year-or-date release. */
-  readonly film = input(false);
+  protected readonly film = computed(() => this.variant() === 'film');
 
   private readonly dialog = inject(MatDialog);
   private readonly curation = inject(CurationSubmitService);

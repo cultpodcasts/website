@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -105,7 +105,7 @@ describe('playable edit form', () => {
       imdb: new URL('https://www.imdb.com/title/tt0000001/'),
       tvdb: null
     };
-    const form = buildPlayableEditForm(dto, { identity: true });
+    const form = buildPlayableEditForm(dto, 'tv');
     expect(form.getRawValue().imdb).toBe('https://www.imdb.com/title/tt0000001/');
     expect(tvShowEpisodeChanges(dto, form.getRawValue())).toEqual({});
     form.patchValue({ imdb: '', tvdb: 'https://thetvdb.com/series/example/episodes/1', explicit: true });
@@ -131,8 +131,17 @@ describe('playable edit form', () => {
       };
     }
 
+    it('the Identity tab is for the tv and film variants only, and only TV gets TheTVDB', () => {
+      expect(playableEditHasIdentity('news')).toBe(false);
+      expect(playableEditHasIdentity('tv')).toBe(true);
+      expect(playableEditHasIdentity('film')).toBe(true);
+      expect(buildPlayableEditForm(film(), 'news').controls.imdb).toBeUndefined();
+      expect(buildPlayableEditForm(film(), 'tv').controls.tvdb).toBeDefined();
+      expect(buildPlayableEditForm(film(), 'film').controls.tvdb).toBeUndefined();
+    });
+
     it('builds a film form: disabled title, publisher, IMDb text (no TheTVDB), year-or-date release', () => {
-      const form = buildPlayableEditForm(film(), { identity: true, film: true });
+      const form = buildPlayableEditForm(film(), 'film');
       expect(form.controls.title.disabled).toBe(true);
       expect(form.controls.publisher?.value).toBe('Example Pictures');
       expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
@@ -146,7 +155,7 @@ describe('playable edit form', () => {
 
     it('never sends title; sends publisher (trimmed, empty clears) and the IMDb patch', () => {
       const previous = film();
-      const form = buildPlayableEditForm(previous, { identity: true, film: true });
+      const form = buildPlayableEditForm(previous, 'film');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
       form.controls.title.setValue('Something else');
       form.controls.publisher!.setValue('  ');
@@ -159,7 +168,7 @@ describe('playable edit form', () => {
 
     it('leaves IMDb alone when it only differs by whitespace, and clears it with an empty string', () => {
       const previous = film();
-      const form = buildPlayableEditForm(previous, { identity: true, film: true });
+      const form = buildPlayableEditForm(previous, 'film');
       form.controls.imdb!.setValue(' https://www.imdb.com/title/tt0000002/ ');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
       form.controls.imdb!.setValue('');

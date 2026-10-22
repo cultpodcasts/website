@@ -91,7 +91,8 @@ export function reviewPlayableLink(
   episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null }
 ): string | string[] {
   if (episode.path?.startsWith("/")) {
-    // Already site-encoded: as a string, routerLink parses it as a URL instead of encoding it again.
+    // Already site-encoded (e.g. /film/One%20Off/…). Callers must `router.parseUrl` it: bound as a plain string,
+    // routerLink splits it into segments and encodes them again (%2520).
     return episode.path;
   }
   const parent = episode.parentName ?? episode.podcastName ?? "";

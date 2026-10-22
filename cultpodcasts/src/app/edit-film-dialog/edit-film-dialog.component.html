@@ -10,10 +10,10 @@
     <p id="submit-error" class="submit-error">{{submitError()}}</p>
     }
     <form id="edit" [formGroup]="f" (ngSubmit)="onSubmit()">
-        <app-playable-edit-fields [form]="f" parentLabel="Film" [parentName]="parentName()"
+        <app-playable-edit-fields [form]="f" parentLabel="Film"
             [subjectNames]="subjectNames()" [defaultSubject]="defaultSubject()" [people]="people()"
             [languages]="languages()" [blueskyPosted]="blueskyPosted()" [(pendingUnBluesky)]="pendingUnBluesky"
-            [identity]="identity" [film]="film"></app-playable-edit-fields>
+            [variant]="variant"></app-playable-edit-fields>
     </form>
     }
 </mat-dialog-content>

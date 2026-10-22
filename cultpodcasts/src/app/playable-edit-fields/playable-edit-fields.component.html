@@ -59,13 +59,17 @@
     <mat-tab label="Meta">
         <mat-form-field class="full-width">
             <mat-label>Release</mat-label>
+            <!-- One root element per block: a multi-node block is projected into the infix, not the hint / error slots. -->
             @if (film()) {
             <input type="text" [formControl]="f.controls.release" matInput placeholder="yyyy or yyyy-mm-dd">
-            @if (f.controls.release.hasError('pattern')) {
-            <mat-error>A year (yyyy) or a date (yyyy-mm-dd)</mat-error>
-            }
             } @else {
             <input type="date" [formControl]="f.controls.release" matInput>
+            }
+            @if (film()) {
+            <mat-hint id="film-release-hint">Year (yyyy) or date (yyyy-mm-dd)</mat-hint>
+            }
+            @if (film() && f.controls.release.hasError('pattern')) {
+            <mat-error>A year (yyyy) or a date (yyyy-mm-dd)</mat-error>
             }
         </mat-form-field>
         <mat-form-field class="full-width">

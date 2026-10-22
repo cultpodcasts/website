@@ -26,7 +26,7 @@ export interface EditTvShowEpisodeDialogData {
 export class EditTvShowEpisodeDialogComponent extends PlayableEditDialogBase<TvShowEpisodeDto, TvShowEpisodeChangeRequest> {
   readonly data = inject<EditTvShowEpisodeDialogData>(MAT_DIALOG_DATA);
   protected readonly hub = 'tv' as const;
-  protected readonly identity = true;
+  protected readonly variant = 'tv' as const;
 
   protected playableId(): string {
     return this.data.episodeId;
