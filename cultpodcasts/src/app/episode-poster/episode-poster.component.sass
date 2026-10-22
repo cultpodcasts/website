@@ -246,6 +246,18 @@
     // Don't let an oversized hit box cover the podcast link below.
     height: fit-content
     overflow: hidden
+    position: relative
+    // CDK's visually-hidden stylesheet is not loaded; keep the same clip so the new-tab cue stays in the name only.
+    .cdk-visually-hidden
+        border: 0
+        clip: rect(0 0 0 0)
+        height: 1px
+        margin: -1px
+        overflow: hidden
+        padding: 0
+        position: absolute
+        width: 1px
+        white-space: nowrap
     &:hover .episode-poster__episode,
     &:focus-visible .episode-poster__episode
         text-decoration: underline

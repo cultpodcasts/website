@@ -120,6 +120,11 @@ describe('catalogue card kind byline and hero star', () => {
     expect(root.querySelector('a.episode-poster__show')?.textContent).toContain('Synthetic Podcast');
   });
 
+  it('does not show the curator hero star on a film trailer, even when showPromote is set', async () => {
+    const { root } = await render(item('FilmTrailer', '', 'Synthetic Teaser'), { showPromote: true, promoted: true });
+    expect(root.querySelector('button.episode-poster__promote')).toBeNull();
+  });
+
   for (const kind of ['NewsReport', 'TvShowEpisode', 'Film']) {
     it(`passes the curator hero star through to a ${kind} card and emits promoteToggle`, async () => {
       const { fixture, root } = await render(item(kind), { showPromote: true, promoted: true });

@@ -92,6 +92,14 @@ describe('EpisodePosterComponent', () => {
     expect(getComputedStyle(byline).order).toBe('2');
   });
 
+  it('does not open a non-http externalHref as an anchor', () => {
+    fixture.componentRef.setInput('externalHref', 'javascript:alert(1)');
+    fixture.detectChanges();
+
+    expect(query('a[target="_blank"]')).toBeNull();
+    expect((query('a.episode-poster__titles') as HTMLAnchorElement).getAttribute('href')).toBe('/podcast/Show%20A/a');
+  });
+
   it('omits the byline entirely when the show name is hidden', () => {
     fixture.componentRef.setInput('showShow', false);
     fixture.componentRef.setInput('showRelease', true);

@@ -73,9 +73,18 @@ describe('FilmTrailersComponent', () => {
 
     expect(card.querySelector('button.episode-poster__cta')).toBeNull();
     expect(card.querySelector('.episode-poster__placeholder')).toBeTruthy();
+    const art = card.querySelector('a.episode-poster__art') as HTMLAnchorElement;
+    expect(art.getAttribute('aria-hidden')).toBe('true');
+    expect(art.getAttribute('tabindex')).toBe('-1');
+    expect(art.target).toBe('_blank');
+    expect(art.rel).toContain('noopener');
+    expect(art.rel).toContain('noreferrer');
     const title = card.querySelector('a.episode-poster__titles') as HTMLAnchorElement;
     expect(title.href).toBe('https://synthetic-video.example/watch/1');
     expect(title.target).toBe('_blank');
+    expect(title.rel).toContain('noopener');
+    expect(title.rel).toContain('noreferrer');
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe('Synthetic Elsewhere (opens in a new tab)');
   });
 
   it('renders nothing when the film has no trailers', async () => {

@@ -45,6 +45,16 @@ describe('FilmTrailerCardComponent', () => {
     expect(byline.querySelector('a')).toBeNull();
   });
 
+  it('opens a non-playable trailer from the artwork in a new tab', () => {
+    const el = show('00:01:00|https://synthetic-video.example/watch/1|Synthetic Elsewhere');
+    const art = el.querySelector('a.episode-poster__art') as HTMLAnchorElement;
+
+    expect(art.href).toBe('https://synthetic-video.example/watch/1');
+    expect(art.target).toBe('_blank');
+    expect(art.rel).toContain('noopener');
+    expect(art.rel).toContain('noreferrer');
+  });
+
   it('gives an iPlayer trailer an outbound Watch button', () => {
     const el = show('00:01:00|https://www.bbc.co.uk/iplayer/episode/synthetic01|Synthetic iPlayer Clip');
 
