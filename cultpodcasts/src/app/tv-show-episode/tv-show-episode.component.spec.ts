@@ -8,7 +8,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { EditTvShowEpisodeCanonicalDialogComponent } from '../edit-tv-show-episode-canonical-dialog/edit-tv-show-episode-canonical-dialog.component';
+import { EditTvShowEpisodeDialogComponent } from '../edit-tv-show-episode-dialog/edit-tv-show-episode-dialog.component';
 import { EpisodeService } from '../episode.service';
 import { GuidService } from '../guid.service';
 import { ODataService } from '../odata.service';
@@ -36,7 +36,7 @@ function tvHit(overrides: Partial<SearchResult> = {}): SearchResult {
 }
 
 describe('TvShowEpisodeComponent', () => {
-  describe('editIdentity', () => {
+  describe('editEpisode', () => {
     let fixture: ComponentFixture<TvShowEpisodeComponent>;
 
     beforeEach(async () => {
@@ -58,14 +58,14 @@ describe('TvShowEpisodeComponent', () => {
       fixture.detectChanges();
     });
 
-    it('opens the identity dialog with identity-only options', () => {
+    it('opens the full TV episode dialog for the episode id', () => {
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
       open.mockReturnValue({ afterClosed: () => of(undefined) });
 
-      fixture.componentInstance.editIdentity('ep-tv');
+      fixture.componentInstance.editEpisode('ep-tv');
 
       expect(open).toHaveBeenCalledWith(
-        EditTvShowEpisodeCanonicalDialogComponent,
+        EditTvShowEpisodeDialogComponent,
         expect.objectContaining({ data: { episodeId: 'ep-tv' } })
       );
     });
@@ -74,7 +74,7 @@ describe('TvShowEpisodeComponent', () => {
   describe('playable curator edit binding', () => {
     const guids = new GuidService();
 
-    it('opens the identity dialog from child edit() through the TV shell, not the podcast editor', async () => {
+    it('opens the TV episode dialog from child edit() through the TV shell, not the podcast editor', async () => {
       const shortId = guids.toCatalogueShortId(id, 'TvShowEpisode');
       const params = { slug: 'Nightly', query: shortId };
       TestBed.resetTestingModule();
@@ -158,7 +158,7 @@ describe('TvShowEpisodeComponent', () => {
       child.componentInstance.edit('Nightly', id);
 
       expect(open).toHaveBeenCalledWith(
-        EditTvShowEpisodeCanonicalDialogComponent,
+        EditTvShowEpisodeDialogComponent,
         expect.objectContaining({ data: { episodeId: id } })
       );
       expect(open).not.toHaveBeenCalledWith(

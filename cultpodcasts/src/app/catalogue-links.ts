@@ -62,6 +62,73 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
   return `${shortner}/${shortIds.toBase64(item.id)}`;
 }
 
+/**
+ * Route for a news report or TV episode from its kind, parent name and guid, with the short base-64 id
+ * the site links use. Null for podcast episodes, films and a missing parent name or id.
+ */
+export function cataloguePlayableCommands(
+  kind: string | null | undefined,
+  parentName: string | null | undefined,
+  playableId: string | null | undefined
+): string[] | null {
+  if (!parentName || !playableId) {
+    return null;
+  }
+  switch (kind) {
+    case "TvShowEpisode":
+      return tvShowEpisodePageCommands(parentName, playableId);
+    case "NewsReport":
+      return newsReportPageCommands(parentName, playableId);
+    default:
+      return null;
+  }
+}
+
+/**
+ * Review page (/episodes/:ids) row title link. Uses the API's ready-made `path` when present (GET /episode/{id} for
+ * every kind, RPP #1063 / Api #179); otherwise the podcast link `/podcast/{name}/{guid}`, or, for a row that has a
+ * `contentKind` but no `path`, /news|/tv/{parent}/{short id} and /film/{title}/{short id}.
+ */
+export function reviewPlayableLink(
+  episode: { id: string; title: string; podcastName?: string | null; contentKind?: string | null; path?: string | null; slug?: string | null; parentName?: string | null }
+): string | string[] {
+  if (episode.path?.startsWith("/")) {
+    // Already site-encoded: as a string, routerLink parses it as a URL instead of encoding it again.
+    return episode.path;
+  }
+  const parent = episode.parentName ?? episode.podcastName ?? "";
+  switch (episode.contentKind) {
+    case "Film":
+      return filmPageCommands(episode.slug ?? episode.podcastName ?? episode.title, episode.id);
+    case "TvShowEpisode":
+      return tvShowEpisodePageCommands(parent, episode.id);
+    case "NewsReport":
+      return newsReportPageCommands(parent, episode.id);
+    default:
+      return ["/podcast", episode.podcastName ?? "", episode.id];
+  }
+}
+
+/** Review page row parent link: the podcast, outlet or show hub. Null for films (no parent) or no name. */
+export function reviewParentLink(
+  episode: { podcastName?: string | null; parentName?: string | null; contentKind?: string | null }
+): string[] | null {
+  const name = episode.parentName ?? episode.podcastName;
+  if (!name) {
+    return null;
+  }
+  switch (episode.contentKind) {
+    case "Film":
+      return null;
+    case "TvShowEpisode":
+      return ["/tv", name];
+    case "NewsReport":
+      return ["/news", name];
+    default:
+      return ["/podcast", name];
+  }
+}
+
 /** Film has no parent. TV and news hubs use the parent name. */
 export function catalogueParentLink(item: CatalogueItem | undefined): string[] | null {
   if (!item) {

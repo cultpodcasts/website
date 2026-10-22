@@ -155,7 +155,20 @@ flowchart LR
   SB -->|Created| AE[Add Episode]
   SB -->|Enriched or AlreadyExists| EE[Edit Episode]
   AE -->|new series| AP[Add Podcast defaults]
+  SB -->|News / TV, Curator| CR["Review: /news or /tv/{parent}/{short id}"]
+  SB -->|News / TV, Curator| CE[Edit News Report / Edit TV Episode]
 ```
+
+News reports and TV episodes (`contentKind` `NewsReport` / `TvShowEpisode`) get **Review** + **Edit** when the
+actor is a Curator, `playableId` is a guid, and the outcome is Created, Enriched or EpisodeAlreadyExists
+(`submittedCataloguePlayableReview`). Film still shows only Ok.
+
+- **Review** goes to `/news/{outlet}/{short id}` or `/tv/{show}/{short id}` (`cataloguePlayableCommands`, base-64 short id of `playableId`). The hub
+  menu passes the outlet / show name to the snackbar. The toolbar path has no parent name, so
+  `CataloguePlayableParentService` asks the curator `GET /newsreport/{id}` / `/tvshowepisode/{id}` (fresh, works
+  before the search indexer has the item), then falls back to the search `getPlayableById` lookup.
+- **Edit** opens the news report or TV episode edit dialog (see
+  [Series hubs](series-hub-redirect.md#news-report-and-tv-episode-edit)). After saving, a second snackbar offers Review.
 
 ## What each response does
 
@@ -247,7 +260,8 @@ flowchart TD
   E -->|no| Cat[TV / Film / News copy; no podcast Review]
 ```
 
-`canReviewSubmittedEpisode` is false when `isNonPodcastPlayableKind` is true, even if ids look like UUIDs. Catalogue Review via `playableId` + slug is website issue #512 (not this slice).
+`canReviewSubmittedEpisode` is false when `isNonPodcastPlayableKind` is true, even if ids look like UUIDs. News / TV
+Review + Edit use `submittedCataloguePlayableReview` and `playableId` instead (see [After a successful POST](#after-a-successful-post)).
 
 ## Sequence: Add Podcast, unknown streaming + typed name
 
@@ -322,7 +336,8 @@ sequenceDiagram
 | `src/app/podcast-api/` | Page submit dialog attach |
 | `src/app/series-hub-menu/` | News / TV hub menu: submit to the outlet or show, edit, rename |
 | `src/app/submit-parent-target.interface.ts` | `{ parentKind, parentId, parentName }` POST target |
-| `src/app/submit-url-origin-response-snackbar/` | Created / Enriched / already exists → episode dialogs |
+| `src/app/submit-url-origin-response-snackbar/` | Created / Enriched / already exists → episode dialogs; news / TV Review + Edit |
+| `src/app/catalogue-playable-parent.service.ts` | Parent name for a toolbar news / TV Review |
 
 ## Overlay layout
 

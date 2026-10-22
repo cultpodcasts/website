@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
+import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * Search typeahead with one row of each kind (subject, podcast, TV show, news outlet, film).
@@ -26,7 +27,7 @@ async function fakeApi(page: Page): Promise<void> {
 	const screenshots = !!process.env["SUGGESTION_SCREENSHOTS"];
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173") ||
+		if (url.startsWith(appOrigin) ||
 			(screenshots && /fonts\.(googleapis|gstatic)\.com/.test(url))) {
 			await route.continue();
 			return;
