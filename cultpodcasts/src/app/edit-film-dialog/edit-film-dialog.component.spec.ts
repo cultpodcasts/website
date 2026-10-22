@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { EditFilmDialogComponent } from './edit-film-dialog.component';
+import { EditFilmDialogComponent, staleTrailersMessage } from './edit-film-dialog.component';
 
 const filmId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const api = (path: string) => new URL(path, environment.api).toString();
@@ -155,15 +155,34 @@ describe('EditFilmDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'One Off' });
   });
 
-  it('PATCHes the IMDb / TMDB ids, links and trailers it edits', async () => {
-    const dialog = await load({
-      ...synthetic,
-      services: { internetArchive: { url: 'https://archive.org/details/synthetic-film' } },
+  const trailered = {
+    ...synthetic,
+    services: { internetArchive: { url: 'https://archive.org/details/synthetic-film' } },
+    trailers: [
+      { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' },
+      { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', title: 'Synthetic Clip', url: 'https://www.youtube.com/watch?v=synthetic02', duration: '0:00:45' }
+    ]
+  };
+
+  it('does not send a stale trailers list when a trailer was attached after the dialog opened', async () => {
+    const dialog = await load(trailered);
+    dialog.form()!.controls.trailers!.removeAt(1);
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/film/${filmId}`))).flush({
+      ...trailered,
       trailers: [
-        { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' },
-        { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', title: 'Synthetic Clip', url: 'https://www.youtube.com/watch?v=synthetic02', duration: '0:00:45' }
+        ...trailered.trailers,
+        { id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', title: 'Synthetic New Teaser', url: 'https://www.youtube.com/watch?v=synthetic03', duration: '0:01:00' }
       ]
     });
+    await saving;
+    // No PATCH (verify() in afterEach fails on one), the dialog stays open and says why.
+    expect(dialog.submitError()).toBe(staleTrailersMessage(1));
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('PATCHes the IMDb / TMDB ids, links and trailers it edits', async () => {
+    const dialog = await load(trailered);
     const form = dialog.form()!;
     form.controls.imdbId!.setValue('');
     form.controls.tmdbId!.setValue('99');
@@ -171,6 +190,8 @@ describe('EditFilmDialogComponent', () => {
     form.controls.trailers!.removeAt(1);
     form.controls.trailers!.at(0).controls.title.setValue('Synthetic Trailer');
     const saving = dialog.onSubmit();
+    // A trailers change re-reads the film first; it has no trailer the dialog did not load.
+    (await expectSoon(api(`/film/${filmId}`))).flush(trailered);
     const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
     expect(patch.request.body).toEqual({
       imdbId: '',
