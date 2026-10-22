@@ -1,5 +1,5 @@
 import { HttpClient, HttpContext, HttpResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE } from './auth.interceptor';
@@ -10,7 +10,13 @@ import { PodcastPostResponse } from './podcast-post-response.interface';
 import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
-import { TvShowEpisodeCanonicalChangeRequest, TvShowEpisodeCanonicalDto } from './tv-show-episode-canonical.interface';
+import {
+  NewsReportChangeRequest,
+  NewsReportDto,
+  PlayableChangeResponse,
+  TvShowEpisodeChangeRequest,
+  TvShowEpisodeDto
+} from './playable-edit.interface';
 import { Person } from './person.interface';
 import { SubjectEntity } from './subject-entity.interface';
 import { SubjectResponse } from './subject-response.interface';
@@ -59,19 +65,43 @@ export class CurationSubmitService {
     });
   }
 
+  /** Curator GET of a news report by guid: playable fields plus the outlet id and name. */
+  getNewsReport(reportId: string) {
+    const url = new URL(`/newsreport/${encodeURIComponent(reportId)}`, environment.api).toString();
+    return this.http.get<NewsReportDto>(url, { context: this.curateContext() });
+  }
+
+  /** PATCH only the changed playable fields: 202 with the episode-style update body. */
+  patchNewsReport(reportId: string, body: NewsReportChangeRequest) {
+    const url = new URL(`/newsreport/${encodeURIComponent(reportId)}`, environment.api).toString();
+    return this.http.patch<PlayableChangeResponse | null>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Curator GET of a TV-show episode by guid: playable fields, show id/name, and IMDb / TheTVDB. */
   getTvShowEpisode(episodeId: string) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
-    return this.http.get<TvShowEpisodeCanonicalDto>(url, {
+    return this.http.get<TvShowEpisodeDto>(url, {
       context: this.curateContext()
     });
   }
 
-  patchTvShowEpisode(episodeId: string, body: TvShowEpisodeCanonicalChangeRequest) {
+  patchTvShowEpisode(episodeId: string, body: TvShowEpisodeChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
-    return this.http.patch(url, body, {
+    return this.http.patch<PlayableChangeResponse | null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
+  }
+
+  /** Published people list for the guest selects. A 404 (nothing published yet) is an empty list. */
+  getPeople() {
+    const url = new URL('/people', environment.api).toString();
+    return this.http.get<Person[]>(url, { context: this.curateContext() }).pipe(
+      catchError((err) => (err?.status === 404 ? of([] as Person[]) : throwError(() => err)))
+    );
   }
 
   /** Subject names for the subject selects (same endpoint as the podcast edit dialog). */

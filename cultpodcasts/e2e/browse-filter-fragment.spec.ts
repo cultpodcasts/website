@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * Bookmarkable browse filters: chip state lives in the URL fragment.
@@ -75,7 +76,7 @@ function search(filter: string, top: number) {
 test.beforeEach(async ({ page }) => {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		if (url.startsWith(appOrigin)) {
 			await route.continue();
 			return;
 		}

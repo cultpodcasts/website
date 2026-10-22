@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
+import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * Homepage hero description: per-layout clamp, the icon expander, and
@@ -49,7 +50,7 @@ function homepage(description: string, title?: string, subjects = ["Invented sub
 async function fakeApi(page: Page, description: string, title?: string, subjects?: string[], services?: Services): Promise<void> {
 	await page.route("**/*", async (route) => {
 		const url = route.request().url();
-		if (url.startsWith("http://127.0.0.1:4173")) {
+		if (url.startsWith(appOrigin)) {
 			await route.continue();
 			return;
 		}

@@ -11,6 +11,16 @@ export interface ApiEpisode {
     displayTitle?: string;
     podcastId?: string;
     podcastName?: string;
+    /** Playable kind (Episode / TvShowEpisode / NewsReport / Film). Absent from older APIs = podcast episode. */
+    contentKind?: string | null;
+    /** Org / show guid for news and TV (absent for films). RPP #1063 / Api #179. */
+    parentId?: string | null;
+    /** Org / show name for news and TV (absent for films). */
+    parentName?: string | null;
+    /** Unencoded slug (film name for films). */
+    slug?: string | null;
+    /** Ready-made site path, e.g. `/news/{slug}/{shortId}`. */
+    path?: string | null;
     description: string;
     displayDescription?: string;
     posted: boolean;
