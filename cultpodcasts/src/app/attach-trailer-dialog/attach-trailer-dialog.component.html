@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>Attach as trailer</h2>
+
+<mat-dialog-content>
+    <p class="warning">
+        This adds the episode to a film's Trailers and removes it from its podcast. The podcast stays.
+        Old episode links open the film.
+    </p>
+    @if (data.hasUnsavedChanges) {
+    <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
+    }
+    <mat-form-field class="full-width">
+        <mat-label>Film</mat-label>
+        <input type="text" matInput [formControl]="filmQuery" [matAutocomplete]="filmAuto"
+            (input)="onFilmQuery(filmQuery.value)" [readonly]="isSending()" autocomplete="off" aria-label="Film">
+        <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
+            @for (film of films(); track film.itemId) {
+            <mat-option [value]="film">{{ film.label }}</mat-option>
+            }
+        </mat-autocomplete>
+        <mat-hint>Type a film name, or paste a film id</mat-hint>
+    </mat-form-field>
+    @if (selected(); as film) {
+    <p class="selected">Film: {{ film.name ?? film.id }}</p>
+    }
+    <mat-form-field class="full-width">
+        <mat-label>Trailer title</mat-label>
+        <input type="text" matInput [formControl]="title" [readonly]="isSending()">
+        <mat-hint>Defaults to the episode title</mat-hint>
+    </mat-form-field>
+    @if (error()) {
+    <p class="error">{{ error() }}</p>
+    }
+    @if (isSending()) {
+    <mat-spinner class="spinner" mode="indeterminate" diameter="40"></mat-spinner>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
+    <button type="button" matButton="filled" [disabled]="isSending() || !selected()" (click)="attach()">Attach as trailer</button>
+</mat-dialog-actions>

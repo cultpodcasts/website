@@ -15,6 +15,8 @@ import { firstValueFrom } from 'rxjs';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import { CurationSubmitService } from '../curation-submit.service';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
+import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
+import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
 import {
   applyGuestSelection,
   hasNonEmptyUrlValue,
@@ -35,8 +37,9 @@ import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject
  * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
  * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) for the `tv` and `film` variants.
- * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, and takes a year-or-date release. There are no Urls / Images
- * tabs: the playable PATCH does not edit service links.
+ * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
+ * adds the IMDb / TMDB ids to Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
+ * Urls / Images tabs: their PATCH does not edit service links.
  */
 @Component({
   selector: 'app-playable-edit-fields',
@@ -52,7 +55,9 @@ import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject
     MatIconModule,
     MatInputModule,
     MatSelectModule,
-    MatTabsModule
+    MatTabsModule,
+    FilmLinksEditComponent,
+    FilmTrailersEditComponent
   ],
   templateUrl: './playable-edit-fields.component.html',
   styleUrl: './playable-edit-fields.component.sass',

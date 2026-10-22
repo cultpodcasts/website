@@ -1,0 +1,20 @@
+@for (group of trailers().controls; track group.controls.id.value; let i = $index, first = $first, last = $last) {
+<div class="trailer-row">
+    <mat-form-field class="title">
+        <mat-label>Trailer {{ i + 1 }}</mat-label>
+        <input type="text" matInput [formControl]="group.controls.title">
+    </mat-form-field>
+    <button type="button" matIconButton aria-label="Move trailer up" [disabled]="first" (click)="move(i, -1)">
+        <mat-icon>arrow_upward</mat-icon>
+    </button>
+    <button type="button" matIconButton aria-label="Move trailer down" [disabled]="last" (click)="move(i, 1)">
+        <mat-icon>arrow_downward</mat-icon>
+    </button>
+    <button type="button" matIconButton aria-label="Remove trailer" (click)="remove(i)">
+        <mat-icon>delete</mat-icon>
+    </button>
+</div>
+}
+@if (trailers().length === 0) {
+<p class="empty">No trailers. Use "Attach as trailer" in an episode's editor to add one.</p>
+}

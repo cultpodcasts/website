@@ -104,7 +104,7 @@ describe('EditFilmDialogComponent', () => {
     expect(dialog.defaultSubject()).toBe('Arts');
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     const tabs = Array.from(element().querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Links', 'Trailers']);
     expect(element().querySelector('h2')?.textContent).toBe('Edit Film');
     expect(element().querySelector('#parent-name')).toBeNull();
     const name = element().querySelector<HTMLInputElement>('#film-name');
@@ -153,6 +153,33 @@ describe('EditFilmDialogComponent', () => {
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
     await saving;
     expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'One Off' });
+  });
+
+  it('PATCHes the IMDb / TMDB ids, links and trailers it edits', async () => {
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: 'https://archive.org/details/synthetic-film' } },
+      trailers: [
+        { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' },
+        { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', title: 'Synthetic Clip', url: 'https://www.youtube.com/watch?v=synthetic02', duration: '0:00:45' }
+      ]
+    });
+    const form = dialog.form()!;
+    form.controls.imdbId!.setValue('');
+    form.controls.tmdbId!.setValue('99');
+    form.controls.links!.at(0).setValue('https://archive.org/details/synthetic-film-restored');
+    form.controls.trailers!.removeAt(1);
+    form.controls.trailers!.at(0).controls.title.setValue('Synthetic Trailer');
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      imdbId: '',
+      tmdbId: 99,
+      services: { internetArchive: { url: 'https://archive.org/details/synthetic-film-restored' } },
+      trailers: [{ id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Trailer' }]
+    });
+    patch.flush({}, { status: 202, statusText: 'Accepted' });
+    await saving;
   });
 
   it('closes with noChange and sends nothing when the form is untouched', async () => {

@@ -282,7 +282,7 @@ test.describe("film curator edit", () => {
 			return json(route, {}, 404);
 		});
 		const dialog = await openFromFilmPage(page);
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity", "Links", "Trailers"]);
 		await expect(dialog.locator("#parent-name")).toHaveCount(0);
 		const name = dialog.getByRole("textbox", { name: "Name" });
 		await expect(name).toHaveValue("One Off");
@@ -318,7 +318,7 @@ test.describe("film curator edit", () => {
 		await expect(page.getByRole("listbox")).toHaveCount(0);
 		await shot(page, "film-edit-guests");
 		await dialog.getByRole("tab", { name: "Identity" }).click();
-		const imdb = dialog.getByRole("textbox", { name: "IMDb" });
+		const imdb = dialog.getByRole("textbox", { name: "IMDb", exact: true });
 		await expect(imdb).toHaveValue("https://www.imdb.com/title/tt0000002/");
 		await expect(dialog.getByRole("textbox", { name: "TheTVDB" })).toHaveCount(0);
 		await imdb.fill("https://www.imdb.com/title/tt0000009/");
