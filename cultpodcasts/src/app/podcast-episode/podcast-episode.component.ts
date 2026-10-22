@@ -110,8 +110,13 @@ export class PodcastEpisodeComponent {
 
   podcastName = signal("");
   protected readonly showName = computed(() => this._episode()?.podcastName || this.podcastName());
+  /** A film has no parent: no hero pill, no "More from" rail, no /podcast/{slug} fallback (the slug is the film name). */
+  protected readonly isFilm = computed(() => this._episode()?.contentKind === "Film");
   protected readonly parentLink = computed(() => {
     const ep = this._episode();
+    if (this.isFilm()) {
+      return null;
+    }
     return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
   });
   protected readonly displayCatalogName = displayCatalogName;
@@ -321,7 +326,9 @@ export class PodcastEpisodeComponent {
     this.subjectRails.set([]);
 
     const escape = (value: string) => value.replaceAll("'", "''");
-    this.loadMoreFromShow(episode, podcastName, "seriesName");
+    if (episode.contentKind !== "Film") {
+      this.loadMoreFromShow(episode, podcastName, "seriesName");
+    }
 
     const subjects = this.visibleSubjects().slice(0, MAX_SUBJECT_RAILS);
     if (subjects.length === 0) {
@@ -409,6 +416,9 @@ export class PodcastEpisodeComponent {
   }
 
   podcastPage() {
+    if (this.isFilm()) {
+      return;
+    }
     const commands = this.parentLink() ?? (this.showName() ? ["/podcast", this.showName()] : null);
     if (commands) {
       this.router.navigate(commands);

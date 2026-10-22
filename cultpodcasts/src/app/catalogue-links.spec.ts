@@ -200,10 +200,18 @@ describe('cataloguePlayableCommands', () => {
     expect(cataloguePlayableCommands('TvShowEpisode', 'Nightly', id)).toEqual(['/tv', 'Nightly', guids.toCatalogueShortId(id, 'TvShowEpisode')]);
   });
 
-  it('is null without a parent name or id, and for films and podcast episodes', () => {
+  it('routes a film under its own name with the Film-prefixed short id, never the GUID', () => {
+    const commands = cataloguePlayableCommands('Film', 'One Off', id);
+    expect(commands).toEqual(['/film', 'One Off', guids.toCatalogueShortId(id, 'Film')]);
+    expect(commands![2]).toHaveLength(23);
+    expect(guids.parseCatalogueShortId(commands![2])).toEqual({ id, contentKind: 'Film' });
+    expect(commands).not.toContain(id);
+  });
+
+  it('is null without a parent name or id, and for podcast episodes', () => {
     expect(cataloguePlayableCommands('NewsReport', '', id)).toBeNull();
     expect(cataloguePlayableCommands('NewsReport', 'Desk', undefined)).toBeNull();
-    expect(cataloguePlayableCommands('Film', 'One Off', id)).toBeNull();
+    expect(cataloguePlayableCommands('Film', '', id)).toBeNull();
     expect(cataloguePlayableCommands('Episode', 'Show', id)).toBeNull();
   });
 });

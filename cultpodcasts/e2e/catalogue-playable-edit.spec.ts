@@ -3,8 +3,9 @@ import { GuidService } from "../src/app/guid.service";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
- * News report / TV episode curator edit against real routes with a faked API (synthetic data only):
- * hub submit → snackbar Review + Edit, the news report page Edit, and the TV episode page Edit.
+ * News report / TV episode / film curator edit against real routes with a faked API (synthetic data only):
+ * hub submit → snackbar Review + Edit, the news report page Edit, the TV episode page Edit, and for films the
+ * film page Edit, the toolbar submit snackbar and the review page row.
  * Set CATALOGUE_EDIT_SCREENSHOTS=dir to save PR screenshots.
  */
 const guids = new GuidService();
@@ -12,6 +13,7 @@ const reportId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const episodeId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const outletId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const showId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const filmId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 const screenshotDir = process.env["CATALOGUE_EDIT_SCREENSHOTS"];
 
 function searchDoc(id: string, kind: string, title: string, parent: string) {
@@ -45,6 +47,24 @@ const tvEpisode = {
 	tvdb: null
 };
 
+/** Synthetic `film/{id}` GET: publisher fields + playable fields, `name` not `title`, year-only release. */
+const film = {
+	...playable,
+	id: filmId,
+	name: "One Off",
+	publisher: "Example Pictures",
+	description: "A synthetic film about nothing in particular.",
+	release: "1999",
+	duration: "1:42:00",
+	subjects: ["Arts"],
+	defaultSubject: "Arts",
+	twitterHandle: "",
+	imdb: "https://www.imdb.com/title/tt0000002/",
+	imdbId: "tt0000002",
+	tmdbId: null,
+	services: null
+};
+
 const json = (route: Route, body: unknown, status = 200, headers: Record<string, string> = {}) =>
 	route.fulfill({ status, contentType: "application/json", headers, body: JSON.stringify(body) });
 
@@ -61,7 +81,9 @@ test.beforeEach(async ({ page }) => {
 				? [searchDoc(reportId, "NewsReport", "Bulletin", "Desk")]
 				: filter.includes("'Nightly'") || filter.includes(episodeId)
 					? [searchDoc(episodeId, "TvShowEpisode", "Part", "Nightly")]
-					: [];
+					: filter.includes(filmId)
+						? [searchDoc(filmId, "Film", "One Off", "One Off")]
+						: [];
 			await json(route, { value });
 			return;
 		}
@@ -75,7 +97,7 @@ test.beforeEach(async ({ page }) => {
 
 /** The `/subjects`, `/people`, `/languages` lookups shared with the podcast Edit Episode dialog. */
 async function fakeLookups(page: Page) {
-	await page.route("**/subjects", (route) => json(route, [{ name: "Politics" }, { name: "Sport" }, { name: "Arts" }]));
+	await page.route("**/subjects", (route) => json(route, [{ name: "Politics" }, { name: "Sport" }, { name: "Arts" }, { name: "Film" }]));
 	await page.route("**/people", (route) => json(route, [{ id: "p1", name: "Ann Example" }, { id: "p2", name: "Bob Sample" }]));
 	await page.route("**/languages", (route) => json(route, { en: "English", fr: "French", de: "German" }));
 	await page.route(`**/newsorganisation/${outletId}`, (route) => json(route, { id: outletId, name: "Desk", defaultSubject: "Politics" }));
@@ -231,5 +253,160 @@ test.describe("news report / TV episode curator edit", () => {
 		await search.fill("election");
 		await search.press("Enter");
 		await expect(page).toHaveURL(/\/search\/election$/);
+	});
+});
+
+test.describe("film curator edit", () => {
+	const filmShort = guids.toCatalogueShortId(filmId, "Film");
+	const filmPath = `/film/${encodeURIComponent("One Off")}/${filmShort}`;
+
+	/** Opens the film dialog from the film page menu; Post Episode is podcast-only and not offered. */
+	async function openFromFilmPage(page: Page) {
+		await page.goto(filmPath);
+		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await expect(page.getByRole("menuitem")).toHaveText([/Edit Episode/]);
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Edit Film" })).toBeVisible();
+		return dialog;
+	}
+
+	test("the film page Edit opens the tabbed film dialog and PATCHes only the changed fields, never a title", async ({ page }) => {
+		const sink: { body?: unknown } = {};
+		await fakeLookups(page);
+		await fakePlayable(page, `film/${filmId}`, film, sink);
+		let podcastEpisodeGet = false;
+		await page.route("**/episode/**", (route) => {
+			podcastEpisodeGet = true;
+			return json(route, {}, 404);
+		});
+		const dialog = await openFromFilmPage(page);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity"]);
+		await expect(dialog.locator("#parent-name")).toHaveCount(0);
+		const name = dialog.getByRole("textbox", { name: "Name" });
+		await expect(name).toHaveValue("One Off");
+		await expect(name).toBeDisabled();
+		await expect(dialog.getByText("Renaming a film is done from the admin Rename screen")).toBeVisible();
+		await dialog.getByRole("textbox", { name: "Publisher" }).fill("Other Pictures");
+		await shot(page, "film-edit-details");
+		await dialog.getByRole("tab", { name: "Flags" }).click();
+		await dialog.getByRole("checkbox", { name: "Tweeted" }).uncheck();
+		await dialog.getByRole("button", { name: "Remove" }).click();
+		await expect(dialog.getByText("Will remove on save")).toBeVisible();
+		await shot(page, "film-edit-flags");
+		await dialog.getByRole("tab", { name: "Meta" }).click();
+		const release = dialog.getByRole("textbox", { name: "Release" });
+		await expect(release).toHaveValue("1999");
+		await release.fill("May 1999");
+		await release.blur();
+		await expect(dialog.getByText("A year (yyyy) or a date (yyyy-mm-dd)")).toBeVisible();
+		await expect(dialog.getByRole("button", { name: "Submit" })).toBeDisabled();
+		await release.fill("1999-05-01");
+		await dialog.getByRole("combobox", { name: "Subjects" }).click();
+		await page.getByRole("option", { name: "Film", exact: true }).click();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+		await shot(page, "film-edit-meta");
+		await dialog.getByRole("tab", { name: "Guests" }).click();
+		await dialog.getByRole("combobox", { name: "Guests" }).click();
+		await page.getByRole("option", { name: "Bob Sample" }).click();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+		await shot(page, "film-edit-guests");
+		await dialog.getByRole("tab", { name: "Identity" }).click();
+		const imdb = dialog.getByRole("textbox", { name: "IMDb" });
+		await expect(imdb).toHaveValue("https://www.imdb.com/title/tt0000002/");
+		await expect(dialog.getByRole("textbox", { name: "TheTVDB" })).toHaveCount(0);
+		await imdb.fill("https://www.imdb.com/title/tt0000009/");
+		await shot(page, "film-edit-identity");
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect.poll(() => sink.body).toEqual({
+			release: "1999-05-01",
+			tweeted: false,
+			unBluesky: true,
+			subjects: ["Arts", "Film"],
+			guests: ["Ann Example", "Bob Sample"],
+			publisher: "Other Pictures",
+			imdb: "https://www.imdb.com/title/tt0000009/"
+		});
+		await expect(page.getByText("Film updated")).toBeVisible();
+		expect(podcastEpisodeGet).toBe(false);
+	});
+
+	test("an untouched film dialog says No change and sends nothing", async ({ page }) => {
+		const sink: { body?: unknown } = {};
+		await fakeLookups(page);
+		await fakePlayable(page, `film/${filmId}`, film, sink);
+		const dialog = await openFromFilmPage(page);
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect(page.getByText("No change")).toBeVisible();
+		expect(sink.body).toBeUndefined();
+	});
+
+	test("the review page film row has the curator menu; Edit Episode opens the film dialog and saves via PATCH /film", async ({ page }) => {
+		const sink: { body?: unknown } = {};
+		await fakeLookups(page);
+		await fakePlayable(page, `film/${filmId}`, film, sink);
+		const row = {
+			id: filmId, title: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			explicit: false, release: "1999-01-01T00:00:00Z", duration: "01:42:00", subjects: ["Arts"],
+			contentKind: "Film", slug: "One Off", path: filmPath
+		};
+		let podcastPatch = false;
+		await page.route(`**/episode/${filmId}`, (route) => json(route, row));
+		await page.route("**/episode/*/*", (route) => {
+			podcastPatch = true;
+			return json(route, {}, 404);
+		});
+		await page.goto(`/episodes/${encodeURIComponent(JSON.stringify([filmId]))}`);
+		// The API path is already encoded: the row link must not encode it again (%2520).
+		await expect(page.locator("mat-card-title a")).toHaveAttribute("href", filmPath);
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		// Post / Edit Podcast / Delete are podcast-only.
+		await expect(page.getByRole("menuitem")).toHaveText([/Edit Episode/]);
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Edit Film" })).toBeVisible();
+		await dialog.getByRole("tab", { name: "Flags" }).click();
+		await dialog.getByRole("checkbox", { name: "Ignored" }).check();
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect.poll(() => sink.body).toEqual({ ignored: true });
+		await expect(page.getByText("Film updated")).toBeVisible();
+		expect(podcastPatch).toBe(false);
+	});
+
+	test("a toolbar film submit shows Review + Edit; Edit opens the film dialog and Review lands on the film page by its Film short id", async ({ page }) => {
+		test.slow(); // submit → snackbar → dialog → save → Review → page load: several serial round trips.
+		const sink: { body?: unknown } = {};
+		await fakeLookups(page);
+		await fakePlayable(page, `film/${filmId}`, film, sink);
+		await page.route("**/submit", (route) =>
+			json(
+				route,
+				{ success: { episode: "Created", podcast: "NotCreated", contentKind: "Film", playableId: filmId } },
+				200,
+				{ "X-Origin": "true", "Access-Control-Expose-Headers": "X-Origin" }
+			));
+		await page.goto("/");
+		await page.getByRole("img", { name: "Add Podcast" }).click();
+		const add = page.locator("mat-dialog-container");
+		await expect(add.getByRole("heading", { name: "Add Podcast" })).toBeVisible();
+		await add.getByPlaceholder("Podcast Url").fill("https://www.youtube.com/watch?v=abc123def45");
+		await add.getByRole("button", { name: "Save" }).click();
+		const snack = page.locator("app-submit-url-origin-response-snackbar");
+		await expect(snack.getByRole("button")).toHaveText(["Review", "Edit"]);
+		await shot(page, "film-snackbar-review-edit");
+		await snack.getByRole("button", { name: "Edit" }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Edit Film" })).toBeVisible();
+		await dialog.getByRole("tab", { name: "Flags" }).click();
+		await dialog.getByRole("checkbox", { name: "Explicit" }).check();
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect.poll(() => sink.body).toEqual({ explicit: true });
+		await page.getByRole("button", { name: "Review" }).click();
+		await expect(page).toHaveURL(new RegExp(`/film/${encodeURIComponent("One Off")}/${filmShort}$`));
+		expect(page.url()).not.toContain(filmId);
+		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
 	});
 });

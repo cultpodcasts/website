@@ -9,7 +9,7 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { CataloguePlayableKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
 import { cataloguePlayableCommands } from '../catalogue-links';
 import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
@@ -46,7 +46,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly serviceIconRows: SubmitEpisodeServiceIconRow[];
   readonly catalogueKindLabel: string | null;
   readonly catalogueOutcomePhrase: string;
-  /** News report / TV episode Review + Edit target (Curator, playable guid, created or existing). */
+  /** News report / TV episode / film Review + Edit target (Curator, playable guid, created or existing). */
   readonly cataloguePlayable: { kind: EditableCataloguePlayableKind; playableId: string } | null;
   private readonly parents = inject(CataloguePlayableParentService);
   constructor(
@@ -182,7 +182,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     await this.router.navigate(["/episodes", id])
   }
 
-  /** News report / TV episode: open its edit dialog, then offer Review on the playable page. */
+  /** News report / TV episode / film: open its edit dialog, then offer Review on the playable page. */
   editSubmittedPlayable(kind: EditableCataloguePlayableKind, playableId: string) {
     openCataloguePlayableEditDialog(this.dialog, kind, playableId).afterClosed().subscribe(result => {
       const message = playableEditResultMessage(kind, result);
@@ -196,7 +196,9 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   }
 
   private async navigateToPlayableReview(kind: EditableCataloguePlayableKind, playableId: string, knownParent?: string) {
-    const parentName = this.data.parentName || knownParent || await this.parents.parentName(kind, playableId);
+    // A film's Review slug is its own name, never the hub the URL was sent from.
+    const hubParent = kind === CataloguePlayableKind.Film ? undefined : this.data.parentName;
+    const parentName = hubParent || knownParent || await this.parents.parentName(kind, playableId);
     const commands = cataloguePlayableCommands(kind, parentName, playableId);
     if (!commands) {
       this.snackBar.open("Could not find the page for this item", "Ok", { duration: 5000 });

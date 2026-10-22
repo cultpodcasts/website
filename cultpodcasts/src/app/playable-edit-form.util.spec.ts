@@ -1,5 +1,5 @@
-import { buildPlayableEditForm, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
-import { NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
+import { buildPlayableEditForm, filmChanges, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
@@ -113,6 +113,57 @@ describe('playable edit form', () => {
       explicit: true,
       imdb: '',
       tvdb: 'https://thetvdb.com/series/example/episodes/1'
+    });
+  });
+
+  describe('film', () => {
+    function film(overrides: Partial<FilmDto> = {}): FilmDto {
+      const { newsOrganisationId: _o, newsOrganisationName: _n, ...playable } = report();
+      return {
+        ...playable,
+        id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+        title: 'One Off',
+        name: 'One Off',
+        publisher: 'Example Pictures',
+        imdb: new URL('https://www.imdb.com/title/tt0000002/'),
+        release: '1999',
+        ...overrides
+      };
+    }
+
+    it('builds a film form: disabled title, publisher, IMDb text (no TheTVDB), year-or-date release', () => {
+      const form = buildPlayableEditForm(film(), { identity: true, film: true });
+      expect(form.controls.title.disabled).toBe(true);
+      expect(form.controls.publisher?.value).toBe('Example Pictures');
+      expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
+      expect(form.controls.tvdb).toBeUndefined();
+      expect(form.valid).toBe(true);
+      form.controls.release.setValue('1999-05-01');
+      expect(form.valid).toBe(true);
+      form.controls.release.setValue('May 1999');
+      expect(form.controls.release.hasError('pattern')).toBe(true);
+    });
+
+    it('never sends title; sends publisher (trimmed, empty clears) and the IMDb patch', () => {
+      const previous = film();
+      const form = buildPlayableEditForm(previous, { identity: true, film: true });
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.title.setValue('Something else');
+      form.controls.publisher!.setValue('  ');
+      form.controls.imdb!.setValue('https://www.imdb.com/title/tt0000009/');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({
+        publisher: '',
+        imdb: 'https://www.imdb.com/title/tt0000009/'
+      });
+    });
+
+    it('leaves IMDb alone when it only differs by whitespace, and clears it with an empty string', () => {
+      const previous = film();
+      const form = buildPlayableEditForm(previous, { identity: true, film: true });
+      form.controls.imdb!.setValue(' https://www.imdb.com/title/tt0000002/ ');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.imdb!.setValue('');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdb: '' });
     });
   });
 });

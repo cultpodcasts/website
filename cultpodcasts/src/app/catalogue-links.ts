@@ -58,8 +58,9 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
 }
 
 /**
- * Route for a news report or TV episode from its kind, parent name and guid, with the short base-64 id
- * the site links use. Null for podcast episodes, films and a missing parent name or id.
+ * Route for a news report, TV episode or film from its kind, parent name (for a film, the film's own name,
+ * which is its page slug) and guid, with the kind-prefixed short id the site links use. Null for podcast
+ * episodes and a missing name or id.
  */
 export function cataloguePlayableCommands(
   kind: string | null | undefined,
@@ -74,6 +75,8 @@ export function cataloguePlayableCommands(
       return tvShowEpisodePageCommands(parentName, playableId);
     case "NewsReport":
       return newsReportPageCommands(parentName, playableId);
+    case "Film":
+      return filmPageCommands(parentName, playableId);
     default:
       return null;
   }

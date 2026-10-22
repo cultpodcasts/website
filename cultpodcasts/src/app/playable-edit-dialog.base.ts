@@ -32,7 +32,7 @@ export function playableEditApiErrorMessage(error: unknown): string | undefined 
 }
 
 /**
- * Load / save shared by the news report and TV episode edit dialogs. Loads the playable GET plus the
+ * Load / save shared by the news report, TV episode and film edit dialogs. Loads the playable GET plus the
  * same `/subjects`, `/people` and `/languages` lookups as the podcast Edit Episode dialog (and the
  * parent's default subject, best-effort), then PATCHes only the changed fields.
  */
@@ -56,13 +56,21 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   readonly pendingUnBluesky = signal(false);
   protected original: TDto | undefined;
 
-  protected abstract readonly hub: CatalogueHub;
+  /** Parent hub for the default-subject lookup; null for films (no parent). */
+  protected abstract readonly hub: CatalogueHub | null;
   protected abstract readonly identity: boolean;
+  /** Film form: read-only title (name), publisher, IMDb only, year-or-date release. */
+  protected readonly film: boolean = false;
   protected abstract playableId(): string;
   protected abstract load(id: string): Observable<TDto>;
   protected abstract patch(id: string, changes: TChange): Observable<HttpResponse<PlayableChangeResponse | null>>;
   protected abstract changes(original: TDto, value: PlayableEditFormValue, pendingUnBluesky: boolean): TChange;
   protected abstract parentOf(dto: TDto): { id: string; name: string };
+
+  /** Default subject carried on the item itself (a film is its own publisher); parents are looked up instead. */
+  protected ownDefaultSubject(_dto: TDto): string | null {
+    return null;
+  }
 
   async ngOnInit(): Promise<void> {
     try {
@@ -73,10 +81,11 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
         languages: this.curation.getLanguages()
       }));
       const parent = this.parentOf(resp.dto);
-      const defaultSubject = parent.id
-        ? await firstValueFrom(this.curation.getCatalogueParent(this.hub, parent.id).pipe(catchError(() => of(null))))
+      const hub = this.hub;
+      const defaultSubject = hub && parent.id
+        ? await firstValueFrom(this.curation.getCatalogueParent(hub, parent.id).pipe(catchError(() => of(null))))
           .then((p) => p?.defaultSubject ?? null)
-        : null;
+        : this.ownDefaultSubject(resp.dto);
       this.original = resp.dto;
       this.parentName.set(parent.name);
       this.defaultSubject.set(defaultSubject);
@@ -86,7 +95,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
       this.languages.set(buildEpisodeLanguageOptions(resp.languages ?? {}));
       this.blueskyPosted.set(!!resp.dto.blueskyPosted);
       this.pendingUnBluesky.set(false);
-      this.form.set(buildPlayableEditForm(resp.dto, { identity: this.identity }));
+      this.form.set(buildPlayableEditForm(resp.dto, { identity: this.identity, film: this.film }));
       this.isLoading.set(false);
     } catch (e) {
       console.error(e);

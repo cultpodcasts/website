@@ -1,6 +1,19 @@
 @let f = form();
 <mat-tab-group class="playable-edit-tabs">
     <mat-tab label="Details">
+        @if (film()) {
+        <mat-form-field class="full-width">
+            <mat-label>Name</mat-label>
+            <input type="text" [formControl]="f.controls.title" matInput id="film-name">
+            <mat-hint>Renaming a film is done from the admin Rename screen</mat-hint>
+        </mat-form-field>
+        @if (f.controls.publisher) {
+        <mat-form-field class="full-width">
+            <mat-label>Publisher</mat-label>
+            <input type="text" [formControl]="f.controls.publisher" matInput>
+        </mat-form-field>
+        }
+        } @else {
         <label class="parent">
             <span>{{parentLabel()}}:</span>
             <p id="parent-name">{{parentName()}}</p>
@@ -12,6 +25,7 @@
             <mat-error>A title is required</mat-error>
             }
         </mat-form-field>
+        }
         <mat-form-field class="full-width">
             <mat-label>Description</mat-label>
             <textarea [formControl]="f.controls.description" matInput cdkTextareaAutosize
@@ -45,7 +59,14 @@
     <mat-tab label="Meta">
         <mat-form-field class="full-width">
             <mat-label>Release</mat-label>
+            @if (film()) {
+            <input type="text" [formControl]="f.controls.release" matInput placeholder="yyyy or yyyy-mm-dd">
+            @if (f.controls.release.hasError('pattern')) {
+            <mat-error>A year (yyyy) or a date (yyyy-mm-dd)</mat-error>
+            }
+            } @else {
             <input type="date" [formControl]="f.controls.release" matInput>
+            }
         </mat-form-field>
         <mat-form-field class="full-width">
             <mat-label>Duration</mat-label>
@@ -140,7 +161,7 @@
         </div>
         }
     </mat-tab>
-    @if (identity() && f.controls.imdb && f.controls.tvdb) {
+    @if (identity() && f.controls.imdb) {
     <mat-tab label="Identity">
         <mat-form-field class="full-width">
             <mat-label>IMDb</mat-label>
@@ -155,6 +176,7 @@
                 <mat-icon>clear</mat-icon>
             </button>
         </mat-form-field>
+        @if (f.controls.tvdb) {
         <mat-form-field class="full-width">
             <mat-label>TheTVDB</mat-label>
             <input type="text" [formControl]="f.controls.tvdb" matInput>
@@ -168,6 +190,7 @@
                 <mat-icon>clear</mat-icon>
             </button>
         </mat-form-field>
+        }
     </mat-tab>
     }
 </mat-tab-group>

@@ -32,9 +32,10 @@ import { PlayableEditForm } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
 
 /**
- * The tabbed body shared by the news report and TV episode edit dialogs, laid out like the podcast
+ * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
- * language), Guests, and Identity (IMDb / TheTVDB) when `identity` is set. There are no Urls / Images
+ * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) when `identity` is set.
+ * `film` swaps the parent row and Title for a read-only Name plus Publisher, and takes a year-or-date release. There are no Urls / Images
  * tabs: the playable PATCH does not edit service links.
  */
 @Component({
@@ -70,8 +71,10 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly languages = input<Record<string, string>>({});
   readonly blueskyPosted = input(false);
   readonly pendingUnBluesky = model(false);
-  /** TV only: show the Identity tab (needs the `imdb` / `tvdb` controls). */
+  /** TV / film: show the Identity tab (needs the `imdb` control; TheTVDB shows when `tvdb` exists). */
   readonly identity = input(false);
+  /** Film: read-only Name (renames are admin-only), Publisher, no parent row, year-or-date release. */
+  readonly film = input(false);
 
   private readonly dialog = inject(MatDialog);
   private readonly curation = inject(CurationSubmitService);

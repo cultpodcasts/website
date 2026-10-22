@@ -9,11 +9,11 @@ import { EpisodeService } from './episode.service';
 const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 describe('CataloguePlayableParentService', () => {
-  let curation: { getNewsReport: ReturnType<typeof vi.fn>; getTvShowEpisode: ReturnType<typeof vi.fn> };
+  let curation: { getNewsReport: ReturnType<typeof vi.fn>; getTvShowEpisode: ReturnType<typeof vi.fn>; getFilm: ReturnType<typeof vi.fn> };
   let episodes: { getPlayableById: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    curation = { getNewsReport: vi.fn(), getTvShowEpisode: vi.fn() };
+    curation = { getNewsReport: vi.fn(), getTvShowEpisode: vi.fn(), getFilm: vi.fn() };
     episodes = { getPlayableById: vi.fn(async () => undefined) };
     TestBed.configureTestingModule({
       providers: [
@@ -39,5 +39,14 @@ describe('CataloguePlayableParentService', () => {
     const service = TestBed.inject(CataloguePlayableParentService);
     expect(await service.parentName(CataloguePlayableKind.NewsReport, id)).toBe('Desk');
     expect(await service.parentName(CataloguePlayableKind.NewsReport, id)).toBeNull();
+  });
+
+  it('uses the film GET name for a film (its page slug), then the search title', async () => {
+    curation.getFilm.mockReturnValueOnce(of({ id, name: 'One Off' }));
+    const service = TestBed.inject(CataloguePlayableParentService);
+    expect(await service.parentName(CataloguePlayableKind.Film, id)).toBe('One Off');
+    curation.getFilm.mockReturnValueOnce(throwError(() => new Error('404')));
+    episodes.getPlayableById.mockResolvedValueOnce({ id, episodeTitle: 'One Off (search)', podcastName: 'Not the slug' });
+    expect(await service.parentName(CataloguePlayableKind.Film, id)).toBe('One Off (search)');
   });
 });

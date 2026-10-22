@@ -6,6 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
 import { GuidService } from '../guid.service';
+import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
 import { EditNewsReportDialogComponent } from '../edit-news-report-dialog/edit-news-report-dialog.component';
 import { EditTvShowEpisodeDialogComponent } from '../edit-tv-show-episode-dialog/edit-tv-show-episode-dialog.component';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
@@ -15,6 +16,7 @@ const playableId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const guids = new GuidService();
 const newsShort = guids.toCatalogueShortId(playableId, 'NewsReport');
 const tvShort = guids.toCatalogueShortId(playableId, 'TvShowEpisode');
+const filmShort = guids.toCatalogueShortId(playableId, 'Film');
 
 describe('SubmitUrlOriginResponseSnackbarComponent', () => {
   let action: Subject<void>;
@@ -109,10 +111,46 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     expect(dialogOpen).toHaveBeenCalledWith(EditTvShowEpisodeDialogComponent, expect.objectContaining({ data: { episodeId: playableId } }));
   });
 
-  it('keeps only Ok for Submitters, films and ignored outcomes', async () => {
+  it('shows Review + Edit for a Curator film submit; Review goes to /film/{name}/{Film short id}, never the GUID', async () => {
+    const { component, navigate, element } = await create({
+      existingPodcast: false, response: response('Film'), roles: ['Curator']
+    });
+    parentName.mockResolvedValue('One Off');
+    expect(buttons(element)).toEqual(['Review', 'Edit']);
+    await component.review();
+    expect(parentName).toHaveBeenCalledWith('Film', playableId);
+    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
+    expect(navigate.mock.calls[0][0]).not.toContain(playableId);
+  });
+
+  it('a film Review ignores a hub parent name (the slug is the film name)', async () => {
+    const { component, navigate } = await create({
+      existingPodcast: true, response: response('Film'), roles: ['Curator'], parentName: 'Desk'
+    });
+    parentName.mockResolvedValue('One Off');
+    await component.review();
+    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
+  });
+
+  it('Edit opens the film dialog, then offers Review on the film page using the dialog film name', async () => {
+    const { component, navigate } = await create({
+      existingPodcast: false, response: response('Film', 'EpisodeAlreadyExists'), roles: ['Curator']
+    });
+    dialogResult = { updated: true, parentName: 'One Off' };
+    component.action();
+    expect(dialogOpen).toHaveBeenCalledWith(EditFilmDialogComponent, expect.objectContaining({ data: { filmId: playableId } }));
+    expect(snackOpen).toHaveBeenCalledWith('Film updated', 'Review', expect.anything());
+    snackAction.next();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(parentName).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
+  });
+
+  it('keeps only Ok for Submitters and ignored outcomes', async () => {
     for (const data of [
       { existingPodcast: true, response: response('NewsReport'), roles: ['Submitter'] },
-      { existingPodcast: true, response: response('Film'), roles: ['Curator'] },
+      { existingPodcast: true, response: response('Film'), roles: ['Submitter'] },
       { existingPodcast: true, response: response('TvShowEpisode', 'Ignored'), roles: ['Curator'] }
     ]) {
       TestBed.resetTestingModule();
