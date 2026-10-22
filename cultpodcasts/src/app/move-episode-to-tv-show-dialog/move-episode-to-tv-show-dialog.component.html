@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>Move to TV show</h2>
+
+<mat-dialog-content>
+    <p class="warning">
+        This removes the episode from its podcast and makes it an episode of a TV show. It keeps the episode id,
+        links, subjects and posted state. The podcast stays. Old episode links open the TV episode.
+    </p>
+    @if (isRecentlyReleased()) {
+    <p class="error recent">This episode was released in the last few days, so the indexer may add it back to the podcast. Check the podcast after the next index and remove any copy.</p>
+    }
+    @if (data.hasUnsavedChanges) {
+    <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
+    }
+    <mat-form-field class="full-width">
+        <mat-label>TV show</mat-label>
+        <input type="text" matInput [formControl]="showQuery" [matAutocomplete]="showAuto"
+            (input)="onShowQuery(showQuery.value)" [readonly]="isSending()" autocomplete="off" aria-label="TV show">
+        <mat-autocomplete #showAuto="matAutocomplete">
+            @for (show of shows(); track show) {
+            <mat-option [value]="show">{{ show }}</mat-option>
+            }
+        </mat-autocomplete>
+        <mat-hint>Type a TV show name, or paste a TV show id</mat-hint>
+    </mat-form-field>
+    @if (hasInvalidName()) {
+    <p class="error">A TV show name cannot contain '/'</p>
+    }
+    @if (!isShowId()) {
+    <mat-checkbox class="create-show" [formControl]="createShow">Create a new TV show if none has this name</mat-checkbox>
+    @if (isCreatingShow()) {
+    <mat-form-field class="full-width">
+        <mat-label>Publisher</mat-label>
+        <input type="text" matInput [formControl]="publisher" [readonly]="isSending()" aria-label="Publisher">
+        <mat-hint>Only used when the show is created</mat-hint>
+    </mat-form-field>
+    }
+    }
+    <mat-form-field class="full-width">
+        <mat-label>Episode title</mat-label>
+        <input type="text" matInput [formControl]="title" [readonly]="isSending()">
+        <mat-hint>Defaults to the episode title</mat-hint>
+    </mat-form-field>
+    @if (error()) {
+    <p class="error">{{ error() }}</p>
+    }
+    @if (isSending()) {
+    <mat-spinner class="spinner" mode="indeterminate" diameter="40"></mat-spinner>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
+    <button type="button" matButton="filled" [disabled]="isSending() || !request()" (click)="move()">Move to TV show</button>
+</mat-dialog-actions>

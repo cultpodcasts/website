@@ -59,11 +59,13 @@ import { normalizeHashTagControl } from '../podcast-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { filmPageCommands } from '../catalogue-links';
+import { filmPageCommands, tvShowEpisodePageCommands } from '../catalogue-links';
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { MoveEpisodeToFilmDialogClose, MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 import { AttachTrailerDialogClose, AttachTrailerDialogData } from '../episode-trailer-attach.interface';
 import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
+import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
+import { MoveEpisodeToTvShowDialogClose, MoveEpisodeToTvShowDialogData } from '../episode-tv-show-move.interface';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -247,6 +249,34 @@ export class EditEpisodeDialogComponent {
         this.snackBar.open("Attached as trailer", "Ok", { duration: 10000 });
         if (result.name) {
           this.router.navigate(filmPageCommands(result.name, result.filmId));
+        }
+      });
+  }
+
+  /** Curator: move this one episode into an existing or new TV show, then open the TV episode page by its short id. */
+  moveToTvShow() {
+    if (!this.podcastId || !this.originalEpisode) {
+      return;
+    }
+    const data: MoveEpisodeToTvShowDialogData = {
+      podcastId: this.podcastId,
+      podcastName: this.podcastName(),
+      episodeId: this.episodeId,
+      episodeTitle: this.originalEpisode.title,
+      release: this.originalEpisode.release,
+      hasUnsavedChanges: this.form()?.dirty ?? false
+    };
+    this.dialog.open<MoveEpisodeToTvShowDialogComponent, MoveEpisodeToTvShowDialogData, MoveEpisodeToTvShowDialogClose>(
+      MoveEpisodeToTvShowDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
+      .afterClosed()
+      .subscribe(result => {
+        if (!result?.moved) {
+          return;
+        }
+        this.dialogRef.close({ movedToTvShow: true, podcastId: this.podcastId });
+        this.snackBar.open(result.createdShow ? "Moved to new TV show" : "Moved to TV show", "Ok", { duration: 10000 });
+        if (result.tvShowName && result.episodeId) {
+          this.router.navigate(tvShowEpisodePageCommands(result.tvShowName, result.episodeId));
         }
       });
   }
