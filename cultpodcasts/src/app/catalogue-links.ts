@@ -8,13 +8,18 @@ type CatalogueItem = HomepageEpisode | SearchResult;
 const shortIds = new GuidService();
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** True when `id` is a canonical 8-4-4-4-12 GUID (any case). */
+export function isGuid(id: string | null | undefined): id is string {
+  return !!id && GUID.test(id);
+}
+
 /**
  * Film, TV, and news page ids use the kind-prefixed short id (the same one shares and the
  * moved-kind 301 use), so links land on the page's own URL with no redirect hop.
  * Anything that is not a GUID passes through unchanged.
  */
 export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEpisode" | "NewsReport"): string {
-  return id && GUID.test(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
+  return isGuid(id) ? shortIds.toCatalogueShortId(id, contentKind) : id;
 }
 
 /**

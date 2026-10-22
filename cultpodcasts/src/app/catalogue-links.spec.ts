@@ -11,6 +11,7 @@ import {
   catalogueShareUrl,
   catalogueShortPageId,
   filmPageCommands,
+  isGuid,
   movedKindRedirect,
   movedSeriesHubPath,
   newsReportPageCommands,
@@ -149,6 +150,16 @@ describe("catalogue links", () => {
     it("leaves non-guid ids untouched", () => {
       expect(catalogueShortPageId("not-a-guid", "NewsReport")).toBe("not-a-guid");
       expect(catalogueShortPageId("", "Film")).toBe("");
+    });
+
+    it("isGuid accepts any-case 8-4-4-4-12 guids and rejects everything else", () => {
+      expect(isGuid(id)).toBe(true);
+      expect(isGuid(id.toUpperCase())).toBe(true);
+      expect(isGuid("not-a-guid")).toBe(false);
+      expect(isGuid(guids.toCatalogueShortId(id, "Film"))).toBe(false);
+      expect(isGuid("")).toBe(false);
+      expect(isGuid(undefined)).toBe(false);
+      expect(isGuid(null)).toBe(false);
     });
 
     it("links podcast episodes (Episode or no kind) by the unprefixed 22-char short id", () => {
