@@ -5,6 +5,9 @@
         This removes the episode from its podcast and makes it a film. The film keeps the episode id,
         links, subjects and posted state. The podcast stays. Old episode links redirect to the film.
     </p>
+    @if (isRecentlyReleased()) {
+    <p class="error recent">This episode was released in the last few days, so the indexer may add it back to the podcast. Check the podcast after the next index and remove any copy.</p>
+    }
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
     }

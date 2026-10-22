@@ -207,6 +207,7 @@ export class EditEpisodeDialogComponent {
       podcastId: this.podcastId,
       episodeId: this.episodeId,
       episodeTitle: this.originalEpisode.title,
+      release: this.originalEpisode.release,
       hasUnsavedChanges: this.form()?.dirty ?? false
     };
     this.dialog.open<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogData, MoveEpisodeToFilmDialogClose>(

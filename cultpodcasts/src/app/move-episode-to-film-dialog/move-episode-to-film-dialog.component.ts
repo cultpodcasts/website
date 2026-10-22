@@ -13,6 +13,20 @@ import {
   MoveEpisodeToFilmDialogData
 } from '../episode-film-move.interface';
 
+/** Indexer look-back (indexer__ReleasedDaysAgo = 2) plus a day for the YouTube publishing delay. */
+export const RECENT_RELEASE_DAYS = 3;
+
+export function releasedWithinDays(release: Date | string | null | undefined, days: number, now: Date): boolean {
+  if (!release) {
+    return false;
+  }
+  const released = new Date(release).getTime();
+  if (Number.isNaN(released)) {
+    return false;
+  }
+  return now.getTime() - released < days * 24 * 60 * 60 * 1000;
+}
+
 /** Confirms and sends the curator "Move to film" command for one podcast episode. */
 @Component({
   selector: 'app-move-episode-to-film-dialog',
@@ -44,6 +58,11 @@ export class MoveEpisodeToFilmDialogComponent {
   requestTitle(): string | null {
     const value = this.title.value.trim();
     return value.length === 0 || value === (this.data.episodeTitle ?? '').trim() ? null : value;
+  }
+
+  /** Released inside the Indexer's look-back, so the next index may re-add it to the podcast (RPP #1068). */
+  isRecentlyReleased(): boolean {
+    return releasedWithinDays(this.data.release, RECENT_RELEASE_DAYS, new Date());
   }
 
   hasInvalidTitle(): boolean {

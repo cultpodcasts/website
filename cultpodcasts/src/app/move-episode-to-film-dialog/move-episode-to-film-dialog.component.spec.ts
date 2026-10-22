@@ -5,7 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
 import { CurationSubmitService } from '../curation-submit.service';
 import { MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
-import { MoveEpisodeToFilmDialogComponent, moveErrorMessage } from './move-episode-to-film-dialog.component';
+import { MoveEpisodeToFilmDialogComponent, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
 
 describe('MoveEpisodeToFilmDialogComponent', () => {
   let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
@@ -98,5 +98,25 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     expect(moveErrorMessage(new HttpErrorResponse({ status: 400, error: { error: 'A removed episode cannot be moved to a film' } })))
       .toBe('A removed episode cannot be moved to a film');
     expect(moveErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
+  });
+
+  it('warns about an Indexer re-add only for a recently released episode', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('.recent')).toBeNull();
+
+    const recent = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    recent.componentInstance.data = { ...data, release: new Date(Date.now() - 60 * 60 * 1000).toISOString() };
+    recent.detectChanges();
+
+    expect((recent.nativeElement as HTMLElement).querySelector('.recent')?.textContent).toContain('indexer');
+  });
+
+  it('treats a release inside the window as recent, and an older, missing or invalid release as not', () => {
+    const now = new Date('2026-01-10T12:00:00Z');
+
+    expect(releasedWithinDays('2026-01-08T13:00:00Z', 3, now)).toBe(true);
+    expect(releasedWithinDays('2026-01-07T11:00:00Z', 3, now)).toBe(false);
+    expect(releasedWithinDays(null, 3, now)).toBe(false);
+    expect(releasedWithinDays('not a date', 3, now)).toBe(false);
   });
 });

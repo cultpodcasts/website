@@ -17,6 +17,8 @@ export interface MoveEpisodeToFilmDialogData {
   episodeTitle: string;
   /** The editor has unsaved changes, which moving discards. */
   hasUnsavedChanges?: boolean;
+  /** Episode release; a recent one can be re-added to the podcast by the Indexer (RPP #1068). */
+  release?: Date | string | null;
 }
 
 export interface MoveEpisodeToFilmDialogClose {
