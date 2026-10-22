@@ -300,5 +300,8 @@
 
 <mat-dialog-actions>
     <button matButton="text" (click)="close()">Close</button>
+    @if (canMoveToFilm && form() && podcastId) {
+    <button type="button" matButton="text" class="move-to-film" (click)="moveToFilm()">Move to film</button>
+    }
     <button matButton="filled" [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>

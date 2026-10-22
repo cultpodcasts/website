@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Move to film</h2>
+
+<mat-dialog-content>
+    <p class="warning">
+        This removes the episode from its podcast and makes it a film. The film keeps the episode id,
+        links, subjects and posted state. The podcast stays. Old episode links redirect to the film.
+    </p>
+    @if (isRecentlyReleased()) {
+    <p class="error recent">This episode was released in the last few days, so the indexer may add it back to the podcast. Check the podcast after the next index and remove any copy.</p>
+    }
+    @if (data.hasUnsavedChanges) {
+    <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
+    }
+    <mat-form-field class="full-width">
+        <mat-label>Film title</mat-label>
+        <input type="text" matInput [formControl]="title" [readonly]="isSending()">
+        <mat-hint>Defaults to the episode title</mat-hint>
+    </mat-form-field>
+    @if (hasInvalidTitle()) {
+    <p class="error">A film title cannot contain '/'</p>
+    }
+    @if (error()) {
+    <p class="error">{{error()}}</p>
+    }
+    @if (isSending()) {
+    <mat-spinner class="spinner" mode="indeterminate" diameter="40"></mat-spinner>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
+    <button type="button" matButton="filled" [disabled]="isSending() || hasInvalidTitle()" (click)="move()">Move to film</button>
+</mat-dialog-actions>
