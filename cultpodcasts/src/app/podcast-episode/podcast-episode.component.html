@@ -103,6 +103,9 @@
     </div>
   </div>
 
+  <!-- Kind pages' own rails (the film page's Trailers) sit above the related rails. -->
+  <ng-content />
+
   @if (morePodcastEpisodes().length > 0) {
   <app-episode-rail
     [title]="'More from ' + displayCatalogName(showName())"

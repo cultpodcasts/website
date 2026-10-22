@@ -49,6 +49,14 @@ export class EpisodePosterComponent {
    * kindIcon. Ignored when the card has a parent link.
    */
   readonly kindLabel = input<string | undefined>(undefined);
+  /**
+   * An outside page the title, and the artwork when nothing plays, open in a new tab instead of a site
+   * route. For items with no page of their own (film trailers). Takes precedence over titleLink.
+   * Only http and https are used; any other value falls through to the in-site link.
+   */
+  readonly externalHref = input<string | undefined>(undefined);
+  /** http(s) only. Non-http(s) values are ignored so the in-site link is used. */
+  protected readonly safeExternalHref = computed(() => safeHttpHref(this.externalHref()));
   /** undefined keeps the podcast parent. null hides the parent line. */
   readonly showLink = input<readonly string[] | null | undefined>(undefined);
   protected readonly playableLink = computed(() => this.titleLink() ?? playableCommands(this.episode()));
@@ -127,5 +135,18 @@ export class EpisodePosterComponent {
     event?.preventDefault();
     event?.stopPropagation();
     this.promoteToggle.emit(this.episode());
+  }
+}
+
+/** http(s) only. javascript: and other schemes are not links. */
+function safeHttpHref(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === 'http:' || protocol === 'https:' ? value : undefined;
+  } catch {
+    return undefined;
   }
 }

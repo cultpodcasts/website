@@ -1,3 +1,6 @@
+import { SearchResult } from './search-result.interface';
+import { resolveServiceKey } from './service-catalog';
+
 /**
  * Film trailers. The curator GET `film/{id}` has full trailer objects; the film search document has one
  * `{duration}|{url}|{title}` token per trailer (RPP `FilmTrailerSearchToken`), in display order. The title is last
@@ -21,6 +24,42 @@ export interface FilmTrailerLink {
   url: URL;
   /** `h:mm:ss` or `mm:ss`, without leading zero hours; empty when unknown. */
   duration: string;
+  /** The token's own duration (search `duration` format, e.g. `00:07:58`), as cards expect it. */
+  searchDuration: string;
+}
+
+/** `contentKind` of a trailer card on the film page's Trailers rail (see catalogue-card). Not an RPP kind. */
+export const FILM_TRAILER_CONTENT_KIND = 'FilmTrailer';
+
+/**
+ * A trailer as a rail card. The search token has only duration, URL and title, so: the id is made up (unique per
+ * film and position, for the player and queue); the URL becomes the one `services` entry for its host, so a YouTube
+ * trailer gets its thumbnail and in-app Watch and an iPlayer / Archive one an outbound Watch; there is no publisher
+ * (`podcastName` is empty, so the card shows a "Trailer" byline and the player no parent link), image, release or
+ * description.
+ */
+export function filmTrailerEpisode(link: FilmTrailerLink, filmId: string, index: number): SearchResult {
+  const key = resolveServiceKey(link.url) ?? 'link';
+  return {
+    id: `${filmId}:trailer:${index}`,
+    podcastName: '',
+    episodeTitle: link.title,
+    episodeDescription: '',
+    release: new Date(Number.NaN),
+    duration: link.searchDuration,
+    services: { [key]: { url: link.url } },
+    contentKind: FILM_TRAILER_CONTENT_KIND,
+  };
+}
+
+/** The trailer's own page (the URL from its token): where its card title links, in a new tab. */
+export function filmTrailerUrl(episode: { services?: SearchResult['services'] }): string | undefined {
+  for (const service of Object.values(episode.services ?? {})) {
+    if (service?.url) {
+      return service.url.toString();
+    }
+  }
+  return undefined;
 }
 
 /** Parses the search document's `trailers` tokens. Malformed tokens and non-http(s) URLs are skipped. */
@@ -40,7 +79,8 @@ export function parseFilmTrailerTokens(tokens: readonly string[] | null | undefi
     if (!url || !title) {
       continue;
     }
-    links.push({ title, url, duration: displayDuration(token.slice(0, first)) });
+    const searchDuration = token.slice(0, first).trim();
+    links.push({ title, url, duration: displayDuration(searchDuration), searchDuration });
   }
   return links;
 }

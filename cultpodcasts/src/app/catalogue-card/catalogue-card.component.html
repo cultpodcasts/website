@@ -11,6 +11,10 @@
       [showPromote]="showPromote()" [promoted]="promoted()"
       (play)="play.emit($event)" (promoteToggle)="promoteToggle.emit($event)" />
   }
+  @case ("FilmTrailer") {
+    <app-film-trailer-card [episode]="episode()" [playing]="playing()" [queued]="queued()"
+      (play)="play.emit($event)" />
+  }
   @case ("NewsReport") {
     <app-news-report-card [episode]="episode()" [playing]="playing()" [queued]="queued()"
       [titleAsHtml]="titleAsHtml()" [showRelease]="showRelease()" [excludeSubject]="excludeSubject()"
