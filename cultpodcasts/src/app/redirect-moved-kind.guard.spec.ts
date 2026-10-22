@@ -276,4 +276,67 @@ describe("redirectMovedKind", () => {
     );
     expect(result).toBe(true);
   });
+
+  describe("podcast episode GUID URLs move to the short id", () => {
+    it("301s a podcast episode opened by its full GUID to /podcast/{name}/{shortId}", async () => {
+      const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+      const { result, lookedUp } = await run(
+        hit({ contentKind: "Episode", podcastName: "Old Show", episodeTitle: "Part" }),
+        `/podcast/Old%20Show/${id}`,
+        responseInit
+      );
+      const target = `/podcast/${encodeURIComponent("Old Show")}/${guids.toBase64(id)}`;
+      expect(lookedUp).toEqual([id]);
+      expect((result as UrlTree).toString()).toBe(target);
+      expect(responseInit.status).toBe(301);
+      expect(responseInit.headers.get("Location")).toBe(target);
+    });
+
+    it("does not redirect again once on the short id, even when the name has reserved characters", async () => {
+      const responseInit: { status?: number; headers: Headers } = { headers: new Headers() };
+      const name = "A & B: Pod, $1 @home";
+      const { result } = await run(
+        hit({ contentKind: "Episode", podcastName: name, episodeTitle: "Part" }),
+        `/podcast/A%20&%20B:%20Pod,%20$1%20@home/${guids.toBase64(id)}`,
+        responseInit,
+        { podcastName: name }
+      );
+      expect(result).toBe(true);
+      expect(responseInit.status).toBeUndefined();
+    });
+
+    it("sends a moved Film opened by GUID straight to /film/ (one hop, not via the podcast short id)", async () => {
+      const { result } = await run(
+        hit({ contentKind: "Film", podcastName: "", episodeTitle: "One Off" }),
+        `/podcast/Old%20Show/${id}`
+      );
+      expect((result as UrlTree).toString()).toBe(`/film/${encodeURIComponent("One Off")}/${guids.toCatalogueShortId(id, "Film")}`);
+    });
+
+    it("still moves a GUID URL to the short id when the episode is not found or the lookup fails", async () => {
+      const missing = await run(undefined, `/podcast/Old%20Show/${id}`);
+      expect((missing.result as UrlTree).toString()).toBe(`/podcast/${encodeURIComponent("Old Show")}/${guids.toBase64(id)}`);
+
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          provideRouter([]),
+          GuidService,
+          { provide: EpisodeService, useValue: { GetEpisodeDetailsFromApi: async () => { throw new Error("search down"); }, getPlayableById: async () => undefined } },
+          { provide: ODataService, useValue: { getEntities: () => of({ entities: [] }) } },
+        ],
+      }).compileComponents();
+      const failed = await TestBed.runInInjectionContext(() => redirectMovedKind(
+        { paramMap: { get: (key: string) => key === "query" ? id : "Old Show" } } as never,
+        { url: `/podcast/Old%20Show/${id}?t=60` } as never
+      ));
+      expect((failed as UrlTree).toString()).toBe(`/podcast/${encodeURIComponent("Old Show")}/${guids.toBase64(id)}?t=60`);
+    });
+
+    it("leaves a podcast search term in the query slot alone", async () => {
+      const { result } = await run(undefined, `/podcast/Old%20Show/cults`, undefined, { query: "cults" });
+      expect(result).toBe(true);
+    });
+  });
 });
