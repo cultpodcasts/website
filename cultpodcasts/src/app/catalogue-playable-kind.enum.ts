@@ -15,6 +15,11 @@ export function isCataloguePlayableKindValue(
   return contentKind != null && playableKindValues.has(contentKind);
 }
 
+/** A made-as-film one-off: no parent, so no hub pill, "More from" rail or /podcast fallback. */
+export function isFilmKind(contentKind: string | null | undefined): contentKind is CataloguePlayableKind.Film {
+  return contentKind === CataloguePlayableKind.Film;
+}
+
 /**
  * TV / Film / News (and any later non-Episode playable).
  * False for podcast `Episode`, parents, and Movie — those are not catalogue snackbar / Review-block kinds.

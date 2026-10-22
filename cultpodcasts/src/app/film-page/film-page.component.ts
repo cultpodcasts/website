@@ -1,15 +1,27 @@
-import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
+import { PodcastEpisodeComponent } from "../podcast-episode/podcast-episode.component";
 import { connectKindEpisode } from "../kind-episode-page";
+import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
+import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 
+/**
+ * /film/{title}/{short id}: the shared episode shell, like the news report and TV episode pages. Curator Edit opens
+ * the film dialog (film/{id}); Post Episode is podcast-only, so the shell hides it for films.
+ */
 @Component({
   selector: "app-film-page",
   templateUrl: "./film-page.component.html",
+  styleUrl: "./film-page.component.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SiteLoadingComponent, EpisodeLoadingSkeletonComponent],
+  imports: [SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent],
 })
 export class FilmPageComponent {
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly page = connectKindEpisode({
     parentHub: () => null,
     seoName: (episode) => episode.episodeTitle || "Film",
@@ -25,5 +37,10 @@ export class FilmPageComponent {
 
   ngOnInit(): void {
     this.page.start();
+  }
+
+  /** Curator Edit: the film dialog (film/{id}), not the podcast Edit Episode dialog. */
+  editFilm(filmId: string): void {
+    editCataloguePlayableFromPage(this.dialog, this.snackBar, CataloguePlayableKind.Film, filmId);
   }
 }

@@ -2,10 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   CataloguePlayableKind,
   isCataloguePlayableKindValue,
+  isFilmKind,
   isNonPodcastPlayableKind,
 } from "./catalogue-playable-kind.enum";
 
 describe("CataloguePlayableKind", () => {
+  it("isFilmKind is true only for Film", () => {
+    expect(isFilmKind(CataloguePlayableKind.Film)).toBe(true);
+    expect(isFilmKind("TvShowEpisode")).toBe(false);
+    expect(isFilmKind("Episode")).toBe(false);
+    expect(isFilmKind("Movie")).toBe(false);
+    expect(isFilmKind(null)).toBe(false);
+  });
+
   it("accepts the four wire values and rejects parents and Movie", () => {
     expect(isCataloguePlayableKindValue(CataloguePlayableKind.Episode)).toBe(true);
     expect(isCataloguePlayableKindValue("TvShowEpisode")).toBe(true);

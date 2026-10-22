@@ -55,7 +55,8 @@ export class SearchSuggestionsService {
 
     const index = await this.loadIndex();
     // Best rank per type+canonical (alias rows and name rows for the same subject
-    // must collapse to one suggestion).
+    // must collapse to one suggestion). Rows with an id (films) key on the id so
+    // two films with the same name stay separate.
     const best = new Map<string, { suggestion: Suggestion; rank: number }>();
 
     for (const entry of index) {
@@ -66,7 +67,7 @@ export class SearchSuggestionsService {
       if (rank < 0) {
         continue;
       }
-      const key = `${entry.type}:${entry.canonical}`;
+      const key = suggestionKey(entry);
       const suggestion = toSuggestion(entry);
       const existing = best.get(key);
       if (!existing || rank < existing.rank ||
@@ -96,11 +97,20 @@ function rankMatch(searchText: string, term: string, isAlias: boolean): number {
   return -1;
 }
 
+/** Dedupe key: type+id when the row has an id (films), else type+canonical. */
+export function suggestionKey(entry: Pick<SuggestionIndexEntry, 'type' | 'canonical' | 'id'>): string {
+  return entry.id ? `${entry.type}#${entry.id}` : `${entry.type}:${entry.canonical}`;
+}
+
 function toSuggestion(entry: SuggestionIndexEntry): Suggestion {
-  return {
+  const suggestion: Suggestion = {
     type: entry.type,
     value: entry.canonical,
     label: displayCatalogName(entry.canonical),
     matchedAlias: entry.alias
   };
+  if (entry.id) {
+    suggestion.itemId = entry.id;
+  }
+  return suggestion;
 }

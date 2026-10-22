@@ -23,7 +23,7 @@ export interface EditNewsReportDialogData {
 export class EditNewsReportDialogComponent extends PlayableEditDialogBase<NewsReportDto, NewsReportChangeRequest> {
   readonly data = inject<EditNewsReportDialogData>(MAT_DIALOG_DATA);
   protected readonly hub = 'news' as const;
-  protected readonly identity = false;
+  protected readonly variant = 'news' as const;
 
   protected playableId(): string {
     return this.data.reportId;
