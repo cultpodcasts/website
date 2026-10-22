@@ -132,6 +132,46 @@ describe('HomepageHeroComponent', () => {
     expect((root.querySelector('a.billboard__play') as HTMLAnchorElement).getAttribute('href')).toBe('/film/One%20Off/a');
   });
 
+  it('labels a film hero with a plain Film pill and the movie icon (no parent link)', () => {
+    const film = ep('a', { contentKind: 'Film', podcastName: 'Synthetic Film', episodeTitle: 'Synthetic Film' });
+    film.playableLink = ['/film', 'Synthetic Film', 'a'];
+    film.parentLink = null;
+    fixture.componentRef.setInput('slides', [film, ep('b'), ep('c')]);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('a.hero-pill')).toBeNull();
+    const pill = root.querySelector('span.hero-pill--static') as HTMLElement;
+    expect(pill.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
+    expect(pill.textContent).toContain('Film');
+    // HERO-TTL-001 still holds: the title opens the film page.
+    expect((root.querySelector('a.billboard__title-link') as HTMLAnchorElement).getAttribute('href'))
+      .toBe('/film/Synthetic%20Film/a');
+  });
+
+  for (const [kind, icon, root] of [['NewsReport', 'newspaper', '/news'], ['TvShowEpisode', 'live_tv', '/tv']] as const) {
+    it(`shows the ${icon} icon in a ${kind} hero's parent pill, linking to the parent hub`, () => {
+      const slide = ep('a', { contentKind: kind, podcastName: 'Synthetic Parent' });
+      slide.playableLink = [root, 'Synthetic Parent', 'a'];
+      slide.parentLink = [root, 'Synthetic Parent'];
+      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
+      expect(pill.getAttribute('href')).toBe(`${root}/Synthetic%20Parent`);
+      expect(pill.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
+      expect(pill.textContent).toContain('Synthetic Parent');
+      expect(el.querySelector('span.hero-pill--static')).toBeNull();
+    });
+  }
+
+  it('keeps a podcast hero pill free of a kind icon', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
+    expect(pill.querySelector('mat-icon')).toBeNull();
+  });
+
   it('starts on the first slide', () => {
     expect(component['heroIndex']()).toBe(0);
     expect(component['featured']()?.id).toBe('a');

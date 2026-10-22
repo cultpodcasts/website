@@ -296,6 +296,22 @@
         text-decoration: underline
         outline: none
 
+// Plain-text byline (a film has no parent page): no link hover.
+.episode-poster__show--kind
+    &:hover,
+    &:focus-visible
+        color: inherit
+        text-decoration: none
+
+// TV / news / film icon before the parent name (same icons as search suggestions).
+.episode-poster__kind-icon
+    width: 1em
+    height: 1em
+    margin-right: 4px
+    font-size: 1em
+    line-height: 1
+    vertical-align: -0.125em
+
 // Sits on its own line below the title/show block.
 .episode-poster__subject
     order: 3

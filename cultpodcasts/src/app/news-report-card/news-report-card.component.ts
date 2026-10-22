@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 import { SearchDisplayEpisode } from "../search-result-links";
+import { contentKindIcon } from "../content-kind-label";
 import { EpisodePosterComponent } from "../episode-poster/episode-poster.component";
 import { newsReportPageCommands } from "../catalogue-links";
 
@@ -17,7 +18,12 @@ export class NewsReportCardComponent {
   readonly titleAsHtml = input(false);
   readonly showRelease = input(false);
   readonly excludeSubject = input<string | undefined>(undefined);
+  /** Curator-only homepage hero star, as on podcast cards. */
+  readonly showPromote = input(false);
+  readonly promoted = input(false);
   readonly play = output<SearchDisplayEpisode>();
+  readonly promoteToggle = output<SearchDisplayEpisode>();
+  protected readonly kindIcon = contentKindIcon("NewsReport");
   protected get playable(): string[] {
     const item = this.episode();
     return newsReportPageCommands(item.podcastName, item.id);

@@ -59,3 +59,75 @@ describe('catalogue card hrefs', () => {
     expect(links).toContain(`/podcast/Show/${id}`);
   });
 });
+
+describe('catalogue card kind byline and hero star', () => {
+  async function render(episode: SearchDisplayEpisode, inputs: Record<string, unknown> = {}) {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [CatalogueCardComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: PlayerService, useValue: { episode: () => undefined, play: () => undefined } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(CatalogueCardComponent);
+    fixture.componentRef.setInput('episode', episode);
+    for (const [key, value] of Object.entries(inputs)) {
+      fixture.componentRef.setInput(key, value);
+    }
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return { fixture, root: fixture.nativeElement as HTMLElement };
+  }
+
+  function item(contentKind: string, podcastName = 'Synthetic Desk', episodeTitle = 'Bulletin'): SearchDisplayEpisode {
+    return {
+      id, contentKind, podcastName, episodeTitle,
+      episodeDescription: '', release: new Date('2026-01-02T00:00:00Z'), duration: '00:10:00', subjects: [],
+      services: { youtube: { url: 'https://www.youtube.com/watch?v=synthetic01' } },
+    } as unknown as SearchDisplayEpisode;
+  }
+
+  it('shows the newspaper icon before a news report\'s outlet name, linking to the outlet', async () => {
+    const { root } = await render(item('NewsReport'));
+    const show = root.querySelector('a.episode-poster__show') as HTMLAnchorElement;
+    expect(show.getAttribute('href')).toBe('/news/Synthetic%20Desk');
+    expect(show.querySelector('mat-icon')?.textContent?.trim()).toBe('newspaper');
+    expect(show.textContent).toContain('Synthetic Desk');
+  });
+
+  it('shows the live_tv icon before a TV episode\'s show name', async () => {
+    const { root } = await render(item('TvShowEpisode', 'Synthetic Show'));
+    const show = root.querySelector('a.episode-poster__show') as HTMLAnchorElement;
+    expect(show.getAttribute('href')).toBe('/tv/Synthetic%20Show');
+    expect(show.querySelector('mat-icon')?.textContent?.trim()).toBe('live_tv');
+  });
+
+  it('labels a film "Film" with the movie icon and no parent link (a film has no parent)', async () => {
+    const { root } = await render(item('Film', 'Synthetic Film', 'Synthetic Film'));
+    expect(root.querySelector('a.episode-poster__show')).toBeNull();
+    const label = root.querySelector('.episode-poster__show--kind') as HTMLElement;
+    expect(label.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
+    expect(label.textContent).toContain('Film');
+  });
+
+  it('keeps podcast cards free of a kind icon', async () => {
+    const { root } = await render(item('Episode', 'Synthetic Podcast'));
+    expect(root.querySelector('.episode-poster__kind-icon')).toBeNull();
+    expect(root.querySelector('a.episode-poster__show')?.textContent).toContain('Synthetic Podcast');
+  });
+
+  for (const kind of ['NewsReport', 'TvShowEpisode', 'Film']) {
+    it(`passes the curator hero star through to a ${kind} card and emits promoteToggle`, async () => {
+      const { fixture, root } = await render(item(kind), { showPromote: true, promoted: true });
+      const emitted: SearchDisplayEpisode[] = [];
+      fixture.componentInstance.promoteToggle.subscribe(e => emitted.push(e));
+      const star = root.querySelector('button.episode-poster__promote') as HTMLButtonElement;
+      expect(star).toBeTruthy();
+      expect(star.getAttribute('aria-pressed')).toBe('true');
+      star.click();
+      expect(emitted.map(e => e.id)).toEqual([id]);
+    });
+  }
+});
