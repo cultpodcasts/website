@@ -180,6 +180,24 @@
                 <mat-icon>clear</mat-icon>
             </button>
         </mat-form-field>
+        @if (f.controls.imdbId) {
+        <mat-form-field class="full-width">
+            <mat-label>IMDb id</mat-label>
+            <input type="text" [formControl]="f.controls.imdbId" matInput placeholder="tt1234567">
+            @if (f.controls.imdbId.hasError('pattern')) {
+            <mat-error>tt followed by 7 to 10 digits</mat-error>
+            }
+        </mat-form-field>
+        }
+        @if (f.controls.tmdbId) {
+        <mat-form-field class="full-width">
+            <mat-label>TMDB id</mat-label>
+            <input type="text" inputmode="numeric" [formControl]="f.controls.tmdbId" matInput>
+            @if (f.controls.tmdbId.hasError('pattern')) {
+            <mat-error>Digits only</mat-error>
+            }
+        </mat-form-field>
+        }
         @if (f.controls.tvdb) {
         <mat-form-field class="full-width">
             <mat-label>TheTVDB</mat-label>
@@ -195,6 +213,16 @@
             </button>
         </mat-form-field>
         }
+    </mat-tab>
+    }
+    @if (f.controls.links) {
+    <mat-tab label="Links">
+        <app-film-links-edit [links]="f.controls.links"></app-film-links-edit>
+    </mat-tab>
+    }
+    @if (f.controls.trailers) {
+    <mat-tab label="Trailers">
+        <app-film-trailers-edit [trailers]="f.controls.trailers"></app-film-trailers-edit>
     </mat-tab>
     }
 </mat-tab-group>

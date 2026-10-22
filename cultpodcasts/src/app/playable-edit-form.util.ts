@@ -1,4 +1,4 @@
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { episodeLanguageFormValue } from './language-options.util';
 import { ensureHashPrefix, hashPrefixedTagValidator } from './podcast-form.util';
 import {
@@ -10,6 +10,7 @@ import {
   TvShowEpisodeDto
 } from './playable-edit.interface';
 import { buildTvShowEpisodeCanonicalChangeRequest } from './tv-show-episode-canonical.util';
+import { resolveServiceKey } from './service-catalog';
 
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
@@ -38,6 +39,91 @@ export interface PlayableEditForm {
   imdb?: FormControl<string>;
   tvdb?: FormControl<string>;
   publisher?: FormControl<string>;
+  /** Film: IMDb title id (`tt…`); blank clears. */
+  imdbId?: FormControl<string>;
+  /** Film: TMDB id as digits; blank clears. */
+  tmdbId?: FormControl<string>;
+  /** Film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL. */
+  links?: FormArray<FormControl<string>>;
+  /** Film: the trailers to keep, in display order, each with an editable title. */
+  trailers?: FormArray<FilmTrailerEditGroup>;
+}
+
+export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
+
+/** IMDb title id: `tt` + 7–10 digits (the film PATCH rejects anything else). */
+export const imdbIdPattern = /^tt\d{7,10}$/;
+
+/**
+ * A film link must be an absolute http(s) URL whose service key resolves (a known service, else a key derived from the
+ * host, as the episode editor does); the film's existing links pass as they are, whatever key they are stored under.
+ */
+export function filmLinkValidator(existing: ReadonlySet<string> = new Set()): ValidatorFn {
+  return (control: AbstractControl<string>): ValidationErrors | null => {
+    const text = (control.value ?? '').trim();
+    if (!text || existing.has(text)) {
+      return null;
+    }
+    const url = absoluteHttpUrl(text);
+    if (!url) {
+      return { filmLinkUrl: true };
+    }
+    return resolveServiceKey(url) ? null : { filmLinkService: true };
+  };
+}
+
+/** Two links for one service would overwrite each other in the PATCH. */
+export function filmLinksDistinctValidator(existing: ReadonlyMap<string, string> = new Map()): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const seen = new Set<string>();
+    for (const value of (control as FormArray<FormControl<string>>).getRawValue()) {
+      const key = existing.get(value.trim()) ?? filmLinkKey(value);
+      if (!key) {
+        continue;
+      }
+      if (seen.has(key)) {
+        return { filmLinkDuplicate: key };
+      }
+      seen.add(key);
+    }
+    return null;
+  };
+}
+
+function absoluteHttpUrl(text: string): URL | undefined {
+  try {
+    const url = new URL(text);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The service key a link files under, or undefined for blank / invalid / unknown links. */
+export function filmLinkKey(value: string | null | undefined): string | undefined {
+  const url = absoluteHttpUrl((value ?? '').trim());
+  return url ? resolveServiceKey(url) ?? undefined : undefined;
+}
+
+/** The film's stored links: URL text → the key it is stored under. */
+export function filmExistingLinks(services: FilmDto['services']): Map<string, string> {
+  const links = new Map<string, string>();
+  for (const [key, link] of Object.entries(services ?? {})) {
+    const url = uriText(link?.url);
+    if (url) links.set(url, key);
+  }
+  return links;
+}
+
+export function newFilmLinkControl(value = '', existing: ReadonlySet<string> = new Set()): FormControl<string> {
+  return new FormControl(value, { nonNullable: true, validators: [filmLinkValidator(existing)] });
+}
+
+export function newFilmTrailerGroup(id: string, title: string): FilmTrailerEditGroup {
+  return new FormGroup({
+    id: new FormControl(id, { nonNullable: true }),
+    title: new FormControl(title, { nonNullable: true })
+  });
 }
 
 /** Film release: a year `yyyy` or a calendar date `yyyy-MM-dd` (anything else is a 400 from the film PATCH). */
@@ -90,6 +176,23 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.release.addValidators(Validators.pattern(filmReleasePattern));
     controls.imdb = new FormControl(uriText(film.imdb), { nonNullable: true });
     controls.publisher = new FormControl(film.publisher ?? '', { nonNullable: true });
+    controls.imdbId = new FormControl(film.imdbId ?? '', {
+      nonNullable: true,
+      validators: [Validators.pattern(imdbIdPattern)]
+    });
+    controls.tmdbId = new FormControl(film.tmdbId ? String(film.tmdbId) : '', {
+      nonNullable: true,
+      validators: [Validators.pattern(/^\d*$/)]
+    });
+    const existingLinks = filmExistingLinks(film.services);
+    const existingUrls = new Set(existingLinks.keys());
+    controls.links = new FormArray(
+      [...existingLinks.keys()].map(url => newFilmLinkControl(url, existingUrls)),
+      { validators: [filmLinksDistinctValidator(existingLinks)] }
+    );
+    controls.trailers = new FormArray(
+      (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
+    );
   } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
     controls.imdb = new FormControl(uriText(tv.imdb), { nonNullable: true });
@@ -171,5 +274,65 @@ export function filmChanges(
     const identity = buildTvShowEpisodeCanonicalChangeRequest({ imdb: uriText(previous.imdb) }, { imdb: next.imdb });
     if (identity.imdb != null) film.imdb = identity.imdb;
   }
+  if (next.imdbId !== undefined) {
+    const imdbId = next.imdbId.trim();
+    if (imdbId !== (previous.imdbId ?? '')) film.imdbId = imdbId;
+  }
+  if (next.tmdbId !== undefined) {
+    const tmdbId = next.tmdbId.trim() === '' ? 0 : Number(next.tmdbId.trim());
+    if (tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
+  }
+  if (next.links !== undefined) {
+    const services = filmServiceChanges(previous.services, next.links);
+    if (services) film.services = services;
+  }
+  if (next.trailers !== undefined) {
+    const trailers = filmTrailerChanges(previous, next.trailers);
+    if (trailers) film.trailers = trailers;
+  }
   return film;
+}
+
+/**
+ * The film `services` patch: each link files under the key its URL resolves to (as the server does); a key the film
+ * had that no link resolves to any more is removed (`url` and `image` blank). Null when nothing changed.
+ */
+export function filmServiceChanges(
+  previous: FilmDto['services'],
+  links: readonly string[]
+): Record<string, { url?: string; image?: string }> | null {
+  const existing = filmExistingLinks(previous);
+  const before = new Map<string, string>([...existing].map(([url, key]) => [key, url]));
+  const after = new Map<string, string>();
+  for (const value of links) {
+    const url = value.trim();
+    // An unchanged link keeps the key it is stored under; a new one files under the key its URL resolves to.
+    const key = existing.get(url) ?? filmLinkKey(url);
+    if (key) after.set(key, url);
+  }
+  const changes: Record<string, { url?: string; image?: string }> = {};
+  for (const [key, url] of after) {
+    if (before.get(key) !== url) changes[key] = { url };
+  }
+  for (const key of before.keys()) {
+    if (!after.has(key)) changes[key] = { url: '', image: '' };
+  }
+  return Object.keys(changes).length > 0 ? changes : null;
+}
+
+/** The film `trailers` patch (keep / order / rename), or null when the list and titles are unchanged. */
+export function filmTrailerChanges(
+  previous: FilmDto,
+  next: readonly { id: string; title: string }[]
+): { id: string; title?: string }[] | null {
+  const before = previous.trailers ?? [];
+  const unchanged = before.length === next.length &&
+    before.every((trailer, index) => trailer.id === next[index].id && (trailer.title ?? '') === next[index].title.trim());
+  if (unchanged) {
+    return null;
+  }
+  return next.map(trailer => {
+    const title = trailer.title.trim();
+    return title ? { id: trailer.id, title } : { id: trailer.id };
+  });
 }

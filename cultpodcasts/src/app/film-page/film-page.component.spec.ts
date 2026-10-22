@@ -19,6 +19,7 @@ import { SearchResult } from '../search-result.interface';
 import { SeoService } from '../seo.service';
 import { SiteService } from '../site.service';
 import { FilmPageComponent } from './film-page.component';
+import { FilmTrailersComponent } from '../film-trailers/film-trailers.component';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
 
@@ -127,7 +128,9 @@ describe('FilmPageComponent', () => {
             provide: EpisodeService,
             useValue: {
               getEpisodeDetailsFromKvViaApi: async () => undefined,
-              GetEpisodeDetailsFromApi: async () => filmHit(),
+              GetEpisodeDetailsFromApi: async () => filmHit({
+                trailers: ['00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser'],
+              }),
               getPlayableById: async () => undefined,
             },
           },
@@ -150,6 +153,10 @@ describe('FilmPageComponent', () => {
 
       const child = fixture.debugElement.query(By.directive(PodcastEpisodeComponent));
       expect(child).toBeTruthy();
+      const trailers = fixture.debugElement.query(By.directive(FilmTrailersComponent));
+      expect(trailers.componentInstance.trailers()).toEqual([
+        '00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser',
+      ]);
       expect(child.componentInstance.emitCuratorEdit).toBe(true);
 
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;

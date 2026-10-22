@@ -6,6 +6,8 @@ export interface EditEpisodeDialogResponse {
     updated?: boolean;
     /** The episode became a Film; the dialog has already navigated to the film page. */
     movedToFilm?: boolean;
+    /** The episode became a film trailer (episode row deleted); the dialog has navigated to the film page. */
+    attachedAsTrailer?: boolean;
     response?: EpisodeChangeResponse;
     podcastId?: string;
 }

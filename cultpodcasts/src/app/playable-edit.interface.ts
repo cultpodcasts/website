@@ -1,4 +1,5 @@
 import { EpisodeChangeResponse } from './episode-change-response.interface';
+import { FilmTrailer } from './film-trailer';
 
 /**
  * Curator GET body shared by `newsreport/{id}` and `tvshowepisode/{id}` (RPP `PlayableFieldsDto`).
@@ -57,6 +58,8 @@ export interface FilmDto extends PlayableFieldsDto {
   imdb?: string | URL | null;
   imdbId?: string | null;
   tmdbId?: number | null;
+  /** In display order; omitted when the film has none. */
+  trailers?: FilmTrailer[] | null;
 }
 
 /** The `film/{id}` GET wire body (no `title`). */
@@ -99,6 +102,14 @@ export interface TvShowEpisodeChangeRequest extends PlayableFieldsChangeRequest 
 export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'title'> {
   publisher?: string;
   imdb?: string;
+  /** IMDb title id `tt` + 7–10 digits; `''` clears. */
+  imdbId?: string;
+  /** TMDB movie id; `0` clears. */
+  tmdbId?: number;
+  /** Per key; the server files a URL under the key it resolves to. `{ url: '', image: '' }` removes the key. */
+  services?: Record<string, { url?: string; image?: string }>;
+  /** The trailers to keep, in order, with optional rename; the rest are removed. */
+  trailers?: { id: string; title?: string }[];
 }
 
 /** 202 body, same as the episode PATCH (`EpisodeUpdateResponse`). */

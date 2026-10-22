@@ -7,17 +7,19 @@ import { PodcastEpisodeComponent } from "../podcast-episode/podcast-episode.comp
 import { connectKindEpisode } from "../kind-episode-page";
 import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
+import { FilmTrailersComponent } from "../film-trailers/film-trailers.component";
 
 /**
  * /film/{title}/{short id}: the shared episode shell, like the news report and TV episode pages. Curator Edit opens
- * the film dialog (film/{id}); Post Episode is podcast-only, so the shell hides it for films.
+ * the film dialog (film/{id}); Post Episode is podcast-only, so the shell hides it for films. Below the shell, the
+ * Trailers section lists the film's trailers from its search document.
  */
 @Component({
   selector: "app-film-page",
   templateUrl: "./film-page.component.html",
   styleUrl: "./film-page.component.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent],
+  imports: [SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent, FilmTrailersComponent],
 })
 export class FilmPageComponent {
   private readonly dialog = inject(MatDialog);

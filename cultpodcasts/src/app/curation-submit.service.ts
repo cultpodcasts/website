@@ -11,6 +11,7 @@ import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.inte
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
+import { EpisodeTrailerAttachRequest, EpisodeTrailerAttachResponse } from './episode-trailer-attach.interface';
 import {
   FilmApiDto,
   FilmChangeRequest,
@@ -75,6 +76,18 @@ export class CurationSubmitService {
       environment.api).toString();
     const body: EpisodeFilmMoveRequest = title ? { title: title } : {};
     return this.http.post<EpisodeFilmMoveResponse>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Curator: attach one podcast episode to an existing film as a trailer (the episode row is then deleted). */
+  postEpisodeAsTrailer(podcastId: string, episodeId: string, filmId: string, title: string | null) {
+    const url = new URL(
+      `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/trailer`,
+      environment.api).toString();
+    const body: EpisodeTrailerAttachRequest = title ? { filmId, title } : { filmId };
+    return this.http.post<EpisodeTrailerAttachResponse>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

@@ -19,4 +19,6 @@ export interface SearchResult {
   /** Non-English IETF tag from the search index when present; null/omitted ≈ English. */
   lang?: string | null;
   contentKind?: string | null;
+  /** Film only: `{duration}|{url}|{title}` per trailer (see film-trailer.ts). */
+  trailers?: string[] | null;
 }

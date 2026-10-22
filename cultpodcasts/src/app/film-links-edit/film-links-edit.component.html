@@ -1,0 +1,25 @@
+@for (control of links().controls; track control; let i = $index) {
+<mat-form-field class="full-width">
+    <mat-label>{{ label(control.value) }}</mat-label>
+    <input type="url" matInput [formControl]="control" placeholder="https://">
+    <button type="button" matIconButton matSuffix aria-label="Open link"
+        [disabled]="!hasNonEmptyUrlValue(control.value)" (click)="openExternalUrl(control.value)">
+        <mat-icon>open_in_new</mat-icon>
+    </button>
+    <button type="button" matIconButton matSuffix aria-label="Remove link" (click)="remove(i)">
+        <mat-icon>clear</mat-icon>
+    </button>
+    @if (control.hasError('filmLinkUrl')) {
+    <mat-error>Enter a full http(s) URL</mat-error>
+    } @else if (control.hasError('filmLinkService')) {
+    <mat-error>Not a service the catalogue knows</mat-error>
+    }
+</mat-form-field>
+}
+@if (links().errors?.['filmLinkDuplicate']; as key) {
+<p class="error">Two links for {{ key }}: keep one.</p>
+}
+@if (links().length === 0) {
+<p class="empty">No links.</p>
+}
+<button type="button" matButton="text" (click)="add()">Add link</button>

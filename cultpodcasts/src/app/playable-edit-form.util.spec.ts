@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -173,6 +173,93 @@ describe('playable edit form', () => {
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
       form.controls.imdb!.setValue('');
       expect(filmChanges(previous, form.getRawValue())).toEqual({ imdb: '' });
+    });
+
+    it('sends the IMDb id (blank clears) and the TMDB id (blank sends 0 to clear), and validates both', () => {
+      const previous = film({ imdbId: 'tt0000002', tmdbId: 7 });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.controls.tmdbId!.value).toBe('7');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.imdbId!.setValue(' tt0000009 ');
+      form.controls.tmdbId!.setValue('42');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: 'tt0000009', tmdbId: 42 });
+      form.controls.imdbId!.setValue('');
+      form.controls.tmdbId!.setValue('');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: '', tmdbId: 0 });
+      form.controls.imdbId!.setValue('nm0000001');
+      form.controls.tmdbId!.setValue('-3');
+      expect(form.controls.imdbId!.hasError('pattern')).toBe(true);
+      expect(form.controls.tmdbId!.hasError('pattern')).toBe(true);
+    });
+
+    it('patches links per service: a new URL files under its service, a removed one clears its key, an unchanged one is not sent', () => {
+      const archive = 'https://archive.org/details/synthetic-film';
+      const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-film';
+      const previous = film({ services: { internetArchive: { url: archive }, bbcIplayer: { url: iplayer } } });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.controls.links!.getRawValue()).toEqual([archive, iplayer]);
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+
+      form.controls.links!.removeAt(1);
+      form.controls.links!.push(newFilmLinkControl('https://www.youtube.com/watch?v=synthetic01'));
+
+      expect(form.valid).toBe(true);
+      expect(filmChanges(previous, form.getRawValue()).services).toEqual({
+        youtube: { url: 'https://www.youtube.com/watch?v=synthetic01' },
+        bbcIplayer: { url: '', image: '' }
+      });
+    });
+
+    it('rejects a relative link and two links for one service; an unlisted host files under its host key', () => {
+      const film0 = film({ services: null });
+      const form = buildPlayableEditForm(film0, 'film');
+      const links = form.controls.links!;
+      links.push(newFilmLinkControl('not a url'));
+      expect(links.at(0).hasError('filmLinkUrl')).toBe(true);
+      links.at(0).setValue('https://synthetic-unknown-service.example/watch/1');
+      expect(links.at(0).valid).toBe(true);
+      expect(filmChanges(film0, form.getRawValue()).services).toEqual({
+        syntheticunknownserviceexample: { url: 'https://synthetic-unknown-service.example/watch/1' }
+      });
+      links.at(0).setValue('https://www.youtube.com/watch?v=synthetic01');
+      links.push(newFilmLinkControl('https://www.youtube.com/watch?v=synthetic02'));
+      expect(links.hasError('filmLinkDuplicate')).toBe(true);
+      expect(form.valid).toBe(false);
+    });
+
+    it('keeps an existing link the client cannot classify valid, so an old link never blocks a save', () => {
+      const odd = 'https://synthetic-unknown-service.example/watch/1';
+      const previous = film({ services: { legacyKey: { url: odd } } });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.valid).toBe(true);
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.links!.removeAt(0);
+      expect(filmChanges(previous, form.getRawValue()).services).toEqual({ legacyKey: { url: '', image: '' } });
+    });
+
+    it('sends the kept trailers in order with their titles only when the list or a title changed', () => {
+      const trailers = [
+        { id: 't1', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' },
+        { id: 't2', title: 'Synthetic Clip', url: 'https://www.youtube.com/watch?v=synthetic02', duration: '0:00:45' },
+        { id: 't3', title: 'Synthetic Spot', url: 'https://www.youtube.com/watch?v=synthetic03', duration: '0:00:30' }
+      ];
+      const previous = film({ trailers });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+
+      const array = form.controls.trailers!;
+      const second = array.at(1);
+      array.removeAt(1);
+      array.insert(0, second);
+      array.removeAt(2);
+      array.at(1).controls.title.setValue('  Renamed Teaser  ');
+
+      expect(filmChanges(previous, form.getRawValue()).trailers).toEqual([
+        { id: 't2', title: 'Synthetic Clip' },
+        { id: 't1', title: 'Renamed Teaser' }
+      ]);
+      array.clear();
+      expect(filmChanges(previous, form.getRawValue()).trailers).toEqual([]);
     });
   });
 });

@@ -62,6 +62,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { filmPageCommands } from '../catalogue-links';
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { MoveEpisodeToFilmDialogClose, MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
+import { AttachTrailerDialogClose, AttachTrailerDialogData } from '../episode-trailer-attach.interface';
+import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -220,6 +222,32 @@ export class EditEpisodeDialogComponent {
         this.dialogRef.close({ movedToFilm: true, podcastId: this.podcastId });
         this.snackBar.open("Moved to film", "Ok", { duration: 10000 });
         this.router.navigate(filmPageCommands(result.name, result.filmId));
+      });
+  }
+
+  /** Curator: attach this one episode to an existing film as a trailer, then open the film page. */
+  attachAsTrailer() {
+    if (!this.podcastId || !this.originalEpisode) {
+      return;
+    }
+    const data: AttachTrailerDialogData = {
+      podcastId: this.podcastId,
+      episodeId: this.episodeId,
+      episodeTitle: this.originalEpisode.title,
+      hasUnsavedChanges: this.form()?.dirty ?? false
+    };
+    this.dialog.open<AttachTrailerDialogComponent, AttachTrailerDialogData, AttachTrailerDialogClose>(
+      AttachTrailerDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
+      .afterClosed()
+      .subscribe(result => {
+        if (!result?.attached || !result.filmId) {
+          return;
+        }
+        this.dialogRef.close({ attachedAsTrailer: true, podcastId: this.podcastId });
+        this.snackBar.open("Attached as trailer", "Ok", { duration: 10000 });
+        if (result.name) {
+          this.router.navigate(filmPageCommands(result.name, result.filmId));
+        }
       });
   }
 
