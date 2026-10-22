@@ -87,6 +87,18 @@ describe('CurationSubmitService', () => {
     await untitled;
   });
 
+  it('POSTs /episode/{podcastId}/{episodeId}/tvshow with the target as a curate command', async () => {
+    const body = { tvShowName: 'Synthetic Show', createShow: true, publisher: 'Synthetic Publisher', title: 'Synthetic Episode' };
+    const pending = firstValueFrom(service.postEpisodeToTvShow('podcast-1', 'episode-1', body));
+    const req = httpMock.expectOne(new URL('/episode/podcast-1/episode-1/tvshow', environment.api).toString());
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(body);
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ tvShowId: 'show-1', tvShowName: 'Synthetic Show', episodeId: 'episode-1', createdShow: true },
+      { status: 202, statusText: 'Accepted' });
+    expect((await pending).body?.tvShowName).toBe('Synthetic Show');
+  });
+
   it('GETs /subject/{name} and /person/{name} as one encoded path segment', async () => {
     const name = 'Alpha Beta/Gamma';
     const subjectPending = firstValueFrom(service.getSubject(name));

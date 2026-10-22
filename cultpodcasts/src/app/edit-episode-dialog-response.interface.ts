@@ -8,6 +8,8 @@ export interface EditEpisodeDialogResponse {
     movedToFilm?: boolean;
     /** The episode became a film trailer (episode row deleted); the dialog has navigated to the film page. */
     attachedAsTrailer?: boolean;
+    /** The episode became a TV show episode (episode row deleted); the dialog has navigated to the TV episode page. */
+    movedToTvShow?: boolean;
     response?: EpisodeChangeResponse;
     podcastId?: string;
 }

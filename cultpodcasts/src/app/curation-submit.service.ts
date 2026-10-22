@@ -12,6 +12,7 @@ import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.in
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
 import { EpisodeTrailerAttachRequest, EpisodeTrailerAttachResponse } from './episode-trailer-attach.interface';
+import { EpisodeTvShowMoveRequest, EpisodeTvShowMoveResponse } from './episode-tv-show-move.interface';
 import {
   FilmApiDto,
   FilmChangeRequest,
@@ -88,6 +89,17 @@ export class CurationSubmitService {
       environment.api).toString();
     const body: EpisodeTrailerAttachRequest = title ? { filmId, title } : { filmId };
     return this.http.post<EpisodeTrailerAttachResponse>(url, body, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Curator: move one podcast episode into an existing or new TV show with the same id (the episode row is then deleted). */
+  postEpisodeToTvShow(podcastId: string, episodeId: string, request: EpisodeTvShowMoveRequest) {
+    const url = new URL(
+      `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/tvshow`,
+      environment.api).toString();
+    return this.http.post<EpisodeTvShowMoveResponse>(url, request, {
       context: this.curateContext(),
       observe: 'response'
     });
