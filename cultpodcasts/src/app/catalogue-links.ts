@@ -1,4 +1,5 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
+import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
@@ -59,8 +60,8 @@ export function newsReportPageCommands(organisation: string, id: string): string
   return ["/news", organisation, catalogueShortPageId(id, "NewsReport")];
 }
 
-/** Mixed lists choose a card with these paths. Podcast pages do not call this. */
-export function cataloguePlayableLink(item: CatalogueItem): string[] {
+/** Mixed lists choose a card with these paths. Podcast pages do not call this. Null for a film trailer whose film page cannot be built. */
+export function cataloguePlayableLink(item: CatalogueItem): string[] | null {
   switch (item.contentKind) {
     case "Film":
       return filmPageCommands(item.episodeTitle, item.id);
@@ -68,6 +69,10 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
       return tvShowEpisodePageCommands(item.podcastName, item.id);
     case "NewsReport":
       return newsReportPageCommands(item.podcastName, item.id);
+    case FILM_TRAILER_CONTENT_KIND:
+      // A trailer has no page. The film page is the only site link, and it uses the film id,
+      // never the synthetic `{filmId}:trailer:{n}` id. Null when the title or film id is missing.
+      return filmTrailerPage(item);
     default:
       return podcastEpisodePageCommands(item.podcastName, item.id);
   }
@@ -75,16 +80,29 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
 
 /**
  * Share link. Podcast episodes keep the s.cultpodcasts.com short link (its KV key is the
- * unprefixed 22-char id). Film, TV, and news link straight to their own page with the prefixed
- * short id: the shortener only accepts 22-char keys, so a prefixed short link there is a 404
- * (same choice as RPP's CataloguePlayableSiteLink for social posts).
+ * unprefixed 22-char id). Film, TV, news, and film trailers link straight to their page with the
+ * prefixed short id: the shortener only accepts 22-char keys, so a prefixed short link there is a
+ * 404 (same choice as RPP's CataloguePlayableSiteLink for social posts). Null when that page
+ * cannot be built (a film trailer with no film title or film id).
  */
-export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string {
-  if (item.contentKind === "Film" || item.contentKind === "TvShowEpisode" || item.contentKind === "NewsReport") {
-    const [root, slug, id] = cataloguePlayableLink(item);
-    return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string | null {
+  if (
+    item.contentKind === "Film" ||
+    item.contentKind === "TvShowEpisode" ||
+    item.contentKind === "NewsReport" ||
+    item.contentKind === FILM_TRAILER_CONTENT_KIND
+  ) {
+    return cataloguePageUrl(cataloguePlayableLink(item), siteOrigin);
   }
   return `${shortner}/${shortIds.toBase64(item.id)}`;
+}
+
+function cataloguePageUrl(page: string[] | null, siteOrigin: string): string | null {
+  if (!page) {
+    return null;
+  }
+  const [root, slug, id] = page;
+  return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
 }
 
 /**
@@ -159,7 +177,7 @@ export function reviewParentLink(
   }
 }
 
-/** Film has no parent. TV and news hubs use the parent name. */
+/** Film has no parent. A film trailer's parent is the film page. TV and news hubs use the parent name. */
 export function catalogueParentLink(item: CatalogueItem | undefined): string[] | null {
   if (!item) {
     return null;
@@ -167,6 +185,8 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
   switch (item.contentKind) {
     case "Film":
       return null;
+    case FILM_TRAILER_CONTENT_KIND:
+      return filmTrailerPage(item);
     case "TvShowEpisode":
       return item.podcastName ? ["/tv", item.podcastName] : null;
     case "NewsReport":
@@ -174,6 +194,20 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
     default:
       return item.podcastName ? ["/podcast", item.podcastName] : null;
   }
+}
+
+/**
+ * Film page for a trailer. `podcastName` is the film title (the page slug). The id segment is the film's
+ * own short id, parsed out of `{filmId}:trailer:{n}`. Null when the title or film id is missing, so callers
+ * do not invent a podcast URL that contains the synthetic id.
+ */
+function filmTrailerPage(item: CatalogueItem): string[] | null {
+  const filmId = filmIdFromTrailerId(item.id);
+  const title = item.podcastName?.trim() ?? "";
+  if (!filmId || !title) {
+    return null;
+  }
+  return filmPageCommands(title, filmId);
 }
 
 /** Public parent hubs after a podcast→TV/news transfer. Film is not a parent. */

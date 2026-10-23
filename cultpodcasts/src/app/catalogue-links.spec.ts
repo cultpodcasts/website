@@ -52,6 +52,37 @@ describe("catalogue links", () => {
     expect(catalogueParentLink(news)).toEqual(["/news", "Show"]);
   });
 
+  it("links a film trailer to its film page and keeps the synthetic id out of the route", () => {
+    const trailer = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "FilmTrailer",
+      episodeTitle: "Synthetic Teaser",
+      podcastName: "One Off",
+    };
+    const filmPage = ["/film", "One Off", guids.toCatalogueShortId(id, "Film")];
+    expect(cataloguePlayableLink(trailer)).toEqual(filmPage);
+    expect(catalogueParentLink(trailer)).toEqual(filmPage);
+  });
+
+  it("gives a film trailer no page when the film title or film id is missing", () => {
+    const untitled = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "FilmTrailer",
+      episodeTitle: "Synthetic Teaser",
+      podcastName: "",
+    };
+    const blankTitle = { ...untitled, podcastName: "   " };
+    const unparsed = { ...untitled, podcastName: "One Off", id: "not-a-trailer" };
+    expect(cataloguePlayableLink(untitled)).toBeNull();
+    expect(catalogueParentLink(untitled)).toBeNull();
+    expect(cataloguePlayableLink(blankTitle)).toBeNull();
+    expect(catalogueParentLink(blankTitle)).toBeNull();
+    expect(cataloguePlayableLink(unparsed)).toBeNull();
+    expect(catalogueParentLink(unparsed)).toBeNull();
+  });
+
   it("keeps a podcast episode on /podcast/ with its unprefixed short id", () => {
     expect(cataloguePlayableLink(item)).toEqual(["/podcast", "Show", guids.toBase64(id)]);
     expect(catalogueParentLink(item)).toEqual(["/podcast", "Show"]);
@@ -142,6 +173,9 @@ describe("catalogue links", () => {
       for (const kind of ["Film", "TvShowEpisode", "NewsReport"] as const) {
         const episode = { ...item, contentKind: kind, podcastName: "Law & Order: SVU" };
         const commands = cataloguePlayableLink(episode);
+        if (!commands) {
+          throw new Error(`expected a page for ${kind}`);
+        }
         const path = `${commands[0]}/${encodeURIComponent(commands[1])}/${commands[2]}`;
         expect(movedKindRedirect(path, episode, guids)).toBeNull();
       }
@@ -224,6 +258,34 @@ describe("catalogue links", () => {
         .toBe(`${origin}/tv/Show/${guids.toCatalogueShortId(id, "TvShowEpisode")}`);
       expect(catalogueShareUrl({ ...item, contentKind: "Film" }, origin, shortner))
         .toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+    });
+
+    it("shares a film trailer as the film page, not through the shortener", () => {
+      const trailer = {
+        ...item,
+        id: `${id}:trailer:0`,
+        contentKind: "FilmTrailer",
+        episodeTitle: "Synthetic Teaser",
+        podcastName: "One Off",
+      };
+      const url = catalogueShareUrl(trailer, origin, shortner);
+      if (!url) {
+        throw new Error("expected a film page share url");
+      }
+      expect(url).toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+      expect(url).not.toContain(":trailer:");
+      expect(url.startsWith(shortner)).toBe(false);
+    });
+
+    it("shares nothing when a film trailer has no film title or film id", () => {
+      const untitled = {
+        ...item,
+        id: `${id}:trailer:0`,
+        contentKind: "FilmTrailer",
+        podcastName: "",
+      };
+      expect(catalogueShareUrl(untitled, origin, shortner)).toBeNull();
+      expect(catalogueShareUrl({ ...untitled, podcastName: "One Off", id: "not-a-trailer" }, origin, shortner)).toBeNull();
     });
 
     it("keeps podcast episodes on the 22-character shortener key", () => {

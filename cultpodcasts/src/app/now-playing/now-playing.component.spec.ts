@@ -5,6 +5,7 @@ import { NowPlayingComponent } from './now-playing.component';
 import { PlayerService } from '../player.service';
 import { SearchResult } from '../search-result.interface';
 import { GuidService } from '../guid.service';
+import { filmTrailerEpisode, parseFilmTrailerTokens } from '../film-trailer';
 
 function ep(overrides: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -60,6 +61,28 @@ describe('NowPlayingComponent', () => {
     player.play(ep({ contentKind: 'NewsReport', podcastName: 'Desk' }), { mode: 'dock' });
     fixture.detectChanges();
     expect(showLink()?.getAttribute('href')).toBe('/news/Desk');
+  });
+
+  it('links a playing film trailer back to its film and names the film on a queued trailer', () => {
+    const filmId = '00112233-4455-4677-8899-aabbccddeeff';
+    const [playingLink, queuedLink] = parseFilmTrailerTokens([
+      '00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser',
+      '00:01:00|https://www.youtube.com/watch?v=synthetic02|Synthetic Clip',
+    ]);
+    player.play(filmTrailerEpisode(playingLink, filmId, 0, 'One Off'), { mode: 'dock' });
+    player.addToQueue(filmTrailerEpisode(queuedLink, filmId, 1, 'One Off'));
+    player.openQueuePanel();
+    fixture.detectChanges();
+
+    const short = new GuidService().toCatalogueShortId(filmId, 'Film');
+    expect(showLink()?.getAttribute('href')).toBe(`/film/One%20Off/${short}`);
+    expect(showLink()?.textContent).toContain('One Off');
+    expect(fixture.nativeElement.querySelector('.queue-panel__show')?.textContent?.trim()).toBe('One Off');
+    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a[href]') as NodeListOf<HTMLAnchorElement>)
+      .map(anchor => anchor.getAttribute('href') ?? '');
+    expect(hrefs.some(href => href.includes(':trailer:'))).toBe(false);
+    expect(hrefs.some(href => href.includes(filmId))).toBe(false);
+    expect(fixture.nativeElement.querySelector('iframe')?.getAttribute('src')).toContain('youtube.com/embed/');
   });
 
   it('keeps a podcast parent row on /podcast/', () => {

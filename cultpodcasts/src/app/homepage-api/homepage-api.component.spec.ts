@@ -368,4 +368,25 @@ describe('withHeroLinks', () => {
     expect(news.playableLink).toEqual(['/news', 'Desk', 'ep-1']);
     expect(news.parentLink).toEqual(['/news', 'Desk']);
   });
+
+  it('drops a film trailer with no film page and keeps one that links to the film', () => {
+    const missing = withHeroLinks([{
+      ...base,
+      id: 'ep-1:trailer:0',
+      contentKind: 'FilmTrailer',
+      podcastName: '',
+      episodeTitle: 'Synthetic Teaser',
+    }]);
+    expect(missing).toEqual([]);
+
+    const [slide] = withHeroLinks([{
+      ...base,
+      id: 'ep-1:trailer:0',
+      contentKind: 'FilmTrailer',
+      podcastName: 'One Off',
+      episodeTitle: 'Synthetic Teaser',
+    }]);
+    expect(slide.playableLink).toEqual(['/film', 'One Off', 'ep-1']);
+    expect(slide.parentLink).toEqual(['/film', 'One Off', 'ep-1']);
+  });
 });

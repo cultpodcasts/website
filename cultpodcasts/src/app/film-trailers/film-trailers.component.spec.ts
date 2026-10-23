@@ -24,6 +24,7 @@ describe('FilmTrailersComponent', () => {
     player = TestBed.inject(PlayerService);
     fixture = TestBed.createComponent(FilmTrailersComponent);
     fixture.componentRef.setInput('filmId', filmId);
+    fixture.componentRef.setInput('filmTitle', 'One Off');
   });
 
   async function render(trailers: readonly string[] | null | undefined): Promise<HTMLElement> {
@@ -53,7 +54,10 @@ describe('FilmTrailersComponent', () => {
     expect(card.querySelector('img')?.getAttribute('src')).toBe('https://i.ytimg.com/vi/synthetic01/hqdefault.jpg');
     expect(card.querySelector('.episode-poster__badge--duration')?.textContent?.trim()).toBe('0:02:11');
     expect(card.querySelector('button.episode-poster__cta')?.textContent?.trim()).toBe('Watch');
-    expect(card.querySelector('.episode-poster__byline')?.textContent?.trim()).toContain('Trailer');
+    const byline = card.querySelector('.episode-poster__byline');
+    expect(byline?.textContent?.trim()).toContain('Trailer');
+    expect(byline?.textContent).not.toContain('One Off');
+    expect(byline?.querySelector('a')).toBeNull();
   });
 
   it('plays a YouTube trailer in the site player', async () => {
@@ -65,6 +69,8 @@ describe('FilmTrailersComponent', () => {
     expect(play).toHaveBeenCalledTimes(1);
     expect(play.mock.calls[0][0].episodeTitle).toBe('Synthetic Teaser');
     expect(play.mock.calls[0][0].id).toBe(`${filmId}:trailer:0`);
+    expect(play.mock.calls[0][0].podcastName).toBe('One Off');
+    expect(play.mock.calls[0][0].services?.['youtube']?.url?.toString()).toBe('https://www.youtube.com/watch?v=synthetic01');
   });
 
   it('links a trailer the site cannot play to its page, with a placeholder image', async () => {

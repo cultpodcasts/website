@@ -54,4 +54,25 @@ describe('EpisodePlayerComponent', () => {
     fixture.detectChanges();
     expect(showLink()?.getAttribute('href')).toBe('/podcast/Show');
   });
+
+  function episodePageLink(): HTMLAnchorElement | null {
+    return [...fixture.nativeElement.querySelectorAll('a')].find((link: HTMLAnchorElement) =>
+      link.textContent?.includes('Episode page')
+    ) ?? null;
+  }
+
+  it('hides the episode page control when the shell has no page', () => {
+    player.play(ep({ youtubeId: undefined }), { mode: 'dock' });
+    fixture.componentRef.setInput('pageLink', null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No playable link for this episode.');
+    expect(episodePageLink()).toBeNull();
+  });
+
+  it('links the empty state to the page the shell was given', () => {
+    player.play(ep({ youtubeId: undefined }), { mode: 'dock' });
+    fixture.componentRef.setInput('pageLink', ['/film', 'One Off', 'abc']);
+    fixture.detectChanges();
+    expect(episodePageLink()?.getAttribute('href')).toBe('/film/One%20Off/abc');
+  });
 });

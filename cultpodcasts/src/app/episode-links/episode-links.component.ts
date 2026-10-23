@@ -45,6 +45,10 @@ export class EpisodeLinksComponent {
   }
 
   share(item: HomepageEpisode | SearchResult) {
+    const url = catalogueShareUrl(item, window.location.origin, environment.shortner);
+    if (!url) {
+      return;
+    }
     let description = `"${item.episodeTitle}" - ${item.podcastName}`;
     description = description + ", " + formatDate(item.release, 'mediumDate', 'en-US');
 
@@ -56,7 +60,7 @@ export class EpisodeLinksComponent {
     const share: ShareData = {
       title: item.episodeTitle,
       text: description,
-      url: catalogueShareUrl(item, window.location.origin, environment.shortner)
+      url
     };
     window.navigator.share(share);
   }
