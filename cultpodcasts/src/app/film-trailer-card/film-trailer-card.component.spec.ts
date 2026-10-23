@@ -45,6 +45,17 @@ describe('FilmTrailerCardComponent', () => {
     expect(byline.querySelector('a')).toBeNull();
   });
 
+  it('keeps the Trailer byline when the film title is carried for the player', () => {
+    const [link] = parseFilmTrailerTokens(['00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser']);
+    fixture.componentRef.setInput('episode', filmTrailerEpisode(link, 'synthetic-film', 0, 'One Off'));
+    fixture.detectChanges();
+    const byline = fixture.nativeElement.querySelector('.episode-poster__byline') as HTMLElement;
+
+    expect(byline.textContent?.replace(/\s+/g, ' ').trim()).toBe('movie Trailer');
+    expect(byline.querySelector('a')).toBeNull();
+    expect(byline.textContent).not.toContain('One Off');
+  });
+
   it('opens a non-playable trailer from the artwork in a new tab', () => {
     const el = show('00:01:00|https://synthetic-video.example/watch/1|Synthetic Elsewhere');
     const art = el.querySelector('a.episode-poster__art') as HTMLAnchorElement;

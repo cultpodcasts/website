@@ -23,9 +23,13 @@ export class FilmTrailersComponent {
   readonly trailers = input<readonly string[] | null | undefined>(undefined);
   /** The film's id, so trailer card ids are unique across films (player and queue). */
   readonly filmId = input.required<string>();
+  /** The film's title, carried as `podcastName` so the player and queue can link back to the film page. */
+  readonly filmTitle = input('');
 
   protected readonly episodes = computed(() =>
-    parseFilmTrailerTokens(this.trailers()).map((link, index) => filmTrailerEpisode(link, this.filmId(), index))
+    parseFilmTrailerTokens(this.trailers()).map((link, index) =>
+      filmTrailerEpisode(link, this.filmId(), index, this.filmTitle())
+    )
   );
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 

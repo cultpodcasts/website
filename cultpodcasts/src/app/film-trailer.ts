@@ -31,18 +31,29 @@ export interface FilmTrailerLink {
 /** `contentKind` of a trailer card on the film page's Trailers rail (see catalogue-card). Not an RPP kind. */
 export const FILM_TRAILER_CONTENT_KIND = 'FilmTrailer';
 
+/** `{filmId}:trailer:{n}` → the film id. Null when `id` is not a trailer id. */
+export function filmIdFromTrailerId(id: string): string | null {
+  const match = /^(.+):trailer:\d+$/.exec(id);
+  return match?.[1] || null;
+}
+
 /**
  * A trailer as a rail card. The search token has only duration, URL and title, so: the id is made up (unique per
  * film and position, for the player and queue); the URL becomes the one `services` entry for its host, so a YouTube
- * trailer gets its thumbnail and in-app Watch and an iPlayer / Archive one an outbound Watch; there is no publisher
- * (`podcastName` is empty, so the card shows a "Trailer" byline and the player no parent link), image, release or
- * description.
+ * trailer gets its thumbnail and in-app Watch and an iPlayer / Archive one an outbound Watch. `podcastName` carries
+ * the film title for the player dock and the queue show line. The card passes a null parent link and a "Trailer"
+ * kind label, so that title does not replace the poster byline. There is no image, release or description.
  */
-export function filmTrailerEpisode(link: FilmTrailerLink, filmId: string, index: number): SearchResult {
+export function filmTrailerEpisode(
+  link: FilmTrailerLink,
+  filmId: string,
+  index: number,
+  filmTitle = ''
+): SearchResult {
   const key = resolveServiceKey(link.url) ?? 'link';
   return {
     id: `${filmId}:trailer:${index}`,
-    podcastName: '',
+    podcastName: filmTitle.trim(),
     episodeTitle: link.title,
     episodeDescription: '',
     release: new Date(Number.NaN),

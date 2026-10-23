@@ -1,4 +1,5 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
+import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
@@ -68,6 +69,10 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
       return tvShowEpisodePageCommands(item.podcastName, item.id);
     case "NewsReport":
       return newsReportPageCommands(item.podcastName, item.id);
+    case FILM_TRAILER_CONTENT_KIND:
+      // A trailer has no page. The film page is the only site link, and it uses the film id,
+      // never the synthetic `{filmId}:trailer:{n}` id.
+      return filmTrailerPage(item) ?? ["/film"];
     default:
       return podcastEpisodePageCommands(item.podcastName, item.id);
   }
@@ -82,6 +87,14 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
 export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string {
   if (item.contentKind === "Film" || item.contentKind === "TvShowEpisode" || item.contentKind === "NewsReport") {
     const [root, slug, id] = cataloguePlayableLink(item);
+    return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+  }
+  if (item.contentKind === FILM_TRAILER_CONTENT_KIND) {
+    const page = filmTrailerPage(item);
+    if (!page) {
+      return new URL("/", siteOrigin).toString();
+    }
+    const [root, slug, id] = page;
     return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
   }
   return `${shortner}/${shortIds.toBase64(item.id)}`;
@@ -159,7 +172,7 @@ export function reviewParentLink(
   }
 }
 
-/** Film has no parent. TV and news hubs use the parent name. */
+/** Film has no parent. A film trailer's parent is the film page. TV and news hubs use the parent name. */
 export function catalogueParentLink(item: CatalogueItem | undefined): string[] | null {
   if (!item) {
     return null;
@@ -167,6 +180,8 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
   switch (item.contentKind) {
     case "Film":
       return null;
+    case FILM_TRAILER_CONTENT_KIND:
+      return filmTrailerPage(item);
     case "TvShowEpisode":
       return item.podcastName ? ["/tv", item.podcastName] : null;
     case "NewsReport":
@@ -174,6 +189,20 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
     default:
       return item.podcastName ? ["/podcast", item.podcastName] : null;
   }
+}
+
+/**
+ * Film page for a trailer. `podcastName` is the film title (the page slug). The id segment is the film's
+ * own short id, parsed out of `{filmId}:trailer:{n}`. Null when the title or film id is missing, so callers
+ * do not invent a podcast URL that contains the synthetic id.
+ */
+function filmTrailerPage(item: CatalogueItem): string[] | null {
+  const filmId = filmIdFromTrailerId(item.id);
+  const title = item.podcastName?.trim() ?? "";
+  if (!filmId || !title) {
+    return null;
+  }
+  return filmPageCommands(title, filmId);
 }
 
 /** Public parent hubs after a podcast→TV/news transfer. Film is not a parent. */

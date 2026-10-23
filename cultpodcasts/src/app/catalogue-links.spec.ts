@@ -52,6 +52,35 @@ describe("catalogue links", () => {
     expect(catalogueParentLink(news)).toEqual(["/news", "Show"]);
   });
 
+  it("links a film trailer to its film page and keeps the synthetic id out of the route", () => {
+    const trailer = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "FilmTrailer",
+      episodeTitle: "Synthetic Teaser",
+      podcastName: "One Off",
+    };
+    const filmPage = ["/film", "One Off", guids.toCatalogueShortId(id, "Film")];
+    expect(cataloguePlayableLink(trailer)).toEqual(filmPage);
+    expect(catalogueParentLink(trailer)).toEqual(filmPage);
+    expect(cataloguePlayableLink(trailer).join("/")).not.toContain(":trailer:");
+    expect(cataloguePlayableLink(trailer)).not.toContain(id);
+  });
+
+  it("gives a film trailer no parent without a film title and does not publish the synthetic id", () => {
+    const trailer = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "FilmTrailer",
+      episodeTitle: "Synthetic Teaser",
+      podcastName: "",
+    };
+    expect(catalogueParentLink(trailer)).toBeNull();
+    const page = cataloguePlayableLink(trailer).join("/");
+    expect(page).not.toContain(":trailer:");
+    expect(page).not.toContain("/podcast");
+  });
+
   it("keeps a podcast episode on /podcast/ with its unprefixed short id", () => {
     expect(cataloguePlayableLink(item)).toEqual(["/podcast", "Show", guids.toBase64(id)]);
     expect(catalogueParentLink(item)).toEqual(["/podcast", "Show"]);
@@ -224,6 +253,33 @@ describe("catalogue links", () => {
         .toBe(`${origin}/tv/Show/${guids.toCatalogueShortId(id, "TvShowEpisode")}`);
       expect(catalogueShareUrl({ ...item, contentKind: "Film" }, origin, shortner))
         .toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+    });
+
+    it("shares a film trailer as the film page, not through the shortener", () => {
+      const trailer = {
+        ...item,
+        id: `${id}:trailer:0`,
+        contentKind: "FilmTrailer",
+        episodeTitle: "Synthetic Teaser",
+        podcastName: "One Off",
+      };
+      const url = catalogueShareUrl(trailer, origin, shortner);
+      expect(url).toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+      expect(url).not.toContain(":trailer:");
+      expect(url.startsWith(shortner)).toBe(false);
+    });
+
+    it("does not send a film trailer id to the shortener when the film title is missing", () => {
+      const trailer = {
+        ...item,
+        id: `${id}:trailer:0`,
+        contentKind: "FilmTrailer",
+        podcastName: "",
+      };
+      const url = catalogueShareUrl(trailer, origin, shortner);
+      expect(url).toBe(`${origin}/`);
+      expect(url).not.toContain(":trailer:");
+      expect(url.startsWith(shortner)).toBe(false);
     });
 
     it("keeps podcast episodes on the 22-character shortener key", () => {

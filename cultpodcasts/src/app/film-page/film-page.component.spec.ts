@@ -158,6 +158,7 @@ describe('FilmPageComponent', () => {
         '00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser',
       ]);
       expect(trailers.componentInstance.filmId()).toBe(id);
+      expect(trailers.componentInstance.filmTitle()).toBe('One Off');
       // Projected into the shell, under the hero, as a rail card.
       const shell = child.nativeElement as HTMLElement;
       const rail = shell.querySelector('section.episode app-film-trailers app-episode-rail');

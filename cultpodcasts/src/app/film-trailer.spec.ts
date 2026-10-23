@@ -1,4 +1,4 @@
-import { displayDuration, FILM_TRAILER_CONTENT_KIND, filmTrailerEpisode, filmTrailerUrl, parseFilmTrailerTokens } from './film-trailer';
+import { displayDuration, FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId, filmTrailerEpisode, filmTrailerUrl, parseFilmTrailerTokens } from './film-trailer';
 import { episodeImageUrl } from './search-result-links';
 
 describe('parseFilmTrailerTokens', () => {
@@ -57,6 +57,16 @@ describe('filmTrailerEpisode', () => {
     expect(episode.episodeTitle).toBe('Synthetic Teaser');
     expect(episode.duration).toBe('00:02:11.9910000');
     expect(episode.podcastName).toBe('');
+    expect(filmIdFromTrailerId(episode.id)).toBe('film-a');
+    expect(filmIdFromTrailerId('not-a-trailer')).toBeNull();
+  });
+
+  it('carries the film title as podcastName for the player and queue', () => {
+    const episode = filmTrailerEpisode(youtube, 'film-a', 0, '  One Off  ');
+
+    expect(episode.podcastName).toBe('One Off');
+    expect(episode.episodeTitle).toBe('Synthetic Teaser');
+    expect(episode.id).toBe('film-a:trailer:0');
   });
 
   it('files the URL under its service key so YouTube gets a thumbnail and iPlayer an outbound Watch', () => {
