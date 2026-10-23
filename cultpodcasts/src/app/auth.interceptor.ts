@@ -1,7 +1,7 @@
 import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, map, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { isCredentialFailure } from './auth-session-recovery';
 import { environment } from '../environments/environment';
@@ -19,9 +19,10 @@ const API_AUDIENCE = 'https://api.cultpodcasts.com/';
 
 /**
  * Attaches a Bearer token for API requests that opt in via AUTH_SCOPE.
- * A 401, or a body that says Unauthorised, refreshes the token and retries once.
+ * A 401, or a 403 whose body says Unauthorised, refreshes the token and retries once.
  * If that still fails and this browser had a session the user did not sign out of,
- * sign-in starts and the error is not shown. A 403 Forbidden still surfaces.
+ * sign-in starts and the error is not shown. Other statuses, including a 403 Forbidden
+ * and a 500, still surface.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const platformId = inject(PLATFORM_ID);
@@ -56,10 +57,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError(() => of(null)),
     switchMap((token) => {
       if (!token) {
-        if (auth.wasPreviouslySignedIn()) {
-          return auth.beginSessionRecovery();
-        }
-        return next(req);
+        return auth.beginSessionRecovery() ?? next(req);
       }
       return send(
         req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }),
@@ -70,6 +68,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     })
   );
 };
+
+/** Sign-in hides the error only after recovery actually starts. Otherwise the original error surfaces. */
+function recoverOrRethrow(auth: AuthServiceWrapper, error: unknown): Observable<never> {
+  return auth.beginSessionRecovery() ?? throwError(() => error);
+}
 
 function send(
   req: HttpRequest<unknown>,
@@ -83,7 +86,7 @@ function send(
         return throwError(() => error);
       }
       if (req.context.get(AUTH_RETRIED)) {
-        return auth.beginSessionRecovery();
+        return recoverOrRethrow(auth, error);
       }
       const scope = req.context.get(AUTH_SCOPE);
       return auth.authService.getAccessTokenSilently({
@@ -93,9 +96,10 @@ function send(
           ...(scope ? { scope } : {})
         }
       }).pipe(
+        catchError(() => recoverOrRethrow(auth, error)),
         switchMap((token) => {
           if (!token) {
-            return auth.beginSessionRecovery();
+            return recoverOrRethrow(auth, error);
           }
           const retry = req.clone({
             setHeaders: { Authorization: `Bearer ${token}` },
@@ -103,14 +107,10 @@ function send(
           });
           return next(retry).pipe(
             catchError((retryError: unknown) =>
-              isCredentialFailure(retryError) ? auth.beginSessionRecovery() : throwError(() => retryError))
+              isCredentialFailure(retryError)
+                ? recoverOrRethrow(auth, retryError)
+                : throwError(() => retryError))
           );
-        }),
-        catchError((refreshError: unknown) => {
-          if (refreshError instanceof HttpErrorResponse) {
-            return throwError(() => refreshError);
-          }
-          return auth.beginSessionRecovery();
         })
       );
     })

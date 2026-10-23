@@ -65,7 +65,11 @@ export function clearSessionRecoveryAttempt(): void {
   }
 }
 
-/** API rejection that means the caller is not signed in, rather than lacking a role. */
+/**
+ * API rejection that means the caller is not signed in, rather than lacking a role.
+ * 401, or a 403 whose body text is exactly unauthorised / unauthorized.
+ * Other statuses stay visible even when the body says Unauthorised.
+ */
 export function isCredentialFailure(error: unknown): boolean {
   if (!error || typeof error !== 'object' || !('status' in error)) {
     return false;
@@ -73,6 +77,9 @@ export function isCredentialFailure(error: unknown): boolean {
   const status = Number((error as { status: unknown }).status);
   if (status === 401) {
     return true;
+  }
+  if (status !== 403) {
+    return false;
   }
   const body = 'error' in error ? (error as { error: unknown }).error : undefined;
   const text = credentialFailureText(body);

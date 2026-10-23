@@ -25,8 +25,12 @@ describe('isSessionRecoveryError', () => {
   it('treats 401 and an Unauthorised body as a signed-out API response', () => {
     expect(isCredentialFailure({ status: 401, error: { error: 'Unauthorised' } })).toBe(true);
     expect(isCredentialFailure({ status: 403, error: { error: 'Unauthorised' } })).toBe(true);
+    expect(isCredentialFailure({ status: 403, error: { error: 'Unauthorized' } })).toBe(true);
     expect(isCredentialFailure({ status: 403, error: { error: 'Forbidden' } })).toBe(false);
     expect(isCredentialFailure({ status: 400, error: { message: 'bad' } })).toBe(false);
+    expect(isCredentialFailure({ status: 400, error: { error: 'Unauthorised' } })).toBe(false);
+    expect(isCredentialFailure({ status: 500, error: { error: 'Unauthorised' } })).toBe(false);
+    expect(isCredentialFailure({ status: 500, error: 'server' })).toBe(false);
   });
 
   it('ignores login_required and other auth noise', () => {

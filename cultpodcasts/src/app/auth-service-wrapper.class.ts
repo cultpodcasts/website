@@ -1,7 +1,7 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
-import { catchError, combineLatest, EMPTY, filter, NEVER, of, ReplaySubject, switchMap, take, throwError } from 'rxjs';
+import { catchError, combineLatest, EMPTY, filter, NEVER, Observable, of, ReplaySubject, switchMap, take, throwError } from 'rxjs';
 import {
     clearSessionRecoveryAttempt,
     consumePostLogoutReturnPath,
@@ -30,7 +30,13 @@ declare global {
 
 /** Survives reloads so the toolbar can show the avatar while Auth0 restores the session. */
 export const AUTH_AVATAR_STORAGE_KEY = 'authAvatarUrl';
+/** First-login notice only. Not a signal that the user is still meant to be signed in. */
 export const HAS_LOGGED_IN_STORAGE_KEY = 'hasLoggedIn';
+/**
+ * Set when Auth0 reports an authenticated subject, cleared only on explicit Sign out.
+ * Absent for visitors who signed out before this flag existed, and for people who never signed in.
+ */
+export const AUTH_RESTORE_SESSION_STORAGE_KEY = 'authRestoreSession';
 
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
@@ -88,6 +94,9 @@ export class AuthServiceWrapper {
             let existingRoles: string[] = [];
             this.authService.user$.subscribe(user => {
                 this.userSubject.set(user?.sub ?? null);
+                if (user?.sub) {
+                    this.rememberRestorableSession();
+                }
                 if (user?.picture) {
                     this.persistAvatar(user.picture);
                 }
@@ -127,9 +136,7 @@ export class AuthServiceWrapper {
                             return;
                         }
                         this.clearCachedAvatar();
-                        if (this.wasPreviouslySignedIn()) {
-                            this.beginSessionRecovery().subscribe({ error: () => undefined });
-                        }
+                        this.beginSessionRecovery()?.subscribe({ error: () => undefined });
                     });
             }
 
@@ -163,29 +170,34 @@ export class AuthServiceWrapper {
         });
     }
 
-    /** True when this browser has signed in before and has not chosen Sign out. */
+    /** True when this build has seen an authenticated subject and Sign out has not cleared it. */
     wasPreviouslySignedIn(): boolean {
         return typeof localStorage !== 'undefined' &&
-            localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY) === 'true';
+            localStorage.getItem(AUTH_RESTORE_SESSION_STORAGE_KEY) === 'true';
     }
 
     /**
      * Interactive login once per tab attempt. An Auth0 SSO cookie usually signs
      * the user back in without a password. A second call while that bounce is
      * in flight, or after it already failed, does not start another redirect.
+     *
+     * Returns null when recovery does not start. Callers with an HTTP error must
+     * surface that error. The returned observable does not complete while the
+     * redirect is in flight.
      */
-    beginSessionRecovery() {
+    beginSessionRecovery(): Observable<never> | null {
         if (!isPlatformBrowser(this.platformId) ||
+            !this.wasPreviouslySignedIn() ||
             this.sessionRecoveryStarted ||
             sessionRecoveryAlreadyAttempted()) {
-            return NEVER;
+            return null;
         }
         this.sessionRecoveryStarted = true;
         markSessionRecoveryAttempted();
         return this.loginWithRedirectToCurrentPage().pipe(
             catchError(error => {
+                // The tab flag stays set so a rejected redirect cannot start another bounce.
                 this.sessionRecoveryStarted = false;
-                clearSessionRecoveryAttempt();
                 return throwError(() => error);
             }),
             switchMap(() => NEVER)
@@ -204,14 +216,20 @@ export class AuthServiceWrapper {
             if (!isSessionRecoveryError(error)) {
                 return;
             }
-            this.beginSessionRecovery().subscribe({ error: () => undefined });
+            this.beginSessionRecovery()?.subscribe({ error: () => undefined });
         });
+    }
+
+    private rememberRestorableSession(): void {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
+        }
     }
 
     private forgetPreviousSignIn(): void {
         clearSessionRecoveryAttempt();
         if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+            localStorage.removeItem(AUTH_RESTORE_SESSION_STORAGE_KEY);
         }
     }
 
