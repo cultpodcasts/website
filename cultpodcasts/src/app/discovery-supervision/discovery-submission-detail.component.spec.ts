@@ -103,16 +103,43 @@ describe('DiscoverySubmissionDetailComponent', () => {
       .compileComponents();
   });
 
-  it('shows every held result with the submitter picks marked and subject-match tooltips intact', async () => {
+  const showAll = () => {
+    fixture.componentInstance['filter'].set('all');
+    fixture.detectChanges();
+  };
+
+  it('opens on the submitter picks only, with the unpicked results one toggle away', async () => {
     await create(detail());
     expect(card(A).dataset['pick']).toBe('kept');
     expect(card(B).dataset['pick']).toBe('kept');
+    expect(card(C)).toBeNull();
+    expect(el().querySelector('.supervision-filter')?.textContent).toContain("Submitter's picks (2)");
+    expect(el().querySelector('.supervision-filter')?.textContent).toContain('All results (3)');
+    showAll();
     expect(card(C).dataset['pick']).toBe('none');
     expect(card(A).querySelector('.mat-mdc-tooltip-trigger')).not.toBeNull();
   });
 
+  it('keeps a deselected pick visible as removed in the picks view, so it can be re-selected', async () => {
+    await create(detail());
+    (card(A).querySelector('mat-card') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(card(A).dataset['pick']).toBe('removed');
+    expect(button('apply').textContent).toContain('Apply 1');
+  });
+
+  it('hides comment boxes until asked for, so the review grid stays uncluttered', async () => {
+    await create(detail());
+    expect(el().querySelector('textarea')).toBeNull();
+    (card(A).querySelector('button.add-item-comment') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(card(A).querySelector('textarea')).not.toBeNull();
+    expect(card(B).querySelector('textarea')).toBeNull();
+  });
+
   it('lets the supervisor add a missed result and remove a wrong one, then apply the reworked set with comments', async () => {
     await create(detail());
+    showAll();
     (card(C).querySelector('mat-card') as HTMLElement).click();
     (card(A).querySelector('mat-card') as HTMLElement).click();
     fixture.detectChanges();
@@ -121,6 +148,9 @@ describe('DiscoverySubmissionDetailComponent', () => {
     expect(el().textContent).toContain('+1 added');
     expect(el().textContent).toContain('−1 removed');
 
+    (card(C).querySelector('button.add-item-comment') as HTMLButtonElement).click();
+    (el().querySelector('button.add-report-comment') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const itemComment = card(C).querySelector('textarea') as HTMLTextAreaElement;
     itemComment.value = 'AI missed this guest';
     itemComment.dispatchEvent(new Event('input'));
@@ -244,6 +274,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
   it('keeps unsaved edits and explains a conflict when apply fails', async () => {
     await create(detail());
     service.apply.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'Report changed' } })));
+    showAll();
     (card(C).querySelector('mat-card') as HTMLElement).click();
     fixture.detectChanges();
     button('apply').click();

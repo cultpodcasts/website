@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -65,7 +66,7 @@ export interface ReviewRow {
     EpisodesApiComponent,
     MatExpansionModule,
     DatePipe, RouterLink, MatButtonModule, MatButtonToggleModule, MatCheckboxModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, DiscoveryItemComponent
+    MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule, MatProgressBarModule, DiscoveryItemComponent
   ],
   templateUrl: './discovery-submission-detail.component.html',
   styleUrl: './discovery-supervision.sass',
@@ -89,7 +90,10 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   protected readonly reportComment = signal('');
   protected readonly itemComments = signal<Record<string, string>>({});
   protected readonly dirty = signal(false);
-  protected readonly filter = signal<'all' | 'picked'>('all');
+  /** Supervisors mostly deselect the submitter's picks, so open on those; All results is for adding misses. */
+  protected readonly filter = signal<'all' | 'picked'>('picked');
+  protected readonly reportCommentOpen = signal(false);
+  private readonly openCommentIds = signal<string[]>([]);
   protected readonly releaseReason = signal('');
   protected readonly abandonIds = signal<string[]>([]);
 
@@ -139,26 +143,36 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   protected readonly ingestedEpisodesRoute = computed(() => episodesReviewRoute(this.ingestedEpisodeIds()));
   protected readonly failed = computed(() => failedOutcomes(this.detail()?.itemOutcomes));
 
-  protected readonly rows = computed<ReviewRow[]>(() => {
+  private readonly allRows = computed<(ReviewRow & { inPicked: boolean })[]>(() => {
     const d = this.detail();
     if (!d) {
       return [];
     }
     const finalIds = this.finalIds();
     const comments = this.itemComments();
-    const rows: ReviewRow[] = [];
+    const rows: (ReviewRow & { inPicked: boolean })[] = [];
     for (const report of d.reports) {
       for (const result of report.results) {
         const pick = pickState(result.id, d.submitterAcceptedResultIds, finalIds);
         const outcome = outcomeFor(d.itemOutcomes, result.id);
-        if (this.filter() === 'picked' && pick === 'none' && !comments[result.id] && !outcome) {
-          continue;
-        }
-        rows.push({ reportId: report.id, result: this.normalize(result), pick, outcome, chip: itemChip(pick, outcome) });
+        const inPicked = pick !== 'none' || !!comments[result.id] || !!outcome;
+        rows.push({ reportId: report.id, result: this.normalize(result), pick, outcome, chip: itemChip(pick, outcome), inPicked });
       }
     }
     return rows;
   });
+  protected readonly rows = computed<ReviewRow[]>(() =>
+    this.filter() === 'picked' ? this.allRows().filter(r => r.inPicked) : this.allRows());
+  protected readonly pickedCount = computed(() => this.allRows().filter(r => r.inPicked).length);
+  protected readonly totalCount = computed(() => this.allRows().length);
+
+  protected commentOpen(resultId: string): boolean {
+    return this.openCommentIds().includes(resultId) || !!this.itemComments()[resultId];
+  }
+
+  openComment(resultId: string): void {
+    this.openCommentIds.update(ids => ids.includes(resultId) ? ids : [...ids, resultId]);
+  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -181,9 +195,6 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       this.itemComments.set(commentsToMap(d.itemComments));
       this.abandonIds.set([]);
       this.dirty.set(false);
-      if (!canEditReview(d)) {
-        this.filter.set('picked');
-      }
     } catch (e) {
       this.error.set(describeSubmissionError(e));
     } finally {

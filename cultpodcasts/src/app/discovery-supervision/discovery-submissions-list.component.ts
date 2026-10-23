@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, inject, signal
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionList, DiscoverySubmissionSummary } from './discovery-supervision.models';
-import { describeSubmissionError, inProgressLabel, submissionStatusLabel } from './discovery-supervision';
+import { describeSubmissionError, inProgressLabel, subjectLabel, submissionStatusLabel } from './discovery-supervision';
 
 /**
  * Supervised-discovery submission list.
@@ -14,7 +16,7 @@ import { describeSubmissionError, inProgressLabel, submissionStatusLabel } from 
  */
 @Component({
   selector: 'app-discovery-submissions-list',
-  imports: [DatePipe, RouterLink, MatButtonModule, MatProgressBarModule],
+  imports: [DatePipe, RouterLink, MatButtonModule, MatIconModule, MatProgressBarModule],
   templateUrl: './discovery-submissions-list.component.html',
   styleUrl: './discovery-supervision.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +32,8 @@ export class DiscoverySubmissionsListComponent implements OnInit {
   protected readonly list = signal<DiscoverySubmissionList | null>(null);
   protected readonly statusLabel = submissionStatusLabel;
   protected readonly inProgressLabel = inProgressLabel;
+  private readonly auth = inject(AuthServiceWrapper, { optional: true });
+  protected readonly who = (subject: string | null | undefined) => subjectLabel(subject, this.auth?.userSubject?.() ?? null);
 
   protected mode(): 'review' | 'mine' {
     return this.route.snapshot.data?.['mode'] === 'review' ? 'review' : 'mine';
