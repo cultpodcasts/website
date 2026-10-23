@@ -26,6 +26,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
 import { Router, RouterLink } from '@angular/router';
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
 import { MatDialog } from '@angular/material/dialog';
+import { ConfirmComponent } from '../confirm/confirm.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
@@ -61,6 +62,7 @@ export class DiscoveryItemComponent implements OnInit {
   result = input.required<DiscoveryResult>();
   selectedIds = input<string[]>([]);
   @Output() changeState = new EventEmitter<{ id: string, selected: boolean }>();
+  @Output() removePodcast = new EventEmitter<DiscoveryResult>();
   @Input() selectedEvent: Observable<boolean> | undefined;
   @Input() resultFilterEvent: Observable<string> | undefined;
   @Input() erroredEvent: Observable<string[]> | undefined;
@@ -144,6 +146,29 @@ export class DiscoveryItemComponent implements OnInit {
 
   allowLink($event: Event) {
     $event.stopPropagation();
+  }
+
+  confirmRemove($event: Event): void {
+    $event.stopPropagation();
+    if (this.submitted()) {
+      return;
+    }
+    const name = this.result().showName?.trim() || 'this podcast';
+    const dialogRef = this.dialog.open(ConfirmComponent, {
+      data: {
+        title: 'Remove podcast',
+        question: `Remove "${name}"? It will be hidden from this queue, rejected if you save, and skipped by future discovery runs.`
+      },
+      disableClose: true,
+      autoFocus: true
+    });
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(closed => {
+        if (closed?.result === true) {
+          this.removePodcast.emit(this.result());
+        }
+      });
   }
 
   editPodcast($event: Event) {

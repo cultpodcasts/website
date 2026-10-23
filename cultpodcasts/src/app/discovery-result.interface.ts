@@ -20,6 +20,9 @@ export interface DiscoveryResult {
     imageUrl: URL | undefined;
     enrichedTimeFromApple: boolean;
     enrichedUrlFromSpotify: boolean;
+    youTubeChannelId?: string | null;
+    spotifyId?: string | null;
+    appleId?: number | null;
     matchingPodcasts: DiscoveryPodcast[] | null;
     acceptProbability: number | null;
     autoHidden: boolean;
@@ -27,7 +30,9 @@ export interface DiscoveryResult {
 }
 
 export interface DiscoveryPodcast {
+    id?: string;
     name: string;
     visible: boolean;
     visibleEpisodes: number;
+    kind?: string | null;
 }
