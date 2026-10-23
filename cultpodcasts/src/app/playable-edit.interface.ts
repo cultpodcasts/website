@@ -110,6 +110,11 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   services?: Record<string, { url?: string; image?: string }>;
   /** The trailers to keep, in order, with optional rename; the rest are removed. */
   trailers?: { id: string; title?: string }[];
+  /**
+   * Trailer ids this editor last saw. Sent with `trailers`. The server returns 409 when the film has a trailer
+   * id that is not in this list, so a stale keep-list cannot delete it.
+   */
+  expectedTrailerIds?: string[];
 }
 
 /** 202 body, same as the episode PATCH (`EpisodeUpdateResponse`). */
