@@ -24,7 +24,7 @@ import { RouterLink } from '@angular/router';
 import { DiscoveryAwaitingReview } from '../discovery-supervision/discovery-supervision.models';
 import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-submissions.service';
 import { ADMIN_ROLE, canSeeSubmissions, describeSubmissionError, isSupervisorRole } from '../discovery-supervision/discovery-supervision';
-import { bannedResultIds, BannedChannel } from '../discovery-ban';
+import { banFailureMessage, BannedChannel, matchesBannedChannel, saveResultIds } from '../discovery-ban';
 import { DiscoveryBanService } from '../discovery-ban.service';
 import {
   armCuratorSnapAfterScroll,
@@ -57,8 +57,8 @@ export class DiscoveryApiComponent implements AfterViewInit {
   results = signal<DiscoveryResult[] | undefined>(undefined);
   documentIds = signal<string[]>([]);
   selectedIds = signal<string[]>([]);
-  /** Result ids hidden after a ban in this visit. A later visit shows them with the removed icon. */
-  private readonly bannedIds = signal<string[]>([]);
+  /** Channels banned in this visit. A later load, including Hidden, is filtered with the same identity. */
+  private readonly bannedChannels = signal<BannedChannel[]>([]);
   hiddenCount = signal<number>(0);
   includeHidden = signal<boolean>(false);
   isLoading = signal<boolean>(true);
@@ -147,6 +147,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
           next: resp => {
             this.isInError.set(false);
             this.results.set(resp.results.map(x => this.normalizeResult(x)));
+            this.dropBannedSelections();
             this.documentIds.set(resp.ids);
             this.hiddenCount.set(resp.hiddenCount ?? 0);
             this.awaitingReview.set(resp.awaitingReview ?? []);
@@ -170,11 +171,11 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   visibleResults(): DiscoveryResult[] {
-    return this.results()?.filter(x => !x.autoHidden && !this.isBanned(x.id)) ?? [];
+    return this.results()?.filter(x => !x.autoHidden && !this.matchesBanned(x)) ?? [];
   }
 
   hiddenResults(): DiscoveryResult[] {
-    return this.results()?.filter(x => x.autoHidden && !this.isBanned(x.id)) ?? [];
+    return this.results()?.filter(x => x.autoHidden && !this.matchesBanned(x)) ?? [];
   }
 
   displayedResults(): DiscoveryResult[] {
@@ -182,7 +183,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
       case 'hidden':
         return this.hiddenResults();
       case 'selected':
-        return (this.results() ?? []).filter(x => this.selectedIds().includes(x.id));
+        return (this.results() ?? []).filter(x => this.selectedIds().includes(x.id) && !this.matchesBanned(x));
       default:
         return this.visibleResults();
     }
@@ -305,7 +306,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
       });
     await dialog.componentInstance.submit({
       documentIds: this.documentIds(),
-      resultIds: this.selectedIds().filter(id => !this.isBanned(id))
+      resultIds: this.acceptedResultIds()
     });
   }
 
@@ -322,13 +323,9 @@ export class DiscoveryApiComponent implements AfterViewInit {
         spotifyId: read.podcast.spotifyId ?? result.spotifyId,
         appleId: read.podcast.appleId ?? result.appleId
       };
-      const hidden = [
-        ...bannedResultIds(refreshed, banned),
-        ...bannedResultIds(this.results() ?? [], banned)
-      ];
-      this.bannedIds.update(ids => [...new Set([...ids, ...hidden])]);
-      this.selectedIds.update(ids => ids.filter(id => !this.isBanned(id)));
+      this.bannedChannels.update(channels => [...channels, banned]);
       this.results.set(refreshed);
+      this.dropBannedSelections();
       this.documentIds.set(read.discovery.ids);
       this.hiddenCount.set(read.discovery.hiddenCount ?? 0);
       this.displaySave.set(this.hasQueueItems());
@@ -336,15 +333,26 @@ export class DiscoveryApiComponent implements AfterViewInit {
       this.closeDisabled.set(this.selectedIds().length > 0);
       this.snackBar.open(`${read.podcast.name ?? result.showName ?? 'Podcast'} removed`, 'Ok', { duration: 5000 });
     } catch (e) {
-      const body = (e as { error?: { error?: string } }).error;
-      this.snackBar.open(body?.error ?? 'Could not remove the podcast', 'Ok', { duration: 10000 });
+      this.snackBar.open(banFailureMessage(e), 'Ok', { duration: 10000 });
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  private isBanned(id: string): boolean {
-    return this.bannedIds().includes(id);
+  acceptedResultIds(): string[] {
+    return saveResultIds(this.results() ?? [], this.selectedIds(), this.bannedChannels());
+  }
+
+  private matchesBanned(result: DiscoveryResult): boolean {
+    return matchesBannedChannel(result, this.bannedChannels());
+  }
+
+  private dropBannedSelections(): void {
+    const results = this.results() ?? [];
+    this.selectedIds.update(ids => ids.filter(id => {
+      const result = results.find(item => item.id === id);
+      return !result || !this.matchesBanned(result);
+    }));
   }
 
   handleEvent($event: { id: string; selected: boolean; }) {

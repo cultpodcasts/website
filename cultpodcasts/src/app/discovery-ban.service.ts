@@ -47,21 +47,23 @@ export class DiscoveryBanService {
       discoveryUrl.searchParams.set('includeHidden', 'true');
     }
     const discovery = await firstValueFrom(this.http.get<DiscoveryResults>(discoveryUrl.toString(), { headers }));
-    const podcastId = discovery.results
+    const candidates = discovery.results
       .find(result => result.id === resultId)
       ?.matchingPodcasts
-      ?.find(podcast => !!podcast.id)
-      ?.id;
-    if (!podcastId) {
+      ?.filter(podcast => !!podcast.id && podcast.visible === false)
+      .map(podcast => podcast.id as string) ?? [];
+    if (candidates.length === 0) {
       throw new Error('Removed podcast was not on the discovery results.');
     }
 
-    const podcastUrl = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api);
-    const podcast = await firstValueFrom(this.http.get<BannedPodcast>(podcastUrl.toString(), { headers }));
-    if (podcast.removed !== true) {
-      throw new Error('Podcast was not removed.');
+    for (const podcastId of candidates) {
+      const podcastUrl = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api);
+      const podcast = await firstValueFrom(this.http.get<BannedPodcast>(podcastUrl.toString(), { headers }));
+      if (podcast.removed === true) {
+        return { podcast, discovery };
+      }
     }
-    return { podcast, discovery };
+    throw new Error('Podcast was not removed.');
   }
 
   private async headers(): Promise<HttpHeaders> {
