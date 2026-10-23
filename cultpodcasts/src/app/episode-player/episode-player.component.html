@@ -106,7 +106,9 @@
 } @else {
 <div class="stage stage--empty" #stageEl>
   <p>No playable link for this episode.</p>
-  <a mat-stroked-button [routerLink]="pageLink()">Episode page</a>
+  @if (pageLink(); as page) {
+  <a mat-stroked-button [routerLink]="page">Episode page</a>
+  }
   <button type="button" mat-icon-button aria-label="Close player" (click)="close()">
     <mat-icon>close</mat-icon>
   </button>

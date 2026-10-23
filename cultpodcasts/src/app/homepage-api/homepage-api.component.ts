@@ -57,11 +57,17 @@ import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 
 /** Homepage list boundary. The hero renders these paths and does not choose them. */
 export function withHeroLinks(episodes: HomepageEpisode[]): HomepageHeroSlide[] {
-  return episodes.map((episode) => ({
-    ...episode,
-    playableLink: cataloguePlayableLink(episode),
-    parentLink: catalogueParentLink(episode),
-  }));
+  return episodes.flatMap((episode) => {
+    const playableLink = cataloguePlayableLink(episode);
+    if (!playableLink) {
+      return [];
+    }
+    return [{
+      ...episode,
+      playableLink,
+      parentLink: catalogueParentLink(episode),
+    }];
+  });
 }
 
 export interface EpisodeRail {

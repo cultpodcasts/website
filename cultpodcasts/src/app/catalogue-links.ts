@@ -60,8 +60,8 @@ export function newsReportPageCommands(organisation: string, id: string): string
   return ["/news", organisation, catalogueShortPageId(id, "NewsReport")];
 }
 
-/** Mixed lists choose a card with these paths. Podcast pages do not call this. */
-export function cataloguePlayableLink(item: CatalogueItem): string[] {
+/** Mixed lists choose a card with these paths. Podcast pages do not call this. Null for a film trailer whose film page cannot be built. */
+export function cataloguePlayableLink(item: CatalogueItem): string[] | null {
   switch (item.contentKind) {
     case "Film":
       return filmPageCommands(item.episodeTitle, item.id);
@@ -71,8 +71,8 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
       return newsReportPageCommands(item.podcastName, item.id);
     case FILM_TRAILER_CONTENT_KIND:
       // A trailer has no page. The film page is the only site link, and it uses the film id,
-      // never the synthetic `{filmId}:trailer:{n}` id.
-      return filmTrailerPage(item) ?? ["/film"];
+      // never the synthetic `{filmId}:trailer:{n}` id. Null when the title or film id is missing.
+      return filmTrailerPage(item);
     default:
       return podcastEpisodePageCommands(item.podcastName, item.id);
   }
@@ -80,24 +80,29 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] {
 
 /**
  * Share link. Podcast episodes keep the s.cultpodcasts.com short link (its KV key is the
- * unprefixed 22-char id). Film, TV, and news link straight to their own page with the prefixed
- * short id: the shortener only accepts 22-char keys, so a prefixed short link there is a 404
- * (same choice as RPP's CataloguePlayableSiteLink for social posts).
+ * unprefixed 22-char id). Film, TV, news, and film trailers link straight to their page with the
+ * prefixed short id: the shortener only accepts 22-char keys, so a prefixed short link there is a
+ * 404 (same choice as RPP's CataloguePlayableSiteLink for social posts). Null when that page
+ * cannot be built (a film trailer with no film title or film id).
  */
-export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string {
-  if (item.contentKind === "Film" || item.contentKind === "TvShowEpisode" || item.contentKind === "NewsReport") {
-    const [root, slug, id] = cataloguePlayableLink(item);
-    return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
-  }
-  if (item.contentKind === FILM_TRAILER_CONTENT_KIND) {
-    const page = filmTrailerPage(item);
-    if (!page) {
-      return new URL("/", siteOrigin).toString();
-    }
-    const [root, slug, id] = page;
-    return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, shortner: string): string | null {
+  if (
+    item.contentKind === "Film" ||
+    item.contentKind === "TvShowEpisode" ||
+    item.contentKind === "NewsReport" ||
+    item.contentKind === FILM_TRAILER_CONTENT_KIND
+  ) {
+    return cataloguePageUrl(cataloguePlayableLink(item), siteOrigin);
   }
   return `${shortner}/${shortIds.toBase64(item.id)}`;
+}
+
+function cataloguePageUrl(page: string[] | null, siteOrigin: string): string | null {
+  if (!page) {
+    return null;
+  }
+  const [root, slug, id] = page;
+  return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
 }
 
 /**
