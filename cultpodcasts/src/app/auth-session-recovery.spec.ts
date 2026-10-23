@@ -1,4 +1,4 @@
-import { currentAppPath, isSafeAppReturnPath, isSessionRecoveryError, POST_LOGOUT_RETURN_PATH_KEY, stashPostLogoutReturnPath, consumePostLogoutReturnPath } from './auth-session-recovery';
+import { currentAppPath, isCredentialFailure, isSafeAppReturnPath, isSessionRecoveryError, POST_LOGOUT_RETURN_PATH_KEY, stashPostLogoutReturnPath, consumePostLogoutReturnPath } from './auth-session-recovery';
 
 describe('isSessionRecoveryError', () => {
   it('matches Auth0 missing_refresh_token errors', () => {
@@ -20,6 +20,13 @@ describe('isSessionRecoveryError', () => {
         new Error("Missing Refresh Token (audience: 'https://api.cultpodcasts.com/', scope: 'openid')")
       )
     ).toBe(true);
+  });
+
+  it('treats 401 and an Unauthorised body as a signed-out API response', () => {
+    expect(isCredentialFailure({ status: 401, error: { error: 'Unauthorised' } })).toBe(true);
+    expect(isCredentialFailure({ status: 403, error: { error: 'Unauthorised' } })).toBe(true);
+    expect(isCredentialFailure({ status: 403, error: { error: 'Forbidden' } })).toBe(false);
+    expect(isCredentialFailure({ status: 400, error: { message: 'bad' } })).toBe(false);
   });
 
   it('ignores login_required and other auth noise', () => {

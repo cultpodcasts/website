@@ -1,11 +1,14 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
-import { combineLatest, EMPTY, filter, of, ReplaySubject, take } from 'rxjs';
+import { catchError, combineLatest, EMPTY, filter, NEVER, of, ReplaySubject, switchMap, take, throwError } from 'rxjs';
 import {
+    clearSessionRecoveryAttempt,
     consumePostLogoutReturnPath,
     currentAppPath,
     isSessionRecoveryError,
+    markSessionRecoveryAttempted,
+    sessionRecoveryAlreadyAttempted,
     stashPostLogoutReturnPath,
 } from './auth-session-recovery';
 import { authRedirectUri } from './auth-redirect-uri';
@@ -116,12 +119,16 @@ export class AuthServiceWrapper {
                         take(1)
                     )
                     .subscribe(([, isAuthenticated, user]) => {
-                        if (isAuthenticated && user?.picture) {
-                            this.persistAvatar(user.picture);
+                        if (isAuthenticated) {
+                            clearSessionRecoveryAttempt();
+                            if (user?.picture) {
+                                this.persistAvatar(user.picture);
+                            }
                             return;
                         }
-                        if (!isAuthenticated) {
-                            this.clearCachedAvatar();
+                        this.clearCachedAvatar();
+                        if (this.wasPreviouslySignedIn()) {
+                            this.beginSessionRecovery().subscribe({ error: () => undefined });
                         }
                     });
             }
@@ -147,12 +154,42 @@ export class AuthServiceWrapper {
      */
     logoutKeepingCurrentPage() {
         this.clearCachedAvatar();
+        this.forgetPreviousSignIn();
         stashPostLogoutReturnPath();
         return this.authService.logout({
             logoutParams: {
                 returnTo: authRedirectUri(environment.assetHost)
             }
         });
+    }
+
+    /** True when this browser has signed in before and has not chosen Sign out. */
+    wasPreviouslySignedIn(): boolean {
+        return typeof localStorage !== 'undefined' &&
+            localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY) === 'true';
+    }
+
+    /**
+     * Interactive login once per tab attempt. An Auth0 SSO cookie usually signs
+     * the user back in without a password. A second call while that bounce is
+     * in flight, or after it already failed, does not start another redirect.
+     */
+    beginSessionRecovery() {
+        if (!isPlatformBrowser(this.platformId) ||
+            this.sessionRecoveryStarted ||
+            sessionRecoveryAlreadyAttempted()) {
+            return NEVER;
+        }
+        this.sessionRecoveryStarted = true;
+        markSessionRecoveryAttempted();
+        return this.loginWithRedirectToCurrentPage().pipe(
+            catchError(error => {
+                this.sessionRecoveryStarted = false;
+                clearSessionRecoveryAttempt();
+                return throwError(() => error);
+            }),
+            switchMap(() => NEVER)
+        );
     }
 
     /**
@@ -164,17 +201,18 @@ export class AuthServiceWrapper {
             return;
         }
         this.authService.error$.subscribe(error => {
-            if (!isSessionRecoveryError(error) || this.sessionRecoveryStarted) {
+            if (!isSessionRecoveryError(error)) {
                 return;
             }
-            this.sessionRecoveryStarted = true;
-            this.loginWithRedirectToCurrentPage().subscribe({
-                error: () => {
-                    // Allow a later retry if the redirect itself failed to start.
-                    this.sessionRecoveryStarted = false;
-                }
-            });
+            this.beginSessionRecovery().subscribe({ error: () => undefined });
         });
+    }
+
+    private forgetPreviousSignIn(): void {
+        clearSessionRecoveryAttempt();
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+        }
     }
 
     /** Call on explicit logout so the toolbar flips immediately before Auth0 redirects. */

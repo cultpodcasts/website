@@ -8,7 +8,7 @@ import {
   AuthServiceWrapper,
   HAS_LOGGED_IN_STORAGE_KEY,
 } from './auth-service-wrapper.class';
-import { POST_LOGOUT_RETURN_PATH_KEY } from './auth-session-recovery';
+import { POST_LOGOUT_RETURN_PATH_KEY, SESSION_RECOVERY_ATTEMPT_KEY } from './auth-session-recovery';
 
 describe('AuthServiceWrapper avatar cache', () => {
   let isLoading$: BehaviorSubject<boolean>;
@@ -22,6 +22,7 @@ describe('AuthServiceWrapper avatar cache', () => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
     sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
+    sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
     isLoading$ = new BehaviorSubject(true);
     isAuthenticated$ = new BehaviorSubject(false);
     user$ = new BehaviorSubject<Record<string, unknown> | null>(null);
@@ -54,6 +55,7 @@ describe('AuthServiceWrapper avatar cache', () => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
     sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
+    sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
     document.documentElement.classList.remove('has-cached-avatar');
   });
 
@@ -143,12 +145,14 @@ describe('AuthServiceWrapper avatar cache', () => {
   });
 
   it('logoutKeepingCurrentPage clears avatar and calls Auth0 logout with origin returnTo', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
     const wrapper = TestBed.inject(AuthServiceWrapper);
     user$.next({ picture: 'https://cdn.example/me.png' });
 
     wrapper.logoutKeepingCurrentPage();
 
     expect(wrapper.avatarUrl()).toBeNull();
+    expect(localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)).toBeNull();
     expect(logout).toHaveBeenCalledTimes(1);
     const args = logout.mock.calls[0][0];
     expect(args.logoutParams.returnTo).toBe(window.location.origin);
@@ -172,6 +176,42 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(loginWithRedirect).toHaveBeenCalledWith({
       appState: { target: expect.stringMatching(/^\//) },
     });
+  });
+
+  it('starts sign-in when a previous session is signed out after load', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+    expect(loginWithRedirect).toHaveBeenCalledWith({
+      appState: { target: expect.stringMatching(/^\//) },
+    });
+  });
+
+  it('does not start sign-in for a visitor who never signed in', () => {
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
+  });
+
+  it('does not start sign-in again after a recovery bounce already failed', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
+    sessionStorage.setItem(SESSION_RECOVERY_ATTEMPT_KEY, '1');
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
   });
 
   it('does not loginWithRedirect for unrelated Auth0 errors', () => {

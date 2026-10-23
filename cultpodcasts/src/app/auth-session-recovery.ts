@@ -41,6 +41,56 @@ export function isSafeAppReturnPath(path: string): boolean {
  */
 export const POST_LOGOUT_RETURN_PATH_KEY = 'postLogoutReturnPath';
 
+/**
+ * Set when an interactive sign-in has been started for an expired session.
+ * Survives the Auth0 redirect in this tab so a failed bounce does not loop,
+ * and is cleared once a session is actually signed in.
+ */
+export const SESSION_RECOVERY_ATTEMPT_KEY = 'authSessionRecoveryAttempted';
+
+export function sessionRecoveryAlreadyAttempted(): boolean {
+  return typeof sessionStorage !== 'undefined' &&
+    sessionStorage.getItem(SESSION_RECOVERY_ATTEMPT_KEY) === '1';
+}
+
+export function markSessionRecoveryAttempted(): void {
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(SESSION_RECOVERY_ATTEMPT_KEY, '1');
+  }
+}
+
+export function clearSessionRecoveryAttempt(): void {
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
+  }
+}
+
+/** API rejection that means the caller is not signed in, rather than lacking a role. */
+export function isCredentialFailure(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return false;
+  }
+  const status = Number((error as { status: unknown }).status);
+  if (status === 401) {
+    return true;
+  }
+  const body = 'error' in error ? (error as { error: unknown }).error : undefined;
+  const text = credentialFailureText(body);
+  return text === 'unauthorised' || text === 'unauthorized';
+}
+
+function credentialFailureText(body: unknown): string {
+  if (typeof body === 'string') {
+    return body.trim().toLowerCase();
+  }
+  if (!body || typeof body !== 'object') {
+    return '';
+  }
+  const record = body as { error?: unknown; message?: unknown };
+  const value = record.error ?? record.message;
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
 /** Call immediately before Auth0 logout when the user should return to this page. */
 export function stashPostLogoutReturnPath(): void {
   if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
