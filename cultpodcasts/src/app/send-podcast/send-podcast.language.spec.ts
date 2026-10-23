@@ -61,9 +61,9 @@ describe('SendPodcastComponent unsupported language', () => {
       }
     }, { headers: { 'X-Origin': '1' } });
     await vi.waitFor(() => expect(openDialog).toHaveBeenCalled());
-    const create = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
-    expect(create.request.body.languageDecision).toBe('add');
-    create.flush({
+    const creating = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    expect(creating.request.body.languageDecision).toBe('add');
+    creating.flush({
       success: { episode: 'Created', podcast: 'Created', defaultLanguageFromDetection: true }
     }, { headers: { 'X-Origin': '1' } });
     await done;

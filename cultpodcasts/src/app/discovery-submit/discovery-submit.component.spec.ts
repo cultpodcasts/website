@@ -82,13 +82,13 @@ describe('DiscoverySubmitComponent supervised submits', () => {
       }]
     });
     await vi.waitFor(() => expect(openDialog).toHaveBeenCalled());
-    const create = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
-    expect(create.request.body).toEqual({
+    const creating = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    expect(creating.request.body).toEqual({
       ids: ['d1'],
       resultIds: ['r1'],
       languageDecisions: { r1: 'continue' }
     });
-    create.flush({ message: 'Success', errorsOccurred: false, results: [] });
+    creating.flush({ message: 'Success', errorsOccurred: false, results: [] });
     await done;
     expect(component.submitState().endpointError).toBe(false);
   });
