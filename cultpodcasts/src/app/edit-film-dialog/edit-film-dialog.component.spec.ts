@@ -197,7 +197,11 @@ describe('EditFilmDialogComponent', () => {
       imdbId: '',
       tmdbId: 99,
       services: { internetArchive: { url: 'https://archive.org/details/synthetic-film-restored' } },
-      trailers: [{ id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Trailer' }]
+      trailers: [{ id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', title: 'Synthetic Trailer' }],
+      expectedTrailerIds: [
+        'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+      ]
     });
     patch.flush({}, { status: 202, statusText: 'Accepted' });
     await saving;
@@ -214,6 +218,27 @@ describe('EditFilmDialogComponent', () => {
     dialog.form()!.patchValue({ release: '05/1999' });
     expect(dialog.form()!.valid).toBe(false);
     await dialog.onSubmit();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('shows the close-and-reopen message when the film PATCH returns 409 for a trailer the editor did not list', async () => {
+    const dialog = await load(trailered);
+    dialog.form()!.controls.trailers!.at(0).controls.title.setValue('Synthetic Trailer');
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/film/${filmId}`))).flush(trailered);
+    const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
+    expect(patch.request.body).toMatchObject({
+      expectedTrailerIds: [
+        'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+      ]
+    });
+    patch.flush(
+      { unexpectedTrailerIds: ['cccccccc-cccc-4ccc-8ccc-cccccccccccc'] },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await saving;
+    expect(dialog.submitError()).toBe(staleTrailersMessage(1));
     expect(close).not.toHaveBeenCalled();
   });
 

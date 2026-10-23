@@ -258,8 +258,10 @@ describe('playable edit form', () => {
         { id: 't2', title: 'Synthetic Clip' },
         { id: 't1', title: 'Renamed Teaser' }
       ]);
+      expect(filmChanges(previous, form.getRawValue()).expectedTrailerIds).toEqual(['t1', 't2', 't3']);
       array.clear();
       expect(filmChanges(previous, form.getRawValue()).trailers).toEqual([]);
+      expect(filmChanges(previous, form.getRawValue()).expectedTrailerIds).toEqual(['t1', 't2', 't3']);
     });
   });
 });

@@ -4,7 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { map, switchMap, throwError } from 'rxjs';
+import { catchError, map, switchMap, throwError } from 'rxjs';
 import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-edit-fields.component';
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { filmChanges, PlayableEditFormValue } from '../playable-edit-form.util';
@@ -48,15 +48,24 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
    * trailers change, re-read the film and refuse (as a 400-style message) when it has a trailer this dialog never saw.
    */
   protected patch(id: string, changes: FilmChangeRequest) {
+    const send = () => this.curation.patchFilm(id, changes).pipe(
+      catchError(error => error instanceof HttpErrorResponse && error.status === 409
+        ? throwError(() => new HttpErrorResponse({
+          status: 400,
+          statusText: 'Conflict',
+          error: { message: staleTrailersMessage(trailerConflictCount(error)) }
+        }))
+        : throwError(() => error))
+    );
     if (changes.trailers === undefined) {
-      return this.curation.patchFilm(id, changes);
+      return send();
     }
     const known = new Set((this.original?.trailers ?? []).map(trailer => trailer.id));
     return this.curation.getFilm(id).pipe(
       switchMap(latest => {
         const added = (latest.trailers ?? []).filter(trailer => !known.has(trailer.id));
         return added.length === 0
-          ? this.curation.patchFilm(id, changes)
+          ? send()
           : throwError(() => new HttpErrorResponse({
             status: 400,
             statusText: 'Trailers changed',
@@ -82,4 +91,9 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
 export function staleTrailersMessage(added: number): string {
   return `${added === 1 ? 'A trailer was' : `${added} trailers were`} attached to this film after the editor opened. ` +
     'Close and reopen the film to edit its trailers.';
+}
+
+function trailerConflictCount(error: HttpErrorResponse): number {
+  const ids = error.error?.unexpectedTrailerIds;
+  return Array.isArray(ids) && ids.length > 0 ? ids.length : 1;
 }

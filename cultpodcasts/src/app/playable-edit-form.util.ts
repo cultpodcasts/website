@@ -288,7 +288,12 @@ export function filmChanges(
   }
   if (next.trailers !== undefined) {
     const trailers = filmTrailerChanges(previous, next.trailers);
-    if (trailers) film.trailers = trailers;
+    if (trailers) {
+      film.trailers = trailers;
+      // The ids this form was built from, not the keep-list. A trailer attached after that is absent here, and the
+      // server rejects the patch instead of deleting it.
+      film.expectedTrailerIds = (previous.trailers ?? []).map(trailer => trailer.id);
+    }
   }
   return film;
 }
