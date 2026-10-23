@@ -2,16 +2,17 @@ import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { DISCOVERY_SUBMIT_SCOPE, describeSubmissionError } from '../discovery-supervision/discovery-supervision';
 import { DiscoverySubmissionHeld } from '../discovery-supervision/discovery-supervision.models';
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmit } from '../discovery-submit.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { SubmitDiscoveryResponse } from '../submit-discovery-response.interface';
+import { DiscoveryLanguageDecision, SubmitDiscoveryResponse } from '../submit-discovery-response.interface';
 import { SubmitDiscoveryState } from '../submit-discovery-state.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DiscoveryInfoService } from '../discovery-info.service';
+import { UnsupportedLanguageAnswer, UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 
 @Component({
   selector: 'app-discovery-submit',
@@ -35,7 +36,8 @@ export class DiscoverySubmitComponent {
     private http: HttpClient,
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, SubmitDiscoveryState>,
     private auth: AuthServiceWrapper,
-    private discoveryInfoSvc: DiscoveryInfoService) {
+    private discoveryInfoSvc: DiscoveryInfoService,
+    private dialog: MatDialog) {
   }
 
   public async submit(data: DiscoverySubmit) {
@@ -53,12 +55,38 @@ export class DiscoverySubmitComponent {
       headers = headers.set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending.set(true);
+      let resultIds = data.resultIds;
+      let languageDecisions: Record<string, UnsupportedLanguageAnswer> | undefined;
       var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
         this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
           endpoint,
-          { ids: data.documentIds, resultIds: data.resultIds },
+          { ids: data.documentIds, resultIds },
           { headers: headers, observe: "response" }
         ));
+      if (resp.status === 200) {
+        const prompted = resp.body as SubmitDiscoveryResponse | null;
+        const required = prompted?.languageDecisionsRequired ?? [];
+        if (required.length > 0) {
+          const answers = await this.askLanguages(required);
+          const prompted = new Set(required.map(item => item.discoveryItemId));
+          const creating = required
+            .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
+            .filter(item => item.answer === 'add' || item.answer === 'continue');
+          const untouched = data.resultIds.filter(id => !prompted.has(id));
+          resultIds = [...untouched, ...creating.map(item => item.id)];
+          if (resultIds.length === 0) {
+            this.isSending.set(false);
+            return;
+          }
+          languageDecisions = Object.fromEntries(creating.map(item => [item.id, item.answer!]));
+          resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
+            this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
+              endpoint,
+              { ids: data.documentIds, resultIds, languageDecisions },
+              { headers: headers, observe: "response" }
+            ));
+        }
+      }
       if (resp.status === 202) {
         // Supervised curator: held for supervisor review; nothing was ingested.
         const held = resp.body as DiscoverySubmissionHeld | null;
@@ -102,5 +130,25 @@ export class DiscoverySubmitComponent {
 
   close() {
     this.dialogRef.close(this.submitState());
+  }
+
+  private async askLanguages(required: DiscoveryLanguageDecision[]) {
+    const answers = new Map<string, UnsupportedLanguageAnswer>();
+    for (const item of required) {
+      const answer = await firstValueFrom(this.dialog.open<
+        UnsupportedLanguageDialogComponent,
+        UnsupportedLanguagePrompt,
+        UnsupportedLanguageAnswer>(
+          UnsupportedLanguageDialogComponent,
+          {
+            data: { code: item.code, name: item.name, signals: item.signals },
+            disableClose: true,
+            autoFocus: true,
+            width: '36rem'
+          }
+        ).afterClosed());
+      answers.set(item.discoveryItemId, answer === 'add' || answer === 'continue' ? answer : 'cancel');
+    }
+    return answers;
   }
 }

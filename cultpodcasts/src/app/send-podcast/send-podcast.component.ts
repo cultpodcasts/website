@@ -15,6 +15,7 @@ import { parseSubmittablePodcastUrl } from '../podcast-url-matcher';
 import { resolveSubmitNameConflict } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { submitEpisodePostBody, submitParentPostBody } from '../submit-series.util';
+import { UnsupportedLanguageAnswer, UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 
 @Component({
   selector: 'app-send-podcast',
@@ -96,17 +97,18 @@ export class SendPodcastComponent {
       }
 
       try {
-        const resp = await firstValueFrom<HttpResponse<any>>(this.http.post(new URL("/submit", environment.api).toString(), body, { headers: headers, observe: 'response' }));
-        if (resp.status == 200) {
-          this.submitted = true;
-          if (resp.headers.get('X-Origin')) {
-            this.originResponse = resp.body;
+        const resp = await this.postSubmit(body, headers);
+        if (resp.status == 200 && resp.body?.languageDecision) {
+          const answer = await this.askLanguage(resp.body.languageDecision as UnsupportedLanguagePrompt);
+          if (answer !== 'add' && answer !== 'continue') {
+            this.isSending.set(false);
+            return;
           }
-        } else {
-          this.submitError.set(true);
-          this.isSending.set(false);
+          const created = await this.postSubmit({ ...body, languageDecision: answer }, headers);
+          this.finishSubmit(created);
+          return;
         }
-        this.close();
+        this.finishSubmit(resp);
       } catch (error) {
         if (!data.parent && !data.podcastId && error instanceof HttpErrorResponse && error.status === 409) {
           this.isSending.set(false);
@@ -144,5 +146,32 @@ export class SendPodcastComponent {
     } else {
       this.unknownError.set(true);
     }
+  }
+
+  private postSubmit(body: object, headers: HttpHeaders) {
+    return firstValueFrom<HttpResponse<any>>(this.http.post(
+      new URL("/submit", environment.api).toString(),
+      body,
+      { headers: headers, observe: 'response' }));
+  }
+
+  private finishSubmit(resp: HttpResponse<any>) {
+    if (resp.status == 200 && !resp.body?.languageDecision && !resp.body?.cancelled) {
+      this.submitted = true;
+      if (resp.headers.get('X-Origin')) {
+        this.originResponse = resp.body;
+      }
+    } else if (resp.status != 200) {
+      this.submitError.set(true);
+      this.isSending.set(false);
+    }
+    this.close();
+  }
+
+  private askLanguage(prompt: UnsupportedLanguagePrompt) {
+    return firstValueFrom(this.dialog.open<UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt, UnsupportedLanguageAnswer>(
+      UnsupportedLanguageDialogComponent,
+      { data: prompt, disableClose: true, autoFocus: true, width: '36rem' }
+    ).afterClosed());
   }
 }

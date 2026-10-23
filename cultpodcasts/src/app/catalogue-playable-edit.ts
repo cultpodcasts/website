@@ -21,24 +21,25 @@ export function isEditableCataloguePlayableKind(kind: string | null | undefined)
 export function openCataloguePlayableEditDialog(
   dialog: MatDialog,
   kind: EditableCataloguePlayableKind,
-  playableId: string
+  playableId: string,
+  highlightDefaultLanguage = false
 ): MatDialogRef<unknown, EditPlayableDialogResponse> {
   const options = { disableClose: true, autoFocus: true, width: '90%' };
   if (kind === CataloguePlayableKind.NewsReport) {
-    return dialog.open<EditNewsReportDialogComponent, { reportId: string }, EditPlayableDialogResponse>(
+    return dialog.open<EditNewsReportDialogComponent, { reportId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
       EditNewsReportDialogComponent,
-      { ...options, data: { reportId: playableId } }
+      { ...options, data: { reportId: playableId, highlightDefaultLanguage } }
     );
   }
   if (kind === CataloguePlayableKind.Film) {
-    return dialog.open<EditFilmDialogComponent, { filmId: string }, EditPlayableDialogResponse>(
+    return dialog.open<EditFilmDialogComponent, { filmId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
       EditFilmDialogComponent,
-      { ...options, data: { filmId: playableId } }
+      { ...options, data: { filmId: playableId, highlightDefaultLanguage } }
     );
   }
-  return dialog.open<EditTvShowEpisodeDialogComponent, { episodeId: string }, EditPlayableDialogResponse>(
+  return dialog.open<EditTvShowEpisodeDialogComponent, { episodeId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
     EditTvShowEpisodeDialogComponent,
-    { ...options, data: { episodeId: playableId } }
+    { ...options, data: { episodeId: playableId, highlightDefaultLanguage } }
   );
 }
 

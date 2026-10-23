@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoveryInfoService } from '../discovery-info.service';
@@ -31,8 +31,15 @@ describe('DiscoverySubmitComponent supervised submits', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
+  function create(answer: 'add' | 'continue' | 'cancel' = 'cancel') {
+    const fixture = TestBed.createComponent(DiscoverySubmitComponent);
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    const openDialog = vi.spyOn(dialog, 'open').mockReturnValue({ afterClosed: () => of(answer) } as never);
+    return { component: fixture.componentInstance, openDialog };
+  }
+
   async function submit(flush: (req: ReturnType<HttpTestingController['expectOne']>) => void) {
-    const component = TestBed.createComponent(DiscoverySubmitComponent).componentInstance;
+    const { component } = create();
     const done = component.submit({ documentIds: ['d1'], resultIds: ['r1'] });
     const req = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
     flush(req);
@@ -55,6 +62,54 @@ describe('DiscoverySubmitComponent supervised submits', () => {
       { message: 'Reports already awaiting review', documentIds: ['d1'] }, { status: 409, statusText: 'Conflict' }));
     expect(component.submitState().endpointError).toBe(true);
     expect(component.submitState().errorMessage).toContain('Reports already awaiting review');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('asks about an unsupported language before the creating post', async () => {
+    const { component, openDialog } = create('continue');
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1'] });
+    const probe = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    expect(openDialog).not.toHaveBeenCalled();
+    probe.flush({
+      message: 'LanguageDecisionRequired',
+      errorsOccurred: false,
+      results: [],
+      languageDecisionsRequired: [{
+        discoveryItemId: 'r1',
+        code: 'is',
+        name: 'Icelandic',
+        signals: [{ field: 'episodeTitle', label: 'Episode title', excerpt: 'ekki', reason: 'Matched Icelandic words: ekki' }]
+      }]
+    });
+    await vi.waitFor(() => expect(openDialog).toHaveBeenCalled());
+    const create = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    expect(create.request.body).toEqual({
+      ids: ['d1'],
+      resultIds: ['r1'],
+      languageDecisions: { r1: 'continue' }
+    });
+    create.flush({ message: 'Success', errorsOccurred: false, results: [] });
+    await done;
+    expect(component.submitState().endpointError).toBe(false);
+  });
+
+  it('does not post a create when the unsupported-language prompt is cancelled', async () => {
+    const { component } = create('cancel');
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1'] });
+    const probe = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    probe.flush({
+      message: 'LanguageDecisionRequired',
+      errorsOccurred: false,
+      results: [],
+      languageDecisionsRequired: [{
+        discoveryItemId: 'r1',
+        code: 'is',
+        name: 'Icelandic',
+        signals: [{ field: 'episodeTitle', label: 'Episode title', excerpt: 'ekki', reason: 'Matched Icelandic words: ekki' }]
+      }]
+    });
+    await done;
+    http.expectNone(new URL('/discovery-curation', environment.api).toString());
     expect(close).not.toHaveBeenCalled();
   });
 });

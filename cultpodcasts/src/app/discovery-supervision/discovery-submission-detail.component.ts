@@ -20,6 +20,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import { UnsupportedLanguageDialogComponent } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 import {
   PickState,
   ADMIN_ROLE,
@@ -249,7 +250,27 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     if (!d || !this.editable()) return;
     await this.run(async () => {
       const etag = this.dirty() ? await this.saveReviewInternal(d) : d.etag;
-      const resp = await firstValueFrom(this.service.apply(d.id, etag, this.finalIds()));
+      let resp = await firstValueFrom(this.service.apply(d.id, etag, this.finalIds()));
+      const required = resp.outcome?.languageDecisionsRequired ?? [];
+      if (required.length > 0) {
+        const decisions: Record<string, string> = {};
+        for (const item of required) {
+          const answer = await firstValueFrom(this.dialog.open(UnsupportedLanguageDialogComponent, {
+            data: { code: item.code, name: item.name, signals: item.signals },
+            disableClose: true,
+            autoFocus: true,
+            width: '36rem'
+          }).afterClosed());
+          if (answer === 'add' || answer === 'continue') {
+            decisions[item.discoveryItemId] = answer;
+          }
+        }
+        if (Object.keys(decisions).length === 0) {
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        resp = await firstValueFrom(this.service.apply(d.id, resp.etag ?? etag, this.finalIds(), decisions));
+      }
       const failedCount = (resp.itemOutcomes ?? []).filter(o => o.state === 'Failed').length;
       this.notifyWithReview(
         resp.status === 'Applied' ? 'Applied' : `${submissionStatusLabel(resp.status)}${failedCount ? `: ${failedCount} item(s) failed` : ''}`,
@@ -261,7 +282,27 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     const d = this.detail();
     if (!d || !this.retryable()) return;
     await this.run(async () => {
-      const resp = await firstValueFrom(this.service.retry(d.id, d.etag, this.abandonIds()));
+      let resp = await firstValueFrom(this.service.retry(d.id, d.etag, this.abandonIds()));
+      const required = resp.outcome?.languageDecisionsRequired ?? [];
+      if (required.length > 0) {
+        const decisions: Record<string, string> = {};
+        for (const item of required) {
+          const answer = await firstValueFrom(this.dialog.open(UnsupportedLanguageDialogComponent, {
+            data: { code: item.code, name: item.name, signals: item.signals },
+            disableClose: true,
+            autoFocus: true,
+            width: '36rem'
+          }).afterClosed());
+          if (answer === 'add' || answer === 'continue') {
+            decisions[item.discoveryItemId] = answer;
+          }
+        }
+        if (Object.keys(decisions).length === 0) {
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        resp = await firstValueFrom(this.service.retry(d.id, resp.etag ?? d.etag, this.abandonIds(), decisions));
+      }
       this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
     });
   }

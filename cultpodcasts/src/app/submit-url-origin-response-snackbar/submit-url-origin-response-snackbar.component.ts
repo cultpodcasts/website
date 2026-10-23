@@ -113,7 +113,8 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
             forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking,
             episodeId: episodeId,
-            episodeLangUnset: result.episodeLangUnset
+            episodeLangUnset: result.episodeLangUnset,
+            defaultLanguageFromDetection: this.data.response.defaultLanguageFromDetection === true
           },
           disableClose: true,
           autoFocus: true,
@@ -184,7 +185,12 @@ export class SubmitUrlOriginResponseSnackbarComponent {
 
   /** News report / TV episode / film: open its edit dialog, then offer Review on the playable page. */
   editSubmittedPlayable(kind: EditableCataloguePlayableKind, playableId: string) {
-    openCataloguePlayableEditDialog(this.dialog, kind, playableId).afterClosed().subscribe(result => {
+    openCataloguePlayableEditDialog(
+      this.dialog,
+      kind,
+      playableId,
+      this.data.response.defaultLanguageFromDetection === true
+    ).afterClosed().subscribe(result => {
       const message = playableEditResultMessage(kind, result);
       if (!message) {
         return;

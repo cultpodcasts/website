@@ -115,7 +115,7 @@
                     <textarea [formControl]="form()!.controls.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
                 </mat-form-field>
             </mat-tab>
-            <mat-tab label="Meta">
+            <mat-tab label="Meta" [labelClass]="highlightLanguageTab() ? 'subjects-tab-highlight' : ''">
                 <mat-form-field class="full-width">
                     <mat-label>Release Authority</mat-label>
                     <mat-select [formControl]="form()!.controls.releaseAuthority">

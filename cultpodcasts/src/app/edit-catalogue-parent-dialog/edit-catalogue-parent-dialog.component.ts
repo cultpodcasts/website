@@ -31,6 +31,7 @@ import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTy
 export interface EditCatalogueParentDialogData {
   hub: CatalogueHub;
   name: string;
+  highlightDefaultLanguage?: boolean;
 }
 
 export interface EditCatalogueParentDialogResponse {

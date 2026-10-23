@@ -75,6 +75,8 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly people = input<Person[]>([]);
   readonly languages = input<Record<string, string>>({});
   readonly blueskyPosted = input(false);
+  /** Bold underline on the Meta tab when this create stored a detected default language. */
+  readonly highlightDefaultLanguage = input(false);
   readonly pendingUnBluesky = model(false);
   /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
   readonly variant = input<PlayableEditVariant>('news');

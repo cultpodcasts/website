@@ -82,6 +82,7 @@ export class AddPodcastDialogComponent {
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string;
   readonly highlightSubjectsTab = signal<boolean>(false);
+  readonly highlightLanguageTab = signal<boolean>(false);
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -94,7 +95,8 @@ export class AddPodcastDialogComponent {
       forceBypassShortEpisodeChecking?: boolean,
       podcastId: string,
       episodeId?: string,
-      episodeLangUnset?: boolean
+      episodeLangUnset?: boolean,
+      defaultLanguageFromDetection?: boolean
     },
     private dialog: MatDialog,
   ) {
@@ -142,6 +144,8 @@ export class AddPodcastDialogComponent {
         this.highlightSubjectsTab.set(this.data.defaultSubjectFromEpisode != null
           && desiredDefaultSubject != null
           && desiredDefaultSubject !== '');
+        this.highlightLanguageTab.set(this.data.defaultLanguageFromDetection === true
+          && form.controls.lang.value !== 'unset');
 
         let initial: string[] = [];
         if (desiredDefaultSubject != null) {

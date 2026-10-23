@@ -51,17 +51,41 @@ export class DiscoverySubmissionsService {
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  apply(id: string, etag: string, acceptedResultIds?: string[]): Observable<DiscoverySubmissionCommandResponse> {
+  apply(
+    id: string,
+    etag: string,
+    acceptedResultIds?: string[],
+    languageDecisions?: Record<string, string>
+  ): Observable<DiscoverySubmissionCommandResponse> {
+    const body: { etag: string; acceptedResultIds?: string[]; languageDecisions?: Record<string, string> } = { etag };
+    if (acceptedResultIds) {
+      body.acceptedResultIds = acceptedResultIds;
+    }
+    if (languageDecisions) {
+      body.languageDecisions = languageDecisions;
+    }
     return this.http.post<DiscoverySubmissionCommandResponse>(
       this.url(`/discovery-submissions/${encodeURIComponent(id)}/apply`),
-      acceptedResultIds ? { etag, acceptedResultIds } : { etag },
+      body,
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  retry(id: string, etag: string, abandonResultIds: string[] = []): Observable<DiscoverySubmissionCommandResponse> {
+  retry(
+    id: string,
+    etag: string,
+    abandonResultIds: string[] = [],
+    languageDecisions?: Record<string, string>
+  ): Observable<DiscoverySubmissionCommandResponse> {
+    const body: { etag: string; abandonResultIds: string[]; languageDecisions?: Record<string, string> } = {
+      etag,
+      abandonResultIds
+    };
+    if (languageDecisions) {
+      body.languageDecisions = languageDecisions;
+    }
     return this.http.post<DiscoverySubmissionCommandResponse>(
       this.url(`/discovery-submissions/${encodeURIComponent(id)}/retry`),
-      { etag, abandonResultIds },
+      body,
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
