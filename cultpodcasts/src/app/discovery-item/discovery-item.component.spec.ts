@@ -3,6 +3,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -72,5 +73,22 @@ describe('DiscoveryItemComponent subject reasons', () => {
     const tooltip = await render(result({ subjectMatches: null }));
 
     expect(tooltip.disabled).toBe(true);
+  });
+
+  it('asks for confirmation and emits the card when the curator removes the podcast', async () => {
+    const dialog = TestBed.inject(MatDialog);
+    vi.mocked(dialog.open).mockReturnValue({ afterClosed: () => of({ result: true }) } as never);
+    const item = result({ showName: 'Northwind Briefing' });
+    const emitted: DiscoveryResult[] = [];
+    fixture.componentInstance.removePodcast.subscribe(card => emitted.push(card));
+    fixture.componentRef.setInput('result', item);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const button = fixture.debugElement.query(By.css('button.ban-channel'));
+    button.triggerEventHandler('click', new MouseEvent('click'));
+
+    expect(dialog.open).toHaveBeenCalled();
+    expect(emitted).toEqual([item]);
   });
 });

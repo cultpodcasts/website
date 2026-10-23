@@ -24,6 +24,8 @@ import { RouterLink } from '@angular/router';
 import { DiscoveryAwaitingReview } from '../discovery-supervision/discovery-supervision.models';
 import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-submissions.service';
 import { ADMIN_ROLE, canSeeSubmissions, describeSubmissionError, isSupervisorRole } from '../discovery-supervision/discovery-supervision';
+import { bannedResultIds, BannedChannel } from '../discovery-ban';
+import { DiscoveryBanService } from '../discovery-ban.service';
 import {
   armCuratorSnapAfterScroll,
   observeCuratorSnapToolbar,
@@ -55,6 +57,8 @@ export class DiscoveryApiComponent implements AfterViewInit {
   results = signal<DiscoveryResult[] | undefined>(undefined);
   documentIds = signal<string[]>([]);
   selectedIds = signal<string[]>([]);
+  /** Result ids hidden after a ban in this visit. A later visit shows them with the removed icon. */
+  private readonly bannedIds = signal<string[]>([]);
   hiddenCount = signal<number>(0);
   includeHidden = signal<boolean>(false);
   isLoading = signal<boolean>(true);
@@ -73,6 +77,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
   releasingReportId = signal<string | null>(null);
 
   private readonly submissions = inject(DiscoverySubmissionsService);
+  private readonly banService = inject(DiscoveryBanService);
   protected readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
   protected readonly isAdmin = () => this.roles().includes(ADMIN_ROLE);
   protected readonly isSupervisor = () => isSupervisorRole(this.roles());
@@ -165,11 +170,11 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   visibleResults(): DiscoveryResult[] {
-    return this.results()?.filter(x => !x.autoHidden) ?? [];
+    return this.results()?.filter(x => !x.autoHidden && !this.isBanned(x.id)) ?? [];
   }
 
   hiddenResults(): DiscoveryResult[] {
-    return this.results()?.filter(x => x.autoHidden) ?? [];
+    return this.results()?.filter(x => x.autoHidden && !this.isBanned(x.id)) ?? [];
   }
 
   displayedResults(): DiscoveryResult[] {
@@ -300,8 +305,46 @@ export class DiscoveryApiComponent implements AfterViewInit {
       });
     await dialog.componentInstance.submit({
       documentIds: this.documentIds(),
-      resultIds: this.selectedIds()
+      resultIds: this.selectedIds().filter(id => !this.isBanned(id))
     });
+  }
+
+  async removePodcast(result: DiscoveryResult): Promise<void> {
+    this.isLoading.set(true);
+    try {
+      const read = await this.banService.ban(result.id, this.includeHidden());
+      const refreshed = read.discovery.results.map(item => this.normalizeResult(item));
+      const banned: BannedChannel = {
+        resultId: result.id,
+        podcastId: read.podcast.id,
+        showName: result.showName,
+        youTubeChannelId: read.podcast.youTubeChannelId ?? result.youTubeChannelId,
+        spotifyId: read.podcast.spotifyId ?? result.spotifyId,
+        appleId: read.podcast.appleId ?? result.appleId
+      };
+      const hidden = [
+        ...bannedResultIds(refreshed, banned),
+        ...bannedResultIds(this.results() ?? [], banned)
+      ];
+      this.bannedIds.update(ids => [...new Set([...ids, ...hidden])]);
+      this.selectedIds.update(ids => ids.filter(id => !this.isBanned(id)));
+      this.results.set(refreshed);
+      this.documentIds.set(read.discovery.ids);
+      this.hiddenCount.set(read.discovery.hiddenCount ?? 0);
+      this.displaySave.set(this.hasQueueItems());
+      this.saveDisabled.set(this.selectedIds().length === 0);
+      this.closeDisabled.set(this.selectedIds().length > 0);
+      this.snackBar.open(`${read.podcast.name ?? result.showName ?? 'Podcast'} removed`, 'Ok', { duration: 5000 });
+    } catch (e) {
+      const body = (e as { error?: { error?: string } }).error;
+      this.snackBar.open(body?.error ?? 'Could not remove the podcast', 'Ok', { duration: 10000 });
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private isBanned(id: string): boolean {
+    return this.bannedIds().includes(id);
   }
 
   handleEvent($event: { id: string; selected: boolean; }) {
