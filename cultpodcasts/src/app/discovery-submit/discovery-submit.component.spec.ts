@@ -112,4 +112,40 @@ describe('DiscoverySubmitComponent supervised submits', () => {
     http.expectNone(new URL('/discovery-curation', environment.api).toString());
     expect(close).not.toHaveBeenCalled();
   });
+
+  it('asks about ambiguous identity before the creating post', async () => {
+    const fixture = TestBed.createComponent(DiscoverySubmitComponent);
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    const openDialog = vi.spyOn(dialog, 'open').mockReturnValue({
+      afterClosed: () => of({ decision: 'select', key: 'tmdb:11' })
+    } as never);
+    const component = fixture.componentInstance;
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1'] });
+    const probe = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    expect(openDialog).not.toHaveBeenCalled();
+    probe.flush({
+      message: 'IdentityDecisionRequired',
+      errorsOccurred: false,
+      results: [],
+      identityDecisionsRequired: [{
+        discoveryItemId: 'r1',
+        target: 'Film',
+        query: 'Synthetic Title',
+        candidates: [
+          { key: 'tmdb:11', title: 'Synthetic Title', year: 2020, kind: 'Film', source: 'tmdb', tmdbId: 11 }
+        ]
+      }]
+    });
+    await vi.waitFor(() => expect(openDialog).toHaveBeenCalled());
+    const creating = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    expect(creating.request.body).toEqual({
+      ids: ['d1'],
+      resultIds: ['r1'],
+      identityDecisions: { r1: 'select' },
+      selectedIdentityKeys: { r1: 'tmdb:11' }
+    });
+    creating.flush({ message: 'Success', errorsOccurred: false, results: [] });
+    await done;
+    expect(component.submitState().endpointError).toBe(false);
+  });
 });

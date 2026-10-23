@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>Choose catalogue identity</h2>
+<mat-dialog-content>
+  <p>
+    Several {{ data.target }} matches were found for
+    <strong>{{ data.query }}</strong>. Nothing has been created yet.
+  </p>
+  <mat-radio-group [(ngModel)]="selectedKey" class="candidates">
+    @for (candidate of data.candidates; track candidate.key) {
+      <mat-radio-button [value]="candidate.key">
+        <span class="candidate-label">{{ label(candidate) }}</span>
+        @if (candidate.pageUrl) {
+          <a class="page" [href]="candidate.pageUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()">Open page</a>
+        }
+      </mat-radio-button>
+    }
+  </mat-radio-group>
+  <p>Pick one match, continue without IMDb / TheTVDB / TMDB ids, or cancel?</p>
+</mat-dialog-content>
+<div mat-dialog-actions>
+  <button type="button" mat-flat-button [disabled]="!selectedKey" (click)="chooseSelect()">Use selected</button>
+  <button type="button" mat-button (click)="chooseContinue()">Continue without identity</button>
+  <button type="button" mat-button (click)="chooseCancel()">Cancel</button>
+</div>

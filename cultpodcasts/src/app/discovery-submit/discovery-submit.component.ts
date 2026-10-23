@@ -7,12 +7,13 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmit } from '../discovery-submit.interface';
 import { firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { DiscoveryLanguageDecision, SubmitDiscoveryResponse } from '../submit-discovery-response.interface';
+import { DiscoveryIdentityDecision, DiscoveryLanguageDecision, SubmitDiscoveryResponse } from '../submit-discovery-response.interface';
 import { SubmitDiscoveryState } from '../submit-discovery-state.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DiscoveryInfoService } from '../discovery-info.service';
 import { UnsupportedLanguageAnswer, UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
+import { AmbiguousIdentityAnswer, AmbiguousIdentityDialogComponent, AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 
 @Component({
   selector: 'app-discovery-submit',
@@ -57,6 +58,8 @@ export class DiscoverySubmitComponent {
       this.isSending.set(true);
       let resultIds = data.resultIds;
       let languageDecisions: Record<string, UnsupportedLanguageAnswer> | undefined;
+      let identityDecisions: Record<string, 'select' | 'continue'> | undefined;
+      let selectedIdentityKeys: Record<string, string> | undefined;
       var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
         this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
           endpoint,
@@ -68,11 +71,11 @@ export class DiscoverySubmitComponent {
         const required = prompted?.languageDecisionsRequired ?? [];
         if (required.length > 0) {
           const answers = await this.askLanguages(required);
-          const prompted = new Set(required.map(item => item.discoveryItemId));
+          const promptedIds = new Set(required.map(item => item.discoveryItemId));
           const creating = required
             .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
             .filter(item => item.answer === 'add' || item.answer === 'continue');
-          const untouched = data.resultIds.filter(id => !prompted.has(id));
+          const untouched = data.resultIds.filter(id => !promptedIds.has(id));
           resultIds = [...untouched, ...creating.map(item => item.id)];
           if (resultIds.length === 0) {
             this.isSending.set(false);
@@ -83,6 +86,44 @@ export class DiscoverySubmitComponent {
             this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
               endpoint,
               { ids: data.documentIds, resultIds, languageDecisions },
+              { headers: headers, observe: "response" }
+            ));
+        }
+      }
+      if (resp.status === 200) {
+        const prompted = resp.body as SubmitDiscoveryResponse | null;
+        const required = prompted?.identityDecisionsRequired ?? [];
+        if (required.length > 0) {
+          const answers = await this.askIdentities(required);
+          const promptedIds = new Set(required.map(item => item.discoveryItemId));
+          const creating = required
+            .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
+            .filter(item => item.answer?.decision === 'select' || item.answer?.decision === 'continue');
+          const untouched = resultIds.filter(id => !promptedIds.has(id));
+          resultIds = [...untouched, ...creating.map(item => item.id)];
+          if (resultIds.length === 0) {
+            this.isSending.set(false);
+            return;
+          }
+          identityDecisions = Object.fromEntries(
+            creating.map(item => [item.id, item.answer!.decision as 'select' | 'continue']));
+          selectedIdentityKeys = Object.fromEntries(
+            creating
+              .filter(item => item.answer?.decision === 'select')
+              .map(item => {
+                const selected = item.answer as { decision: 'select'; key: string };
+                return [item.id, selected.key];
+              }));
+          resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
+            this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
+              endpoint,
+              {
+                ids: data.documentIds,
+                resultIds,
+                ...(languageDecisions ? { languageDecisions } : {}),
+                identityDecisions,
+                ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
+              },
               { headers: headers, observe: "response" }
             ));
         }
@@ -148,6 +189,30 @@ export class DiscoverySubmitComponent {
           }
         ).afterClosed());
       answers.set(item.discoveryItemId, answer === 'add' || answer === 'continue' ? answer : 'cancel');
+    }
+    return answers;
+  }
+
+  private async askIdentities(required: DiscoveryIdentityDecision[]) {
+    const answers = new Map<string, AmbiguousIdentityAnswer>();
+    for (const item of required) {
+      const answer = await firstValueFrom(this.dialog.open<
+        AmbiguousIdentityDialogComponent,
+        AmbiguousIdentityPrompt,
+        AmbiguousIdentityAnswer>(
+          AmbiguousIdentityDialogComponent,
+          {
+            data: { target: item.target, query: item.query, candidates: item.candidates },
+            disableClose: true,
+            autoFocus: true,
+            width: '36rem'
+          }
+        ).afterClosed());
+      answers.set(
+        item.discoveryItemId,
+        answer?.decision === 'select' || answer?.decision === 'continue'
+          ? answer
+          : { decision: 'cancel' });
     }
     return answers;
   }

@@ -16,6 +16,7 @@ import { resolveSubmitNameConflict } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { submitEpisodePostBody, submitParentPostBody } from '../submit-series.util';
 import { UnsupportedLanguageAnswer, UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
+import { AmbiguousIdentityAnswer, AmbiguousIdentityDialogComponent, AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 
 @Component({
   selector: 'app-send-podcast',
@@ -97,16 +98,29 @@ export class SendPodcastComponent {
       }
 
       try {
-        const resp = await this.postSubmit(body, headers);
+        let submitBody: Record<string, unknown> = { ...body as object };
+        let resp = await this.postSubmit(submitBody, headers);
         if (resp.status == 200 && resp.body?.languageDecision) {
           const answer = await this.askLanguage(resp.body.languageDecision as UnsupportedLanguagePrompt);
           if (answer !== 'add' && answer !== 'continue') {
             this.isSending.set(false);
             return;
           }
-          const created = await this.postSubmit({ ...body, languageDecision: answer }, headers);
-          this.finishSubmit(created);
-          return;
+          submitBody = { ...submitBody, languageDecision: answer };
+          resp = await this.postSubmit(submitBody, headers);
+        }
+        if (resp.status == 200 && resp.body?.identityDecision) {
+          const identity = await this.askIdentity(resp.body.identityDecision as AmbiguousIdentityPrompt);
+          if (!identity || identity.decision === 'cancel') {
+            this.isSending.set(false);
+            return;
+          }
+          submitBody = {
+            ...submitBody,
+            identityDecision: identity.decision,
+            ...(identity.decision === 'select' ? { selectedIdentityKey: identity.key } : {})
+          };
+          resp = await this.postSubmit(submitBody, headers);
         }
         this.finishSubmit(resp);
       } catch (error) {
@@ -156,7 +170,10 @@ export class SendPodcastComponent {
   }
 
   private finishSubmit(resp: HttpResponse<any>) {
-    if (resp.status == 200 && !resp.body?.languageDecision && !resp.body?.cancelled) {
+    if (resp.status == 200 &&
+      !resp.body?.languageDecision &&
+      !resp.body?.identityDecision &&
+      !resp.body?.cancelled) {
       this.submitted = true;
       if (resp.headers.get('X-Origin')) {
         this.originResponse = resp.body;
@@ -171,6 +188,13 @@ export class SendPodcastComponent {
   private askLanguage(prompt: UnsupportedLanguagePrompt) {
     return firstValueFrom(this.dialog.open<UnsupportedLanguageDialogComponent, UnsupportedLanguagePrompt, UnsupportedLanguageAnswer>(
       UnsupportedLanguageDialogComponent,
+      { data: prompt, disableClose: true, autoFocus: true, width: '36rem' }
+    ).afterClosed());
+  }
+
+  private askIdentity(prompt: AmbiguousIdentityPrompt) {
+    return firstValueFrom(this.dialog.open<AmbiguousIdentityDialogComponent, AmbiguousIdentityPrompt, AmbiguousIdentityAnswer>(
+      AmbiguousIdentityDialogComponent,
       { data: prompt, disableClose: true, autoFocus: true, width: '36rem' }
     ).afterClosed());
   }
