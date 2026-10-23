@@ -12,7 +12,7 @@ describe('openCataloguePlayableEditDialog default language highlight', () => {
     openCataloguePlayableEditDialog(dialog, CataloguePlayableKind.NewsReport, 'report-1');
 
     expect(open.mock.calls[0][1].data.highlightDefaultLanguage).toBe(true);
-    expect(open.mock.calls[1][1].data.highlightDefaultLanguage).toBe(false);
-    expect(open.mock.calls[2][1].data.highlightDefaultLanguage).toBe(false);
+    expect(open.mock.calls[1][1].data.highlightDefaultLanguage).toBeUndefined();
+    expect(open.mock.calls[2][1].data.highlightDefaultLanguage).toBeUndefined();
   });
 });

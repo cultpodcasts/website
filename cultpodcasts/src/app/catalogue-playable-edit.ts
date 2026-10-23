@@ -25,21 +25,22 @@ export function openCataloguePlayableEditDialog(
   highlightDefaultLanguage = false
 ): MatDialogRef<unknown, EditPlayableDialogResponse> {
   const options = { disableClose: true, autoFocus: true, width: '90%' };
+  const highlight = highlightDefaultLanguage ? { highlightDefaultLanguage: true } : {};
   if (kind === CataloguePlayableKind.NewsReport) {
     return dialog.open<EditNewsReportDialogComponent, { reportId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
       EditNewsReportDialogComponent,
-      { ...options, data: { reportId: playableId, highlightDefaultLanguage } }
+      { ...options, data: { reportId: playableId, ...highlight } }
     );
   }
   if (kind === CataloguePlayableKind.Film) {
     return dialog.open<EditFilmDialogComponent, { filmId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
       EditFilmDialogComponent,
-      { ...options, data: { filmId: playableId, highlightDefaultLanguage } }
+      { ...options, data: { filmId: playableId, ...highlight } }
     );
   }
   return dialog.open<EditTvShowEpisodeDialogComponent, { episodeId: string; highlightDefaultLanguage?: boolean }, EditPlayableDialogResponse>(
     EditTvShowEpisodeDialogComponent,
-    { ...options, data: { episodeId: playableId, highlightDefaultLanguage } }
+    { ...options, data: { episodeId: playableId, ...highlight } }
   );
 }
 
