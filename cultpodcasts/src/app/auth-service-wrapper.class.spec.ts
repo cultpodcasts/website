@@ -1,14 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { BehaviorSubject, Subject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { AuthService } from '@auth0/auth0-angular';
 import {
   AUTH_AVATAR_STORAGE_KEY,
+  AUTH_RESTORE_SESSION_STORAGE_KEY,
   AuthServiceWrapper,
   HAS_LOGGED_IN_STORAGE_KEY,
 } from './auth-service-wrapper.class';
-import { POST_LOGOUT_RETURN_PATH_KEY } from './auth-session-recovery';
+import { POST_LOGOUT_RETURN_PATH_KEY, SESSION_RECOVERY_ATTEMPT_KEY } from './auth-session-recovery';
 
 describe('AuthServiceWrapper avatar cache', () => {
   let isLoading$: BehaviorSubject<boolean>;
@@ -21,7 +22,9 @@ describe('AuthServiceWrapper avatar cache', () => {
   beforeEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+    localStorage.removeItem(AUTH_RESTORE_SESSION_STORAGE_KEY);
     sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
+    sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
     isLoading$ = new BehaviorSubject(true);
     isAuthenticated$ = new BehaviorSubject(false);
     user$ = new BehaviorSubject<Record<string, unknown> | null>(null);
@@ -53,7 +56,9 @@ describe('AuthServiceWrapper avatar cache', () => {
   afterEach(() => {
     localStorage.removeItem(AUTH_AVATAR_STORAGE_KEY);
     localStorage.removeItem(HAS_LOGGED_IN_STORAGE_KEY);
+    localStorage.removeItem(AUTH_RESTORE_SESSION_STORAGE_KEY);
     sessionStorage.removeItem(POST_LOGOUT_RETURN_PATH_KEY);
+    sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
     document.documentElement.classList.remove('has-cached-avatar');
   });
 
@@ -142,19 +147,35 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(target.startsWith('//')).toBe(false);
   });
 
-  it('logoutKeepingCurrentPage clears avatar and calls Auth0 logout with origin returnTo', () => {
+  it('records a restorable session when Auth0 reports a subject, without the first-login notice flag', () => {
+    const wrapper = TestBed.inject(AuthServiceWrapper);
+
+    user$.next({ sub: 'auth0|subject' });
+
+    expect(localStorage.getItem(AUTH_RESTORE_SESSION_STORAGE_KEY)).toBe('true');
+    expect(localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)).toBeNull();
+    expect(wrapper.wasPreviouslySignedIn()).toBe(true);
+  });
+
+  it('logoutKeepingCurrentPage clears avatar and the restorable session and calls Auth0 logout with origin returnTo', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
+    localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
     const wrapper = TestBed.inject(AuthServiceWrapper);
     user$.next({ picture: 'https://cdn.example/me.png' });
 
     wrapper.logoutKeepingCurrentPage();
 
     expect(wrapper.avatarUrl()).toBeNull();
+    expect(localStorage.getItem(HAS_LOGGED_IN_STORAGE_KEY)).toBe('true');
+    expect(localStorage.getItem(AUTH_RESTORE_SESSION_STORAGE_KEY)).toBeNull();
+    expect(wrapper.wasPreviouslySignedIn()).toBe(false);
     expect(logout).toHaveBeenCalledTimes(1);
     const args = logout.mock.calls[0][0];
     expect(args.logoutParams.returnTo).toBe(window.location.origin);
   });
 
-  it('loginWithRedirects once on missing_refresh_token', () => {
+  it('loginWithRedirects once on missing_refresh_token when a restorable session exists', () => {
+    localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
     TestBed.inject(AuthServiceWrapper);
 
     error$.next(
@@ -172,6 +193,84 @@ describe('AuthServiceWrapper avatar cache', () => {
     expect(loginWithRedirect).toHaveBeenCalledWith({
       appState: { target: expect.stringMatching(/^\//) },
     });
+  });
+
+  it('does not loginWithRedirect for missing_refresh_token without a restorable session', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
+    TestBed.inject(AuthServiceWrapper);
+
+    error$.next(
+      Object.assign(new Error("Missing Refresh Token (audience: 'https://api.cultpodcasts.com/')"), {
+        error: 'missing_refresh_token',
+      })
+    );
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
+  });
+
+  it('starts sign-in when a previous session is signed out after load', () => {
+    localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+    expect(loginWithRedirect).toHaveBeenCalledWith({
+      appState: { target: expect.stringMatching(/^\//) },
+    });
+  });
+
+  it('does not start sign-in when only the first-login notice flag is set', () => {
+    localStorage.setItem(HAS_LOGGED_IN_STORAGE_KEY, 'true');
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
+  });
+
+  it('does not start sign-in for a visitor who never signed in', () => {
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
+  });
+
+  it('leaves the tab recovery flag set when the redirect fails to start', () => {
+    localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
+    loginWithRedirect.mockReturnValue(throwError(() => new Error('redirect failed')));
+    TestBed.inject(AuthServiceWrapper);
+    const missing = Object.assign(new Error("Missing Refresh Token (audience: 'https://api.cultpodcasts.com/')"), {
+      error: 'missing_refresh_token',
+    });
+
+    error$.next(missing);
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem(SESSION_RECOVERY_ATTEMPT_KEY)).toBe('1');
+
+    error$.next(missing);
+
+    expect(loginWithRedirect).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start sign-in again after a recovery bounce already failed', () => {
+    localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
+    sessionStorage.setItem(SESSION_RECOVERY_ATTEMPT_KEY, '1');
+    TestBed.inject(AuthServiceWrapper);
+
+    isAuthenticated$.next(false);
+    user$.next(null);
+    isLoading$.next(false);
+
+    expect(loginWithRedirect).not.toHaveBeenCalled();
   });
 
   it('does not loginWithRedirect for unrelated Auth0 errors', () => {

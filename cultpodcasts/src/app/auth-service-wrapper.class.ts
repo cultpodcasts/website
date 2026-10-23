@@ -1,11 +1,14 @@
 import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '@auth0/auth0-angular';
-import { combineLatest, EMPTY, filter, of, ReplaySubject, take } from 'rxjs';
+import { catchError, combineLatest, EMPTY, filter, NEVER, Observable, of, ReplaySubject, switchMap, take, throwError } from 'rxjs';
 import {
+    clearSessionRecoveryAttempt,
     consumePostLogoutReturnPath,
     currentAppPath,
     isSessionRecoveryError,
+    markSessionRecoveryAttempted,
+    sessionRecoveryAlreadyAttempted,
     stashPostLogoutReturnPath,
 } from './auth-session-recovery';
 import { authRedirectUri } from './auth-redirect-uri';
@@ -27,7 +30,13 @@ declare global {
 
 /** Survives reloads so the toolbar can show the avatar while Auth0 restores the session. */
 export const AUTH_AVATAR_STORAGE_KEY = 'authAvatarUrl';
+/** First-login notice only. Not a signal that the user is still meant to be signed in. */
 export const HAS_LOGGED_IN_STORAGE_KEY = 'hasLoggedIn';
+/**
+ * Set when Auth0 reports an authenticated subject, cleared only on explicit Sign out.
+ * Absent for visitors who signed out before this flag existed, and for people who never signed in.
+ */
+export const AUTH_RESTORE_SESSION_STORAGE_KEY = 'authRestoreSession';
 
 @Injectable({ providedIn: 'root' })
 export class AuthServiceWrapper {
@@ -85,6 +94,9 @@ export class AuthServiceWrapper {
             let existingRoles: string[] = [];
             this.authService.user$.subscribe(user => {
                 this.userSubject.set(user?.sub ?? null);
+                if (user?.sub) {
+                    this.rememberRestorableSession();
+                }
                 if (user?.picture) {
                     this.persistAvatar(user.picture);
                 }
@@ -116,13 +128,15 @@ export class AuthServiceWrapper {
                         take(1)
                     )
                     .subscribe(([, isAuthenticated, user]) => {
-                        if (isAuthenticated && user?.picture) {
-                            this.persistAvatar(user.picture);
+                        if (isAuthenticated) {
+                            clearSessionRecoveryAttempt();
+                            if (user?.picture) {
+                                this.persistAvatar(user.picture);
+                            }
                             return;
                         }
-                        if (!isAuthenticated) {
-                            this.clearCachedAvatar();
-                        }
+                        this.clearCachedAvatar();
+                        this.beginSessionRecovery()?.subscribe({ error: () => undefined });
                     });
             }
 
@@ -147,12 +161,47 @@ export class AuthServiceWrapper {
      */
     logoutKeepingCurrentPage() {
         this.clearCachedAvatar();
+        this.forgetPreviousSignIn();
         stashPostLogoutReturnPath();
         return this.authService.logout({
             logoutParams: {
                 returnTo: authRedirectUri(environment.assetHost)
             }
         });
+    }
+
+    /** True when this build has seen an authenticated subject and Sign out has not cleared it. */
+    wasPreviouslySignedIn(): boolean {
+        return typeof localStorage !== 'undefined' &&
+            localStorage.getItem(AUTH_RESTORE_SESSION_STORAGE_KEY) === 'true';
+    }
+
+    /**
+     * Interactive login once per tab attempt. An Auth0 SSO cookie usually signs
+     * the user back in without a password. A second call while that bounce is
+     * in flight, or after it already failed, does not start another redirect.
+     *
+     * Returns null when recovery does not start. Callers with an HTTP error must
+     * surface that error. The returned observable does not complete while the
+     * redirect is in flight.
+     */
+    beginSessionRecovery(): Observable<never> | null {
+        if (!isPlatformBrowser(this.platformId) ||
+            !this.wasPreviouslySignedIn() ||
+            this.sessionRecoveryStarted ||
+            sessionRecoveryAlreadyAttempted()) {
+            return null;
+        }
+        this.sessionRecoveryStarted = true;
+        markSessionRecoveryAttempted();
+        return this.loginWithRedirectToCurrentPage().pipe(
+            catchError(error => {
+                // The tab flag stays set so a rejected redirect cannot start another bounce.
+                this.sessionRecoveryStarted = false;
+                return throwError(() => error);
+            }),
+            switchMap(() => NEVER)
+        );
     }
 
     /**
@@ -164,17 +213,24 @@ export class AuthServiceWrapper {
             return;
         }
         this.authService.error$.subscribe(error => {
-            if (!isSessionRecoveryError(error) || this.sessionRecoveryStarted) {
+            if (!isSessionRecoveryError(error)) {
                 return;
             }
-            this.sessionRecoveryStarted = true;
-            this.loginWithRedirectToCurrentPage().subscribe({
-                error: () => {
-                    // Allow a later retry if the redirect itself failed to start.
-                    this.sessionRecoveryStarted = false;
-                }
-            });
+            this.beginSessionRecovery()?.subscribe({ error: () => undefined });
         });
+    }
+
+    private rememberRestorableSession(): void {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(AUTH_RESTORE_SESSION_STORAGE_KEY, 'true');
+        }
+    }
+
+    private forgetPreviousSignIn(): void {
+        clearSessionRecoveryAttempt();
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(AUTH_RESTORE_SESSION_STORAGE_KEY);
+        }
     }
 
     /** Call on explicit logout so the toolbar flips immediately before Auth0 redirects. */

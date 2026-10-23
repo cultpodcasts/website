@@ -4,19 +4,26 @@ import { HttpClient, provideHttpClient, withInterceptors, withXhr } from '@angul
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { AUTH_SCOPE, authInterceptor } from './auth.interceptor';
+import { SESSION_RECOVERY_ATTEMPT_KEY, sessionRecoveryAlreadyAttempted } from './auth-session-recovery';
 
 describe('authInterceptor', () => {
     let http: HttpClient;
     let httpMock: HttpTestingController;
     let getAccessTokenSilently: Mock;
+    let beginSessionRecovery: Mock;
+    let wasPreviouslySignedIn: Mock;
     const api = environment.api.replace(/\/$/, '');
 
     function setup(platformId: object = 'browser' as unknown as object) {
         getAccessTokenSilently = vi.fn().mockName('getAccessTokenSilently').mockReturnValue(of('test-token'));
+        wasPreviouslySignedIn = vi.fn().mockName('wasPreviouslySignedIn').mockReturnValue(false);
+        beginSessionRecovery = vi.fn().mockName('beginSessionRecovery').mockImplementation(() =>
+            wasPreviouslySignedIn() && !sessionRecoveryAlreadyAttempted() ? NEVER : null
+        );
         TestBed.configureTestingModule({
             providers: [
                 provideZonelessChangeDetection(),
@@ -26,7 +33,9 @@ describe('authInterceptor', () => {
                 {
                     provide: AuthServiceWrapper,
                     useValue: {
-                        authService: { getAccessTokenSilently }
+                        authService: { getAccessTokenSilently },
+                        beginSessionRecovery,
+                        wasPreviouslySignedIn
                     }
                 }
             ]
@@ -37,6 +46,7 @@ describe('authInterceptor', () => {
 
     afterEach(() => {
         httpMock.verify();
+        sessionStorage.removeItem(SESSION_RECOVERY_ATTEMPT_KEY);
     });
 
     it('attaches Bearer token for API requests using AUTH_SCOPE from context', () => {
@@ -115,6 +125,214 @@ describe('authInterceptor', () => {
         httpMock.expectNone(`${api}/episode/publish/p/e`);
         expect(status).toBe(400);
         expect(errorBody).toEqual({ tweeted: false, failedTweetContent: 'hello tweet' });
+        expect(beginSessionRecovery).not.toHaveBeenCalled();
+    });
+
+    it('refreshes the token and retries once when the API says Unauthorised', () => {
+        setup();
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('fresh-token'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let body: unknown;
+        http.get(`${api}/episode/1`, { context }).subscribe(response => {
+            body = response;
+        });
+
+        const first = httpMock.expectOne(`${api}/episode/1`);
+        expect(first.request.headers.get('Authorization')).toBe('Bearer expired-token');
+        first.flush({ error: 'Unauthorised' }, { status: 401, statusText: 'Unauthorized' });
+
+        const retry = httpMock.expectOne(`${api}/episode/1`);
+        expect(retry.request.headers.get('Authorization')).toBe('Bearer fresh-token');
+        expect(getAccessTokenSilently).toHaveBeenLastCalledWith({
+            cacheMode: 'off',
+            authorizationParams: {
+                audience: 'https://api.cultpodcasts.com/',
+                scope: 'curate'
+            }
+        });
+        retry.flush({ id: 'kept' });
+
+        expect(body).toEqual({ id: 'kept' });
+        expect(beginSessionRecovery).not.toHaveBeenCalled();
+    });
+
+    it('starts sign-in instead of surfacing a second Unauthorised response', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('still-expired'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let failed = false;
+        http.get(`${api}/episode/1`, { context }).subscribe({ error: () => { failed = true; } });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+
+        expect(failed).toBe(false);
+        expect(beginSessionRecovery).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces a second 401 when there is no restorable session', () => {
+        setup();
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('still-expired'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let status: number | undefined;
+        http.get(`${api}/episode/1`, { context }).subscribe({
+            error: (err) => { status = err.status; }
+        });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+
+        expect(status).toBe(401);
+        expect(beginSessionRecovery).toHaveBeenCalled();
+    });
+
+    it('surfaces a 401 when session recovery was already attempted', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        sessionStorage.setItem(SESSION_RECOVERY_ATTEMPT_KEY, '1');
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('still-expired'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let status: number | undefined;
+        http.get(`${api}/episode/1`, { context }).subscribe({
+            error: (err) => { status = err.status; }
+        });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+
+        expect(status).toBe(401);
+        expect(sessionRecoveryAlreadyAttempted()).toBe(true);
+        expect(beginSessionRecovery).toHaveBeenCalled();
+    });
+
+    it('surfaces a retry 500 with a normal body', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('fresh-token'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let status: number | undefined;
+        http.get(`${api}/episode/1`, { context }).subscribe({
+            error: (err) => { status = err.status; }
+        });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { message: 'nope' },
+            { status: 500, statusText: 'Server Error' }
+        );
+
+        expect(status).toBe(500);
+        expect(beginSessionRecovery).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a retry 500 whose body says Unauthorised', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('fresh-token'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let status: number | undefined;
+        http.get(`${api}/episode/1`, { context }).subscribe({
+            error: (err) => { status = err.status; }
+        });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 500, statusText: 'Server Error' }
+        );
+
+        expect(status).toBe(500);
+        expect(beginSessionRecovery).not.toHaveBeenCalled();
+    });
+
+    it('starts sign-in when a retried 403 body says Unauthorised', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        getAccessTokenSilently
+            .mockReturnValueOnce(of('expired-token'))
+            .mockReturnValueOnce(of('fresh-token'));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let failed = false;
+        http.get(`${api}/episode/1`, { context }).subscribe({ error: () => { failed = true; } });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 401, statusText: 'Unauthorized' }
+        );
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Unauthorised' },
+            { status: 403, statusText: 'Forbidden' }
+        );
+
+        expect(failed).toBe(false);
+        expect(beginSessionRecovery).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts sign-in when a previous session can no longer get a token', () => {
+        setup();
+        wasPreviouslySignedIn.mockReturnValue(true);
+        getAccessTokenSilently.mockReturnValue(throwError(() => new Error('login_required')));
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let failed = false;
+        http.get(`${api}/episode/1`, { context }).subscribe({ error: () => { failed = true; } });
+
+        httpMock.expectNone(`${api}/episode/1`);
+        expect(failed).toBe(false);
+        expect(beginSessionRecovery).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces Forbidden without starting sign-in', () => {
+        setup();
+        const context = new HttpContext().set(AUTH_SCOPE, 'curate');
+        let status: number | undefined;
+        http.get(`${api}/episode/1`, { context }).subscribe({
+            error: (err) => { status = err.status; }
+        });
+
+        httpMock.expectOne(`${api}/episode/1`).flush(
+            { error: 'Forbidden' },
+            { status: 403, statusText: 'Forbidden' }
+        );
+
+        expect(status).toBe(403);
+        expect(beginSessionRecovery).not.toHaveBeenCalled();
     });
 
     it('continues without token when silent auth fails', () => {
