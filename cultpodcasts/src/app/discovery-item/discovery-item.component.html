@@ -28,6 +28,11 @@
                         AI / synthetic
                     </span>
                     }
+                    <button mat-icon-button type="button" class="ban-channel" title="Remove podcast" aria-label="Remove podcast"
+                        [disabled]="submitted()"
+                        (click)="confirmRemove($event)">
+                        <mat-icon>block</mat-icon>
+                    </button>
                 </mat-card-subtitle>
                 <mat-card-subtitle
                     [class.multipleMatchingPodcasts]="item.matchingPodcasts!= null && item.matchingPodcasts.length > 1"
