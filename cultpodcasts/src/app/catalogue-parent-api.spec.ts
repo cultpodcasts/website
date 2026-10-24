@@ -77,6 +77,17 @@ describe('news outlet / TV show API calls', () => {
       await expect(pending).resolves.toEqual({ id: parentId, name: 'Night Show' });
     });
 
+    it('encodes a slash in the news outlet name as %2F so GET keeps one path segment', async () => {
+      const name = 'Synthetic Desk 24/7';
+      const pending = firstValueFrom(curation.getCatalogueParent('news', name));
+      const req = httpMock.expectOne(url(`/newsorganisation/${encodeURIComponent(name)}`));
+      expect(req.request.method).toBe('GET');
+      expect(req.request.url).toContain('24%2F7');
+      expect(req.request.url).not.toMatch(/newsorganisation\/.*24\/7/);
+      req.flush({ id: parentId, name });
+      await expect(pending).resolves.toEqual({ id: parentId, name });
+    });
+
     it('PATCHes by guid with only the changes (curate) and accepts 202', async () => {
       const pending = firstValueFrom(curation.patchCatalogueParent('news', parentId, { twitterHandle: '' }));
       const req = httpMock.expectOne(url(`/newsorganisation/${parentId}`));

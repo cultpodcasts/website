@@ -18,6 +18,15 @@ describe("podcastGetPath", () => {
     );
   });
 
+  it("percent-encodes '/' in a podcast name so GET keeps one path segment", () => {
+    const name = "Synthetic Show 24/7";
+    expect(podcastGetPath(name)).toBe(`/podcast/${encodeURIComponent(name)}`);
+    expect(podcastGetPath(name)).toContain("24%2F7");
+    expect(podcastGetPath(name, episodeId)).toBe(
+      `/podcast/${encodeURIComponent(name)}/${episodeId}`
+    );
+  });
+
   it("looks up by encoded name alone when there is no episode id", () => {
     expect(podcastGetPath("News+Weather")).toBe(`/podcast/${encodeURIComponent("News+Weather")}`);
   });
