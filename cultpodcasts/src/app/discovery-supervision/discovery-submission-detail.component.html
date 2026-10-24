@@ -4,7 +4,6 @@
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
   </div>
-  <a matButton [routerLink]="[backLink()]" class="back-link">← Back</a>
 
   @if (error(); as message) {
   <p role="alert" class="supervision-error">{{message}}</p>
@@ -13,6 +12,9 @@
   @if (detail(); as d) {
   <header class="submission-header">
     <div class="submission-header__title">
+      <a mat-icon-button class="back-link" [routerLink]="[backLink()]" aria-label="Back" title="Back">
+        <mat-icon>arrow_back</mat-icon>
+      </a>
       <h2>Discovery submission</h2>
       <span class="status-chip" [attr.data-status]="d.status">{{statusLabel(d.status)}}</span>
       @if (isCurator() && ingestedEpisodeIds().length) {
@@ -20,13 +22,11 @@
       }
     </div>
     <p class="submission-header__meta">
-      Submitted {{d.submittedAt | date:'d MMM yyyy H:mm'}} by <span class="who" [attr.title]="d.submitterSubject">{{who(d.submitterSubject)}}</span>
-      @if (d.supervisorSubject) { · reviewed by <span class="who" [attr.title]="d.supervisorSubject">{{who(d.supervisorSubject)}}</span> }
-      @if (d.appliedAt) { · applied {{d.appliedAt | date:'d MMM yyyy H:mm'}} }
+      <span>Submitted {{d.submittedAt | date:'d MMM yyyy H:mm'}} by <span class="who" [attr.title]="d.submitterSubject">{{who(d.submitterSubject)}}</span></span>
+      @if (d.supervisorSubject) {<span>Reviewed by <span class="who" [attr.title]="d.supervisorSubject">{{who(d.supervisorSubject)}}</span></span>}
+      @if (d.appliedAt) {<span>Applied {{d.appliedAt | date:'d MMM yyyy H:mm'}}</span>}
+      @if (d.status === 'Released') {<span>Released {{d.releasedAt | date:'d MMM yyyy H:mm'}}@if (d.releaseReason) {: {{d.releaseReason}}}</span>}
     </p>
-    @if (d.status === 'Released') {
-    <p class="submission-header__meta">Released {{d.releasedAt | date:'d MMM yyyy H:mm'}}@if (d.releaseReason) {: {{d.releaseReason}}}</p>
-    }
     @if (d.status === 'Applying') {
     <p class="in-progress" role="status">
       {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
@@ -41,32 +41,41 @@
     }
   </header>
 
-  <section class="pick-summary" aria-label="Picks">
-    @if (d.submitterAcceptedResultIds.length) {<span class="pick-legend" data-pick="kept">{{d.submitterAcceptedResultIds.length}} submitter pick(s)</span>}
-    @if (finalIds().length) {<span class="pick-legend" data-pick="final">{{finalIds().length}} final</span>}
-    @if (diff().added.length) {<span class="pick-legend" data-pick="added">+{{diff().added.length}} added</span>}
-    @if (diff().removed.length) {<span class="pick-legend" data-pick="removed">−{{diff().removed.length}} removed</span>}
-  </section>
+  <div class="review-bar" [class.review-bar--sticky]="editable()">
+    <section class="pick-summary" aria-label="Picks">
+      @if (d.submitterAcceptedResultIds.length) {<span class="pick-legend" data-pick="kept">{{d.submitterAcceptedResultIds.length}} submitter pick(s)</span>}
+      @if (finalIds().length) {<span class="pick-legend" data-pick="final">{{finalIds().length}} final</span>}
+      @if (diff().added.length) {<span class="pick-legend" data-pick="added">+{{diff().added.length}} added</span>}
+      @if (diff().removed.length) {<span class="pick-legend" data-pick="removed">−{{diff().removed.length}} removed</span>}
+    </section>
+    @if (editable()) {
+    <div class="supervision-actions">
+      @if (diff().added.length || diff().removed.length) {
+      <button matButton type="button" class="reset" (click)="resetToSubmitter()" [disabled]="busy()">Reset</button>
+      }
+      <button matButton="outlined" type="button" class="save-draft" (click)="saveDraft()" [disabled]="busy() || !dirty()">Save draft</button>
+      <button matButton="filled" type="button" class="apply" (click)="apply()" [disabled]="busy()">Apply {{finalIds().length}}</button>
+    </div>
+    }
+  </div>
 
   <section class="report-comment">
     @if (editable()) {
-    <mat-form-field appearance="outline" class="full-width">
+    @if (reportCommentOpen() || reportComment()) {
+    <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
       <mat-label>Comment on the whole submission</mat-label>
-      <textarea matInput rows="3" maxlength="4000" [value]="reportComment()"
+      <textarea matInput rows="2" maxlength="4000" [value]="reportComment()"
         (input)="setReportComment($any($event.target).value)"></textarea>
     </mat-form-field>
+    } @else {
+    <button matButton type="button" class="add-report-comment" (click)="reportCommentOpen.set(true)">
+      <mat-icon>add_comment</mat-icon> Comment on submission
+    </button>
+    }
     } @else if (d.reportComment) {
     <p class="submission-comment"><strong>Supervisor comment:</strong> {{d.reportComment}}</p>
     }
   </section>
-
-  @if (editable()) {
-  <div class="supervision-actions">
-    <button matButton="tonal" type="button" (click)="resetToSubmitter()" [disabled]="busy()">Reset to submitter's picks</button>
-    <button matButton="tonal" type="button" class="save-draft" (click)="saveDraft()" [disabled]="busy() || !dirty()">Save draft</button>
-    <button matButton="filled" type="button" class="apply" (click)="apply()" [disabled]="busy()">Apply ({{finalIds().length}})</button>
-  </div>
-  }
 
   @if (retryable()) {
   <section class="retry-panel" aria-labelledby="retry-heading">
@@ -88,18 +97,6 @@
   </section>
   }
 
-  @if (releasable()) {
-  <section class="release-panel" aria-labelledby="release-heading">
-    <h3 id="release-heading">Release lock</h3>
-    <p>Puts the reports back to Unprocessed for anyone to curate. Nothing is ingested.</p>
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Reason</mat-label>
-      <input matInput maxlength="500" [value]="releaseReason()" (input)="releaseReason.set($any($event.target).value)">
-    </mat-form-field>
-    <button matButton="outlined" type="button" class="release" (click)="release()" [disabled]="busy()">Release</button>
-  </section>
-  }
-
   @if (isCurator() && ingestedEpisodeIds().length) {
   <section class="ingested-episodes" aria-label="Ingested episodes">
     <app-episodes-api [episodeIds]="ingestedEpisodeIds()" [embedded]="true" heading="Ingested episodes"></app-episodes-api>
@@ -107,68 +104,98 @@
   }
 
   <div class="supervision-filter">
-    <mat-button-toggle-group [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
-      <mat-button-toggle value="all">All results</mat-button-toggle>
-      <mat-button-toggle value="picked">Picked, changed or commented</mat-button-toggle>
+    <mat-button-toggle-group hideSingleSelectionIndicator [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
+      <mat-button-toggle value="picked">Submitter's picks ({{pickedCount()}})</mat-button-toggle>
+      <mat-button-toggle value="all">All results ({{totalCount()}})</mat-button-toggle>
     </mat-button-toggle-group>
   </div>
 
   <div class="curator-card-grid">
     @for (row of rows(); track row.result.id) {
     <div class="review-item" [attr.data-pick]="row.pick" [attr.data-result-id]="row.result.id">
-      @if (row.chip; as chip) {
-      <span class="review-item__chip" [attr.data-tone]="chip.tone" [attr.role]="chip.tone === 'error' ? 'status' : null">{{chip.text}}</span>
-      }
+      <div class="review-item__bar">
+        @if (row.chip; as chip) {
+        <span class="review-item__chip" [attr.data-tone]="chip.tone" [attr.role]="chip.tone === 'error' ? 'status' : null">{{chip.text}}</span>
+        }
+        @if (editable() && !commentOpen(row.result.id)) {
+        <button mat-icon-button type="button" class="add-item-comment" (click)="openComment(row.result.id)"
+          aria-label="Comment on this item" title="Comment on this item">
+          <mat-icon>add_comment</mat-icon>
+        </button>
+        }
+      </div>
       <discovery-item [result]="row.result" [selectedIds]="finalIds()" (changeState)="toggle($event)"
         [selectedEvent]="editable() ? unlockedEvent : lockedEvent"></discovery-item>
-      @if (editable()) {
-      <mat-form-field appearance="outline" class="full-width review-item__comment">
+      @if (editable() && commentOpen(row.result.id)) {
+      <mat-form-field appearance="outline" class="full-width review-item__comment" subscriptSizing="dynamic">
         <mat-label>Comment on this item</mat-label>
         <textarea matInput rows="2" maxlength="4000" [value]="itemComments()[row.result.id] ?? ''"
           (input)="setItemComment(row.result.id, $any($event.target).value)"></textarea>
       </mat-form-field>
-      } @else if (itemComments()[row.result.id]) {
+      } @else if (!editable() && itemComments()[row.result.id]) {
       <p class="review-item__comment-text"><strong>Supervisor:</strong> {{itemComments()[row.result.id]}}</p>
       }
     </div>
     } @empty {
-    <p>No results to show.</p>
+    <p class="supervision-empty">
+      @if (filter() === 'picked') { The submitter picked nothing. Switch to All results to add items. } @else { No results to show. }
+    </p>
     }
   </div>
 
-  @if (isAdmin()) {
-  <mat-expansion-panel class="state-panel">
-    <mat-expansion-panel-header>
-      <mat-panel-title id="state-heading">Change state (admin)</mat-panel-title>
-    </mat-expansion-panel-header>
-    <p>Sets the submission status by hand. Reports and item outcomes are not changed.</p>
-    <div class="state-panel__row">
-      <mat-form-field appearance="outline">
-        <mat-label>New status</mat-label>
-        <mat-select class="state-select" [value]="newStatus()" (selectionChange)="newStatus.set($event.value)">
-          @for (s of settableStatuses; track s) {
-          <mat-option [value]="s">{{s}}</mat-option>
-          }
-        </mat-select>
+  @if (releasable() || isAdmin() || d.history.length) {
+  <mat-accordion class="more-panels" multi>
+    @if (releasable()) {
+    <mat-expansion-panel class="release-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title>Release lock</mat-panel-title>
+      </mat-expansion-panel-header>
+      <p>Puts the reports back to Unprocessed for anyone to curate. Nothing is ingested.</p>
+      <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
+        <mat-label>Reason</mat-label>
+        <input matInput maxlength="500" [value]="releaseReason()" (input)="releaseReason.set($any($event.target).value)">
       </mat-form-field>
-      <mat-form-field appearance="outline" class="state-panel__reason">
-        <mat-label>Reason (optional)</mat-label>
-        <input matInput class="state-reason" maxlength="4000" [value]="stateReason()" (input)="stateReason.set($any($event.target).value)">
-      </mat-form-field>
-    </div>
-    <button matButton="outlined" type="button" class="change-state" (click)="changeState()" [disabled]="busy() || !newStatus()">Change state</button>
-  </mat-expansion-panel>
-  }
+      <button matButton="outlined" type="button" class="release" (click)="release()" [disabled]="busy()">Release</button>
+    </mat-expansion-panel>
+    }
 
-  @if (d.history.length) {
-  <details class="history">
-    <summary>History</summary>
-    <ol>
-      @for (h of d.history; track $index) {
-      <li>{{h.at | date:'d MMM yyyy H:mm'}} — {{historyText(h)}}@if (h.actorSubject) { (<span class="who" [attr.title]="h.actorSubject">{{who(h.actorSubject)}}</span>)}</li>
-      }
-    </ol>
-  </details>
+    @if (isAdmin()) {
+    <mat-expansion-panel class="state-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title id="state-heading">Change state (admin)</mat-panel-title>
+      </mat-expansion-panel-header>
+      <p>Sets the submission status by hand. Reports and item outcomes are not changed.</p>
+      <div class="state-panel__row">
+        <mat-form-field appearance="outline">
+          <mat-label>New status</mat-label>
+          <mat-select class="state-select" [value]="newStatus()" (selectionChange)="newStatus.set($event.value)">
+            @for (s of settableStatuses; track s) {
+            <mat-option [value]="s">{{s}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="state-panel__reason">
+          <mat-label>Reason (optional)</mat-label>
+          <input matInput class="state-reason" maxlength="4000" [value]="stateReason()" (input)="stateReason.set($any($event.target).value)">
+        </mat-form-field>
+      </div>
+      <button matButton="outlined" type="button" class="change-state" (click)="changeState()" [disabled]="busy() || !newStatus()">Change state</button>
+    </mat-expansion-panel>
+    }
+
+    @if (d.history.length) {
+    <mat-expansion-panel class="history">
+      <mat-expansion-panel-header>
+        <mat-panel-title>History ({{d.history.length}})</mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="history__list">
+        @for (h of d.history; track $index) {
+        <li><span class="history__at">{{h.at | date:'d MMM H:mm'}}</span> {{historyText(h)}}@if (h.actorSubject) { · <span class="who" [attr.title]="h.actorSubject">{{who(h.actorSubject)}}</span>}</li>
+        }
+      </ol>
+    </mat-expansion-panel>
+    }
+  </mat-accordion>
   }
   }
 </section>
