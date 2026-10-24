@@ -246,10 +246,6 @@ export class DiscoveryApiComponent implements AfterViewInit {
       ? this.results()?.filter(x => x.autoHidden && !this.selectedIds().includes(x.id)).length ?? 0
       : this.hiddenCount();
 
-    if (unselectedVisible === 0 && unreviewedHidden === 0) {
-      return true;
-    }
-
     const parts: string[] = [];
     if (unselectedVisible > 0) {
       parts.push(`${unselectedVisible} unselected visible result(s) will be rejected`);
@@ -260,6 +256,11 @@ export class DiscoveryApiComponent implements AfterViewInit {
     const pendingDocs = this.pendingDocumentCount();
     if (pendingDocs > 0) {
       parts.push(`${pendingDocs} newer report(s) will be left for later`);
+    }
+    // Skip only when there is nothing to warn about — including pending newer reports
+    // when every visible item is already selected.
+    if (parts.length === 0) {
+      return true;
     }
 
     const dialogRef = this.dialog.open(ConfirmComponent, {
@@ -303,11 +304,29 @@ export class DiscoveryApiComponent implements AfterViewInit {
           return;
         }
         if (result?.reconciledOutcomes?.length) {
-          const accepted = result.reconciledOutcomes.filter(x => x.state === 'Accepted').length;
-          const pending = result.reconciledOutcomes.filter(x =>
+          const outcomes = result.reconciledOutcomes;
+          const accepted = outcomes.filter(x => x.state === 'Accepted').length;
+          const pending = outcomes.filter(x =>
             x.state === 'Pending' || x.state === 'Unknown').length;
-          const msg = accepted > 0
-            ? `Save response lost — ${accepted} submitted` + (pending ? `, ${pending} still pending` : '')
+          const rejected = outcomes.filter(x => x.state === 'Rejected').length;
+          const acceptErrors = outcomes.filter(x => x.state === 'AcceptError').length;
+          // Incomplete = any non-Accepted stamp (Pending/Unknown/Rejected/AcceptError).
+          const incomplete = outcomes.filter(x => x.state !== 'Accepted').length;
+          const parts: string[] = [];
+          if (accepted > 0) {
+            parts.push(`${accepted} submitted`);
+          }
+          if (pending > 0) {
+            parts.push(`${pending} still pending`);
+          }
+          if (rejected > 0) {
+            parts.push(`${rejected} rejected`);
+          }
+          if (acceptErrors > 0) {
+            parts.push(`${acceptErrors} failed`);
+          }
+          const msg = parts.length > 0
+            ? `Save response lost — ${parts.join(', ')}`
             : (result.errorMessage ?? 'Save response lost; check items below.');
           const review = (result.episodeIds?.length ?? 0) > 0;
           const ref = this.snackBar.open(msg, review ? 'Review' : 'Ok', { duration: 15000 });
@@ -316,13 +335,14 @@ export class DiscoveryApiComponent implements AfterViewInit {
               this.router.navigate(['/episodes', JSON.stringify(result.episodeIds)]);
             });
           }
-          if (accepted > 0 && pending === 0 && !result.hasErrors) {
+          // Full success only when every stamped id is Accepted — keep Save otherwise.
+          if (accepted > 0 && incomplete === 0) {
             this.displaySave.set(false);
             this.submitted.set(true);
             this.submittedSubject.next(true);
             this.selectedIds.set([]);
             void this.session.clearVotes(
-              result.reconciledOutcomes!.filter(x => x.state === 'Accepted').map(x => x.discoveryItemId));
+              outcomes.filter(x => x.state === 'Accepted').map(x => x.discoveryItemId));
             this.loadResults(false);
             return;
           }

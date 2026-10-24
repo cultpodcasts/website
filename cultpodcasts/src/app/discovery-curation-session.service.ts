@@ -52,51 +52,67 @@ export class DiscoveryCurationSessionService implements OnDestroy {
   }
 
   async syncDocuments(documentIds: string[]): Promise<void> {
-    const headers = await this.authHeaders();
-    if (!headers) {
-      return;
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        return;
+      }
+      const url = new URL('/discovery-curation/session/sync-documents', environment.api).toString();
+      const snap = await firstValueFrom(
+        this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
+      this.snapshot.set(snap);
+    } catch {
+      /* void callers must not surface unhandled rejections */
     }
-    const url = new URL('/discovery-curation/session/sync-documents', environment.api).toString();
-    const snap = await firstValueFrom(
-      this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
-    this.snapshot.set(snap);
   }
 
   async includePending(documentIds: string[] | 'all' = 'all'): Promise<void> {
-    const headers = await this.authHeaders();
-    if (!headers) {
-      return;
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        return;
+      }
+      const url = new URL('/discovery-curation/session/include', environment.api).toString();
+      const snap = await firstValueFrom(
+        this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
+      this.snapshot.set(snap);
+    } catch {
+      /* void callers must not surface unhandled rejections */
     }
-    const url = new URL('/discovery-curation/session/include', environment.api).toString();
-    const snap = await firstValueFrom(
-      this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
-    this.snapshot.set(snap);
   }
 
   async setVote(resultId: string, selected: boolean): Promise<void> {
-    const headers = await this.authHeaders();
-    if (!headers) {
-      return;
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        return;
+      }
+      if (this.socket?.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({ type: 'vote', resultId, selected }));
+        return;
+      }
+      const url = new URL('/discovery-curation/session/vote', environment.api).toString();
+      const snap = await firstValueFrom(
+        this.http.post<DiscoveryCurationSessionSnapshot>(url, { resultId, selected }, { headers }));
+      this.snapshot.set(snap);
+    } catch {
+      /* void callers must not surface unhandled rejections */
     }
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ type: 'vote', resultId, selected }));
-      return;
-    }
-    const url = new URL('/discovery-curation/session/vote', environment.api).toString();
-    const snap = await firstValueFrom(
-      this.http.post<DiscoveryCurationSessionSnapshot>(url, { resultId, selected }, { headers }));
-    this.snapshot.set(snap);
   }
 
   async clearVotes(resultIds: string[]): Promise<void> {
-    const headers = await this.authHeaders();
-    if (!headers) {
-      return;
+    try {
+      const headers = await this.authHeaders();
+      if (!headers) {
+        return;
+      }
+      const url = new URL('/discovery-curation/session/clear-votes', environment.api).toString();
+      const snap = await firstValueFrom(
+        this.http.post<DiscoveryCurationSessionSnapshot>(url, { resultIds }, { headers }));
+      this.snapshot.set(snap);
+    } catch {
+      /* void callers must not surface unhandled rejections */
     }
-    const url = new URL('/discovery-curation/session/clear-votes', environment.api).toString();
-    const snap = await firstValueFrom(
-      this.http.post<DiscoveryCurationSessionSnapshot>(url, { resultIds }, { headers }));
-    this.snapshot.set(snap);
   }
 
   private async openSocket(): Promise<void> {
@@ -110,12 +126,11 @@ export class DiscoveryCurationSessionService implements OnDestroy {
       return;
     }
     const base = new URL('/discovery-curation/session/ws', environment.api);
-    // Workers validate JWT from Authorization on the upgrade request; browsers cannot set
-    // custom headers on WebSocket, so pass the bearer as a subprotocol + query fallback.
+    // Browsers cannot set Authorization on WebSocket upgrade; Worker accepts ?access_token=.
     const wsUrl = base.toString().replace(/^http/, 'ws') + `?access_token=${encodeURIComponent(token)}`;
     try {
       this.socket?.close();
-      this.socket = new WebSocket(wsUrl, ['bearer', token]);
+      this.socket = new WebSocket(wsUrl);
       this.socket.onopen = () => this.connected.set(true);
       this.socket.onclose = () => {
         this.connected.set(false);

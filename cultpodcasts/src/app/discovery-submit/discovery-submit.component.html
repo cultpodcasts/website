@@ -30,6 +30,14 @@
             }
         </ul>
         }
+        @if (reconciledRejected().length) {
+        <p><strong>Rejected ({{reconciledRejected().length}})</strong></p>
+        <ul>
+            @for (item of reconciledRejected(); track item.discoveryItemId) {
+            <li>{{ item.episodeName || item.discoveryItemId }}</li>
+            }
+        </ul>
+        }
         @if (reconciledPending().length) {
         <p><strong>Still pending ({{reconciledPending().length}})</strong></p>
         <ul>

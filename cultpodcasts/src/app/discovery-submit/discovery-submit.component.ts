@@ -44,9 +44,11 @@ export class DiscoverySubmitComponent {
     (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'Accepted'));
   reconciledErrored = computed(() =>
     (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'AcceptError'));
+  reconciledRejected = computed(() =>
+    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'Rejected'));
   reconciledPending = computed(() =>
     (this.submitState().reconciledOutcomes ?? []).filter(x =>
-      x.state === 'Pending' || x.state === 'Unknown' || x.state === 'Rejected'));
+      x.state === 'Pending' || x.state === 'Unknown'));
 
   constructor(
     private http: HttpClient,
@@ -211,7 +213,8 @@ export class DiscoverySubmitComponent {
         .map(x => `${x.podcastId}/${x.episodeId}`);
       const accepted = results.filter(x => x.state === 'Accepted');
       const errored = results.filter(x => x.state === 'AcceptError');
-      if (results.length > 0 && (accepted.length > 0 || errored.length > 0)) {
+      // Any non-empty stamp set is useful — including all-Pending/Rejected when Azure never finished.
+      if (results.length > 0) {
         this.submitState.update(s => ({
           ...s,
           endpointError: true,
