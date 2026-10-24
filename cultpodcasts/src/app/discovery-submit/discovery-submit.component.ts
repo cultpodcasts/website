@@ -1,7 +1,7 @@
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { DISCOVERY_SUBMIT_SCOPE, describeSubmissionError } from '../discovery-supervision/discovery-supervision';
 import { DiscoverySubmissionHeld } from '../discovery-supervision/discovery-supervision.models';
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 import { MatDialog, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySubmit } from '../discovery-submit.interface';
@@ -17,6 +17,10 @@ import {
   promptAmbiguousIdentities,
   promptUnsupportedLanguages
 } from '../submit-language-identity-prompts';
+import {
+  DiscoverySubmitOutcomeItem,
+  DiscoverySubmitOutcomeResponse
+} from '../discovery-submit-outcome.interface';
 
 @Component({
   selector: 'app-discovery-submit',
@@ -36,6 +40,14 @@ export class DiscoverySubmitComponent {
     endpointError: false
   });
 
+  reconciledSubmitted = computed(() =>
+    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'Accepted'));
+  reconciledErrored = computed(() =>
+    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'AcceptError'));
+  reconciledPending = computed(() =>
+    (this.submitState().reconciledOutcomes ?? []).filter(x =>
+      x.state === 'Pending' || x.state === 'Unknown' || x.state === 'Rejected'));
+
   constructor(
     private http: HttpClient,
     private dialogRef: MatDialogRef<DiscoverySubmitComponent, SubmitDiscoveryState>,
@@ -45,6 +57,8 @@ export class DiscoverySubmitComponent {
   }
 
   public async submit(data: DiscoverySubmit) {
+    let headers: HttpHeaders | undefined;
+    let resultIds = data.resultIds;
     try {
       var token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
@@ -55,11 +69,9 @@ export class DiscoverySubmitComponent {
       if (token === "") {
         throw new Error("Unable to get access-token");
       }
-      let headers: HttpHeaders = new HttpHeaders();
-      headers = headers.set("Authorization", "Bearer " + token);
+      headers = new HttpHeaders().set("Authorization", "Bearer " + token);
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending.set(true);
-      let resultIds = data.resultIds;
       let languageDecisions: Record<string, UnsupportedLanguageAnswer> | undefined;
       let identityDecisions: Record<string, 'select' | 'continue'> | undefined;
       let selectedIdentityKeys: Record<string, string> | undefined;
@@ -147,12 +159,78 @@ export class DiscoverySubmitComponent {
         }
       } else {
         this.isSending.set(false);
-        this.submitState.update(s => ({ ...s, endpointError: true }));
+        // 4xx (conflict / bad request) are definitive — do not pretend the Save may have landed.
+        this.submitState.update(s => ({
+          ...s,
+          endpointError: true,
+          errorMessage: describeSubmissionError({ status: resp.status, error: resp.body })
+        }));
       }
     } catch (error) {
       this.isSending.set(false);
-      this.submitState.update(s => ({ ...s, endpointError: true, errorMessage: describeSubmissionError(error) }));
+      const status = error instanceof HttpErrorResponse ? error.status : 0;
+      // 4xx are definitive. 5xx / network (0) may mean Azure finished after the edge dropped.
+      if (status > 0 && status < 500) {
+        this.submitState.update(s => ({
+          ...s,
+          endpointError: true,
+          errorMessage: describeSubmissionError(error)
+        }));
+        return;
+      }
+      await this.reconcileAfterEndpointError(
+        data.documentIds,
+        resultIds,
+        headers,
+        describeSubmissionError(error));
     }
+  }
+
+  private async reconcileAfterEndpointError(
+    documentIds: string[],
+    resultIds: string[],
+    headers: HttpHeaders | undefined,
+    errorMessage: string
+  ) {
+    if (!headers || documentIds.length === 0 || resultIds.length === 0) {
+      this.submitState.update(s => ({ ...s, endpointError: true, errorMessage }));
+      return;
+    }
+    try {
+      const outcomeUrl = new URL('/discovery-curation/submit-outcome', environment.api).toString();
+      const outcome = await firstValueFrom(
+        this.http.post<DiscoverySubmitOutcomeResponse>(
+          outcomeUrl,
+          { ids: documentIds, resultIds },
+          { headers }
+        ));
+      const results = outcome?.results ?? [];
+      const episodeIds = results
+        .filter((x): x is DiscoverySubmitOutcomeItem & { podcastId: string; episodeId: string } =>
+          x.state === 'Accepted' && !!x.podcastId && !!x.episodeId)
+        .map(x => `${x.podcastId}/${x.episodeId}`);
+      const accepted = results.filter(x => x.state === 'Accepted');
+      const errored = results.filter(x => x.state === 'AcceptError');
+      if (results.length > 0 && (accepted.length > 0 || errored.length > 0)) {
+        this.submitState.update(s => ({
+          ...s,
+          endpointError: true,
+          errorMessage,
+          reconciledOutcomes: results,
+          episodeIds,
+          hasErrors: errored.length > 0,
+          erroredItems: errored.map(x => x.discoveryItemId),
+          allErrored: accepted.length === 0 && errored.length === resultIds.length
+        }));
+        if (accepted.length > 0) {
+          this.discoveryInfoSvc.getDiscoveryInfo();
+        }
+        return;
+      }
+    } catch {
+      /* fall through to generic error */
+    }
+    this.submitState.update(s => ({ ...s, endpointError: true, errorMessage }));
   }
 
   close() {
