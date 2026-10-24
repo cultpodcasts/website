@@ -144,11 +144,11 @@ describe('CurationSubmitService', () => {
     const getReq = httpMock.expectOne(getUrl);
     expect(getReq.request.method).toBe('GET');
     expect(getReq.request.context.get(AUTH_SCOPE)).toBe('curate');
-    getReq.flush({ id: episodeId, tvShowId: episodeId, title: 'Item', imdb: null, tvdb: null });
+    getReq.flush({ id: episodeId, tvShowId: episodeId, title: 'Item', imdbId: null, tvdbId: null });
     const dto = await getPending;
     expect(dto.id).toBe(episodeId);
 
-    const body = { imdb: 'https://www.imdb.com/title/tt0000001/' };
+    const body = { imdbId: 'tt0000001' };
     const postPending = firstValueFrom(service.patchTvShowEpisode(episodeId, body));
     const postReq = httpMock.expectOne(getUrl);
     expect(postReq.request.method).toBe('PATCH');

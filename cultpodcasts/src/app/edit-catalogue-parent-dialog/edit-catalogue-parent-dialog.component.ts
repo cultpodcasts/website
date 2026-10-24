@@ -19,6 +19,8 @@ import {
   catalogueParentChanges,
   catalogueParentEditModel,
   isValidAppleIdText,
+  isValidImdbIdText,
+  isValidNumericIdText,
   removesCatalogueParent,
   subjectOptions
 } from "../catalogue-parent-edit";
@@ -80,6 +82,7 @@ export class EditCatalogueParentDialogComponent {
   protected readonly saveError = signal(false);
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
+  protected readonly identityInvalid = signal(false);
   protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
   protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
@@ -129,6 +132,12 @@ export class EditCatalogueParentDialogComponent {
     }
     this.appleIdInvalid.set(!isValidAppleIdText(model.appleId));
     if (this.appleIdInvalid()) {
+      return;
+    }
+    this.identityInvalid.set(
+      this.isTv && !(isValidImdbIdText(model.imdbId) && isValidNumericIdText(model.tvdbId) && isValidNumericIdText(model.tmdbId))
+    );
+    if (this.identityInvalid()) {
       return;
     }
     const changes = catalogueParentChanges(this.original, model, this.isTv);

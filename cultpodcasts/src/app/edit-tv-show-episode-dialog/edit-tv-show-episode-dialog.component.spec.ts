@@ -32,8 +32,9 @@ const synthetic = {
   guests: ['Ann Example'],
   tvShowId: showId,
   tvShowName: 'Nightly',
-  imdb: 'https://www.imdb.com/title/tt0000001/',
-  tvdb: null
+  imdbId: 'tt0000001',
+  tvdbId: null,
+  tmdbId: null
 };
 
 describe('EditTvShowEpisodeDialogComponent', () => {
@@ -88,7 +89,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     return fixture.componentInstance;
   }
 
-  it('has the Identity tab after the episode-editor tabs and loads IMDb / TheTVDB', async () => {
+  it('has the Identity tab after the episode-editor tabs and loads IMDb / TheTVDB / TMDB ids', async () => {
     const dialog = await load();
     expect(dialog.isInError()).toBe(false);
     expect(dialog.parentName()).toBe('Nightly');
@@ -96,8 +97,9 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
     expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity']);
     expect(dialog.form()!.getRawValue()).toEqual(expect.objectContaining({
-      imdb: 'https://www.imdb.com/title/tt0000001/',
-      tvdb: '',
+      imdbId: 'tt0000001',
+      tvdbId: '',
+      tmdbId: '',
       lang: 'fr',
       guests: ['Ann Example'],
       hashTag: '#nightly'
@@ -110,8 +112,9 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     dialog.form()!.patchValue({
       description: 'Edited',
       lang: 'unset',
-      imdb: '',
-      tvdb: 'https://thetvdb.com/series/example/episodes/1'
+      imdbId: '',
+      tvdbId: '4242',
+      tmdbId: '77'
     });
     const saving = dialog.onSubmit();
     const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
@@ -119,8 +122,9 @@ describe('EditTvShowEpisodeDialogComponent', () => {
       description: 'Edited',
       unBluesky: true,
       language: '',
-      imdb: '',
-      tvdb: 'https://thetvdb.com/series/example/episodes/1'
+      imdbId: '',
+      tvdbId: 4242,
+      tmdbId: 77
     });
     patch.flush({ blueskyPostDeleted: true }, { status: 202, statusText: 'Accepted' });
     await saving;

@@ -134,12 +134,22 @@
             @if (isTv) {
             <mat-tab label="Identity">
                 <mat-form-field class="full-width">
-                    <mat-label>IMDb URL</mat-label>
-                    <input type="url" name="imdb" [(ngModel)]="m.imdb" matInput>
+                    <mat-label>IMDb id</mat-label>
+                    <input type="text" name="imdbId" placeholder="tt1234567" [(ngModel)]="m.imdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
                 </mat-form-field>
                 <mat-form-field class="full-width">
-                    <mat-label>TheTVDB URL</mat-label>
-                    <input type="url" name="tvdb" [(ngModel)]="m.tvdb" matInput>
+                    <mat-label>TheTVDB id</mat-label>
+                    <input type="text" inputmode="numeric" name="tvdbId" [(ngModel)]="m.tvdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>TMDB id</mat-label>
+                    <input type="text" inputmode="numeric" name="tmdbId" [(ngModel)]="m.tmdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
+                    @if (identityInvalid()) {
+                    <mat-hint id="identity-error" class="invalid">IMDb id is tt followed by 7 to 10 digits; TheTVDB and TMDB ids are digits only (blank clears).</mat-hint>
+                    }
                 </mat-form-field>
             </mat-tab>
             }

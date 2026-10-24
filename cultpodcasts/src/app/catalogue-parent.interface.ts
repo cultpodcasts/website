@@ -2,7 +2,7 @@ import { SearchIndexerState } from "./search-indexer-state.interface";
 
 /**
  * GET /newsorganisation/{identifier} or /tvshow/{identifier}: the shared publisher fields (RPP #1053).
- * TV adds the canonical identity URLs.
+ * TV adds the identity ids.
  */
 export interface CatalogueParentDto {
   id: string;
@@ -20,8 +20,10 @@ export interface CatalogueParentDto {
   defaultSubject?: string | null;
   ignoredSubjects?: string[] | null;
   ignoredAssociatedSubjects?: string[] | null;
-  imdb?: string | null;
-  tvdb?: string | null;
+  /** TV show identity ids (no URLs): IMDb `tt` id, TheTVDB series id, TMDB id. Clear: `''`, `0`, `0`. */
+  imdbId?: string | null;
+  tvdbId?: number | null;
+  tmdbId?: number | null;
   /**
    * Service ids (RPP #1053 `ServiceIdsDto`, stored under the parent's `indexing`). URL submission matches a
    * submitted episode's channel / show to the outlet or show on these. Empty / null when unset.

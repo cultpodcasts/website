@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, imdbTitleUrl, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -37,7 +37,7 @@ describe('playable edit form', () => {
     expect(value.guests).toEqual(['Ann Example']);
     expect(value.searchTerms).toBe('');
     expect(value.release).toBe('2026-01-02');
-    expect(form.controls.imdb).toBeUndefined();
+    expect(form.controls.imdbId).toBeUndefined();
   });
 
   it('sends nothing when nothing changed (including the normalised hash tag and English)', () => {
@@ -96,24 +96,51 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
   });
 
-  it('TV adds the identity patch: omit unchanged, empty string clears, URL sets', () => {
+  it('TV adds the identity id patch: omit unchanged, blank clears (imdbId "", tvdbId 0, tmdbId 0), id sets', () => {
     const dto: TvShowEpisodeDto = {
       ...report(),
       tvShowId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
       tvShowName: 'Nightly',
-      // As delivered by json-url.interceptor.
-      imdb: new URL('https://www.imdb.com/title/tt0000001/'),
-      tvdb: null
+      imdbId: 'tt0000001',
+      tvdbId: null,
+      tmdbId: 5
     };
     const form = buildPlayableEditForm(dto, 'tv');
-    expect(form.getRawValue().imdb).toBe('https://www.imdb.com/title/tt0000001/');
+    expect(form.getRawValue().imdbId).toBe('tt0000001');
+    expect(form.getRawValue().tvdbId).toBe('');
+    expect(form.getRawValue().tmdbId).toBe('5');
+    expect('imdb' in form.controls).toBe(false);
+    expect('tvdb' in form.controls).toBe(false);
     expect(tvShowEpisodeChanges(dto, form.getRawValue())).toEqual({});
-    form.patchValue({ imdb: '', tvdb: 'https://thetvdb.com/series/example/episodes/1', explicit: true });
+    form.patchValue({ imdbId: '', tvdbId: ' 4242 ', tmdbId: '', explicit: true });
     expect(tvShowEpisodeChanges(dto, form.getRawValue())).toEqual({
       explicit: true,
-      imdb: '',
-      tvdb: 'https://thetvdb.com/series/example/episodes/1'
+      imdbId: '',
+      tvdbId: 4242,
+      tmdbId: 0
     });
+  });
+
+  it('TV validates the identity ids', () => {
+    const dto: TvShowEpisodeDto = { ...report(), tvShowId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' };
+    const form = buildPlayableEditForm(dto, 'tv');
+    form.patchValue({ imdbId: 'nm0000001', tvdbId: 'x', tmdbId: '-3' });
+    expect(form.controls.imdbId!.hasError('pattern')).toBe(true);
+    expect(form.controls.tvdbId!.hasError('pattern')).toBe(true);
+    expect(form.controls.tmdbId!.hasError('pattern')).toBe(true);
+  });
+
+  it('generates page URLs from ids, and nothing for a blank or invalid id', () => {
+    expect(imdbTitleUrl('tt0000001')).toBe('https://www.imdb.com/title/tt0000001/');
+    expect(imdbTitleUrl(' tt0000001 ')).toBe('https://www.imdb.com/title/tt0000001/');
+    expect(imdbTitleUrl('')).toBe('');
+    expect(imdbTitleUrl('nm0000001')).toBe('');
+    expect(tvdbSeriesUrl('123')).toBe('https://www.thetvdb.com/dereferrer/series/123');
+    expect(tvdbSeriesUrl(123)).toBe('https://www.thetvdb.com/dereferrer/series/123');
+    expect(tvdbEpisodeUrl('456')).toBe('https://www.thetvdb.com/dereferrer/episode/456');
+    expect(tvdbEpisodeUrl(0)).toBe('');
+    expect(tvdbEpisodeUrl('')).toBe('');
+    expect(tvdbEpisodeUrl('abc')).toBe('');
   });
 
   describe('film', () => {
@@ -125,7 +152,7 @@ describe('playable edit form', () => {
         title: 'One Off',
         name: 'One Off',
         publisher: 'Example Pictures',
-        imdb: new URL('https://www.imdb.com/title/tt0000002/'),
+        imdbId: 'tt0000002',
         release: '1999',
         ...overrides
       };
@@ -135,17 +162,18 @@ describe('playable edit form', () => {
       expect(playableEditHasIdentity('news')).toBe(false);
       expect(playableEditHasIdentity('tv')).toBe(true);
       expect(playableEditHasIdentity('film')).toBe(true);
-      expect(buildPlayableEditForm(film(), 'news').controls.imdb).toBeUndefined();
-      expect(buildPlayableEditForm(film(), 'tv').controls.tvdb).toBeDefined();
-      expect(buildPlayableEditForm(film(), 'film').controls.tvdb).toBeUndefined();
+      expect(buildPlayableEditForm(film(), 'news').controls.imdbId).toBeUndefined();
+      expect(buildPlayableEditForm(film(), 'tv').controls.tvdbId).toBeDefined();
+      expect(buildPlayableEditForm(film(), 'film').controls.tvdbId).toBeUndefined();
     });
 
-    it('builds a film form: disabled title, publisher, IMDb text (no TheTVDB), year-or-date release', () => {
+    it('builds a film form: disabled title, publisher, IMDb id (no TheTVDB), year-or-date release', () => {
       const form = buildPlayableEditForm(film(), 'film');
       expect(form.controls.title.disabled).toBe(true);
       expect(form.controls.publisher?.value).toBe('Example Pictures');
-      expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
-      expect(form.controls.tvdb).toBeUndefined();
+      expect(form.controls.imdbId?.value).toBe('tt0000002');
+      expect(form.controls.tvdbId).toBeUndefined();
+      expect('imdb' in form.controls).toBe(false);
       expect(form.valid).toBe(true);
       form.controls.release.setValue('1999-05-01');
       expect(form.valid).toBe(true);
@@ -153,26 +181,26 @@ describe('playable edit form', () => {
       expect(form.controls.release.hasError('pattern')).toBe(true);
     });
 
-    it('never sends title; sends publisher (trimmed, empty clears) and the IMDb patch', () => {
+    it('never sends title; sends publisher (trimmed, empty clears) and the IMDb id patch', () => {
       const previous = film();
       const form = buildPlayableEditForm(previous, 'film');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
       form.controls.title.setValue('Something else');
       form.controls.publisher!.setValue('  ');
-      form.controls.imdb!.setValue('https://www.imdb.com/title/tt0000009/');
+      form.controls.imdbId!.setValue('tt0000009');
       expect(filmChanges(previous, form.getRawValue())).toEqual({
         publisher: '',
-        imdb: 'https://www.imdb.com/title/tt0000009/'
+        imdbId: 'tt0000009'
       });
     });
 
-    it('leaves IMDb alone when it only differs by whitespace, and clears it with an empty string', () => {
+    it('leaves the IMDb id alone when it only differs by whitespace, and clears it with an empty string', () => {
       const previous = film();
       const form = buildPlayableEditForm(previous, 'film');
-      form.controls.imdb!.setValue(' https://www.imdb.com/title/tt0000002/ ');
+      form.controls.imdbId!.setValue(' tt0000002 ');
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
-      form.controls.imdb!.setValue('');
-      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdb: '' });
+      form.controls.imdbId!.setValue('');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ imdbId: '' });
     });
 
     it('sends the IMDb id (blank clears) and the TMDB id (blank sends 0 to clear), and validates both', () => {

@@ -83,15 +83,16 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('loads by name, PATCHes only the changed fields by id, and closes on 202', async () => {
     const dialog = create();
-    await loadWith({ id: showId, name: 'Nightly', publisher: 'Net', tvdb: 'https://thetvdb.com/series/x' });
+    await loadWith({ id: showId, name: 'Nightly', publisher: 'Net', tvdbId: 321, imdbId: 'tt0000001' });
     await settle();
     const model = dialog.model()!;
     model.publisher = 'Network Two';
-    model.tvdb = '';
+    model.tvdbId = '';
+    model.imdbId = 'tt0000002';
     const done = dialog.save();
     const req = await expectSoon(patchUrl);
     expect(req.request.method).toBe('PATCH');
-    expect(req.request.body).toEqual({ publisher: 'Network Two', tvdb: '' });
+    expect(req.request.body).toEqual({ publisher: 'Network Two', imdbId: 'tt0000002', tvdbId: 0 });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
     expect(close).toHaveBeenCalledWith({ updated: true });

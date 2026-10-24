@@ -89,6 +89,7 @@ export class EditPodcastDialogComponent {
   readonly languages = signal<{ [key: string]: string }>({});
   readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
+  readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string | undefined;
   episodeId: string | undefined;
   readonly transferTarget = signal<CatalogueParentKind | null>(null);
@@ -171,6 +172,7 @@ export class EditPodcastDialogComponent {
     const presets = this.regexPresetsService.loadRegexPresets();
     this.titleRegexPresets.set(presets.title);
     this.descriptionRegexPresets.set(presets.description);
+    this.includeTitleRegexPresets.set(presets.includeTitle);
   }
 
   resolveRegexPlaceholders(regexValue: string): string {
@@ -193,6 +195,19 @@ export class EditPodcastDialogComponent {
     }
 
     this.regexPresetsService.applyDescriptionRegexPreset(pattern, form.controls.descriptionRegex, this.podcastName);
+  }
+
+  applyIncludeTitleRegexPreset(pattern: string): void {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+
+    this.regexPresetsService.applyIncludeTitleRegexPreset(
+      pattern,
+      form.controls.episodeIncludeTitleRegex,
+      this.podcastName,
+    );
   }
 
   onSubmit() {

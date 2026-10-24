@@ -24,7 +24,6 @@ const synthetic = {
   hashTag: null,
   searchTerms: null,
   defaultSubject: 'Arts',
-  imdb: 'https://www.imdb.com/title/tt0000002/',
   imdbId: 'tt0000002',
   tmdbId: null,
   release: '1999',
@@ -113,16 +112,10 @@ describe('EditFilmDialogComponent', () => {
     const form = dialog.form()!;
     expect(form.controls.title.disabled).toBe(true);
     expect(form.controls.publisher?.value).toBe('Example Pictures');
-    // json-url.interceptor would hand a URL object; the form always holds text.
-    expect(form.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000002/');
-    expect(form.controls.tvdb).toBeUndefined();
+    expect(form.controls.imdbId?.value).toBe('tt0000002');
+    expect(form.controls.tvdbId).toBeUndefined();
     expect(form.controls.release.value).toBe('1999');
     expect(form.valid).toBe(true);
-  });
-
-  it('turns a URL-object IMDb value into text before the form uses it', async () => {
-    const dialog = await load({ ...synthetic, imdb: new URL('https://www.imdb.com/title/tt0000003/') });
-    expect(dialog.form()!.controls.imdb?.value).toBe('https://www.imdb.com/title/tt0000003/');
   });
 
   it('PATCHes film/{id} with only the changed fields, never a title, and closes with the film name', async () => {
@@ -135,7 +128,7 @@ describe('EditFilmDialogComponent', () => {
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
       tweeted: false,
-      imdb: ''
+      imdbId: ''
     });
     dialog.pendingUnBluesky.set(true);
     const saving = dialog.onSubmit();
@@ -147,7 +140,7 @@ describe('EditFilmDialogComponent', () => {
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
       publisher: 'Other Pictures',
-      imdb: ''
+      imdbId: ''
     });
     expect('title' in patch.request.body).toBe(false);
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });

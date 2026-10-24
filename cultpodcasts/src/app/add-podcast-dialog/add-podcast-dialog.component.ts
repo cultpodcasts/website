@@ -80,6 +80,7 @@ export class AddPodcastDialogComponent {
   readonly languages = signal<{ [key: string]: string }>({});
   readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
+  readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string;
   readonly highlightSubjectsTab = signal<boolean>(false);
   readonly highlightLanguageTab = signal<boolean>(false);
@@ -178,6 +179,7 @@ export class AddPodcastDialogComponent {
     const presets = this.regexPresetsService.loadRegexPresets();
     this.titleRegexPresets.set(presets.title);
     this.descriptionRegexPresets.set(presets.description);
+    this.includeTitleRegexPresets.set(presets.includeTitle);
   }
 
   applyTitleRegexPreset(pattern: string): void {
@@ -202,6 +204,19 @@ export class AddPodcastDialogComponent {
     this.regexPresetsService.applyDescriptionRegexPreset(
       pattern,
       form.controls.descriptionRegex,
+      form.controls.podcastName.value ?? this.podcastName,
+    );
+  }
+
+  applyIncludeTitleRegexPreset(pattern: string): void {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+
+    this.regexPresetsService.applyIncludeTitleRegexPreset(
+      pattern,
+      form.controls.episodeIncludeTitleRegex,
       form.controls.podcastName.value ?? this.podcastName,
     );
   }

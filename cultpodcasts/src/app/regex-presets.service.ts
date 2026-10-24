@@ -10,6 +10,7 @@ export class RegexPresetsService {
     return {
       title: presets.title ?? [],
       description: presets.description ?? [],
+      includeTitle: presets.includeTitle ?? [],
     };
   }
 
@@ -31,6 +32,10 @@ export class RegexPresetsService {
   }
 
   applyDescriptionRegexPreset(pattern: string, control: FormControl<string>, podcastName: string): void {
+    control.setValue(this.resolveRegexPlaceholders(pattern, podcastName));
+  }
+
+  applyIncludeTitleRegexPreset(pattern: string, control: FormControl<string>, podcastName: string): void {
     control.setValue(this.resolveRegexPlaceholders(pattern, podcastName));
   }
 }

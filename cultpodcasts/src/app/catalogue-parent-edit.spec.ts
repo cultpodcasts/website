@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -14,7 +14,9 @@ const outlet: CatalogueParentDto = {
   twitterHandle: '@desk',
   knownTerms: ['alpha', 'beta'],
   ignoredSubjects: null,
-  imdb: 'https://www.imdb.com/title/tt0000001/'
+  imdbId: 'tt0000001',
+  tvdbId: 321,
+  tmdbId: null
 };
 
 describe('catalogueParentChanges', () => {
@@ -38,11 +40,29 @@ describe('catalogueParentChanges', () => {
     });
   });
 
-  it('only diffs imdb/tvdb for TV shows', () => {
+  it('only diffs imdbId/tvdbId/tmdbId for TV shows; blank clears ("", 0, 0)', () => {
     const model = catalogueParentEditModel(outlet);
-    model.imdb = '';
+    model.imdbId = '';
+    model.tvdbId = '';
+    model.tmdbId = ' 99 ';
     expect(catalogueParentChanges(outlet, model, false)).toEqual({});
-    expect(catalogueParentChanges(outlet, model, true)).toEqual({ imdb: '' });
+    expect(catalogueParentChanges(outlet, model, true)).toEqual({ imdbId: '', tvdbId: 0, tmdbId: 99 });
+  });
+
+  it('sends nothing for unchanged ids, ignores non-numeric id text, and validates the id text', () => {
+    const model = catalogueParentEditModel(outlet);
+    expect(model.imdbId).toBe('tt0000001');
+    expect(model.tvdbId).toBe('321');
+    expect(model.tmdbId).toBe('');
+    expect(catalogueParentChanges(outlet, model, true)).toEqual({});
+    model.tvdbId = 'abc';
+    expect(catalogueParentChanges(outlet, model, true)).toEqual({});
+    expect(isValidNumericIdText('')).toBe(true);
+    expect(isValidNumericIdText(' 12 ')).toBe(true);
+    expect(isValidNumericIdText('1a')).toBe(false);
+    expect(isValidImdbIdText('')).toBe(true);
+    expect(isValidImdbIdText('tt0000001')).toBe(true);
+    expect(isValidImdbIdText('nm0000001')).toBe(false);
   });
 
   it('never includes name (rename is a separate admin action)', () => {

@@ -186,7 +186,20 @@
                 <mat-form-field class="full-width">
                     <mat-label>Episode Include Title Regex</mat-label>
                     <input type="text" [formControl]="form()!.controls.episodeIncludeTitleRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="includeTitleRegexPresetMenu"
+                        aria-label="Episode include title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
                 </mat-form-field>
+                <mat-menu #includeTitleRegexPresetMenu="matMenu">
+                    @if (includeTitleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of includeTitleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyIncludeTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
             </mat-tab>
             <mat-tab label="Catalogue">
                 <mat-form-field class="full-width">
