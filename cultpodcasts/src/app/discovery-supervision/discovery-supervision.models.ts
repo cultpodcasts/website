@@ -1,5 +1,5 @@
 import { DiscoveryResult } from '../discovery-result.interface';
-import { DiscoveryLanguageDecision } from '../submit-discovery-response.interface';
+import { DiscoveryIdentityDecision, DiscoveryLanguageDecision } from '../submit-discovery-response.interface';
 import { SubmitDiscoveryItemResult } from '../submit-discovery-item-result.interface';
 
 /** Lifecycle of a supervised discovery submission (Api `discoverySubmissionStatusSchema`). */
@@ -128,6 +128,7 @@ export interface DiscoverySubmissionCommandResponse {
     errorsOccurred: boolean;
     results: SubmitDiscoveryItemResult[];
     languageDecisionsRequired?: DiscoveryLanguageDecision[];
+    identityDecisionsRequired?: DiscoveryIdentityDecision[];
   } | null;
   itemOutcomes?: DiscoverySubmissionItemOutcome[] | null;
 }

@@ -84,4 +84,50 @@ describe('SendPodcastComponent ambiguous identity', () => {
     http.expectNone(new URL('/submit', environment.api).toString());
     expect(component.submitted).toBe(false);
   });
+
+  it('handles language then identity when both appear across sequential 200s', async () => {
+    const fixture = TestBed.createComponent(SendPodcastComponent);
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    let openCount = 0;
+    vi.spyOn(dialog, 'open').mockImplementation(() => {
+      openCount += 1;
+      return {
+        afterClosed: () => of(openCount === 1 ? 'continue' : { decision: 'select', key: 'tmdb:11' })
+      } as never;
+    });
+    const component = fixture.componentInstance;
+    const done = component.submit(share);
+    const languageProbe = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    languageProbe.flush({
+      languageDecision: {
+        code: 'is',
+        name: 'Icelandic',
+        signals: [{ field: 'episodeTitle', label: 'Episode title', excerpt: 'ekki', reason: 'Matched Icelandic words: ekki' }]
+      }
+    });
+    const afterLanguage = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    expect(afterLanguage.request.body.languageDecision).toBe('continue');
+    afterLanguage.flush({ identityDecision });
+    const creating = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    expect(creating.request.body.identityDecision).toBe('select');
+    expect(creating.request.body.selectedIdentityKey).toBe('tmdb:11');
+    creating.flush({ success: { episode: 'Created', podcast: 'None', contentKind: 'Film' } }, { headers: { 'X-Origin': '1' } });
+    await done;
+    expect(component.submitted).toBe(true);
+    expect(component.submitError()).toBe(false);
+  });
+
+  it('sets submitError when a gate remains after the decision loop', async () => {
+    const { component } = create({ decision: 'select', key: 'tmdb:11' });
+    const done = component.submit(share);
+    const probe = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    probe.flush({ identityDecision });
+    for (let i = 0; i < 4; i++) {
+      const next = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+      next.flush({ identityDecision });
+    }
+    await done;
+    expect(component.submitted).toBe(false);
+    expect(component.submitError()).toBe(true);
+  });
 });

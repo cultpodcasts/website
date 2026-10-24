@@ -100,27 +100,38 @@ export class SendPodcastComponent {
       try {
         let submitBody: Record<string, unknown> = { ...body as object };
         let resp = await this.postSubmit(submitBody, headers);
-        if (resp.status == 200 && resp.body?.languageDecision) {
-          const answer = await this.askLanguage(resp.body.languageDecision as UnsupportedLanguagePrompt);
-          if (answer !== 'add' && answer !== 'continue') {
-            this.isSending.set(false);
-            return;
+        // RPP #1122 / SubmitUrlService: one gate per 200 (language, then identity). Loop so a
+        // body that still carries a decision after the other answer, or both on one body, is handled.
+        const maxGatePosts = 4;
+        for (let gate = 0; gate < maxGatePosts; gate++) {
+          if (resp.status != 200) {
+            break;
           }
-          submitBody = { ...submitBody, languageDecision: answer };
-          resp = await this.postSubmit(submitBody, headers);
-        }
-        if (resp.status == 200 && resp.body?.identityDecision) {
-          const identity = await this.askIdentity(resp.body.identityDecision as AmbiguousIdentityPrompt);
-          if (!identity || identity.decision === 'cancel') {
-            this.isSending.set(false);
-            return;
+          if (resp.body?.languageDecision) {
+            const answer = await this.askLanguage(resp.body.languageDecision as UnsupportedLanguagePrompt);
+            if (answer !== 'add' && answer !== 'continue') {
+              this.isSending.set(false);
+              return;
+            }
+            submitBody = { ...submitBody, languageDecision: answer };
+            resp = await this.postSubmit(submitBody, headers);
+            continue;
           }
-          submitBody = {
-            ...submitBody,
-            identityDecision: identity.decision,
-            ...(identity.decision === 'select' ? { selectedIdentityKey: identity.key } : {})
-          };
-          resp = await this.postSubmit(submitBody, headers);
+          if (resp.body?.identityDecision) {
+            const identity = await this.askIdentity(resp.body.identityDecision as AmbiguousIdentityPrompt);
+            if (!identity || identity.decision === 'cancel') {
+              this.isSending.set(false);
+              return;
+            }
+            submitBody = {
+              ...submitBody,
+              identityDecision: identity.decision,
+              ...(identity.decision === 'select' ? { selectedIdentityKey: identity.key } : {})
+            };
+            resp = await this.postSubmit(submitBody, headers);
+            continue;
+          }
+          break;
         }
         this.finishSubmit(resp);
       } catch (error) {
@@ -178,7 +189,8 @@ export class SendPodcastComponent {
       if (resp.headers.get('X-Origin')) {
         this.originResponse = resp.body;
       }
-    } else if (resp.status != 200) {
+    } else {
+      // Leftover language/identity gate after the capped loop, cancelled, or non-200 — not success.
       this.submitError.set(true);
       this.isSending.set(false);
     }
