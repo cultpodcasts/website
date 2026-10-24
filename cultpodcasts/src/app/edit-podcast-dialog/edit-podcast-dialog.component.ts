@@ -42,7 +42,9 @@ import {
   asStringArray,
   normalizeHandleControl,
   normalizeHashTagControl,
-  normalizePodcastSocialHandles
+  normalizePodcastSocialHandles,
+  PODCAST_REGEXS_TAB_INDEX,
+  syncIndexAllEpisodesWithIncludeTitleRegex
 } from '../podcast-form.util';
 
 @Component({
@@ -89,10 +91,16 @@ export class EditPodcastDialogComponent {
   readonly languages = signal<{ [key: string]: string }>({});
   readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
+  readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string | undefined;
   episodeId: string | undefined;
   readonly transferTarget = signal<CatalogueParentKind | null>(null);
   protected readonly CatalogueParentKind = CatalogueParentKind;
+  readonly selectedTabIndex = signal(0);
+  readonly indexAllOverriddenByIncludeTitle = signal(false);
+  readonly highlightIncludeTitleRegex = signal(false);
+  private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
+  private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -136,7 +144,9 @@ export class EditPodcastDialogComponent {
       if (resp.podcast.status == 200 && resp.podcast.body) {
         this.podcastId = resp.podcast.body.id;
         this.originalPodcast = resp.podcast.body;
-        this.form.set(new FormGroup<EditPodcastForm>(buildPodcastFormControls(resp.podcast.body)));
+        const form = new FormGroup<EditPodcastForm>(buildPodcastFormControls(resp.podcast.body));
+        this.form.set(form);
+        this.wireIndexAllIncludeTitleSync(form);
         let initial: string[] = [];
         if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
           initial.push(resp.podcast.body.defaultSubject);
@@ -171,6 +181,7 @@ export class EditPodcastDialogComponent {
     const presets = this.regexPresetsService.loadRegexPresets();
     this.titleRegexPresets.set(presets.title);
     this.descriptionRegexPresets.set(presets.description);
+    this.includeTitleRegexPresets.set(presets.includeTitle);
   }
 
   resolveRegexPlaceholders(regexValue: string): string {
@@ -193,6 +204,45 @@ export class EditPodcastDialogComponent {
     }
 
     this.regexPresetsService.applyDescriptionRegexPreset(pattern, form.controls.descriptionRegex, this.podcastName);
+  }
+
+  applyIncludeTitleRegexPreset(pattern: string): void {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+
+    this.regexPresetsService.applyIncludeTitleRegexPreset(
+      pattern,
+      form.controls.episodeIncludeTitleRegex,
+      this.podcastName,
+    );
+  }
+
+  goToIncludeTitleRegex(): void {
+    this.selectedTabIndex.set(PODCAST_REGEXS_TAB_INDEX);
+    this.highlightIncludeTitleRegex.set(true);
+    if (this.highlightIncludeTitleTimer) {
+      clearTimeout(this.highlightIncludeTitleTimer);
+    }
+    this.highlightIncludeTitleTimer = setTimeout(() => {
+      this.highlightIncludeTitleRegex.set(false);
+      this.highlightIncludeTitleTimer = undefined;
+    }, 2500);
+    queueMicrotask(() => {
+      document.getElementById('episode-include-title-regex-field')
+        ?.querySelector('input')
+        ?.focus();
+    });
+  }
+
+  private wireIndexAllIncludeTitleSync(form: FormGroup<EditPodcastForm>): void {
+    this.indexAllIncludeTitleSync?.unsubscribe();
+    this.indexAllIncludeTitleSync = syncIndexAllEpisodesWithIncludeTitleRegex(
+      form.controls.indexAllEpisodes,
+      form.controls.episodeIncludeTitleRegex,
+      blocked => this.indexAllOverriddenByIncludeTitle.set(blocked),
+    );
   }
 
   onSubmit() {

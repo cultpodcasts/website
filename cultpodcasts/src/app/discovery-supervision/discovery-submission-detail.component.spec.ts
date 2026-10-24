@@ -429,4 +429,144 @@ describe('DiscoverySubmissionDetailComponent', () => {
       expect(embedded()).toBeNull();
     });
   });
+
+  describe('language and identity gates on apply/retry', () => {
+    const languageHold = {
+      discoveryItemId: A,
+      code: 'is',
+      name: 'Icelandic',
+      signals: [{ field: 'episodeTitle', label: 'Episode title', excerpt: 'ekki', reason: 'Matched Icelandic words: ekki' }]
+    };
+    const identityHold = {
+      discoveryItemId: B,
+      target: 'Film',
+      query: 'Synthetic Title',
+      candidates: [
+        { key: 'tmdb:11', title: 'Synthetic Title', year: 2020, kind: 'Film', source: 'tmdb', tmdbId: 11 }
+      ]
+    };
+
+    it('re-posts apply with language decisions and filtered accepted ids after continue', async () => {
+      service.apply
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'Pending', etag: 'e-lang',
+          outcome: { message: 'LanguageDecisionRequired', errorsOccurred: false, results: [], languageDecisionsRequired: [languageHold] }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
+      dialogOpen.mockReturnValue({ afterClosed: () => of('continue') });
+      await create(detail());
+      button('apply').click();
+      await fixture.whenStable();
+      expect(dialogOpen).toHaveBeenCalled();
+      expect(service.apply).toHaveBeenNthCalledWith(2, 's1', 'e-lang', [B, A], {
+        languageDecisions: { [A]: 'continue' }
+      });
+    });
+
+    it('drops cancelled language ids from apply and does not re-post when nothing remains', async () => {
+      service.apply.mockReturnValueOnce(of({
+        submissionId: 's1', status: 'Pending', etag: 'e-lang',
+        outcome: {
+          message: 'LanguageDecisionRequired', errorsOccurred: false, results: [],
+          languageDecisionsRequired: [
+            languageHold,
+            { ...languageHold, discoveryItemId: B }
+          ]
+        }
+      }));
+      dialogOpen.mockReturnValue({ afterClosed: () => of('cancel') });
+      await create(detail({ submitterAcceptedResultIds: [A, B] }));
+      button('apply').click();
+      await fixture.whenStable();
+      expect(service.apply).toHaveBeenCalledTimes(1);
+      expect(snackOpen).toHaveBeenCalledWith('Nothing was created', 'Ok', expect.anything());
+    });
+
+    it('re-posts apply with identity decisions after select', async () => {
+      service.apply
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'Pending', etag: 'e-id',
+          outcome: { message: 'IdentityDecisionRequired', errorsOccurred: false, results: [], identityDecisionsRequired: [identityHold] }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
+      dialogOpen.mockReturnValue({ afterClosed: () => of({ decision: 'select', key: 'tmdb:11' }) });
+      await create(detail());
+      button('apply').click();
+      await fixture.whenStable();
+      expect(service.apply).toHaveBeenNthCalledWith(2, 's1', 'e-id', [A, B], {
+        identityDecisions: { [B]: 'select' },
+        selectedIdentityKeys: { [B]: 'tmdb:11' }
+      });
+    });
+
+    it('does not re-post apply when every identity prompt is cancelled', async () => {
+      service.apply.mockReturnValueOnce(of({
+        submissionId: 's1', status: 'Pending', etag: 'e-id',
+        outcome: { message: 'IdentityDecisionRequired', errorsOccurred: false, results: [], identityDecisionsRequired: [identityHold] }
+      }));
+      dialogOpen.mockReturnValue({ afterClosed: () => of({ decision: 'cancel' }) });
+      await create(detail({ submitterAcceptedResultIds: [B] }));
+      button('apply').click();
+      await fixture.whenStable();
+      expect(service.apply).toHaveBeenCalledTimes(1);
+      expect(snackOpen).toHaveBeenCalledWith('Nothing was created', 'Ok', expect.anything());
+    });
+
+    it('re-posts retry with identity decisions and abandons cancelled ids', async () => {
+      service.retry
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'PartiallyApplied', etag: 'e-retry',
+          outcome: {
+            message: 'IdentityDecisionRequired', errorsOccurred: false, results: [],
+            identityDecisionsRequired: [
+              identityHold,
+              { ...identityHold, discoveryItemId: C }
+            ]
+          }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
+      let identityCalls = 0;
+      dialogOpen.mockImplementation(() => {
+        identityCalls += 1;
+        return {
+          afterClosed: () => of(
+            identityCalls === 1
+              ? { decision: 'select', key: 'tmdb:11' }
+              : { decision: 'cancel' })
+        };
+      });
+      await create(detail({
+        status: 'PartiallyApplied', supervisorAcceptedResultIds: [B, C],
+        itemOutcomes: [
+          { resultId: B, state: 'Failed', attempts: 1, error: 'x' },
+          { resultId: C, state: 'Failed', attempts: 1, error: 'y' }
+        ]
+      }));
+      button('retry').click();
+      await fixture.whenStable();
+      expect(service.retry).toHaveBeenNthCalledWith(2, 's1', 'e-retry', [C], {
+        identityDecisions: { [B]: 'select' },
+        selectedIdentityKeys: { [B]: 'tmdb:11' }
+      });
+    });
+
+    it('abandons cancelled ids on retry cancel-all without creating', async () => {
+      service.retry
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'PartiallyApplied', etag: 'e-lang',
+          outcome: { message: 'LanguageDecisionRequired', errorsOccurred: false, results: [], languageDecisionsRequired: [languageHold] }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
+      dialogOpen.mockReturnValue({ afterClosed: () => of('cancel') });
+      await create(detail({
+        status: 'PartiallyApplied', supervisorAcceptedResultIds: [A],
+        itemOutcomes: [{ resultId: A, state: 'Failed', attempts: 1, error: 'x' }]
+      }));
+      button('retry').click();
+      await fixture.whenStable();
+      expect(service.retry).toHaveBeenCalledTimes(2);
+      expect(service.retry).toHaveBeenNthCalledWith(2, 's1', 'e-lang', [A]);
+      expect(snackOpen).toHaveBeenCalledWith('Nothing was created', 'Ok', expect.anything());
+    });
+  });
 });

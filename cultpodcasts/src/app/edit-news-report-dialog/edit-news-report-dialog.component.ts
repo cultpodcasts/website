@@ -10,6 +10,7 @@ import { NewsReportChangeRequest, NewsReportDto } from '../playable-edit.interfa
 
 export interface EditNewsReportDialogData {
   reportId: string;
+  highlightDefaultLanguage?: boolean;
 }
 
 /** Curator edit of a news report (GET/PATCH `newsreport/{id}`), laid out like the podcast Edit Episode dialog. */

@@ -13,13 +13,20 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DiscoveryItemComponent } from '../discovery-item/discovery-item.component';
 import { DiscoveryResult } from '../discovery-result.interface';
-import { DiscoverySubmissionsService } from './discovery-submissions.service';
+import {
+  DiscoverySubmissionCreateDecisions,
+  DiscoverySubmissionsService
+} from './discovery-submissions.service';
 import { DiscoverySubmissionDetail, DiscoverySubmissionItemOutcome, DiscoverySubmissionStatus } from './discovery-supervision.models';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import {
+  promptAmbiguousIdentities,
+  promptUnsupportedLanguages
+} from '../submit-language-identity-prompts';
 import {
   PickState,
   ADMIN_ROLE,
@@ -249,7 +256,43 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     if (!d || !this.editable()) return;
     await this.run(async () => {
       const etag = this.dirty() ? await this.saveReviewInternal(d) : d.etag;
-      const resp = await firstValueFrom(this.service.apply(d.id, etag, this.finalIds()));
+      let acceptedIds = this.finalIds();
+      let languageDecisions: Record<string, string> | undefined;
+      let identityDecisions: Record<string, string> | undefined;
+      let selectedIdentityKeys: Record<string, string> | undefined;
+      let resp = await firstValueFrom(this.service.apply(d.id, etag, acceptedIds));
+
+      const languageRequired = resp.outcome?.languageDecisionsRequired ?? [];
+      if (languageRequired.length > 0) {
+        const language = await promptUnsupportedLanguages(this.dialog, languageRequired, acceptedIds);
+        acceptedIds = language.idsToCreate;
+        if (acceptedIds.length === 0) {
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        languageDecisions = language.languageDecisions;
+        resp = await firstValueFrom(this.service.apply(
+          d.id, resp.etag ?? etag, acceptedIds, { languageDecisions }));
+      }
+
+      const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
+      if (identityRequired.length > 0) {
+        const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, acceptedIds);
+        acceptedIds = identity.idsToCreate;
+        if (acceptedIds.length === 0) {
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        identityDecisions = identity.identityDecisions;
+        selectedIdentityKeys = identity.selectedIdentityKeys;
+        const decisions: DiscoverySubmissionCreateDecisions = {
+          ...(languageDecisions ? { languageDecisions } : {}),
+          identityDecisions,
+          ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
+        };
+        resp = await firstValueFrom(this.service.apply(d.id, resp.etag ?? etag, acceptedIds, decisions));
+      }
+
       const failedCount = (resp.itemOutcomes ?? []).filter(o => o.state === 'Failed').length;
       this.notifyWithReview(
         resp.status === 'Applied' ? 'Applied' : `${submissionStatusLabel(resp.status)}${failedCount ? `: ${failedCount} item(s) failed` : ''}`,
@@ -261,7 +304,49 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     const d = this.detail();
     if (!d || !this.retryable()) return;
     await this.run(async () => {
-      const resp = await firstValueFrom(this.service.retry(d.id, d.etag, this.abandonIds()));
+      let abandonIds = this.abandonIds();
+      let languageDecisions: Record<string, string> | undefined;
+      let identityDecisions: Record<string, string> | undefined;
+      let selectedIdentityKeys: Record<string, string> | undefined;
+      let resp = await firstValueFrom(this.service.retry(d.id, d.etag, abandonIds));
+
+      const languageRequired = resp.outcome?.languageDecisionsRequired ?? [];
+      if (languageRequired.length > 0) {
+        // Retry abandons cancelled prompted ids; create-set is the non-cancelled prompted ids only.
+        const language = await promptUnsupportedLanguages(this.dialog, languageRequired, []);
+        abandonIds = [...new Set([...abandonIds, ...language.cancelledIds])];
+        if (language.idsToCreate.length === 0) {
+          // Cancel-all: still POST abandon so Failed items are not re-prompted forever.
+          await firstValueFrom(this.service.retry(d.id, resp.etag ?? d.etag, abandonIds));
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        languageDecisions = language.languageDecisions;
+        resp = await firstValueFrom(this.service.retry(
+          d.id, resp.etag ?? d.etag, abandonIds, { languageDecisions }));
+      }
+
+      const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
+      if (identityRequired.length > 0) {
+        const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, []);
+        abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
+        if (identity.idsToCreate.length === 0) {
+          await firstValueFrom(this.service.retry(
+            d.id, resp.etag ?? d.etag, abandonIds,
+            languageDecisions ? { languageDecisions } : undefined));
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        identityDecisions = identity.identityDecisions;
+        selectedIdentityKeys = identity.selectedIdentityKeys;
+        const decisions: DiscoverySubmissionCreateDecisions = {
+          ...(languageDecisions ? { languageDecisions } : {}),
+          identityDecisions,
+          ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
+        };
+        resp = await firstValueFrom(this.service.retry(d.id, resp.etag ?? d.etag, abandonIds, decisions));
+      }
+
       this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
     });
   }

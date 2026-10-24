@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Unsupported language</h2>
+<mat-dialog-content>
+    <p>This looks like <strong>{{ data.name }}</strong> ({{ data.code }}), which is not on the website's supported-language list. Nothing has been created yet.</p>
+    <ul>
+        @for (signal of data.signals; track signal.field) {
+        <li>
+            <span class="label">{{ signal.label }}</span>
+            @if (signal.excerpt) {
+            <q>{{ signal.excerpt }}</q>
+            }
+            <span class="reason">{{ signal.reason }}</span>
+        </li>
+        }
+    </ul>
+    <p>Add {{ data.name }} to the supported languages, continue without a default language, or cancel?</p>
+</mat-dialog-content>
+<div mat-dialog-actions>
+    <button type="button" mat-flat-button (click)="choose('add')">Add {{ data.name }}</button>
+    <button type="button" mat-button (click)="choose('continue')">Continue without a default language</button>
+    <button type="button" mat-button (click)="choose('cancel')">Cancel</button>
+</div>

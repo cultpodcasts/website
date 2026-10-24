@@ -16,6 +16,9 @@ type Internals = {
   defaultSubjects(): string[];
   filteredIgnoredSubjects(): string[];
   languages(): Record<string, string>;
+  includeTitleRegexPresets(): { name: string; pattern: string }[];
+  applyIncludeTitleRegexPreset(pattern: string): void;
+  applyTitleRegexPreset(pattern: string): void;
   save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
@@ -83,15 +86,16 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('loads by name, PATCHes only the changed fields by id, and closes on 202', async () => {
     const dialog = create();
-    await loadWith({ id: showId, name: 'Nightly', publisher: 'Net', tvdb: 'https://thetvdb.com/series/x' });
+    await loadWith({ id: showId, name: 'Nightly', publisher: 'Net', tvdbId: 321, imdbId: 'tt0000001' });
     await settle();
     const model = dialog.model()!;
     model.publisher = 'Network Two';
-    model.tvdb = '';
+    model.tvdbId = '';
+    model.imdbId = 'tt0000002';
     const done = dialog.save();
     const req = await expectSoon(patchUrl);
     expect(req.request.method).toBe('PATCH');
-    expect(req.request.body).toEqual({ publisher: 'Network Two', tvdb: '' });
+    expect(req.request.body).toEqual({ publisher: 'Network Two', imdbId: 'tt0000002', tvdbId: 0 });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
     expect(close).toHaveBeenCalledWith({ updated: true });
@@ -194,5 +198,19 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(req.request.body).toEqual({ defaultSubject: 'Arts', ignoredSubjects: ['Sport', 'Arts'], language: 'fr' });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
+  });
+
+  it('applies include-title and title regex presets like the podcast Regexs tab', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly', indexAllEpisodes: true });
+    await settle();
+    const includePreset = dialog.includeTitleRegexPresets().find(
+      x => x.name === 'Exclude Introducing / You Might Also Like');
+    expect(includePreset).toBeTruthy();
+    dialog.applyIncludeTitleRegexPreset(includePreset!.pattern);
+    expect(dialog.model()!.episodeIncludeTitleRegex).toBe(includePreset!.pattern);
+    expect(dialog.model()!.indexAllEpisodes).toBe(false);
+    dialog.applyTitleRegexPreset("^(?'title'.*?)(?'suffix' \\| {podcastName})?$");
+    expect(dialog.model()!.titleRegex).toBe("^(?'title'.*?)(?'suffix' \\| Nightly)?$");
   });
 });
