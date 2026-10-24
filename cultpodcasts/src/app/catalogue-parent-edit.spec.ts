@@ -24,6 +24,16 @@ describe('catalogueParentChanges', () => {
     expect(catalogueParentChanges(outlet, catalogueParentEditModel(outlet), false)).toEqual({});
   });
 
+  it('clears Index All Episodes when Episode Include Title Regex is non-empty (backend mutual exclusion)', () => {
+    const withIndexAll: CatalogueParentDto = { ...outlet, indexAllEpisodes: true };
+    const model = catalogueParentEditModel(withIndexAll);
+    model.episodeIncludeTitleRegex = '\\bDateline\\b';
+    expect(catalogueParentChanges(withIndexAll, model, false)).toEqual({
+      episodeIncludeTitleRegex: '\\bDateline\\b',
+      indexAllEpisodes: false
+    });
+  });
+
   it('sends only edited fields; a cleared string is "" and a cleared list is []', () => {
     const model = catalogueParentEditModel(outlet);
     model.twitterHandle = '';

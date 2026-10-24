@@ -34,6 +34,12 @@ export interface CatalogueParentDto {
   youTubePlaylistIdHistory?: { id: string; replacedAt: string }[] | null;
   spotifyId?: string | null;
   appleId?: number | null;
+  /** From `indexing`: auto-index every item, or only titles matching the include regex. */
+  indexAllEpisodes?: boolean | null;
+  titleRegex?: string | null;
+  descriptionRegex?: string | null;
+  episodeMatchRegex?: string | null;
+  episodeIncludeTitleRegex?: string | null;
 }
 
 /**

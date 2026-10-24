@@ -18,6 +18,7 @@ import {
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
+  includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
   isValidImdbIdText,
   isValidNumericIdText,
@@ -27,7 +28,7 @@ import {
 import { ConfirmComponent } from "../confirm/confirm.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { buildPodcastLanguageOptions } from "../language-options.util";
-import { filterSubjectsByTerm, noCompareFunction } from "../podcast-form.util";
+import { filterSubjectsByTerm, noCompareFunction, PODCAST_REGEXS_TAB_INDEX } from "../podcast-form.util";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 
 export interface EditCatalogueParentDialogData {
@@ -44,8 +45,8 @@ export interface EditCatalogueParentDialogResponse {
 
 /**
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
- * Details (service ids), Flags, Subjects, Social, Meta, and Identity for TV. Rename is a separate admin dialog.
- * Default/ignored subjects and language use the podcast dialog's selects (`/subjects`, `/languages`, typing filter).
+ * Details (service ids), Flags (incl. Index All Episodes), Subjects, Social, Meta, Regexs, and Identity for TV.
+ * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
   selector: "app-edit-catalogue-parent-dialog",
@@ -92,6 +93,10 @@ export class EditCatalogueParentDialogComponent {
   protected readonly defaultSubjectFilterTerm = signal("");
   protected readonly ignoredSubjectsFilterTerm = signal("");
   protected readonly languages = signal<Record<string, string>>({});
+  protected readonly selectedTabIndex = signal(0);
+  protected readonly highlightIncludeTitleRegex = signal(false);
+  protected readonly includeTitleRegexBlocksIndexAllEpisodes = includeTitleRegexBlocksIndexAllEpisodes;
+  private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
   private original: CatalogueParentDto | null = null;
 
   constructor() {
@@ -206,6 +211,32 @@ export class EditCatalogueParentDialogComponent {
   protected filteredIgnoredSubjects(): string[] {
     const selected = new Set(this.model()?.ignoredSubjects ?? []);
     return filterKeepingSelectedInOrder(this.ignoredSubjects(), this.ignoredSubjectsFilterTerm(), selected);
+  }
+
+  protected onIncludeTitleRegexChange(value: string): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    if (includeTitleRegexBlocksIndexAllEpisodes(value) && model.indexAllEpisodes) {
+      model.indexAllEpisodes = false;
+      this.model.set({ ...model });
+    }
+  }
+
+  protected goToIncludeTitleRegex(): void {
+    this.selectedTabIndex.set(PODCAST_REGEXS_TAB_INDEX);
+    this.highlightIncludeTitleRegex.set(true);
+    if (this.highlightIncludeTitleTimer) {
+      clearTimeout(this.highlightIncludeTitleTimer);
+    }
+    this.highlightIncludeTitleTimer = setTimeout(() => {
+      this.highlightIncludeTitleRegex.set(false);
+      this.highlightIncludeTitleTimer = undefined;
+    }, 2500);
+    queueMicrotask(() => {
+      document.getElementById("episode-include-title-regex-field")?.querySelector("input")?.focus();
+    });
   }
 
   protected close(): void {

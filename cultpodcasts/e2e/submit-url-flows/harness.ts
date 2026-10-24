@@ -607,12 +607,24 @@ export function submitUrlFlowsDocument(): string {
     document.getElementById('add-close').onclick = () => setScrim('dlg-add', false);
     document.getElementById('add-save').onclick = () => saveAdd();
     let lookupTimer = 0;
+    let lookupGate = Promise.resolve();
+    const queuedLookup = () => {
+      lookupGate = lookupGate.then(() => runLookup(), () => runLookup());
+      return lookupGate;
+    };
     urlInput.addEventListener('input', () => {
       window.clearTimeout(lookupTimer);
-      lookupTimer = window.setTimeout(runLookup, 200);
+      lookupTimer = window.setTimeout(() => { void queuedLookup(); }, 200);
     });
-    urlInput.addEventListener('change', runLookup);
-    urlInput.addEventListener('blur', runLookup);
+    // change cancels the debounce so fill()+change does not race a second in-flight lookup
+    urlInput.addEventListener('change', () => {
+      window.clearTimeout(lookupTimer);
+      void queuedLookup();
+    });
+    urlInput.addEventListener('blur', () => {
+      window.clearTimeout(lookupTimer);
+      void queuedLookup();
+    });
     document.getElementById('drop-home').onclick = () => dropGeneral(pendingUrl);
     document.getElementById('drop-general').onclick = () => dropGeneral(pendingUrl);
     document.getElementById('drop-page').onclick = () => dropToPage(pendingUrl);

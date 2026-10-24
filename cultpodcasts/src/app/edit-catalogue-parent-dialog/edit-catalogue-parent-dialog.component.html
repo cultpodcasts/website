@@ -17,7 +17,7 @@
     <p id="error" role="alert">Saving failed. Nothing was changed.</p>
     }
     <form id="edit" (ngSubmit)="save()">
-        <mat-tab-group>
+        <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="selectedTabIndex.set($event)">
             <mat-tab label="Details">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify Id</mat-label>
@@ -52,6 +52,17 @@
                 <div class="flags">
                     <mat-checkbox name="removed" [(ngModel)]="m.removed">Removed</mat-checkbox>
                     <p class="hint">Removing hides every {{ itemNoun.slice(0, -1) }}. You'll be asked to confirm.</p>
+                    <div class="flag-row">
+                        <mat-checkbox name="indexAllEpisodes" [(ngModel)]="m.indexAllEpisodes"
+                            [disabled]="includeTitleRegexBlocksIndexAllEpisodes(m.episodeIncludeTitleRegex)">
+                            Index All Episodes
+                        </mat-checkbox>
+                        @if (includeTitleRegexBlocksIndexAllEpisodes(m.episodeIncludeTitleRegex)) {
+                        <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
+                            Overridden by Episode Include Title Regex
+                        </button>
+                        }
+                    </div>
                 </div>
             </mat-tab>
             <mat-tab label="Subjects">
@@ -129,6 +140,26 @@
                 <mat-form-field class="full-width">
                     <mat-label>Search Terms</mat-label>
                     <input type="text" name="searchTerms" [(ngModel)]="m.searchTerms" matInput>
+                </mat-form-field>
+            </mat-tab>
+            <mat-tab label="Regexs">
+                <mat-form-field class="full-width">
+                    <mat-label>Title Regex</mat-label>
+                    <input type="text" name="titleRegex" [(ngModel)]="m.titleRegex" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Description Regex</mat-label>
+                    <input type="text" name="descriptionRegex" [(ngModel)]="m.descriptionRegex" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Episode Match Regex</mat-label>
+                    <input type="text" name="episodeMatchRegex" [(ngModel)]="m.episodeMatchRegex" matInput>
+                </mat-form-field>
+                <mat-form-field id="episode-include-title-regex-field" class="full-width"
+                    [class.field-highlight]="highlightIncludeTitleRegex()">
+                    <mat-label>Episode Include Title Regex</mat-label>
+                    <input type="text" name="episodeIncludeTitleRegex" [(ngModel)]="m.episodeIncludeTitleRegex"
+                        (ngModelChange)="onIncludeTitleRegexChange($event)" matInput>
                 </mat-form-field>
             </mat-tab>
             @if (isTv) {

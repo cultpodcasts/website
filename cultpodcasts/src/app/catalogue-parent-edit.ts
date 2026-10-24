@@ -1,5 +1,8 @@
 import { CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
 import { episodeLanguageFormValue } from "./language-options.util";
+import { includeTitleRegexBlocksIndexAllEpisodes } from "./podcast-form.util";
+
+export { includeTitleRegexBlocksIndexAllEpisodes };
 
 /**
  * Editable text fields, in form order. `defaultSubject` is a subject select ("" = No Subject).
@@ -45,10 +48,19 @@ export function isValidNumericIdText(text: string): boolean {
 /** String service ids: "" clears, like the podcast edit API. `appleId` is numeric and handled on its own. */
 export const catalogueParentServiceIdFields = ["youTubeChannelId", "youTubePlaylistId", "spotifyId"] as const;
 
+/** Indexing regexes on the parent's `indexing` block (podcast Regexs tab parity). */
+export const catalogueParentRegexFields = [
+  "titleRegex",
+  "descriptionRegex",
+  "episodeMatchRegex",
+  "episodeIncludeTitleRegex"
+] as const;
+
 type TextField =
   | typeof catalogueParentTextFields[number]
   | typeof tvShowIdentityFields[number]
-  | typeof catalogueParentServiceIdFields[number];
+  | typeof catalogueParentServiceIdFields[number]
+  | typeof catalogueParentRegexFields[number];
 type ListField = typeof catalogueParentListFields[number];
 
 /**
@@ -57,6 +69,7 @@ type ListField = typeof catalogueParentListFields[number];
  */
 export type CatalogueParentEditModel = Record<TextField, string> & Record<ListField, string> & {
   removed: boolean;
+  indexAllEpisodes: boolean;
   appleId: string;
   tvdbId: string;
   tmdbId: string;
@@ -105,17 +118,26 @@ export function textToList(text: string): string[] {
 export function catalogueParentEditModel(dto: CatalogueParentDto): CatalogueParentEditModel {
   const model = {
     removed: dto.removed === true,
+    indexAllEpisodes: dto.indexAllEpisodes === true,
     appleId: dto.appleId == null ? "" : String(dto.appleId),
     tvdbId: dto.tvdbId ? String(dto.tvdbId) : "",
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
     ignoredSubjects: [...(dto.ignoredSubjects ?? [])]
   } as CatalogueParentEditModel;
-  for (const field of [...catalogueParentTextFields, ...tvShowIdentityFields, ...catalogueParentServiceIdFields]) {
+  for (const field of [
+    ...catalogueParentTextFields,
+    ...tvShowIdentityFields,
+    ...catalogueParentServiceIdFields,
+    ...catalogueParentRegexFields
+  ]) {
     model[field] = (dto[field] ?? "").toString();
   }
   for (const field of catalogueParentListFields) {
     model[field] = listToText(dto[field]);
+  }
+  if (includeTitleRegexBlocksIndexAllEpisodes(model.episodeIncludeTitleRegex)) {
+    model.indexAllEpisodes = false;
   }
   return model;
 }
@@ -138,8 +160,13 @@ export function catalogueParentChanges(
 ): CatalogueParentChangeRequest {
   const changes: CatalogueParentChangeRequest = {};
   const textFields: readonly TextField[] = includeTvIdentity
-    ? [...catalogueParentTextFields, ...tvShowIdentityFields, ...catalogueParentServiceIdFields]
-    : [...catalogueParentTextFields, ...catalogueParentServiceIdFields];
+    ? [
+        ...catalogueParentTextFields,
+        ...tvShowIdentityFields,
+        ...catalogueParentServiceIdFields,
+        ...catalogueParentRegexFields
+      ]
+    : [...catalogueParentTextFields, ...catalogueParentServiceIdFields, ...catalogueParentRegexFields];
   for (const field of textFields) {
     const before = (original[field] ?? "").toString().trim();
     const after = edited[field].trim();
@@ -183,6 +210,11 @@ export function catalogueParentChanges(
   }
   if ((original.removed === true) !== edited.removed) {
     changes.removed = edited.removed;
+  }
+  const indexAllBlocked = includeTitleRegexBlocksIndexAllEpisodes(edited.episodeIncludeTitleRegex);
+  const indexAllAfter = indexAllBlocked ? false : edited.indexAllEpisodes;
+  if ((original.indexAllEpisodes === true) !== indexAllAfter) {
+    changes.indexAllEpisodes = indexAllAfter;
   }
   return changes;
 }
