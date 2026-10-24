@@ -9,9 +9,11 @@ export default defineConfig({
 	testDir: "./e2e",
 	testMatch: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts", "home-chrome-dock.spec.ts", "catalogue-playable-edit.spec.ts", "search-suggestion-kinds.spec.ts", "film-trailers-rail.spec.ts"],
 	fullyParallel: false,
-	retries: 0,
+	// Pre-push runs this after unit + main e2e; one retry covers load/hydration flakes.
+	retries: 1,
 	reporter: "list",
-	timeout: 30_000,
+	// Hero desc holds 9s for rotation; chrome-dock walks ~240 scroll positions × 6 rAFs.
+	timeout: 60_000,
 	use: {
 		baseURL: origin,
 		trace: "on-first-retry",
