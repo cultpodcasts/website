@@ -199,7 +199,8 @@ test("submit URL flows video tour — GET probes and POST persist are on screen"
 	await fillSeries(page, "Duplicate Series", true);
 	await page.waitForTimeout(UI_HOLD_MS);
 	await saveAddPodcast(page);
-	await expect(page.getByRole("dialog", { name: "Choose series" })).toBeVisible();
+	// Name probe + 409 + two row GETs with harness delayMs can exceed the default 5s expect.
+	await expect(page.getByRole("dialog", { name: "Choose series" })).toBeVisible({ timeout: 20_000 });
 	await page.waitForTimeout(UI_HOLD_MS);
 	await page.locator(".conflict-pick", { hasText: PICK_ID }).click();
 	await expect.poll(() => persistPosts(captured).length).toBeGreaterThanOrEqual(postsBeforeNo + 3);

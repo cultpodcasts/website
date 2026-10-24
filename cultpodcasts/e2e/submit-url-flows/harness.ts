@@ -355,23 +355,29 @@ export function submitUrlFlowsDocument(): string {
       let body;
       if (init && init.body) body = JSON.parse(init.body);
       const card = addHttp(method, path, body);
-      const res = await origFetch(input, init);
-      const text = await res.clone().text();
-      const st = card.querySelector('.status');
-      const xOrigin = res.headers.get('X-Origin');
-      st.textContent =
-        '← ' +
-        res.status +
-        (xOrigin ? '  X-Origin' : '') +
-        (text ? '  ' + text : '');
-      st.classList.remove('pending');
-      if (method === 'POST' && path === '/submit' && res.ok) st.classList.add('persist');
-      if (!res.ok) st.classList.add('stop');
-      revealLatestHttp();
-      return res;
+      try {
+        const res = await origFetch(input, init);
+        const text = await res.clone().text();
+        const st = card.querySelector('.status');
+        const xOrigin = res.headers.get('X-Origin');
+        st.textContent =
+          '← ' +
+          res.status +
+          (xOrigin ? '  X-Origin' : '') +
+          (text ? '  ' + text : '');
+        st.classList.remove('pending');
+        if (method === 'POST' && path === '/submit' && res.ok) st.classList.add('persist');
+        if (!res.ok) st.classList.add('stop');
+        revealLatestHttp();
+        return res;
+      } catch (err) {
+        // Drop aborted lookups from the tour HTTP panel so mid-type GETs do not inflate the conversation.
+        card.remove();
+        throw err;
+      }
     };
 
-    async function call(method, path, body) {
+    async function call(method, path, body, signal) {
       const payload = compact(body);
       const res = await fetch(API + path, {
         method,
@@ -379,7 +385,8 @@ export function submitUrlFlowsDocument(): string {
           'Content-Type': 'application/json',
           'X-Tour-Role': tourRole
         },
-        body: payload ? JSON.stringify(payload) : undefined
+        body: payload ? JSON.stringify(payload) : undefined,
+        signal
       });
       const text = await res.text();
       return { status: res.status, json: text ? JSON.parse(text) : null };
@@ -415,6 +422,7 @@ export function submitUrlFlowsDocument(): string {
       } catch { return ''; }
     }
 
+    let lookupAbort = null;
     async function runLookup() {
       const href = parsedHref();
       if (!href) {
@@ -436,23 +444,42 @@ export function submitUrlFlowsDocument(): string {
         saveBtn.disabled = false;
         return;
       }
+      if (lookupAbort) lookupAbort.abort();
+      const ac = new AbortController();
+      lookupAbort = ac;
       pending = true;
       saveBtn.disabled = true;
-      const res = await call('GET', '/submit/lookup?url=' + encodeURIComponent(href));
-      const prepared = await prepareUnknownStreaming(href, res.json);
-      if (!prepared.ok) {
-        lookup = null;
+      try {
+        const res = await call('GET', '/submit/lookup?url=' + encodeURIComponent(href), undefined, ac.signal);
+        if (ac.signal.aborted || urlInput.value.trim() !== href) {
+          pending = false;
+          return;
+        }
+        const prepared = await prepareUnknownStreaming(href, res.json, ac.signal);
+        if (ac.signal.aborted || urlInput.value.trim() !== href) {
+          pending = false;
+          return;
+        }
+        if (!prepared.ok) {
+          lookup = null;
+          lookedUpHref = href;
+          pending = false;
+          applySeriesFromLookup();
+          saveBtn.disabled = true;
+          return;
+        }
+        lookup = prepared.lookup;
         lookedUpHref = href;
         pending = false;
         applySeriesFromLookup();
-        saveBtn.disabled = true;
-        return;
+        saveBtn.disabled = false;
+      } catch (err) {
+        if (ac.signal.aborted || (err && err.name === 'AbortError')) {
+          pending = false;
+          return;
+        }
+        throw err;
       }
-      lookup = prepared.lookup;
-      lookedUpHref = href;
-      pending = false;
-      applySeriesFromLookup();
-      saveBtn.disabled = false;
     }
 
     async function persist(url, podcastId, podcastName) {
@@ -521,9 +548,9 @@ export function submitUrlFlowsDocument(): string {
       return name ? Object.assign({}, looked, { podcastName: name }) : looked;
     }
 
-    async function prepareUnknownStreaming(href, looked) {
+    async function prepareUnknownStreaming(href, looked, signal) {
       if (!shouldCallSubmitUrlPrepare(looked)) return { ok: true, lookup: looked };
-      const prep = await call('POST', '/submit/prepare', { url: href });
+      const prep = await call('POST', '/submit/prepare', { url: href }, signal);
       if (prep.status !== 200 || !prep.json) {
         const snack = document.getElementById('snack');
         snack.textContent = 'Could not prepare this podcast URL. Try again.';
@@ -612,9 +639,12 @@ export function submitUrlFlowsDocument(): string {
       lookupGate = lookupGate.then(() => runLookup(), () => runLookup());
       return lookupGate;
     };
+    // Longer than pressSequentially delay in the video tour (32–40ms) so mid-type pauses
+    // do not spam GET /submit/lookup for partial URLs. Abort any in-flight lookup on further input.
     urlInput.addEventListener('input', () => {
       window.clearTimeout(lookupTimer);
-      lookupTimer = window.setTimeout(() => { void queuedLookup(); }, 200);
+      if (lookupAbort) lookupAbort.abort();
+      lookupTimer = window.setTimeout(() => { void queuedLookup(); }, 450);
     });
     // change cancels the debounce so fill()+change does not race a second in-flight lookup
     urlInput.addEventListener('change', () => {

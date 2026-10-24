@@ -141,6 +141,8 @@ export async function fillUrl(page: Page, url: string, typeSlowly: boolean) {
 	await field.click();
 	if (typeSlowly) {
 		await field.pressSequentially(url, { delay: 32 });
+		// Wait past the harness input debounce so only the full URL is looked up.
+		await page.waitForTimeout(500);
 	} else {
 		await field.fill(url);
 		await field.dispatchEvent("change");
