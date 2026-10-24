@@ -23,17 +23,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
-import { DiscoveryIdentityDecision, DiscoveryLanguageDecision } from '../submit-discovery-response.interface';
 import {
-  UnsupportedLanguageAnswer,
-  UnsupportedLanguageDialogComponent,
-  UnsupportedLanguagePrompt
-} from '../unsupported-language-dialog/unsupported-language-dialog.component';
-import {
-  AmbiguousIdentityAnswer,
-  AmbiguousIdentityDialogComponent,
-  AmbiguousIdentityPrompt
-} from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
+  promptAmbiguousIdentities,
+  promptUnsupportedLanguages
+} from '../submit-language-identity-prompts';
 import {
   PickState,
   ADMIN_ROLE,
@@ -271,44 +264,27 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
 
       const languageRequired = resp.outcome?.languageDecisionsRequired ?? [];
       if (languageRequired.length > 0) {
-        const answers = await this.askLanguages(languageRequired);
-        const promptedIds = new Set(languageRequired.map(item => item.discoveryItemId));
-        const creating = languageRequired
-          .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
-          .filter(item => item.answer === 'add' || item.answer === 'continue');
-        const untouched = acceptedIds.filter(id => !promptedIds.has(id));
-        acceptedIds = [...untouched, ...creating.map(item => item.id)];
+        const language = await promptUnsupportedLanguages(this.dialog, languageRequired, acceptedIds);
+        acceptedIds = language.idsToCreate;
         if (acceptedIds.length === 0) {
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        languageDecisions = Object.fromEntries(creating.map(item => [item.id, item.answer!]));
+        languageDecisions = language.languageDecisions;
         resp = await firstValueFrom(this.service.apply(
           d.id, resp.etag ?? etag, acceptedIds, { languageDecisions }));
       }
 
       const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
       if (identityRequired.length > 0) {
-        const answers = await this.askIdentities(identityRequired);
-        const promptedIds = new Set(identityRequired.map(item => item.discoveryItemId));
-        const creating = identityRequired
-          .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
-          .filter(item => item.answer?.decision === 'select' || item.answer?.decision === 'continue');
-        const untouched = acceptedIds.filter(id => !promptedIds.has(id));
-        acceptedIds = [...untouched, ...creating.map(item => item.id)];
+        const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, acceptedIds);
+        acceptedIds = identity.idsToCreate;
         if (acceptedIds.length === 0) {
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        identityDecisions = Object.fromEntries(
-          creating.map(item => [item.id, item.answer!.decision as 'select' | 'continue']));
-        selectedIdentityKeys = Object.fromEntries(
-          creating
-            .filter(item => item.answer?.decision === 'select')
-            .map(item => {
-              const selected = item.answer as { decision: 'select'; key: string };
-              return [item.id, selected.key];
-            }));
+        identityDecisions = identity.identityDecisions;
+        selectedIdentityKeys = identity.selectedIdentityKeys;
         const decisions: DiscoverySubmissionCreateDecisions = {
           ...(languageDecisions ? { languageDecisions } : {}),
           identityDecisions,
@@ -336,46 +312,28 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
 
       const languageRequired = resp.outcome?.languageDecisionsRequired ?? [];
       if (languageRequired.length > 0) {
-        const answers = await this.askLanguages(languageRequired);
-        const creating = languageRequired
-          .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
-          .filter(item => item.answer === 'add' || item.answer === 'continue');
-        const cancelled = languageRequired
-          .map(item => item.discoveryItemId)
-          .filter(id => !creating.some(item => item.id === id));
-        if (creating.length === 0) {
+        // Retry abandons cancelled prompted ids; create-set is the non-cancelled prompted ids only.
+        const language = await promptUnsupportedLanguages(this.dialog, languageRequired, []);
+        if (language.idsToCreate.length === 0) {
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        abandonIds = [...new Set([...abandonIds, ...cancelled])];
-        languageDecisions = Object.fromEntries(creating.map(item => [item.id, item.answer!]));
+        abandonIds = [...new Set([...abandonIds, ...language.cancelledIds])];
+        languageDecisions = language.languageDecisions;
         resp = await firstValueFrom(this.service.retry(
           d.id, resp.etag ?? d.etag, abandonIds, { languageDecisions }));
       }
 
       const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
       if (identityRequired.length > 0) {
-        const answers = await this.askIdentities(identityRequired);
-        const creating = identityRequired
-          .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId) }))
-          .filter(item => item.answer?.decision === 'select' || item.answer?.decision === 'continue');
-        const cancelled = identityRequired
-          .map(item => item.discoveryItemId)
-          .filter(id => !creating.some(item => item.id === id));
-        if (creating.length === 0) {
+        const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, []);
+        if (identity.idsToCreate.length === 0) {
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        abandonIds = [...new Set([...abandonIds, ...cancelled])];
-        identityDecisions = Object.fromEntries(
-          creating.map(item => [item.id, item.answer!.decision as 'select' | 'continue']));
-        selectedIdentityKeys = Object.fromEntries(
-          creating
-            .filter(item => item.answer?.decision === 'select')
-            .map(item => {
-              const selected = item.answer as { decision: 'select'; key: string };
-              return [item.id, selected.key];
-            }));
+        abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
+        identityDecisions = identity.identityDecisions;
+        selectedIdentityKeys = identity.selectedIdentityKeys;
         const decisions: DiscoverySubmissionCreateDecisions = {
           ...(languageDecisions ? { languageDecisions } : {}),
           identityDecisions,
@@ -470,49 +428,5 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   private normalize(result: DiscoveryResult): DiscoveryResult {
     const released = typeof result.released === 'string' ? new Date(result.released) : result.released;
     return { ...result, released, acceptProbability: result.acceptProbability ?? null, autoHidden: result.autoHidden ?? false };
-  }
-
-  private async askLanguages(required: DiscoveryLanguageDecision[]) {
-    const answers = new Map<string, UnsupportedLanguageAnswer>();
-    for (const item of required) {
-      const answer = await firstValueFrom(this.dialog.open<
-        UnsupportedLanguageDialogComponent,
-        UnsupportedLanguagePrompt,
-        UnsupportedLanguageAnswer>(
-          UnsupportedLanguageDialogComponent,
-          {
-            data: { code: item.code, name: item.name, signals: item.signals },
-            disableClose: true,
-            autoFocus: true,
-            width: '36rem'
-          }
-        ).afterClosed());
-      answers.set(item.discoveryItemId, answer === 'add' || answer === 'continue' ? answer : 'cancel');
-    }
-    return answers;
-  }
-
-  private async askIdentities(required: DiscoveryIdentityDecision[]) {
-    const answers = new Map<string, AmbiguousIdentityAnswer>();
-    for (const item of required) {
-      const answer = await firstValueFrom(this.dialog.open<
-        AmbiguousIdentityDialogComponent,
-        AmbiguousIdentityPrompt,
-        AmbiguousIdentityAnswer>(
-          AmbiguousIdentityDialogComponent,
-          {
-            data: { target: item.target, query: item.query, candidates: item.candidates },
-            disableClose: true,
-            autoFocus: true,
-            width: '36rem'
-          }
-        ).afterClosed());
-      answers.set(
-        item.discoveryItemId,
-        answer?.decision === 'select' || answer?.decision === 'continue'
-          ? answer
-          : { decision: 'cancel' });
-    }
-    return answers;
   }
 }
