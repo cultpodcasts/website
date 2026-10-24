@@ -550,11 +550,13 @@ describe('DiscoverySubmissionDetailComponent', () => {
       });
     });
 
-    it('does not re-post retry when every language prompt is cancelled', async () => {
-      service.retry.mockReturnValueOnce(of({
-        submissionId: 's1', status: 'PartiallyApplied', etag: 'e-lang',
-        outcome: { message: 'LanguageDecisionRequired', errorsOccurred: false, results: [], languageDecisionsRequired: [languageHold] }
-      }));
+    it('abandons cancelled ids on retry cancel-all without creating', async () => {
+      service.retry
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'PartiallyApplied', etag: 'e-lang',
+          outcome: { message: 'LanguageDecisionRequired', errorsOccurred: false, results: [], languageDecisionsRequired: [languageHold] }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
       dialogOpen.mockReturnValue({ afterClosed: () => of('cancel') });
       await create(detail({
         status: 'PartiallyApplied', supervisorAcceptedResultIds: [A],
@@ -562,7 +564,8 @@ describe('DiscoverySubmissionDetailComponent', () => {
       }));
       button('retry').click();
       await fixture.whenStable();
-      expect(service.retry).toHaveBeenCalledTimes(1);
+      expect(service.retry).toHaveBeenCalledTimes(2);
+      expect(service.retry).toHaveBeenNthCalledWith(2, 's1', 'e-lang', [A]);
       expect(snackOpen).toHaveBeenCalledWith('Nothing was created', 'Ok', expect.anything());
     });
   });

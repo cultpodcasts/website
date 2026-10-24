@@ -7,6 +7,8 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from "@angu
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatIconModule } from "@angular/material/icon";
+import { MatMenuModule } from "@angular/material/menu";
 import { MatSelectModule } from "@angular/material/select";
 import { MatTabsModule } from "@angular/material/tabs";
 import { TextFieldModule } from "@angular/cdk/text-field";
@@ -28,6 +30,8 @@ import {
 import { ConfirmComponent } from "../confirm/confirm.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { buildPodcastLanguageOptions } from "../language-options.util";
+import { NamedRegexPreset } from "../regex-presets.interface";
+import { RegexPresetsService } from "../regex-presets.service";
 import { filterSubjectsByTerm, noCompareFunction, PODCAST_REGEXS_TAB_INDEX } from "../podcast-form.util";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 
@@ -57,7 +61,9 @@ export interface EditCatalogueParentDialogResponse {
     MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
+    MatMenuModule,
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTabsModule,
@@ -72,6 +78,7 @@ export class EditCatalogueParentDialogComponent {
   private readonly dialogRef = inject<MatDialogRef<EditCatalogueParentDialogComponent, EditCatalogueParentDialogResponse>>(MatDialogRef);
   private readonly curation = inject(CurationSubmitService);
   private readonly dialog = inject(MatDialog);
+  private readonly regexPresetsService = inject(RegexPresetsService);
 
   protected readonly label = hubParentLabel(this.data.hub);
   protected readonly isTv = this.data.hub === "tv";
@@ -96,10 +103,17 @@ export class EditCatalogueParentDialogComponent {
   protected readonly selectedTabIndex = signal(0);
   protected readonly highlightIncludeTitleRegex = signal(false);
   protected readonly includeTitleRegexBlocksIndexAllEpisodes = includeTitleRegexBlocksIndexAllEpisodes;
+  protected readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
+  protected readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
+  protected readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
   private original: CatalogueParentDto | null = null;
 
   constructor() {
+    const presets = this.regexPresetsService.loadRegexPresets();
+    this.titleRegexPresets.set(presets.title);
+    this.descriptionRegexPresets.set(presets.description);
+    this.includeTitleRegexPresets.set(presets.includeTitle);
     void this.load();
   }
 
@@ -222,6 +236,35 @@ export class EditCatalogueParentDialogComponent {
       model.indexAllEpisodes = false;
       this.model.set({ ...model });
     }
+  }
+
+  protected applyTitleRegexPreset(pattern: string): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    model.titleRegex = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
+    this.model.set({ ...model });
+  }
+
+  protected applyDescriptionRegexPreset(pattern: string): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    model.descriptionRegex = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
+    this.model.set({ ...model });
+  }
+
+  protected applyIncludeTitleRegexPreset(pattern: string): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    const value = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
+    model.episodeIncludeTitleRegex = value;
+    this.model.set({ ...model });
+    this.onIncludeTitleRegexChange(value);
   }
 
   protected goToIncludeTitleRegex(): void {

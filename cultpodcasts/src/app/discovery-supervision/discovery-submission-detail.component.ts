@@ -314,11 +314,13 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       if (languageRequired.length > 0) {
         // Retry abandons cancelled prompted ids; create-set is the non-cancelled prompted ids only.
         const language = await promptUnsupportedLanguages(this.dialog, languageRequired, []);
+        abandonIds = [...new Set([...abandonIds, ...language.cancelledIds])];
         if (language.idsToCreate.length === 0) {
+          // Cancel-all: still POST abandon so Failed items are not re-prompted forever.
+          await firstValueFrom(this.service.retry(d.id, resp.etag ?? d.etag, abandonIds));
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        abandonIds = [...new Set([...abandonIds, ...language.cancelledIds])];
         languageDecisions = language.languageDecisions;
         resp = await firstValueFrom(this.service.retry(
           d.id, resp.etag ?? d.etag, abandonIds, { languageDecisions }));
@@ -327,11 +329,14 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
       if (identityRequired.length > 0) {
         const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, []);
+        abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
         if (identity.idsToCreate.length === 0) {
+          await firstValueFrom(this.service.retry(
+            d.id, resp.etag ?? d.etag, abandonIds,
+            languageDecisions ? { languageDecisions } : undefined));
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
-        abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
         identityDecisions = identity.identityDecisions;
         selectedIdentityKeys = identity.selectedIdentityKeys;
         const decisions: DiscoverySubmissionCreateDecisions = {

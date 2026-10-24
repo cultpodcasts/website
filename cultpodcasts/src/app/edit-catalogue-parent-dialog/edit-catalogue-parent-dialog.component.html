@@ -146,11 +146,37 @@
                 <mat-form-field class="full-width">
                     <mat-label>Title Regex</mat-label>
                     <input type="text" name="titleRegex" [(ngModel)]="m.titleRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="titleRegexPresetMenu"
+                        aria-label="Title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
                 </mat-form-field>
+                <mat-menu #titleRegexPresetMenu="matMenu">
+                    @if (titleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of titleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
                 <mat-form-field class="full-width">
                     <mat-label>Description Regex</mat-label>
                     <input type="text" name="descriptionRegex" [(ngModel)]="m.descriptionRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="descriptionRegexPresetMenu"
+                        aria-label="Description regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
                 </mat-form-field>
+                <mat-menu #descriptionRegexPresetMenu="matMenu">
+                    @if (descriptionRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of descriptionRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyDescriptionRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
                 <mat-form-field class="full-width">
                     <mat-label>Episode Match Regex</mat-label>
                     <input type="text" name="episodeMatchRegex" [(ngModel)]="m.episodeMatchRegex" matInput>
@@ -160,7 +186,20 @@
                     <mat-label>Episode Include Title Regex</mat-label>
                     <input type="text" name="episodeIncludeTitleRegex" [(ngModel)]="m.episodeIncludeTitleRegex"
                         (ngModelChange)="onIncludeTitleRegexChange($event)" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="includeTitleRegexPresetMenu"
+                        aria-label="Episode include title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
                 </mat-form-field>
+                <mat-menu #includeTitleRegexPresetMenu="matMenu">
+                    @if (includeTitleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of includeTitleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyIncludeTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
             </mat-tab>
             @if (isTv) {
             <mat-tab label="Identity">
