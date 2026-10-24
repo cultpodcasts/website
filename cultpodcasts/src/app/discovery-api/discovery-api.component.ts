@@ -33,6 +33,7 @@ import {
   syncCuratorSnapOffset,
   toggleCuratorSnapClass
 } from '../curator-snap';
+import { DiscoverySubmitOutcomeState } from '../discovery-submit-outcome-state.enum';
 
 const likelyMatchThreshold = 0.5;
 const autoHiddenThreshold = 0.05;
@@ -305,13 +306,18 @@ export class DiscoveryApiComponent implements AfterViewInit {
         }
         if (result?.reconciledOutcomes?.length) {
           const outcomes = result.reconciledOutcomes;
-          const accepted = outcomes.filter(x => x.state === 'Accepted').length;
+          const accepted = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.Accepted).length;
           const pending = outcomes.filter(x =>
-            x.state === 'Pending' || x.state === 'Unknown').length;
-          const rejected = outcomes.filter(x => x.state === 'Rejected').length;
-          const acceptErrors = outcomes.filter(x => x.state === 'AcceptError').length;
+            x.state === DiscoverySubmitOutcomeState.Pending
+            || x.state === DiscoverySubmitOutcomeState.Unknown).length;
+          const rejected = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.Rejected).length;
+          const acceptErrors = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.AcceptError).length;
           // Incomplete = any non-Accepted stamp (Pending/Unknown/Rejected/AcceptError).
-          const incomplete = outcomes.filter(x => x.state !== 'Accepted').length;
+          const incomplete = outcomes.filter(x =>
+            x.state !== DiscoverySubmitOutcomeState.Accepted).length;
           const parts: string[] = [];
           if (accepted > 0) {
             parts.push(`${accepted} submitted`);
@@ -342,7 +348,9 @@ export class DiscoveryApiComponent implements AfterViewInit {
             this.submittedSubject.next(true);
             this.selectedIds.set([]);
             void this.session.clearVotes(
-              outcomes.filter(x => x.state === 'Accepted').map(x => x.discoveryItemId));
+              outcomes
+                .filter(x => x.state === DiscoverySubmitOutcomeState.Accepted)
+                .map(x => x.discoveryItemId));
             this.loadResults(false);
             return;
           }

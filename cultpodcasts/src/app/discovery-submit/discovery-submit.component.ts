@@ -19,7 +19,8 @@ import {
 } from '../submit-language-identity-prompts';
 import {
   DiscoverySubmitOutcomeItem,
-  DiscoverySubmitOutcomeResponse
+  DiscoverySubmitOutcomeResponse,
+  DiscoverySubmitOutcomeState
 } from '../discovery-submit-outcome.interface';
 
 @Component({
@@ -41,14 +42,18 @@ export class DiscoverySubmitComponent {
   });
 
   reconciledSubmitted = computed(() =>
-    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'Accepted'));
+    (this.submitState().reconciledOutcomes ?? []).filter(x =>
+      x.state === DiscoverySubmitOutcomeState.Accepted));
   reconciledErrored = computed(() =>
-    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'AcceptError'));
+    (this.submitState().reconciledOutcomes ?? []).filter(x =>
+      x.state === DiscoverySubmitOutcomeState.AcceptError));
   reconciledRejected = computed(() =>
-    (this.submitState().reconciledOutcomes ?? []).filter(x => x.state === 'Rejected'));
+    (this.submitState().reconciledOutcomes ?? []).filter(x =>
+      x.state === DiscoverySubmitOutcomeState.Rejected));
   reconciledPending = computed(() =>
     (this.submitState().reconciledOutcomes ?? []).filter(x =>
-      x.state === 'Pending' || x.state === 'Unknown'));
+      x.state === DiscoverySubmitOutcomeState.Pending
+      || x.state === DiscoverySubmitOutcomeState.Unknown));
 
   constructor(
     private http: HttpClient,
@@ -209,10 +214,10 @@ export class DiscoverySubmitComponent {
       const results = outcome?.results ?? [];
       const episodeIds = results
         .filter((x): x is DiscoverySubmitOutcomeItem & { podcastId: string; episodeId: string } =>
-          x.state === 'Accepted' && !!x.podcastId && !!x.episodeId)
+          x.state === DiscoverySubmitOutcomeState.Accepted && !!x.podcastId && !!x.episodeId)
         .map(x => `${x.podcastId}/${x.episodeId}`);
-      const accepted = results.filter(x => x.state === 'Accepted');
-      const errored = results.filter(x => x.state === 'AcceptError');
+      const accepted = results.filter(x => x.state === DiscoverySubmitOutcomeState.Accepted);
+      const errored = results.filter(x => x.state === DiscoverySubmitOutcomeState.AcceptError);
       // Any non-empty stamp set is useful — including all-Pending/Rejected when Azure never finished.
       if (results.length > 0) {
         this.submitState.update(s => ({

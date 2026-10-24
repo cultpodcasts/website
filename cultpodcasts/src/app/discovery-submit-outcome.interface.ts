@@ -1,7 +1,9 @@
+import { DiscoverySubmitOutcomeState } from './discovery-submit-outcome-state.enum';
+
 /** One durable stamp from POST /discovery-curation/submit-outcome. */
 export interface DiscoverySubmitOutcomeItem {
   discoveryItemId: string;
-  state: 'Accepted' | 'AcceptError' | 'Rejected' | 'Pending' | 'Unknown';
+  state: DiscoverySubmitOutcomeState;
   podcastId?: string | null;
   episodeId?: string | null;
   message?: string | null;
@@ -12,3 +14,5 @@ export interface DiscoverySubmitOutcomeItem {
 export interface DiscoverySubmitOutcomeResponse {
   results: DiscoverySubmitOutcomeItem[];
 }
+
+export { DiscoverySubmitOutcomeState };
