@@ -44,22 +44,56 @@ describe('DiscoverySubmissionsService', () => {
     review.flush({});
 
     service.apply('s1', 'e', ['a', 'c']).subscribe();
-    expect(http.expectOne(api('/discovery-submissions/s1/apply')).request.body).toEqual({ etag: 'e', acceptedResultIds: ['a', 'c'] });
+    const apply = http.expectOne(api('/discovery-submissions/s1/apply'));
+    expect(apply.request.body).toEqual({ etag: 'e', acceptedResultIds: ['a', 'c'] });
+    apply.flush({});
+
+    service.apply('s1', 'e', ['a'], {
+      languageDecisions: { a: 'continue' },
+      identityDecisions: { a: 'select' },
+      selectedIdentityKeys: { a: 'tmdb:11' }
+    }).subscribe();
+    const applyDecisions = http.expectOne(api('/discovery-submissions/s1/apply'));
+    expect(applyDecisions.request.body).toEqual({
+      etag: 'e',
+      acceptedResultIds: ['a'],
+      languageDecisions: { a: 'continue' },
+      identityDecisions: { a: 'select' },
+      selectedIdentityKeys: { a: 'tmdb:11' }
+    });
+    applyDecisions.flush({});
 
     service.retry('s1', 'e', ['x']).subscribe();
-    expect(http.expectOne(api('/discovery-submissions/s1/retry')).request.body).toEqual({ etag: 'e', abandonResultIds: ['x'] });
+    const retry = http.expectOne(api('/discovery-submissions/s1/retry'));
+    expect(retry.request.body).toEqual({ etag: 'e', abandonResultIds: ['x'] });
+    retry.flush({});
+
+    service.retry('s1', 'e', ['x'], {
+      identityDecisions: { y: 'continue' }
+    }).subscribe();
+    const retryIdentity = http.expectOne(api('/discovery-submissions/s1/retry'));
+    expect(retryIdentity.request.body).toEqual({
+      etag: 'e',
+      abandonResultIds: ['x'],
+      identityDecisions: { y: 'continue' }
+    });
+    retryIdentity.flush({});
 
     service.release('s1', 'e', '  wrong batch ').subscribe();
-    expect(http.expectOne(api('/discovery-submissions/s1/release')).request.body).toEqual({ etag: 'e', reason: 'wrong batch' });
+    const release = http.expectOne(api('/discovery-submissions/s1/release'));
+    expect(release.request.body).toEqual({ etag: 'e', reason: 'wrong batch' });
+    release.flush({});
 
     service.changeState('s1', 'Pending', 'e', ' crashed ').subscribe();
     const state = http.expectOne(api('/discovery-submissions/s1/state'));
     expect(state.request.context.get(AUTH_SCOPE)).toBe('admin');
     expect(state.request.body).toEqual({ status: 'Pending', etag: 'e', reason: 'crashed' });
+    state.flush({});
 
     service.releaseReport('d1').subscribe();
     const admin = http.expectOne(api('/discovery-reports/d1/release'));
     expect(admin.request.context.get(AUTH_SCOPE)).toBe('admin');
     expect(admin.request.body).toEqual({ reason: null });
+    admin.flush({});
   });
 });

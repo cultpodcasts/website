@@ -19,7 +19,6 @@ import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.compo
 import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
 import {
   applyGuestSelection,
-  hasNonEmptyUrlValue,
   noCompareFunction,
   openExternalUrl,
   personLabel,
@@ -30,13 +29,13 @@ import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { Person } from '../person.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
-import { PlayableEditForm, playableEditHasIdentity, PlayableEditVariant } from '../playable-edit-form.util';
+import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tvdbEpisodeUrl } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
 
 /**
  * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
- * language), Guests, and Identity (IMDb, plus TheTVDB when the form has it) for the `tv` and `film` variants.
+ * language), Guests, and Identity (id inputs: IMDb / TMDB, plus TheTVDB when the form has it) for the `tv` and `film` variants.
  * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
  * adds the IMDb / TMDB ids to Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
  * Urls / Images tabs: their PATCH does not edit service links.
@@ -75,10 +74,12 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly people = input<Person[]>([]);
   readonly languages = input<Record<string, string>>({});
   readonly blueskyPosted = input(false);
+  /** Bold underline on the Meta tab when this create stored a detected default language. */
+  readonly highlightDefaultLanguage = input(false);
   readonly pendingUnBluesky = model(false);
   /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
   readonly variant = input<PlayableEditVariant>('news');
-  /** TV / film: the Identity tab (IMDb; TheTVDB shows when the form has `tvdb`). */
+  /** TV / film: the Identity tab (IMDb id; TheTVDB id shows when the form has `tvdbId`). */
   protected readonly identity = computed(() => playableEditHasIdentity(this.variant()));
   /** Film: read-only Name (renames are admin-only), Publisher, no parent row, year-or-date release. */
   protected readonly film = computed(() => this.variant() === 'film');
@@ -91,8 +92,10 @@ export class PlayableEditFieldsComponent implements OnInit {
   protected readonly FeatureSwitch = FeatureSwitch;
   protected readonly personLabel = personLabel;
   protected readonly noCompareFunction = noCompareFunction;
-  protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
   protected readonly openExternalUrl = openExternalUrl;
+  protected readonly imdbUrl = imdbTitleUrl;
+  /** TV: TheTVDB episode page (the TV variant edits an episode id). */
+  protected readonly tvdbUrl = tvdbEpisodeUrl;
   protected readonly typingFilter = isDesktopSubjectTypingEnabled();
   private readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
 

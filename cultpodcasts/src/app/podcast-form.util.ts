@@ -17,6 +17,44 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+/** Tab index of Regexs in add/edit podcast dialogs (Details … Meta, then Regexs). */
+export const PODCAST_REGEXS_TAB_INDEX = 5;
+
+/**
+ * Backend indexes when IndexAllEpisodes OR a non-whitespace EpisodeIncludeTitleRegex
+ * (`IsNullOrWhiteSpace`). Validity is not checked on save; an empty/whitespace pattern
+ * does not override Index All Episodes.
+ */
+export function includeTitleRegexBlocksIndexAllEpisodes(value: string | null | undefined): boolean {
+  return !!(value && value.trim().length > 0);
+}
+
+/**
+ * When include-title regex is non-empty, force Index All Episodes off and disable the
+ * control (matches PodcastChangeApplier clearing IndexAllEpisodes when a pattern is set).
+ */
+export function syncIndexAllEpisodesWithIncludeTitleRegex(
+  indexAllEpisodes: FormControl<boolean>,
+  episodeIncludeTitleRegex: FormControl<string>,
+  onBlockedChange?: (blocked: boolean) => void,
+): { apply: () => void; unsubscribe: () => void } {
+  const apply = () => {
+    const blocked = includeTitleRegexBlocksIndexAllEpisodes(episodeIncludeTitleRegex.value);
+    onBlockedChange?.(blocked);
+    if (blocked) {
+      if (indexAllEpisodes.value) {
+        indexAllEpisodes.setValue(false, { emitEvent: false });
+      }
+      indexAllEpisodes.disable({ emitEvent: false });
+    } else {
+      indexAllEpisodes.enable({ emitEvent: false });
+    }
+  };
+  apply();
+  const sub = episodeIncludeTitleRegex.valueChanges.subscribe(() => apply());
+  return { apply, unsubscribe: () => sub.unsubscribe() };
+}
+
 /**
  * Split a space-delimited handle field into non-empty tokens.
  * Matches backend PersonFactory.NormalizeHandle (whitespace only).

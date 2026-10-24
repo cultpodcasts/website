@@ -10,6 +10,7 @@ import { TvShowEpisodeChangeRequest, TvShowEpisodeDto } from '../playable-edit.i
 
 export interface EditTvShowEpisodeDialogData {
   episodeId: string;
+  highlightDefaultLanguage?: boolean;
 }
 
 /**

@@ -5,9 +5,11 @@ import {
   ensureAtPrefix,
   ensureHashPrefix,
   hashPrefixedTagValidator,
+  includeTitleRegexBlocksIndexAllEpisodes,
   normalizeHandleControl,
   normalizeHashTagControl,
-  normalizePodcastSocialHandles
+  normalizePodcastSocialHandles,
+  syncIndexAllEpisodesWithIncludeTitleRegex
 } from './podcast-form.util';
 import { Podcast } from './podcast.interface';
 
@@ -41,6 +43,39 @@ function basePodcast(overrides: Partial<Podcast> = {}): Podcast {
     ...overrides
   };
 }
+
+describe('includeTitleRegexBlocksIndexAllEpisodes', () => {
+  it('matches backend IsNullOrWhiteSpace: empty and whitespace do not block', () => {
+    expect(includeTitleRegexBlocksIndexAllEpisodes('')).toBe(false);
+    expect(includeTitleRegexBlocksIndexAllEpisodes('   ')).toBe(false);
+    expect(includeTitleRegexBlocksIndexAllEpisodes(null)).toBe(false);
+    expect(includeTitleRegexBlocksIndexAllEpisodes(undefined)).toBe(false);
+  });
+
+  it('blocks when any non-whitespace pattern is present (validity not required)', () => {
+    expect(includeTitleRegexBlocksIndexAllEpisodes('\\bThe Unbreakable Cult\\b')).toBe(true);
+    expect(includeTitleRegexBlocksIndexAllEpisodes('[')).toBe(true);
+  });
+});
+
+describe('syncIndexAllEpisodesWithIncludeTitleRegex', () => {
+  it('disables and clears Index All Episodes while include-title regex is non-empty', () => {
+    const indexAll = new FormControl(true, { nonNullable: true });
+    const includeTitle = new FormControl('\\bcult\\b', { nonNullable: true });
+    let blocked = false;
+    const sync = syncIndexAllEpisodesWithIncludeTitleRegex(indexAll, includeTitle, b => { blocked = b; });
+
+    expect(blocked).toBe(true);
+    expect(indexAll.value).toBe(false);
+    expect(indexAll.disabled).toBe(true);
+
+    includeTitle.setValue('');
+    expect(blocked).toBe(false);
+    expect(indexAll.disabled).toBe(false);
+
+    sync.unsubscribe();
+  });
+});
 
 describe('ensureAtPrefix', () => {
   it('leaves empty values empty', () => {

@@ -12,6 +12,7 @@ import { FilmChangeRequest, FilmDto } from '../playable-edit.interface';
 
 export interface EditFilmDialogData {
   filmId: string;
+  highlightDefaultLanguage?: boolean;
 }
 
 /**

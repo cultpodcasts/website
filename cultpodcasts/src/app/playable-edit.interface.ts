@@ -34,10 +34,8 @@ export interface NewsReportDto extends PlayableFieldsDto {
 export interface TvShowEpisodeDto extends PlayableFieldsDto {
   tvShowId: string;
   tvShowName?: string | null;
-  /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
-  imdb?: string | URL | null;
+  /** Ids only; open-in-new URLs are generated from them. */
   imdbId?: string | null;
-  tvdb?: string | URL | null;
   tvdbId?: number | null;
   tmdbId?: number | null;
 }
@@ -54,8 +52,6 @@ export interface FilmDto extends PlayableFieldsDto {
   /** Network / label / brand attribution. */
   publisher?: string | null;
   defaultSubject?: string | null;
-  /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
-  imdb?: string | URL | null;
   imdbId?: string | null;
   tmdbId?: number | null;
   /** In display order; omitted when the film has none. */
@@ -88,20 +84,23 @@ export interface PlayableFieldsChangeRequest {
 
 export type NewsReportChangeRequest = PlayableFieldsChangeRequest;
 
-/** TV adds the canonical identity URIs: omit = leave, `''` = clear, absolute URL = set. */
+/** TV adds the identity ids: omit = leave; `imdbId: ''`, `tvdbId: 0`, `tmdbId: 0` clear. */
 export interface TvShowEpisodeChangeRequest extends PlayableFieldsChangeRequest {
-  imdb?: string;
-  tvdb?: string;
+  /** IMDb title id `tt` + 7–10 digits; `''` clears. */
+  imdbId?: string;
+  /** TheTVDB episode id; `0` clears. */
+  tvdbId?: number;
+  /** TMDB id; `0` clears. */
+  tmdbId?: number;
 }
 
 /**
  * PATCH `film/{id}` (RPP `FilmChangeRequest`): the playable fields a film has, `publisher` (`''` clears) and the
- * IMDb identity URI (omit = leave, `''` = clear, absolute URL = set). Never `title`: the film PATCH has no title
+ * identity ids (`imdbId`, `tmdbId`). Never `title`: the film PATCH has no title
  * (renames go through the admin rename screen).
  */
 export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'title'> {
   publisher?: string;
-  imdb?: string;
   /** IMDb title id `tt` + 7–10 digits; `''` clears. */
   imdbId?: string;
   /** TMDB movie id; `0` clears. */

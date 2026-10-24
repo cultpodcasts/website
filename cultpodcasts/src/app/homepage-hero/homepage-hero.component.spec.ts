@@ -11,7 +11,8 @@ import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
 
 const heroDir = dirname(fileURLToPath(import.meta.url));
-const heroSass = readFileSync(join(heroDir, 'homepage-hero.component.sass'), 'utf8');
+// Specs match indented Sass with \n; normalize CRLF so Windows checkouts still pass.
+const heroSass = readFileSync(join(heroDir, 'homepage-hero.component.sass'), 'utf8').replaceAll('\r\n', '\n');
 
 function ep(id: string, overrides: Partial<HomepageEpisode> = {}): HomepageHeroSlide {
   const episode: HomepageEpisode = {

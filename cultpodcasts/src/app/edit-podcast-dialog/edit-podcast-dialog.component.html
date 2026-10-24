@@ -14,7 +14,7 @@
     } @else {
     <p>{{this.podcastName}}</p>
     <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
-        <mat-tab-group>
+        <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="selectedTabIndex.set($event)">
             <mat-tab label="Details">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify Id</mat-label>
@@ -40,7 +40,14 @@
             <mat-tab label="Flags">
                 <div class="flags">
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
-                    <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                    <div class="flag-row">
+                        <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                        @if (indexAllOverriddenByIncludeTitle()) {
+                        <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
+                            Overridden by Episode Include Title Regex
+                        </button>
+                        }
+                    </div>
                     <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking">Bypass Short Episode Checking</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube">Skip Enriching From YouTube</mat-checkbox>
@@ -183,10 +190,24 @@
                     <mat-label>Episode Match Regex</mat-label>
                     <input type="text" [formControl]="form()!.controls.episodeMatchRegex" matInput>
                 </mat-form-field>
-                <mat-form-field class="full-width">
+                <mat-form-field id="episode-include-title-regex-field" class="full-width"
+                    [class.field-highlight]="highlightIncludeTitleRegex()">
                     <mat-label>Episode Include Title Regex</mat-label>
                     <input type="text" [formControl]="form()!.controls.episodeIncludeTitleRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="includeTitleRegexPresetMenu"
+                        aria-label="Episode include title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
                 </mat-form-field>
+                <mat-menu #includeTitleRegexPresetMenu="matMenu">
+                    @if (includeTitleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of includeTitleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyIncludeTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
             </mat-tab>
             <mat-tab label="Catalogue">
                 <mat-form-field class="full-width">

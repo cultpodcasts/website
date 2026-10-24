@@ -40,4 +40,34 @@ describe('RegexPresetsService', () => {
       expect(() => new RegExp(pattern, 's')).not.toThrow();
     }
   });
+
+  it('includes the Introducing / You Might Also Like exclude preset for episode include-title', () => {
+    const preset = service.loadRegexPresets().includeTitle.find(
+      x => x.name === 'Exclude Introducing / You Might Also Like'
+    );
+    expect(preset).toBeDefined();
+    expect(preset!.pattern).toBe('^(?!(Introducing|You Might Also Like):).+');
+  });
+
+  it('applies the include-title preset unchanged (no client-side tokens)', () => {
+    const preset = service.loadRegexPresets().includeTitle.find(
+      x => x.name === 'Exclude Introducing / You Might Also Like'
+    )!;
+    const control = new FormControl<string>('', { nonNullable: true });
+    const podcastName = `Example Podcast (${Math.random().toString(36).slice(2, 8)})`;
+
+    service.applyIncludeTitleRegexPreset(preset.pattern, control, podcastName);
+
+    expect(control.value).toBe(preset.pattern);
+  });
+
+  it('every include-title preset compiles as a JS regex with IgnoreCase like the indexer', () => {
+    for (const preset of service.loadRegexPresets().includeTitle) {
+      expect(() => new RegExp(preset.pattern, 'i')).not.toThrow();
+      const re = new RegExp(preset.pattern, 'i');
+      expect(re.test('Introducing: Other Show')).toBe(false);
+      expect(re.test('You Might Also Like: Other Show')).toBe(false);
+      expect(re.test('Real Episode About Something')).toBe(true);
+    }
+  });
 });

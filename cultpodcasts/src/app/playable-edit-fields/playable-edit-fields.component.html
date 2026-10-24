@@ -56,7 +56,7 @@
             <mat-checkbox [formControl]="f.controls.explicit">Explicit</mat-checkbox>
         </div>
     </mat-tab>
-    <mat-tab label="Meta">
+    <mat-tab label="Meta" [labelClass]="highlightDefaultLanguage() ? 'subjects-tab-highlight' : ''">
         <mat-form-field class="full-width">
             <mat-label>Release</mat-label>
             <!-- One root element per block: a multi-node block is projected into the infix, not the hint / error slots. -->
@@ -165,30 +165,24 @@
         </div>
         }
     </mat-tab>
-    @if (identity() && f.controls.imdb) {
+    @if (identity() && f.controls.imdbId) {
     <mat-tab label="Identity">
-        <mat-form-field class="full-width">
-            <mat-label>IMDb</mat-label>
-            <input type="text" [formControl]="f.controls.imdb" matInput>
-            <button type="button" matIconButton matSuffix aria-label="Open IMDb URL"
-                [disabled]="!hasNonEmptyUrlValue(f.controls.imdb.value)"
-                (click)="openExternalUrl(f.controls.imdb.value)">
-                <mat-icon>open_in_new</mat-icon>
-            </button>
-            <button type="button" matIconButton matSuffix aria-label="Remove IMDb URL"
-                [disabled]="!hasNonEmptyUrlValue(f.controls.imdb.value)" (click)="clearField(f.controls.imdb)">
-                <mat-icon>clear</mat-icon>
-            </button>
-        </mat-form-field>
-        @if (f.controls.imdbId) {
         <mat-form-field class="full-width">
             <mat-label>IMDb id</mat-label>
             <input type="text" [formControl]="f.controls.imdbId" matInput placeholder="tt1234567">
+            <button type="button" matIconButton matSuffix aria-label="Open IMDb page"
+                [disabled]="!imdbUrl(f.controls.imdbId.value)"
+                (click)="openExternalUrl(imdbUrl(f.controls.imdbId.value))">
+                <mat-icon>open_in_new</mat-icon>
+            </button>
+            <button type="button" matIconButton matSuffix aria-label="Remove IMDb id"
+                [disabled]="!f.controls.imdbId.value.trim()" (click)="clearField(f.controls.imdbId)">
+                <mat-icon>clear</mat-icon>
+            </button>
             @if (f.controls.imdbId.hasError('pattern')) {
             <mat-error>tt followed by 7 to 10 digits</mat-error>
             }
         </mat-form-field>
-        }
         @if (f.controls.tmdbId) {
         <mat-form-field class="full-width">
             <mat-label>TMDB id</mat-label>
@@ -198,19 +192,22 @@
             }
         </mat-form-field>
         }
-        @if (f.controls.tvdb) {
+        @if (f.controls.tvdbId) {
         <mat-form-field class="full-width">
-            <mat-label>TheTVDB</mat-label>
-            <input type="text" [formControl]="f.controls.tvdb" matInput>
-            <button type="button" matIconButton matSuffix aria-label="Open TheTVDB URL"
-                [disabled]="!hasNonEmptyUrlValue(f.controls.tvdb.value)"
-                (click)="openExternalUrl(f.controls.tvdb.value)">
+            <mat-label>TheTVDB id</mat-label>
+            <input type="text" inputmode="numeric" [formControl]="f.controls.tvdbId" matInput>
+            <button type="button" matIconButton matSuffix aria-label="Open TheTVDB page"
+                [disabled]="!tvdbUrl(f.controls.tvdbId.value)"
+                (click)="openExternalUrl(tvdbUrl(f.controls.tvdbId.value))">
                 <mat-icon>open_in_new</mat-icon>
             </button>
-            <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB URL"
-                [disabled]="!hasNonEmptyUrlValue(f.controls.tvdb.value)" (click)="clearField(f.controls.tvdb)">
+            <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB id"
+                [disabled]="!f.controls.tvdbId.value.trim()" (click)="clearField(f.controls.tvdbId)">
                 <mat-icon>clear</mat-icon>
             </button>
+            @if (f.controls.tvdbId.hasError('pattern')) {
+            <mat-error>Digits only</mat-error>
+            }
         </mat-form-field>
         }
     </mat-tab>

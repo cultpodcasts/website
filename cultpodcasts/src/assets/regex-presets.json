@@ -22,5 +22,11 @@
             "name": "Episode title prefix removal",
             "pattern": "^\\s*{episode-title}\\s*[-–—:|]?\\s*(?<body>.*)$"
         }
+    ],
+    "includeTitle": [
+        {
+            "name": "Exclude Introducing / You Might Also Like",
+            "pattern": "^(?!(Introducing|You Might Also Like):).+"
+        }
     ]
 }

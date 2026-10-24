@@ -13,6 +13,13 @@ import {
 } from './discovery-supervision.models';
 import { DISCOVERY_SUBMISSIONS_SCOPE, DISCOVERY_SUPERVISE_SCOPE } from './discovery-supervision';
 
+/** Optional language / identity answers on a creating apply or retry POST. */
+export interface DiscoverySubmissionCreateDecisions {
+  languageDecisions?: Record<string, string>;
+  identityDecisions?: Record<string, string>;
+  selectedIdentityKeys?: Record<string, string>;
+}
+
 /** Client for the supervised-discovery routes on the Cloudflare API Worker. */
 @Injectable({ providedIn: 'root' })
 export class DiscoverySubmissionsService {
@@ -51,17 +58,49 @@ export class DiscoverySubmissionsService {
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  apply(id: string, etag: string, acceptedResultIds?: string[]): Observable<DiscoverySubmissionCommandResponse> {
+  apply(
+    id: string,
+    etag: string,
+    acceptedResultIds?: string[],
+    decisions?: DiscoverySubmissionCreateDecisions
+  ): Observable<DiscoverySubmissionCommandResponse> {
+    const body: {
+      etag: string;
+      acceptedResultIds?: string[];
+      languageDecisions?: Record<string, string>;
+      identityDecisions?: Record<string, string>;
+      selectedIdentityKeys?: Record<string, string>;
+    } = { etag };
+    if (acceptedResultIds) {
+      body.acceptedResultIds = acceptedResultIds;
+    }
+    this.assignDecisions(body, decisions);
     return this.http.post<DiscoverySubmissionCommandResponse>(
       this.url(`/discovery-submissions/${encodeURIComponent(id)}/apply`),
-      acceptedResultIds ? { etag, acceptedResultIds } : { etag },
+      body,
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  retry(id: string, etag: string, abandonResultIds: string[] = []): Observable<DiscoverySubmissionCommandResponse> {
+  retry(
+    id: string,
+    etag: string,
+    abandonResultIds: string[] = [],
+    decisions?: DiscoverySubmissionCreateDecisions
+  ): Observable<DiscoverySubmissionCommandResponse> {
+    const body: {
+      etag: string;
+      abandonResultIds: string[];
+      languageDecisions?: Record<string, string>;
+      identityDecisions?: Record<string, string>;
+      selectedIdentityKeys?: Record<string, string>;
+    } = {
+      etag,
+      abandonResultIds
+    };
+    this.assignDecisions(body, decisions);
     return this.http.post<DiscoverySubmissionCommandResponse>(
       this.url(`/discovery-submissions/${encodeURIComponent(id)}/retry`),
-      { etag, abandonResultIds },
+      body,
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
@@ -86,5 +125,20 @@ export class DiscoverySubmissionsService {
       this.url(`/discovery-reports/${encodeURIComponent(documentId)}/release`),
       { reason: reason?.trim() || null },
       { context: this.context('admin') });
+  }
+
+  private assignDecisions(
+    body: DiscoverySubmissionCreateDecisions,
+    decisions?: DiscoverySubmissionCreateDecisions
+  ): void {
+    if (decisions?.languageDecisions) {
+      body.languageDecisions = decisions.languageDecisions;
+    }
+    if (decisions?.identityDecisions) {
+      body.identityDecisions = decisions.identityDecisions;
+    }
+    if (decisions?.selectedIdentityKeys && Object.keys(decisions.selectedIdentityKeys).length > 0) {
+      body.selectedIdentityKeys = decisions.selectedIdentityKeys;
+    }
   }
 }
