@@ -53,10 +53,10 @@ export function spotifyUrl(episode: SearchDisplayEpisode): URL | undefined {
 export function youtubeUrl(episode: SearchDisplayEpisode): URL | undefined {
   const id = platformIds(episode).youtube;
   // TV / news / film have no nested ids.youtube — prefer services.youtube.url (and leftovers)
-  // before reconstructing from youtubeId. Compact `svc` never carries YouTube (index id key).
+  // before reconstructing from youtubeId. Compact `svc` never carries YouTube (index id key),
+  // so there is no svcUrl("youtube") fallback (unlike BBC / Archive streaming keys).
   return serviceUrl(episode, "youtube")
     ?? leftoverNamedUrl(episode, "youtube")
-    ?? svcUrl(episode, "youtube")
     ?? (id ? toUrl(`https://www.youtube.com/watch?v=${encodeURIComponent(String(id))}`) : undefined);
 }
 

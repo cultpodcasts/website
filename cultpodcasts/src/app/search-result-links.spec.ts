@@ -49,6 +49,8 @@ describe("search-result-links", () => {
     expect(youtubeUrl(homepage)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
   });
 
+  // Regression: youtubeUrl already preferred services.youtube.url on main; keep this
+  // locked so Move playables that only retain the services map (no youtubeId) still Watch.
   it("reads YouTube from nested services when youtubeId is absent (TV/news playables have no ids.youtube)", () => {
     const moved: SearchResult = {
       ...searchResult,
