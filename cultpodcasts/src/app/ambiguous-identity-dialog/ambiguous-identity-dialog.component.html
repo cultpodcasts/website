@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Choose catalogue identity</h2>
+<mat-dialog-content>
+  <p>
+    Several {{ data.target }} matches were found for
+    <strong>{{ data.query }}</strong>.
+    @if (isEdit) {
+      Nothing has been applied yet.
+    } @else {
+      Nothing has been created yet.
+    }
+  </p>
+  <mat-radio-group [(ngModel)]="selectedKey" class="candidates">
+    @for (candidate of data.candidates; track candidate.key) {
+      <mat-radio-button [value]="candidate.key" class="candidate">
+        <span class="candidate-row">
+          @if (candidate.thumbnailUrl) {
+            <img class="thumb" [src]="candidate.thumbnailUrl" [alt]="candidate.title" width="46" height="69">
+          }
+          <span class="candidate-body">
+            <span class="candidate-label">{{ label(candidate) }}</span>
+            @if (candidate.description) {
+              <span class="description">{{ candidate.description }}</span>
+            }
+            @if (candidate.pageUrl) {
+              <a class="page" [href]="candidate.pageUrl" target="_blank" rel="noopener"
+                (click)="$event.stopPropagation()">Open page</a>
+            }
+          </span>
+        </span>
+      </mat-radio-button>
+    }
+  </mat-radio-group>
+  <p>
+    @if (isEdit) {
+      Pick one match, leave identity unchanged, or cancel?
+    } @else {
+      Pick one match, continue without IMDb / TheTVDB / TMDB ids, or cancel?
+    }
+  </p>
+</mat-dialog-content>
+<div mat-dialog-actions>
+  <button type="button" mat-flat-button [disabled]="!selectedKey" (click)="chooseSelect()">Use selected</button>
+  <button type="button" mat-button (click)="chooseContinue()">
+    {{ isEdit ? 'Leave unchanged' : 'Continue without identity' }}
+  </button>
+  <button type="button" mat-button (click)="chooseCancel()">Cancel</button>
+</div>

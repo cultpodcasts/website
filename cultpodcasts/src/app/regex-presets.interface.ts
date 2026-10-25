@@ -1,6 +1,6 @@
 /**
- * A named regex shown in the Title Regex / Description Regex drop-downs
- * (`src/assets/regex-presets.json`).
+ * A named regex shown in the Title Regex / Description Regex / Episode Include Title Regex
+ * drop-downs (`src/assets/regex-presets.json`).
  *
  * Two placeholder families exist and they behave differently:
  *
@@ -23,4 +23,6 @@ export interface NamedRegexPreset {
 export interface RegexPresets {
   title: NamedRegexPreset[];
   description: NamedRegexPreset[];
+  /** Episode include-title filters (keep matching titles; used as EpisodeIncludeTitleRegex). */
+  includeTitle: NamedRegexPreset[];
 }

@@ -1,0 +1,44 @@
+.candidates
+  display: flex
+  flex-direction: column
+  gap: 0.75rem
+  margin: 0 0 1rem
+
+.candidate
+  align-items: flex-start
+
+.candidate-row
+  display: flex
+  gap: 0.75rem
+  align-items: flex-start
+
+.thumb
+  flex: 0 0 auto
+  width: 46px
+  height: 69px
+  object-fit: cover
+  border-radius: 2px
+  background: rgba(255, 255, 255, 0.06)
+
+.candidate-body
+  display: flex
+  flex-direction: column
+  gap: 0.2rem
+  min-width: 0
+
+.candidate-label
+  display: block
+
+.description
+  display: -webkit-box
+  -webkit-line-clamp: 3
+  -webkit-box-orient: vertical
+  overflow: hidden
+  font-size: 0.85em
+  opacity: 0.85
+  line-height: 1.35
+
+.page
+  display: inline-block
+  font-size: 0.85em
+  margin-top: 0.1rem

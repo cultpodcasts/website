@@ -17,7 +17,7 @@
     <p id="error" role="alert">Saving failed. Nothing was changed.</p>
     }
     <form id="edit" (ngSubmit)="save()">
-        <mat-tab-group>
+        <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="selectedTabIndex.set($event)">
             <mat-tab label="Details">
                 <mat-form-field class="full-width">
                     <mat-label>Spotify Id</mat-label>
@@ -52,6 +52,17 @@
                 <div class="flags">
                     <mat-checkbox name="removed" [(ngModel)]="m.removed">Removed</mat-checkbox>
                     <p class="hint">Removing hides every {{ itemNoun.slice(0, -1) }}. You'll be asked to confirm.</p>
+                    <div class="flag-row">
+                        <mat-checkbox name="indexAllEpisodes" [(ngModel)]="m.indexAllEpisodes"
+                            [disabled]="includeTitleRegexBlocksIndexAllEpisodes(m.episodeIncludeTitleRegex)">
+                            Index All Episodes
+                        </mat-checkbox>
+                        @if (includeTitleRegexBlocksIndexAllEpisodes(m.episodeIncludeTitleRegex)) {
+                        <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
+                            Overridden by Episode Include Title Regex
+                        </button>
+                        }
+                    </div>
                 </div>
             </mat-tab>
             <mat-tab label="Subjects">
@@ -109,7 +120,7 @@
                     <textarea name="enrichmentHashTags" [(ngModel)]="m.enrichmentHashTags" matInput cdkTextareaAutosize></textarea>
                 </mat-form-field>
             </mat-tab>
-            <mat-tab label="Meta">
+            <mat-tab label="Meta" [labelClass]="data.highlightDefaultLanguage ? 'subjects-tab-highlight' : ''">
                 <mat-form-field class="full-width">
                     <mat-label>Publisher</mat-label>
                     <input type="text" name="publisher" [(ngModel)]="m.publisher" matInput>
@@ -131,15 +142,120 @@
                     <input type="text" name="searchTerms" [(ngModel)]="m.searchTerms" matInput>
                 </mat-form-field>
             </mat-tab>
+            <mat-tab label="Regexs">
+                <mat-form-field class="full-width">
+                    <mat-label>Title Regex</mat-label>
+                    <input type="text" name="titleRegex" [(ngModel)]="m.titleRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="titleRegexPresetMenu"
+                        aria-label="Title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
+                </mat-form-field>
+                <mat-menu #titleRegexPresetMenu="matMenu">
+                    @if (titleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of titleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
+                <mat-form-field class="full-width">
+                    <mat-label>Description Regex</mat-label>
+                    <input type="text" name="descriptionRegex" [(ngModel)]="m.descriptionRegex" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="descriptionRegexPresetMenu"
+                        aria-label="Description regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
+                </mat-form-field>
+                <mat-menu #descriptionRegexPresetMenu="matMenu">
+                    @if (descriptionRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of descriptionRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyDescriptionRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
+                <mat-form-field class="full-width">
+                    <mat-label>Episode Match Regex</mat-label>
+                    <input type="text" name="episodeMatchRegex" [(ngModel)]="m.episodeMatchRegex" matInput>
+                </mat-form-field>
+                <mat-form-field id="episode-include-title-regex-field" class="full-width"
+                    [class.field-highlight]="highlightIncludeTitleRegex()">
+                    <mat-label>Episode Include Title Regex</mat-label>
+                    <input type="text" name="episodeIncludeTitleRegex" [(ngModel)]="m.episodeIncludeTitleRegex"
+                        (ngModelChange)="onIncludeTitleRegexChange($event)" matInput>
+                    <button type="button" matIconButton matSuffix [matMenuTriggerFor]="includeTitleRegexPresetMenu"
+                        aria-label="Episode include title regex presets">
+                        <mat-icon>arrow_drop_down</mat-icon>
+                    </button>
+                </mat-form-field>
+                <mat-menu #includeTitleRegexPresetMenu="matMenu">
+                    @if (includeTitleRegexPresets().length == 0) {
+                    <button mat-menu-item type="button" disabled>No presets configured</button>
+                    }
+                    @for (preset of includeTitleRegexPresets(); track preset.name) {
+                    <button mat-menu-item type="button"
+                        (click)="applyIncludeTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
+                    }
+                </mat-menu>
+            </mat-tab>
             @if (isTv) {
             <mat-tab label="Identity">
+                <div class="identity-lookup">
+                    <button type="button" matButton="tonal" id="look-up-identity"
+                        [disabled]="lookingUpIdentity() || isSending()" (click)="lookUpIdentity()">
+                        Look up identity
+                    </button>
+                    @if (identityLookupMessage()) {
+                    <p class="identity-lookup-message" id="identity-lookup-message">{{ identityLookupMessage() }}</p>
+                    }
+                </div>
                 <mat-form-field class="full-width">
-                    <mat-label>IMDb URL</mat-label>
-                    <input type="url" name="imdb" [(ngModel)]="m.imdb" matInput>
+                    <mat-label>IMDb id</mat-label>
+                    <input type="text" name="imdbId" placeholder="tt1234567" [(ngModel)]="m.imdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open IMDb page"
+                        [disabled]="!imdbUrl(m.imdbId)"
+                        (click)="openExternalUrl(imdbUrl(m.imdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove IMDb id"
+                        [disabled]="!m.imdbId.trim()" (click)="clearIdentityField('imdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
-                    <mat-label>TheTVDB URL</mat-label>
-                    <input type="url" name="tvdb" [(ngModel)]="m.tvdb" matInput>
+                    <mat-label>TheTVDB id</mat-label>
+                    <input type="text" inputmode="numeric" name="tvdbId" [(ngModel)]="m.tvdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open TheTVDB page"
+                        [disabled]="!tvdbUrl(m.tvdbId)"
+                        (click)="openExternalUrl(tvdbUrl(m.tvdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB id"
+                        [disabled]="!m.tvdbId.trim()" (click)="clearIdentityField('tvdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>TMDB id</mat-label>
+                    <input type="text" inputmode="numeric" name="tmdbId" [(ngModel)]="m.tmdbId"
+                        (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open TMDB page"
+                        [disabled]="!tmdbUrl(m.tmdbId)"
+                        (click)="openExternalUrl(tmdbUrl(m.tmdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove TMDB id"
+                        [disabled]="!m.tmdbId.trim()" (click)="clearIdentityField('tmdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
+                    @if (identityInvalid()) {
+                    <mat-hint id="identity-error" class="invalid">IMDb id is tt followed by 7 to 10 digits; TheTVDB and TMDB ids are digits only (blank clears).</mat-hint>
+                    }
                 </mat-form-field>
             </mat-tab>
             }

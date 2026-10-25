@@ -9,14 +9,14 @@ import {
   TvShowEpisodeChangeRequest,
   TvShowEpisodeDto
 } from './playable-edit.interface';
-import { buildTvShowEpisodeCanonicalChangeRequest } from './tv-show-episode-canonical.util';
 import { resolveServiceKey } from './service-catalog';
 
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
  * `EpisodeForm` where the field exists there, so the shared tabs read like the episode editor.
- * `imdb` / `tvdb` are only present on the TV form (Identity tab); the film form has `imdb` (no TheTVDB) and
- * `publisher`, and its `title` (the film name) is disabled: the film PATCH cannot rename.
+ * `imdbId` / `tmdbId` are on the TV and film forms (Identity tab), `tvdbId` on the TV form only. Ids only: page URLs
+ * for the Open buttons are generated from them. The film form also has `publisher`, and its `title` (the film name)
+ * is disabled: the film PATCH cannot rename.
  */
 export interface PlayableEditForm {
   title: FormControl<string>;
@@ -36,13 +36,13 @@ export interface PlayableEditForm {
   /** Language code, or `unset` for English. */
   lang: FormControl<string>;
   guests: FormControl<string[]>;
-  imdb?: FormControl<string>;
-  tvdb?: FormControl<string>;
   publisher?: FormControl<string>;
-  /** Film: IMDb title id (`tt…`); blank clears. */
+  /** TV / film: IMDb title id (`tt…`); blank clears. */
   imdbId?: FormControl<string>;
-  /** Film: TMDB id as digits; blank clears. */
+  /** TV / film: TMDB id as digits; blank clears. */
   tmdbId?: FormControl<string>;
+  /** TV: TheTVDB episode id as digits; blank clears. */
+  tvdbId?: FormControl<string>;
   /** Film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL. */
   links?: FormArray<FormControl<string>>;
   /** Film: the trailers to keep, in display order, each with an editable title. */
@@ -53,6 +53,48 @@ export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: F
 
 /** IMDb title id: `tt` + 7–10 digits (the film PATCH rejects anything else). */
 export const imdbIdPattern = /^tt\d{7,10}$/;
+
+/** IMDb title page for an id, or '' when the id is blank / not a valid `tt` id. */
+export function imdbTitleUrl(imdbId: string | null | undefined): string {
+  const id = (imdbId ?? '').trim();
+  return imdbIdPattern.test(id) ? `https://www.imdb.com/title/${id}/` : '';
+}
+
+/** TheTVDB series page for a numeric id, or '' when blank / not a positive whole number. */
+export function tvdbSeriesUrl(tvdbId: string | number | null | undefined): string {
+  const id = String(tvdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.thetvdb.com/dereferrer/series/${id}` : '';
+}
+
+/** TheTVDB episode page for a numeric id, or '' when blank / not a positive whole number. */
+export function tvdbEpisodeUrl(tvdbId: string | number | null | undefined): string {
+  const id = String(tvdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.thetvdb.com/dereferrer/episode/${id}` : '';
+}
+
+/** TMDB movie page for a numeric id, or '' when blank / not a positive whole number. */
+export function tmdbMovieUrl(tmdbId: string | number | null | undefined): string {
+  const id = String(tmdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.themoviedb.org/movie/${id}` : '';
+}
+
+/** TMDB TV show page for a numeric id, or '' when blank / not a positive whole number. */
+export function tmdbTvShowUrl(tmdbId: string | number | null | undefined): string {
+  const id = String(tmdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.themoviedb.org/tv/${id}` : '';
+}
+
+const digitsPattern = /^\d*$/;
+
+function idText(id: number | null | undefined): string {
+  return id ? String(id) : '';
+}
+
+/** Form text for a numeric id patch: blank clears (`0`). */
+function numericIdValue(text: string): number {
+  const trimmed = text.trim();
+  return trimmed === '' ? 0 : Number(trimmed);
+}
 
 /**
  * A film link must be an absolute http(s) URL whose service key resolves (a known service, else a key derived from the
@@ -174,15 +216,14 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.title.clearValidators();
     controls.title.disable();
     controls.release.addValidators(Validators.pattern(filmReleasePattern));
-    controls.imdb = new FormControl(uriText(film.imdb), { nonNullable: true });
     controls.publisher = new FormControl(film.publisher ?? '', { nonNullable: true });
     controls.imdbId = new FormControl(film.imdbId ?? '', {
       nonNullable: true,
       validators: [Validators.pattern(imdbIdPattern)]
     });
-    controls.tmdbId = new FormControl(film.tmdbId ? String(film.tmdbId) : '', {
+    controls.tmdbId = new FormControl(idText(film.tmdbId), {
       nonNullable: true,
-      validators: [Validators.pattern(/^\d*$/)]
+      validators: [Validators.pattern(digitsPattern)]
     });
     const existingLinks = filmExistingLinks(film.services);
     const existingUrls = new Set(existingLinks.keys());
@@ -195,8 +236,18 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     );
   } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
-    controls.imdb = new FormControl(uriText(tv.imdb), { nonNullable: true });
-    controls.tvdb = new FormControl(uriText(tv.tvdb), { nonNullable: true });
+    controls.imdbId = new FormControl(tv.imdbId ?? '', {
+      nonNullable: true,
+      validators: [Validators.pattern(imdbIdPattern)]
+    });
+    controls.tvdbId = new FormControl(idText(tv.tvdbId), {
+      nonNullable: true,
+      validators: [Validators.pattern(digitsPattern)]
+    });
+    controls.tmdbId = new FormControl(idText(tv.tmdbId), {
+      nonNullable: true,
+      validators: [Validators.pattern(digitsPattern)]
+    });
   }
   return new FormGroup<PlayableEditForm>(controls);
 }
@@ -241,25 +292,31 @@ export function playableFieldsChanges(
   return changes;
 }
 
-/** Playable fields plus the Identity tab (omit / `''` clear / URL set, same as the old identity dialog). */
+/** Playable fields plus the Identity tab ids (omit = unchanged; `imdbId: ''`, `tvdbId: 0`, `tmdbId: 0` clear). */
 export function tvShowEpisodeChanges(
   previous: TvShowEpisodeDto,
   next: PlayableEditFormValue,
   pendingUnBluesky = false
 ): TvShowEpisodeChangeRequest {
   const changes: TvShowEpisodeChangeRequest = playableFieldsChanges(previous, next, pendingUnBluesky);
-  const identity = buildTvShowEpisodeCanonicalChangeRequest(
-    { imdb: uriText(previous.imdb), tvdb: uriText(previous.tvdb) },
-    { imdb: next.imdb, tvdb: next.tvdb }
-  );
-  if (identity.imdb != null) changes.imdb = identity.imdb;
-  if (identity.tvdb != null) changes.tvdb = identity.tvdb;
+  if (next.imdbId !== undefined) {
+    const imdbId = next.imdbId.trim();
+    if (imdbId !== (previous.imdbId ?? '')) changes.imdbId = imdbId;
+  }
+  if (next.tvdbId !== undefined) {
+    const tvdbId = numericIdValue(next.tvdbId);
+    if (tvdbId !== (previous.tvdbId ?? 0)) changes.tvdbId = tvdbId;
+  }
+  if (next.tmdbId !== undefined) {
+    const tmdbId = numericIdValue(next.tmdbId);
+    if (tmdbId !== (previous.tmdbId ?? 0)) changes.tmdbId = tmdbId;
+  }
   return changes;
 }
 
 /**
  * Film PATCH body: the changed playable fields without `title` (the film PATCH has none; renames are admin-only),
- * plus `publisher` (`''` clears) and the IMDb identity (omit / `''` clear / URL set).
+ * plus `publisher` (`''` clears) and the identity ids (`imdbId`, `tmdbId`).
  */
 export function filmChanges(
   previous: FilmDto,
@@ -270,16 +327,12 @@ export function filmChanges(
   const film: FilmChangeRequest = changes;
   const publisher = (next.publisher ?? '').trim();
   if (next.publisher !== undefined && publisher !== (previous.publisher ?? '').trim()) film.publisher = publisher;
-  if (next.imdb !== undefined) {
-    const identity = buildTvShowEpisodeCanonicalChangeRequest({ imdb: uriText(previous.imdb) }, { imdb: next.imdb });
-    if (identity.imdb != null) film.imdb = identity.imdb;
-  }
   if (next.imdbId !== undefined) {
     const imdbId = next.imdbId.trim();
     if (imdbId !== (previous.imdbId ?? '')) film.imdbId = imdbId;
   }
   if (next.tmdbId !== undefined) {
-    const tmdbId = next.tmdbId.trim() === '' ? 0 : Number(next.tmdbId.trim());
+    const tmdbId = numericIdValue(next.tmdbId);
     if (tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
   }
   if (next.links !== undefined) {

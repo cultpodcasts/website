@@ -9,4 +9,5 @@ export interface SubmitUrlOriginSuccessResponse {
     contentKind?: CataloguePlayableKind | undefined;
     playableId?: string | undefined;
     episodeDetails?: SubmitEpisodeDetails;
+    defaultLanguageFromDetection?: boolean;
 }

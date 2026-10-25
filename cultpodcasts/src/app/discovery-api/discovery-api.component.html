@@ -43,6 +43,13 @@
     }
   </div>
 
+  @if (!isLoading() && !isInError() && pendingDocumentCount() > 0) {
+  <section class="pending-docs" aria-labelledby="pending-docs-heading">
+    <h3 id="pending-docs-heading">{{pendingDocumentCount()}} newer report(s) available</h3>
+    <p>They are not in this room yet. Include them into the list, or Save the current set and leave them for later.</p>
+    <button matButton="tonal" type="button" (click)="includePendingDocuments()">Include</button>
+  </section>
+  }
   @if (!isLoading() && !isInError() && awaitingReview().length > 0) {
   <section class="awaiting-review" aria-labelledby="awaiting-review-heading">
     <h3 id="awaiting-review-heading">Awaiting supervisor review</h3>

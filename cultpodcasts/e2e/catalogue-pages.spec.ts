@@ -218,7 +218,7 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.getByText("Bulletin")).toBeVisible();
 		await (await openHubMenu(page)).getByRole("menuitem", { name: /Edit News Outlet/ }).click();
 		const dialog = page.locator("mat-dialog-container");
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta", "Regexs"]);
 		const channel = dialog.getByLabel("YouTube Id");
 		await expect(channel).toHaveValue("");
 		await expect(page.getByRole("menu")).toHaveCount(0);

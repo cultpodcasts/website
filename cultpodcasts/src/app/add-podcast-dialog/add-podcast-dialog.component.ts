@@ -34,7 +34,9 @@ import {
   asStringArray,
   normalizeHandleControl,
   normalizeHashTagControl,
-  normalizePodcastSocialHandles
+  normalizePodcastSocialHandles,
+  PODCAST_REGEXS_TAB_INDEX,
+  syncIndexAllEpisodesWithIncludeTitleRegex
 } from '../podcast-form.util';
 
 @Component({
@@ -80,8 +82,15 @@ export class AddPodcastDialogComponent {
   readonly languages = signal<{ [key: string]: string }>({});
   readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
   readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
+  readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   podcastId: string;
   readonly highlightSubjectsTab = signal<boolean>(false);
+  readonly highlightLanguageTab = signal<boolean>(false);
+  readonly selectedTabIndex = signal(0);
+  readonly indexAllOverriddenByIncludeTitle = signal(false);
+  readonly highlightIncludeTitleRegex = signal(false);
+  private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
+  private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -94,7 +103,8 @@ export class AddPodcastDialogComponent {
       forceBypassShortEpisodeChecking?: boolean,
       podcastId: string,
       episodeId?: string,
-      episodeLangUnset?: boolean
+      episodeLangUnset?: boolean,
+      defaultLanguageFromDetection?: boolean
     },
     private dialog: MatDialog,
   ) {
@@ -131,6 +141,7 @@ export class AddPodcastDialogComponent {
           ...buildPodcastFormControls(resp.podcast.body)
         });
         this.form.set(form);
+        this.wireIndexAllIncludeTitleSync(form);
         if (this.data.forceBypassShortEpisodeChecking) {
           form.controls.bypassShortEpisodeChecking.setValue(true);
         }
@@ -142,6 +153,8 @@ export class AddPodcastDialogComponent {
         this.highlightSubjectsTab.set(this.data.defaultSubjectFromEpisode != null
           && desiredDefaultSubject != null
           && desiredDefaultSubject !== '');
+        this.highlightLanguageTab.set(this.data.defaultLanguageFromDetection === true
+          && form.controls.lang.value !== 'unset');
 
         let initial: string[] = [];
         if (desiredDefaultSubject != null) {
@@ -174,6 +187,7 @@ export class AddPodcastDialogComponent {
     const presets = this.regexPresetsService.loadRegexPresets();
     this.titleRegexPresets.set(presets.title);
     this.descriptionRegexPresets.set(presets.description);
+    this.includeTitleRegexPresets.set(presets.includeTitle);
   }
 
   applyTitleRegexPreset(pattern: string): void {
@@ -198,6 +212,19 @@ export class AddPodcastDialogComponent {
     this.regexPresetsService.applyDescriptionRegexPreset(
       pattern,
       form.controls.descriptionRegex,
+      form.controls.podcastName.value ?? this.podcastName,
+    );
+  }
+
+  applyIncludeTitleRegexPreset(pattern: string): void {
+    const form = this.form();
+    if (!form) {
+      return;
+    }
+
+    this.regexPresetsService.applyIncludeTitleRegexPreset(
+      pattern,
+      form.controls.episodeIncludeTitleRegex,
       form.controls.podcastName.value ?? this.podcastName,
     );
   }
@@ -333,9 +360,36 @@ export class AddPodcastDialogComponent {
   }
 
   onTabChange(selectedIndex: number) {
+    this.selectedTabIndex.set(selectedIndex);
     if (selectedIndex === 2) {
       this.highlightSubjectsTab.set(false);
     }
+  }
+
+  goToIncludeTitleRegex(): void {
+    this.selectedTabIndex.set(PODCAST_REGEXS_TAB_INDEX);
+    this.highlightIncludeTitleRegex.set(true);
+    if (this.highlightIncludeTitleTimer) {
+      clearTimeout(this.highlightIncludeTitleTimer);
+    }
+    this.highlightIncludeTitleTimer = setTimeout(() => {
+      this.highlightIncludeTitleRegex.set(false);
+      this.highlightIncludeTitleTimer = undefined;
+    }, 2500);
+    queueMicrotask(() => {
+      document.getElementById('episode-include-title-regex-field')
+        ?.querySelector('input')
+        ?.focus();
+    });
+  }
+
+  private wireIndexAllIncludeTitleSync(form: FormGroup<AddPodcastForm>): void {
+    this.indexAllIncludeTitleSync?.unsubscribe();
+    this.indexAllIncludeTitleSync = syncIndexAllEpisodesWithIncludeTitleRegex(
+      form.controls.indexAllEpisodes,
+      form.controls.episodeIncludeTitleRegex,
+      blocked => this.indexAllOverriddenByIncludeTitle.set(blocked),
+    );
   }
 
   filteredDefaultSubjects() {

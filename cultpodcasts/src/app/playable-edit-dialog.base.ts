@@ -48,6 +48,10 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   readonly submitError = signal('');
   readonly form = signal<FormGroup<PlayableEditForm> | undefined>(undefined);
   readonly parentName = signal('');
+  readonly parentId = signal('');
+  readonly parentImdbId = signal<string | null>(null);
+  readonly parentTmdbId = signal<number | null>(null);
+  readonly parentTvdbId = signal<number | null>(null);
   readonly subjectNames = signal<string[]>([]);
   readonly defaultSubject = signal<string | null>(null);
   readonly people = signal<Person[]>([]);
@@ -81,12 +85,16 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
       }));
       const parent = this.parentOf(resp.dto);
       const hub = this.hub;
-      const defaultSubject = hub && parent.id
+      const parentDto = hub && parent.id
         ? await firstValueFrom(this.curation.getCatalogueParent(hub, parent.id).pipe(catchError(() => of(null))))
-          .then((p) => p?.defaultSubject ?? null)
-        : this.ownDefaultSubject(resp.dto);
+        : null;
+      const defaultSubject = parentDto?.defaultSubject ?? this.ownDefaultSubject(resp.dto);
       this.original = resp.dto;
       this.parentName.set(parent.name);
+      this.parentId.set(parent.id);
+      this.parentImdbId.set(parentDto?.imdbId ?? null);
+      this.parentTmdbId.set(parentDto?.tmdbId ?? null);
+      this.parentTvdbId.set(parentDto?.tvdbId ?? null);
       this.defaultSubject.set(defaultSubject);
       const { allSubjects } = mergeEpisodeSubjects(resp.dto.subjects ?? [], resp.subjects as Subject[], defaultSubject);
       this.subjectNames.set(allSubjects);
@@ -105,6 +113,17 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
 
   close(): void {
     this.dialogRef.close({ closed: true });
+  }
+
+  /** After episode Look up PATCHes blank show ids, keep local parent id state in sync. */
+  onParentIdentityFilled(ids: {
+    imdbId: string | null;
+    tmdbId: number | null;
+    tvdbId: number | null;
+  }): void {
+    this.parentImdbId.set(ids.imdbId);
+    this.parentTmdbId.set(ids.tmdbId);
+    this.parentTvdbId.set(ids.tvdbId);
   }
 
   async onSubmit(): Promise<void> {

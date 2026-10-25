@@ -32,6 +32,10 @@ import {
   CatalogueParentRenameRequest,
   CatalogueParentRenameResponse
 } from './catalogue-parent.interface';
+import {
+  CatalogueIdentityLookupRequest,
+  CatalogueIdentityLookupResponse
+} from './catalogue-identity-lookup.interface';
 
 /**
  * Shared authenticated catalogue writes used by spinner/send dialogs.
@@ -175,6 +179,14 @@ export class CurationSubmitService {
   getCatalogueParent(hub: CatalogueHub, identifier: string) {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(identifier)}`, environment.api).toString();
     return this.http.get<CatalogueParentDto>(url, { context: this.curateContext() });
+  }
+
+  /** Edit-time Identity tab probe (does not write Cosmos). */
+  lookupCatalogueIdentity(body: CatalogueIdentityLookupRequest) {
+    const url = new URL(`/catalogue/identity/lookup`, environment.api).toString();
+    return this.http.post<CatalogueIdentityLookupResponse>(url, body, {
+      context: this.curateContext()
+    });
   }
 
   /** PATCH a news outlet / TV show by guid (curate): 202, empty body. */

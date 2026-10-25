@@ -43,8 +43,9 @@ const tvEpisode = {
 	title: "Part",
 	tvShowId: showId,
 	tvShowName: "Nightly",
-	imdb: "https://www.imdb.com/title/tt0000001/",
-	tvdb: null
+	imdbId: "tt0000001",
+	tvdbId: null,
+	tmdbId: null
 };
 
 /** Synthetic `film/{id}` GET: publisher fields + playable fields, `name` not `title`, year-only release. */
@@ -59,7 +60,6 @@ const film = {
 	subjects: ["Arts"],
 	defaultSubject: "Arts",
 	twitterHandle: "",
-	imdb: "https://www.imdb.com/title/tt0000002/",
 	imdbId: "tt0000002",
 	tmdbId: null,
 	services: null
@@ -235,13 +235,13 @@ test.describe("news report / TV episode curator edit", () => {
 		await dialog.getByLabel("Description").fill("Edited synthetic description");
 		await shot(page, "tv-edit-details");
 		await dialog.getByRole("tab", { name: "Identity" }).click();
-		await expect(dialog.getByRole("textbox", { name: "IMDb" })).toHaveValue("https://www.imdb.com/title/tt0000001/");
-		await dialog.getByRole("textbox", { name: "TheTVDB" }).fill("https://thetvdb.com/series/example/episodes/1");
+		await expect(dialog.getByRole("textbox", { name: "IMDb id" })).toHaveValue("tt0000001");
+		await dialog.getByRole("textbox", { name: "TheTVDB id" }).fill("4242");
 		await shot(page, "tv-edit-identity");
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({
 			description: "Edited synthetic description",
-			tvdb: "https://thetvdb.com/series/example/episodes/1"
+			tvdbId: 4242
 		});
 		await expect(page.getByText("TV episode updated")).toBeVisible();
 	});
@@ -318,10 +318,10 @@ test.describe("film curator edit", () => {
 		await expect(page.getByRole("listbox")).toHaveCount(0);
 		await shot(page, "film-edit-guests");
 		await dialog.getByRole("tab", { name: "Identity" }).click();
-		const imdb = dialog.getByRole("textbox", { name: "IMDb", exact: true });
-		await expect(imdb).toHaveValue("https://www.imdb.com/title/tt0000002/");
-		await expect(dialog.getByRole("textbox", { name: "TheTVDB" })).toHaveCount(0);
-		await imdb.fill("https://www.imdb.com/title/tt0000009/");
+		const imdb = dialog.getByRole("textbox", { name: "IMDb id", exact: true });
+		await expect(imdb).toHaveValue("tt0000002");
+		await expect(dialog.getByRole("textbox", { name: "TheTVDB id" })).toHaveCount(0);
+		await imdb.fill("tt0000009");
 		await shot(page, "film-edit-identity");
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({
@@ -331,7 +331,7 @@ test.describe("film curator edit", () => {
 			subjects: ["Arts", "Film"],
 			guests: ["Ann Example", "Bob Sample"],
 			publisher: "Other Pictures",
-			imdb: "https://www.imdb.com/title/tt0000009/"
+			imdbId: "tt0000009"
 		});
 		await expect(page.getByText("Film updated")).toBeVisible();
 		expect(podcastEpisodeGet).toBe(false);
