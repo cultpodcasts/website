@@ -14,7 +14,7 @@
       <mat-radio-button [value]="candidate.key" class="candidate">
         <span class="candidate-row">
           @if (candidate.thumbnailUrl) {
-            <img class="thumb" [src]="candidate.thumbnailUrl" [alt]="''" width="46" height="69">
+            <img class="thumb" [src]="candidate.thumbnailUrl" [alt]="candidate.title" width="46" height="69">
           }
           <span class="candidate-body">
             <span class="candidate-label">{{ label(candidate) }}</span>

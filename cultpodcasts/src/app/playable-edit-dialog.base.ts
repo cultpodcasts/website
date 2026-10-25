@@ -115,6 +115,17 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
     this.dialogRef.close({ closed: true });
   }
 
+  /** After episode Look up PATCHes blank show ids, keep local parent id state in sync. */
+  onParentIdentityFilled(ids: {
+    imdbId: string | null;
+    tmdbId: number | null;
+    tvdbId: number | null;
+  }): void {
+    this.parentImdbId.set(ids.imdbId);
+    this.parentTmdbId.set(ids.tmdbId);
+    this.parentTvdbId.set(ids.tvdbId);
+  }
+
   async onSubmit(): Promise<void> {
     const form = this.form();
     if (!form || !form.valid || !this.original || this.isSaving()) {
