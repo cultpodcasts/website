@@ -97,7 +97,12 @@ export class MoveEpisodeToFilmDialogComponent {
           this.isSending.set(false);
           return;
         }
-        if (resp.status === 200 && outcome?.identityDecision?.candidates?.length) {
+        if (resp.status === 200 && outcome?.identityDecision) {
+          if (!outcome.identityDecision.candidates?.length) {
+            this.isSending.set(false);
+            this.error.set('No confident identity match.');
+            return;
+          }
           const next = await this.answerIdentity(outcome.identityDecision, body);
           if (!next) {
             this.isSending.set(false);
@@ -106,11 +111,17 @@ export class MoveEpisodeToFilmDialogComponent {
           body = next;
           continue;
         }
-        this.dialogRef.close({
-          moved: true,
-          filmId: outcome?.filmId ?? this.data.episodeId,
-          name: outcome?.name ?? (this.requestTitle() ?? this.data.episodeTitle)
-        });
+        // Contract: 202 = moved; 200 = identity/cancelled gate only (nothing written).
+        if (resp.status === 202) {
+          this.dialogRef.close({
+            moved: true,
+            filmId: outcome?.filmId ?? this.data.episodeId,
+            name: outcome?.name ?? (this.requestTitle() ?? this.data.episodeTitle)
+          });
+          return;
+        }
+        this.isSending.set(false);
+        this.error.set('Unexpected response while moving to film.');
         return;
       }
       this.isSending.set(false);
