@@ -199,7 +199,12 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       this.detail.set(d);
       this.finalIds.set(initialFinalIds(d));
       this.reportComment.set(d.reportComment ?? '');
-      this.itemComments.set(commentsToMap(d.itemComments));
+      const comments = commentsToMap(d.itemComments);
+      this.itemComments.set(comments);
+      // Sticky for the session: seed open flags from loaded text so clearing never unmounts the field.
+      this.reportCommentOpen.set(!!(d.reportComment?.trim()));
+      this.openCommentIds.set(
+        Object.entries(comments).filter(([, text]) => !!text.trim()).map(([id]) => id));
       this.abandonIds.set([]);
       this.dirty.set(false);
     } catch (e) {
@@ -420,6 +425,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       this.finalIds.set(keepEdits.finalIds);
       this.reportComment.set(keepEdits.reportComment);
       this.itemComments.set(keepEdits.itemComments);
+      this.reportCommentOpen.set(keepEdits.reportCommentOpen);
+      this.openCommentIds.set(keepEdits.openCommentIds);
       this.dirty.set(keepEdits.dirty);
     }
     if (message) {
@@ -433,6 +440,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       finalIds: this.finalIds(),
       reportComment: this.reportComment(),
       itemComments: this.itemComments(),
+      reportCommentOpen: this.reportCommentOpen(),
+      openCommentIds: this.openCommentIds(),
       dirty: this.dirty()
     };
   }

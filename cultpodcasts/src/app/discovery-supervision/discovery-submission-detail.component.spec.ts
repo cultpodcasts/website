@@ -113,7 +113,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
     expect(card(A).dataset['pick']).toBe('kept');
     expect(card(B).dataset['pick']).toBe('kept');
     expect(card(C)).toBeNull();
-    expect(el().querySelector('.supervision-filter')?.textContent).toContain("Submitter's picks (2)");
+    expect(el().querySelector('.supervision-filter')?.textContent).toContain('Picks & changes (2)');
     expect(el().querySelector('.supervision-filter')?.textContent).toContain('All results (3)');
     showAll();
     expect(card(C).dataset['pick']).toBe('none');
@@ -136,6 +136,39 @@ describe('DiscoverySubmissionDetailComponent', () => {
     expect(card(A).querySelector('textarea')).not.toBeNull();
     expect(card(B).querySelector('textarea')).toBeNull();
   });
+
+  it('keeps loaded comment fields mounted when cleared, so clearing does not collapse mid-edit', async () => {
+    await create(detail({
+      reportComment: 'Draft note',
+      itemComments: [{ resultId: A, comment: 'Check guest' }]
+    }));
+    const reportArea = el().querySelector('.report-comment textarea') as HTMLTextAreaElement;
+    const itemArea = card(A).querySelector('textarea') as HTMLTextAreaElement;
+    expect(reportArea).not.toBeNull();
+    expect(itemArea).not.toBeNull();
+    expect(reportArea.value).toBe('Draft note');
+    expect(itemArea.value).toBe('Check guest');
+
+    reportArea.value = '';
+    reportArea.dispatchEvent(new Event('input'));
+    itemArea.value = '';
+    itemArea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(el().querySelector('.report-comment textarea')).not.toBeNull();
+    expect(card(A).querySelector('textarea')).not.toBeNull();
+    expect(el().querySelector('button.add-report-comment')).toBeNull();
+
+    button('save-draft').click();
+    await fixture.whenStable();
+    expect(service.saveReview).toHaveBeenCalledWith('s1', {
+      etag: 'e1',
+      reportComment: '',
+      itemComments: [],
+      acceptedResultIds: [A, B]
+    });
+  });
+
 
   it('lets the supervisor add a missed result and remove a wrong one, then apply the reworked set with comments', async () => {
     await create(detail());

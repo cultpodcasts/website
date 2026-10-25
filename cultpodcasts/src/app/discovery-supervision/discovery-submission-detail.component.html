@@ -105,7 +105,7 @@
 
   <div class="supervision-filter">
     <mat-button-toggle-group hideSingleSelectionIndicator [value]="filter()" (change)="filter.set($event.value)" aria-label="Which results to show">
-      <mat-button-toggle value="picked">Submitter's picks ({{pickedCount()}})</mat-button-toggle>
+      <mat-button-toggle value="picked">Picks &amp; changes ({{pickedCount()}})</mat-button-toggle>
       <mat-button-toggle value="all">All results ({{totalCount()}})</mat-button-toggle>
     </mat-button-toggle-group>
   </div>
