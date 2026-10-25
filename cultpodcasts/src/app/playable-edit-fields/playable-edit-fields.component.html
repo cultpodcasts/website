@@ -167,6 +167,15 @@
     </mat-tab>
     @if (identity() && f.controls.imdbId) {
     <mat-tab label="Identity">
+        <div class="identity-lookup">
+            <button type="button" matButton="tonal" id="look-up-identity"
+                [disabled]="lookingUpIdentity()" (click)="lookUpIdentity()">
+                Look up identity
+            </button>
+            @if (identityLookupMessage()) {
+            <p class="identity-lookup-message" id="identity-lookup-message">{{ identityLookupMessage() }}</p>
+            }
+        </div>
         <mat-form-field class="full-width">
             <mat-label>IMDb id</mat-label>
             <input type="text" [formControl]="f.controls.imdbId" matInput placeholder="tt1234567">

@@ -11,6 +11,8 @@
     }
     <form id="edit" [formGroup]="f" (ngSubmit)="onSubmit()">
         <app-playable-edit-fields [form]="f" parentLabel="TV Show" [parentName]="parentName()"
+            [parentId]="parentId()" [parentImdbId]="parentImdbId()" [parentTmdbId]="parentTmdbId()"
+            [parentTvdbId]="parentTvdbId()"
             [subjectNames]="subjectNames()" [defaultSubject]="defaultSubject()" [people]="people()"
             [languages]="languages()" [blueskyPosted]="blueskyPosted()" [(pendingUnBluesky)]="pendingUnBluesky"
             [variant]="variant" [highlightDefaultLanguage]="data.highlightDefaultLanguage === true"></app-playable-edit-fields>

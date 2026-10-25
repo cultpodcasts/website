@@ -13,12 +13,16 @@ export interface AmbiguousIdentityCandidate {
   tmdbId?: number | null;
   tvdbId?: number | null;
   pageUrl?: string | null;
+  thumbnailUrl?: string | null;
+  description?: string | null;
 }
 
 export interface AmbiguousIdentityPrompt {
   target: string;
   query: string;
   candidates: AmbiguousIdentityCandidate[];
+  /** create = submit/discovery gate; edit = Identity tab Look up. */
+  context?: 'create' | 'edit';
 }
 
 /** select = apply the chosen key; continue = create with blank identity; cancel = abort create. */
@@ -38,6 +42,7 @@ export class AmbiguousIdentityDialogComponent {
   readonly data = inject<AmbiguousIdentityPrompt>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<AmbiguousIdentityDialogComponent, AmbiguousIdentityAnswer>);
   selectedKey = this.data.candidates[0]?.key ?? '';
+  readonly isEdit = this.data.context === 'edit';
 
   chooseSelect() {
     if (!this.selectedKey) {
