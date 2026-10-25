@@ -13,6 +13,7 @@ import { ParentIdentityFilled, PlayableEditFieldsComponent } from './playable-ed
 type Internals = {
   lookUpIdentity(): Promise<void>;
   identityLookupMessage(): string;
+  tmdbUrl(id: string | null | undefined): string;
 };
 
 describe('PlayableEditFieldsComponent lookUpIdentity', () => {
@@ -104,6 +105,14 @@ describe('PlayableEditFieldsComponent lookUpIdentity', () => {
     fixture.detectChanges();
     return { form, component: fixture.componentInstance as unknown as Internals };
   }
+
+  it('builds a TMDB movie URL for film and returns empty for TV episode', () => {
+    const { component: film } = createFilm({ tmdbId: 42 });
+    expect(film.tmdbUrl('42')).toBe('https://www.themoviedb.org/movie/42');
+    expect(film.tmdbUrl('')).toBe('');
+    const { component: tv } = createTvEpisode({ episode: { tmdbId: 42 } });
+    expect(tv.tmdbUrl('42')).toBe('');
+  });
 
   it('fills blank film identity controls and does not PATCH a parent', async () => {
     lookup.mockReturnValue(of<CatalogueIdentityLookupResponse>({

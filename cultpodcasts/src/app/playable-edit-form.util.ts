@@ -72,6 +72,18 @@ export function tvdbEpisodeUrl(tvdbId: string | number | null | undefined): stri
   return /^[1-9]\d*$/.test(id) ? `https://www.thetvdb.com/dereferrer/episode/${id}` : '';
 }
 
+/** TMDB movie page for a numeric id, or '' when blank / not a positive whole number. */
+export function tmdbMovieUrl(tmdbId: string | number | null | undefined): string {
+  const id = String(tmdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.themoviedb.org/movie/${id}` : '';
+}
+
+/** TMDB TV show page for a numeric id, or '' when blank / not a positive whole number. */
+export function tmdbTvShowUrl(tmdbId: string | number | null | undefined): string {
+  const id = String(tmdbId ?? '').trim();
+  return /^[1-9]\d*$/.test(id) ? `https://www.themoviedb.org/tv/${id}` : '';
+}
+
 const digitsPattern = /^\d*$/;
 
 function idText(id: number | null | undefined): string {

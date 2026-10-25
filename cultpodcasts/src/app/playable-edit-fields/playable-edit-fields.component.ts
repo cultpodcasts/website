@@ -37,7 +37,7 @@ import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { Person } from '../person.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
-import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tvdbEpisodeUrl } from '../playable-edit-form.util';
+import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tmdbMovieUrl, tvdbEpisodeUrl } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
 
 /** Filled parent-show identity ids after an immediate TV-show PATCH from episode Look up. */
@@ -125,6 +125,9 @@ export class PlayableEditFieldsComponent implements OnInit {
   protected readonly imdbUrl = imdbTitleUrl;
   /** TV: TheTVDB episode page (the TV variant edits an episode id). */
   protected readonly tvdbUrl = tvdbEpisodeUrl;
+  /** Film: TMDB movie page. TV episode TMDB has no single-id page URL here. */
+  protected readonly tmdbUrl = (id: string | null | undefined) =>
+    this.film() ? tmdbMovieUrl(id) : '';
   protected readonly typingFilter = isDesktopSubjectTypingEnabled();
   private readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
 

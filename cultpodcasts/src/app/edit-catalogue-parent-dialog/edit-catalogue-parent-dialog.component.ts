@@ -31,6 +31,8 @@ import {
 } from "../catalogue-parent-edit";
 import { ConfirmComponent } from "../confirm/confirm.component";
 import { CurationSubmitService } from "../curation-submit.service";
+import { openExternalUrl } from "../episode-form.util";
+import { imdbTitleUrl, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-form.util";
 import { buildPodcastLanguageOptions } from "../language-options.util";
 import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
@@ -96,6 +98,19 @@ export class EditCatalogueParentDialogComponent {
   protected readonly identityInvalid = signal(false);
   protected readonly lookingUpIdentity = signal(false);
   protected readonly identityLookupMessage = signal("");
+  protected readonly openExternalUrl = openExternalUrl;
+  protected readonly imdbUrl = imdbTitleUrl;
+  protected readonly tvdbUrl = tvdbSeriesUrl;
+  protected readonly tmdbUrl = tmdbTvShowUrl;
+
+  protected clearIdentityField(field: "imdbId" | "tvdbId" | "tmdbId"): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    this.model.set({ ...model, [field]: "" });
+    this.identityInvalid.set(false);
+  }
   protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
   protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();

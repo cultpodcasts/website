@@ -176,8 +176,10 @@ test.describe("browse filters in the URL fragment", () => {
 		await page.goto("/search/part");
 		await expect(page.getByText("Alpha english part")).toBeVisible();
 		await page.goto("/subject/Topic#lang=zz&show=Missing%20show");
-		await expect(page).toHaveURL(/\/subject\/Topic#lang=all$/);
+		// Tidy runs after search facets return; wait for results first so a slow
+		// POST under suite load does not fail the URL assert on the pre-tidy hash.
 		await expect(page.getByText("Beta kikuyu part")).toBeVisible();
+		await expect(page).toHaveURL(/\/subject\/Topic#lang=all$/);
 
 		await page.goBack();
 		await expect(page).toHaveURL(/\/search\/part$/);

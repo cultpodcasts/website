@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, imdbTitleUrl, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, imdbTitleUrl, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -141,6 +141,10 @@ describe('playable edit form', () => {
     expect(tvdbEpisodeUrl(0)).toBe('');
     expect(tvdbEpisodeUrl('')).toBe('');
     expect(tvdbEpisodeUrl('abc')).toBe('');
+    expect(tmdbMovieUrl('42')).toBe('https://www.themoviedb.org/movie/42');
+    expect(tmdbMovieUrl(0)).toBe('');
+    expect(tmdbTvShowUrl('255311')).toBe('https://www.themoviedb.org/tv/255311');
+    expect(tmdbTvShowUrl('')).toBe('');
   });
 
   describe('film', () => {
