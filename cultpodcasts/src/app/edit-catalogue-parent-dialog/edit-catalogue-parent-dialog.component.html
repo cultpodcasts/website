@@ -216,16 +216,43 @@
                     <mat-label>IMDb id</mat-label>
                     <input type="text" name="imdbId" placeholder="tt1234567" [(ngModel)]="m.imdbId"
                         (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open IMDb page"
+                        [disabled]="!imdbUrl(m.imdbId)"
+                        (click)="openExternalUrl(imdbUrl(m.imdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove IMDb id"
+                        [disabled]="!m.imdbId.trim()" (click)="clearIdentityField('imdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>TheTVDB id</mat-label>
                     <input type="text" inputmode="numeric" name="tvdbId" [(ngModel)]="m.tvdbId"
                         (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open TheTVDB page"
+                        [disabled]="!tvdbUrl(m.tvdbId)"
+                        (click)="openExternalUrl(tvdbUrl(m.tvdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB id"
+                        [disabled]="!m.tvdbId.trim()" (click)="clearIdentityField('tvdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>TMDB id</mat-label>
                     <input type="text" inputmode="numeric" name="tmdbId" [(ngModel)]="m.tmdbId"
                         (ngModelChange)="identityInvalid.set(false)" matInput>
+                    <button type="button" matIconButton matSuffix aria-label="Open TMDB page"
+                        [disabled]="!tmdbUrl(m.tmdbId)"
+                        (click)="openExternalUrl(tmdbUrl(m.tmdbId))">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button type="button" matIconButton matSuffix aria-label="Remove TMDB id"
+                        [disabled]="!m.tmdbId.trim()" (click)="clearIdentityField('tmdbId')">
+                        <mat-icon>clear</mat-icon>
+                    </button>
                     @if (identityInvalid()) {
                     <mat-hint id="identity-error" class="invalid">IMDb id is tt followed by 7 to 10 digits; TheTVDB and TMDB ids are digits only (blank clears).</mat-hint>
                     }

@@ -22,6 +22,10 @@ type Internals = {
   applyTitleRegexPreset(pattern: string): void;
   lookUpIdentity(): Promise<void>;
   identityLookupMessage(): string;
+  clearIdentityField(field: 'imdbId' | 'tvdbId' | 'tmdbId'): void;
+  imdbUrl(id: string): string;
+  tvdbUrl(id: string): string;
+  tmdbUrl(id: string): string;
   save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
@@ -219,6 +223,24 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(dialog.model()!.indexAllEpisodes).toBe(false);
     dialog.applyTitleRegexPreset("^(?'title'.*?)(?'suffix' \\| {podcastName})?$");
     expect(dialog.model()!.titleRegex).toBe("^(?'title'.*?)(?'suffix' \\| Nightly)?$");
+  });
+
+  it('builds IMDb / TheTVDB series / TMDB TV page URLs and clears identity fields', async () => {
+    const dialog = create();
+    await loadWith({
+      id: showId,
+      name: 'Nightly',
+      imdbId: 'tt39398650',
+      tmdbId: 255311,
+      tvdbId: 321
+    });
+    await settle();
+    expect(dialog.imdbUrl(dialog.model()!.imdbId)).toBe('https://www.imdb.com/title/tt39398650/');
+    expect(dialog.tvdbUrl(dialog.model()!.tvdbId)).toBe('https://www.thetvdb.com/dereferrer/series/321');
+    expect(dialog.tmdbUrl(dialog.model()!.tmdbId)).toBe('https://www.themoviedb.org/tv/255311');
+    dialog.clearIdentityField('imdbId');
+    expect(dialog.model()!.imdbId).toBe('');
+    expect(dialog.model()!.tmdbId).toBe('255311');
   });
 
   it('Look up fills blank show identity on the model without PATCH until Save', async () => {
