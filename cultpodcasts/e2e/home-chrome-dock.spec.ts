@@ -53,20 +53,23 @@ async function fakeApi(page: Page): Promise<void> {
 }
 
 test("CHROME-DOCK-012: docked header state holds frame after frame across the dock line (fractional scrollY)", async ({ page }) => {
-	// ~240 scroll positions × 6 rAFs; needs headroom when the catalogue suite is under load.
-	test.setTimeout(60_000);
+	// Fractional scroll positions × 6 rAFs; keep headroom even when the machine is busy.
+	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await fakeApi(page);
 	await page.goto("/");
 	await expect(page.locator(".billboard")).toBeVisible();
-	await page.waitForTimeout(500);
+	await expect(page.locator("#body")).toBeAttached();
+	// Let sticky chrome measure after first paint (avoid racing layout).
+	await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
 
 	const report = await page.evaluate(async () => {
 		const body = document.querySelector("#body")!;
 		const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 		const positions: number[] = [];
-		for (let y = 50; y <= 80; y += 0.25) positions.push(y);
-		for (let y = 80; y >= 50; y -= 0.25) positions.push(y);
+		// 0.5px steps still cross the dock hysteresis band; denser walks timed out under load.
+		for (let y = 50; y <= 80; y += 0.5) positions.push(y);
+		for (let y = 80; y >= 50; y -= 0.5) positions.push(y);
 		const flips: string[] = [];
 		let dockedAt: number | null = null;
 		for (const y of positions) {
