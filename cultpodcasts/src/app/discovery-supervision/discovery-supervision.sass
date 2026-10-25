@@ -34,51 +34,119 @@
     background: var(--mat-sys-error-container, #f9dedc)
     color: var(--mat-sys-on-error-container, #410e0b)
 
+.list-header
+  display: flex
+  flex-wrap: wrap
+  align-items: baseline
+  gap: 12px
+  h2
+    margin: 16px 0 8px
+
+.supervision-count, .supervision-empty
+  color: var(--mat-sys-on-surface-variant, inherit)
+
 .submission-list
   list-style: none
   padding: 0
-
-.submission-row
-  padding: 10px 0
-  border-bottom: 1px solid var(--mat-sys-outline-variant, #cac4d0)
+  margin: 0
+  display: flex
+  flex-direction: column
+  gap: 8px
+  max-width: 880px
 
 .submission-row__link
   display: flex
-  gap: 10px
+  gap: 12px
   align-items: center
+  padding: 12px 8px 12px 16px
+  border-radius: 12px
+  background: var(--mat-sys-surface-container-low, rgba(127,127,127,.06))
+  border: 1px solid var(--mat-sys-outline-variant, rgba(127,127,127,.25))
   color: inherit
   text-decoration: none
+  transition: background-color .15s ease
   &:hover, &:focus-visible
-    text-decoration: underline
+    background: var(--mat-sys-surface-container-high, rgba(127,127,127,.14))
+    outline: none
+
+.submission-row__body
+  display: flex
+  flex-direction: column
+  gap: 4px
+  flex: 1 1 auto
+  min-width: 0
+
+.submission-row__top
+  display: flex
+  align-items: center
+  gap: 10px
+
+.submission-row__main
+  font-weight: 500
+
+.submission-row__meta
+  font-size: 13px
+  color: var(--mat-sys-on-surface-variant, inherit)
+
+.submission-row__chevron
+  flex: none
+  color: var(--mat-sys-on-surface-variant, inherit)
 
 .submission-row__comment, .submission-row__failures
-  margin: 4px 0 0
+  font-size: 13px
 .submission-row__failures
   color: var(--mat-sys-error, #b3261e)
+
+.submission-header
+  margin-bottom: 4px
 
 .submission-header__title
   display: flex
   flex-wrap: wrap
   align-items: center
-  gap: 12px
+  gap: 8px 12px
   h2
     margin: 0
+
+.back-link
+  margin-left: -8px
 
 .submission-header__primary
   margin-left: auto
 
 .submission-header__meta
+  display: flex
+  flex-wrap: wrap
+  gap: 4px 16px
+  margin: 6px 0 0
+  font-size: 13px
   color: var(--mat-sys-on-surface-variant, inherit)
 
 .who
   font-weight: 600
   cursor: help
 
+.review-bar
+  display: flex
+  flex-wrap: wrap
+  align-items: center
+  justify-content: space-between
+  gap: 8px 16px
+  margin: 12px 0
+  padding: 8px 0
+  &.review-bar--sticky
+    position: sticky
+    top: 0
+    z-index: 2
+    padding: 8px 12px
+    border-radius: 12px
+    background: var(--mat-sys-surface-container, #f3edf7)
+    box-shadow: 0 1px 3px rgba(0,0,0,.15)
+
 .pick-summary
   display: flex
   flex-wrap: wrap
   gap: 6px
-  margin: 8px 0 16px
 
 .pick-legend
   font-size: 12px
@@ -93,13 +161,21 @@
     background: var(--mat-sys-error-container, rgba(198,40,40,.18))
     color: var(--mat-sys-on-error-container, inherit)
 
-.supervision-actions, .supervision-filter
+.supervision-actions
   display: flex
   flex-wrap: wrap
   gap: 8px
+  margin-left: auto
+
+.supervision-filter
   margin: 8px 0 16px
 
-.retry-panel, .release-panel
+.report-comment
+  margin: 0 0 8px
+  button mat-icon
+    margin-right: 4px
+
+.retry-panel
   padding: 12px 16px
   margin: 12px 0
   border-radius: 12px
@@ -111,8 +187,12 @@
   padding-left: 0
   list-style: none
 
+.more-panels
+  display: block
+  margin: 32px 0 8px
+  max-width: 880px
+
 .state-panel
-  margin: 24px 0 8px
   .state-panel__row
     display: flex
     flex-wrap: wrap
@@ -123,12 +203,25 @@
 .review-item
   display: flex
   flex-direction: column
-  gap: 6px
+  gap: 4px
   &[data-pick="removed"] discovery-item
-    opacity: .6
+    opacity: .5
+
+.review-item__bar
+  display: flex
+  align-items: center
+  justify-content: space-between
+  min-height: 40px
+
+.add-item-comment
+  margin-left: auto
+  color: var(--mat-sys-on-surface-variant, inherit)
+
+.review-item__comment-text
+  margin: 0
+  font-size: 13px
 
 .review-item__chip
-  align-self: flex-start
   font-size: 12px
   font-weight: 600
   line-height: 1.4
@@ -146,8 +239,16 @@
     background: var(--mat-sys-error-container, rgba(198,40,40,.18))
     color: var(--mat-sys-on-error-container, inherit)
 
-.history
-  margin-top: 24px
+.history__list
+  margin: 0
+  padding-left: 20px
+  font-size: 13px
+  li
+    margin: 2px 0
+
+.history__at
+  color: var(--mat-sys-on-surface-variant, inherit)
+  margin-right: 6px
 
 .in-progress
   font-weight: 600
