@@ -5,24 +5,72 @@
     @if (isSending()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     }
-    @if (submitState().endpointError) {
+    @if (submitState().reconciledOutcomes?.length) {
+    <div class="reconcile">
+        <p role="status">Save response was lost; here is what the server recorded.</p>
+        @if (reconciledSubmitted().length) {
+        <p><strong>Submitted ({{reconciledSubmitted().length}})</strong></p>
+        <ul>
+            @for (item of reconciledSubmitted(); track item.discoveryItemId) {
+            <li>
+                {{ item.episodeName || item.discoveryItemId }}
+                @if (item.showName) { — {{ item.showName }} }
+            </li>
+            }
+        </ul>
+        }
+        @if (reconciledErrored().length) {
+        <p><strong>Failed ({{reconciledErrored().length}})</strong></p>
+        <ul>
+            @for (item of reconciledErrored(); track item.discoveryItemId) {
+            <li>
+                {{ item.episodeName || item.discoveryItemId }}
+                @if (item.message) { — {{ item.message }} }
+            </li>
+            }
+        </ul>
+        }
+        @if (reconciledRejected().length) {
+        <p><strong>Rejected ({{reconciledRejected().length}})</strong></p>
+        <ul>
+            @for (item of reconciledRejected(); track item.discoveryItemId) {
+            <li>{{ item.episodeName || item.discoveryItemId }}</li>
+            }
+        </ul>
+        }
+        @if (reconciledPending().length) {
+        <p><strong>Still pending ({{reconciledPending().length}})</strong></p>
+        <ul>
+            @for (item of reconciledPending(); track item.discoveryItemId) {
+            <li>{{ item.episodeName || item.discoveryItemId }}</li>
+            }
+        </ul>
+        }
+    </div>
+    } @else if (submitState().endpointError) {
     <div>
         <p>Error submitting discovery</p>
         @if (submitState().errorMessage) {
         <p role="alert">{{submitState().errorMessage}}</p>
         }
     </div>
-
     }
     @if (submitState().hasErrors) {
     <div>
         <p>Error occurred submitting discovery-item</p>
+        @if (submitState().erroredItems.length) {
+        <ul>
+            @for (id of submitState().erroredItems; track id) {
+            <li>{{ id }}</li>
+            }
+        </ul>
+        }
     </div>
     }
 
 </mat-dialog-content>
 
-@if (submitState().endpointError || submitState().hasErrors) {
+@if (submitState().endpointError || submitState().hasErrors || submitState().reconciledOutcomes?.length) {
 <mat-dialog-actions>
     <button mat-raised-button (click)="close()">Close</button>
 </mat-dialog-actions>

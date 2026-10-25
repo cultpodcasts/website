@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, effect, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { Subject, firstValueFrom } from 'rxjs';
@@ -26,15 +26,25 @@ import { DiscoverySubmissionsService } from '../discovery-supervision/discovery-
 import { ADMIN_ROLE, canSeeSubmissions, describeSubmissionError, isSupervisorRole } from '../discovery-supervision/discovery-supervision';
 import { banFailureMessage, BannedChannel, matchesBannedChannel, saveResultIds } from '../discovery-ban';
 import { DiscoveryBanService } from '../discovery-ban.service';
+import { DiscoveryCurationSessionService } from '../discovery-curation-session.service';
 import {
   armCuratorSnapAfterScroll,
   observeCuratorSnapToolbar,
   syncCuratorSnapOffset,
   toggleCuratorSnapClass
 } from '../curator-snap';
+import { DiscoverySubmitOutcomeState } from '../discovery-submit-outcome-state.enum';
 
 const likelyMatchThreshold = 0.5;
 const autoHiddenThreshold = 0.05;
+
+function sameIdSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const set = new Set(a);
+  return b.every(id => set.has(id));
+}
 
 @Component({
   selector: 'app-discovery-api',
@@ -78,14 +88,21 @@ export class DiscoveryApiComponent implements AfterViewInit {
 
   private readonly submissions = inject(DiscoverySubmissionsService);
   private readonly banService = inject(DiscoveryBanService);
+  private readonly session = inject(DiscoveryCurationSessionService);
   protected readonly roles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
   protected readonly isAdmin = () => this.roles().includes(ADMIN_ROLE);
   protected readonly isSupervisor = () => isSupervisorRole(this.roles());
   protected readonly canSeeSubmissions = () => canSeeSubmissions(this.roles());
+  protected readonly pendingDocumentCount = () => this.session.snapshot()?.pendingDocumentIds.length ?? 0;
 
   private destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private snapOffsetObserver: ResizeObserver | undefined;
+  private applyingRemoteSelection = false;
+  /** Optimistic local votes not yet reflected in the session snapshot. */
+  private readonly pendingVoteIds = new Set<string>();
+  /** Last session `rev` applied into `selectedIds` from the snapshot effect. */
+  private lastAppliedSessionRev = -1;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -99,6 +116,35 @@ export class DiscoveryApiComponent implements AfterViewInit {
       this.snapOffsetObserver?.disconnect();
       this.snapOffsetObserver = undefined;
       toggleCuratorSnapClass(false);
+      this.session.disconnect();
+    });
+    // Optimistic UI is local authority while votes are in flight; session snapshot
+    // applies only when rev advances past lastAppliedSessionRev and no pending ids.
+    effect(() => {
+      const snap = this.session.snapshot();
+      const results = this.results();
+      if (!snap || !results) {
+        return;
+      }
+      this.clearAckedPendingVotes(snap);
+      if (this.pendingVoteIds.size > 0) {
+        return;
+      }
+      if (snap.rev <= this.lastAppliedSessionRev) {
+        return;
+      }
+      const known = new Set(results.map(r => r.id));
+      const next = snap.selectedResultIds.filter(id => known.has(id));
+      if (sameIdSet(this.selectedIds(), next)) {
+        this.lastAppliedSessionRev = snap.rev;
+        return;
+      }
+      this.applyingRemoteSelection = true;
+      this.selectedIds.set(next);
+      this.saveDisabled.set(next.length === 0);
+      this.closeDisabled.set(next.length > 0);
+      this.applyingRemoteSelection = false;
+      this.lastAppliedSessionRev = snap.rev;
     });
   }
 
@@ -109,6 +155,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
 
     // FakeAuth on the server cannot mint a curate token — wait for the browser.
     if (isPlatformBrowser(this.platformId)) {
+      void this.session.connect();
       this.loadResults(false);
     }
   }
@@ -158,6 +205,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
             this.isLoading.set(false);
             this.displaySave.set(this.hasQueueItems());
             this.resultsFilterSubject.next(this.resultsFilter());
+            void this.session.syncDocuments(resp.ids);
           },
           error: () => {
             this.isLoading.set(false);
@@ -167,6 +215,16 @@ export class DiscoveryApiComponent implements AfterViewInit {
     }).catch(() => {
       this.isLoading.set(false);
       this.isInError.set(true);
+    });
+  }
+
+  includePendingDocuments() {
+    void this.session.includePending('all').then(ok => {
+      if (ok) {
+        this.loadResults(this.includeHidden());
+        return;
+      }
+      this.snackBar.open('Could not include newer reports. Try again.', 'Ok', { duration: 10000 });
     });
   }
 
@@ -221,16 +279,21 @@ export class DiscoveryApiComponent implements AfterViewInit {
       ? this.results()?.filter(x => x.autoHidden && !this.selectedIds().includes(x.id)).length ?? 0
       : this.hiddenCount();
 
-    if (unselectedVisible === 0 && unreviewedHidden === 0) {
-      return true;
-    }
-
     const parts: string[] = [];
     if (unselectedVisible > 0) {
       parts.push(`${unselectedVisible} unselected visible result(s) will be rejected`);
     }
     if (unreviewedHidden > 0) {
       parts.push(`${unreviewedHidden} unreviewed auto-hidden result(s) will be rejected`);
+    }
+    const pendingDocs = this.pendingDocumentCount();
+    if (pendingDocs > 0) {
+      parts.push(`${pendingDocs} newer report(s) will be left for later`);
+    }
+    // Skip only when there is nothing to warn about — including pending newer reports
+    // when every visible item is already selected.
+    if (parts.length === 0) {
+      return true;
     }
 
     const dialogRef = this.dialog.open(ConfirmComponent, {
@@ -254,6 +317,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
     this.closeDisabled.set(true);
     this.submittedSubject.next(true);
 
+    const submittedResultIds = this.acceptedResultIds();
     const dialog = this.dialog
       .open<DiscoverySubmitComponent, any, SubmitDiscoveryState>(DiscoverySubmitComponent, { disableClose: true, autoFocus: true });
     dialog
@@ -269,6 +333,63 @@ export class DiscoveryApiComponent implements AfterViewInit {
           this.submitted.set(true);
           this.submittedSubject.next(true);
           this.selectedIds.set([]);
+          this.loadResults(false);
+          return;
+        }
+        if (result?.reconciledOutcomes?.length) {
+          const outcomes = result.reconciledOutcomes;
+          const accepted = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.Accepted).length;
+          const pending = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.Pending
+            || x.state === DiscoverySubmitOutcomeState.Unknown).length;
+          const rejected = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.Rejected).length;
+          const acceptErrors = outcomes.filter(x =>
+            x.state === DiscoverySubmitOutcomeState.AcceptError).length;
+          // Incomplete = any non-Accepted stamp (Pending/Unknown/Rejected/AcceptError).
+          const incomplete = outcomes.filter(x =>
+            x.state !== DiscoverySubmitOutcomeState.Accepted).length;
+          const parts: string[] = [];
+          if (accepted > 0) {
+            parts.push(`${accepted} submitted`);
+          }
+          if (pending > 0) {
+            parts.push(`${pending} still pending`);
+          }
+          if (rejected > 0) {
+            parts.push(`${rejected} rejected`);
+          }
+          if (acceptErrors > 0) {
+            parts.push(`${acceptErrors} failed`);
+          }
+          const msg = parts.length > 0
+            ? `Save response lost — ${parts.join(', ')}`
+            : (result.errorMessage ?? 'Save response lost; check items below.');
+          const review = (result.episodeIds?.length ?? 0) > 0;
+          const ref = this.snackBar.open(msg, review ? 'Review' : 'Ok', { duration: 15000 });
+          if (review) {
+            ref.onAction().subscribe(() => {
+              this.router.navigate(['/episodes', JSON.stringify(result.episodeIds)]);
+            });
+          }
+          // Full success only when every stamped id is Accepted — keep Save otherwise.
+          if (accepted > 0 && incomplete === 0) {
+            this.displaySave.set(false);
+            this.submitted.set(true);
+            this.submittedSubject.next(true);
+            this.selectedIds.set([]);
+            void this.session.clearVotes(
+              outcomes
+                .filter(x => x.state === DiscoverySubmitOutcomeState.Accepted)
+                .map(x => x.discoveryItemId));
+            this.loadResults(false);
+            return;
+          }
+          this.submitted.set(false);
+          this.submittedSubject.next(false);
+          this.closeDisabled.set(this.selectedIds().length > 0);
+          this.saveDisabled.set(this.selectedIds().length === 0);
           this.loadResults(false);
           return;
         }
@@ -297,6 +418,9 @@ export class DiscoveryApiComponent implements AfterViewInit {
           this.displaySave.set(false);
           this.submitted.set(true);
           this.submittedSubject.next(this.submitted());
+          void this.session.clearVotes(submittedResultIds);
+          this.selectedIds.set([]);
+          this.loadResults(false);
         } else {
           this.submitted.set(false);
           this.submittedSubject.next(this.submitted());
@@ -306,7 +430,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
       });
     await dialog.componentInstance.submit({
       documentIds: this.documentIds(),
-      resultIds: this.acceptedResultIds()
+      resultIds: submittedResultIds
     });
   }
 
@@ -363,6 +487,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
     }
     this.closeDisabled.set(this.selectedIds().length > 0);
     this.saveDisabled.set(this.selectedIds().length === 0);
+    if (!this.applyingRemoteSelection) {
+      this.pendingVoteIds.add($event.id);
+      void this.session.setVote($event.id, $event.selected);
+    }
   }
 
   selectLikelyMatches() {
@@ -373,6 +501,24 @@ export class DiscoveryApiComponent implements AfterViewInit {
     this.closeDisabled.set(this.selectedIds().length > 0);
     this.saveDisabled.set(this.selectedIds().length === 0);
     this.submittedSubject.next(false);
+    for (const id of likelyIds) {
+      this.pendingVoteIds.add(id);
+      void this.session.setVote(id, true);
+    }
+  }
+
+  /** Drop pending markers once the session snapshot agrees with local selection. */
+  private clearAckedPendingVotes(snap: { selectedResultIds: string[] }): void {
+    if (this.pendingVoteIds.size === 0) {
+      return;
+    }
+    const remote = new Set(snap.selectedResultIds);
+    const local = new Set(this.selectedIds());
+    for (const id of [...this.pendingVoteIds]) {
+      if (remote.has(id) === local.has(id)) {
+        this.pendingVoteIds.delete(id);
+      }
+    }
   }
 
   private normalizeResult(result: DiscoveryResult): DiscoveryResult {
@@ -387,10 +533,25 @@ export class DiscoveryApiComponent implements AfterViewInit {
     if (nextFilter === 'hidden' && !this.includeHidden()) {
       this.resultsFilter.set(nextFilter);
       this.loadResults(true);
+      this.scrollListOriginIntoView();
       return;
     }
     this.resultsFilter.set(nextFilter);
     this.resultsFilterSubject.next(this.resultsFilter());
+    this.scrollListOriginIntoView();
+  }
+
+  /** All / Selected / Hidden swaps the list under a sticky toolbar — reset scroll so the progress bar and filters stay in view. */
+  private scrollListOriginIntoView() {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    queueMicrotask(() => {
+      const origin = document.getElementById('progresswrapper')
+        ?? this.curatorToolbar?.nativeElement
+        ?? document.getElementById('results');
+      origin?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
   }
 
   /** Admin: free a report held with no live submission behind it. */

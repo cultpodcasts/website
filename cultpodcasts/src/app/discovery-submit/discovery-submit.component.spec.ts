@@ -65,6 +65,80 @@ describe('DiscoverySubmitComponent supervised submits', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('reconciles durable stamps after a Worker 500 so the curator sees what landed', async () => {
+    const { component } = create();
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1', 'r2'] });
+    const req = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    req.flush({ error: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
+    const outcome = await vi.waitFor(() =>
+      http.expectOne(new URL('/discovery-curation/submit-outcome', environment.api).toString()));
+    expect(outcome.request.body).toEqual({ ids: ['d1'], resultIds: ['r1', 'r2'] });
+    outcome.flush({
+      results: [
+        {
+          discoveryItemId: 'r1',
+          state: 'Accepted',
+          podcastId: 'p1',
+          episodeId: 'e1',
+          episodeName: 'Korean episode',
+          showName: 'Bible Fact'
+        },
+        { discoveryItemId: 'r2', state: 'Pending', episodeName: 'Still pending' }
+      ]
+    });
+    await done;
+    expect(component.submitState().reconciledOutcomes?.length).toBe(2);
+    expect(component.reconciledSubmitted().map(x => x.discoveryItemId)).toEqual(['r1']);
+    expect(component.reconciledPending().map(x => x.discoveryItemId)).toEqual(['r2']);
+    expect(component.submitState().episodeIds).toEqual(['p1/e1']);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('shows reconcile UI when every stamp is still Pending after a Worker 500', async () => {
+    const { component } = create();
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1', 'r2'] });
+    const req = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    req.flush({ error: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
+    const outcome = await vi.waitFor(() =>
+      http.expectOne(new URL('/discovery-curation/submit-outcome', environment.api).toString()));
+    outcome.flush({
+      results: [
+        { discoveryItemId: 'r1', state: 'Pending', episodeName: 'One' },
+        { discoveryItemId: 'r2', state: 'Pending', episodeName: 'Two' }
+      ]
+    });
+    await done;
+    expect(component.submitState().reconciledOutcomes?.length).toBe(2);
+    expect(component.reconciledSubmitted()).toEqual([]);
+    expect(component.reconciledPending().map(x => x.discoveryItemId)).toEqual(['r1', 'r2']);
+    expect(component.reconciledRejected()).toEqual([]);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('buckets Rejected separately from Still pending', async () => {
+    const { component } = create();
+    const done = component.submit({ documentIds: ['d1'], resultIds: ['r1', 'r2'] });
+    const req = await vi.waitFor(() => http.expectOne(new URL('/discovery-curation', environment.api).toString()));
+    req.flush({ error: 'Error' }, { status: 500, statusText: 'Internal Server Error' });
+    const outcome = await vi.waitFor(() =>
+      http.expectOne(new URL('/discovery-curation/submit-outcome', environment.api).toString()));
+    outcome.flush({
+      results: [
+        { discoveryItemId: 'r1', state: 'Rejected', episodeName: 'No' },
+        { discoveryItemId: 'r2', state: 'Unknown', episodeName: 'Maybe' }
+      ]
+    });
+    await done;
+    expect(component.reconciledRejected().map(x => x.discoveryItemId)).toEqual(['r1']);
+    expect(component.reconciledPending().map(x => x.discoveryItemId)).toEqual(['r2']);
+  });
+
+  it('does not call submit-outcome after a definitive 4xx', async () => {
+    await submit(req => req.flush(
+      { message: 'Reports already awaiting review', documentIds: ['d1'] }, { status: 409, statusText: 'Conflict' }));
+    http.expectNone(new URL('/discovery-curation/submit-outcome', environment.api).toString());
+  });
+
   it('asks about an unsupported language before the creating post', async () => {
     const { component, openDialog } = create('continue');
     const done = component.submit({ documentIds: ['d1'], resultIds: ['r1'] });
