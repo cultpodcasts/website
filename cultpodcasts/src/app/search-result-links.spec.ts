@@ -49,6 +49,18 @@ describe("search-result-links", () => {
     expect(youtubeUrl(homepage)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
   });
 
+  it("reads YouTube from nested services when youtubeId is absent (TV/news playables have no ids.youtube)", () => {
+    const moved: SearchResult = {
+      ...searchResult,
+      youtubeId: undefined,
+      spotifyId: undefined,
+      appleId: undefined,
+      podcastAppleId: undefined,
+      services: { youtube: { url: "https://www.youtube.com/watch?v=svcOnlyYt11" } }
+    };
+    expect(youtubeUrl(moved)?.toString()).toBe("https://www.youtube.com/watch?v=svcOnlyYt11");
+  });
+
   it("reconstructs platform URLs from compact ids", () => {
     expect(spotifyUrl(searchResult)?.toString()).toBe("https://open.spotify.com/episode/spotify123");
     expect(youtubeUrl(searchResult)?.toString()).toBe("https://www.youtube.com/watch?v=yt123456789");
