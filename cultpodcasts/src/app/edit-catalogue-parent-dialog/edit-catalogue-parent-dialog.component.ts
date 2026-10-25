@@ -10,11 +10,13 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatIconModule } from "@angular/material/icon";
 import { MatMenuModule } from "@angular/material/menu";
 import { MatSelectModule } from "@angular/material/select";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTabsModule } from "@angular/material/tabs";
 import { TextFieldModule } from "@angular/cdk/text-field";
 import { KeyValuePipe } from "@angular/common";
 import { firstValueFrom, forkJoin } from "rxjs";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
+import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
 import { CatalogueParentDto } from "../catalogue-parent.interface";
 import {
   CatalogueParentEditModel,
@@ -78,6 +80,7 @@ export class EditCatalogueParentDialogComponent {
   private readonly dialogRef = inject<MatDialogRef<EditCatalogueParentDialogComponent, EditCatalogueParentDialogResponse>>(MatDialogRef);
   private readonly curation = inject(CurationSubmitService);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly regexPresetsService = inject(RegexPresetsService);
 
   protected readonly label = hubParentLabel(this.data.hub);
@@ -91,6 +94,8 @@ export class EditCatalogueParentDialogComponent {
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
+  protected readonly lookingUpIdentity = signal(false);
+  protected readonly identityLookupMessage = signal("");
   protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
   protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
@@ -141,6 +146,57 @@ export class EditCatalogueParentDialogComponent {
       this.isInError.set(true);
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  protected async lookUpIdentity(): Promise<void> {
+    if (!this.isTv || this.lookingUpIdentity()) {
+      return;
+    }
+    const model = this.model();
+    const title = (this.original?.name ?? this.data.name).trim();
+    if (!model || !title) {
+      this.identityLookupMessage.set("Show name is required before looking up identity.");
+      return;
+    }
+    this.lookingUpIdentity.set(true);
+    this.identityLookupMessage.set("");
+    try {
+      const outcome = await runCatalogueIdentityLookup(
+        this.dialog,
+        (body) => this.curation.lookupCatalogueIdentity(body),
+        { kind: "TvShow", title }
+      );
+      if (outcome.kind === "cancelled") {
+        return;
+      }
+      if (outcome.kind === "noMatch" || outcome.kind === "error") {
+        this.identityLookupMessage.set(outcome.message);
+        this.snackBar.open(outcome.message, "Ok", { duration: 8000 });
+        return;
+      }
+      const filled = applyIdentityIds(
+        { imdbId: model.imdbId, tmdbId: model.tmdbId, tvdbId: model.tvdbId },
+        outcome.ids
+      );
+      if (!filled.changed) {
+        const msg = "Lookup matched, but no blank identity fields to fill.";
+        this.identityLookupMessage.set(msg);
+        this.snackBar.open(msg, "Ok", { duration: 8000 });
+        return;
+      }
+      this.model.set({
+        ...model,
+        imdbId: filled.imdbId ?? model.imdbId,
+        tmdbId: filled.tmdbId ?? model.tmdbId,
+        tvdbId: filled.tvdbId ?? model.tvdbId
+      });
+      this.identityInvalid.set(false);
+      const msg = "Filled blank show identity. Save to keep.";
+      this.identityLookupMessage.set(msg);
+      this.snackBar.open(msg, "Ok", { duration: 8000 });
+    } finally {
+      this.lookingUpIdentity.set(false);
     }
   }
 

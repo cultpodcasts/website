@@ -203,6 +203,15 @@
             </mat-tab>
             @if (isTv) {
             <mat-tab label="Identity">
+                <div class="identity-lookup">
+                    <button type="button" matButton="tonal" id="look-up-identity"
+                        [disabled]="lookingUpIdentity() || isSending()" (click)="lookUpIdentity()">
+                        Look up identity
+                    </button>
+                    @if (identityLookupMessage()) {
+                    <p class="identity-lookup-message" id="identity-lookup-message">{{ identityLookupMessage() }}</p>
+                    }
+                </div>
                 <mat-form-field class="full-width">
                     <mat-label>IMDb id</mat-label>
                     <input type="text" name="imdbId" placeholder="tt1234567" [(ngModel)]="m.imdbId"

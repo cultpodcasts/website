@@ -39,6 +39,23 @@ describe('CurationSubmitService', () => {
     httpMock.verify();
   });
 
+  it('POSTs /catalogue/identity/lookup with curate scope', async () => {
+    const pending = firstValueFrom(service.lookupCatalogueIdentity({
+      kind: 'Film',
+      title: 'Synthetic Film',
+      year: 2021
+    }));
+    const expected = new URL('/catalogue/identity/lookup', environment.api).toString();
+    const req = httpMock.expectOne(expected);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ kind: 'Film', title: 'Synthetic Film', year: 2021 });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ status: 'Matched', ids: { imdbId: 'tt0000001', tmdbId: 12 } });
+    const body = await pending;
+    expect(body.status).toBe('Matched');
+    expect(body.ids?.imdbId).toBe('tt0000001');
+  });
+
   it('POSTs /podcast/{id}/kind body { targetKind } with curate interceptor', async () => {
     const podcastId = 'Show A';
     const pending = firstValueFrom(service.postPodcastKind(podcastId, CatalogueParentKind.TvShow));

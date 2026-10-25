@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, model, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, model, OnInit, output, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -10,9 +10,17 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { firstValueFrom } from 'rxjs';
 import subjectNamesConfig from '../hoisted-subject-names.json';
+import {
+  applyIdentityIds,
+  filmReleaseYear,
+  runCatalogueIdentityLookup
+} from '../catalogue-identity-lookup';
+import { CatalogueIdentityLookupRequest } from '../catalogue-identity-lookup.interface';
+import { ConfirmComponent } from '../confirm/confirm.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
@@ -31,6 +39,13 @@ import { Person } from '../person.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
 import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tvdbEpisodeUrl } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
+
+/** Filled parent-show identity ids after an immediate TV-show PATCH from episode Look up. */
+export interface ParentIdentityFilled {
+  imdbId: string | null;
+  tmdbId: number | null;
+  tvdbId: number | null;
+}
 
 /**
  * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
@@ -67,6 +82,13 @@ export class PlayableEditFieldsComponent implements OnInit {
   /** "News Outlet" / "TV Show". */
   readonly parentLabel = input.required<string>();
   readonly parentName = input<string>('');
+  /** TV episode: parent show guid (for applying parentIds from lookup). */
+  readonly parentId = input<string>('');
+  readonly parentImdbId = input<string | null>(null);
+  readonly parentTmdbId = input<number | null>(null);
+  readonly parentTvdbId = input<number | null>(null);
+  /** Owning dialog updates its parent-id signals after an immediate show PATCH. */
+  readonly parentIdentityFilled = output<ParentIdentityFilled>();
   /** Every subject option (playable subjects first, then the catalogue). */
   readonly subjectNames = input<string[]>([]);
   /** The parent's default subject, hoisted to the top like the podcast default. */
@@ -86,8 +108,15 @@ export class PlayableEditFieldsComponent implements OnInit {
 
   private readonly dialog = inject(MatDialog);
   private readonly curation = inject(CurationSubmitService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);
   protected readonly featureSwitchService = inject(FeatureSwitchService);
+  protected readonly lookingUpIdentity = signal(false);
+  protected readonly identityLookupMessage = signal('');
+  /** Local mirrors so a second Look up sees filled show ids before input bindings refresh. */
+  private readonly parentImdbOverride = signal<string | null | undefined>(undefined);
+  private readonly parentTmdbOverride = signal<number | null | undefined>(undefined);
+  private readonly parentTvdbOverride = signal<number | null | undefined>(undefined);
 
   protected readonly FeatureSwitch = FeatureSwitch;
   protected readonly personLabel = personLabel;
@@ -131,6 +160,188 @@ export class PlayableEditFieldsComponent implements OnInit {
   protected clearField(control: FormControl<string>): void {
     control.setValue('');
     control.markAsDirty();
+  }
+
+  protected async lookUpIdentity(): Promise<void> {
+    if (this.lookingUpIdentity() || !this.identity()) {
+      return;
+    }
+    const form = this.form();
+    const title = form.controls.title.value.trim();
+    if (!title) {
+      this.identityLookupMessage.set('Enter a title before looking up identity.');
+      return;
+    }
+    this.lookingUpIdentity.set(true);
+    this.identityLookupMessage.set('');
+    try {
+      const request = this.buildLookupRequest(title);
+      const outcome = await runCatalogueIdentityLookup(
+        this.dialog,
+        (body) => this.curation.lookupCatalogueIdentity(body),
+        request
+      );
+      if (outcome.kind === 'cancelled') {
+        return;
+      }
+      if (outcome.kind === 'noMatch' || outcome.kind === 'error') {
+        this.identityLookupMessage.set(outcome.message);
+        this.snackBar.open(outcome.message, 'Ok', { duration: 8000 });
+        return;
+      }
+      const applied = this.applyMatchedIds(outcome.ids);
+      let parentSaved = false;
+      if (this.variant() === 'tv' && outcome.parentIds && this.parentId()) {
+        parentSaved = await this.patchParentBlanks(outcome.parentIds);
+      }
+      const parts: string[] = [];
+      if (applied) {
+        parts.push(
+          this.film()
+            ? 'Filled blank film identity. Save to keep.'
+            : 'Filled blank episode identity. Save to keep.'
+        );
+      }
+      if (parentSaved) {
+        parts.push('Blank show identity was already saved on the TV show.');
+      }
+      const msg = parts.length
+        ? parts.join(' ')
+        : 'Lookup matched, but no blank identity fields to fill.';
+      this.identityLookupMessage.set(msg);
+      this.snackBar.open(msg, 'Ok', { duration: 8000 });
+      this.cdr.markForCheck();
+    } finally {
+      this.lookingUpIdentity.set(false);
+    }
+  }
+
+  private effectiveParentImdbId(): string | null {
+    const override = this.parentImdbOverride();
+    return override !== undefined ? override : this.parentImdbId();
+  }
+
+  private effectiveParentTmdbId(): number | null {
+    const override = this.parentTmdbOverride();
+    return override !== undefined ? override : this.parentTmdbId();
+  }
+
+  private effectiveParentTvdbId(): number | null {
+    const override = this.parentTvdbOverride();
+    return override !== undefined ? override : this.parentTvdbId();
+  }
+
+  private buildLookupRequest(title: string): CatalogueIdentityLookupRequest {
+    if (this.film()) {
+      return {
+        kind: 'Film',
+        title,
+        year: filmReleaseYear(this.form().controls.release.value)
+      };
+    }
+    return {
+      kind: 'TvShowEpisode',
+      title,
+      showName: this.parentName().trim() || undefined,
+      showImdbId: this.effectiveParentImdbId() || undefined,
+      showTmdbId: this.effectiveParentTmdbId() ?? undefined,
+      showTvdbId: this.effectiveParentTvdbId() ?? undefined
+    };
+  }
+
+  private applyMatchedIds(ids: {
+    imdbId?: string | null;
+    tmdbId?: number | null;
+    tvdbId?: number | null;
+  }): boolean {
+    const form = this.form();
+    const filled = applyIdentityIds(
+      {
+        imdbId: form.controls.imdbId?.value,
+        tmdbId: form.controls.tmdbId?.value,
+        tvdbId: form.controls.tvdbId?.value
+      },
+      ids
+    );
+    if (filled.imdbId != null && form.controls.imdbId) {
+      form.controls.imdbId.setValue(filled.imdbId);
+      form.controls.imdbId.markAsDirty();
+    }
+    if (filled.tmdbId != null && form.controls.tmdbId) {
+      form.controls.tmdbId.setValue(filled.tmdbId);
+      form.controls.tmdbId.markAsDirty();
+    }
+    if (filled.tvdbId != null && form.controls.tvdbId) {
+      form.controls.tvdbId.setValue(filled.tvdbId);
+      form.controls.tvdbId.markAsDirty();
+    }
+    return filled.changed;
+  }
+
+  private async patchParentBlanks(parentIds: {
+    imdbId?: string | null;
+    tmdbId?: number | null;
+    tvdbId?: number | null;
+  }): Promise<boolean> {
+    const parentId = this.parentId();
+    if (!parentId) {
+      return false;
+    }
+    const filled = applyIdentityIds(
+      {
+        imdbId: this.effectiveParentImdbId(),
+        tmdbId: this.effectiveParentTmdbId(),
+        tvdbId: this.effectiveParentTvdbId()
+      },
+      parentIds
+    );
+    if (!filled.changed) {
+      return false;
+    }
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmComponent, {
+          data: {
+            title: 'Update TV show identity?',
+            question:
+              'Also fill blank show identity ids on the TV show now? This saves immediately and cannot be undone by cancelling this episode dialog.'
+          }
+        })
+        .afterClosed()
+    );
+    if ((confirmed as { result?: boolean } | undefined)?.result !== true) {
+      return false;
+    }
+    const body: {
+      imdbId?: string;
+      tmdbId?: number;
+      tvdbId?: number;
+    } = {};
+    if (filled.imdbId != null) {
+      body.imdbId = filled.imdbId;
+    }
+    if (filled.tmdbId != null) {
+      body.tmdbId = Number(filled.tmdbId);
+    }
+    if (filled.tvdbId != null) {
+      body.tvdbId = Number(filled.tvdbId);
+    }
+    try {
+      await firstValueFrom(this.curation.patchCatalogueParent('tv', parentId, body));
+      const next: ParentIdentityFilled = {
+        imdbId: filled.imdbId ?? this.effectiveParentImdbId(),
+        tmdbId: filled.tmdbId != null ? Number(filled.tmdbId) : this.effectiveParentTmdbId(),
+        tvdbId: filled.tvdbId != null ? Number(filled.tvdbId) : this.effectiveParentTvdbId()
+      };
+      this.parentImdbOverride.set(next.imdbId);
+      this.parentTmdbOverride.set(next.tmdbId);
+      this.parentTvdbOverride.set(next.tvdbId);
+      this.parentIdentityFilled.emit(next);
+      return true;
+    } catch {
+      this.snackBar.open('Matched show identity but saving the TV show failed.', 'Ok', { duration: 8000 });
+      return false;
+    }
   }
 
   protected regroupSubjects(): void {
