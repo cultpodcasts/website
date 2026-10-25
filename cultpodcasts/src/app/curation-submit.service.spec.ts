@@ -71,7 +71,7 @@ describe('CurationSubmitService', () => {
   });
 
   it('POSTs /episode/{podcastId}/{episodeId}/film with the title, or {} without one', async () => {
-    const pending = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', 'Synthetic Film'));
+    const pending = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', { title: 'Synthetic Film' }));
     const expected = new URL('/episode/podcast-1/episode-1/film', environment.api).toString();
     const req = httpMock.expectOne(expected);
     expect(req.request.method).toBe('POST');
@@ -80,7 +80,7 @@ describe('CurationSubmitService', () => {
     req.flush({ filmId: 'episode-1', name: 'Synthetic Film' }, { status: 202, statusText: 'Accepted' });
     expect((await pending).body?.name).toBe('Synthetic Film');
 
-    const untitled = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', null));
+    const untitled = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', {}));
     const untitledReq = httpMock.expectOne(expected);
     expect(untitledReq.request.body).toEqual({});
     untitledReq.flush({ filmId: 'episode-1' }, { status: 202, statusText: 'Accepted' });
