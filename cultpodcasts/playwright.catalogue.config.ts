@@ -25,6 +25,7 @@ export default defineConfig({
 		command: `npx ng serve --host 127.0.0.1 --port ${port} --ssl=false`,
 		url: origin,
 		reuseExistingServer: true,
-		timeout: 180_000
+		// Cold ng serve (SSR browser+server bundles) measured ~412s on a loaded machine; 180s was the readiness fail.
+		timeout: 600_000
 	}
 });
