@@ -14,9 +14,8 @@ export default defineConfig({
 	// Pre-push runs this after unit + main e2e; one retry covers load/hydration flakes.
 	retries: 1,
 	reporter: "list",
-	// Hero desc holds 9s for rotation; chrome-dock walks many scroll positions × 6 rAFs.
-	timeout: 90_000,
-	expect: { timeout: 15_000 },
+	// Hero desc holds 9s for rotation; chrome-dock walks fractional scroll positions × 6 rAFs.
+	timeout: 60_000,
 	use: {
 		baseURL: origin,
 		trace: "on-first-retry",

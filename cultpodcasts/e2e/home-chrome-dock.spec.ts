@@ -53,8 +53,8 @@ async function fakeApi(page: Page): Promise<void> {
 }
 
 test("CHROME-DOCK-012: docked header state holds frame after frame across the dock line (fractional scrollY)", async ({ page }) => {
-	// Fractional scroll positions × 6 rAFs; keep headroom even when the machine is busy.
-	test.setTimeout(120_000);
+	// Fractional 0.5px steps × 6 rAFs; suite timeout stays 60s (workers:1 keeps this healthy).
+	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await fakeApi(page);
 	await page.goto("/");

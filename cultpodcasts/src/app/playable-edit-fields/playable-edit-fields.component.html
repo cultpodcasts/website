@@ -196,11 +196,13 @@
         <mat-form-field class="full-width">
             <mat-label>TMDB id</mat-label>
             <input type="text" inputmode="numeric" [formControl]="f.controls.tmdbId" matInput>
+            @if (film()) {
             <button type="button" matIconButton matSuffix aria-label="Open TMDB page"
                 [disabled]="!tmdbUrl(f.controls.tmdbId.value)"
                 (click)="openExternalUrl(tmdbUrl(f.controls.tmdbId.value))">
                 <mat-icon>open_in_new</mat-icon>
             </button>
+            }
             <button type="button" matIconButton matSuffix aria-label="Remove TMDB id"
                 [disabled]="!f.controls.tmdbId.value.trim()" (click)="clearField(f.controls.tmdbId)">
                 <mat-icon>clear</mat-icon>
