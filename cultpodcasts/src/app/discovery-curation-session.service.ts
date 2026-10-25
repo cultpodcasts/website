@@ -6,6 +6,12 @@ import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { DISCOVERY_SUBMIT_SCOPE } from './discovery-supervision/discovery-supervision';
 import { DiscoveryCurationSessionSnapshot } from './discovery-curation-session.interface';
 
+/** Cap for WS reconnect delay (ms). */
+const RECONNECT_DELAY_CAP_MS = 30_000;
+/** After this many failed reconnects, wait a full minute until the next try. */
+const RECONNECT_SLOW_AFTER = 8;
+const RECONNECT_SLOW_MS = 60_000;
+
 /**
  * Global discovery curation room: HTTP + WebSocket sync of vote sets / sticky include.
  * Mode A: any vote ≥1 enables Save; supervised-only votes are marked provisional.
@@ -17,24 +23,37 @@ export class DiscoveryCurationSessionService implements OnDestroy {
 
   readonly snapshot = signal<DiscoveryCurationSessionSnapshot | null>(null);
   readonly connected = signal(false);
+  /** Set when the last HTTP session refresh failed (connect still attempts WS). */
+  readonly refreshError = signal(false);
 
   private socket: WebSocket | null = null;
   private closed = false;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnDestroy(): void {
-    this.closed = true;
-    this.socket?.close();
-    this.socket = null;
+    this.disconnect();
   }
 
   async connect(): Promise<void> {
     this.closed = false;
-    await this.refresh();
+    this.reconnectAttempt = 0;
+    this.clearReconnectTimer();
+    try {
+      await this.refresh();
+      this.refreshError.set(false);
+    } catch {
+      this.refreshError.set(true);
+      this.connected.set(false);
+    }
+    // WS can still sync state when the initial GET is transiently down.
     await this.openSocket();
   }
 
   disconnect(): void {
     this.closed = true;
+    this.clearReconnectTimer();
+    this.reconnectAttempt = 0;
     this.socket?.close();
     this.socket = null;
     this.connected.set(false);
@@ -51,33 +70,37 @@ export class DiscoveryCurationSessionService implements OnDestroy {
     return snap;
   }
 
-  async syncDocuments(documentIds: string[]): Promise<void> {
+  /** @returns false when auth/HTTP failed (callers may snackbar). */
+  async syncDocuments(documentIds: string[]): Promise<boolean> {
     try {
       const headers = await this.authHeaders();
       if (!headers) {
-        return;
+        return false;
       }
       const url = new URL('/discovery-curation/session/sync-documents', environment.api).toString();
       const snap = await firstValueFrom(
         this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
       this.snapshot.set(snap);
+      return true;
     } catch {
-      /* void callers must not surface unhandled rejections */
+      return false;
     }
   }
 
-  async includePending(documentIds: string[] | 'all' = 'all'): Promise<void> {
+  /** @returns false when auth/HTTP failed (callers may snackbar). */
+  async includePending(documentIds: string[] | 'all' = 'all'): Promise<boolean> {
     try {
       const headers = await this.authHeaders();
       if (!headers) {
-        return;
+        return false;
       }
       const url = new URL('/discovery-curation/session/include', environment.api).toString();
       const snap = await firstValueFrom(
         this.http.post<DiscoveryCurationSessionSnapshot>(url, { documentIds }, { headers }));
       this.snapshot.set(snap);
+      return true;
     } catch {
-      /* void callers must not surface unhandled rejections */
+      return false;
     }
   }
 
@@ -116,6 +139,9 @@ export class DiscoveryCurationSessionService implements OnDestroy {
   }
 
   private async openSocket(): Promise<void> {
+    if (this.closed) {
+      return;
+    }
     const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
         audience: 'https://api.cultpodcasts.com/',
@@ -123,6 +149,7 @@ export class DiscoveryCurationSessionService implements OnDestroy {
       }
     })).catch(() => '');
     if (!token || this.closed) {
+      this.scheduleReconnect();
       return;
     }
     const base = new URL('/discovery-curation/session/ws', environment.api);
@@ -131,12 +158,13 @@ export class DiscoveryCurationSessionService implements OnDestroy {
     try {
       this.socket?.close();
       this.socket = new WebSocket(wsUrl);
-      this.socket.onopen = () => this.connected.set(true);
+      this.socket.onopen = () => {
+        this.reconnectAttempt = 0;
+        this.connected.set(true);
+      };
       this.socket.onclose = () => {
         this.connected.set(false);
-        if (!this.closed) {
-          setTimeout(() => void this.openSocket(), 3000);
-        }
+        this.scheduleReconnect();
       };
       this.socket.onmessage = (ev) => {
         try {
@@ -145,11 +173,36 @@ export class DiscoveryCurationSessionService implements OnDestroy {
             this.snapshot.set(msg.state);
           }
         } catch {
-          /* ignore */
+          /* ignore malformed frames */
         }
       };
     } catch {
       this.connected.set(false);
+      this.scheduleReconnect();
+    }
+  }
+
+  /** Exponential backoff + jitter, capped; slows after RECONNECT_SLOW_AFTER failures. */
+  private scheduleReconnect(): void {
+    if (this.closed) {
+      return;
+    }
+    this.clearReconnectTimer();
+    const attempt = this.reconnectAttempt++;
+    const jitter = Math.floor(Math.random() * 500);
+    const delay = attempt >= RECONNECT_SLOW_AFTER
+      ? RECONNECT_SLOW_MS + jitter
+      : Math.min(RECONNECT_DELAY_CAP_MS, 1000 * Math.pow(2, attempt)) + jitter;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      void this.openSocket();
+    }, delay);
+  }
+
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer != null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
   }
 

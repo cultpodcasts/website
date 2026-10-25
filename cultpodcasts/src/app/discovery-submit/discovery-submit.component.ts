@@ -165,8 +165,8 @@ export class DiscoverySubmitComponent {
           this.close();
         }
       } else {
+        // Unexpected 2xx (HttpClient rejects non-2xx into catch). Treat as endpoint error.
         this.isSending.set(false);
-        // 4xx (conflict / bad request) are definitive — do not pretend the Save may have landed.
         this.submitState.update(s => ({
           ...s,
           endpointError: true,

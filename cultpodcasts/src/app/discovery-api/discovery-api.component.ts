@@ -38,6 +38,14 @@ import { DiscoverySubmitOutcomeState } from '../discovery-submit-outcome-state.e
 const likelyMatchThreshold = 0.5;
 const autoHiddenThreshold = 0.05;
 
+function sameIdSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const set = new Set(a);
+  return b.every(id => set.has(id));
+}
+
 @Component({
   selector: 'app-discovery-api',
   imports: [
@@ -91,6 +99,10 @@ export class DiscoveryApiComponent implements AfterViewInit {
   private readonly platformId = inject(PLATFORM_ID);
   private snapOffsetObserver: ResizeObserver | undefined;
   private applyingRemoteSelection = false;
+  /** Optimistic local votes not yet reflected in the session snapshot. */
+  private readonly pendingVoteIds = new Set<string>();
+  /** Last session `rev` applied into `selectedIds` from the snapshot effect. */
+  private lastAppliedSessionRev = -1;
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -106,19 +118,33 @@ export class DiscoveryApiComponent implements AfterViewInit {
       toggleCuratorSnapClass(false);
       this.session.disconnect();
     });
+    // Optimistic UI is local authority while votes are in flight; session snapshot
+    // applies only when rev advances past lastAppliedSessionRev and no pending ids.
     effect(() => {
       const snap = this.session.snapshot();
       const results = this.results();
       if (!snap || !results) {
         return;
       }
+      this.clearAckedPendingVotes(snap);
+      if (this.pendingVoteIds.size > 0) {
+        return;
+      }
+      if (snap.rev <= this.lastAppliedSessionRev) {
+        return;
+      }
       const known = new Set(results.map(r => r.id));
       const next = snap.selectedResultIds.filter(id => known.has(id));
+      if (sameIdSet(this.selectedIds(), next)) {
+        this.lastAppliedSessionRev = snap.rev;
+        return;
+      }
       this.applyingRemoteSelection = true;
       this.selectedIds.set(next);
       this.saveDisabled.set(next.length === 0);
       this.closeDisabled.set(next.length > 0);
       this.applyingRemoteSelection = false;
+      this.lastAppliedSessionRev = snap.rev;
     });
   }
 
@@ -193,7 +219,13 @@ export class DiscoveryApiComponent implements AfterViewInit {
   }
 
   includePendingDocuments() {
-    void this.session.includePending('all').then(() => this.loadResults(this.includeHidden()));
+    void this.session.includePending('all').then(ok => {
+      if (ok) {
+        this.loadResults(this.includeHidden());
+        return;
+      }
+      this.snackBar.open('Could not include newer reports. Try again.', 'Ok', { duration: 10000 });
+    });
   }
 
   visibleResults(): DiscoveryResult[] {
@@ -456,6 +488,7 @@ export class DiscoveryApiComponent implements AfterViewInit {
     this.closeDisabled.set(this.selectedIds().length > 0);
     this.saveDisabled.set(this.selectedIds().length === 0);
     if (!this.applyingRemoteSelection) {
+      this.pendingVoteIds.add($event.id);
       void this.session.setVote($event.id, $event.selected);
     }
   }
@@ -469,7 +502,22 @@ export class DiscoveryApiComponent implements AfterViewInit {
     this.saveDisabled.set(this.selectedIds().length === 0);
     this.submittedSubject.next(false);
     for (const id of likelyIds) {
+      this.pendingVoteIds.add(id);
       void this.session.setVote(id, true);
+    }
+  }
+
+  /** Drop pending markers once the session snapshot agrees with local selection. */
+  private clearAckedPendingVotes(snap: { selectedResultIds: string[] }): void {
+    if (this.pendingVoteIds.size === 0) {
+      return;
+    }
+    const remote = new Set(snap.selectedResultIds);
+    const local = new Set(this.selectedIds());
+    for (const id of [...this.pendingVoteIds]) {
+      if (remote.has(id) === local.has(id)) {
+        this.pendingVoteIds.delete(id);
+      }
     }
   }
 
