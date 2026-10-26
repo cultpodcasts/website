@@ -23,6 +23,7 @@ import { CatalogueIdentityLookupRequest } from '../catalogue-identity-lookup.int
 import { ConfirmComponent } from '../confirm/confirm.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
+import { FilmImagesEditComponent } from '../film-images-edit/film-images-edit.component';
 import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
 import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
 import {
@@ -52,8 +53,8 @@ export interface ParentIdentityFilled {
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
  * language), Guests, and Identity (id inputs: IMDb / TMDB, plus TheTVDB when the form has it) for the `tv` and `film` variants.
  * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
- * adds the IMDb / TMDB ids to Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
- * Urls / Images tabs: their PATCH does not edit service links.
+ * adds the IMDb / TMDB ids to Identity, and adds Trailers. All variants (news / TV / film) share Urls + Images tabs
+ * for `services` (page URL and image URL per key; same PATCH shape as film / podcast episode).
  */
 @Component({
   selector: 'app-playable-edit-fields',
@@ -71,6 +72,7 @@ export interface ParentIdentityFilled {
     MatSelectModule,
     MatTabsModule,
     FilmLinksEditComponent,
+    FilmImagesEditComponent,
     FilmTrailersEditComponent
   ],
   templateUrl: './playable-edit-fields.component.html',

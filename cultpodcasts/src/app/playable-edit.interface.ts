@@ -80,6 +80,12 @@ export interface PlayableFieldsChangeRequest {
   guests?: string[];
   /** `''` clears (English). */
   language?: string;
+  /**
+   * Per key; the server files a URL under the key it resolves to. `{ url: '', image: '' }` removes the key.
+   * Same wire as film; Worker OpenAPI documents it on news/TV PATCH via `playableFieldsChangeShape.services`
+   * (Api #193 / cultpodcasts-api 2.10.4+). Absolute http(s) only; Azure 400s before apply.
+   */
+  services?: Record<string, { url?: string; image?: string }>;
 }
 
 export type NewsReportChangeRequest = PlayableFieldsChangeRequest;
@@ -105,8 +111,6 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   imdbId?: string;
   /** TMDB movie id; `0` clears. */
   tmdbId?: number;
-  /** Per key; the server files a URL under the key it resolves to. `{ url: '', image: '' }` removes the key. */
-  services?: Record<string, { url?: string; image?: string }>;
   /** The trailers to keep, in order, with optional rename; the rest are removed. */
   trailers?: { id: string; title?: string }[];
   /**

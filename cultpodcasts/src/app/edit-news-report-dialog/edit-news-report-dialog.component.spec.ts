@@ -7,11 +7,15 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { newFilmLinkControl } from '../playable-edit-form.util';
 import { EditNewsReportDialogComponent } from './edit-news-report-dialog.component';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const api = (path: string) => new URL(path, environment.api).toString();
+const archiveUrl = 'https://archive.org/details/synthetic-playable';
+const iplayerUrl = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
+const youtubeUrl = 'https://www.youtube.com/watch?v=synthetic01';
 
 const synthetic = {
   id: reportId,
@@ -31,7 +35,8 @@ const synthetic = {
   language: null,
   guests: null,
   newsOrganisationId: outletId,
-  newsOrganisationName: 'Desk'
+  newsOrganisationName: 'Desk',
+  services: null as Record<string, { url?: string }> | null
 };
 
 describe('EditNewsReportDialogComponent', () => {
@@ -96,7 +101,7 @@ describe('EditNewsReportDialogComponent', () => {
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     expect(dialog.subjectNames()).toEqual(['Politics', 'Sport']);
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Urls', 'Images']);
     expect((fixture.nativeElement as HTMLElement).querySelector('#parent-name')?.textContent).toBe('Desk');
   });
 
@@ -115,6 +120,49 @@ describe('EditNewsReportDialogComponent', () => {
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
     await saving;
     expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'Desk' });
+  });
+
+  it('PATCHes Urls edits as film-shaped services on newsreport/{id}', async () => {
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
+    });
+    const links = dialog.form()!.controls.links!;
+    expect(links.getRawValue()).toEqual([
+      { url: archiveUrl, image: '' },
+      { url: iplayerUrl, image: '' }
+    ]);
+    links.removeAt(1);
+    links.push(newFilmLinkControl(youtubeUrl));
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/newsreport/${reportId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      services: {
+        youtube: { url: youtubeUrl },
+        bbcIplayer: { url: '', image: '' }
+      }
+    });
+    patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
+    await saving;
+    expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'Desk' });
+  });
+
+  it('PATCHes Images edits as services.*.image on newsreport/{id} while preserving url', async () => {
+    const imageUrl = 'https://cdn.example.test/archive.jpg';
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: archiveUrl } }
+    });
+    dialog.form()!.controls.links!.at(0).controls.image.setValue(imageUrl);
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/newsreport/${reportId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      services: {
+        internetArchive: { image: imageUrl }
+      }
+    });
+    patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
+    await saving;
   });
 
   it('closes with noChange and sends nothing when the form is untouched', async () => {

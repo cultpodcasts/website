@@ -103,7 +103,7 @@ describe('EditFilmDialogComponent', () => {
     expect(dialog.defaultSubject()).toBe('Arts');
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     const tabs = Array.from(element().querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Links', 'Trailers']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Urls', 'Images', 'Trailers']);
     expect(element().querySelector('h2')?.textContent).toBe('Edit Film');
     expect(element().querySelector('#parent-name')).toBeNull();
     const name = element().querySelector<HTMLInputElement>('#film-name');
@@ -179,7 +179,7 @@ describe('EditFilmDialogComponent', () => {
     const form = dialog.form()!;
     form.controls.imdbId!.setValue('');
     form.controls.tmdbId!.setValue('99');
-    form.controls.links!.at(0).setValue('https://archive.org/details/synthetic-film-restored');
+    form.controls.links!.at(0).controls.url.setValue('https://archive.org/details/synthetic-film-restored');
     form.controls.trailers!.removeAt(1);
     form.controls.trailers!.at(0).controls.title.setValue('Synthetic Trailer');
     const saving = dialog.onSubmit();

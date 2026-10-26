@@ -162,7 +162,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await snack.getByRole("button", { name: "Edit" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Urls", "Images"]);
 		await expect(dialog.locator("#parent-name")).toHaveText("Desk");
 		await dialog.getByLabel("Title").fill("Bulletin (edited)");
 		await shot(page, "news-edit-details");
@@ -230,7 +230,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit TV Episode" })).toBeVisible();
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity", "Urls", "Images"]);
 		await expect(dialog.locator("#parent-name")).toHaveText("Nightly");
 		await dialog.getByLabel("Description").fill("Edited synthetic description");
 		await shot(page, "tv-edit-details");
@@ -282,7 +282,7 @@ test.describe("film curator edit", () => {
 			return json(route, {}, 404);
 		});
 		const dialog = await openFromFilmPage(page);
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity", "Links", "Trailers"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Meta", "Guests", "Identity", "Urls", "Images", "Trailers"]);
 		await expect(dialog.locator("#parent-name")).toHaveCount(0);
 		const name = dialog.getByRole("textbox", { name: "Name" });
 		await expect(name).toHaveValue("One Off");
