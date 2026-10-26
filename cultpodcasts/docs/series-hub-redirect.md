@@ -60,8 +60,9 @@ like the podcast Edit Episode dialog:
 | Meta | Release (date), duration (`h:mm:ss`), subjects, search terms, hash tag, language (English = unset, sends `""`) |
 | Guests | Guest select, Add person / Edit person |
 | Identity (TV only) | IMDb and TheTVDB URLs (omit = unchanged, `""` clears). Replaces the old identity-only dialog |
+| Links | `services` URLs via `app-film-links-edit` (same wire / PATCH shape as film) |
 
-There are no Urls / Images tabs: the playable PATCH does not edit service links. Parents are not renamed here.
+There are no podcast Urls / Images tabs. The Links tab edits `services` on the news/TV playable PATCH. Parents are not renamed here.
 
 On these pages the curator menu has no **Post Episode** (it is podcast-only), and the search bar is not scoped to the
 outlet / show: a search goes to `/search/{term}`.
