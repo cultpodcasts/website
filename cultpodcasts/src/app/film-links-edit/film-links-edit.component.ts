@@ -1,16 +1,16 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { FormArray, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { hasNonEmptyUrlValue, openExternalUrl } from '../episode-form.util';
-import { newFilmLinkControl } from '../playable-edit-form.util';
+import { newFilmLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
 
 /**
- * Edit film: the film's own links (YouTube, BBC iPlayer, Internet Archive, …), one URL per row. The service is taken
- * from the URL, so there is no key to pick; removing a row removes that link from the film.
+ * Playable Urls tab (film / news / TV): one page URL per service row. The service is taken from the URL;
+ * removing a row removes that service (and its image) from the PATCH.
  */
 @Component({
   selector: 'app-film-links-edit',
@@ -20,16 +20,16 @@ import { serviceLabelForUrl } from '../service-catalog';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilmLinksEditComponent {
-  readonly links = input.required<FormArray<FormControl<string>>>();
+  readonly links = input.required<FormArray<PlayableServiceLinkGroup>>();
   protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
   protected readonly openExternalUrl = openExternalUrl;
 
   protected label(value: string): string {
-    return serviceLabelForUrl(value) || 'Link';
+    return serviceLabelForUrl(value) || 'URL';
   }
 
   add(): void {
-    this.links().push(newFilmLinkControl());
+    this.links().push(newFilmLinkGroup());
     this.links().markAsDirty();
   }
 

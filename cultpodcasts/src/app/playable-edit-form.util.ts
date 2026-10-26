@@ -44,13 +44,20 @@ export interface PlayableEditForm {
   /** TV: TheTVDB episode id as digits; blank clears. */
   tvdbId?: FormControl<string>;
   /**
-   * News / TV / film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL.
-   * Always built by `buildPlayableEditForm`; optional on the type so non-playable form consumers stay compatible.
+   * News / TV / film: one row per service link (YouTube, BBC iPlayer, Internet Archive, …). The service key comes
+   * from the URL; `image` is the matching `services.*.image`. Shared by the Urls and Images tabs (podcast-episode
+   * naming). Always built by `buildPlayableEditForm`; optional on the type so non-playable form consumers stay compatible.
    */
-  links?: FormArray<FormControl<string>>;
+  links?: FormArray<PlayableServiceLinkGroup>;
   /** Film: the trailers to keep, in display order, each with an editable title. */
   trailers?: FormArray<FilmTrailerEditGroup>;
 }
+
+/** One playable service row: page URL + optional image URL (same shape as episode `additionalUrls`). */
+export type PlayableServiceLinkGroup = FormGroup<{
+  url: FormControl<string>;
+  image: FormControl<string>;
+}>;
 
 export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
 
@@ -121,8 +128,9 @@ export function filmLinkValidator(existing: ReadonlySet<string> = new Set()): Va
 export function filmLinksDistinctValidator(existing: ReadonlyMap<string, string> = new Map()): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const seen = new Set<string>();
-    for (const value of (control as FormArray<FormControl<string>>).getRawValue()) {
-      const key = existing.get(value.trim()) ?? filmLinkKey(value);
+    for (const row of (control as FormArray<PlayableServiceLinkGroup>).getRawValue()) {
+      const value = (row.url ?? '').trim();
+      const key = existing.get(value) ?? filmLinkKey(value);
       if (!key) {
         continue;
       }
@@ -160,8 +168,21 @@ export function filmExistingLinks(services: PlayableFieldsDto['services']): Map<
   return links;
 }
 
-export function newFilmLinkControl(value = '', existing: ReadonlySet<string> = new Set()): FormControl<string> {
-  return new FormControl(value, { nonNullable: true, validators: [filmLinkValidator(existing)] });
+/** One Urls/Images row: absolute URL (+ optional image). Existing catalogue URLs skip re-validation. */
+export function newFilmLinkGroup(
+  url = '',
+  image = '',
+  existing: ReadonlySet<string> = new Set()
+): PlayableServiceLinkGroup {
+  return new FormGroup({
+    url: new FormControl(url, { nonNullable: true, validators: [filmLinkValidator(existing)] }),
+    image: new FormControl(image, { nonNullable: true })
+  });
+}
+
+/** @deprecated Prefer `newFilmLinkGroup`; kept for call sites that only set a URL. */
+export function newFilmLinkControl(value = '', existing: ReadonlySet<string> = new Set()): PlayableServiceLinkGroup {
+  return newFilmLinkGroup(value, '', existing);
 }
 
 export function newFilmTrailerGroup(id: string, title: string): FilmTrailerEditGroup {
@@ -213,11 +234,13 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     lang: new FormControl(episodeLanguageFormValue(dto.language), { nonNullable: true }),
     guests: new FormControl<string[]>([...(dto.guests ?? [])], { nonNullable: true })
   };
-  // Film / TV / news all edit `services` via the Links tab (same wire shape as film PATCH).
+  // Film / TV / news all edit `services` via Urls + Images tabs (same wire shape as film PATCH).
   const existingLinks = filmExistingLinks(dto.services);
   const existingUrls = new Set(existingLinks.keys());
   controls.links = new FormArray(
-    [...existingLinks.keys()].map(url => newFilmLinkControl(url, existingUrls)),
+    [...existingLinks.entries()].map(([url, key]) =>
+      newFilmLinkGroup(url, uriText(dto.services?.[key]?.image), existingUrls)
+    ),
     { validators: [filmLinksDistinctValidator(existingLinks)] }
   );
   if (variant === 'film') {
@@ -358,27 +381,43 @@ export function filmChanges(
 
 /**
  * The playable `services` patch (news / TV / film): each link files under the key its URL resolves to (as the
- * server does); a key that no link resolves to any more is removed (`url` and `image` blank). Null when unchanged.
+ * server does); a key that no link resolves to any more is removed (`url` and `image` blank). Diffs `url` and
+ * `image` independently (emit only changed members) so image-only edits do not wipe `url` and vice versa.
+ * Null when unchanged.
  */
 export function filmServiceChanges(
   previous: PlayableFieldsDto['services'],
-  links: readonly string[]
+  links: readonly { url: string; image?: string }[]
 ): Record<string, { url?: string; image?: string }> | null {
   const existing = filmExistingLinks(previous);
-  const before = new Map<string, string>([...existing].map(([url, key]) => [key, url]));
-  const after = new Map<string, string>();
-  for (const value of links) {
-    const url = value.trim();
+  const beforeUrl = new Map<string, string>([...existing].map(([url, key]) => [key, url]));
+  const beforeImage = new Map<string, string>();
+  for (const [key, link] of Object.entries(previous ?? {})) {
+    beforeImage.set(key, uriText(link?.image));
+  }
+  const afterUrl = new Map<string, string>();
+  const afterImage = new Map<string, string>();
+  for (const row of links) {
+    const url = (row.url ?? '').trim();
     // An unchanged link keeps the key it is stored under; a new one files under the key its URL resolves to.
     const key = existing.get(url) ?? filmLinkKey(url);
-    if (key) after.set(key, url);
+    if (key) {
+      afterUrl.set(key, url);
+      afterImage.set(key, (row.image ?? '').trim());
+    }
   }
   const changes: Record<string, { url?: string; image?: string }> = {};
-  for (const [key, url] of after) {
-    if (before.get(key) !== url) changes[key] = { url };
+  for (const [key, url] of afterUrl) {
+    const prevUrl = beforeUrl.get(key);
+    const prevImage = beforeImage.get(key) ?? '';
+    const image = afterImage.get(key) ?? '';
+    const entry: { url?: string; image?: string } = {};
+    if (prevUrl !== url) entry.url = url;
+    if (prevImage !== image) entry.image = image;
+    if (Object.keys(entry).length > 0) changes[key] = entry;
   }
-  for (const key of before.keys()) {
-    if (!after.has(key)) changes[key] = { url: '', image: '' };
+  for (const key of beforeUrl.keys()) {
+    if (!afterUrl.has(key)) changes[key] = { url: '', image: '' };
   }
   return Object.keys(changes).length > 0 ? changes : null;
 }

@@ -96,13 +96,16 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
   });
 
-  it('news and TV Links tab PATCH services the same way as film', () => {
+  it('news and TV Urls tab PATCH services the same way as film', () => {
     const archive = 'https://archive.org/details/synthetic-playable';
     const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
     const youtube = 'https://www.youtube.com/watch?v=synthetic01';
     const news = report({ services: { internetArchive: { url: archive }, bbcIplayer: { url: iplayer } } });
     const newsForm = buildPlayableEditForm(news);
-    expect(newsForm.controls.links!.getRawValue()).toEqual([archive, iplayer]);
+    expect(newsForm.controls.links!.getRawValue()).toEqual([
+      { url: archive, image: '' },
+      { url: iplayer, image: '' }
+    ]);
     expect(playableFieldsChanges(news, newsForm.getRawValue())).toEqual({});
     newsForm.controls.links!.removeAt(1);
     newsForm.controls.links!.push(newFilmLinkControl(youtube));
@@ -126,6 +129,25 @@ describe('playable edit form', () => {
     expect(tvShowEpisodeChanges(tv, tvForm.getRawValue()).services).toEqual({
       youtube: { url: youtube },
       bbcIplayer: { url: '', image: '' }
+    });
+  });
+
+  it('PATCHes image-only service edits without dropping url, and seeds images from dto.services', () => {
+    const archive = 'https://archive.org/details/synthetic-playable';
+    const oldImage = 'https://cdn.example.test/archive-old.jpg';
+    const newImage = 'https://cdn.example.test/archive-new.jpg';
+    const news = report({
+      services: { internetArchive: { url: archive, image: oldImage } }
+    });
+    const form = buildPlayableEditForm(news);
+    expect(form.controls.links!.getRawValue()).toEqual([{ url: archive, image: oldImage }]);
+    form.controls.links!.at(0).controls.image.setValue(newImage);
+    expect(playableFieldsChanges(news, form.getRawValue()).services).toEqual({
+      internetArchive: { image: newImage }
+    });
+    form.controls.links!.at(0).controls.image.setValue('');
+    expect(playableFieldsChanges(news, form.getRawValue()).services).toEqual({
+      internetArchive: { image: '' }
     });
   });
 
@@ -262,7 +284,10 @@ describe('playable edit form', () => {
       const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-film';
       const previous = film({ services: { internetArchive: { url: archive }, bbcIplayer: { url: iplayer } } });
       const form = buildPlayableEditForm(previous, 'film');
-      expect(form.controls.links!.getRawValue()).toEqual([archive, iplayer]);
+      expect(form.controls.links!.getRawValue()).toEqual([
+        { url: archive, image: '' },
+        { url: iplayer, image: '' }
+      ]);
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
 
       form.controls.links!.removeAt(1);
@@ -280,13 +305,13 @@ describe('playable edit form', () => {
       const form = buildPlayableEditForm(film0, 'film');
       const links = form.controls.links!;
       links.push(newFilmLinkControl('not a url'));
-      expect(links.at(0).hasError('filmLinkUrl')).toBe(true);
-      links.at(0).setValue('https://synthetic-unknown-service.example/watch/1');
+      expect(links.at(0).controls.url.hasError('filmLinkUrl')).toBe(true);
+      links.at(0).controls.url.setValue('https://synthetic-unknown-service.example/watch/1');
       expect(links.at(0).valid).toBe(true);
       expect(filmChanges(film0, form.getRawValue()).services).toEqual({
         syntheticunknownserviceexample: { url: 'https://synthetic-unknown-service.example/watch/1' }
       });
-      links.at(0).setValue('https://www.youtube.com/watch?v=synthetic01');
+      links.at(0).controls.url.setValue('https://www.youtube.com/watch?v=synthetic01');
       links.push(newFilmLinkControl('https://www.youtube.com/watch?v=synthetic02'));
       expect(links.hasError('filmLinkDuplicate')).toBe(true);
       expect(form.valid).toBe(false);

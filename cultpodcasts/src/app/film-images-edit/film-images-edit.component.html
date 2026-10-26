@@ -1,0 +1,19 @@
+@for (group of links().controls; track group) {
+<mat-form-field class="full-width">
+    <mat-label>{{ label(group.controls.url.value) }}</mat-label>
+    <input type="url" matInput [formControl]="group.controls.image" placeholder="https://">
+    <button type="button" matIconButton matSuffix aria-label="Preview image"
+        [disabled]="!hasNonEmptyUrlValue(group.controls.image.value)"
+        (click)="previewImage(previewKey(group.controls.url.value))">
+        <mat-icon>visibility</mat-icon>
+    </button>
+    <button type="button" matIconButton matSuffix aria-label="Remove image"
+        [disabled]="!hasNonEmptyUrlValue(group.controls.image.value)"
+        (click)="clearImage(group.controls.image)">
+        <mat-icon>clear</mat-icon>
+    </button>
+</mat-form-field>
+}
+@if (links().length === 0) {
+<p class="empty">No service URLs — add one on the Urls tab to edit its image.</p>
+}

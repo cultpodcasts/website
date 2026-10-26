@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { FormArray, FormControl } from '@angular/forms';
-import { newFilmLinkControl } from '../playable-edit-form.util';
+import { FormArray } from '@angular/forms';
+import { newFilmLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { FilmLinksEditComponent } from './film-links-edit.component';
 
 describe('FilmLinksEditComponent', () => {
   let fixture: ComponentFixture<FilmLinksEditComponent>;
-  let links: FormArray<FormControl<string>>;
+  let links: FormArray<PlayableServiceLinkGroup>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FilmLinksEditComponent],
       providers: [provideZonelessChangeDetection()],
     }).compileComponents();
-    links = new FormArray([newFilmLinkControl('https://www.youtube.com/watch?v=synthetic01')]);
+    links = new FormArray([newFilmLinkGroup('https://www.youtube.com/watch?v=synthetic01')]);
     fixture = TestBed.createComponent(FilmLinksEditComponent);
     fixture.componentRef.setInput('links', links);
     fixture.detectChanges();
@@ -31,7 +31,7 @@ describe('FilmLinksEditComponent', () => {
     fixture.componentInstance.add();
     expect(links.length).toBe(2);
     fixture.componentInstance.remove(0);
-    expect(links.getRawValue()).toEqual(['']);
+    expect(links.getRawValue()).toEqual([{ url: '', image: '' }]);
     expect(links.dirty).toBe(true);
   });
 });

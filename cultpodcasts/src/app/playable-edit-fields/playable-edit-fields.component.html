@@ -233,8 +233,11 @@
     </mat-tab>
     }
     @if (f.controls.links) {
-    <mat-tab label="Links">
+    <mat-tab label="Urls">
         <app-film-links-edit [links]="f.controls.links"></app-film-links-edit>
+    </mat-tab>
+    <mat-tab label="Images">
+        <app-film-images-edit [links]="f.controls.links"></app-film-images-edit>
     </mat-tab>
     }
     @if (f.controls.trailers) {

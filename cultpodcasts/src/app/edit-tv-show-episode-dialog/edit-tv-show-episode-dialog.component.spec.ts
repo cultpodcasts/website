@@ -100,7 +100,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     expect(dialog.parentName()).toBe('Nightly');
     expect(dialog.defaultSubject()).toBeNull();
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Links']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Urls', 'Images']);
     expect(dialog.form()!.getRawValue()).toEqual(expect.objectContaining({
       imdbId: 'tt0000001',
       tvdbId: '',
@@ -136,13 +136,16 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, response: { blueskyPostDeleted: true }, parentName: 'Nightly' });
   });
 
-  it('PATCHes Links edits as film-shaped services on tvshowepisode/{id}', async () => {
+  it('PATCHes Urls edits as film-shaped services on tvshowepisode/{id}', async () => {
     const dialog = await load({
       ...synthetic,
       services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
     });
     const links = dialog.form()!.controls.links!;
-    expect(links.getRawValue()).toEqual([archiveUrl, iplayerUrl]);
+    expect(links.getRawValue()).toEqual([
+      { url: archiveUrl, image: '' },
+      { url: iplayerUrl, image: '' }
+    ]);
     links.removeAt(1);
     links.push(newFilmLinkControl(youtubeUrl));
     const saving = dialog.onSubmit();
@@ -156,5 +159,23 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     patch.flush({ blueskyPostDeleted: false }, { status: 202, statusText: 'Accepted' });
     await saving;
     expect(close).toHaveBeenCalledWith({ updated: true, response: { blueskyPostDeleted: false }, parentName: 'Nightly' });
+  });
+
+  it('PATCHes Images edits as services.*.image on tvshowepisode/{id} while preserving url', async () => {
+    const imageUrl = 'https://cdn.example.test/archive.jpg';
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: archiveUrl } }
+    });
+    dialog.form()!.controls.links!.at(0).controls.image.setValue(imageUrl);
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      services: {
+        internetArchive: { image: imageUrl }
+      }
+    });
+    patch.flush({ blueskyPostDeleted: false }, { status: 202, statusText: 'Accepted' });
+    await saving;
   });
 });
