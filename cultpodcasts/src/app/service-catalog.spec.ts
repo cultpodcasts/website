@@ -9,6 +9,7 @@ import {
   SERVICE_CATALOG,
   expandSvc,
   resolveServiceKey,
+  serviceDescriptor,
   serviceLabelForUrl
 } from "./service-catalog";
 import { streamingServiceKeys } from "./streaming-submit-contract";
@@ -46,6 +47,18 @@ describe("service-catalog", () => {
   it("expands a compact Tubi svc token to the canonical /movies/{id} URL", () => {
     expect(expandSvc("tubi:movies/1")).toEqual([
       { key: "tubi", url: new URL("https://tubitv.com/movies/1") }
+    ]);
+  });
+
+  it("expands a compact ABC iview svc token to the canonical /video/ URL", () => {
+    expect(expandSvc("abcIview:LE1717H003S00")).toEqual([
+      { key: "abcIview", url: new URL("https://iview.abc.net.au/video/LE1717H003S00") }
+    ]);
+  });
+
+  it("canonicalises legacy iviewabcnetau full-URL svc to abcIview for Watch/svcUrl", () => {
+    expect(expandSvc("iviewabcnetau:uhttps://iview.abc.net.au/video/LE1717H003S00")).toEqual([
+      { key: "abcIview", url: new URL("https://iview.abc.net.au/video/LE1717H003S00") }
     ]);
   });
 
@@ -91,7 +104,17 @@ describe("service-catalog", () => {
     expect(resolveServiceKey(new URL("https://evilardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ"))).not.toBe("ard");
     expect(resolveServiceKey(new URL("https://www.canalplus.com/series/example-slug/h/12345_67890"))).toBe("canalPlus");
     expect(resolveServiceKey(new URL("https://evilcanalplus.com/series/example-slug/h/12345_67890"))).not.toBe("canalPlus");
+    expect(resolveServiceKey(new URL("https://iview.abc.net.au/video/LE1717H003S00"))).toBe("abcIview");
+    expect(resolveServiceKey(new URL("https://eviliview.abc.net.au/video/LE1717H003S00"))).not.toBe("abcIview");
     expect(resolveServiceKey(new URL("https://notmax.com/watch"))).toBe("notmaxcom");
+  });
+
+  it("aliases legacy unknown-host slug iviewabcnetau to ABC iview display metadata", () => {
+    const descriptor = serviceDescriptor("iviewabcnetau");
+    expect(descriptor.key).toBe("abcIview");
+    expect(descriptor.displayName).toBe("ABC iview");
+    expect(descriptor.icon).toBe("abc-iview");
+    expect(descriptor.wideImage).toBe(true);
   });
 
   it("registers every catalog icon name in the generated svgIconLiterals map", () => {
@@ -161,6 +184,7 @@ describe("service-catalog", () => {
     expect(serviceLabelForUrl("https://www.zdf.de/serien/example-slug")).toBe("ZDF");
     expect(serviceLabelForUrl("https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ")).toBe("ARD");
     expect(serviceLabelForUrl("https://www.canalplus.com/series/example-slug/h/12345_67890")).toBe("Canal+");
+    expect(serviceLabelForUrl("https://iview.abc.net.au/video/LE1717H003S00")).toBe("ABC iview");
     expect(serviceLabelForUrl("https://www.playsuisse.ch/watch/example")).toBe("Play Suisse");
     expect(serviceLabelForUrl("https://www.rts.ch/play/tv/example-show/video/example-episode")).toBe("Play RTS");
   });
@@ -177,7 +201,7 @@ describe("service-catalog", () => {
   it("does not treat other as a defined listen service", () => {
     expect(SERVICE_CATALOG.map((d) => d.key)).not.toContain("other");
     expect(SERVICE_CATALOG.map((d) => d.key)).toEqual(
-      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv", "arte", "hulu", "peacock", "appleTvPlus", "zdf", "ard", "canalPlus"])
+      expect.arrayContaining(["paramountPlus", "hboMax", "playSuisse", "playRts", "tvnzPlus", "itvx", "channel4", "fawesome", "disneyPlus", "discoveryPlus", "bitchute", "tubi", "franceTv", "arte", "hulu", "peacock", "appleTvPlus", "zdf", "ard", "canalPlus", "abcIview"])
     );
     expect(SERVICE_CATALOG.some((d) => d.key === "bitchute")).toBe(true);
     expect(SERVICE_CATALOG.some((d) => d.key === "tubi")).toBe(true);

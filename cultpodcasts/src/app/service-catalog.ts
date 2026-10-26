@@ -86,15 +86,29 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "appleTvPlus", displayName: "Apple TV+", icon: "apple-tv-plus", wideImage: true },
   { key: "zdf", displayName: "ZDF", icon: "zdf", wideImage: true },
   { key: "ard", displayName: "ARD", icon: "ard", wideImage: true },
-  { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true }
+  { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true },
+  { key: "abcIview", displayName: "ABC iview", icon: "abc-iview", wideImage: true }
 ];
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
 
+/**
+ * Pre-catalog unknown-host slugs (Cosmos / stale search `svc`) → catalog wire keys.
+ * Used by {@link expandSvc} (Watch/`svcUrl`) and {@link serviceDescriptor} (display).
+ */
+const LEGACY_SERVICE_KEY_ALIASES: Readonly<Record<string, KnownServiceKey>> = {
+  iviewabcnetau: "abcIview"
+};
+
+function canonicalServiceKey(key: string): string {
+  return LEGACY_SERVICE_KEY_ALIASES[key] ?? key;
+}
+
 export function serviceDescriptor(key: string): ServiceDescriptor {
-  return byKey.get(key) ?? {
-    key,
-    displayName: key,
+  const canonical = canonicalServiceKey(key);
+  return byKey.get(canonical) ?? {
+    key: canonical,
+    displayName: canonical,
     icon: "external-service",
     wideImage: false
   };
@@ -209,6 +223,9 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   if (host === "canalplus.com" || host.endsWith(".canalplus.com")) {
     return "canalPlus";
   }
+  if (host === "iview.abc.net.au" || host.endsWith(".iview.abc.net.au")) {
+    return "abcIview";
+  }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
 
@@ -231,7 +248,8 @@ const EXPAND: Partial<Record<StreamingServiceKey, (id: string) => string>> = {
   vimeo: (id) => `https://vimeo.com/${id}`,
   netflix: (id) => `https://www.netflix.com/title/${id}`,
   bitchute: (id) => `https://www.bitchute.com/video/${id}`,
-  tubi: (id) => `https://tubitv.com/${id}`
+  tubi: (id) => `https://tubitv.com/${id}`,
+  abcIview: (id) => `https://iview.abc.net.au/video/${id}`
 };
 
 /** Inverse of RPP SearchEpisodeServices compact `svc` field. */
@@ -245,7 +263,7 @@ export function expandSvc(svc: string | undefined | null): { key: string; url: U
     if (colon <= 0 || colon === entry.length - 1) {
       continue;
     }
-    const key = entry.slice(0, colon);
+    const key = canonicalServiceKey(entry.slice(0, colon));
     let payload = entry.slice(colon + 1).replaceAll("%7C", "|").replaceAll("%25", "%");
     if (payload.startsWith("u") && payload.slice(1).startsWith("http")) {
       payload = payload.slice(1);

@@ -25,6 +25,7 @@ const appleTvPlus = /^(?:https?:)?\/\/tv\.apple\.com\/[a-z]{2}\/(?:show|movie|ep
 const zdf = /^(?:https?:)?\/\/(?:www\.)?zdf\.de\/(?:(?:video|play)\/)?[a-z0-9\-]+\/[a-z0-9\-]+(?:\/[a-z0-9\-]+)?(?:\.html)?\/?(?:[?#]|$)/;
 const ard = /^(?:https?:)?\/\/(?:www\.)?ardmediathek\.de\/(?:video(?:\/[^/\s?#]+){1,4}|serie\/[^/\s?#]+(?:\/[^/\s?#]+)+|sendung\/[^/\s?#]+\/[^/\s?#]+)\/?(?:[?#]|$)/;
 const canalPlus = /^(?:https?:)?\/\/(?:www\.)?canalplus\.com\/(?:[a-z]{2}\/)?(?:series|cinema|documentaires|emissions|sport|kids|films?)\/[^/\s?#]+\/h\/\d+(?:_\d+)?(?:\/[^/\s?#]+)*\/?(?:[?#]|$)/;
+const abcIview = /^(?:https?:)?\/\/(?:www\.)?iview\.abc\.net\.au\/(?:video|show)\/[^/\s?#]+\/?(?:[?#]|$)/;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
@@ -56,6 +57,7 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: zdf, useFullInput: true, kind: 'streaming' },
   { regex: ard, useFullInput: true, kind: 'streaming' },
   { regex: canalPlus, useFullInput: true, kind: 'streaming' },
+  { regex: abcIview, useFullInput: true, kind: 'streaming' },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {

@@ -194,6 +194,12 @@ const streamingIconSvgs = {
     `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
     `<text x="12" y="15.6" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="8" font-weight="900" letter-spacing="0.1">C+</text>` +
     `</svg>`,
+  // ABC iview — black tile with iview wordmark (simple geometry; matches AU streamer tiles).
+  'abc-iview':
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
+    `<text x="12" y="15.2" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="5.2" font-weight="900" letter-spacing="-0.15">iview</text>` +
+    `</svg>`,
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

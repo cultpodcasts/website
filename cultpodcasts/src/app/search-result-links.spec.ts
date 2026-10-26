@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, externalWatchUrl, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
 import { SearchResult } from "./search-result.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
@@ -180,6 +181,36 @@ describe("search-result-links", () => {
       image: undefined
     };
     expect(externalWatchUrl(both)?.toString()).toBe("https://www.bbc.co.uk/iplayer/episode/p0abc123/jared-leto");
+  });
+
+  it("resolves Watch from compact abcIview svc when services.abcIview is absent", () => {
+    const episode: HomepageEpisode = {
+      id: "id",
+      podcastName: "Show",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:45:00",
+      svc: "abcIview:LE1717H003S00",
+      subjects: [],
+      image: undefined
+    };
+    expect(externalWatchUrl(episode)?.toString()).toBe("https://iview.abc.net.au/video/LE1717H003S00");
+  });
+
+  it("resolves Watch from legacy iviewabcnetau svc when services.abcIview is absent", () => {
+    const episode: HomepageEpisode = {
+      id: "id",
+      podcastName: "Show",
+      episodeTitle: "Title",
+      episodeDescription: "Description",
+      release: new Date("2026-07-17T00:00:00Z"),
+      duration: "00:45:00",
+      svc: "iviewabcnetau:uhttps://iview.abc.net.au/video/LE1717H003S00",
+      subjects: [],
+      image: undefined
+    };
+    expect(externalWatchUrl(episode)?.toString()).toBe("https://iview.abc.net.au/video/LE1717H003S00");
   });
 
   it("prefers a YouTube thumbnail when the index stored square cover but the episode is watchable", () => {
