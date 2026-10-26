@@ -118,7 +118,8 @@ describe('PodcastComponent', () => {
     return { fixture, lookedUp, titles, nav };
   }
 
-  it('shows a podcast episode and keeps its not-found link on /podcast/', async () => {
+  // Full-suite runs can exceed the default 5s while navigateByUrl waits for stability.
+  it('shows a podcast episode and keeps its not-found link on /podcast/', { timeout: 20_000 }, async () => {
     const shortId = guids.toBase64(id);
     const stayed = await render({
       path: `/podcast/${encodeURIComponent('Show')}/${shortId}`,

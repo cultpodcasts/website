@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of, throwError } from 'rxjs';
+import { AmbiguousIdentityAnswer } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 import { MoveEpisodeToFilmDialogComponent, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
@@ -11,6 +12,7 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
   let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
   let component: MoveEpisodeToFilmDialogComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
+  let openIdentityDialog: ReturnType<typeof vi.fn>;
   let postEpisodeToFilm: ReturnType<typeof vi.fn>;
   const data: MoveEpisodeToFilmDialogData = {
     podcastId: 'podcast-1',
@@ -18,8 +20,19 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     episodeTitle: 'Synthetic Episode Title'
   };
 
+  const identityDecision = {
+    target: 'Film',
+    query: 'Synthetic Episode Title',
+    candidates: [{ key: 'tmdb:42', title: 'Synthetic Film', year: 2020, kind: 'Film', source: 'tmdb' }]
+  };
+
+  function mockIdentityAnswer(answer: AmbiguousIdentityAnswer | undefined) {
+    openIdentityDialog.mockReturnValue({ afterClosed: () => of(answer) });
+  }
+
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
+    openIdentityDialog = vi.fn();
     postEpisodeToFilm = vi.fn();
     await TestBed.configureTestingModule({
       imports: [MoveEpisodeToFilmDialogComponent],
@@ -29,7 +42,15 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: CurationSubmitService, useValue: { postEpisodeToFilm: postEpisodeToFilm } }
       ]
-    }).compileComponents();
+    })
+      // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
+      .overrideProvider(MatDialog, {
+        useValue: {
+          open: (...args: unknown[]) =>
+            (openIdentityDialog as unknown as (...a: unknown[]) => unknown)(...args)
+        }
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
     component = fixture.componentInstance;
@@ -43,39 +64,137 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: false });
   });
 
-  it('sends a null title when the title is unchanged, so the server keeps the episode title', () => {
+  it('prompts on ambiguous identity then re-POSTs select and closes moved', async () => {
+    postEpisodeToFilm
+      .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
+      .mockReturnValueOnce(of({ status: 202, body: { filmId: 'episode-1', name: data.episodeTitle } }));
+    mockIdentityAnswer({ decision: 'select', key: 'tmdb:42' });
+
+    await component.move();
+
+    expect(openIdentityDialog).toHaveBeenCalled();
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(1, 'podcast-1', 'episode-1', {});
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(2, 'podcast-1', 'episode-1', {
+      identityDecision: 'select',
+      selectedIdentityKey: 'tmdb:42'
+    });
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      moved: true,
+      filmId: 'episode-1',
+      name: data.episodeTitle
+    });
+  });
+
+  it('re-POSTs continue after identity prompt then closes moved on 202', async () => {
+    postEpisodeToFilm
+      .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
+      .mockReturnValueOnce(of({ status: 202, body: { filmId: 'episode-1', name: data.episodeTitle } }));
+    mockIdentityAnswer({ decision: 'continue' });
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(2, 'podcast-1', 'episode-1', {
+      identityDecision: 'continue'
+    });
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      moved: true,
+      filmId: 'episode-1',
+      name: data.episodeTitle
+    });
+  });
+
+  it('re-POSTs cancel with prior title when identity prompt is cancelled and stays open', async () => {
+    postEpisodeToFilm
+      .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
+      .mockReturnValueOnce(of({ status: 200, body: { cancelled: true } }));
+    component.title.setValue('  Synthetic Override  ');
+    mockIdentityAnswer({ decision: 'cancel' });
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(1, 'podcast-1', 'episode-1', {
+      title: 'Synthetic Override'
+    });
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(2, 'podcast-1', 'episode-1', {
+      title: 'Synthetic Override',
+      identityDecision: 'cancel'
+    });
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+  });
+
+  it('re-POSTs cancel when the identity prompt is dismissed without an answer', async () => {
+    postEpisodeToFilm
+      .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
+      .mockReturnValueOnce(of({ status: 200, body: { cancelled: true } }));
+    mockIdentityAnswer(undefined);
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenNthCalledWith(2, 'podcast-1', 'episode-1', {
+      identityDecision: 'cancel'
+    });
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+  });
+
+  it('stays open with an error when identityDecision has no candidates', async () => {
+    postEpisodeToFilm.mockReturnValue(of({
+      status: 200,
+      body: { identityDecision: { target: 'Film', query: 'Synthetic Episode Title', candidates: [] } }
+    }));
+
+    await component.move();
+
+    expect(openIdentityDialog).not.toHaveBeenCalled();
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+    expect(component.error()).toBe('No confident identity match.');
+  });
+
+  it('stays open with an error on bare 200 without a gate (does not treat as moved)', async () => {
+    postEpisodeToFilm.mockReturnValue(of({ status: 200, body: { filmId: 'episode-1', name: 'Synthetic Film' } }));
+
+    await component.move();
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+    expect(component.error()).toContain('Unexpected response');
+  });
+
+  it('sends an empty body when the title is unchanged, so the server keeps the episode title', async () => {
     postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: 'episode-1', name: data.episodeTitle } }));
 
-    component.move();
+    await component.move();
 
-    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', null);
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', {});
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, filmId: 'episode-1', name: data.episodeTitle });
   });
 
-  it('sends a trimmed override title and closes with the film name from the response', () => {
+  it('sends a trimmed override title and closes with the film name from the response', async () => {
     postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: 'episode-1', name: 'Synthetic Film' } }));
     component.title.setValue('  Synthetic Film  ');
 
-    component.move();
+    await component.move();
 
-    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', 'Synthetic Film');
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { title: 'Synthetic Film' });
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, filmId: 'episode-1', name: 'Synthetic Film' });
   });
 
-  it("blocks a title containing '/' without calling the API", () => {
+  it("blocks a title containing '/' without calling the API", async () => {
     component.title.setValue('Synthetic/Film');
 
-    component.move();
+    await component.move();
 
     expect(component.hasInvalidTitle()).toBe(true);
     expect(postEpisodeToFilm).not.toHaveBeenCalled();
   });
 
-  it('shows the name-conflict message on 409 and stays open', () => {
+  it('shows the name-conflict message on 409 and stays open', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     postEpisodeToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
 
-    component.move();
+    await component.move();
 
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(component.isSending()).toBe(false);

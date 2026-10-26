@@ -1,20 +1,26 @@
-import { ChangeDetectionStrategy, Component, Inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { firstValueFrom } from 'rxjs';
+import { AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import {
+  EpisodeFilmMoveRequest,
   EpisodeFilmMoveResponse,
   MoveEpisodeToFilmDialogClose,
   MoveEpisodeToFilmDialogData
 } from '../episode-film-move.interface';
+import { promptAmbiguousIdentity } from '../submit-language-identity-prompts';
 
 /** Indexer look-back (indexer__ReleasedDaysAgo = 2) plus a day for the YouTube publishing delay. */
 export const RECENT_RELEASE_DAYS = 3;
+
+const MAX_IDENTITY_ROUNDS = 4;
 
 export function releasedWithinDays(release: Date | string | null | undefined, days: number, now: Date): boolean {
   if (!release) {
@@ -46,6 +52,7 @@ export class MoveEpisodeToFilmDialogComponent {
   readonly title: FormControl<string>;
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
+  private readonly identityDialog = inject(MatDialog);
 
   constructor(
     private dialogRef: MatDialogRef<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogClose>,
@@ -69,27 +76,82 @@ export class MoveEpisodeToFilmDialogComponent {
     return this.title.value.includes('/');
   }
 
-  move() {
+  async move() {
     if (this.isSending() || this.hasInvalidTitle()) {
       return;
     }
     this.isSending.set(true);
     this.error.set(null);
-    this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, this.requestTitle()).subscribe({
-      next: resp => {
-        const body = resp.body as EpisodeFilmMoveResponse | null;
-        this.dialogRef.close({
-          moved: true,
-          filmId: body?.filmId ?? this.data.episodeId,
-          name: body?.name ?? (this.requestTitle() ?? this.data.episodeTitle)
-        });
-      },
-      error: (e: HttpErrorResponse) => {
+    let body: EpisodeFilmMoveRequest = {};
+    const title = this.requestTitle();
+    if (title) {
+      body = { title };
+    }
+    try {
+      for (let round = 0; round < MAX_IDENTITY_ROUNDS; round++) {
+        const resp = await firstValueFrom(
+          this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, body)
+        );
+        const outcome = resp.body as EpisodeFilmMoveResponse | null;
+        if (resp.status === 200 && outcome?.cancelled) {
+          this.isSending.set(false);
+          return;
+        }
+        if (resp.status === 200 && outcome?.identityDecision) {
+          if (!outcome.identityDecision.candidates?.length) {
+            this.isSending.set(false);
+            this.error.set('No confident identity match.');
+            return;
+          }
+          const next = await this.answerIdentity(outcome.identityDecision, body);
+          if (!next) {
+            this.isSending.set(false);
+            return;
+          }
+          body = next;
+          continue;
+        }
+        // Contract: 202 = moved; 200 = identity/cancelled gate only (nothing written).
+        if (resp.status === 202) {
+          this.dialogRef.close({
+            moved: true,
+            filmId: outcome?.filmId ?? this.data.episodeId,
+            name: outcome?.name ?? (this.requestTitle() ?? this.data.episodeTitle)
+          });
+          return;
+        }
         this.isSending.set(false);
-        this.error.set(moveErrorMessage(e));
-        console.error(e);
+        this.error.set('Unexpected response while moving to film.');
+        return;
       }
-    });
+      this.isSending.set(false);
+      this.error.set('Identity lookup stopped after too many prompts.');
+    } catch (e) {
+      this.isSending.set(false);
+      this.error.set(moveErrorMessage(e as HttpErrorResponse));
+      console.error(e);
+    }
+  }
+
+  private async answerIdentity(
+    prompt: AmbiguousIdentityPrompt,
+    previous: EpisodeFilmMoveRequest
+  ): Promise<EpisodeFilmMoveRequest | null> {
+    const identity = await promptAmbiguousIdentity(this.identityDialog, prompt);
+    if (!identity || identity.decision === 'cancel') {
+      await firstValueFrom(
+        this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, {
+          ...previous,
+          identityDecision: 'cancel'
+        })
+      ).catch(() => undefined);
+      return null;
+    }
+    return {
+      ...previous,
+      identityDecision: identity.decision,
+      ...(identity.decision === 'select' ? { selectedIdentityKey: identity.key } : {})
+    };
   }
 
   cancel() {

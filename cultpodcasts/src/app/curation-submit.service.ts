@@ -75,12 +75,11 @@ export class CurationSubmitService {
   }
 
   /** Moves one podcast episode into a new Film with the same id. */
-  postEpisodeToFilm(podcastId: string, episodeId: string, title: string | null) {
+  postEpisodeToFilm(podcastId: string, episodeId: string, request: EpisodeFilmMoveRequest = {}) {
     const url = new URL(
       `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/film`,
       environment.api).toString();
-    const body: EpisodeFilmMoveRequest = title ? { title: title } : {};
-    return this.http.post<EpisodeFilmMoveResponse>(url, body, {
+    return this.http.post<EpisodeFilmMoveResponse>(url, request, {
       context: this.curateContext(),
       observe: 'response'
     });

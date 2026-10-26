@@ -15,6 +15,7 @@ describe('DiscoverySubmitComponent supervised submits', () => {
   let getToken: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     close = vi.fn();
     getToken = vi.fn().mockReturnValue(of('token'));
     TestBed.configureTestingModule({

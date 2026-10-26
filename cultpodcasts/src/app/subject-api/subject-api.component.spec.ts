@@ -45,6 +45,7 @@ describe('SubjectApiComponent', () => {
   let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     calls = [];
     respond = () => of(searchPage());
     queryParams$ = new BehaviorSubject<Params>({});
