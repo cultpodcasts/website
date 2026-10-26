@@ -92,19 +92,23 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
 
+/**
+ * Pre-catalog unknown-host slugs (Cosmos / stale search `svc`) → catalog wire keys.
+ * Used by {@link expandSvc} (Watch/`svcUrl`) and {@link serviceDescriptor} (display).
+ */
+const LEGACY_SERVICE_KEY_ALIASES: Readonly<Record<string, KnownServiceKey>> = {
+  iviewabcnetau: "abcIview"
+};
+
+function canonicalServiceKey(key: string): string {
+  return LEGACY_SERVICE_KEY_ALIASES[key] ?? key;
+}
+
 export function serviceDescriptor(key: string): ServiceDescriptor {
-  // Legacy unknown-host slug before abcIview was catalogued (Cosmos / stale svc).
-  if (key === "iviewabcnetau") {
-    return byKey.get("abcIview") ?? {
-      key: "abcIview",
-      displayName: "ABC iview",
-      icon: "abc-iview",
-      wideImage: true
-    };
-  }
-  return byKey.get(key) ?? {
-    key,
-    displayName: key,
+  const canonical = canonicalServiceKey(key);
+  return byKey.get(canonical) ?? {
+    key: canonical,
+    displayName: canonical,
     icon: "external-service",
     wideImage: false
   };
@@ -259,7 +263,7 @@ export function expandSvc(svc: string | undefined | null): { key: string; url: U
     if (colon <= 0 || colon === entry.length - 1) {
       continue;
     }
-    const key = entry.slice(0, colon);
+    const key = canonicalServiceKey(entry.slice(0, colon));
     let payload = entry.slice(colon + 1).replaceAll("%7C", "|").replaceAll("%25", "%");
     if (payload.startsWith("u") && payload.slice(1).startsWith("http")) {
       payload = payload.slice(1);

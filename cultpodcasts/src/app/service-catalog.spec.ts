@@ -50,6 +50,18 @@ describe("service-catalog", () => {
     ]);
   });
 
+  it("expands a compact ABC iview svc token to the canonical /video/ URL", () => {
+    expect(expandSvc("abcIview:LE1717H003S00")).toEqual([
+      { key: "abcIview", url: new URL("https://iview.abc.net.au/video/LE1717H003S00") }
+    ]);
+  });
+
+  it("canonicalises legacy iviewabcnetau full-URL svc to abcIview for Watch/svcUrl", () => {
+    expect(expandSvc("iviewabcnetau:uhttps://iview.abc.net.au/video/LE1717H003S00")).toEqual([
+      { key: "abcIview", url: new URL("https://iview.abc.net.au/video/LE1717H003S00") }
+    ]);
+  });
+
   it("resolves Netflix, iPlayer, Paramount+, HBO Max, Play Suisse, and TVNZ+ URLs to catalog keys for logos", () => {
     expect(resolveServiceKey(new URL("https://www.netflix.com/title/80057281"))).toBe("netflix");
     expect(resolveServiceKey(new URL("https://www.bbc.co.uk/iplayer/episode/p0abcd12"))).toBe("bbcIplayer");
