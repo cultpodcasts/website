@@ -96,6 +96,39 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
   });
 
+  it('news and TV Links tab PATCH services the same way as film', () => {
+    const archive = 'https://archive.org/details/synthetic-playable';
+    const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
+    const youtube = 'https://www.youtube.com/watch?v=synthetic01';
+    const news = report({ services: { internetArchive: { url: archive }, bbcIplayer: { url: iplayer } } });
+    const newsForm = buildPlayableEditForm(news);
+    expect(newsForm.controls.links!.getRawValue()).toEqual([archive, iplayer]);
+    expect(playableFieldsChanges(news, newsForm.getRawValue())).toEqual({});
+    newsForm.controls.links!.removeAt(1);
+    newsForm.controls.links!.push(newFilmLinkControl(youtube));
+    expect(playableFieldsChanges(news, newsForm.getRawValue()).services).toEqual({
+      youtube: { url: youtube },
+      bbcIplayer: { url: '', image: '' }
+    });
+
+    const tv: TvShowEpisodeDto = {
+      ...news,
+      tvShowId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      tvShowName: 'Nightly',
+      imdbId: null,
+      tvdbId: null,
+      tmdbId: null
+    };
+    const tvForm = buildPlayableEditForm(tv, 'tv');
+    expect(tvShowEpisodeChanges(tv, tvForm.getRawValue())).toEqual({});
+    tvForm.controls.links!.removeAt(1);
+    tvForm.controls.links!.push(newFilmLinkControl(youtube));
+    expect(tvShowEpisodeChanges(tv, tvForm.getRawValue()).services).toEqual({
+      youtube: { url: youtube },
+      bbcIplayer: { url: '', image: '' }
+    });
+  });
+
   it('TV adds the identity id patch: omit unchanged, blank clears (imdbId "", tvdbId 0, tmdbId 0), id sets', () => {
     const dto: TvShowEpisodeDto = {
       ...report(),
