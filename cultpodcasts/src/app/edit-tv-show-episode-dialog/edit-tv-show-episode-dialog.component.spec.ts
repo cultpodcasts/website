@@ -7,11 +7,15 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { newFilmLinkControl } from '../playable-edit-form.util';
 import { EditTvShowEpisodeDialogComponent } from './edit-tv-show-episode-dialog.component';
 
 const episodeId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const api = (path: string) => new URL(path, environment.api).toString();
+const archiveUrl = 'https://archive.org/details/synthetic-playable';
+const iplayerUrl = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
+const youtubeUrl = 'https://www.youtube.com/watch?v=synthetic01';
 
 const synthetic = {
   id: episodeId,
@@ -34,7 +38,8 @@ const synthetic = {
   tvShowName: 'Nightly',
   imdbId: 'tt0000001',
   tvdbId: null,
-  tmdbId: null
+  tmdbId: null,
+  services: null as Record<string, { url?: string }> | null
 };
 
 describe('EditTvShowEpisodeDialogComponent', () => {
@@ -72,10 +77,10 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     return http.expectOne((r) => r.urlWithParams === url && r.method === method);
   }
 
-  async function load() {
+  async function load(dto: object = synthetic) {
     fixture = TestBed.createComponent(EditTvShowEpisodeDialogComponent);
     fixture.detectChanges();
-    (await expectSoon(api(`/tvshowepisode/${episodeId}`))).flush(synthetic);
+    (await expectSoon(api(`/tvshowepisode/${episodeId}`))).flush(dto);
     (await expectSoon(api('/subjects'))).flush([{ name: 'Arts' }]);
     // No people published yet: the guest select still shows the stored name.
     (await expectSoon(api('/people'))).flush('', { status: 404, statusText: 'Not Found' });
@@ -129,5 +134,27 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     patch.flush({ blueskyPostDeleted: true }, { status: 202, statusText: 'Accepted' });
     await saving;
     expect(close).toHaveBeenCalledWith({ updated: true, response: { blueskyPostDeleted: true }, parentName: 'Nightly' });
+  });
+
+  it('PATCHes Links edits as film-shaped services on tvshowepisode/{id}', async () => {
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
+    });
+    const links = dialog.form()!.controls.links!;
+    expect(links.getRawValue()).toEqual([archiveUrl, iplayerUrl]);
+    links.removeAt(1);
+    links.push(newFilmLinkControl(youtubeUrl));
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      services: {
+        youtube: { url: youtubeUrl },
+        bbcIplayer: { url: '', image: '' }
+      }
+    });
+    patch.flush({ blueskyPostDeleted: false }, { status: 202, statusText: 'Accepted' });
+    await saving;
+    expect(close).toHaveBeenCalledWith({ updated: true, response: { blueskyPostDeleted: false }, parentName: 'Nightly' });
   });
 });

@@ -7,11 +7,15 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { newFilmLinkControl } from '../playable-edit-form.util';
 import { EditNewsReportDialogComponent } from './edit-news-report-dialog.component';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 const api = (path: string) => new URL(path, environment.api).toString();
+const archiveUrl = 'https://archive.org/details/synthetic-playable';
+const iplayerUrl = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
+const youtubeUrl = 'https://www.youtube.com/watch?v=synthetic01';
 
 const synthetic = {
   id: reportId,
@@ -31,7 +35,8 @@ const synthetic = {
   language: null,
   guests: null,
   newsOrganisationId: outletId,
-  newsOrganisationName: 'Desk'
+  newsOrganisationName: 'Desk',
+  services: null as Record<string, { url?: string }> | null
 };
 
 describe('EditNewsReportDialogComponent', () => {
@@ -111,6 +116,28 @@ describe('EditNewsReportDialogComponent', () => {
       subjects: ['Politics', 'Sport'],
       guests: ['Ann Example'],
       language: 'fr'
+    });
+    patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
+    await saving;
+    expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'Desk' });
+  });
+
+  it('PATCHes Links edits as film-shaped services on newsreport/{id}', async () => {
+    const dialog = await load({
+      ...synthetic,
+      services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
+    });
+    const links = dialog.form()!.controls.links!;
+    expect(links.getRawValue()).toEqual([archiveUrl, iplayerUrl]);
+    links.removeAt(1);
+    links.push(newFilmLinkControl(youtubeUrl));
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/newsreport/${reportId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      services: {
+        youtube: { url: youtubeUrl },
+        bbcIplayer: { url: '', image: '' }
+      }
     });
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
     await saving;

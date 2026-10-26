@@ -43,7 +43,10 @@ export interface PlayableEditForm {
   tmdbId?: FormControl<string>;
   /** TV: TheTVDB episode id as digits; blank clears. */
   tvdbId?: FormControl<string>;
-  /** Film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL. */
+  /**
+   * News / TV / film: one URL per link (YouTube, BBC iPlayer, Internet Archive, …); the service comes from the URL.
+   * Always built by `buildPlayableEditForm`; optional on the type so non-playable form consumers stay compatible.
+   */
   links?: FormArray<FormControl<string>>;
   /** Film: the trailers to keep, in display order, each with an editable title. */
   trailers?: FormArray<FilmTrailerEditGroup>;
@@ -147,8 +150,8 @@ export function filmLinkKey(value: string | null | undefined): string | undefine
   return url ? resolveServiceKey(url) ?? undefined : undefined;
 }
 
-/** The film's stored links: URL text → the key it is stored under. */
-export function filmExistingLinks(services: FilmDto['services']): Map<string, string> {
+/** Stored playable links (news / TV / film share `services`): URL text → the key it is stored under. */
+export function filmExistingLinks(services: PlayableFieldsDto['services']): Map<string, string> {
   const links = new Map<string, string>();
   for (const [key, link] of Object.entries(services ?? {})) {
     const url = uriText(link?.url);
@@ -354,11 +357,11 @@ export function filmChanges(
 }
 
 /**
- * The film `services` patch: each link files under the key its URL resolves to (as the server does); a key the film
- * had that no link resolves to any more is removed (`url` and `image` blank). Null when nothing changed.
+ * The playable `services` patch (news / TV / film): each link files under the key its URL resolves to (as the
+ * server does); a key that no link resolves to any more is removed (`url` and `image` blank). Null when unchanged.
  */
 export function filmServiceChanges(
-  previous: FilmDto['services'],
+  previous: PlayableFieldsDto['services'],
   links: readonly string[]
 ): Record<string, { url?: string; image?: string }> | null {
   const existing = filmExistingLinks(previous);
