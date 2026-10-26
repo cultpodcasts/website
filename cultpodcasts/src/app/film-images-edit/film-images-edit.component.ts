@@ -40,12 +40,12 @@ export class FilmImagesEditComponent {
     return additionalServicePreviewKey(url);
   }
 
-  protected clearImage(control: FormControl<string>): void {
+  clearImage(control: FormControl<string>): void {
     control.setValue('');
     control.markAsDirty();
   }
 
-  protected previewImage(service: EpisodeImageService): void {
+  previewImage(service: EpisodeImageService): void {
     const images = this.collectPreviews();
     if (images.length === 0) {
       return;
