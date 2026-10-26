@@ -46,7 +46,8 @@ export const streamingServiceKeys = [
 	"appleTvPlus",
 	"zdf",
 	"ard",
-	"canalPlus"
+	"canalPlus",
+	"abcIview"
 ] as const;
 
 export type StreamingServiceKey = (typeof streamingServiceKeys)[number];
@@ -298,7 +299,8 @@ export const streamingSpecimenUrls: Record<StreamingServiceKey, string> = {
 	appleTvPlus: "https://tv.apple.com/us/show/example-slug/umc.cmc.exampleid000000000000",
 	zdf: "https://www.zdf.de/serien/example-slug",
 	ard: "https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ",
-	canalPlus: "https://www.canalplus.com/series/example-slug/h/12345_67890"
+	canalPlus: "https://www.canalplus.com/series/example-slug/h/12345_67890",
+	abcIview: "https://iview.abc.net.au/video/EXAMPLEVIDEO01"
 };
 
 export type StreamingMembershipKnown = {

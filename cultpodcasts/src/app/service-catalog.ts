@@ -86,12 +86,22 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "appleTvPlus", displayName: "Apple TV+", icon: "apple-tv-plus", wideImage: true },
   { key: "zdf", displayName: "ZDF", icon: "zdf", wideImage: true },
   { key: "ard", displayName: "ARD", icon: "ard", wideImage: true },
-  { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true }
+  { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true },
+  { key: "abcIview", displayName: "ABC iview", icon: "abc-iview", wideImage: true }
 ];
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
 
 export function serviceDescriptor(key: string): ServiceDescriptor {
+  // Legacy unknown-host slug before abcIview was catalogued (Cosmos / stale svc).
+  if (key === "iviewabcnetau") {
+    return byKey.get("abcIview") ?? {
+      key: "abcIview",
+      displayName: "ABC iview",
+      icon: "abc-iview",
+      wideImage: true
+    };
+  }
   return byKey.get(key) ?? {
     key,
     displayName: key,
@@ -209,6 +219,9 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   if (host === "canalplus.com" || host.endsWith(".canalplus.com")) {
     return "canalPlus";
   }
+  if (host === "iview.abc.net.au" || host.endsWith(".iview.abc.net.au")) {
+    return "abcIview";
+  }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
 
@@ -231,7 +244,8 @@ const EXPAND: Partial<Record<StreamingServiceKey, (id: string) => string>> = {
   vimeo: (id) => `https://vimeo.com/${id}`,
   netflix: (id) => `https://www.netflix.com/title/${id}`,
   bitchute: (id) => `https://www.bitchute.com/video/${id}`,
-  tubi: (id) => `https://tubitv.com/${id}`
+  tubi: (id) => `https://tubitv.com/${id}`,
+  abcIview: (id) => `https://iview.abc.net.au/video/${id}`
 };
 
 /** Inverse of RPP SearchEpisodeServices compact `svc` field. */

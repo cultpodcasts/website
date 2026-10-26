@@ -88,7 +88,9 @@ describe('podcast-url-matcher', () => {
       'https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ',
       'https://www.ardmediathek.de/video/example-show/example-episode/ard/Y3JpZDovL2V4YW1wbGUvaWQ',
       'https://www.canalplus.com/series/example-slug/h/12345_67890',
-      'https://www.canalplus.com/fr/cinema/example-slug/h/12345_67890'
+      'https://www.canalplus.com/fr/cinema/example-slug/h/12345_67890',
+      'https://iview.abc.net.au/video/LE1717H003S00',
+      'https://iview.abc.net.au/show/you-cant-ask-that'
     ];
 
     for (const url of accepted) {
@@ -144,6 +146,8 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.ardmediathek.de/video')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.canalplus.com/series')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.canalplus.com/series/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://iview.abc.net.au/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://iview.abc.net.au/categories/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -193,6 +197,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.zdf.de/serien/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.canalplus.com/series/example-slug/h/12345_67890')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://iview.abc.net.au/video/LE1717H003S00')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
