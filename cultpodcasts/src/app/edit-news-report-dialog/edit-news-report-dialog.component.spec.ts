@@ -96,7 +96,7 @@ describe('EditNewsReportDialogComponent', () => {
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     expect(dialog.subjectNames()).toEqual(['Politics', 'Sport']);
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Links']);
     expect((fixture.nativeElement as HTMLElement).querySelector('#parent-name')?.textContent).toBe('Desk');
   });
 

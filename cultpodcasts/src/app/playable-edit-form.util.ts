@@ -210,6 +210,13 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     lang: new FormControl(episodeLanguageFormValue(dto.language), { nonNullable: true }),
     guests: new FormControl<string[]>([...(dto.guests ?? [])], { nonNullable: true })
   };
+  // Film / TV / news all edit `services` via the Links tab (same wire shape as film PATCH).
+  const existingLinks = filmExistingLinks(dto.services);
+  const existingUrls = new Set(existingLinks.keys());
+  controls.links = new FormArray(
+    [...existingLinks.keys()].map(url => newFilmLinkControl(url, existingUrls)),
+    { validators: [filmLinksDistinctValidator(existingLinks)] }
+  );
   if (variant === 'film') {
     const film = dto as FilmDto;
     // Read-only name: no required marker, and never part of validity or the PATCH.
@@ -225,12 +232,6 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
       nonNullable: true,
       validators: [Validators.pattern(digitsPattern)]
     });
-    const existingLinks = filmExistingLinks(film.services);
-    const existingUrls = new Set(existingLinks.keys());
-    controls.links = new FormArray(
-      [...existingLinks.keys()].map(url => newFilmLinkControl(url, existingUrls)),
-      { validators: [filmLinksDistinctValidator(existingLinks)] }
-    );
     controls.trailers = new FormArray(
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
     );
@@ -289,6 +290,10 @@ export function playableFieldsChanges(
   if (!sameStrings(previous.guests, next.guests)) changes.guests = [...next.guests];
   const lang = episodeLanguageFormValue(next.lang === 'unset' ? null : next.lang);
   if (lang !== episodeLanguageFormValue(previous.language)) changes.language = lang === 'unset' ? '' : lang;
+  if (next.links !== undefined) {
+    const services = filmServiceChanges(previous.services, next.links);
+    if (services) changes.services = services;
+  }
   return changes;
 }
 
@@ -335,10 +340,7 @@ export function filmChanges(
     const tmdbId = numericIdValue(next.tmdbId);
     if (tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
   }
-  if (next.links !== undefined) {
-    const services = filmServiceChanges(previous.services, next.links);
-    if (services) film.services = services;
-  }
+  // `services` already folded into playableFieldsChanges when links change.
   if (next.trailers !== undefined) {
     const trailers = filmTrailerChanges(previous, next.trailers);
     if (trailers) {

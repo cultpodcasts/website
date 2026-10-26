@@ -80,6 +80,8 @@ export interface PlayableFieldsChangeRequest {
   guests?: string[];
   /** `''` clears (English). */
   language?: string;
+  /** Per key; the server files a URL under the key it resolves to. `{ url: '', image: '' }` removes the key. */
+  services?: Record<string, { url?: string; image?: string }>;
 }
 
 export type NewsReportChangeRequest = PlayableFieldsChangeRequest;

@@ -52,8 +52,8 @@ export interface ParentIdentityFilled {
  * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
  * language), Guests, and Identity (id inputs: IMDb / TMDB, plus TheTVDB when the form has it) for the `tv` and `film` variants.
  * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
- * adds the IMDb / TMDB ids to Identity, and adds Links (its service URLs) and Trailers tabs. News and TV have no
- * Urls / Images tabs: their PATCH does not edit service links.
+ * adds the IMDb / TMDB ids to Identity, and adds Trailers. All variants (news / TV / film) share a Links tab for
+ * `services` URLs (same PATCH shape as film).
  */
 @Component({
   selector: 'app-playable-edit-fields',
