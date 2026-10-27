@@ -362,7 +362,8 @@
     overflow-wrap: anywhere
     // HERO-DSC-003 / 006: the text keeps clear of the expanded scrollbar (gutter reserved for
     // classic scrollbars; 16px also clears overlay thumbs). Collapsed too, so the text column is
-    // the same width and expanding never re-wraps a line. Border-box: the box itself does not grow.
+    // the same width and expanding never re-wraps a line. Border-box: a full column keeps its 36em
+    // box; a shorter description's box is 16px (+ gutter) wider than its text, in both states.
     box-sizing: border-box
     scrollbar-gutter: stable
     padding-right: 16px
