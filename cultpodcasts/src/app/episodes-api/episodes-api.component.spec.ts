@@ -292,5 +292,40 @@ describe('EpisodesApiComponent (embedded)', () => {
       await flushTicks();
       expect(episodeReqs().length).toBe(0);
     });
+
+    it('a re-read landing while a suggested guest is being added does not overwrite that card', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, response: {} }) });
+      const fixture = TestBed.createComponent(EpisodesApiComponent);
+      fixture.componentRef.setInput('episodeIds', [inherits]);
+      fixture.componentRef.setInput('embedded', true);
+      fixture.detectChanges();
+      await flushTicks();
+      const guest = { person: { id: 'synthetic-guest', name: 'Synthetic Guest' }, matchResults: [] };
+      episodeReqs()[0].flush({ ...body(inherits, podId), guestSuggestions: [guest] });
+      await flushTicks();
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      const card = () => (component as unknown as { episodes: () => { lang?: string; guestPeople?: { name: string }[] }[] }).episodes()[0];
+
+      component.addSuggestedGuest(card() as never, 'Synthetic Guest');
+      await flushTicks();
+      const patch = http.expectOne(r => r.method === 'PATCH');
+      component.editPodcast({ podcastName: 'Synthetic Pod', podcastId: podId });
+      await flushTicks();
+      // The podcast re-read lands first, without the guest: the card keeps the in-flight guest.
+      http.expectOne(r => r.method === 'GET' && r.url.endsWith(`/episode/${inherits}`)).flush(body(inherits, podId, 'hi'));
+      await flushTicks();
+      expect(card().guestPeople?.map(x => x.name)).toEqual(['Synthetic Guest']);
+
+      // The guest save's own GET then binds the server state (guest + inherited language).
+      patch.flush(null);
+      await flushTicks();
+      http.expectOne(r => r.method === 'GET' && r.url.endsWith(`/episode/${inherits}`))
+        .flush({ ...body(inherits, podId, 'hi'), guestPeople: [guest.person] });
+      await flushTicks();
+      fixture.detectChanges();
+      expect(card().guestPeople?.map(x => x.name)).toEqual(['Synthetic Guest']);
+      expect(card().lang).toBe('hi');
+    });
   });
 });

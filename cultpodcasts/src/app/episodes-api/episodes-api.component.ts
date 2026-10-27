@@ -396,7 +396,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
    * card that inherits it (cards with their own episode language are unchanged server-side). No Refresh needed.
    */
   refreshPodcastEpisodes(podcast: SavedPodcastRef): Promise<void> {
-    return this.episodeUpdate.refreshPodcastCards(this.episodes, podcast, id => this.isUpdating(id));
+    return this.episodeUpdate.refreshPodcastCards(this.episodes, podcast, id => this.isUpdating(id) || !!this.addingGuest()[id]);
   }
 
   async refreshEpisode(episodeId: string) {
