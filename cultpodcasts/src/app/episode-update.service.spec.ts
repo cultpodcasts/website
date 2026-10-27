@@ -1,6 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../environments/environment';
 import { ApiEpisode } from './api-episode.interface';
@@ -103,10 +103,46 @@ describe('EpisodeUpdateService podcast-save card refresh', () => {
     expect(updated[0].release).toBeInstanceOf(Date);
   });
 
-  it('replaceEpisodes swaps re-read bodies in place and ignores ids no longer listed', () => {
+  it('refreshPodcastCards binds the GET bodies of that podcast\'s cards and leaves the others', async () => {
     const service = TestBed.inject(EpisodeUpdateService);
-    const current = [card('a'), card('b')];
-    const next = service.replaceEpisodes(current, [card('b', { lang: 'hi' }), card('gone', { lang: 'fr' })]);
-    expect(next?.map(x => [x.id, x.lang])).toEqual([['a', undefined], ['b', 'hi']]);
+    const http = TestBed.inject(HttpTestingController);
+    const other = card('b', { podcastId: 'other' });
+    const episodes = signal<ApiEpisode[] | undefined>([card('a'), other]);
+    const done = service.refreshPodcastCards(episodes, { podcastId: pod });
+    await Promise.resolve();
+    http.expectOne(api('/episode/a')).flush({ ...card('a'), lang: 'hi' });
+    await done;
+    expect(episodes()!.map(x => [x.id, x.lang])).toEqual([['a', 'hi'], ['b', undefined]]);
+    expect(episodes()![1]).toBe(other);
+  });
+
+  it('refreshPodcastCards never lets an older re-read overwrite a newer card (edit, reload or mid-update)', async () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const http = TestBed.inject(HttpTestingController);
+    const episodes = signal<ApiEpisode[] | undefined>([card('a'), card('b'), card('c')]);
+    const done = service.refreshPodcastCards(episodes, { podcastId: pod }, id => id === 'c');
+    await Promise.resolve();
+    // While the GETs are in flight: card a is saved inline (newer body), card c is mid-update.
+    const newerA = card('a', { lang: 'es', ignored: true });
+    episodes.set(episodes()!.map(x => x.id === 'a' ? newerA : x));
+    http.expectOne(api('/episode/a')).flush({ ...card('a'), lang: 'hi' });
+    http.expectOne(api('/episode/b')).flush({ ...card('b'), lang: 'hi' });
+    http.expectOne(api('/episode/c')).flush({ ...card('c'), lang: 'hi' });
+    await done;
+    expect(episodes()![0]).toBe(newerA);
+    expect(episodes()!.map(x => [x.id, x.lang])).toEqual([['a', 'es'], ['b', 'hi'], ['c', undefined]]);
+  });
+
+  it('refreshPodcastCards drops the re-read when the list was reloaded meanwhile', async () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const http = TestBed.inject(HttpTestingController);
+    const episodes = signal<ApiEpisode[] | undefined>([card('a')]);
+    const done = service.refreshPodcastCards(episodes, { podcastId: pod });
+    await Promise.resolve();
+    const reloaded = [card('a', { lang: 'fr' })];
+    episodes.set(reloaded);
+    http.expectOne(api('/episode/a')).flush({ ...card('a'), lang: 'hi' });
+    await done;
+    expect(episodes()).toBe(reloaded);
   });
 });

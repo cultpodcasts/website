@@ -1,5 +1,5 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, WritableSignal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import { ApiEpisode } from './api-episode.interface';
@@ -18,6 +18,8 @@ export interface SavedPodcastRef {
 /**
  * Podcast-episode cards that belong to the saved podcast. News / TV / film rows never match (their parent is
  * not a podcast). Matches on `podcastId` when the dialog knew it, otherwise on the podcast name.
+ * Over-matching on the name fallback (a same-named podcast) is harmless by design: a match only triggers a
+ * read-only GET whose body is the server's current state, so do not tighten this in a way that misses siblings.
  */
 export function isCardOfPodcast(episode: ApiEpisode, podcast: SavedPodcastRef): boolean {
   if (isNonPodcastPlayableKind(episode.contentKind)) {
@@ -214,9 +216,39 @@ export class EpisodeUpdateService {
     return updated;
   }
 
-  /** `replaceEpisode` for several re-read bodies; ids no longer on the page are ignored. */
-  replaceEpisodes(episodes: ApiEpisode[] | undefined, updated: readonly ApiEpisode[]): ApiEpisode[] | undefined {
-    return updated.reduce((current, episode) => this.replaceEpisode(current, episode), episodes);
+  /**
+   * Re-read the saved podcast's cards (`fetchPodcastEpisodes`) and bind the GET bodies into `episodes`. Race-safe:
+   * a card is only replaced when the list still holds the exact object its GET was started for and the card is
+   * not mid-update, so a newer inline edit, a Refresh / reload or a later podcast save is never overwritten by
+   * an older read.
+   */
+  async refreshPodcastCards(
+    episodes: WritableSignal<ApiEpisode[] | undefined>,
+    podcast: SavedPodcastRef,
+    isUpdating: (episodeId: string) => boolean = () => false
+  ): Promise<void> {
+    try {
+      const startedFor = new Set((episodes() ?? []).filter(x => isCardOfPodcast(x, podcast)));
+      const fresh = new Map((await this.fetchPodcastEpisodes([...startedFor], podcast)).map(x => [x.id, x]));
+      const current = episodes();
+      if (!current || fresh.size === 0) {
+        return;
+      }
+      let changed = false;
+      const next = current.map(card => {
+        const body = fresh.get(card.id);
+        if (!body || !startedFor.has(card) || isUpdating(card.id)) {
+          return card;
+        }
+        changed = true;
+        return body;
+      });
+      if (changed) {
+        episodes.set(next);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   replaceEpisode(episodes: ApiEpisode[] | undefined, updated: ApiEpisode): ApiEpisode[] | undefined {

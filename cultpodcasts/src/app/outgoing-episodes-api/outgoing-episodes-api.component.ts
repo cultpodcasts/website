@@ -311,15 +311,8 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
    * Re-read this podcast's cards after an edit-podcast save, so a new default language shows its flag on every
    * card that inherits it (cards with their own episode language are unchanged server-side). No Refresh needed.
    */
-  async refreshPodcastEpisodes(podcast: SavedPodcastRef) {
-    try {
-      const updated = await this.episodeUpdate.fetchPodcastEpisodes(this.episodes(), podcast);
-      if (updated.length > 0) {
-        this.episodes.set(this.episodeUpdate.replaceEpisodes(this.episodes(), updated));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  refreshPodcastEpisodes(podcast: SavedPodcastRef): Promise<void> {
+    return this.episodeUpdate.refreshPodcastCards(this.episodes, podcast, id => this.isUpdating(id));
   }
 
   async refreshEpisode(episodeId: string) {
