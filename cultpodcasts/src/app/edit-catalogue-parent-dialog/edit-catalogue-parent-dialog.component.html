@@ -59,7 +59,6 @@
             <mat-tab label="Flags">
                 <div class="flags">
                     <mat-checkbox name="removed" [(ngModel)]="m.removed">Removed</mat-checkbox>
-                    <p class="hint">Removing hides every {{ itemNoun.slice(0, -1) }}. You'll be asked to confirm.</p>
                     <div class="flag-row">
                         <mat-checkbox name="indexAllEpisodes" [(ngModel)]="m.indexAllEpisodes"
                             [disabled]="includeTitleRegexBlocksIndexAllEpisodes(m.episodeIncludeTitleRegex)">
@@ -75,12 +74,6 @@
                         Bypass Short Episode Checking
                     </mat-checkbox>
                     <mat-checkbox name="alwaysPromoteAsHero" [(ngModel)]="m.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
-                    @if (isNews) {
-                    <p class="hint">New news organisations start with Bypass Short Episode Checking and Always promote as hero on.</p>
-                    }
-                    <mat-checkbox name="skipEnrichingFromYouTube" [(ngModel)]="m.skipEnrichingFromYouTube">
-                        Skip Enriching From YouTube
-                    </mat-checkbox>
                     <mat-checkbox name="ignoreAllEpisodes" [(ngModel)]="m.ignoreAllEpisodes">Ignore All Episodes</mat-checkbox>
                 </div>
             </mat-tab>

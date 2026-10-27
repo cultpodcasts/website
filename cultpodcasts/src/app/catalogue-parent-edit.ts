@@ -59,11 +59,13 @@ export const catalogueParentRegexFields = [
 /** TimeSpan text fields on `indexing` (podcast Details / Meta tab parity): "" clears. */
 export const catalogueParentDurationFields = ["minimumDuration", "youTubePublicationDelay"] as const;
 
-/** Podcast Flags tab parity, kept on `indexing`. */
+/**
+ * Podcast Flags tab parity, kept on `indexing`. `skipEnrichingFromYouTube` is podcast-only in the UI: news / TV
+ * dialogs neither show nor send it, so a stored value is left as it is.
+ */
 export const catalogueParentFlagFields = [
   "bypassShortEpisodeChecking",
   "alwaysPromoteAsHero",
-  "skipEnrichingFromYouTube",
   "ignoreAllEpisodes"
 ] as const;
 

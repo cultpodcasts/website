@@ -56,6 +56,11 @@
             <mat-checkbox [formControl]="f.controls.explicit">Explicit</mat-checkbox>
         </div>
     </mat-tab>
+    @if (f.controls.links) {
+    <mat-tab label="Urls">
+        <app-film-links-edit [links]="f.controls.links"></app-film-links-edit>
+    </mat-tab>
+    }
     <mat-tab label="Meta" [labelClass]="highlightDefaultLanguage() ? 'subjects-tab-highlight' : ''">
         <mat-form-field class="full-width">
             <mat-label>Release</mat-label>
@@ -127,6 +132,16 @@
             </mat-select>
         </mat-form-field>
     </mat-tab>
+    @if (f.controls.links) {
+    <mat-tab label="Images">
+        <app-film-images-edit [links]="f.controls.links"></app-film-images-edit>
+    </mat-tab>
+    }
+    @if (f.controls.trailers) {
+    <mat-tab label="Trailers">
+        <app-film-trailers-edit [trailers]="f.controls.trailers"></app-film-trailers-edit>
+    </mat-tab>
+    }
     <mat-tab label="Guests">
         <mat-form-field class="full-width">
             <mat-label>Guests</mat-label>
@@ -230,19 +245,6 @@
             }
         </mat-form-field>
         }
-    </mat-tab>
-    }
-    @if (f.controls.links) {
-    <mat-tab label="Urls">
-        <app-film-links-edit [links]="f.controls.links"></app-film-links-edit>
-    </mat-tab>
-    <mat-tab label="Images">
-        <app-film-images-edit [links]="f.controls.links"></app-film-images-edit>
-    </mat-tab>
-    }
-    @if (f.controls.trailers) {
-    <mat-tab label="Trailers">
-        <app-film-trailers-edit [trailers]="f.controls.trailers"></app-film-trailers-edit>
     </mat-tab>
     }
 </mat-tab-group>

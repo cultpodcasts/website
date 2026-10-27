@@ -191,13 +191,24 @@ describe('podcast flags on news / TV (indexing)', () => {
     model.bypassShortEpisodeChecking = false;
     model.alwaysPromoteAsHero = true;
     model.ignoreAllEpisodes = true;
-    model.skipEnrichingFromYouTube = true;
     expect(catalogueParentChanges(flagged, model, false)).toEqual({
       bypassShortEpisodeChecking: false,
       alwaysPromoteAsHero: true,
-      ignoreAllEpisodes: true,
-      skipEnrichingFromYouTube: true
+      ignoreAllEpisodes: true
     });
+  });
+
+  it('never edits or sends skipEnrichingFromYouTube, so a stored value is kept', () => {
+    for (const stored of [true, false, null]) {
+      const original: CatalogueParentDto = { ...flagged, skipEnrichingFromYouTube: stored };
+      const model = catalogueParentEditModel(original);
+      expect('skipEnrichingFromYouTube' in model).toBe(false);
+      expect(catalogueParentChanges(original, model, false)).toEqual({});
+      model.alwaysPromoteAsHero = true;
+      const changes = catalogueParentChanges(original, model, true);
+      expect(changes).toEqual({ alwaysPromoteAsHero: true });
+      expect('skipEnrichingFromYouTube' in changes).toBe(false);
+    }
   });
 
   it('sends a picked release authority, and unsetReleaseAuthority when set back to Unset', () => {

@@ -91,7 +91,6 @@ export class EditCatalogueParentDialogComponent {
 
   protected readonly label = hubParentLabel(this.data.hub);
   protected readonly isTv = this.data.hub === "tv";
-  protected readonly isNews = this.data.hub === "news";
   protected readonly releaseAuthorityOptions = releaseAuthorityOptions;
   protected readonly isLoading = signal(true);
   protected readonly isSending = signal(false);

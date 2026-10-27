@@ -58,9 +58,12 @@ export interface CatalogueParentDto {
 
 /**
  * PATCH body. Omitted = unchanged; "" clears a string; [] clears a list; `nullAppleId: true` clears `appleId`.
- * No `name` (rename is separate) and no `youTubePlaylistIdHistory` (server-kept).
+ * No `name` (rename is separate), no `youTubePlaylistIdHistory` (server-kept) and no `skipEnrichingFromYouTube`
+ * (not edited on news / TV, so it is never sent and a stored value is kept).
  */
-export type CatalogueParentChangeRequest = Partial<Omit<CatalogueParentDto, "id" | "name" | "youTubePlaylistIdHistory">> & {
+export type CatalogueParentChangeRequest = Partial<
+  Omit<CatalogueParentDto, "id" | "name" | "youTubePlaylistIdHistory" | "skipEnrichingFromYouTube">
+> & {
   nullAppleId?: boolean;
   /** `true` clears `releaseAuthority`. */
   unsetReleaseAuthority?: boolean;

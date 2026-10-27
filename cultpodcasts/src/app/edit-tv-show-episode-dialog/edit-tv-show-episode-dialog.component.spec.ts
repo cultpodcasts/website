@@ -100,7 +100,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     expect(dialog.parentName()).toBe('Nightly');
     expect(dialog.defaultSubject()).toBeNull();
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Urls', 'Images']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Identity']);
     expect(dialog.form()!.getRawValue()).toEqual(expect.objectContaining({
       imdbId: 'tt0000001',
       tvdbId: '',
