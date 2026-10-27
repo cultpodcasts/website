@@ -118,17 +118,6 @@ body {
   line-height: 1;
 }
 
-/* A film has no parent page, so its pill is a label, not a link. */
-.hero-pill--static {
-  cursor: default;
-}
-
-.hero-pill--static:hover,
-.hero-pill--static:focus-visible {
-  border-color: rgba(255, 255, 255, 0.28);
-  color: #fff;
-}
-
 .hero-meta {
   margin: 0 0 12px;
   display: flex;

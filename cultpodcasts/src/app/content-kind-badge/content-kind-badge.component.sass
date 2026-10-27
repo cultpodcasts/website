@@ -1,0 +1,22 @@
+// The host adds no box, so the separator and badge sit directly in the parent's flex row and use its gap.
+:host
+    display: contents
+
+.kind-badge__sep
+    opacity: 0.7
+
+.kind-badge
+    display: inline-flex
+    align-items: center
+    gap: 4px
+    white-space: nowrap
+
+// The scoped selector (0-2-0) beats MatIcon's `.mat-icon` (24px default box). The glyph is 1.25em of the
+// parent text; the box is 1em of that glyph (em is the icon's own font-size), and --mat-icon-size keeps
+// Material's own sizing in step.
+.kind-badge__icon
+    font-size: 1.25em
+    --mat-icon-size: 1em
+    width: 1em
+    height: 1em
+    line-height: 1

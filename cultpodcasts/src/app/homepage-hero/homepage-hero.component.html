@@ -72,24 +72,21 @@
       <div class="billboard__copy">
         <p class="billboard__eyebrow">
           <span class="billboard__live" aria-hidden="true"></span>
-          Now featuring
+          <span class="billboard__eyebrow-text">Now featuring</span>
+          <!-- HERO-KND-001: news reports, TV episodes and films say what they are. Podcasts show nothing extra. -->
+          <app-content-kind-badge [kind]="feature.contentKind" [separator]="true" />
         </p>
+        <!-- A film has no parent page, so it has no pill: the eyebrow already says Film. -->
+        @if (feature.parentLink; as parent) {
         <p class="hero-show">
-          @if (feature.parentLink; as parent) {
           <a class="hero-pill" [routerLink]="parent">
             @if (kindIcon(feature); as icon) {
             <mat-icon class="hero-pill__icon" aria-hidden="true">{{ icon }}</mat-icon>
             }
             {{ displayCatalogName(feature.podcastName) }}
           </a>
-          } @else if (kindIcon(feature); as icon) {
-          <!-- A film has no parent page: a plain "Film" pill with its icon. -->
-          <span class="hero-pill hero-pill--static">
-            <mat-icon class="hero-pill__icon" aria-hidden="true">{{ icon }}</mat-icon>
-            {{ kindLabel(feature) }}
-          </span>
-          }
         </p>
+        }
         <!-- HERO-TTL-001: the title opens the episode page (where More info used to go). -->
         <h1 class="billboard__title"><a class="billboard__title-link" [routerLink]="feature.playableLink">{{ feature.episodeTitle }}</a></h1>
         <p class="hero-meta">
