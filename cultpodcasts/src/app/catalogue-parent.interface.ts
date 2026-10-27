@@ -40,6 +40,20 @@ export interface CatalogueParentDto {
   descriptionRegex?: string | null;
   episodeMatchRegex?: string | null;
   episodeIncludeTitleRegex?: string | null;
+  /**
+   * Podcast flags kept on `indexing` (same wire names and rules as the podcast edit API).
+   * These are the stored values (unset is off). New news organisations are saved with `bypassShortEpisodeChecking`
+   * and `alwaysPromoteAsHero` on; a curator can switch either off afterwards.
+   */
+  ignoreAllEpisodes?: boolean | null;
+  bypassShortEpisodeChecking?: boolean | null;
+  alwaysPromoteAsHero?: boolean | null;
+  skipEnrichingFromYouTube?: boolean | null;
+  /** TimeSpan text (e.g. `00:01:30`); "" clears. */
+  minimumDuration?: string | null;
+  /** TimeSpan text, may be negative (e.g. `-1:00:00`); "" clears. */
+  youTubePublicationDelay?: string | null;
+  releaseAuthority?: string | null;
 }
 
 /**
@@ -48,6 +62,8 @@ export interface CatalogueParentDto {
  */
 export type CatalogueParentChangeRequest = Partial<Omit<CatalogueParentDto, "id" | "name" | "youTubePlaylistIdHistory">> & {
   nullAppleId?: boolean;
+  /** `true` clears `releaseAuthority`. */
+  unsetReleaseAuthority?: boolean;
 };
 
 /** POST /newsorganisation/name/{identifier} or /tvshow/name/{identifier} (admin). */

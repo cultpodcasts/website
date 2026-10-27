@@ -56,19 +56,49 @@ export const catalogueParentRegexFields = [
   "episodeIncludeTitleRegex"
 ] as const;
 
+/** TimeSpan text fields on `indexing` (podcast Details / Meta tab parity): "" clears. */
+export const catalogueParentDurationFields = ["minimumDuration", "youTubePublicationDelay"] as const;
+
+/** Podcast Flags tab parity, kept on `indexing`. */
+export const catalogueParentFlagFields = [
+  "bypassShortEpisodeChecking",
+  "alwaysPromoteAsHero",
+  "skipEnrichingFromYouTube",
+  "ignoreAllEpisodes"
+] as const;
+
+/** Release-authority select options; "Unset" clears (podcast Meta tab parity). */
+export const releaseAuthorityOptions = ["Unset", "Spotify", "Apple", "YouTube"] as const;
+
+/**
+ * `[-][d.]hh:mm[:ss[.fffffff]]`, or the `[-]d:h:mm:ss[.fffffff]` form .NET's "g" format (used by Functions for
+ * `youTubePublicationDelay`) gives a span of a day or more, e.g. `1:0:00:00`. Functions parses both.
+ */
+const durationPattern = /^-?(?:\d+:\d{1,2}:\d{2}:\d{2}(\.\d{1,7})?|(\d+\.)?\d{1,2}:\d{1,2}(:\d{1,2}(\.\d{1,7})?)?)$/;
+
+/** Blank (clear) or a TimeSpan such as `00:01:30`, `-1:00:00` or `1:0:00:00`. Save is blocked otherwise. */
+export function isValidDurationText(text: string): boolean {
+  const trimmed = text.trim();
+  return trimmed === "" || durationPattern.test(trimmed);
+}
+
 type TextField =
   | typeof catalogueParentTextFields[number]
   | typeof tvShowIdentityFields[number]
   | typeof catalogueParentServiceIdFields[number]
-  | typeof catalogueParentRegexFields[number];
+  | typeof catalogueParentRegexFields[number]
+  | typeof catalogueParentDurationFields[number];
+type FlagField = typeof catalogueParentFlagFields[number];
 type ListField = typeof catalogueParentListFields[number];
 
 /**
  * `appleId` is edited as text so a blank field can mean "clear". `language` is a language-select key
  * ("unset" = the "No Language" option, stored blank). `ignoredSubjects` is the multi-select value.
  */
-export type CatalogueParentEditModel = Record<TextField, string> & Record<ListField, string> & {
+export type CatalogueParentEditModel = Record<TextField, string> & Record<ListField, string> & Record<FlagField, boolean> & {
   removed: boolean;
+  /** A `releaseAuthorityOptions` value; "Unset" = none. */
+  releaseAuthority: string;
   indexAllEpisodes: boolean;
   appleId: string;
   tvdbId: string;
@@ -123,13 +153,18 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
     tvdbId: dto.tvdbId ? String(dto.tvdbId) : "",
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
-    ignoredSubjects: [...(dto.ignoredSubjects ?? [])]
+    ignoredSubjects: [...(dto.ignoredSubjects ?? [])],
+    releaseAuthority: dto.releaseAuthority || "Unset"
   } as CatalogueParentEditModel;
+  for (const field of catalogueParentFlagFields) {
+    model[field] = dto[field] === true;
+  }
   for (const field of [
     ...catalogueParentTextFields,
     ...tvShowIdentityFields,
     ...catalogueParentServiceIdFields,
-    ...catalogueParentRegexFields
+    ...catalogueParentRegexFields,
+    ...catalogueParentDurationFields
   ]) {
     model[field] = (dto[field] ?? "").toString();
   }
@@ -151,7 +186,8 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * Only the fields the curator changed. A cleared string is sent as "" and a cleared list as [];
  * "No Subject" is "" and "No Language" ("unset") is language "",
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
- * ("unchanged"). An invalid `appleId` text is ignored here; the dialog blocks Save on it.
+ * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
+ * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -170,6 +206,16 @@ export function catalogueParentChanges(
   for (const field of textFields) {
     const before = (original[field] ?? "").toString().trim();
     const after = edited[field].trim();
+    if (before !== after) {
+      changes[field] = after;
+    }
+  }
+  for (const field of catalogueParentDurationFields) {
+    const after = edited[field].trim();
+    if (!isValidDurationText(after)) {
+      continue;
+    }
+    const before = (original[field] ?? "").toString().trim();
     if (before !== after) {
       changes[field] = after;
     }
@@ -206,6 +252,19 @@ export function catalogueParentChanges(
       if (after !== (original[field] ?? 0)) {
         changes[field] = after;
       }
+    }
+  }
+  for (const field of catalogueParentFlagFields) {
+    if ((original[field] === true) !== edited[field]) {
+      changes[field] = edited[field];
+    }
+  }
+  const releaseAuthorityBefore = original.releaseAuthority || "Unset";
+  if (releaseAuthorityBefore !== edited.releaseAuthority) {
+    if (edited.releaseAuthority === "Unset") {
+      changes.unsetReleaseAuthority = true;
+    } else {
+      changes.releaseAuthority = edited.releaseAuthority;
     }
   }
   if ((original.removed === true) !== edited.removed) {

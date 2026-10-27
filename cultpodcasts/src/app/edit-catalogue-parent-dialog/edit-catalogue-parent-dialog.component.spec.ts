@@ -26,7 +26,7 @@ type Internals = {
   imdbUrl(id: string): string;
   tvdbUrl(id: string): string;
   tmdbUrl(id: string): string;
-  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean };
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
@@ -154,6 +154,68 @@ describe('EditCatalogueParentDialogComponent', () => {
     await dialog.save();
     expect(dialog.appleIdInvalid()).toBe(true);
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('PATCHes the podcast flags, release authority and durations with podcast wire names', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly', releaseAuthority: 'YouTube', youTubePublicationDelay: '' });
+    await settle();
+    const model = dialog.model()!;
+    model.bypassShortEpisodeChecking = true;
+    model.alwaysPromoteAsHero = true;
+    model.ignoreAllEpisodes = true;
+    model.releaseAuthority = 'Unset';
+    model.minimumDuration = '00:01:30';
+    model.youTubePublicationDelay = '-1:00:00';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({
+      minimumDuration: '00:01:30',
+      youTubePublicationDelay: '-1:00:00',
+      bypassShortEpisodeChecking: true,
+      alwaysPromoteAsHero: true,
+      ignoreAllEpisodes: true,
+      unsetReleaseAuthority: true
+    });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
+  });
+
+  it('blocks Save on an invalid minimum duration and flags only that field', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.model()!.minimumDuration = 'ninety';
+    await dialog.save();
+    expect(dialog.minimumDurationInvalid()).toBe(true);
+    expect(dialog.publicationDelayInvalid()).toBe(false);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('blocks Save on an invalid publication delay and flags only that field', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.model()!.youTubePublicationDelay = 'an hour';
+    await dialog.save();
+    expect(dialog.publicationDelayInvalid()).toBe(true);
+    expect(dialog.minimumDurationInvalid()).toBe(false);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('saves when the stored publication delay is a day or more in the .NET "g" form', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly', youTubePublicationDelay: '1:0:00:00' });
+    await settle();
+    dialog.model()!.description = 'Changed';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ description: 'Changed' });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(dialog.publicationDelayInvalid()).toBe(false);
+    expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
   it('asks before removing, and sends nothing when the curator says No', async () => {

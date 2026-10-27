@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -161,6 +161,87 @@ describe('service ids', () => {
     expect(removesCatalogueParent({ removed: true })).toBe(true);
     expect(removesCatalogueParent({ removed: false })).toBe(false);
     expect(removesCatalogueParent({ publisher: 'x' })).toBe(false);
+  });
+});
+
+describe('podcast flags on news / TV (indexing)', () => {
+  const flagged: CatalogueParentDto = {
+    ...outlet,
+    ignoreAllEpisodes: null,
+    bypassShortEpisodeChecking: true,
+    alwaysPromoteAsHero: null,
+    skipEnrichingFromYouTube: null,
+    minimumDuration: null,
+    youTubePublicationDelay: '',
+    releaseAuthority: null
+  };
+
+  it('loads the stored flags and sends nothing when untouched', () => {
+    const model = catalogueParentEditModel(flagged);
+    expect(model.bypassShortEpisodeChecking).toBe(true);
+    expect(model.alwaysPromoteAsHero).toBe(false);
+    expect(model.ignoreAllEpisodes).toBe(false);
+    expect(model.releaseAuthority).toBe('Unset');
+    expect(model.minimumDuration).toBe('');
+    expect(catalogueParentChanges(flagged, model, false)).toEqual({});
+  });
+
+  it('sends toggled flags as true / false, so unticking a saved news flag is an explicit opt-out', () => {
+    const model = catalogueParentEditModel(flagged);
+    model.bypassShortEpisodeChecking = false;
+    model.alwaysPromoteAsHero = true;
+    model.ignoreAllEpisodes = true;
+    model.skipEnrichingFromYouTube = true;
+    expect(catalogueParentChanges(flagged, model, false)).toEqual({
+      bypassShortEpisodeChecking: false,
+      alwaysPromoteAsHero: true,
+      ignoreAllEpisodes: true,
+      skipEnrichingFromYouTube: true
+    });
+  });
+
+  it('sends a picked release authority, and unsetReleaseAuthority when set back to Unset', () => {
+    const model = catalogueParentEditModel(flagged);
+    model.releaseAuthority = 'YouTube';
+    expect(catalogueParentChanges(flagged, model, true)).toEqual({ releaseAuthority: 'YouTube' });
+    const withAuthority: CatalogueParentDto = { ...flagged, releaseAuthority: 'YouTube' };
+    const cleared = catalogueParentEditModel(withAuthority);
+    expect(cleared.releaseAuthority).toBe('YouTube');
+    cleared.releaseAuthority = 'Unset';
+    expect(catalogueParentChanges(withAuthority, cleared, true)).toEqual({ unsetReleaseAuthority: true });
+  });
+
+  it('sends edited durations trimmed and "" when cleared, and skips invalid duration text', () => {
+    const withDurations: CatalogueParentDto = { ...flagged, minimumDuration: '00:01:30', youTubePublicationDelay: '-1:00:00' };
+    const model = catalogueParentEditModel(withDurations);
+    expect(catalogueParentChanges(withDurations, model, false)).toEqual({});
+    model.minimumDuration = '';
+    model.youTubePublicationDelay = ' 2:00:00 ';
+    expect(catalogueParentChanges(withDurations, model, false)).toEqual({
+      minimumDuration: '',
+      youTubePublicationDelay: '2:00:00'
+    });
+    model.minimumDuration = 'ninety seconds';
+    expect(catalogueParentChanges(withDurations, model, false)).toEqual({ youTubePublicationDelay: '2:00:00' });
+  });
+
+  it('loads a stored delay of a day or more in the .NET "g" form, sends nothing when untouched and sends it as typed when edited', () => {
+    const longDelay: CatalogueParentDto = { ...flagged, youTubePublicationDelay: '1:0:00:00' };
+    const model = catalogueParentEditModel(longDelay);
+    expect(model.youTubePublicationDelay).toBe('1:0:00:00');
+    expect(isValidDurationText(model.youTubePublicationDelay)).toBe(true);
+    expect(catalogueParentChanges(longDelay, model, false)).toEqual({});
+    model.youTubePublicationDelay = '-2:3:00:00';
+    expect(catalogueParentChanges(longDelay, model, false)).toEqual({ youTubePublicationDelay: '-2:3:00:00' });
+  });
+
+  it('validates duration text', () => {
+    for (const ok of ['', ' ', '00:01:30', '1:00:00', '-1:00:00', '1.02:03:04', '00:00:30.5', '1:0:00:00', '1:00:00:00', '-2:3:04:05', '1:0:00:00.5']) {
+      expect(isValidDurationText(ok)).toBe(true);
+    }
+    for (const bad of ['90', 'abc', '1:2:3:4', '-', '1:0:00:', ':0:00:00']) {
+      expect(isValidDurationText(bad)).toBe(false);
+    }
   });
 });
 
