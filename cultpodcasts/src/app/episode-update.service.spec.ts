@@ -4,7 +4,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../environments/environment';
 import { ApiEpisode } from './api-episode.interface';
-import { EpisodeUpdateService, toPlayableChanges } from './episode-update.service';
+import { EpisodeUpdateService, isCardOfPodcast, toPlayableChanges } from './episode-update.service';
 
 const id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const podcastId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
@@ -59,5 +59,54 @@ describe('EpisodeUpdateService review-page routing', () => {
   it('maps episode lang to playable language and drops service links', () => {
     expect(toPlayableChanges({ lang: 'fr', subjects: ['A'], urls: {}, images: {}, unBluesky: true }))
       .toEqual({ language: 'fr', subjects: ['A'], unBluesky: true });
+  });
+});
+
+describe('EpisodeUpdateService podcast-save card refresh', () => {
+  const pod = '66666666-6666-4666-8666-666666666666';
+  const card = (cid: string, extra: Partial<ApiEpisode> = {}): ApiEpisode => ({
+    id: cid, title: 'Synthetic', description: '', posted: false, tweeted: false, ignored: false, removed: false,
+    explicit: false, release: new Date('2026-01-02T00:00:00Z'), duration: '0:09:18', subjects: [],
+    podcastId: pod, podcastName: 'Synthetic Pod', ...extra
+  } as ApiEpisode);
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting()]
+    });
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('isCardOfPodcast matches by id, falls back to name, and never matches news / TV / film rows', () => {
+    expect(isCardOfPodcast(card('a'), { podcastId: pod })).toBe(true);
+    expect(isCardOfPodcast(card('a', { podcastId: 'other' }), { podcastId: pod, podcastName: 'Synthetic Pod' })).toBe(false);
+    expect(isCardOfPodcast(card('a', { podcastId: undefined }), { podcastName: 'Synthetic Pod' })).toBe(true);
+    expect(isCardOfPodcast(card('a'), { podcastName: 'Other' })).toBe(false);
+    expect(isCardOfPodcast(card('a'), {})).toBe(false);
+    expect(isCardOfPodcast(card('a', { contentKind: 'NewsReport' }), { podcastId: pod })).toBe(false);
+    expect(isCardOfPodcast(card('a', { contentKind: 'Episode' }), { podcastId: pod })).toBe(true);
+  });
+
+  it('fetchPodcastEpisodes GETs each matching card once and returns the re-read bodies', async () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const http = TestBed.inject(HttpTestingController);
+    const cards = [card('a'), card('b', { podcastId: 'other' }), card('a'), card('c', { contentKind: 'Film' })];
+    const done = service.fetchPodcastEpisodes(cards, { podcastId: pod });
+    await Promise.resolve();
+    const reqs = http.match(() => true);
+    expect(reqs.map(r => r.request.url)).toEqual([api('/episode/a')]);
+    expect(reqs[0].request.method).toBe('GET');
+    reqs[0].flush({ ...card('a'), lang: 'hi', release: '2026-01-02T00:00:00Z' });
+    const updated = await done;
+    expect(updated.map(x => x.lang)).toEqual(['hi']);
+    expect(updated[0].release).toBeInstanceOf(Date);
+  });
+
+  it('replaceEpisodes swaps re-read bodies in place and ignores ids no longer listed', () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const current = [card('a'), card('b')];
+    const next = service.replaceEpisodes(current, [card('b', { lang: 'hi' }), card('gone', { lang: 'fr' })]);
+    expect(next?.map(x => [x.id, x.lang])).toEqual([['a', undefined], ['b', 'hi']]);
   });
 });

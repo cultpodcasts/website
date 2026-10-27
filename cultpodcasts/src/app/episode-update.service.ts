@@ -7,6 +7,27 @@ import { EpisodePost } from './episode-post.interface';
 import { EpisodePublishResponse } from './episode-publish-response.interface';
 import { PostEpisodeModel } from './post-episode-model.interface';
 import { AUTH_SCOPE } from './auth.interceptor';
+import { isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
+
+/** The podcast a review-page edit-podcast dialog saved (id when the card had one, else its name). */
+export interface SavedPodcastRef {
+  podcastId?: string;
+  podcastName?: string;
+}
+
+/**
+ * Podcast-episode cards that belong to the saved podcast. News / TV / film rows never match (their parent is
+ * not a podcast). Matches on `podcastId` when the dialog knew it, otherwise on the podcast name.
+ */
+export function isCardOfPodcast(episode: ApiEpisode, podcast: SavedPodcastRef): boolean {
+  if (isNonPodcastPlayableKind(episode.contentKind)) {
+    return false;
+  }
+  if (podcast.podcastId) {
+    return episode.podcastId === podcast.podcastId;
+  }
+  return !!podcast.podcastName && episode.podcastName === podcast.podcastName;
+}
 
 /**
  * The review page's inline edits (subjects, guests, ignored / removed / tweeted, unBluesky, language) in the
@@ -171,6 +192,31 @@ export class EpisodeUpdateService {
       return [...episode.guests];
     }
     return episode.guestPeople?.map(x => x.name) ?? [];
+  }
+
+  /**
+   * After an edit-podcast save, GET every card of that podcast again. The podcast PUT moves episodes that
+   * followed the old default language onto the new one server-side (episodes with their own language keep it),
+   * so the re-read bodies carry the inherited language flag without a page Refresh. A card whose GET fails is
+   * left out (it keeps its current body); the rest still update.
+   */
+  async fetchPodcastEpisodes(episodes: readonly ApiEpisode[] | undefined, podcast: SavedPodcastRef): Promise<ApiEpisode[]> {
+    const ids = [...new Set((episodes ?? []).filter(x => isCardOfPodcast(x, podcast)).map(x => x.id))];
+    const results = await Promise.allSettled(ids.map(id => this.fetchEpisode(id)));
+    const updated: ApiEpisode[] = [];
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        updated.push(result.value);
+      } else {
+        console.error(result.reason);
+      }
+    }
+    return updated;
+  }
+
+  /** `replaceEpisode` for several re-read bodies; ids no longer on the page are ignored. */
+  replaceEpisodes(episodes: ApiEpisode[] | undefined, updated: readonly ApiEpisode[]): ApiEpisode[] | undefined {
+    return updated.reduce((current, episode) => this.replaceEpisode(current, episode), episodes);
   }
 
   replaceEpisode(episodes: ApiEpisode[] | undefined, updated: ApiEpisode): ApiEpisode[] | undefined {
