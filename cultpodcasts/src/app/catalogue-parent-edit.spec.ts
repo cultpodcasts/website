@@ -176,7 +176,7 @@ describe('podcast flags on news / TV (indexing)', () => {
     releaseAuthority: null
   };
 
-  it('loads the flags (bypass is the effective value) and sends nothing when untouched', () => {
+  it('loads the stored flags and sends nothing when untouched', () => {
     const model = catalogueParentEditModel(flagged);
     expect(model.bypassShortEpisodeChecking).toBe(true);
     expect(model.alwaysPromoteAsHero).toBe(false);
@@ -186,7 +186,7 @@ describe('podcast flags on news / TV (indexing)', () => {
     expect(catalogueParentChanges(flagged, model, false)).toEqual({});
   });
 
-  it('sends toggled flags as true / false, so unticking the news default bypass is an explicit opt-out', () => {
+  it('sends toggled flags as true / false, so unticking a saved news flag is an explicit opt-out', () => {
     const model = catalogueParentEditModel(flagged);
     model.bypassShortEpisodeChecking = false;
     model.alwaysPromoteAsHero = true;

@@ -74,10 +74,10 @@
                     <mat-checkbox name="bypassShortEpisodeChecking" [(ngModel)]="m.bypassShortEpisodeChecking">
                         Bypass Short Episode Checking
                     </mat-checkbox>
-                    @if (isNews) {
-                    <p class="hint">On by default for news organisations. Untick to apply the short-episode check.</p>
-                    }
                     <mat-checkbox name="alwaysPromoteAsHero" [(ngModel)]="m.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
+                    @if (isNews) {
+                    <p class="hint">New news organisations start with Bypass Short Episode Checking and Always promote as hero on.</p>
+                    }
                     <mat-checkbox name="skipEnrichingFromYouTube" [(ngModel)]="m.skipEnrichingFromYouTube">
                         Skip Enriching From YouTube
                     </mat-checkbox>

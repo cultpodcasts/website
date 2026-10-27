@@ -42,7 +42,8 @@ export interface CatalogueParentDto {
   episodeIncludeTitleRegex?: string | null;
   /**
    * Podcast flags kept on `indexing` (same wire names and rules as the podcast edit API).
-   * `bypassShortEpisodeChecking` is the effective value: a news organisation that never set it reads `true`.
+   * These are the stored values (unset is off). New news organisations are saved with `bypassShortEpisodeChecking`
+   * and `alwaysPromoteAsHero` on; a curator can switch either off afterwards.
    */
   ignoreAllEpisodes?: boolean | null;
   bypassShortEpisodeChecking?: boolean | null;
