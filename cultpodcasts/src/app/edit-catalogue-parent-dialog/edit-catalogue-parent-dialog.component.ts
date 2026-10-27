@@ -24,8 +24,10 @@ import {
   catalogueParentEditModel,
   includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
+  isValidDurationText,
   isValidImdbIdText,
   isValidNumericIdText,
+  releaseAuthorityOptions,
   removesCatalogueParent,
   subjectOptions
 } from "../catalogue-parent-edit";
@@ -53,7 +55,9 @@ export interface EditCatalogueParentDialogResponse {
 
 /**
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
- * Details (service ids), Flags (incl. Index All Episodes), Subjects, Social, Meta, Regexs, and Identity for TV.
+ * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
+ * promote as hero, Skip Enriching From YouTube, Ignore All Episodes), Subjects, Social, Meta (incl. release authority and
+ * minimum duration), Regexs, and Identity for TV.
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
@@ -87,6 +91,8 @@ export class EditCatalogueParentDialogComponent {
 
   protected readonly label = hubParentLabel(this.data.hub);
   protected readonly isTv = this.data.hub === "tv";
+  protected readonly isNews = this.data.hub === "news";
+  protected readonly releaseAuthorityOptions = releaseAuthorityOptions;
   protected readonly isLoading = signal(true);
   protected readonly isSending = signal(false);
   protected readonly notFound = signal(false);
@@ -96,6 +102,7 @@ export class EditCatalogueParentDialogComponent {
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
+  protected readonly durationInvalid = signal(false);
   protected readonly lookingUpIdentity = signal(false);
   protected readonly identityLookupMessage = signal("");
   protected readonly openExternalUrl = openExternalUrl;
@@ -222,6 +229,12 @@ export class EditCatalogueParentDialogComponent {
     }
     this.appleIdInvalid.set(!isValidAppleIdText(model.appleId));
     if (this.appleIdInvalid()) {
+      return;
+    }
+    this.durationInvalid.set(
+      !(isValidDurationText(model.minimumDuration) && isValidDurationText(model.youTubePublicationDelay))
+    );
+    if (this.durationInvalid()) {
       return;
     }
     this.identityInvalid.set(

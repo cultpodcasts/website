@@ -46,6 +46,14 @@
                     }
                 </p>
                 }
+                <mat-form-field class="full-width">
+                    <mat-label>YouTube Publication Delay</mat-label>
+                    <input type="text" name="youTubePublicationDelay" placeholder="-1:00:00"
+                        [(ngModel)]="m.youTubePublicationDelay" (ngModelChange)="durationInvalid.set(false)" matInput>
+                    @if (durationInvalid()) {
+                    <mat-hint class="invalid">Use a time span such as 1:00:00 or -1:00:00 (blank clears it).</mat-hint>
+                    }
+                </mat-form-field>
                 <p class="hint">URL submission files an episode under this {{ label.toLowerCase() }} when its channel or show matches these ids.</p>
             </mat-tab>
             <mat-tab label="Flags">
@@ -63,6 +71,17 @@
                         </button>
                         }
                     </div>
+                    <mat-checkbox name="bypassShortEpisodeChecking" [(ngModel)]="m.bypassShortEpisodeChecking">
+                        Bypass Short Episode Checking
+                    </mat-checkbox>
+                    @if (isNews) {
+                    <p class="hint">On by default for news organisations. Untick to apply the short-episode check.</p>
+                    }
+                    <mat-checkbox name="alwaysPromoteAsHero" [(ngModel)]="m.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
+                    <mat-checkbox name="skipEnrichingFromYouTube" [(ngModel)]="m.skipEnrichingFromYouTube">
+                        Skip Enriching From YouTube
+                    </mat-checkbox>
+                    <mat-checkbox name="ignoreAllEpisodes" [(ngModel)]="m.ignoreAllEpisodes">Ignore All Episodes</mat-checkbox>
                 </div>
             </mat-tab>
             <mat-tab label="Subjects">
@@ -140,6 +159,22 @@
                 <mat-form-field class="full-width">
                     <mat-label>Search Terms</mat-label>
                     <input type="text" name="searchTerms" [(ngModel)]="m.searchTerms" matInput>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Release Authority</mat-label>
+                    <mat-select name="releaseAuthority" [(ngModel)]="m.releaseAuthority">
+                        @for (service of releaseAuthorityOptions; track service) {
+                        <mat-option [value]="service">{{service}}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <mat-form-field class="full-width">
+                    <mat-label>Minimum Duration</mat-label>
+                    <input type="text" name="minimumDuration" placeholder="00:01:30" [(ngModel)]="m.minimumDuration"
+                        (ngModelChange)="durationInvalid.set(false)" matInput>
+                    @if (durationInvalid()) {
+                    <mat-hint class="invalid">Use a time span such as 00:01:30 (blank clears it).</mat-hint>
+                    }
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Regexs">
