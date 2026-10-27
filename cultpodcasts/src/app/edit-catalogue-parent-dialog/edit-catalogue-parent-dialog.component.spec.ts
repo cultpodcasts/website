@@ -31,6 +31,67 @@ type Internals = {
   tmdbUrl(id: string): string;
   save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
+/** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
+async function expectSoon(url: string) {
+  const http = TestBed.inject(HttpTestingController);
+  for (let i = 0; i < 20; i++) {
+    const hits = http.match(url);
+    if (hits.length === 1) {
+      return hits[0];
+    }
+    await Promise.resolve();
+  }
+  return http.expectOne(url);
+}
+
+async function settle() {
+  for (let i = 0; i < 10; i++) {
+    await Promise.resolve();
+  }
+}
+
+/** Clicks a tab header and waits for its lazy body to render. */
+async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogComponent>, label: string) {
+  fixture.detectChanges();
+  const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
+    .find((t) => t.textContent?.trim() === label);
+  expect(tab).toBeTruthy();
+  tab!.click();
+  for (let i = 0; i < 5; i++) {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  fixture.detectChanges();
+}
+
+/** Renders the Flags tab (tab bodies are lazy) and returns its text. */
+async function flagsTabText(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): Promise<string> {
+  await showTab(fixture, 'Flags');
+  const body = fixture.debugElement.queryAll(By.css('.flags'));
+  expect(body.length).toBe(1);
+  return (body[0].nativeElement as HTMLElement).textContent ?? '';
+}
+
+function tabLabels(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): (string | undefined)[] {
+  return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
+}
+
+/** Providers shared by the TV show and news outlet blocks. */
+function dialogProviders(data: { hub: 'tv' | 'news'; name: string }, close: unknown, snackOpen: unknown) {
+  return [
+    provideZonelessChangeDetection(),
+    // Tab bodies switch on animation end, which jsdom never fires.
+    { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
+    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClientTesting(),
+    { provide: MAT_DIALOG_DATA, useValue: data },
+    { provide: MatDialogRef, useValue: { close } },
+    { provide: MatSnackBar, useValue: { open: snackOpen } },
+    { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
+  ];
+}
+
 describe('EditCatalogueParentDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
   let confirmOpen: ReturnType<typeof vi.fn>;
@@ -49,17 +110,7 @@ describe('EditCatalogueParentDialogComponent', () => {
     confirmOpen = vi.fn(() => ({ afterClosed: () => of(confirmAnswer) }));
     await TestBed.configureTestingModule({
       imports: [EditCatalogueParentDialogComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        // Tab bodies switch on animation end, which jsdom never fires.
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
-        provideHttpClient(withInterceptors([authInterceptor])),
-        provideHttpClientTesting(),
-        { provide: MAT_DIALOG_DATA, useValue: { hub: 'tv', name: 'Nightly' } },
-        { provide: MatDialogRef, useValue: { close } },
-        { provide: MatSnackBar, useValue: { open: snackOpen } },
-        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
-      ]
+      providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, snackOpen)
     })
       // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
       .overrideProvider(MatDialog, { useValue: { open: (...args: unknown[]) => (confirmOpen as unknown as (...a: unknown[]) => unknown)(...args) } })
@@ -67,25 +118,6 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
-
-  async function expectSoon(url: string) {
-    const http = TestBed.inject(HttpTestingController);
-    // match() removes what it returns, so keep the first hit.
-    for (let i = 0; i < 20; i++) {
-      const hits = http.match(url);
-      if (hits.length === 1) {
-        return hits[0];
-      }
-      await Promise.resolve();
-    }
-    return http.expectOne(url);
-  }
-
-  async function settle() {
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-  }
 
   /** The dialog loads the show, `/subjects` and `/languages` together, like the podcast edit dialog. */
   async function loadWith(show: object, subjects = [{ name: 'Arts' }, { name: 'Sport' }], languages: Record<string, string> = { en: 'English', fr: 'French' }) {
@@ -117,29 +149,6 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
-  /** Clicks a tab header and waits for its lazy body to render. */
-  async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogComponent>, label: string) {
-    fixture.detectChanges();
-    const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
-      .find((t) => t.textContent?.trim() === label);
-    expect(tab).toBeTruthy();
-    tab!.click();
-    for (let i = 0; i < 5; i++) {
-      fixture.detectChanges();
-      await fixture.whenStable();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-    fixture.detectChanges();
-  }
-
-  /** Renders the Flags tab (tab bodies are lazy) and returns its text. */
-  async function flagsTabText(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): Promise<string> {
-    await showTab(fixture, 'Flags');
-    const body = fixture.debugElement.queryAll(By.css('.flags'));
-    expect(body.length).toBe(1);
-    return (body[0].nativeElement as HTMLElement).textContent ?? '';
-  }
-
   it('Flags tab has the checkboxes without helper text and without Skip Enriching From YouTube', async () => {
     const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
     fixture.detectChanges();
@@ -160,7 +169,7 @@ describe('EditCatalogueParentDialogComponent', () => {
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
     fixture.detectChanges();
-    const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
+    const tabs = tabLabels(fixture);
     expect(tabs).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs', 'Identity']);
     expect(tabs.indexOf('Regexs')).toBe(PODCAST_REGEXS_TAB_INDEX);
   });
@@ -401,58 +410,21 @@ describe('EditCatalogueParentDialogComponent (news outlet Flags tab)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EditCatalogueParentDialogComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        // Tab bodies switch on animation end, which jsdom never fires.
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
-        provideHttpClient(withInterceptors([authInterceptor])),
-        provideHttpClientTesting(),
-        { provide: MAT_DIALOG_DATA, useValue: { hub: 'news', name: 'Desk' } },
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MatSnackBar, useValue: { open: vi.fn() } },
-        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
-      ]
+      providers: dialogProviders({ hub: 'news', name: 'Desk' }, vi.fn(), vi.fn())
     }).compileComponents();
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  async function flush(url: string, body: unknown) {
-    const http = TestBed.inject(HttpTestingController);
-    for (let i = 0; i < 20; i++) {
-      const hits = http.match(url);
-      if (hits.length === 1) {
-        hits[0].flush(body as object);
-        return;
-      }
-      await Promise.resolve();
-    }
-    http.expectOne(url).flush(body as object);
-  }
-
   it('keeps the podcast tab order and shows no new-outlet defaults note or Skip Enriching From YouTube', async () => {
     const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
     fixture.detectChanges();
-    await flush(getUrl, { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', name: 'Desk', bypassShortEpisodeChecking: true, alwaysPromoteAsHero: true });
-    await flush(subjectsUrl, [{ name: 'Arts' }]);
-    await flush(languagesUrl, { en: 'English' });
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-    fixture.detectChanges();
-    const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
-      .find((t) => t.textContent?.trim() === 'Flags');
-    expect(tab).toBeTruthy();
-    tab!.click();
-    for (let i = 0; i < 5; i++) {
-      fixture.detectChanges();
-      await fixture.whenStable();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-    fixture.detectChanges();
-    const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs']);
-    const text = (fixture.debugElement.query(By.css('.flags')).nativeElement as HTMLElement).textContent ?? '';
+    (await expectSoon(getUrl)).flush({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', name: 'Desk', bypassShortEpisodeChecking: true, alwaysPromoteAsHero: true });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    const text = await flagsTabText(fixture);
+    expect(tabLabels(fixture)).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs']);
     expect(text).toContain('Always promote as hero');
     expect(text).not.toContain('New news organisations start with');
     expect(text).not.toContain('Skip Enriching From YouTube');

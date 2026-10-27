@@ -56,7 +56,7 @@ export interface EditCatalogueParentDialogResponse {
 /**
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
- * promote as hero, Skip Enriching From YouTube, Ignore All Episodes), Subjects, Social, Meta (incl. release authority and
+ * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl. release authority and
  * minimum duration), Regexs, and Identity for TV.
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
