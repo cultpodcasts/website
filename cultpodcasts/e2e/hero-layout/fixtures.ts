@@ -1,6 +1,7 @@
 /**
- * Episode/layout fixtures for homepage-hero geometry e2e (HERO-SCR-* / HERO-SUB-*).
- * HTML mirrors the billboard copy structure in homepage-hero.component.html.
+ * Episode/layout fixtures for homepage-hero geometry e2e (HERO-SCR-* / HERO-SUB-* / HERO-DSC-*).
+ * HTML mirrors the billboard copy structure in homepage-hero.component.html, including the
+ * description expander (wrap, fade, chevron) for expandable cases. All data is synthetic.
  */
 
 export type HeroLayoutCaseId =
@@ -9,7 +10,10 @@ export type HeroLayoutCaseId =
   | "long-title-with-desc"
   | "empty-desc-with-subjects"
   | "many-subjects-with-desc"
-  | "many-subjects-no-desc";
+  | "many-subjects-no-desc"
+  | "very-long-desc-with-urls"
+  | "medium-desc-with-urls"
+  | "medium-desc-tall-card";
 
 export interface HeroLayoutCase {
   id: HeroLayoutCaseId;
@@ -21,9 +25,42 @@ export interface HeroLayoutCase {
   releaseLabel: string;
   durationLabel: string;
   podcastName: string;
+  /**
+   * The description overflows its clamp, so the hero renders the chevron expander
+   * (HERO-DSC-001) and the harness can expand it (HERO-DSC-002..004).
+   */
+  expandable?: boolean;
 }
 
+/**
+ * Medium show notes (HERO-DSC-005): overflows the clamp but fits the expanded cap on desktop, so
+ * expanded it shows in full (Jon's 27 Oct 2026 report: expanding moved the card down).
+ * Synthetic: example.test hosts only.
+ */
+const MEDIUM_DESC_WITH_URLS = [
+  "Invented show notes. Previous video: https://video.example.test/_SyntheticAAA?is=2UOsXSc3lQiESIHE and part two: https://video.example.test/kQSynthetic?is=iDE3kl3t4jufLS0O",
+  "Support the invented host at https://tips.example.test/inventedhost or https://pay.example.test/inventedhost; the invented book: https://tips.example.test/s/23f5f8d77a",
+  ...Array.from({ length: 4 }, (_, i) =>
+    `Invented paragraph ${i + 1} with more synthetic notes at https://news.example.test/invented/story-${i + 1}?ref=hero&campaign=synthetic_value_${i}.`),
+].join(" ");
+
 const MANY_SUBJECTS = Array.from({ length: 12 }, (_, i) => `Topic ${i + 1}`);
+
+/**
+ * Show-notes style description: many paragraphs and long unbroken URLs (query strings,
+ * path segments without breaks), like the real feeds that showed the HERO-DSC-003 bugs.
+ * Synthetic: example.test hosts only.
+ */
+export const VERY_LONG_DESC_WITH_URLS = [
+  "Invented show notes for the hero harness. Follow along at https://notes.example.test/invented/episode-33/show-notes-with-a-very-long-path-segment-that-never-breaks-on-its-own?utm_source=harness&utm_medium=synthetic&utm_campaign=hero_desc_overflow_check_value",
+  "Support line: if you are affected by any of the invented issues in this synthetic episode, see https://support.example.test/Join or https://help.example.test/gb/basics/invented-topic/invented-topic-prevention-resources-and-a-very-long-path-segment-without-breaks for more.",
+  ...Array.from(
+    { length: 14 },
+    (_, i) =>
+      `Invented paragraph ${i + 1} with more synthetic notes at https://news.example.test/invented/story-${i + 1}?ref=hero&campaign=synthetic_long_value_${i}_${"x".repeat(24)}.`
+  ),
+  "Closing line of the synthetic description.",
+].join(" ");
 
 export const heroLayoutCases: HeroLayoutCase[] = [
   {
@@ -89,7 +126,44 @@ export const heroLayoutCases: HeroLayoutCase[] = [
     durationLabel: "0:45:00",
     podcastName: "Crowded Show",
   },
+  {
+    id: "very-long-desc-with-urls",
+    reqs: ["HERO-DSC-001", "HERO-DSC-002", "HERO-DSC-003", "HERO-DSC-004"],
+    episodeTitle: "Ep 33 - The Inventor: Synthetic Playbook",
+    episodeDescription: VERY_LONG_DESC_WITH_URLS,
+    subjects: ["Invented subject", "Another subject"],
+    releaseLabel: "27 Oct 2026",
+    durationLabel: "0:51:17",
+    podcastName: "Invented Show",
+    expandable: true,
+  },
+  {
+    id: "medium-desc-with-urls",
+    reqs: ["HERO-DSC-002", "HERO-DSC-005"],
+    episodeTitle: "Ep 34 - The Inventor: Synthetic Sequel",
+    episodeDescription: MEDIUM_DESC_WITH_URLS,
+    subjects: ["Invented subject", "Another subject"],
+    releaseLabel: "27 Oct 2026",
+    durationLabel: "0:08:10",
+    podcastName: "Invented Show",
+    expandable: true,
+  },
+  {
+    // Jon's 27 Oct 2026 shape: long title, no chips, so the wide card fills its band.
+    id: "medium-desc-tall-card",
+    reqs: ["HERO-DSC-002", "HERO-DSC-005"],
+    episodeTitle: "Invented Kingdom From Another World Or The Synthetic Host Examines A Made-Up Group",
+    episodeDescription: MEDIUM_DESC_WITH_URLS,
+    subjects: [],
+    releaseLabel: "27 Oct 2026",
+    durationLabel: "0:08:10",
+    podcastName: "Invented Show",
+    expandable: true,
+  },
 ];
+
+/** Same id the component gives the description (aria-controls target). */
+export const HERO_LAYOUT_DESC_ID = "hero-layout-desc";
 
 export function renderBillboardHtml(c: HeroLayoutCase): string {
   const hasDesc = c.episodeDescription.trim().length > 0;
@@ -105,8 +179,15 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
         .join("")}</div>`
     : "";
 
+  // Expandable: fade + chevron like the component (HERO-DSC-001); the harness script toggles
+  // the expanded state (see build-harness.ts, which mirrors HomepageHeroComponent.toggleDesc).
+  const toggleHtml = c.expandable
+    ? `<span class="billboard__desc-fade" aria-hidden="true"></span>` +
+      `<button type="button" class="billboard__desc-toggle" aria-label="Expand description" ` +
+      `aria-expanded="false" aria-controls="${HERO_LAYOUT_DESC_ID}"><span class="mat-icon" aria-hidden="true">&#x2304;</span></button>`
+    : "";
   const descHtml = hasDesc
-    ? `<div class="billboard__desc-wrap"><p class="billboard__desc">${escapeHtml(c.episodeDescription)}</p></div>`
+    ? `<div class="billboard__desc-wrap"><p class="billboard__desc" id="${HERO_LAYOUT_DESC_ID}">${escapeHtml(c.episodeDescription)}</p>${toggleHtml}</div>`
     : "";
 
   const copyBodyHtml = hasCopyBody
@@ -114,12 +195,12 @@ export function renderBillboardHtml(c: HeroLayoutCase): string {
     : "";
 
   return `
-<section class="billboard has-art-aspect" aria-label="Featured episodes" data-case="${c.id}">
+<section class="billboard has-art-aspect" aria-roledescription="carousel" aria-label="Featured episodes" data-case="${c.id}">
   <div class="billboard__stages" aria-hidden="true">
     <div class="billboard__stage is-active" style="--hero-art-aspect: 1.777">
       <div class="billboard__stage-motion">
         <div class="billboard__stage-focus-slot">
-          <div class="billboard__stage-focus" style="background:#333"></div>
+          <div class="billboard__stage-focus" style="background:linear-gradient(135deg,#5a4630,#c9b08a)"></div>
         </div>
       </div>
     </div>
@@ -172,4 +253,27 @@ function escapeHtml(value: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+/**
+ * Mock stats strip (app-homepage-catalogue) under the hero: the real component's Sass is
+ * compiled into the harness, so its -28px overlap and z-index match production (HERO-DSC-004).
+ */
+export function renderStatsStripHtml(): string {
+  const stat = (label: string, value: string, hero = false) =>
+    `<div class="catalogue__stat${hero ? " catalogue__stat--hero" : ""} is-active" role="group" aria-label="${label}">` +
+    `<p class="catalogue__value">${value}</p><p class="catalogue__label">${label}</p></div>`;
+  return `
+<app-homepage-catalogue>
+  <section class="catalogue" aria-label="Catalogue scale">
+    <div class="catalogue__viewport">
+      <div class="catalogue__inner">
+        ${stat("New this week", "123")}${stat("Episodes in the index", "45,678", true)}${stat("Days of listening", "1234")}
+      </div>
+    </div>
+  </section>
+</app-homepage-catalogue>
+<div class="hero-layout-rails" aria-label="Rails (mock)">
+  ${Array.from({ length: 3 }, (_, i) => `<div class="hero-layout-rail">Rail ${i + 1}</div>`).join("")}
+</div>`;
 }

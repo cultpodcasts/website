@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.24.15",
+  "version": "1.24.16",
   "scripts": {
     "ng": "ng",
     "start": "node ./tools/start-local.mjs",
@@ -12,7 +12,7 @@
     "test:watch": "ng test --watch",
     "test:e2e": "playwright test",
     "test:e2e:catalogue": "playwright test -c playwright.catalogue.config.ts",
-    "test:e2e:hero-layout": "playwright test e2e/hero-layout.spec.ts",
+    "test:e2e:hero-layout": "playwright test e2e/hero-layout.spec.ts e2e/hero-layout-expand.spec.ts",
     "test:e2e:chrome-search": "playwright test e2e/chrome-search-layout.spec.ts",
     "test:e2e:submit-url": "playwright test e2e/submit-url-flows.spec.ts e2e/submit-url-flows.tour.spec.ts",
     "test:all": "npm run assert:svg-icons && npm run test && npm run test:e2e && npm run test:e2e:catalogue",

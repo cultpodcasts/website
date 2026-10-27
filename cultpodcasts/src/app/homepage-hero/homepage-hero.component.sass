@@ -340,6 +340,11 @@
     // The 32px button overhangs the last line by ~4px; keep it clear of the chips.
     margin: 0 0 8px
     font-size: var(--hero-desc-font)
+    // Expanded (HERO-DSC-003): the chevron gets its own band under the scrolling text, so it
+    // never covers a line at any scroll position (its bottom offset keeps it inside the band).
+    // 40px must match HERO_DESC_GROW.toggleBandPx (TS sizing).
+    &.is-expanded
+        padding-bottom: 40px
 
 .billboard__desc
     // Font size inherits from .billboard__desc-wrap (--hero-desc-font).
@@ -353,24 +358,28 @@
     -webkit-line-clamp: var(--hero-desc-lines)
     line-clamp: var(--hero-desc-lines)
     overflow: hidden
+    // Long unbroken URLs (show notes) wrap inside the column instead of being cut off at its edge.
+    overflow-wrap: anywhere
+    // HERO-DSC-003 / 006: the text keeps clear of the expanded scrollbar (gutter reserved for
+    // classic scrollbars; 16px also clears overlay thumbs). Collapsed too, so the text column is
+    // the same width and expanding never re-wraps a line. Border-box: a full column keeps its 36em
+    // box; a shorter description's box is 16px (+ gutter) wider than its text, in both states.
+    box-sizing: border-box
+    scrollbar-gutter: stable
+    padding-right: 16px
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
-    // Expanded (HERO-DSC-002): clamp off; TS sizes it (grow to the viewport foot, at least
+    // Expanded (HERO-DSC-002): clamp off; TS sizes it (card to the viewport foot, at least
     // max(6 lines, 30vh), at most 60vh) and the rest scrolls inside. The hero keeps its height.
     &.is-expanded
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
+        overflow-x: hidden
         overflow-y: auto
         overscroll-behavior: contain
         // TS sets the height; the collapsed min-height (clamp lines) must not inflate it.
         min-height: 0
-        // Spacer at the end of the text: the last line wraps short of the expander,
-        // so nothing is hidden once the reader reaches the end.
-        &::after
-            content: ''
-            display: inline-block
-            width: var(--hero-desc-toggle-room)
 
 // Fades the end of the last visible line under the expander (the art/card behind the
 // copy is near-black in every layout), so the button never sits on legible text.
@@ -852,12 +861,19 @@
         width: 40px
         height: 40px
 
-// Expanded (HERO-DSC-002): the hero height is locked, so the card spills past it, over the stats strip / rails (z-index 2), on an opaque surface ending
-// with the card.
+// Expanded (HERO-DSC-002): the hero height is locked, so the card spills past its foot, over the
+// stats strip / rails (z-index 2), on an opaque surface ending with the card.
+// Only the card is raised (HERO-DSC-004). The billboard itself gets no z-index: that would make it a
+// stacking context above the strip (which overlaps the hero's foot by 28px), so the art band and
+// the billboard's own background painted over the top of the stats strip while expanded.
+// Sideways it still clips (clip, not hidden, so the vertical spill stays visible): the stacked
+// card's 100vw panel is wider than the page when a classic scrollbar shows, and unclipped it
+// scrolled the page sideways.
 .billboard.is-desc-expanded
-    overflow: visible
-    z-index: 3
-    // Over the in-flow pager/admin it grows across (short stacked windows: they sit below it).
+    overflow-x: clip
+    overflow-y: visible
+    // Over the stats strip / rails (2) and the in-flow pager/admin it grows across (short
+    // stacked windows: they sit below it); still below the site chrome (100+).
     .billboard__content
         z-index: 4
     // TS sizes the description; the collapsed reserve must not add to it.

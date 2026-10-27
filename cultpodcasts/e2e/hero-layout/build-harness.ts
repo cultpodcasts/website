@@ -1,7 +1,8 @@
 import * as sass from "sass";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { HeroLayoutCase, renderBillboardHtml } from "./fixtures";
+import { HeroLayoutCase, renderBillboardHtml, renderStatsStripHtml } from "./fixtures";
+import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc } from "../../src/app/homepage-hero/hero-desc-layout";
 
 const heroSassPath = join(
   process.cwd(),
@@ -12,6 +13,13 @@ const heroSassPath = join(
 );
 const queueButtonSassPath = join(process.cwd(), "src", "app", "queue-button", "queue-button.component.sass");
 const stylesPath = join(process.cwd(), "src", "styles.scss");
+const catalogueSassPath = join(
+  process.cwd(),
+  "src",
+  "app",
+  "homepage-catalogue",
+  "homepage-catalogue.component.sass"
+);
 
 /** Compile real hero component Sass for light-DOM harness (rewrite :host). */
 export function compileHeroLayoutCss(): string {
@@ -22,6 +30,11 @@ export function compileHeroLayoutCss(): string {
   const queueButtonCss = sass.compile(queueButtonSassPath, { style: "expanded" }).css
     .replace(/:host\(([^)]*)\)/g, "app-queue-button$1")
     .replaceAll(":host", "app-queue-button");
+  // The stats strip under the hero (mock markup, real Sass): its -28px overlap and z-index are
+  // what an expanded hero must not paint over (HERO-DSC-004).
+  const catalogueCss = sass.compile(catalogueSassPath, { style: "expanded" }).css
+    .replace(/:host\(([^)]*)\)/g, "app-homepage-catalogue$1")
+    .replaceAll(":host", "app-homepage-catalogue");
 
   const tokenCss = `
 .hero-layout-root {
@@ -52,6 +65,25 @@ export function compileHeroLayoutCss(): string {
   font-size: 0.85rem;
 }
 .hero-meta { margin: 0; }
+/* mat-icon-button look for the expander (round, centred icon). */
+.billboard__desc-toggle {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.billboard__desc-toggle .mat-icon { display: block; line-height: 20px; text-align: center; }
+.billboard__desc-wrap.is-expanded .billboard__desc-toggle .mat-icon { transform: rotate(180deg); }
+.hero-layout-rails { padding: 24px 4vw 120px; }
+.hero-layout-rail {
+  height: 220px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  color: #777;
+  padding: 12px;
+}
+.catalogue__label { margin: 0; color: #bbb; }
 .hero-show { margin: 0 0 8px; }
 `;
 
@@ -65,7 +97,7 @@ export function compileHeroLayoutCss(): string {
     /* optional */
   }
 
-  return `${tokenCss}\n${stylesSnippet}\n${heroCss}\n${queueButtonCss}`;
+  return `${tokenCss}\n${stylesSnippet}\n${heroCss}\n${queueButtonCss}\n${catalogueCss}`;
 }
 
 export function buildHeroLayoutDocument(c: HeroLayoutCase): string {
@@ -81,6 +113,78 @@ export function buildHeroLayoutDocument(c: HeroLayoutCase): string {
 </head>
 <body class="hero-layout-root">
   <div class="hero-layout-host">${billboard}</div>
+  ${renderStatsStripHtml()}
+  <script>${expandScript()}</script>
 </body>
 </html>`;
+}
+
+/**
+ * In-page expander that mirrors HomepageHeroComponent.toggleDesc (HERO-DSC-002..004): measure the
+ * collapsed card, then lock the hero height, set the expanded classes, size the description and
+ * lay a bottom-anchored (wide) card from its collapsed top, with the component's own `measureCollapsedDesc` and
+ * `expandedDescLayout` (serialised here, so harness and component measure and size identically).
+ * Collapse restores the exact collapsed layout.
+ * Exposed as `window.heroLayoutHarness.toggleDesc()`; the chevron click calls it too.
+ */
+function expandScript(): string {
+  return `
+(() => {
+  const measureCollapsedDesc = ${measureCollapsedDesc.toString()};
+  const expandedDescLayout = ${expandedDescLayout.toString()};
+  const GROW = ${JSON.stringify(HERO_DESC_GROW)};
+  const q = (sel) => document.querySelector(sel);
+  let metrics = null;
+  function expand() {
+    const hero = q(".billboard"), card = q(".billboard__content");
+    const wrap = q(".billboard__desc-wrap"), desc = q(".billboard__desc");
+    const toggle = q(".billboard__desc-toggle");
+    if (!hero || !card || !wrap || !desc || !toggle) return;
+    metrics = measureCollapsedDesc(hero, card, desc);
+    hero.classList.add("is-desc-expanded");
+    wrap.classList.add("is-expanded");
+    desc.classList.add("is-expanded");
+    desc.tabIndex = 0;
+    q(".billboard__desc-fade")?.remove();
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    const layout = expandedDescLayout(metrics, vh, GROW);
+    hero.style.height = layout.heroH + "px";
+    desc.style.height = layout.descPx + "px";
+    // Wide: lay the card from its collapsed top (HERO-DSC-005), as the component's bindings do.
+    hero.style.alignItems = layout.cardTopPx != null ? "flex-start" : "";
+    card.style.marginTop = layout.cardTopPx != null ? layout.cardTopPx + "px" : "";
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Collapse description");
+  }
+  function collapse() {
+    const hero = q(".billboard"), card = q(".billboard__content");
+    const wrap = q(".billboard__desc-wrap"), desc = q(".billboard__desc");
+    const toggle = q(".billboard__desc-toggle");
+    metrics = null;
+    hero.classList.remove("is-desc-expanded");
+    wrap.classList.remove("is-expanded");
+    desc.classList.remove("is-expanded");
+    desc.removeAttribute("tabindex");
+    hero.style.height = "";
+    desc.style.height = "";
+    hero.style.alignItems = "";
+    card.style.marginTop = "";
+    desc.scrollTop = 0;
+    if (!q(".billboard__desc-fade")) {
+      const fade = document.createElement("span");
+      fade.className = "billboard__desc-fade";
+      fade.setAttribute("aria-hidden", "true");
+      wrap.insertBefore(fade, toggle);
+    }
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Expand description");
+  }
+  function toggleDesc() {
+    if (metrics) collapse(); else expand();
+  }
+  window.heroLayoutHarness = { toggleDesc, isExpanded: () => metrics !== null };
+  document.addEventListener("click", (e) => {
+    if (e.target instanceof Element && e.target.closest(".billboard__desc-toggle")) toggleDesc();
+  });
+})();`;
 }

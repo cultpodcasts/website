@@ -78,6 +78,9 @@ const layouts = [
 	{ name: "mobile", width: 390, height: 844, lines: 3 }
 ] as const;
 
+/** Chevron band under the expanded description (HERO-DSC-003; HERO_DESC_GROW.toggleBandPx). */
+const TOGGLE_BAND = 40;
+
 const desc = (page: Page) => page.locator(".billboard__desc");
 const toggle = (page: Page) => page.locator("button.billboard__desc-toggle");
 const shots = process.env.HERO_SCREENS_DIR;
@@ -116,6 +119,8 @@ async function inlineToggle(page: Page): Promise<{ centreOffset: number; rightOf
 type Geo = {
 	heroH: number; band: number; cardTop: number; cardBottom: number; anchor: number; clearance: number;
 	vh: number; scrollY: number; heroTopVp: number; descH: number; lineH: number; toggleBottomVp: number;
+	/** Art box and stats strip top, relative to the hero top (HERO-DSC-004: expanding moves neither). */
+	stagesTop: number; stagesH: number; stagesW: number; stripTop: number | null;
 };
 /** Hero/card geometry; card offsets are relative to the hero top. */
 const geometry = (page: Page): Promise<Geo> => page.evaluate(() => {
@@ -124,8 +129,14 @@ const geometry = (page: Page): Promise<Geo> => page.evaluate(() => {
 	const cs = getComputedStyle(hero);
 	const h = hero.getBoundingClientRect();
 	const c = card.getBoundingClientRect();
+	const st = document.querySelector(".billboard__stages")!.getBoundingClientRect();
+	const strip = document.querySelector(".catalogue")?.getBoundingClientRect();
 	return {
 		heroH: h.height,
+		stagesTop: st.top - h.top,
+		stagesH: st.height,
+		stagesW: st.width,
+		stripTop: strip ? strip.top - h.top : null,
 		band: parseFloat(cs.minHeight),
 		cardTop: c.top - h.top,
 		cardBottom: c.bottom - h.top,
@@ -167,12 +178,38 @@ async function expectToggleVisible(page: Page, when: string): Promise<void> {
  * grows by the gap G to the viewport foot (less 12px), at least max(6 lines, 30vh), at most
  * 60vh (short text: in full), overlaying whatever follows the hero; the rest scrolls inside;
  * the chevron is within 60vh of page scroll and visible at both ends of the inner scroll.
+ * The card counts the chevron band under the text (HERO-DSC-003) toward the foot and the 60vh.
+ * HERO-DSC-003: text keeps a 16px gap from the scrollbar, nothing scrolls sideways, and the
+ * chevron sits below the scroller (never over a line). HERO-DSC-004: the art box and the stats
+ * strip do not move.
  */
 async function expectExpandedSized(page: Page, collapsed: Geo, shot?: string): Promise<void> {
 	const g = await geometry(page);
 	expect(Math.abs(g.heroH - collapsed.heroH), "expanding changed the hero height").toBeLessThanOrEqual(1);
 	expect(g.scrollY, "expanding scrolled the page").toBe(collapsed.scrollY);
 	expect(Math.abs(g.cardTop - collapsed.cardTop), "card top moved").toBeLessThanOrEqual(1);
+	expect(Math.abs(g.stagesTop - collapsed.stagesTop), "expanding moved the art").toBeLessThanOrEqual(1);
+	expect(Math.abs(g.stagesH - collapsed.stagesH), "expanding resized the art").toBeLessThanOrEqual(1);
+	expect(Math.abs(g.stagesW - collapsed.stagesW), "expanding resized the art").toBeLessThanOrEqual(1);
+	if (collapsed.stripTop !== null && g.stripTop !== null) {
+		expect(Math.abs(g.stripTop - collapsed.stripTop), "expanding moved the stats strip").toBeLessThanOrEqual(1);
+	}
+	const text = await desc(page).evaluate((d) => {
+		const b = d.getBoundingClientRect();
+		const clientRight = b.left + d.clientLeft + d.clientWidth;
+		const range = document.createRange();
+		range.selectNodeContents(d);
+		const right = Math.max(...[...range.getClientRects()].filter((r) => r.width > 0).map((r) => r.right));
+		const t = document.querySelector(".billboard__desc-toggle")!.getBoundingClientRect();
+		return {
+			gap: clientRight - right, padRight: parseFloat(getComputedStyle(d).paddingRight),
+			xOverflow: d.scrollWidth - d.clientWidth, toggleTop: t.top, descBottom: b.bottom
+		};
+	});
+	expect(text.padRight, "no gap kept from the scrollbar").toBeGreaterThanOrEqual(16);
+	expect(text.gap, "text runs under the scrollbar").toBeGreaterThanOrEqual(16 - 0.5);
+	expect(text.xOverflow, "description scrolls sideways (long URLs)").toBeLessThanOrEqual(0);
+	expect(text.toggleTop, "chevron over the scrolling text").toBeGreaterThanOrEqual(text.descBottom - 0.5);
 	const vh = collapsed.vh;
 	const collapsedCardTopVp = collapsed.heroTopVp + collapsed.cardTop;
 	const box = await page.evaluate((cardTopVp) => {
@@ -207,8 +244,9 @@ async function expectExpandedSized(page: Page, collapsed: Geo, shot?: string): P
 	const C = collapsed.descH;
 	const L = collapsed.lineH;
 	const minGrow = Math.max(6 * L, 0.3 * vh);
-	const maxGrow = 0.6 * vh;
-	const gap = vh - 12 - (collapsed.heroTopVp + collapsed.cardBottom);
+	// The chevron band (HERO-DSC-003) is part of the card's growth: the text gets the rest.
+	const maxGrow = Math.max(minGrow, 0.6 * vh - TOGGLE_BAND);
+	const gap = vh - 12 - (collapsed.heroTopVp + collapsed.cardBottom) - TOGGLE_BAND;
 	const grown = box.descH - C;
 	expect(grown, "description grew more than 60vh").toBeLessThanOrEqual(maxGrow + 2);
 	if (box.fullH > C + minGrow + L) {
@@ -764,7 +802,7 @@ test.describe("homepage hero description", () => {
 		await toggle(page).click();
 		await expect(desc(page)).toHaveClass(/is-expanded/);
 		const grown = (await desc(page).evaluate((el) => el.clientHeight - parseFloat(getComputedStyle(el).paddingTop) - parseFloat(getComputedStyle(el).paddingBottom))) - collapsed.descH;
-		expect(Math.abs(grown - 0.6 * collapsed.vh)).toBeLessThanOrEqual(2);
+		expect(Math.abs(grown - (0.6 * collapsed.vh - TOGGLE_BAND))).toBeLessThanOrEqual(2);
 		const bottom = await page.locator(".billboard__content").evaluate((el) => el.getBoundingClientRect().bottom);
 		expect(bottom, "capped card should end above the foot").toBeLessThan(collapsed.vh - 12);
 		await expectExpandedSized(page, collapsed, shots ? "hero-wide-tallgap" : undefined);
@@ -814,7 +852,9 @@ test.describe("homepage hero description", () => {
 				expect(now.expanded, `collapsed while the card was on screen (step ${steps})`).toBe(true);
 				expect(Math.abs(now.cardH - start.cardH), "card changed shape on page scroll").toBeLessThanOrEqual(1);
 				expect(Math.abs(now.cardInHero - start.cardInHero), "card did not move with the page").toBeLessThanOrEqual(1);
-				expect(now.descScroll, "inner scroll changed on page scroll").toBe(start.descScroll);
+				// ±1px: at the scroll end (where expectExpandedSized leaves it) a fractional scroll
+				// range can round either way between reads; a page-scroll re-fit moves it far more.
+				expect(Math.abs(now.descScroll - start.descScroll), "inner scroll changed on page scroll").toBeLessThanOrEqual(1);
 				if (now.cardBottom < 0) {
 					break;
 				}
@@ -829,7 +869,7 @@ test.describe("homepage hero description", () => {
 			const back = await read();
 			expect(back.expanded).toBe(true);
 			expect(Math.abs(back.cardH - start.cardH)).toBeLessThanOrEqual(1);
-			expect(back.descScroll).toBe(start.descScroll);
+			expect(Math.abs(back.descScroll - start.descScroll)).toBeLessThanOrEqual(1);
 			// The chevron may sit below the foot (the card grows past it): bring it into view.
 			await toggle(page).evaluate((el) => el.scrollIntoView({ block: "nearest" }));
 			await expectToggleVisible(page, "back where it was expanded");

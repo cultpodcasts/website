@@ -31,6 +31,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
+import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics, type HeroDescLayout } from './hero-desc-layout';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -116,25 +117,17 @@ export class HomepageHeroComponent {
   /**
    * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
    * inline) and the card grows downward from its collapsed top, overlaying what follows the hero.
-   * `descPx` is the description's height (it scrolls inside past that) and `shiftPx` keeps the
-   * card's top where it was (the wide card is bottom-anchored in flow). Null while collapsed.
+   * `descPx` is the description's height (it scrolls inside past that) and, wide, `cardTopPx`
+   * lays the card from its collapsed top (the hero aligns it to the top, the card takes it as
+   * `margin-top`), so the top never moves (HERO-DSC-005). Null while collapsed.
    */
-  protected readonly descLayout = signal<{ heroH: number; descPx: number; shiftPx: number } | null>(null);
-  /** Expanded: the description's scrollbar width, so the pinned chevron sits clear of it. */
-  protected readonly descScrollbarPx = signal(0);
+  protected readonly descLayout = signal<HeroDescLayout | null>(null);
   /**
    * Collapsed geometry captured at expand time, including where the card's bottom was in the
    * viewport then (`cardBottomVp`): the size is measured once, so page scroll just moves the
    * expanded card with the page (no re-fit, no collapse); only a height resize re-sizes it.
    */
-  private descExpandMetrics: {
-    heroH: number; cardBottomVp: number; descH: number; fullH: number; lineH: number; width: number;
-    bottomAnchored: boolean;
-  } | null = null;
-  /** HERO-DSC-002 growth bounds: at least max(6 lines, 30vh), at most 60vh, past the collapsed text. */
-  private static readonly descMinGrowLines = 6;
-  private static readonly descMinGrowVh = 0.3;
-  private static readonly descMaxGrowVh = 0.6;
+  private descExpandMetrics: (HeroDescExpandMetrics & { width: number }) | null = null;
 
   protected readonly displayCatalogName = displayCatalogName;
 
@@ -641,12 +634,11 @@ export class HomepageHeroComponent {
     this.syncHeroPaused();
   }
 
-  /** Back to the exact collapsed layout: no lock, shift or height, first line at the top. */
+  /** Back to the exact collapsed layout: no lock, top offset or height, first line at the top. */
   private collapseDesc(): void {
     this.descExpanded.set(false);
     this.descExpandMetrics = null;
     this.descLayout.set(null);
-    this.descScrollbarPx.set(0);
     // A scrolled box re-clamped at its old offset showed blank space past the text.
     this.resetDescScroll();
   }
@@ -659,36 +651,16 @@ export class HomepageHeroComponent {
     if (!isPlatformBrowser(this.platformId) || !desc || !card || !hero) {
       return;
     }
-    const px = (value: string) => Number.parseFloat(value) || 0;
-    const heroBox = hero.getBoundingClientRect();
-    const cardBox = card.getBoundingClientRect();
-    const styles = getComputedStyle(hero);
-    const descStyles = getComputedStyle(desc);
-    // The description's content box: the expanded height is set on it.
-    const descH = px(descStyles.height) || desc.clientHeight;
-    const lineH = px(descStyles.lineHeight);
-    const padY = px(descStyles.paddingTop) + px(descStyles.paddingBottom);
-    this.descExpandMetrics = {
-      heroH: heroBox.height,
-      cardBottomVp: cardBox.bottom,
-      descH,
-      // Whole text (the clamped box still reports it as scrollHeight), plus a line for the
-      // expanded end spacer that keeps the last line clear of the chevron.
-      fullH: Math.max(descH, desc.scrollHeight - padY + lineH),
-      lineH,
-      width: window.innerWidth,
-      // Wide: the card sits at the flex-end of a row hero, so a taller card grows upward in
-      // flow. Stacked (column) layouts keep its top and grow it downward.
-      bottomAnchored: styles.flexDirection !== 'column',
-    };
+    this.descExpandMetrics = { ...measureCollapsedDesc(hero, card, desc), width: window.innerWidth };
   }
 
   /**
    * Expanded size (HERO-DSC-002), measured once at expand time (and on resize): the card's top
-   * never moves; the description grows by the gap G from the card's bottom to the viewport foot
-   * (less a 12px margin), but always by at least max(6 lines, 30vh), so it grows noticeably even
-   * at the foot, and by at most 60vh, so the chevron is never a long scroll away. Short text just
-   * shows in full; the rest scrolls inside. Hero-relative, so page scroll carries it along.
+   * never moves; the card (description + the chevron band under it, HERO-DSC-003) fills to the
+   * viewport foot (less a 12px margin), but the description always grows by at least
+   * max(6 lines, 30vh), so it grows noticeably even at the foot, and the card by at most 60vh, so
+   * the chevron is never a long scroll away. Short text just shows in full; the rest scrolls
+   * inside. Hero-relative, so page scroll carries it along. Maths: {@link expandedDescLayout}.
    */
   private layoutExpandedDesc(): void {
     const metrics = this.descExpandMetrics;
@@ -696,14 +668,7 @@ export class HomepageHeroComponent {
       return;
     }
     const viewportH = window.visualViewport?.height ?? window.innerHeight;
-    const gap = viewportH - 12 - metrics.cardBottomVp;
-    const minGrow = Math.max(HomepageHeroComponent.descMinGrowLines * metrics.lineH, HomepageHeroComponent.descMinGrowVh * viewportH);
-    const maxGrow = HomepageHeroComponent.descMaxGrowVh * viewportH;
-    const grow = Math.min(Math.max(minGrow, gap), maxGrow);
-    const descPx = Math.floor(Math.min(metrics.fullH, metrics.descH + grow));
-    // Wide: the card is bottom-anchored in flow and would grow upward; shift it back down.
-    const shiftPx = metrics.bottomAnchored ? Math.round(descPx - metrics.descH) : 0;
-    this.descLayout.set({ heroH: metrics.heroH, descPx, shiftPx });
+    this.descLayout.set(expandedDescLayout(metrics, viewportH, HERO_DESC_GROW));
   }
 
   private resetDescScroll(): void {
@@ -728,8 +693,7 @@ export class HomepageHeroComponent {
       return;
     }
     if (this.descExpanded()) {
-      // The pinned chevron sits clear of the description's own scrollbar.
-      this.descScrollbarPx.set(Math.max(0, element.offsetWidth - element.clientWidth));
+      // Clamp is off while expanded: keep the answer (the chevron must stay to collapse).
       return;
     }
     this.fitWideDesc(element);
