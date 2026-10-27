@@ -213,4 +213,119 @@ describe('EpisodesApiComponent (embedded)', () => {
     expect(hrefs).toContain(`/podcast/Synthetic%20Pod/${new GuidService().toBase64(guid)}`);
     expect(hrefs.filter(h => h.includes(guid))).toEqual([]);
   });
+  describe('after an edit-podcast save', () => {
+    const podId = '11111111-1111-4111-8111-111111111111';
+    const otherPodId = '22222222-2222-4222-8222-222222222222';
+    const inherits = '33333333-3333-4333-8333-333333333333';
+    const ownLanguage = '44444444-4444-4444-8444-444444444444';
+    const otherPodcast = '55555555-5555-4555-8555-555555555555';
+    const body = (id: string, podcastId: string, lang?: string) => ({
+      id, title: `Synthetic ${id.slice(0, 4)}`, podcastId, podcastName: podcastId === podId ? 'Synthetic Pod' : 'Other Pod',
+      description: '', posted: false, tweeted: false, ignored: false, removed: false, explicit: false,
+      release: '2026-01-02T00:00:00Z', duration: '00:09:18', subjects: [], lang,
+    });
+    const cardOrder = [inherits, ownLanguage, otherPodcast];
+    /** Cards render in id order (forkJoin keeps it); each card's flag after the duration, or null. */
+    const flagOf = (el: HTMLElement, id: string) =>
+      el.querySelectorAll('mat-card.curator-card')[cardOrder.indexOf(id)]
+        ?.querySelector('.curator-card__lang')?.textContent?.trim() ?? null;
+
+    async function loadCards() {
+      const fixture = TestBed.createComponent(EpisodesApiComponent);
+      fixture.componentRef.setInput('episodeIds', cardOrder);
+      fixture.componentRef.setInput('embedded', true);
+      fixture.detectChanges();
+      await flushTicks();
+      const reqs = episodeReqs();
+      reqs.find(r => r.request.url.endsWith(inherits))!.flush(body(inherits, podId));
+      reqs.find(r => r.request.url.endsWith(ownLanguage))!.flush(body(ownLanguage, podId, 'es'));
+      reqs.find(r => r.request.url.endsWith(otherPodcast))!.flush(body(otherPodcast, otherPodId));
+      await flushTicks();
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('re-reads only that podcast\'s cards, so an inherited default language shows its flag without Refresh', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, response: {} }) });
+      const fixture = await loadCards();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(flagOf(el, inherits)).toBeNull();
+      expect(flagOf(el, ownLanguage)).toBe('🇪🇸');
+
+      fixture.componentInstance.editPodcast({ podcastName: 'Synthetic Pod', podcastId: podId, episodeId: inherits });
+      await flushTicks();
+      const refetch = episodeReqs();
+      expect(refetch.map(r => new URL(r.request.url).pathname).sort()).toEqual([`/episode/${inherits}`, `/episode/${ownLanguage}`].sort());
+      // Server-side propagation moved the inheriting episode to Hindi; the episode with its own language kept it.
+      refetch.find(r => r.request.url.endsWith(inherits))!.flush(body(inherits, podId, 'hi'));
+      refetch.find(r => r.request.url.endsWith(ownLanguage))!.flush(body(ownLanguage, podId, 'es'));
+      await flushTicks();
+      fixture.detectChanges();
+
+      expect(flagOf(el, inherits)).toBe('🇮🇳');
+      expect(flagOf(el, ownLanguage)).toBe('🇪🇸');
+      expect(flagOf(el, otherPodcast)).toBeNull();
+      expect(snackBar.open).toHaveBeenCalledWith('Podcast updated', 'Ok', expect.anything());
+    });
+
+    it('a failed re-read keeps that card and still updates the others', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, response: {} }) });
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const fixture = await loadCards();
+      const el = fixture.nativeElement as HTMLElement;
+      fixture.componentInstance.editPodcast({ podcastName: 'Synthetic Pod', podcastId: podId });
+      await flushTicks();
+      const refetch = episodeReqs();
+      refetch.find(r => r.request.url.endsWith(inherits))!.flush(body(inherits, podId, 'hi'));
+      refetch.find(r => r.request.url.endsWith(ownLanguage))!.flush('boom', { status: 500, statusText: 'Server Error' });
+      await flushTicks();
+      fixture.detectChanges();
+      expect(flagOf(el, inherits)).toBe('🇮🇳');
+      expect(flagOf(el, ownLanguage)).toBe('🇪🇸');
+      expect(el.querySelectorAll('mat-card.curator-card').length).toBe(3);
+    });
+
+    it('does not re-read anything when the dialog reports no change', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of({ noChange: true }) });
+      const fixture = await loadCards();
+      fixture.componentInstance.editPodcast({ podcastName: 'Synthetic Pod', podcastId: podId });
+      await flushTicks();
+      expect(episodeReqs().length).toBe(0);
+    });
+
+    it('a re-read landing while a suggested guest is being added does not overwrite that card', async () => {
+      dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, response: {} }) });
+      const fixture = TestBed.createComponent(EpisodesApiComponent);
+      fixture.componentRef.setInput('episodeIds', [inherits]);
+      fixture.componentRef.setInput('embedded', true);
+      fixture.detectChanges();
+      await flushTicks();
+      const guest = { person: { id: 'synthetic-guest', name: 'Synthetic Guest' }, matchResults: [] };
+      episodeReqs()[0].flush({ ...body(inherits, podId), guestSuggestions: [guest] });
+      await flushTicks();
+      fixture.detectChanges();
+      const component = fixture.componentInstance;
+      const card = () => (component as unknown as { episodes: () => { lang?: string; guestPeople?: { name: string }[] }[] }).episodes()[0];
+
+      component.addSuggestedGuest(card() as never, 'Synthetic Guest');
+      await flushTicks();
+      const patch = http.expectOne(r => r.method === 'PATCH');
+      component.editPodcast({ podcastName: 'Synthetic Pod', podcastId: podId });
+      await flushTicks();
+      // The podcast re-read lands first, without the guest: the card keeps the in-flight guest.
+      http.expectOne(r => r.method === 'GET' && r.url.endsWith(`/episode/${inherits}`)).flush(body(inherits, podId, 'hi'));
+      await flushTicks();
+      expect(card().guestPeople?.map(x => x.name)).toEqual(['Synthetic Guest']);
+
+      // The guest save's own GET then binds the server state (guest + inherited language).
+      patch.flush(null);
+      await flushTicks();
+      http.expectOne(r => r.method === 'GET' && r.url.endsWith(`/episode/${inherits}`))
+        .flush({ ...body(inherits, podId, 'hi'), guestPeople: [guest.person] });
+      await flushTicks();
+      fixture.detectChanges();
+      expect(card().guestPeople?.map(x => x.name)).toEqual(['Synthetic Guest']);
+      expect(card().lang).toBe('hi');
+    });
+  });
 });

@@ -1,5 +1,5 @@
 import { HttpClient, HttpContext } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, WritableSignal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import { ApiEpisode } from './api-episode.interface';
@@ -7,6 +7,29 @@ import { EpisodePost } from './episode-post.interface';
 import { EpisodePublishResponse } from './episode-publish-response.interface';
 import { PostEpisodeModel } from './post-episode-model.interface';
 import { AUTH_SCOPE } from './auth.interceptor';
+import { isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
+
+/** The podcast a review-page edit-podcast dialog saved (id when the card had one, else its name). */
+export interface SavedPodcastRef {
+  podcastId?: string;
+  podcastName?: string;
+}
+
+/**
+ * Podcast-episode cards that belong to the saved podcast. News / TV / film rows never match (their parent is
+ * not a podcast). Matches on `podcastId` when the dialog knew it, otherwise on the podcast name.
+ * Over-matching on the name fallback (a same-named podcast) is harmless by design: a match only triggers a
+ * read-only GET whose body is the server's current state, so do not tighten this in a way that misses siblings.
+ */
+export function isCardOfPodcast(episode: ApiEpisode, podcast: SavedPodcastRef): boolean {
+  if (isNonPodcastPlayableKind(episode.contentKind)) {
+    return false;
+  }
+  if (podcast.podcastId) {
+    return episode.podcastId === podcast.podcastId;
+  }
+  return !!podcast.podcastName && episode.podcastName === podcast.podcastName;
+}
 
 /**
  * The review page's inline edits (subjects, guests, ignored / removed / tweeted, unBluesky, language) in the
@@ -171,6 +194,61 @@ export class EpisodeUpdateService {
       return [...episode.guests];
     }
     return episode.guestPeople?.map(x => x.name) ?? [];
+  }
+
+  /**
+   * After an edit-podcast save, GET every card of that podcast again. The podcast PUT moves episodes that
+   * followed the old default language onto the new one server-side (episodes with their own language keep it),
+   * so the re-read bodies carry the inherited language flag without a page Refresh. A card whose GET fails is
+   * left out (it keeps its current body); the rest still update.
+   */
+  async fetchPodcastEpisodes(episodes: readonly ApiEpisode[] | undefined, podcast: SavedPodcastRef): Promise<ApiEpisode[]> {
+    const ids = [...new Set((episodes ?? []).filter(x => isCardOfPodcast(x, podcast)).map(x => x.id))];
+    const results = await Promise.allSettled(ids.map(id => this.fetchEpisode(id)));
+    const updated: ApiEpisode[] = [];
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        updated.push(result.value);
+      } else {
+        console.error(result.reason);
+      }
+    }
+    return updated;
+  }
+
+  /**
+   * Re-read the saved podcast's cards (`fetchPodcastEpisodes`) and bind the GET bodies into `episodes`. Race-safe:
+   * a card is only replaced when the list still holds the exact object its GET was started for and the card is
+   * not mid-update, so a newer inline edit, a Refresh / reload or a later podcast save is never overwritten by
+   * an older read.
+   */
+  async refreshPodcastCards(
+    episodes: WritableSignal<ApiEpisode[] | undefined>,
+    podcast: SavedPodcastRef,
+    isUpdating: (episodeId: string) => boolean = () => false
+  ): Promise<void> {
+    try {
+      const startedFor = new Set((episodes() ?? []).filter(x => isCardOfPodcast(x, podcast)));
+      const fresh = new Map((await this.fetchPodcastEpisodes([...startedFor], podcast)).map(x => [x.id, x]));
+      const current = episodes();
+      if (!current || fresh.size === 0) {
+        return;
+      }
+      let changed = false;
+      const next = current.map(card => {
+        const body = fresh.get(card.id);
+        if (!body || !startedFor.has(card) || isUpdating(card.id)) {
+          return card;
+        }
+        changed = true;
+        return body;
+      });
+      if (changed) {
+        episodes.set(next);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   replaceEpisode(episodes: ApiEpisode[] | undefined, updated: ApiEpisode): ApiEpisode[] | undefined {
