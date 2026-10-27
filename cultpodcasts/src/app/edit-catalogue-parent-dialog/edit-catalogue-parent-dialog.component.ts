@@ -56,7 +56,7 @@ export interface EditCatalogueParentDialogResponse {
 /**
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
- * promote as hero, Skip Enriching From YouTube, Ignore All Episodes), Subjects, Social, Meta (incl. release authority and
+ * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl. release authority and
  * minimum duration), Regexs, and Identity for TV.
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
@@ -91,7 +91,6 @@ export class EditCatalogueParentDialogComponent {
 
   protected readonly label = hubParentLabel(this.data.hub);
   protected readonly isTv = this.data.hub === "tv";
-  protected readonly isNews = this.data.hub === "news";
   protected readonly releaseAuthorityOptions = releaseAuthorityOptions;
   protected readonly isLoading = signal(true);
   protected readonly isSending = signal(false);

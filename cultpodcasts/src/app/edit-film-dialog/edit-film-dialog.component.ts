@@ -17,8 +17,8 @@ export interface EditFilmDialogData {
 
 /**
  * Curator edit of a film (GET/PATCH `film/{id}`), laid out like the news report / TV episode dialogs: Details
- * (read-only name, publisher, description), Flags, Meta, Guests, Identity (IMDb URL, IMDb id, TMDB id), Links
- * (YouTube, BBC iPlayer, Internet Archive, …) and Trailers (rename, reorder, remove). The name is not editable
+ * (read-only name, publisher, description), Flags, Urls (YouTube, BBC iPlayer, Internet Archive, …), Meta, Images,
+ * Trailers (rename, reorder, remove), Guests and Identity (IMDb URL, IMDb id, TMDB id). The name is not editable
  * here: the film PATCH has no title, renames go through the admin rename screen. A film has no parent, so its
  * own default subject is hoisted, and `parentName` on close is the film name (for the Review link).
  */

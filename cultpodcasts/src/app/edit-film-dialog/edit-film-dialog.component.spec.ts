@@ -103,7 +103,7 @@ describe('EditFilmDialogComponent', () => {
     expect(dialog.defaultSubject()).toBe('Arts');
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     const tabs = Array.from(element().querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Meta', 'Guests', 'Identity', 'Urls', 'Images', 'Trailers']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Guests', 'Identity']);
     expect(element().querySelector('h2')?.textContent).toBe('Edit Film');
     expect(element().querySelector('#parent-name')).toBeNull();
     const name = element().querySelector<HTMLInputElement>('#film-name');

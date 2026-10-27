@@ -49,12 +49,12 @@ export interface ParentIdentityFilled {
 }
 
 /**
- * The tabbed body shared by the news report, TV episode and film edit dialogs, laid out like the podcast
- * Edit Episode dialog: Details, Flags, Meta (release, duration, subjects, search terms, hash tag,
- * language), Guests, and Identity (id inputs: IMDb / TMDB, plus TheTVDB when the form has it) for the `tv` and `film` variants.
- * The `film` variant swaps the parent row and Title for a read-only Name plus Publisher, takes a year-or-date release,
- * adds the IMDb / TMDB ids to Identity, and adds Trailers. All variants (news / TV / film) share Urls + Images tabs
- * for `services` (page URL and image URL per key; same PATCH shape as film / podcast episode).
+ * The tabbed body shared by the news report, TV episode and film edit dialogs, in the podcast Edit Episode
+ * dialog's tab order: Details, Flags, Urls, Meta (release, duration, subjects, search terms, hash tag, language),
+ * Images, Guests. Urls and Images edit `services` (page URL and image URL per key; same PATCH shape as film / podcast
+ * episode). The `film` variant adds Trailers straight after Images. The `tv` and `film` variants add Identity last
+ * (id inputs: IMDb / TMDB, plus TheTVDB when the form has it). The `film` variant also swaps the parent row and Title
+ * for a read-only Name plus Publisher and takes a year-or-date release.
  */
 @Component({
   selector: 'app-playable-edit-fields',
