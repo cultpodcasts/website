@@ -31,7 +31,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
-import { expandedDescLayout, HERO_DESC_GROW, type HeroDescExpandMetrics } from './hero-desc-layout';
+import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics } from './hero-desc-layout';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -650,28 +650,7 @@ export class HomepageHeroComponent {
     if (!isPlatformBrowser(this.platformId) || !desc || !card || !hero) {
       return;
     }
-    const px = (value: string) => Number.parseFloat(value) || 0;
-    const heroBox = hero.getBoundingClientRect();
-    const cardBox = card.getBoundingClientRect();
-    const styles = getComputedStyle(hero);
-    const descStyles = getComputedStyle(desc);
-    // The description's content box: the expanded height is set on it.
-    const descH = px(descStyles.height) || desc.clientHeight;
-    const lineH = px(descStyles.lineHeight);
-    const padY = px(descStyles.paddingTop) + px(descStyles.paddingBottom);
-    this.descExpandMetrics = {
-      heroH: heroBox.height,
-      cardBottomVp: cardBox.bottom,
-      descH,
-      // Whole text (the clamped box still reports it as scrollHeight). The chevron sits in its
-      // own band under the expanded text (HERO-DSC-003), so no end spacer line is needed.
-      fullH: Math.max(descH, desc.scrollHeight - padY),
-      lineH,
-      width: window.innerWidth,
-      // Wide: the card sits at the flex-end of a row hero, so a taller card grows upward in
-      // flow. Stacked (column) layouts keep its top and grow it downward.
-      bottomAnchored: styles.flexDirection !== 'column',
-    };
+    this.descExpandMetrics = { ...measureCollapsedDesc(hero, card, desc), width: window.innerWidth };
   }
 
   /**

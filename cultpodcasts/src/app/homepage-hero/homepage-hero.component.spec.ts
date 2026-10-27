@@ -1125,7 +1125,14 @@ describe('HomepageHeroComponent', () => {
       expect(heroSass).toMatch(/\.billboard__desc-toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
       // Expanded (HERO-DSC-003): the chevron moves into its own band under the scroller, so the
       // old end-of-text spacer is gone.
-      expect(heroSass).not.toMatch(/&::after\n\s+content: ''\n\s+display: inline-block\n\s+width: var\(--hero-desc-toggle-room\)/);
+      const descBlock = heroSass.slice(heroSass.indexOf('\n.billboard__desc\n') + 1);
+      const descLines = descBlock.split('\n');
+      const descEnd = descLines.findIndex((line, i) => i > 0 && /^\S/.test(line));
+      const descRule = descLines.slice(0, descEnd).join('\n');
+      const expandedRule = descRule.slice(descRule.indexOf('&.is-expanded'));
+      expect(descRule).toContain('&.is-expanded');
+      expect(expandedRule).not.toMatch(/::after/);
+      expect(expandedRule).not.toMatch(/--hero-desc-toggle-room/);
       // Stacked reserve no longer adds a 32px expander row.
       expect(heroSass).not.toMatch(/var\(--hero-desc-lines\)\s*\+\s*4[04]px\s*\+\s*32px/);
       expect(heroSass).not.toMatch(/billboard__desc-more/);

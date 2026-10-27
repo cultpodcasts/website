@@ -2,8 +2,10 @@
  * Expanded hero description sizing (HERO-DSC-002), as a pure function so the component and the
  * hero layout harness (`e2e/hero-layout/`) size the expanded card with the same maths.
  *
- * Keep {@link expandedDescLayout} self-contained (no imports, no module references): the harness
- * serialises it into its setContent document with `Function.prototype.toString`.
+ * Keep {@link measureCollapsedDesc} and {@link expandedDescLayout} self-contained (no imports, no
+ * module references, no helpers outside their bodies): the harness serialises both into its
+ * setContent document with `Function.prototype.toString`, so it measures and sizes exactly as the
+ * component does.
  */
 export interface HeroDescGrowBounds {
   /** Minimum growth in description lines (with {@link minVh}: max of the two). */
@@ -40,6 +42,30 @@ export interface HeroDescExpandMetrics {
   lineH: number;
   /** Wide: the card sits at the flex-end of a row hero, so it grows upward in flow. */
   bottomAnchored: boolean;
+}
+
+/**
+ * Measures the collapsed card at expand time (browser only, before the expanded classes apply):
+ * the description's content height, its whole text height (the clamped box still reports it as
+ * `scrollHeight`), its line height, the hero height, where the card's bottom is in the viewport,
+ * and whether the hero is a row (wide: the card is bottom-anchored and grows upward in flow) or a
+ * column (stacked: the card keeps its top and grows down).
+ */
+export function measureCollapsedDesc(hero: HTMLElement, card: HTMLElement, desc: HTMLElement): HeroDescExpandMetrics {
+  const px = (value: string): number => Number.parseFloat(value) || 0;
+  const descStyles = getComputedStyle(desc);
+  // The description's content box: the expanded height is set on it.
+  const descH = px(descStyles.height) || desc.clientHeight;
+  const padY = px(descStyles.paddingTop) + px(descStyles.paddingBottom);
+  return {
+    heroH: hero.getBoundingClientRect().height,
+    cardBottomVp: card.getBoundingClientRect().bottom,
+    descH,
+    // The chevron sits in its own band under the expanded text (HERO-DSC-003), so no end spacer line.
+    fullH: Math.max(descH, desc.scrollHeight - padY),
+    lineH: px(descStyles.lineHeight),
+    bottomAnchored: getComputedStyle(hero).flexDirection !== 'column',
+  };
 }
 
 export interface HeroDescLayout {

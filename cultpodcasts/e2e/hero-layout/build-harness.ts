@@ -2,7 +2,7 @@ import * as sass from "sass";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { HeroLayoutCase, renderBillboardHtml, renderStatsStripHtml } from "./fixtures";
-import { expandedDescLayout, HERO_DESC_GROW } from "../../src/app/homepage-hero/hero-desc-layout";
+import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc } from "../../src/app/homepage-hero/hero-desc-layout";
 
 const heroSassPath = join(
   process.cwd(),
@@ -122,16 +122,17 @@ export function buildHeroLayoutDocument(c: HeroLayoutCase): string {
 /**
  * In-page expander that mirrors HomepageHeroComponent.toggleDesc (HERO-DSC-002..004): measure the
  * collapsed card, then lock the hero height, set the expanded classes, size the description and
- * shift a bottom-anchored card with the component's own `expandedDescLayout` (serialised here,
- * so harness and component cannot drift). Collapse restores the exact collapsed layout.
+ * shift a bottom-anchored card with the component's own `measureCollapsedDesc` and
+ * `expandedDescLayout` (serialised here, so harness and component measure and size identically).
+ * Collapse restores the exact collapsed layout.
  * Exposed as `window.heroLayoutHarness.toggleDesc()`; the chevron click calls it too.
  */
 function expandScript(): string {
   return `
 (() => {
+  const measureCollapsedDesc = ${measureCollapsedDesc.toString()};
   const expandedDescLayout = ${expandedDescLayout.toString()};
   const GROW = ${JSON.stringify(HERO_DESC_GROW)};
-  const px = (v) => Number.parseFloat(v) || 0;
   const q = (sel) => document.querySelector(sel);
   let metrics = null;
   function expand() {
@@ -139,17 +140,7 @@ function expandScript(): string {
     const wrap = q(".billboard__desc-wrap"), desc = q(".billboard__desc");
     const toggle = q(".billboard__desc-toggle");
     if (!hero || !card || !wrap || !desc || !toggle) return;
-    const ds = getComputedStyle(desc);
-    const descH = px(ds.height) || desc.clientHeight;
-    const padY = px(ds.paddingTop) + px(ds.paddingBottom);
-    metrics = {
-      heroH: hero.getBoundingClientRect().height,
-      cardBottomVp: card.getBoundingClientRect().bottom,
-      descH,
-      fullH: Math.max(descH, desc.scrollHeight - padY),
-      lineH: px(ds.lineHeight),
-      bottomAnchored: getComputedStyle(hero).flexDirection !== "column",
-    };
+    metrics = measureCollapsedDesc(hero, card, desc);
     hero.classList.add("is-desc-expanded");
     wrap.classList.add("is-expanded");
     desc.classList.add("is-expanded");
