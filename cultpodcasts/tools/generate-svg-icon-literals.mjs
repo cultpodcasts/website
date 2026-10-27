@@ -44,7 +44,8 @@ function boxedIcon(bg, pathD, { fg = '#fff', inset = 2.75 } = {}) {
 }
 
 function readSvgInner(file) {
-  const raw = fs.readFileSync(path.join(root, 'icon-sources', file), 'utf8');
+  // Normalise CRLF/CR to LF so a Windows (autocrlf) checkout generates the same literals as Linux.
+  const raw = fs.readFileSync(path.join(root, 'icon-sources', file), 'utf8').replace(/\r\n?/g, '\n');
   const vbMatch = raw.match(/viewBox=["']([^"']+)["']/i);
   const viewBox = vbMatch ? vbMatch[1] : '0 0 24 24';
   const inner = raw
@@ -208,7 +209,7 @@ const streamingIconSvgs = {
 };
 
 const assetEntries = assetIcons.map(([name, file]) => {
-  const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').replace(/\r\n/g, '\n').trim();
+  const svg = fs.readFileSync(path.join(assetsDir, file), 'utf8').replace(/\r\n?/g, '\n').trim();
   return `  [${JSON.stringify(name)}, ${JSON.stringify(svg)}], // pragma: allowlist secret`;
 });
 
@@ -226,7 +227,8 @@ ${entries}
 
 const check = process.argv.includes('--check');
 if (check) {
-  const committed = fs.readFileSync(outFile, 'utf8');
+  // Compare line endings normalised, so a CRLF working copy of the output isn't reported stale.
+  const committed = fs.readFileSync(outFile, 'utf8').replace(/\r\n?/g, '\n');
   if (committed !== out) {
     console.error(
       `${path.relative(root, outFile)} is stale. Run npm run generate:svg-icons and commit the result.`,
