@@ -9,6 +9,7 @@ import { HomepageHeroComponent, HomepageHeroSlide } from './homepage-hero.compon
 import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
+import { HERO_DESC_GROW } from './hero-desc-layout';
 
 const heroDir = dirname(fileURLToPath(import.meta.url));
 // Specs match indented Sass with \n; normalize CRLF so Windows checkouts still pass.
@@ -1122,8 +1123,9 @@ describe('HomepageHeroComponent', () => {
       expect(wrap.querySelector('.billboard__desc-fade')?.getAttribute('aria-hidden')).toBe('true');
       expect(heroSass).toMatch(/\.billboard__desc-wrap\n[\s\S]*?position:\s*relative/);
       expect(heroSass).toMatch(/\.billboard__desc-toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
-      // Expanded: the last line wraps short of the button.
-      expect(heroSass).toMatch(/&\.is-expanded\n[\s\S]*?&::after\n[\s\S]*?width:\s*var\(--hero-desc-toggle-room\)/);
+      // Expanded (HERO-DSC-003): the chevron moves into its own band under the scroller, so the
+      // old end-of-text spacer is gone.
+      expect(heroSass).not.toMatch(/&::after\n\s+content: ''\n\s+display: inline-block\n\s+width: var\(--hero-desc-toggle-room\)/);
       // Stacked reserve no longer adds a 32px expander row.
       expect(heroSass).not.toMatch(/var\(--hero-desc-lines\)\s*\+\s*4[04]px\s*\+\s*32px/);
       expect(heroSass).not.toMatch(/billboard__desc-more/);
@@ -1285,10 +1287,11 @@ describe('HomepageHeroComponent', () => {
         fakeCollapsed(900);
         expand();
         expect(hero().style.height).toBe('720px');
-        // G = 888 - 688 = 200 < minGrow = max(132, 270) = 270 → 110 + 270.
+        // G = 888 - 688 - 40 (chevron band) = 160 < minGrow = max(132, 270) = 270 → 110 + 270.
         expect(descEl().style.height).toBe('380px');
-        // The row hero grows the card upward in flow; shifted down by the growth, the top stays.
-        expect(card().style.transform).toBe('translateY(270px)');
+        // The row hero grows the card upward in flow; shifted down by the growth (description
+        // + the 40px chevron band), the top stays.
+        expect(card().style.transform).toBe('translateY(310px)');
         expect(hero().classList.contains('is-desc-expanded')).toBe(true);
       });
 
@@ -1304,7 +1307,7 @@ describe('HomepageHeroComponent', () => {
         fakeOverflow(true);
         fakeCollapsed(700, 0, true);
         expand();
-        // G = 688 - 688 = 0 → minGrow = max(132, 210) = 210.
+        // G = 688 - 688 - 40 < 0 → minGrow = max(132, 210) = 210.
         expect(descEl().style.height).toBe('320px');
         expect(card().style.transform).toBe('');
       });
@@ -1313,25 +1316,26 @@ describe('HomepageHeroComponent', () => {
         fakeOverflow(true);
         fakeCollapsed(900, -200);
         expand();
-        // Card bottom at 488: G = 888 - 488 = 400 (270 ≤ G ≤ 540) → 110 + 400.
-        expect(descEl().style.height).toBe('510px');
+        // Card bottom at 488: G = 888 - 488 - 40 = 360 (270 ≤ G ≤ 540 - 40) → 110 + 360; the
+        // 40px chevron band then ends the card at the foot.
+        expect(descEl().style.height).toBe('470px');
       });
 
       it('tall gap: capped at 60vh of growth, so collapsing never needs a long scroll', () => {
         fakeOverflow(true);
         fakeCollapsed(900, -500);
         expand();
-        // G = 888 - 188 = 700 > maxGrow = 540 → 110 + 540.
-        expect(descEl().style.height).toBe('650px');
+        // G = 888 - 188 - 40 = 660 > maxGrow = 540 - 40 (the band counts in the 60vh) → 110 + 500.
+        expect(descEl().style.height).toBe('610px');
       });
 
-      it('short text shows in full (no scroller), with a line for the end spacer', () => {
+      it('short text shows in full (no scroller); the chevron band is under it, not a spacer line', () => {
         fakeOverflow(true);
         fakeCollapsed(900, 0, false, 150);
         expand();
-        // full = 150 + 22 = 172 < 110 + 270.
-        expect(descEl().style.height).toBe('172px');
-        expect(card().style.transform).toBe('translateY(62px)');
+        // full = 150 < 110 + 270.
+        expect(descEl().style.height).toBe('150px');
+        expect(card().style.transform).toBe('translateY(80px)');
       });
 
       it('measures once: page scroll neither re-sizes nor collapses (the card moves with the page)', () => {
@@ -1344,7 +1348,7 @@ describe('HomepageHeroComponent', () => {
         fixture.detectChanges();
         expect(descEl().classList.contains('is-expanded')).toBe(true);
         expect(descEl().style.height).toBe('380px');
-        expect(card().style.transform).toBe('translateY(270px)');
+        expect(card().style.transform).toBe('translateY(310px)');
       });
 
       it('a height-only resize re-sizes from the expand-time position', () => {
@@ -1373,7 +1377,7 @@ describe('HomepageHeroComponent', () => {
 
       it('Sass: the expanded description scrolls inside; the card spills over what follows on an opaque surface', () => {
         expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-y:\s*auto\n\s+overscroll-behavior:\s*contain/);
-        expect(heroSass).toMatch(/\.billboard\.is-desc-expanded\n\s+overflow:\s*visible\n\s+z-index:\s*3\n[\s\S]*?\.billboard__content::before\n\s+height:[^\n]+\n\s+background:\s*#0b0b0b\n/);
+        expect(heroSass).toMatch(/\.billboard\.is-desc-expanded\n\s+overflow-x:\s*clip\n\s+overflow-y:\s*visible\n[\s\S]*?\.billboard__content::before\n\s+height:[^\n]+\n\s+background:\s*#0b0b0b\n/);
         expect(heroSass).not.toMatch(/is-desc-expanded::before/);
         expect(heroSass).toMatch(/scroll-margin-top:\s*var\(--nflx-hero-search-clearance,\s*140px\)/);
         expect(heroSass).not.toMatch(/45vh/);
@@ -1387,6 +1391,37 @@ describe('HomepageHeroComponent', () => {
         expect(button.parentElement?.classList.contains('billboard__desc-wrap')).toBe(true);
         // A scroll container must be reachable by keyboard (arrow keys scroll it).
         expect(descEl().getAttribute('tabindex')).toBe('0');
+      });
+
+      it('HERO-DSC-003: expanded text keeps clear of the scrollbar, long URLs wrap, and the chevron has its own band', () => {
+        fakeOverflow(true);
+        expand();
+        const wrap = descEl().parentElement!;
+        expect(wrap.classList.contains('billboard__desc-wrap')).toBe(true);
+        expect(wrap.classList.contains('is-expanded')).toBe(true);
+        // The fade belongs to the collapsed inline expander only.
+        expect(wrap.querySelector('.billboard__desc-fade')).toBeNull();
+        expect(heroSass).toMatch(/^\.billboard__desc\n[\s\S]*?overflow-wrap:\s*anywhere/m);
+        expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-x:\s*hidden[\s\S]*?scrollbar-gutter:\s*stable\n\s+padding-right:\s*16px/);
+        // TS sizing counts the same band (card fills to the foot, at most 60vh of growth).
+        const band = heroSass.match(/\.billboard__desc-wrap\n[\s\S]*?&\.is-expanded\n\s+padding-bottom:\s*(\d+)px/);
+        expect(Number(band?.[1])).toBe(HERO_DESC_GROW.toggleBandPx);
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(wrap.classList.contains('is-expanded')).toBe(false);
+      });
+
+      it('HERO-DSC-004: only the card is raised over the stats strip, not the billboard (art band stays under it)', () => {
+        const lines = heroSass.slice(heroSass.indexOf('.billboard.is-desc-expanded\n')).split('\n');
+        const end = lines.findIndex((line, i) => i > 0 && /^\S/.test(line));
+        const block = lines.slice(0, end < 0 ? undefined : end).join('\n');
+        const own = block.split('\n').slice(1).filter((line) => /^    [^\s/]/.test(line)).join('\n');
+        // Direct declarations of .billboard.is-desc-expanded: overflow only, no z-index (a
+        // stacking context above the strip painted the art over its top 28px). Sideways it
+        // clips, so the stacked card's 100vw panel cannot scroll the page horizontally.
+        expect(own).toMatch(/overflow-x:\s*clip\n\s+overflow-y:\s*visible/);
+        expect(own).not.toMatch(/z-index/);
+        expect(block).toMatch(/\n    \.billboard__content\n\s+z-index:\s*4/);
       });
     });
 
