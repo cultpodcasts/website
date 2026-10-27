@@ -33,7 +33,7 @@ import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.inter
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
-import { EpisodeUpdateService } from '../episode-update.service';
+import { EpisodeUpdateService, SavedPodcastRef } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
@@ -305,6 +305,14 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     if (current) {
       this.episodes.set([...current]);
     }
+  }
+
+  /**
+   * Re-read this podcast's cards after an edit-podcast save, so a new default language shows its flag on every
+   * card that inherits it (cards with their own episode language are unchanged server-side). No Refresh needed.
+   */
+  refreshPodcastEpisodes(podcast: SavedPodcastRef): Promise<void> {
+    return this.episodeUpdate.refreshPodcastCards(this.episodes, podcast, id => this.isUpdating(id) || !!this.addingGuest()[id]);
   }
 
   async refreshEpisode(episodeId: string) {
@@ -628,6 +636,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
           message += ". Some episodes failed to delete from index";
         }
         let snackBarRef = this.snackBar.open(message, "Ok", { duration: 10000 });
+        await this.refreshPodcastEpisodes(data);
       } else if (result?.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
