@@ -102,7 +102,9 @@ export class EditCatalogueParentDialogComponent {
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
-  protected readonly durationInvalid = signal(false);
+  /** Minimum Duration (Meta tab) and YouTube Publication Delay (Details tab) are validated separately so each tab shows only its own error. */
+  protected readonly minimumDurationInvalid = signal(false);
+  protected readonly publicationDelayInvalid = signal(false);
   protected readonly lookingUpIdentity = signal(false);
   protected readonly identityLookupMessage = signal("");
   protected readonly openExternalUrl = openExternalUrl;
@@ -231,10 +233,9 @@ export class EditCatalogueParentDialogComponent {
     if (this.appleIdInvalid()) {
       return;
     }
-    this.durationInvalid.set(
-      !(isValidDurationText(model.minimumDuration) && isValidDurationText(model.youTubePublicationDelay))
-    );
-    if (this.durationInvalid()) {
+    this.minimumDurationInvalid.set(!isValidDurationText(model.minimumDuration));
+    this.publicationDelayInvalid.set(!isValidDurationText(model.youTubePublicationDelay));
+    if (this.minimumDurationInvalid() || this.publicationDelayInvalid()) {
       return;
     }
     this.identityInvalid.set(

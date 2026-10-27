@@ -225,11 +225,21 @@ describe('podcast flags on news / TV (indexing)', () => {
     expect(catalogueParentChanges(withDurations, model, false)).toEqual({ youTubePublicationDelay: '2:00:00' });
   });
 
+  it('loads a stored delay of a day or more in the .NET "g" form, sends nothing when untouched and sends it as typed when edited', () => {
+    const longDelay: CatalogueParentDto = { ...flagged, youTubePublicationDelay: '1:0:00:00' };
+    const model = catalogueParentEditModel(longDelay);
+    expect(model.youTubePublicationDelay).toBe('1:0:00:00');
+    expect(isValidDurationText(model.youTubePublicationDelay)).toBe(true);
+    expect(catalogueParentChanges(longDelay, model, false)).toEqual({});
+    model.youTubePublicationDelay = '-2:3:00:00';
+    expect(catalogueParentChanges(longDelay, model, false)).toEqual({ youTubePublicationDelay: '-2:3:00:00' });
+  });
+
   it('validates duration text', () => {
-    for (const ok of ['', ' ', '00:01:30', '1:00:00', '-1:00:00', '1.02:03:04', '00:00:30.5']) {
+    for (const ok of ['', ' ', '00:01:30', '1:00:00', '-1:00:00', '1.02:03:04', '00:00:30.5', '1:0:00:00', '1:00:00:00', '-2:3:04:05', '1:0:00:00.5']) {
       expect(isValidDurationText(ok)).toBe(true);
     }
-    for (const bad of ['90', 'abc', '1:2:3:4', '-']) {
+    for (const bad of ['90', 'abc', '1:2:3:4', '-', '1:0:00:', ':0:00:00']) {
       expect(isValidDurationText(bad)).toBe(false);
     }
   });

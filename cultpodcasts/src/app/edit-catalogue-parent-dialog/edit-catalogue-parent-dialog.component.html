@@ -49,9 +49,9 @@
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Publication Delay</mat-label>
                     <input type="text" name="youTubePublicationDelay" placeholder="-1:00:00"
-                        [(ngModel)]="m.youTubePublicationDelay" (ngModelChange)="durationInvalid.set(false)" matInput>
-                    @if (durationInvalid()) {
-                    <mat-hint class="invalid">Use a time span such as 1:00:00 or -1:00:00 (blank clears it).</mat-hint>
+                        [(ngModel)]="m.youTubePublicationDelay" (ngModelChange)="publicationDelayInvalid.set(false)" matInput>
+                    @if (publicationDelayInvalid()) {
+                    <mat-hint class="invalid">Use a time span such as 1:00:00, -1:00:00 or 1:0:00:00 for a day (blank clears it).</mat-hint>
                     }
                 </mat-form-field>
                 <p class="hint">URL submission files an episode under this {{ label.toLowerCase() }} when its channel or show matches these ids.</p>
@@ -171,8 +171,8 @@
                 <mat-form-field class="full-width">
                     <mat-label>Minimum Duration</mat-label>
                     <input type="text" name="minimumDuration" placeholder="00:01:30" [(ngModel)]="m.minimumDuration"
-                        (ngModelChange)="durationInvalid.set(false)" matInput>
-                    @if (durationInvalid()) {
+                        (ngModelChange)="minimumDurationInvalid.set(false)" matInput>
+                    @if (minimumDurationInvalid()) {
                     <mat-hint class="invalid">Use a time span such as 00:01:30 (blank clears it).</mat-hint>
                     }
                 </mat-form-field>

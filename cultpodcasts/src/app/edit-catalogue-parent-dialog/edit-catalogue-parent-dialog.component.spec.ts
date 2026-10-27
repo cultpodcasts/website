@@ -26,7 +26,7 @@ type Internals = {
   imdbUrl(id: string): string;
   tvdbUrl(id: string): string;
   tmdbUrl(id: string): string;
-  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; durationInvalid(): boolean };
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
 describe('EditCatalogueParentDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
@@ -182,14 +182,40 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
-  it('blocks Save on invalid duration text', async () => {
+  it('blocks Save on an invalid minimum duration and flags only that field', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
     dialog.model()!.minimumDuration = 'ninety';
     await dialog.save();
-    expect(dialog.durationInvalid()).toBe(true);
+    expect(dialog.minimumDurationInvalid()).toBe(true);
+    expect(dialog.publicationDelayInvalid()).toBe(false);
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('blocks Save on an invalid publication delay and flags only that field', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.model()!.youTubePublicationDelay = 'an hour';
+    await dialog.save();
+    expect(dialog.publicationDelayInvalid()).toBe(true);
+    expect(dialog.minimumDurationInvalid()).toBe(false);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('saves when the stored publication delay is a day or more in the .NET "g" form', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly', youTubePublicationDelay: '1:0:00:00' });
+    await settle();
+    dialog.model()!.description = 'Changed';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ description: 'Changed' });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(dialog.publicationDelayInvalid()).toBe(false);
+    expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
   it('asks before removing, and sends nothing when the curator says No', async () => {

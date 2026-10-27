@@ -70,9 +70,13 @@ export const catalogueParentFlagFields = [
 /** Release-authority select options; "Unset" clears (podcast Meta tab parity). */
 export const releaseAuthorityOptions = ["Unset", "Spotify", "Apple", "YouTube"] as const;
 
-const durationPattern = /^-?(\d+\.)?\d{1,2}:\d{1,2}(:\d{1,2}(\.\d{1,7})?)?$/;
+/**
+ * `[-][d.]hh:mm[:ss[.fffffff]]`, or the `[-]d:h:mm:ss[.fffffff]` form .NET's "g" format (used by Functions for
+ * `youTubePublicationDelay`) gives a span of a day or more, e.g. `1:0:00:00`. Functions parses both.
+ */
+const durationPattern = /^-?(?:\d+:\d{1,2}:\d{2}:\d{2}(\.\d{1,7})?|(\d+\.)?\d{1,2}:\d{1,2}(:\d{1,2}(\.\d{1,7})?)?)$/;
 
-/** Blank (clear) or a TimeSpan such as `00:01:30` or `-1:00:00`. Save is blocked otherwise. */
+/** Blank (clear) or a TimeSpan such as `00:01:30`, `-1:00:00` or `1:0:00:00`. Save is blocked otherwise. */
 export function isValidDurationText(text: string): boolean {
   const trimmed = text.trim();
   return trimmed === "" || durationPattern.test(trimmed);
