@@ -80,6 +80,18 @@ async function fakeApi(page: Page, episodeDescription = LONG_URL_DESC, tallCard 
 }
 
 const desc = (page: Page) => page.locator(".billboard__desc");
+
+/**
+ * Home, settled: the expander and the strip are up and the art's aspect is measured. Stacked
+ * layouts size the art band from it (`has-art-aspect`), and a "before" box taken ahead of the
+ * image load is the full-bleed fallback, which then changes under the test.
+ */
+async function openHero(page: Page): Promise<void> {
+	await page.goto("/");
+	await expect(page.locator("button.billboard__desc-toggle")).toBeVisible();
+	await expect(page.locator(".catalogue")).toBeVisible();
+	await expect(page.locator(".billboard")).toHaveClass(/has-art-aspect/);
+}
 const toggle = (page: Page) => page.locator("button.billboard__desc-toggle");
 const shots = process.env.HERO_SCREENS_DIR;
 
@@ -96,9 +108,7 @@ test.describe("homepage hero: expanded description vs stats strip, scrollbar and
 		test(`${vp.name}: card top kept (may cover the strip), art never over the strip; text clears the scrollbar; URLs wrap; chevron off the text (HERO-DSC-003/005)`, async ({ page }) => {
 			await page.setViewportSize({ width: vp.width, height: vp.height });
 			await fakeApi(page);
-			await page.goto("/");
-			await expect(toggle(page)).toBeVisible();
-			await expect(page.locator(".catalogue")).toBeVisible();
+			await openHero(page);
 			expect(await desc(page).evaluate((d) => d.scrollWidth - d.clientWidth), "collapsed URLs overflow").toBeLessThanOrEqual(0);
 			const before = await heroExpandGeometry(page);
 			const beforePainters = await stripTopPainters(page);
@@ -166,43 +176,133 @@ test.describe("homepage hero: expanded description vs stats strip, scrollbar and
 	}
 });
 
-// Jon (27 Oct 2026): "when i expand the description, the box shifts downwards now" — a tall
-// card (long title, no chips) with medium show notes; on e77a995 the wide card moved down ~32px
-// (its growth-sized translateY overshot the in-flow growth).
-test.describe("homepage hero: medium show notes, expanded in full (HERO-DSC-005)", () => {
-	for (const vp of viewports) for (const tallCard of [false, true]) {
-		test(`${vp.name}${tallCard ? ", tall card" : ""}: the card top is kept (it may grow over the strip); the art never covers the strip; collapse restores`, async ({ page }) => {
+// HERO-DSC-005. Jon (27 Oct 2026): "when i expand the description, the box shifts downwards now" —
+// a tall card (long title, no chips) with medium show notes; on e77a995 the wide card moved down
+// ~32px (its growth-sized translateY overshot the in-flow growth). Checked at every layout,
+// including the wide/stacked boundary (1280 is stacked, 1281 the first wide width) and 1536,
+// with medium and very long notes, normal and tall cards: the top holds on every frame from the
+// click, collapse restores the layout and clears the inline styles; a height-only resize while
+// expanded keeps the top; a width change collapses back to the exact layout.
+/** Extra widths for HERO-DSC-005, on top of `viewports`. */
+const edgeViewports = [
+	{ name: "desktop-1280", width: 1280, height: 800 },
+	{ name: "desktop-1281", width: 1281, height: 800 },
+	{ name: "desktop-1536", width: 1536, height: 864 }
+];
+
+/** Card top (page-relative) on each animation frame for `frames` frames, starting now. */
+function sampleCardTop(page: Page, frames: number): Promise<number[]> {
+	return page.evaluate((n) => new Promise<number[]>((resolve) => {
+		const out: number[] = [];
+		const card = document.querySelector<HTMLElement>(".billboard__content")!;
+		const tick = () => {
+			out.push(card.getBoundingClientRect().top + window.scrollY);
+			if (out.length >= n) resolve(out); else requestAnimationFrame(tick);
+		};
+		tick();
+	}), frames);
+}
+
+test.describe("homepage hero: card top kept at the layout edges, every frame and on resize (HERO-DSC-005)", () => {
+	for (const vp of [...edgeViewports, ...viewports]) for (const notes of ["medium", "long"] as const) for (const tallCard of [false, true]) {
+		const label = `${vp.name}, ${notes} notes${tallCard ? ", tall card" : ""}`;
+		test(`${label}: top kept on every frame of the expand; collapse restores the layout and clears the inline styles`, async ({ page }) => {
 			await page.setViewportSize({ width: vp.width, height: vp.height });
-			await fakeApi(page, MEDIUM_URL_DESC, tallCard);
-			await page.goto("/");
-			await expect(toggle(page)).toBeVisible();
-			await expect(page.locator(".catalogue")).toBeVisible();
+			await fakeApi(page, notes === "medium" ? MEDIUM_URL_DESC : LONG_URL_DESC, tallCard);
+			await openHero(page);
 			const before = await heroExpandGeometry(page);
 			const beforePainters = await stripTopPainters(page);
 			await page.evaluate(() => window.scrollTo(0, 0));
 			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 			if (shots) {
-				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-medium${tallCard ? "-tall" : ""}-collapsed.png` });
+				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-${notes}${tallCard ? "-tall" : ""}-collapsed.png` });
 			}
 
-			await toggle(page).click();
-			await toggle(page).evaluate((el) => (el as HTMLElement).blur());
+			// Sample from the click on: every rendered frame keeps the top.
+			const frames = page.evaluate(() => new Promise<number[]>((resolve) => {
+				const out: number[] = [];
+				const card = document.querySelector<HTMLElement>(".billboard__content")!;
+				const btn = document.querySelector<HTMLElement>("button.billboard__desc-toggle")!;
+				btn.click();
+				const tick = () => {
+					out.push(card.getBoundingClientRect().top + window.scrollY);
+					if (out.length >= 12) resolve(out); else requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			}));
+			const tops = await frames;
 			await expect(desc(page)).toHaveClass(/is-expanded/);
+			for (const t of tops) {
+				expect(Math.abs(t - before.cardTop), `${label}: frame tops ${JSON.stringify(tops)} vs ${before.cardTop}`).toBeLessThanOrEqual(1);
+			}
 			const after = await heroExpandGeometry(page);
 			const painters = await stripTopPainters(page);
-			expectExpandedKeepsTop(before, after, beforePainters, painters, `${vp.name} medium${tallCard ? " tall" : ""}`);
-			expect(after.cardBottom - after.cardTop, "card did not grow").toBeGreaterThan(before.cardBottom - before.cardTop + 20);
+			expectExpandedKeepsTop(before, after, beforePainters, painters, label);
+			expect(after.cardBottom - after.cardTop, `${label}: card did not grow`).toBeGreaterThan(before.cardBottom - before.cardTop + 20);
 			if (shots) {
 				await page.evaluate(() => window.scrollTo(0, 0));
-				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-medium${tallCard ? "-tall" : ""}-expanded.png` });
+				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-${notes}${tallCard ? "-tall" : ""}-expanded.png` });
 			}
 
+			await page.evaluate(() => window.scrollTo(0, 0));
 			await toggle(page).click();
 			await expect(desc(page)).not.toHaveClass(/is-expanded/);
 			const collapsed = await heroExpandGeometry(page);
-			for (const k of ["cardTop", "cardBottom", "stripTop"] as const) {
-				expect(Math.abs(collapsed[k] - before[k]), `${k} after collapse`).toBeLessThanOrEqual(1);
+			expect(Math.abs(collapsed.cardTop - before.cardTop)).toBeLessThanOrEqual(1);
+			expect(Math.abs(collapsed.cardBottom - before.cardBottom)).toBeLessThanOrEqual(1);
+			expect(Math.abs(collapsed.stripTop - before.stripTop)).toBeLessThanOrEqual(1);
+			for (let i = 0; i < 4; i++) {
+				expect(Math.abs(collapsed.stages[i] - before.stages[i]), `art [${i}] after collapse`).toBeLessThanOrEqual(1);
+				expect(Math.abs(collapsed.hero[i] - before.hero[i]), `hero [${i}] after collapse`).toBeLessThanOrEqual(1);
 			}
+			const inline = await page.evaluate(() => ({
+				heroAlign: document.querySelector<HTMLElement>(".billboard")!.style.alignItems,
+				heroH: document.querySelector<HTMLElement>(".billboard")!.style.height,
+				cardMargin: document.querySelector<HTMLElement>(".billboard__content")!.style.marginTop,
+				descH: document.querySelector<HTMLElement>(".billboard__desc")!.style.height,
+				scrollTop: document.querySelector<HTMLElement>(".billboard__desc")!.scrollTop
+			}));
+			expect(inline).toEqual({ heroAlign: "", heroH: "", cardMargin: "", descH: "", scrollTop: 0 });
+		});
+	}
+
+	for (const vp of [edgeViewports[1], edgeViewports[2], viewports[1], viewports[2]]) {
+		test(`${vp.name}, tall card: a height-only resize while expanded keeps the card top and the strip unpainted by the art; a width change collapses to the exact layout`, async ({ page }) => {
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			await fakeApi(page, MEDIUM_URL_DESC, true);
+			await openHero(page);
+			await page.evaluate(() => window.scrollTo(0, 0));
+			const before = await heroExpandGeometry(page);
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+
+			for (const h of [vp.height - 120, vp.height + 80]) {
+				await page.setViewportSize({ width: vp.width, height: h });
+				await sampleCardTop(page, 4);
+				await expect(desc(page)).toHaveClass(/is-expanded/);
+				const resized = await heroExpandGeometry(page);
+				expect(Math.abs(resized.cardTop - before.cardTop), `height ${h}: card top moved`).toBeLessThanOrEqual(1);
+				// The hero may follow its viewport-relative min-height (as it would collapsed); it never shrinks under the card's collapsed foot.
+				expect(resized.hero[1] + resized.hero[3], `height ${h}: hero shrank`).toBeGreaterThanOrEqual(before.hero[1] + before.hero[3] - 1);
+				const art = await stripTopPainters(page);
+				expect(art.filter((p) => p !== "strip" && p !== "card"), `height ${h}: art over the strip`).toEqual([]);
+			}
+
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			await sampleCardTop(page, 4);
+			await page.setViewportSize({ width: vp.width - 40, height: vp.height });
+			await expect(desc(page)).not.toHaveClass(/is-expanded/);
+			const inline = await page.evaluate(() => ({
+				heroAlign: document.querySelector<HTMLElement>(".billboard")!.style.alignItems,
+				cardMargin: document.querySelector<HTMLElement>(".billboard__content")!.style.marginTop
+			}));
+			expect(inline).toEqual({ heroAlign: "", cardMargin: "" });
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			await sampleCardTop(page, 4);
+			await page.evaluate(() => window.scrollTo(0, 0));
+			const restored = await heroExpandGeometry(page);
+			expect(Math.abs(restored.cardTop - before.cardTop), "card top after width change and back").toBeLessThanOrEqual(1);
+			expect(Math.abs(restored.cardBottom - before.cardBottom), "card bottom after width change and back").toBeLessThanOrEqual(1);
 		});
 	}
 });

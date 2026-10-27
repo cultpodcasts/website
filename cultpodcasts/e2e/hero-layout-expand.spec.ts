@@ -22,7 +22,9 @@ async function openCase(page: Page, caseId: HeroLayoutCaseId): Promise<void> {
  */
 const expandViewports = [
   { name: "desktop-1024", width: 1024, height: 700 },
+  { name: "desktop-1280", width: 1280, height: 800 },
   { name: "desktop-1440", width: 1440, height: 900 },
+  { name: "desktop-1536", width: 1536, height: 864 },
   { name: "full-hd", width: 1920, height: 1080 },
   { name: "tablet", width: 768, height: 1024 },
   { name: "mobile", width: 390, height: 844 },
