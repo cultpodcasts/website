@@ -133,7 +133,7 @@ describe('HomepageHeroComponent', () => {
     expect((root.querySelector('a.billboard__play') as HTMLAnchorElement).getAttribute('href')).toBe('/film/One%20Off/a');
   });
 
-  it('labels a film hero with a plain Film pill and the movie icon (no parent link)', () => {
+  it('HERO-KND-001: labels a film hero "Film" with the movie icon in the eyebrow, with no parent pill', () => {
     const film = ep('a', { contentKind: 'Film', podcastName: 'Synthetic Film', episodeTitle: 'Synthetic Film' });
     film.playableLink = ['/film', 'Synthetic Film', 'a'];
     film.parentLink = null;
@@ -141,16 +141,20 @@ describe('HomepageHeroComponent', () => {
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelector('a.hero-pill')).toBeNull();
-    const pill = root.querySelector('span.hero-pill--static') as HTMLElement;
-    expect(pill.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
-    expect(pill.textContent).toContain('Film');
+    expect(root.querySelector('.hero-pill')).toBeNull();
+    expect(root.querySelector('.hero-show')).toBeNull();
+    const badge = root.querySelector('.billboard__eyebrow .kind-badge') as HTMLElement;
+    expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
+    expect(badge.textContent).toContain('Film');
     // HERO-TTL-001 still holds: the title opens the film page.
     expect((root.querySelector('a.billboard__title-link') as HTMLAnchorElement).getAttribute('href'))
       .toBe('/film/Synthetic%20Film/a');
   });
 
-  for (const [kind, icon, root] of [['NewsReport', 'newspaper', '/news'], ['TvShowEpisode', 'live_tv', '/tv']] as const) {
+  for (const [kind, icon, root, label] of [
+    ['NewsReport', 'newspaper', '/news', 'News'],
+    ['TvShowEpisode', 'live_tv', '/tv', 'TV'],
+  ] as const) {
     it(`shows the ${icon} icon in a ${kind} hero's parent pill, linking to the parent hub`, () => {
       const slide = ep('a', { contentKind: kind, podcastName: 'Synthetic Parent' });
       slide.playableLink = [root, 'Synthetic Parent', 'a'];
@@ -163,14 +167,47 @@ describe('HomepageHeroComponent', () => {
       expect(pill.getAttribute('href')).toBe(`${root}/Synthetic%20Parent`);
       expect(pill.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
       expect(pill.textContent).toContain('Synthetic Parent');
-      expect(el.querySelector('span.hero-pill--static')).toBeNull();
+      expect((el.querySelector('a.billboard__title-link') as HTMLAnchorElement).getAttribute('href'))
+        .toBe(`${root}/Synthetic%20Parent/a`);
+    });
+
+    it(`HERO-KND-001: labels a ${kind} hero "${label}" with the ${icon} icon in the eyebrow`, () => {
+      const slide = ep('a', { contentKind: kind, podcastName: 'Synthetic Parent' });
+      slide.playableLink = [root, 'Synthetic Parent', 'a'];
+      slide.parentLink = [root, 'Synthetic Parent'];
+      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
+      fixture.detectChanges();
+
+      const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.billboard__eyebrow') as HTMLElement;
+      const badge = eyebrow.querySelector('.kind-badge') as HTMLElement;
+      expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
+      expect(badge.textContent?.replace(icon, '').trim()).toBe(label);
+      expect(eyebrow.textContent).toContain('Now featuring');
     });
   }
 
-  it('keeps a podcast hero pill free of a kind icon', () => {
+  it('HERO-KND-001: follows the slide, so a podcast after a news report has no kind badge', () => {
+    const news = ep('a', { contentKind: 'NewsReport', podcastName: 'Synthetic Desk' });
+    news.playableLink = ['/news', 'Synthetic Desk', 'a'];
+    news.parentLink = ['/news', 'Synthetic Desk'];
+    fixture.componentRef.setInput('slides', [news, ep('b'), ep('c')]);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.kind-badge')?.textContent).toContain('News');
+
+    component['heroIndex'].set(1);
+    fixture.detectChanges();
+    expect(el.querySelector('.kind-badge')).toBeNull();
+    expect(el.querySelector('.kind-badge__sep')).toBeNull();
+    expect((el.querySelector('a.hero-pill') as HTMLAnchorElement).getAttribute('href')).toBe('/podcast/Show%20b');
+  });
+
+  it('keeps a podcast hero pill free of a kind icon, and its eyebrow free of a kind badge', () => {
     const el = fixture.nativeElement as HTMLElement;
     const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.querySelector('mat-icon')).toBeNull();
+    expect(el.querySelector('.kind-badge')).toBeNull();
+    expect(el.querySelector('.billboard__eyebrow')?.textContent?.trim()).toBe('Now featuring');
   });
 
   it('starts on the first slide', () => {

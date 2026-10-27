@@ -25,9 +25,10 @@ import { PlayerService } from '../player.service';
 import { episodeImageUrl, SearchDisplayEpisode } from '../search-result-links';
 import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
+import { ContentKindBadgeComponent } from '../content-kind-badge/content-kind-badge.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
-import { contentKindIcon, contentKindLabel } from '../content-kind-label';
+import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -39,7 +40,7 @@ export interface HomepageHeroSlide extends HomepageEpisode {
 
 @Component({
   selector: 'app-homepage-hero',
-  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, EpisodeLinksComponent, QueueButtonComponent],
+  imports: [RouterLink, MatButtonModule, MatIconModule, SubjectChipComponent, ContentKindBadgeComponent, EpisodeLinksComponent, QueueButtonComponent],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.sass',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -142,9 +143,6 @@ export class HomepageHeroComponent {
     return contentKindIcon(slide.contentKind);
   }
 
-  protected kindLabel(slide: HomepageEpisode): string {
-    return slide.contentKind ? contentKindLabel(slide.contentKind) : '';
-  }
 
   private readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
