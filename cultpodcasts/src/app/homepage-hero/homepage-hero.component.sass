@@ -360,6 +360,12 @@
     overflow: hidden
     // Long unbroken URLs (show notes) wrap inside the column instead of being cut off at its edge.
     overflow-wrap: anywhere
+    // HERO-DSC-003 / 006: the text keeps clear of the expanded scrollbar (gutter reserved for
+    // classic scrollbars; 16px also clears overlay thumbs). Collapsed too, so the text column is
+    // the same width and expanding never re-wraps a line. Border-box: the box itself does not grow.
+    box-sizing: border-box
+    scrollbar-gutter: stable
+    padding-right: 16px
     // Keep short descriptions from collapsing the reserved copy-body height.
     min-height: calc(1.45em * var(--hero-desc-lines))
     // Expanded (HERO-DSC-002): clamp off; TS sizes it (card to the viewport foot, at least
@@ -373,12 +379,6 @@
         overscroll-behavior: contain
         // TS sets the height; the collapsed min-height (clamp lines) must not inflate it.
         min-height: 0
-        // HERO-DSC-003: text keeps clear of the scrollbar. The gutter is reserved up front
-        // (classic scrollbars) and the 16px padding also clears overlay scrollbar thumbs.
-        // Border-box keeps the box as wide as collapsed, so expanding does not widen the card.
-        box-sizing: border-box
-        scrollbar-gutter: stable
-        padding-right: 16px
 
 // Fades the end of the last visible line under the expander (the art/card behind the
 // copy is near-black in every layout), so the button never sits on legible text.

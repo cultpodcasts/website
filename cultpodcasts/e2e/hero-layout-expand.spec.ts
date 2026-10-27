@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { buildHeroLayoutDocument } from "./hero-layout/build-harness";
 import { heroLayoutCases, type HeroLayoutCaseId } from "./hero-layout/fixtures";
-import { expectExpandedKeepsTop, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
+import { expectExpandedKeepsTop, expectSameWrap, heroDescWrap, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
 
 async function openCase(page: Page, caseId: HeroLayoutCaseId): Promise<void> {
   const c = heroLayoutCases.find((x) => x.id === caseId);
@@ -30,7 +30,7 @@ const expandViewports = [
   { name: "mobile", width: 390, height: 844 },
 ] as const;
 
-/** Must match the expanded `.billboard__desc` padding-right (HERO-DSC-003). */
+/** Must match the `.billboard__desc` padding-right (HERO-DSC-003; collapsed too, HERO-DSC-006). */
 const DESC_SCROLL_GAP_PX = 16;
 
 
@@ -187,5 +187,60 @@ test.describe("hero expanded description (HERO-DSC-002..005)", () => {
         expect(pageOverflow).toBeLessThanOrEqual(0);
       });
     });
+  }
+});
+
+// HERO-DSC-006 (Jon, 27 Oct 2026: expanding re-wrapped the text): the text column is the same
+// width collapsed and expanded (within 0.5px) and the visible lines break at the same characters,
+// at every width (1280 stacked, 1281 the first wide one), medium and long notes, with classic
+// scrollbars (this file's launch option) and overlay ones (a browser with Playwright's default
+// args, which hides scrollbars: no gutter, like macOS / mobile).
+const wrapViewports = [
+  { name: "desktop-1024", width: 1024, height: 700 },
+  { name: "desktop-1280", width: 1280, height: 800 },
+  { name: "desktop-1281", width: 1281, height: 800 },
+  { name: "desktop-1440", width: 1440, height: 900 },
+  { name: "desktop-1536", width: 1536, height: 864 },
+  { name: "full-hd", width: 1920, height: 1080 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "mobile", width: 390, height: 844 },
+] as const;
+
+test.describe("hero expanded description keeps the text wrap (HERO-DSC-006)", () => {
+  for (const scrollbars of ["classic", "overlay"] as const) {
+    for (const vp of wrapViewports) {
+      for (const caseId of ["medium-desc-with-urls", "very-long-desc-with-urls"] as const) {
+        const label = `${vp.name}, ${caseId}, ${scrollbars} scrollbars`;
+        test(`HERO-DSC-006 ${label}: same text column width and visible line breaks collapsed and expanded`, async ({
+          page: classicPage,
+          playwright,
+        }) => {
+          const overlay = scrollbars === "overlay" ? await playwright.chromium.launch() : null;
+          try {
+            const page = overlay ? await overlay.newPage() : classicPage;
+            await page.setViewportSize({ width: vp.width, height: vp.height });
+            await openCase(page, caseId);
+            const toggle = page.locator(".billboard__desc-toggle");
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            const collapsed = await heroDescWrap(page);
+            expect(collapsed.starts.length, `${label}: notes overflow the clamp`).toBeGreaterThan(collapsed.visible);
+            await toggle.click();
+            await expect(toggle).toHaveAttribute("aria-expanded", "true");
+            const expanded = await heroDescWrap(page);
+            expectSameWrap(collapsed, expanded, label);
+            if (scrollbars === "classic" && caseId === "very-long-desc-with-urls") {
+              const sbW = await page.locator(".billboard__desc").evaluate((d) => d.offsetWidth - d.clientWidth);
+              expect(sbW, `${label}: classic scrollbar shown`).toBeGreaterThan(0);
+            }
+            await toggle.click();
+            await expect(toggle).toHaveAttribute("aria-expanded", "false");
+            const again = await heroDescWrap(page);
+            expect(again.starts, `${label}: collapse restores the wrap`).toEqual(collapsed.starts);
+          } finally {
+            await overlay?.close();
+          }
+        });
+      }
+    }
   }
 });

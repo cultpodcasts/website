@@ -81,3 +81,71 @@ export function expectExpandedKeepsTop(
 	expect(beforePainters.filter(notStripOrCard), `${where}: collapsed strip top painted by`).toEqual([]);
 	expect(afterPainters.filter(notStripOrCard), `${where}: art paints over the expanded strip top`).toEqual([]);
 }
+
+/**
+ * HERO-DSC-006: the description's text column and where its lines break, at the current state
+ * (collapsed or expanded). `contentWidth` is the client box less the padding (the width the text
+ * wraps in, past any reserved scrollbar gutter); `starts` is the character offset each line starts
+ * at, found per character with Range.getClientRects (every line is laid out, also the ones past
+ * the collapsed clamp, so this is independent of the clamp and the scroll offset); `lines` is
+ * each line's text. `visible` is the collapsed clamp's line count (client height / line height).
+ */
+export interface HeroDescWrap {
+	contentWidth: number;
+	starts: number[];
+	lines: string[];
+	visible: number;
+}
+
+export function heroDescWrap(page: Page): Promise<HeroDescWrap> {
+	return page.evaluate(() => {
+		const d = document.querySelector<HTMLElement>(".billboard__desc")!;
+		const cs = getComputedStyle(d);
+		const px = (v: string) => Number.parseFloat(v) || 0;
+		const lineH = px(cs.lineHeight);
+		const text = d.textContent ?? "";
+		const walker = document.createTreeWalker(d, NodeFilter.SHOW_TEXT);
+		const nodes: Text[] = [];
+		for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+		const starts: number[] = [];
+		let base = 0;
+		let lastTop = Number.NEGATIVE_INFINITY;
+		const range = document.createRange();
+		for (const node of nodes) {
+			for (let i = 0; i < node.length; i++) {
+				if (/\s/.test(node.data[i])) continue;
+				range.setStart(node, i);
+				range.setEnd(node, i + 1);
+				const r = range.getClientRects()[0];
+				if (!r || r.width === 0) continue;
+				if (r.top > lastTop + lineH / 2) {
+					starts.push(base + i);
+					lastTop = r.top;
+				}
+			}
+			base += node.length;
+		}
+		const lines = starts.map((s, i) => text.slice(s, i + 1 < starts.length ? starts[i + 1] : text.length).trim());
+		return {
+			contentWidth: d.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight),
+			starts,
+			lines,
+			visible: Math.round(d.clientHeight / lineH),
+		};
+	});
+}
+
+/**
+ * HERO-DSC-006: expanding never re-wraps the text. The text column is the same width (within
+ * 0.5px) and every line that showed collapsed, plus where the last one broke, starts at the same
+ * character expanded (the first `visible + 1` line starts match), so the visible lines wrap at
+ * exactly the same words.
+ */
+export function expectSameWrap(collapsed: HeroDescWrap, expanded: HeroDescWrap, where: string): void {
+	const n = Math.min(collapsed.visible + 1, collapsed.starts.length);
+	const at = `${where}: collapsed ${JSON.stringify({ w: collapsed.contentWidth, lines: collapsed.lines.slice(0, n) })} expanded ${JSON.stringify({ w: expanded.contentWidth, lines: expanded.lines.slice(0, n) })}`;
+	expect(collapsed.visible, `collapsed shows lines — ${at}`).toBeGreaterThanOrEqual(2);
+	expect(Math.abs(expanded.contentWidth - collapsed.contentWidth), `text column width changed — ${at}`).toBeLessThanOrEqual(0.5);
+	expect(expanded.starts.slice(0, n), `lines re-wrapped — ${at}`).toEqual(collapsed.starts.slice(0, n));
+	expect(expanded.lines.slice(0, collapsed.visible), `visible lines re-wrapped — ${at}`).toEqual(collapsed.lines.slice(0, collapsed.visible));
+}

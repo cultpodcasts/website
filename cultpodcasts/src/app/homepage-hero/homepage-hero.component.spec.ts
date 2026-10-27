@@ -1418,13 +1418,37 @@ describe('HomepageHeroComponent', () => {
         // The fade belongs to the collapsed inline expander only.
         expect(wrap.querySelector('.billboard__desc-fade')).toBeNull();
         expect(heroSass).toMatch(/^\.billboard__desc\n[\s\S]*?overflow-wrap:\s*anywhere/m);
-        expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-x:\s*hidden[\s\S]*?scrollbar-gutter:\s*stable\n\s+padding-right:\s*16px/);
+        expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-x:\s*hidden/);
+        // HERO-DSC-006: the scrollbar clearance (gutter + 16px, border-box) is on the base rule, so
+        // collapsed and expanded share one text column width and expanding never re-wraps a line.
+        expect(heroSass).toMatch(/^\.billboard__desc\n(?:    [^\n]*\n|\n)*?    box-sizing:\s*border-box\n    scrollbar-gutter:\s*stable\n    padding-right:\s*16px\n/m);
         // TS sizing counts the same band (card fills to the foot, at most 60vh of growth).
         const band = heroSass.match(/\.billboard__desc-wrap\n[\s\S]*?&\.is-expanded\n\s+padding-bottom:\s*(\d+)px/);
         expect(Number(band?.[1])).toBe(HERO_DESC_GROW.toggleBandPx);
         toggle()!.click();
         fixture.detectChanges();
         expect(wrap.classList.contains('is-expanded')).toBe(false);
+      });
+
+      it('HERO-DSC-006: expanding never changes the text column width (no width, padding, gutter or sizing override expanded)', () => {
+        fakeOverflow(true);
+        expand();
+        expect(descEl().classList.contains('is-expanded')).toBe(true);
+        // Only the height is set inline expanded (no inline width or padding).
+        expect(descEl().style.width).toBe('');
+        expect(descEl().style.paddingRight).toBe('');
+        // The Sass contract (geometry itself: e2e): the expanded description block overrides
+        // none of the column's width, padding, gutter or sizing.
+        const descBlock = heroSass.slice(heroSass.indexOf('\n.billboard__desc\n') + 1);
+        const descLines = descBlock.split('\n');
+        const descEnd = descLines.findIndex((line, i) => i > 0 && /^\S/.test(line));
+        const descRule = descLines.slice(0, descEnd).join('\n');
+        const expandedRule = descRule.slice(descRule.indexOf('&.is-expanded'));
+        expect(expandedRule).not.toMatch(/padding|scrollbar-gutter|box-sizing|width|max-width/);
+        expect(descRule.slice(0, descRule.indexOf('&.is-expanded'))).toMatch(/scrollbar-gutter:\s*stable[\s\S]*?padding-right:\s*16px/);
+        // Nor does the expanded billboard.
+        const expandedHero = heroSass.slice(heroSass.indexOf('\n.billboard.is-desc-expanded\n'));
+        expect(expandedHero).not.toMatch(/\.billboard__desc\b[^\n]*\n(?:\s{8,}[^\n]*\n)*?\s{8,}(?:padding|width|scrollbar-gutter|box-sizing)/);
       });
 
       it('HERO-DSC-004: only the card is raised over the stats strip, not the billboard (art band stays under it)', () => {

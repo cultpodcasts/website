@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
-import { expectExpandedKeepsTop, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
+import { expectExpandedKeepsTop, expectSameWrap, heroDescWrap, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
 
 /**
  * Homepage hero, expanded description on the real app (ng serve, faked /homepage) with classic
@@ -10,6 +10,8 @@ import { expectExpandedKeepsTop, heroExpandGeometry, stripTopPainters } from "./
  *   art never paints over it (only the strip or the card paints the strip's top).
  * - HERO-DSC-003: the text keeps a gap from the scrollbar, long unbroken URLs wrap (nothing
  *   scrolls sideways, not the description and not the page), and the chevron never covers text.
+ * - HERO-DSC-006: expanding never re-wraps the text (same column width, same line breaks), with
+ *   classic and with overlay (hidden) scrollbars.
  * Made-up shows, titles and show notes only (example.test hosts).
  * Set HERO_SCREENS_DIR to save screenshots. The harness twin is e2e/hero-layout-expand.spec.ts.
  */
@@ -306,3 +308,46 @@ test.describe("homepage hero: card top kept at the layout edges, every frame and
 		});
 	}
 });
+
+// HERO-DSC-006. Jon (27 Oct 2026): "when i expand the description the text inside the description
+// box changes layout" — on 1e1d44d only the expanded box reserved the scrollbar gutter and the 16px
+// right padding, so its text column was narrower and lines re-wrapped (at 1024 line 2 lost "the").
+// Checked at every width, medium and long notes, with classic scrollbars (this file's default) and
+// overlay ones (headless Chromium's hidden scrollbars: no gutter, like macOS / mobile).
+for (const scrollbars of ["classic", "overlay"] as const) {
+	test.describe(`homepage hero: expanding keeps the text wrap, ${scrollbars} scrollbars (HERO-DSC-006)`, () => {
+		for (const vp of [...viewports, ...edgeViewports]) for (const notes of ["medium", "long"] as const) {
+			const label = `${vp.name}, ${notes} notes, ${scrollbars} scrollbars`;
+			test(`${label}: same text column width and the same visible line breaks collapsed and expanded`, async ({ page: classicPage, playwright }) => {
+				// Overlay: a browser with Playwright's default args (hidden scrollbars); launch
+				// options cannot vary per describe group.
+				const overlay = scrollbars === "overlay" ? await playwright.chromium.launch() : null;
+				const page = overlay ? await (await overlay.newContext({ baseURL: appOrigin })).newPage() : classicPage;
+				try {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				await fakeApi(page, notes === "medium" ? MEDIUM_URL_DESC : LONG_URL_DESC);
+				await openHero(page);
+				await page.evaluate(() => document.fonts.ready.then(() => undefined));
+				const collapsed = await heroDescWrap(page);
+				expect(collapsed.starts.length, `${label}: notes overflow the clamp`).toBeGreaterThan(collapsed.visible);
+				await toggle(page).click();
+				await expect(desc(page)).toHaveClass(/is-expanded/);
+				const expanded = await heroDescWrap(page);
+				expectSameWrap(collapsed, expanded, label);
+				// The fix keeps the gap from the scrollbar: a classic one is really there when it scrolls.
+				const sb = await desc(page).evaluate((d) => ({ w: d.offsetWidth - d.clientWidth, scrolls: d.scrollHeight > d.clientHeight + 1 }));
+				if (scrollbars === "classic" && sb.scrolls) {
+					expect(sb.w, `${label}: classic scrollbar shown`).toBeGreaterThan(0);
+				}
+				await toggle(page).click();
+				await expect(desc(page)).not.toHaveClass(/is-expanded/);
+				const again = await heroDescWrap(page);
+				expect(again.starts, `${label}: collapse restores the wrap`).toEqual(collapsed.starts);
+				expect(Math.abs(again.contentWidth - collapsed.contentWidth)).toBeLessThanOrEqual(0.5);
+				} finally {
+					await overlay?.close();
+				}
+			});
+		}
+	});
+}
