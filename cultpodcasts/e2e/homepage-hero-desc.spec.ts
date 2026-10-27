@@ -557,13 +557,28 @@ test.describe("homepage hero description", () => {
 				await expect(page.locator(`a[href^="/podcast/"]`)).toHaveCount(0);
 
 				const eyebrow = page.locator(".billboard__eyebrow");
-				const badge = eyebrow.locator(".billboard__kind");
+				const badge = eyebrow.locator(".kind-badge");
 				await expect(badge).toBeVisible();
 				await expect(badge.locator("mat-icon")).toHaveText(k.icon);
 				await expect(badge).toContainText(k.label);
-				// One line: the badge must not wrap the eyebrow, even on mobile.
-				const lines = await eyebrow.evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).fontSize)));
-				expect(lines).toBeLessThanOrEqual(2);
+				const geo = await eyebrow.evaluate((el) => {
+					const text = el.querySelector(".billboard__eyebrow-text")!.getBoundingClientRect();
+					const badgeBox = el.querySelector(".kind-badge")!.getBoundingClientRect();
+					const icon = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+					return {
+						fontSize: parseFloat(getComputedStyle(el).fontSize),
+						textTop: text.top, textMid: (text.top + text.bottom) / 2,
+						badgeTop: badgeBox.top, badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
+						iconW: icon.width, iconH: icon.height
+					};
+				});
+				// Same row as "Now featuring": a wrapped badge would start a whole line (> 1 font-size) lower.
+				expect(Math.abs(geo.badgeTop - geo.textTop), JSON.stringify(geo)).toBeLessThan(geo.fontSize);
+				expect(Math.abs(geo.badgeMid - geo.textMid), JSON.stringify(geo)).toBeLessThanOrEqual(3);
+				// The icon box is 1.25em of the eyebrow, not MatIcon's default 24x24.
+				expect(geo.iconW, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+				expect(geo.iconH, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+				expect(geo.iconH).toBeLessThan(24);
 				if (k.parent) {
 					await expect(page.locator("a.hero-pill")).toHaveAttribute("href", `${k.root}/${encodeURIComponent(k.parent)}`);
 				} else {

@@ -143,7 +143,7 @@ describe('HomepageHeroComponent', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.hero-pill')).toBeNull();
     expect(root.querySelector('.hero-show')).toBeNull();
-    const badge = root.querySelector('.billboard__eyebrow .billboard__kind') as HTMLElement;
+    const badge = root.querySelector('.billboard__eyebrow .kind-badge') as HTMLElement;
     expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
     expect(badge.textContent).toContain('Film');
     // HERO-TTL-001 still holds: the title opens the film page.
@@ -179,7 +179,7 @@ describe('HomepageHeroComponent', () => {
       fixture.detectChanges();
 
       const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.billboard__eyebrow') as HTMLElement;
-      const badge = eyebrow.querySelector('.billboard__kind') as HTMLElement;
+      const badge = eyebrow.querySelector('.kind-badge') as HTMLElement;
       expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
       expect(badge.textContent?.replace(icon, '').trim()).toBe(label);
       expect(eyebrow.textContent).toContain('Now featuring');
@@ -193,12 +193,12 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('slides', [news, ep('b'), ep('c')]);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.billboard__kind')?.textContent).toContain('News');
+    expect(el.querySelector('.kind-badge')?.textContent).toContain('News');
 
     component['heroIndex'].set(1);
     fixture.detectChanges();
-    expect(el.querySelector('.billboard__kind')).toBeNull();
-    expect(el.querySelector('.billboard__kind-sep')).toBeNull();
+    expect(el.querySelector('.kind-badge')).toBeNull();
+    expect(el.querySelector('.kind-badge__sep')).toBeNull();
     expect((el.querySelector('a.hero-pill') as HTMLAnchorElement).getAttribute('href')).toBe('/podcast/Show%20b');
   });
 
@@ -206,7 +206,7 @@ describe('HomepageHeroComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.querySelector('mat-icon')).toBeNull();
-    expect(el.querySelector('.billboard__kind')).toBeNull();
+    expect(el.querySelector('.kind-badge')).toBeNull();
     expect(el.querySelector('.billboard__eyebrow')?.textContent?.trim()).toBe('Now featuring');
   });
 

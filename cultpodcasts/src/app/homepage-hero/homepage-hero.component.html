@@ -72,15 +72,9 @@
       <div class="billboard__copy">
         <p class="billboard__eyebrow">
           <span class="billboard__live" aria-hidden="true"></span>
-          Now featuring
+          <span class="billboard__eyebrow-text">Now featuring</span>
           <!-- HERO-KND-001: news reports, TV episodes and films say what they are. Podcasts show nothing extra. -->
-          @if (kindIcon(feature); as icon) {
-          <span class="billboard__kind-sep" aria-hidden="true">&middot;</span>
-          <span class="billboard__kind">
-            <mat-icon class="billboard__kind-icon" aria-hidden="true">{{ icon }}</mat-icon>
-            {{ kindLabel(feature) }}
-          </span>
-          }
+          <app-content-kind-badge [kind]="feature.contentKind" [separator]="true" />
         </p>
         <!-- A film has no parent page, so it has no pill: the eyebrow already says Film. -->
         @if (feature.parentLink; as parent) {

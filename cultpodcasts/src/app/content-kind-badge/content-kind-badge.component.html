@@ -1,0 +1,9 @@
+@if (icon(); as icon) {
+@if (separator()) {
+<span class="kind-badge__sep" aria-hidden="true">&middot;</span>
+}
+<span class="kind-badge">
+  <mat-icon class="kind-badge__icon" aria-hidden="true">{{ icon }}</mat-icon>
+  {{ label() }}
+</span>
+}

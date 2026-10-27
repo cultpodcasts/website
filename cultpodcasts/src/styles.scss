@@ -118,26 +118,6 @@ body {
   line-height: 1;
 }
 
-/* HERO-KND-001: homepage hero kind badge after "Now featuring" (News / TV / Film, same icons as the cards).
-   Global like .hero-pill so the hero component stylesheet stays inside its budget. */
-.billboard__kind-sep {
-  opacity: 0.7;
-}
-
-.billboard__kind {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.billboard__kind-icon {
-  width: 1.25em;
-  height: 1.25em;
-  font-size: 1.25em;
-  line-height: 1;
-}
-
 .hero-meta {
   margin: 0 0 12px;
   display: flex;
