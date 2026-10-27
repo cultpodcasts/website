@@ -40,8 +40,13 @@ export interface HeroDescExpandMetrics {
   /** Whole text height. */
   fullH: number;
   lineH: number;
-  /** Wide: the card sits at the flex-end of a row hero, so it grows upward in flow. */
+  /** Wide: the card sits at the flex-end of a row hero, so it would grow upward in flow. */
   bottomAnchored: boolean;
+  /**
+   * Wide only (else 0): the collapsed card's top below the hero's content-box top (its padding,
+   * the search clearance). Expanded, the card is laid from there (HERO-DSC-005).
+   */
+  cardTopPx: number;
 }
 
 /**
@@ -57,14 +62,19 @@ export function measureCollapsedDesc(hero: HTMLElement, card: HTMLElement, desc:
   // The description's content box: the expanded height is set on it.
   const descH = px(descStyles.height) || desc.clientHeight;
   const padY = px(descStyles.paddingTop) + px(descStyles.paddingBottom);
+  const heroStyles = getComputedStyle(hero);
+  const heroBox = hero.getBoundingClientRect();
+  const cardBox = card.getBoundingClientRect();
+  const bottomAnchored = heroStyles.flexDirection !== 'column';
   return {
-    heroH: hero.getBoundingClientRect().height,
-    cardBottomVp: card.getBoundingClientRect().bottom,
+    heroH: heroBox.height,
+    cardBottomVp: cardBox.bottom,
     descH,
     // The chevron sits in its own band under the expanded text (HERO-DSC-003), so no end spacer line.
     fullH: Math.max(descH, desc.scrollHeight - padY),
     lineH: px(descStyles.lineHeight),
-    bottomAnchored: getComputedStyle(hero).flexDirection !== 'column',
+    bottomAnchored,
+    cardTopPx: bottomAnchored ? Math.max(0, cardBox.top - heroBox.top - px(heroStyles.paddingTop)) : 0,
   };
 }
 
@@ -73,12 +83,18 @@ export interface HeroDescLayout {
   heroH: number;
   /** Expanded description height (the rest scrolls inside). */
   descPx: number;
-  /** Wide: translateY that keeps the bottom-anchored card's top where it was. */
-  shiftPx: number;
+  /**
+   * Wide only (else null): the card's top offset in the hero's content box. Expanded, the hero
+   * aligns the card to its top (`align-items: flex-start`) and the card takes this `margin-top`,
+   * so it keeps its collapsed top exactly and grows down (HERO-DSC-005). (A translateY sized
+   * from the computed growth drifted: the in-flow growth is not always the computed one, so the
+   * card moved down, Jon 27 Oct 2026.)
+   */
+  cardTopPx: number | null;
 }
 
 /**
- * The card's top never moves. Expanded, the card adds the description growth plus the chevron
+ * The card's top never moves (wide: {@link HeroDescLayout.cardTopPx}). Expanded, the card adds the description growth plus the chevron
  * band under it (B). The description grows by the gap G from the card's bottom to the viewport
  * foot (less the foot margin) minus B, so the card fills exactly to the foot; but by at least
  * max(minLines lines, minVh), so it always grows noticeably, and the card by at most maxVh in
@@ -91,6 +107,5 @@ export function expandedDescLayout(m: HeroDescExpandMetrics, viewportH: number, 
   const maxGrow = Math.max(minGrow, b.maxVh * viewportH - band);
   const grow = Math.min(Math.max(minGrow, gap), maxGrow);
   const descPx = Math.floor(Math.min(m.fullH, m.descH + grow));
-  const shiftPx = m.bottomAnchored ? Math.round(descPx - m.descH + band) : 0;
-  return { heroH: m.heroH, descPx, shiftPx };
+  return { heroH: m.heroH, descPx, cardTopPx: m.bottomAnchored ? m.cardTopPx : null };
 }

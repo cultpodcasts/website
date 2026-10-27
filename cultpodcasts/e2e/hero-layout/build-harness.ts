@@ -122,7 +122,7 @@ export function buildHeroLayoutDocument(c: HeroLayoutCase): string {
 /**
  * In-page expander that mirrors HomepageHeroComponent.toggleDesc (HERO-DSC-002..004): measure the
  * collapsed card, then lock the hero height, set the expanded classes, size the description and
- * shift a bottom-anchored card with the component's own `measureCollapsedDesc` and
+ * lay a bottom-anchored (wide) card from its collapsed top, with the component's own `measureCollapsedDesc` and
  * `expandedDescLayout` (serialised here, so harness and component measure and size identically).
  * Collapse restores the exact collapsed layout.
  * Exposed as `window.heroLayoutHarness.toggleDesc()`; the chevron click calls it too.
@@ -150,7 +150,9 @@ function expandScript(): string {
     const layout = expandedDescLayout(metrics, vh, GROW);
     hero.style.height = layout.heroH + "px";
     desc.style.height = layout.descPx + "px";
-    card.style.transform = layout.shiftPx ? "translateY(" + layout.shiftPx + "px)" : "";
+    // Wide: lay the card from its collapsed top (HERO-DSC-005), as the component's bindings do.
+    hero.style.alignItems = layout.cardTopPx != null ? "flex-start" : "";
+    card.style.marginTop = layout.cardTopPx != null ? layout.cardTopPx + "px" : "";
     toggle.setAttribute("aria-expanded", "true");
     toggle.setAttribute("aria-label", "Collapse description");
   }
@@ -165,7 +167,8 @@ function expandScript(): string {
     desc.removeAttribute("tabindex");
     hero.style.height = "";
     desc.style.height = "";
-    card.style.transform = "";
+    hero.style.alignItems = "";
+    card.style.marginTop = "";
     desc.scrollTop = 0;
     if (!q(".billboard__desc-fade")) {
       const fade = document.createElement("span");

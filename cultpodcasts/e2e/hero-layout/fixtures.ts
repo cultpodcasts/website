@@ -11,7 +11,9 @@ export type HeroLayoutCaseId =
   | "empty-desc-with-subjects"
   | "many-subjects-with-desc"
   | "many-subjects-no-desc"
-  | "very-long-desc-with-urls";
+  | "very-long-desc-with-urls"
+  | "medium-desc-with-urls"
+  | "medium-desc-tall-card";
 
 export interface HeroLayoutCase {
   id: HeroLayoutCaseId;
@@ -29,6 +31,18 @@ export interface HeroLayoutCase {
    */
   expandable?: boolean;
 }
+
+/**
+ * Medium show notes (HERO-DSC-005): overflows the clamp but fits the expanded cap on desktop, so
+ * expanded it shows in full (Jon's 27 Oct 2026 report: expanding moved the card down).
+ * Synthetic: example.test hosts only.
+ */
+const MEDIUM_DESC_WITH_URLS = [
+  "Invented show notes. Previous video: https://video.example.test/_SyntheticAAA?is=2UOsXSc3lQiESIHE and part two: https://video.example.test/kQSynthetic?is=iDE3kl3t4jufLS0O",
+  "Support the invented host at https://tips.example.test/inventedhost or https://pay.example.test/inventedhost; the invented book: https://tips.example.test/s/23f5f8d77a",
+  ...Array.from({ length: 4 }, (_, i) =>
+    `Invented paragraph ${i + 1} with more synthetic notes at https://news.example.test/invented/story-${i + 1}?ref=hero&campaign=synthetic_value_${i}.`),
+].join(" ");
 
 const MANY_SUBJECTS = Array.from({ length: 12 }, (_, i) => `Topic ${i + 1}`);
 
@@ -120,6 +134,29 @@ export const heroLayoutCases: HeroLayoutCase[] = [
     subjects: ["Invented subject", "Another subject"],
     releaseLabel: "27 Oct 2026",
     durationLabel: "0:51:17",
+    podcastName: "Invented Show",
+    expandable: true,
+  },
+  {
+    id: "medium-desc-with-urls",
+    reqs: ["HERO-DSC-002", "HERO-DSC-005"],
+    episodeTitle: "Ep 34 - The Inventor: Synthetic Sequel",
+    episodeDescription: MEDIUM_DESC_WITH_URLS,
+    subjects: ["Invented subject", "Another subject"],
+    releaseLabel: "27 Oct 2026",
+    durationLabel: "0:08:10",
+    podcastName: "Invented Show",
+    expandable: true,
+  },
+  {
+    // Jon's 27 Oct 2026 shape: long title, no chips, so the wide card fills its band.
+    id: "medium-desc-tall-card",
+    reqs: ["HERO-DSC-002", "HERO-DSC-005"],
+    episodeTitle: "Invented Kingdom From Another World Or The Synthetic Host Examines A Made-Up Group",
+    episodeDescription: MEDIUM_DESC_WITH_URLS,
+    subjects: [],
+    releaseLabel: "27 Oct 2026",
+    durationLabel: "0:08:10",
     podcastName: "Invented Show",
     expandable: true,
   },

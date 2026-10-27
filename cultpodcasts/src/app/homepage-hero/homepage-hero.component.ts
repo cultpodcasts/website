@@ -31,7 +31,7 @@ import { displayCatalogName } from '../display-catalog-name';
 import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
-import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics } from './hero-desc-layout';
+import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics, type HeroDescLayout } from './hero-desc-layout';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -117,10 +117,11 @@ export class HomepageHeroComponent {
   /**
    * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
    * inline) and the card grows downward from its collapsed top, overlaying what follows the hero.
-   * `descPx` is the description's height (it scrolls inside past that) and `shiftPx` keeps the
-   * card's top where it was (the wide card is bottom-anchored in flow). Null while collapsed.
+   * `descPx` is the description's height (it scrolls inside past that) and, wide, `cardTopPx`
+   * lays the card from its collapsed top (the hero aligns it to the top, the card takes it as
+   * `margin-top`), so the top never moves (HERO-DSC-005). Null while collapsed.
    */
-  protected readonly descLayout = signal<{ heroH: number; descPx: number; shiftPx: number } | null>(null);
+  protected readonly descLayout = signal<HeroDescLayout | null>(null);
   /**
    * Collapsed geometry captured at expand time, including where the card's bottom was in the
    * viewport then (`cardBottomVp`): the size is measured once, so page scroll just moves the
@@ -633,7 +634,7 @@ export class HomepageHeroComponent {
     this.syncHeroPaused();
   }
 
-  /** Back to the exact collapsed layout: no lock, shift or height, first line at the top. */
+  /** Back to the exact collapsed layout: no lock, top offset or height, first line at the top. */
   private collapseDesc(): void {
     this.descExpanded.set(false);
     this.descExpandMetrics = null;

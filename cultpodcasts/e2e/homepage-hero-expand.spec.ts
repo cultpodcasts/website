@@ -1,11 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
+import { expectExpandedKeepsTop, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
 
 /**
  * Homepage hero, expanded description on the real app (ng serve, faked /homepage) with classic
  * scrollbars shown (headless Chromium hides them by default):
- * - HERO-DSC-004: expanding leaves the art box, the hero box and the stats strip where they
- *   were, and the art never paints over the strip's top (only the raised card may sit over it).
+ * - HERO-DSC-004 / 005: expanding keeps the card's top (within 1px), the art box, the hero box
+ *   and the stats strip where they were; the card grows down and may cover the strip, but the
+ *   art never paints over it (only the strip or the card paints the strip's top).
  * - HERO-DSC-003: the text keeps a gap from the scrollbar, long unbroken URLs wrap (nothing
  *   scrolls sideways, not the description and not the page), and the chevron never covers text.
  * Made-up shows, titles and show notes only (example.test hosts).
@@ -26,18 +28,32 @@ const PNG = Buffer.from(
 	"base64"
 );
 
-async function fakeApi(page: Page): Promise<void> {
+/**
+ * Medium show notes (HERO-DSC-005): overflow the clamp but fit the expanded cap on desktop, so
+ * they show in full.
+ */
+const MEDIUM_URL_DESC = [
+	"Invented show notes. Previous video: https://video.example.test/_SyntheticAAA?is=2UOsXSc3lQiESIHE and part two: https://video.example.test/kQSynthetic?is=iDE3kl3t4jufLS0O",
+	"Support the invented host at https://tips.example.test/inventedhost or https://pay.example.test/inventedhost; the invented book: https://tips.example.test/s/23f5f8d77a",
+	...Array.from({ length: 4 }, (_, i) =>
+		`Invented paragraph ${i + 1} with more synthetic notes at https://news.example.test/invented/story-${i + 1}?ref=hero&campaign=synthetic_value_${i}.`)
+].join(" ");
+
+/** Two-line title and no subject chips: the wide card fills its band, ~20px under the search. */
+const TALL_CARD_TITLE = "Invented Kingdom From Another World Or The Synthetic Host Examines A Made-Up Group";
+
+async function fakeApi(page: Page, episodeDescription = LONG_URL_DESC, tallCard = false): Promise<void> {
 	const now = Date.now();
 	const recentEpisodes = Array.from({ length: 4 }, (_, i) => ({
 		id: `00000000-0000-4000-8000-00000000001${i + 1}`,
 		podcastName: `Invented Show ${String.fromCharCode(65 + i)}`,
-		episodeTitle: `Invented episode title ${i + 1}`,
-		episodeDescription: LONG_URL_DESC,
+		episodeTitle: tallCard ? `${TALL_CARD_TITLE} ${i + 1}` : `Invented episode title ${i + 1}`,
+		episodeDescription,
 		release: new Date(now - (i + 1) * 3_600_000).toISOString(),
 		duration: "00:51:17",
 		services: { youtube: { url: `https://www.youtube.com/watch?v=synthetic${i}` } },
 		ids: { youtube: `synthetic${i}` },
-		subjects: ["Invented subject"],
+		subjects: tallCard ? [] : ["Invented subject"],
 		image: `https://img.example.test/hero-${i}.png`
 	}));
 	const body = JSON.stringify({ recentEpisodes, episodeCount: 87_753, totalDuration: "2639:00:00:00" });
@@ -63,68 +79,39 @@ async function fakeApi(page: Page): Promise<void> {
 	});
 }
 
-type Boxes = { stages: number[]; hero: number[]; stripTop: number };
-/** Page-relative (scroll-independent) boxes: [left, top, width, height]. */
-const boxes = (page: Page): Promise<Boxes> => page.evaluate(() => {
-	const b = (sel: string) => {
-		const r = document.querySelector(sel)!.getBoundingClientRect();
-		return [r.left + window.scrollX, r.top + window.scrollY, r.width, r.height];
-	};
-	return { stages: b(".billboard__stages"), hero: b(".billboard"), stripTop: b(".catalogue")[1] };
-});
-
-/** Who paints the strip's top band (the 28px it overlaps the hero) across the width. */
-const stripTopPainters = (page: Page): Promise<string[]> => page.evaluate(() => {
-	const strip = document.querySelector<HTMLElement>(".catalogue")!;
-	window.scrollTo(0, Math.max(0, strip.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2));
-	const top = strip.getBoundingClientRect().top;
-	const w = document.documentElement.clientWidth;
-	const out: string[] = [];
-	for (const dy of [2, 10, 20]) {
-		for (let x = 4; x < w - 4; x += Math.max(8, Math.floor(w / 40))) {
-			const el = document.elementFromPoint(x, top + dy);
-			out.push(el?.closest(".billboard__content") ? "card" : el?.closest(".catalogue") ? "strip"
-				: el ? `${el.tagName.toLowerCase()}.${[...el.classList].join(".")}` : "none");
-		}
-	}
-	return out;
-});
-
 const desc = (page: Page) => page.locator(".billboard__desc");
 const toggle = (page: Page) => page.locator("button.billboard__desc-toggle");
 const shots = process.env.HERO_SCREENS_DIR;
 
+const viewports = [
+	{ name: "desktop-1024", width: 1024, height: 700 },
+	{ name: "desktop-1440", width: 1440, height: 900 },
+	{ name: "desktop-1920", width: 1920, height: 1080 },
+	{ name: "tablet-768", width: 768, height: 1024 },
+	{ name: "mobile-390", width: 390, height: 844 }
+];
+
 test.describe("homepage hero: expanded description vs stats strip, scrollbar and long URLs", () => {
-	for (const vp of [
-		{ name: "desktop-1024", width: 1024, height: 700 },
-		{ name: "desktop-1440", width: 1440, height: 900 },
-		{ name: "tablet-768", width: 768, height: 1024 },
-		{ name: "mobile-390", width: 390, height: 844 }
-	]) {
-		test(`${vp.name}: art and strip stay put and unpainted; text clears the scrollbar; URLs wrap; chevron off the text (HERO-DSC-003/004)`, async ({ page }) => {
+	for (const vp of viewports) {
+		test(`${vp.name}: card top kept (may cover the strip), art never over the strip; text clears the scrollbar; URLs wrap; chevron off the text (HERO-DSC-003/005)`, async ({ page }) => {
 			await page.setViewportSize({ width: vp.width, height: vp.height });
 			await fakeApi(page);
 			await page.goto("/");
 			await expect(toggle(page)).toBeVisible();
 			await expect(page.locator(".catalogue")).toBeVisible();
 			expect(await desc(page).evaluate((d) => d.scrollWidth - d.clientWidth), "collapsed URLs overflow").toBeLessThanOrEqual(0);
-			const before = await boxes(page);
+			const before = await heroExpandGeometry(page);
 			const beforePainters = await stripTopPainters(page);
-			expect(beforePainters.filter((p) => p !== "strip" && p !== "card"), "collapsed strip top").toEqual([]);
 			await page.evaluate(() => window.scrollTo(0, 0));
 			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 
 			await toggle(page).click();
 			await toggle(page).evaluate((el) => (el as HTMLElement).blur());
 			await expect(desc(page)).toHaveClass(/is-expanded/);
-			const after = await boxes(page);
-			for (let i = 0; i < 4; i++) {
-				expect(Math.abs(after.stages[i] - before.stages[i]), `art box [${i}] changed`).toBeLessThanOrEqual(1);
-				expect(Math.abs(after.hero[i] - before.hero[i]), `hero box [${i}] changed`).toBeLessThanOrEqual(1);
-			}
-			expect(Math.abs(after.stripTop - before.stripTop), "stats strip moved").toBeLessThanOrEqual(1);
+			const after = await heroExpandGeometry(page);
 			const painters = await stripTopPainters(page);
-			expect(painters.filter((p) => p !== "strip" && p !== "card"), "art paints over the stats strip").toEqual([]);
+			expectExpandedKeepsTop(before, after, beforePainters, painters, vp.name);
+			expect(after.cardBottom - after.cardTop, "card did not grow").toBeGreaterThan(before.cardBottom - before.cardTop + 40);
 			await page.evaluate(() => window.scrollTo(0, 0));
 			if (shots) {
 				await desc(page).evaluate((d) => { d.scrollTop = (d.scrollHeight - d.clientHeight) / 3; });
@@ -167,9 +154,55 @@ test.describe("homepage hero: expanded description vs stats strip, scrollbar and
 
 			await toggle(page).click();
 			await expect(desc(page)).not.toHaveClass(/is-expanded/);
-			const collapsed = await boxes(page);
-			expect(Math.abs(collapsed.stripTop - before.stripTop)).toBeLessThanOrEqual(1);
-			expect(Math.abs(collapsed.stages[3] - before.stages[3])).toBeLessThanOrEqual(1);
+			const collapsed = await heroExpandGeometry(page);
+			for (const k of ["cardTop", "cardBottom", "stripTop"] as const) {
+				expect(Math.abs(collapsed[k] - before[k]), `${k} after collapse`).toBeLessThanOrEqual(1);
+			}
+			for (let i = 0; i < 4; i++) {
+				expect(Math.abs(collapsed.stages[i] - before.stages[i]), `art [${i}] after collapse`).toBeLessThanOrEqual(1);
+				expect(Math.abs(collapsed.hero[i] - before.hero[i]), `hero [${i}] after collapse`).toBeLessThanOrEqual(1);
+			}
+		});
+	}
+});
+
+// Jon (27 Oct 2026): "when i expand the description, the box shifts downwards now" — a tall
+// card (long title, no chips) with medium show notes; on e77a995 the wide card moved down ~32px
+// (its growth-sized translateY overshot the in-flow growth).
+test.describe("homepage hero: medium show notes, expanded in full (HERO-DSC-005)", () => {
+	for (const vp of viewports) for (const tallCard of [false, true]) {
+		test(`${vp.name}${tallCard ? ", tall card" : ""}: the card top is kept (it may grow over the strip); the art never covers the strip; collapse restores`, async ({ page }) => {
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			await fakeApi(page, MEDIUM_URL_DESC, tallCard);
+			await page.goto("/");
+			await expect(toggle(page)).toBeVisible();
+			await expect(page.locator(".catalogue")).toBeVisible();
+			const before = await heroExpandGeometry(page);
+			const beforePainters = await stripTopPainters(page);
+			await page.evaluate(() => window.scrollTo(0, 0));
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+			if (shots) {
+				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-medium${tallCard ? "-tall" : ""}-collapsed.png` });
+			}
+
+			await toggle(page).click();
+			await toggle(page).evaluate((el) => (el as HTMLElement).blur());
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			const after = await heroExpandGeometry(page);
+			const painters = await stripTopPainters(page);
+			expectExpandedKeepsTop(before, after, beforePainters, painters, `${vp.name} medium${tallCard ? " tall" : ""}`);
+			expect(after.cardBottom - after.cardTop, "card did not grow").toBeGreaterThan(before.cardBottom - before.cardTop + 20);
+			if (shots) {
+				await page.evaluate(() => window.scrollTo(0, 0));
+				await page.screenshot({ path: `${shots}/homepage-e2e-${vp.name}-medium${tallCard ? "-tall" : ""}-expanded.png` });
+			}
+
+			await toggle(page).click();
+			await expect(desc(page)).not.toHaveClass(/is-expanded/);
+			const collapsed = await heroExpandGeometry(page);
+			for (const k of ["cardTop", "cardBottom", "stripTop"] as const) {
+				expect(Math.abs(collapsed[k] - before[k]), `${k} after collapse`).toBeLessThanOrEqual(1);
+			}
 		});
 	}
 });

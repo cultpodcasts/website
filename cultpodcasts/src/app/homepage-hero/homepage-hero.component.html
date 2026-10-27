@@ -3,6 +3,7 @@
   [class.is-paused]="heroPaused()"
   [class.is-desc-expanded]="descExpanded()"
   [style.height.px]="descLayout()?.heroH ?? null"
+  [style.align-items]="descLayout()?.cardTopPx != null ? 'flex-start' : null"
   [class.has-art-aspect]="heroArtAspect() != null"
   [style.--hero-art-aspect]="heroArtAspect() ?? null"
   (focusin)="onHeroFocusIn()" (focusout)="onHeroFocusOut($event)"
@@ -67,7 +68,7 @@
     (mouseenter)="onHeroPointerEnter()" (mouseleave)="onHeroPointerLeave($event)"></div>
 
   <div class="billboard__content" [style.--hero-desc-lines]="descFitLines()"
-    [style.transform]="descLayout()?.shiftPx ? 'translateY(' + descLayout()!.shiftPx + 'px)' : null">
+    [style.margin-top.px]="descLayout()?.cardTopPx ?? null">
     <div class="billboard__feature" [class.is-hidden]="!heroContentVisible()">
       <div class="billboard__copy">
         <p class="billboard__eyebrow">

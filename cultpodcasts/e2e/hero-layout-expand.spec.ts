@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { buildHeroLayoutDocument } from "./hero-layout/build-harness";
 import { heroLayoutCases, type HeroLayoutCaseId } from "./hero-layout/fixtures";
+import { expectExpandedKeepsTop, heroExpandGeometry, stripTopPainters } from "./hero-expand-geometry";
 
 async function openCase(page: Page, caseId: HeroLayoutCaseId): Promise<void> {
   const c = heroLayoutCases.find((x) => x.id === caseId);
@@ -11,7 +12,7 @@ async function openCase(page: Page, caseId: HeroLayoutCaseId): Promise<void> {
 }
 
 /**
- * Expanded description (HERO-DSC-002..004) on the harness: the very long show-notes fixture
+ * Expanded description (HERO-DSC-002..005) on the harness: the very long show-notes fixture
  * (long unbroken URLs) expanded with the harness's mirror of HomepageHeroComponent.toggleDesc,
  * under a mock stats strip that compiles the real homepage-catalogue Sass.
  *
@@ -30,40 +31,6 @@ const expandViewports = [
 /** Must match the expanded `.billboard__desc` padding-right (HERO-DSC-003). */
 const DESC_SCROLL_GAP_PX = 16;
 
-interface Box {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-  width: number;
-  height: number;
-}
-
-/** Page-relative boxes (scroll-independent) of the art, hero and strip. */
-async function heroPageBoxes(page: Page): Promise<{ stages: Box; hero: Box; strip: Box }> {
-  return page.evaluate(() => {
-    const box = (sel: string) => {
-      const r = document.querySelector(sel)!.getBoundingClientRect();
-      const y = window.scrollY;
-      const x = window.scrollX;
-      return {
-        left: r.left + x,
-        top: r.top + y,
-        right: r.right + x,
-        bottom: r.bottom + y,
-        width: r.width,
-        height: r.height,
-      };
-    };
-    return { stages: box(".billboard__stages"), hero: box(".billboard"), strip: box(".catalogue") };
-  });
-}
-
-function expectSameBox(actual: Box, expected: Box, what: string): void {
-  for (const k of ["left", "top", "width", "height"] as const) {
-    expect(Math.abs(actual[k] - expected[k]), `${what} ${k}: ${actual[k]} vs ${expected[k]}`).toBeLessThanOrEqual(0.5);
-  }
-}
 
 /**
  * Text, scrollbar and chevron geometry of the expanded description at its current scroll offset.
@@ -114,52 +81,26 @@ async function expandedDescReport(page: Page) {
   });
 }
 
-/**
- * Sample the strip's top band (the 28px it overlaps the hero foot) across the width: every point
- * must paint either the strip or the raised card, never the art, scrim or billboard background.
- */
-async function stripTopPainters(page: Page): Promise<{ x: number; painter: string }[]> {
-  return page.evaluate(() => {
-    const strip = document.querySelector<HTMLElement>(".catalogue")!;
-    // Bring the strip's top band to mid-viewport so elementFromPoint can see it.
-    const pageTop = strip.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo(0, Math.max(0, pageTop - window.innerHeight / 2));
-    const top = strip.getBoundingClientRect().top;
-    const out: { x: number; painter: string }[] = [];
-    const w = document.documentElement.clientWidth;
-    for (const dy of [2, 10, 20]) {
-      for (let x = 4; x < w - 4; x += Math.max(8, Math.floor(w / 40))) {
-        const el = document.elementFromPoint(x, top + dy);
-        let painter = "none";
-        if (el?.closest(".billboard__content")) painter = "card";
-        else if (el?.closest(".catalogue")) painter = "strip";
-        else if (el) painter = `${el.tagName.toLowerCase()}.${[...el.classList].join(".")}`;
-        out.push({ x, painter });
-      }
-    }
-    return out;
-  });
-}
-
 // Classic scrollbars, so the scrollbar-clearance check measures a real one (file-level: a
 // launch option forces its own worker).
 test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 
-test.describe("hero expanded description (HERO-DSC-002..004)", () => {
+test.describe("hero expanded description (HERO-DSC-002..005)", () => {
   for (const vp of expandViewports) {
     test.describe(`@ ${vp.name} (${vp.width}x${vp.height})`, () => {
       test.use({ viewport: { width: vp.width, height: vp.height } });
 
-      test("expanding keeps the art box, hero box and stats strip; the strip is never painted over; collapse restores", async ({
+      for (const caseId of ["very-long-desc-with-urls", "medium-desc-with-urls", "medium-desc-tall-card"] as const) {
+      test(`HERO-DSC-005 (${caseId}): expanding keeps the card top (it grows down, over the strip if need be); the art never covers the strip; collapse restores`, async ({
         page,
       }) => {
-        await openCase(page, "very-long-desc-with-urls");
+        await openCase(page, caseId);
         const toggle = page.locator(".billboard__desc-toggle");
         await expect(toggle).toHaveAttribute("aria-expanded", "false");
         if (process.env.HERO_SCREENS_DIR) {
-          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-collapsed.png` });
+          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-${caseId}-collapsed.png` });
         }
-        const before = await heroPageBoxes(page);
+        const before = await heroExpandGeometry(page);
         const beforePainters = await stripTopPainters(page);
         await page.evaluate(() => window.scrollTo(0, 0));
 
@@ -167,41 +108,33 @@ test.describe("hero expanded description (HERO-DSC-002..004)", () => {
         await expect(toggle).toHaveAttribute("aria-expanded", "true");
         await expect(page.locator(".billboard")).toHaveClass(/is-desc-expanded/);
         // Measure first: a full-page screenshot resizes the viewport (and drops the scrollbar).
-        const expanded = await heroPageBoxes(page);
+        const expanded = await heroExpandGeometry(page);
         const painters = await stripTopPainters(page);
         if (process.env.HERO_SCREENS_DIR) {
           await page.evaluate(() => window.scrollTo(0, 0));
-          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-expanded.png` });
-          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-expanded-full.png`, fullPage: true });
+          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-${caseId}-expanded.png` });
+          await page.screenshot({ path: `${process.env.HERO_SCREENS_DIR}/harness-${vp.name}-${caseId}-expanded-full.png`, fullPage: true });
         }
-        expectSameBox(expanded.stages, before.stages, "art (.billboard__stages)");
-        expectSameBox(expanded.hero, before.hero, "hero (.billboard)");
-        expect(Math.abs(expanded.strip.top - before.strip.top), "stats strip top").toBeLessThanOrEqual(0.5);
-
-        // HERO-DSC-004: only the card may sit over the strip; the art never does. Every point
-        // the strip painted collapsed is the strip or the card expanded.
-        const art = painters.filter((p) => p.painter !== "strip" && p.painter !== "card");
-        expect(art, `strip top painted by: ${JSON.stringify(art.slice(0, 5))}`).toEqual([]);
-        const lost = painters.filter(
-          (p, i) => beforePainters[i]?.painter === "strip" && p.painter !== "strip" && p.painter !== "card"
-        );
-        expect(lost).toEqual([]);
-        // Where the card does not reach, the strip still shows.
-        const card = await page.locator(".billboard__content").boundingBox();
-        const vw = vp.width;
-        if (card && (card.x > 24 || card.x + card.width < vw - 24)) {
-          expect(painters.some((p) => p.painter === "strip"), "strip visible beside the card").toBe(true);
-        }
+        expectExpandedKeepsTop(before, expanded, beforePainters, painters, vp.name);
+        // The card really grew (the description expanded), within the 60vh cap.
+        expect(expanded.cardBottom - expanded.cardTop).toBeGreaterThan(before.cardBottom - before.cardTop + 20);
+        const descH = await page.locator(".billboard__desc").evaluate((d) => d.getBoundingClientRect().height);
+        expect(descH).toBeLessThanOrEqual(vp.height * 0.6 + 1);
 
         await page.evaluate(() => window.scrollTo(0, 0));
         await toggle.click();
         await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        const collapsed = await heroPageBoxes(page);
-        expectSameBox(collapsed.stages, before.stages, "art after collapse");
-        expectSameBox(collapsed.hero, before.hero, "hero after collapse");
-        expect(Math.abs(collapsed.strip.top - before.strip.top)).toBeLessThanOrEqual(0.5);
+        const collapsed = await heroExpandGeometry(page);
+        for (const k of ["cardTop", "cardBottom", "stripTop"] as const) {
+          expect(Math.abs(collapsed[k] - before[k]), `${k} after collapse`).toBeLessThanOrEqual(0.5);
+        }
+        for (let i = 0; i < 4; i++) {
+          expect(Math.abs(collapsed.stages[i] - before.stages[i]), `art [${i}] after collapse`).toBeLessThanOrEqual(0.5);
+          expect(Math.abs(collapsed.hero[i] - before.hero[i]), `hero [${i}] after collapse`).toBeLessThanOrEqual(0.5);
+        }
         expect(await page.locator(".billboard__desc").evaluate((d) => d.scrollTop)).toBe(0);
       });
+      }
 
       test("HERO-DSC-003: text clears the scrollbar, long URLs wrap, the chevron never covers text", async ({ page }) => {
         await openCase(page, "very-long-desc-with-urls");

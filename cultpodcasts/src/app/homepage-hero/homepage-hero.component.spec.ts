@@ -1240,7 +1240,7 @@ describe('HomepageHeroComponent', () => {
       });
     });
 
-    describe('HERO-DSC-002: expanded keeps the hero and the card top; the description grows by the gap, within [max(6 lines, 30vh), 60vh]', () => {
+    describe('HERO-DSC-002 / 005: expanded keeps the hero and the card top (never moves down); the description grows by the gap, within [max(6 lines, 30vh), 60vh]', () => {
       const realInnerHeight = window.innerHeight;
       afterEach(() => {
         vi.restoreAllMocks();
@@ -1249,7 +1249,8 @@ describe('HomepageHeroComponent', () => {
 
       /**
        * Collapsed card at hero y 300–688 in a 720px hero; desc 110px of it (C), 22px lines (L);
-       * full text `fullPx` tall. Wide (row) hero unless `column`.
+       * full text `fullPx` tall. Wide (row) hero unless `column`, with 138px top padding (the
+       * search clearance), so the card's top is 162px below the hero's content top.
        */
       function fakeCollapsed(viewportH: number, heroTop = 0, column = false, fullPx = 3000): void {
         Object.defineProperty(window, 'innerHeight', { configurable: true, value: viewportH });
@@ -1264,7 +1265,7 @@ describe('HomepageHeroComponent', () => {
         const real = window.getComputedStyle.bind(window);
         vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
           if (el === hero) {
-            return { flexDirection: column ? 'column' : 'row', getPropertyValue: () => '' } as unknown as CSSStyleDeclaration;
+            return { flexDirection: column ? 'column' : 'row', paddingTop: column ? '0px' : '138px', getPropertyValue: () => '' } as unknown as CSSStyleDeclaration;
           }
           if (el === desc) {
             return { lineHeight: '22px', height: '110px', paddingTop: '0px', paddingBottom: '0px' } as unknown as CSSStyleDeclaration;
@@ -1296,18 +1297,22 @@ describe('HomepageHeroComponent', () => {
         expect(hero().style.height).toBe('720px');
         // G = 888 - 688 - 40 (chevron band) = 160 < minGrow = max(132, 270) = 270 → 110 + 270.
         expect(descEl().style.height).toBe('380px');
-        // The row hero grows the card upward in flow; shifted down by the growth (description
-        // + the 40px chevron band), the top stays.
-        expect(card().style.transform).toBe('translateY(310px)');
+        // HERO-DSC-005: no translate; the hero aligns the card to its top and the card is laid
+        // from its collapsed top (162px into the content box), so the top cannot drift.
+        expect(card().style.transform).toBe('');
+        expect(hero().style.alignItems).toBe('flex-start');
+        expect(card().style.marginTop).toBe('162px');
         expect(hero().classList.contains('is-desc-expanded')).toBe(true);
       });
 
-      it('stacked: the card keeps its top in flow, so no shift', () => {
+      it('stacked: the card keeps its top in flow, so no shift and no top offset', () => {
         fakeOverflow(true);
         fakeCollapsed(900, 0, true);
         expand();
         expect(descEl().style.height).toBe('380px');
         expect(card().style.transform).toBe('');
+        expect(card().style.marginTop).toBe('');
+        expect(hero().style.alignItems).toBe('');
       });
 
       it("card bottom at the foot (Jon's mobile case): still grows by the minimum, never moves up", () => {
@@ -1342,7 +1347,9 @@ describe('HomepageHeroComponent', () => {
         expand();
         // full = 150 < 110 + 270.
         expect(descEl().style.height).toBe('150px');
-        expect(card().style.transform).toBe('translateY(80px)');
+        // Same top offset whatever the growth (the growth-sized shift drifted: Jon, 27 Oct 2026).
+        expect(card().style.transform).toBe('');
+        expect(card().style.marginTop).toBe('162px');
       });
 
       it('measures once: page scroll neither re-sizes nor collapses (the card moves with the page)', () => {
@@ -1355,7 +1362,7 @@ describe('HomepageHeroComponent', () => {
         fixture.detectChanges();
         expect(descEl().classList.contains('is-expanded')).toBe(true);
         expect(descEl().style.height).toBe('380px');
-        expect(card().style.transform).toBe('translateY(310px)');
+        expect(card().style.marginTop).toBe('162px');
       });
 
       it('a height-only resize re-sizes from the expand-time position', () => {
@@ -1368,7 +1375,7 @@ describe('HomepageHeroComponent', () => {
         expect(descEl().style.height).toBe('350px');
       });
 
-      it('collapse restores the exact collapsed layout (no lock, shift, height or scroll offset)', () => {
+      it('collapse restores the exact collapsed layout (no lock, top offset, height or scroll offset)', () => {
         fakeOverflow(true);
         fakeCollapsed(600);
         expand();
@@ -1376,7 +1383,9 @@ describe('HomepageHeroComponent', () => {
         toggle()!.click();
         fixture.detectChanges();
         expect(hero().style.height).toBe('');
+        expect(hero().style.alignItems).toBe('');
         expect(card().style.transform).toBe('');
+        expect(card().style.marginTop).toBe('');
         expect(descEl().style.height).toBe('');
         expect(descEl().scrollTop).toBe(0);
         expect(hero().classList.contains('is-desc-expanded')).toBe(false);
