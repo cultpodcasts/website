@@ -523,6 +523,59 @@ test.describe("homepage hero description", () => {
 		});
 	}
 
+	const kinds = [
+		{ kind: "NewsReport", root: "/news", icon: "newspaper", label: "News", parent: "Invented Desk" },
+		{ kind: "TvShowEpisode", root: "/tv", icon: "live_tv", label: "TV", parent: "Invented Programme" },
+		{ kind: "Film", root: "/film", icon: "movie", label: "Film", parent: null }
+	] as const;
+	for (const layout of layouts) {
+		for (const k of kinds) {
+			test(`${layout.name}: a ${k.kind} hero links to ${k.root} with its short id and says ${k.label} in the eyebrow (HERO-KND-001)`, async ({ page }) => {
+				await page.setViewportSize({ width: layout.width, height: layout.height });
+				await fakeApi(page, SHORT_DESC);
+				// Every slide is this kind, so whichever the time bucket features is one.
+				const feed = homepage(SHORT_DESC);
+				feed.recentEpisodes = feed.recentEpisodes.map((e, i) => ({
+					...e,
+					contentKind: k.kind,
+					podcastName: k.parent ?? `Invented Film ${i + 1}`,
+					episodeTitle: k.parent ? e.episodeTitle : `Invented Film ${i + 1}`
+				}));
+				// Registered after fakeApi, so it wins for /homepage.
+				await page.route((url) => url.pathname === "/homepage", async (route) => {
+					await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(feed) });
+				});
+				await page.goto("/");
+
+				const guids = new GuidService();
+				const link = page.locator("h1.billboard__title > a.billboard__title-link");
+				await expect(link).toHaveAttribute("href", new RegExp(`^${k.root}/`));
+				const href = (await link.getAttribute("href")) ?? "";
+				const featured = feed.recentEpisodes.find((e) =>
+					href === `${k.root}/${encodeURIComponent(e.podcastName)}/${guids.toCatalogueShortId(e.id, k.kind)}`);
+				expect(featured, href).toBeDefined();
+				await expect(page.locator(`a[href^="/podcast/"]`)).toHaveCount(0);
+
+				const eyebrow = page.locator(".billboard__eyebrow");
+				const badge = eyebrow.locator(".billboard__kind");
+				await expect(badge).toBeVisible();
+				await expect(badge.locator("mat-icon")).toHaveText(k.icon);
+				await expect(badge).toContainText(k.label);
+				// One line: the badge must not wrap the eyebrow, even on mobile.
+				const lines = await eyebrow.evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).fontSize)));
+				expect(lines).toBeLessThanOrEqual(2);
+				if (k.parent) {
+					await expect(page.locator("a.hero-pill")).toHaveAttribute("href", `${k.root}/${encodeURIComponent(k.parent)}`);
+				} else {
+					await expect(page.locator(".hero-pill")).toHaveCount(0);
+				}
+				if (shots) {
+					await page.screenshot({ path: `${shots}/hero-${layout.name}-kind-${k.kind}.png` });
+				}
+			});
+		}
+	}
+
 	test("no Add to Queue when the episode only plays outbound (HERO-QUE-001)", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await fakeApi(page, SHORT_DESC, undefined, undefined, { bbcSounds: ALL_SERVICES.bbcSounds });

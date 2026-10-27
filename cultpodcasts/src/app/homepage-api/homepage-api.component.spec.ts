@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { BehaviorSubject, of, ReplaySubject } from 'rxjs';
 import { HomepageApiComponent, withHeroLinks } from './homepage-api.component';
 import { HomepageService } from '../homepage.service';
+import { GuidService } from '../guid.service';
 import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SiteService } from '../site.service';
@@ -367,6 +368,30 @@ describe('withHeroLinks', () => {
     expect(tv.parentLink).toEqual(['/tv', 'Nightly']);
     expect(news.playableLink).toEqual(['/news', 'Desk', 'ep-1']);
     expect(news.parentLink).toEqual(['/news', 'Desk']);
+  });
+
+  it('links a GUID news report, TV episode and film to their own routes with kind-prefixed short ids, never /podcast', () => {
+    // Synthetic GUID, same shape the /homepage feed sends for every kind.
+    const guid = '00000000-0000-4000-8000-000000000001';
+    const shortIds = new GuidService();
+    const [news, tv, film, podcast] = withHeroLinks([
+      { ...base, id: guid, contentKind: 'NewsReport', podcastName: 'Synthetic Desk' },
+      { ...base, id: guid, contentKind: 'TvShowEpisode', podcastName: 'Synthetic Show' },
+      { ...base, id: guid, contentKind: 'Film', podcastName: 'Synthetic Film', episodeTitle: 'Synthetic Film' },
+      { ...base, id: guid },
+    ]);
+    expect(news.playableLink).toEqual(['/news', 'Synthetic Desk', shortIds.toCatalogueShortId(guid, 'NewsReport')]);
+    expect(news.parentLink).toEqual(['/news', 'Synthetic Desk']);
+    expect(tv.playableLink).toEqual(['/tv', 'Synthetic Show', shortIds.toCatalogueShortId(guid, 'TvShowEpisode')]);
+    expect(tv.parentLink).toEqual(['/tv', 'Synthetic Show']);
+    expect(film.playableLink).toEqual(['/film', 'Synthetic Film', shortIds.toCatalogueShortId(guid, 'Film')]);
+    expect(film.parentLink).toBeNull();
+    for (const slide of [news, tv, film]) {
+      expect(slide.playableLink[0]).not.toBe('/podcast');
+      // The prefixed short id is 23 chars; the podcast one is 22.
+      expect(slide.playableLink[2]).toHaveLength(23);
+    }
+    expect(podcast.playableLink).toEqual(['/podcast', 'Nightly', shortIds.toBase64(guid)]);
   });
 
   it('drops a film trailer with no film page and keeps one that links to the film', () => {
