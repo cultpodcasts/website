@@ -18,4 +18,9 @@ export interface CatalogueIndexDialogResult {
   notFound?: boolean;
   /** 409: more than one outlet / show has the name. */
   ambiguous?: boolean;
+  /**
+   * 504 `{reason: "TimedOut"}`: the on-demand time budget cut the index off. Not a fault; what was saved
+   * reaches search on the next pull-indexer run, so the curator is told to try again later.
+   */
+  timedOut?: boolean;
 }

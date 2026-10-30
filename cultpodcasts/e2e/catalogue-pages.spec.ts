@@ -219,6 +219,21 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.locator("mat-snack-bar-container")).toContainText("TV Show not indexable");
 	});
 
+	test("Index News Outlet says to try again later when the index runs out of time (504)", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		await page.route("**/newsorganisation/index/Desk", (route) =>
+			route.fulfill({
+				status: 504,
+				contentType: "application/json",
+				body: JSON.stringify({ reason: "TimedOut", message: "Indexing ran out of time. Try again later." })
+			}));
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Index News Outlet/ }).click();
+		await expect(page.locator("mat-snack-bar-container"))
+			.toContainText("News Outlet indexing ran out of time. Anything it saved will appear shortly; try again later.");
+	});
+
 	test("admin Rename posts the new name to the TV show rename route", async ({ page }) => {
 		await signInAs(page, ["Curator", "Admin"]);
 		let renameBody: Record<string, unknown> | undefined;

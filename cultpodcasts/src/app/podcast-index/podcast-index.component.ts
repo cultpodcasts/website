@@ -54,7 +54,8 @@ export class PodcastIndexComponent {
         e.status == 400 ? { notIndexable: true, reason: e.error?.reason }
           : e.status == 404 ? { notFound: true }
             : e.status == 409 ? { ambiguous: true }
-              : undefined);
+              : e.status == 504 ? { timedOut: true }
+                : undefined);
   }
 
   private post<T>(

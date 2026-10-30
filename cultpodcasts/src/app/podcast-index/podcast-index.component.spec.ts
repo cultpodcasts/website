@@ -77,9 +77,9 @@ describe('PodcastIndexComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, itemIds: ['a'], searchIndexerState: 'Executed' });
   });
 
-  it('maps a TV show 400 (with reason), 404 and 409, and stays open with an error otherwise', async () => {
+  it('maps a TV show 400 (with reason), 404, 409 and 504 (timed out), and stays open with an error otherwise', async () => {
     const sut = TestBed.createComponent(PodcastIndexComponent).componentInstance;
-    for (const [status, body] of [[400, { reason: 'SourcePodcastStillExists' }], [404, null], [409, ['x', 'y']]] as const) {
+    for (const [status, body] of [[400, { reason: 'SourcePodcastStillExists' }], [404, null], [409, ['x', 'y']], [504, { reason: 'TimedOut', message: 'Indexing ran out of time.' }]] as const) {
       sut.indexCatalogueParent('tv', 'Nightly');
       await settle();
       expectPost('/tvshow/index/Nightly').flush(body, { status, statusText: 'Error' });
@@ -87,12 +87,13 @@ describe('PodcastIndexComponent', () => {
     expect(close.mock.calls.map((c) => c[0])).toEqual([
       { notIndexable: true, reason: 'SourcePodcastStillExists' },
       { notFound: true },
-      { ambiguous: true }
+      { ambiguous: true },
+      { timedOut: true }
     ]);
     sut.indexCatalogueParent('tv', 'Nightly');
     await settle();
     expectPost('/tvshow/index/Nightly').flush({ error: 'Unable to index TV show' }, { status: 500, statusText: 'Error' });
-    expect(close).toHaveBeenCalledTimes(3);
+    expect(close).toHaveBeenCalledTimes(4);
     expect(sut.sendError()).toBe(true);
     expect(sut.isSending()).toBe(false);
     expect(sut.subject()).toBe('TV Show');

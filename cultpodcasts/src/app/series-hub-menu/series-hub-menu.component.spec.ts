@@ -154,13 +154,14 @@ describe('SeriesHubMenuComponent', () => {
     expect(snackOpen.mock.calls[1][0]).toBe('TV Show indexed. 1 item updated. Index update failed.');
   });
 
-  it('Index reports not indexable, not found and an ambiguous name', () => {
+  it('Index reports not indexable, not found, an ambiguous name and a timeout', () => {
     const { menu } = create('tv', 'Nightly');
     for (const result of [
       { notIndexable: true, reason: 'NotAutoIndexed' },
       { notIndexable: true, reason: 'SourcePodcastStillExists' },
       { notFound: true },
       { ambiguous: true },
+      { timedOut: true },
       { updated: false }
     ]) {
       indexDialogResult = result;
@@ -170,7 +171,8 @@ describe('SeriesHubMenuComponent', () => {
       'TV Show not indexable',
       'TV Show not indexable (its podcast still exists)',
       'TV Show not found',
-      'More than one tv show is called "Nightly". Nothing was indexed.'
+      'More than one tv show is called "Nightly". Nothing was indexed.',
+      'TV Show indexing ran out of time. Anything it saved will appear shortly; try again later.'
     ]);
   });
 
