@@ -29,7 +29,7 @@ export function youTubePlaylistReplacesChannel(playlistId: string | null | undef
 }
 
 /** Hint shown under the YouTube channel id while a playlist id is set (RPP #1177). */
-export const youTubeChannelIgnoredHint = "Not used while a playlist id is set: every video in the playlist is indexed.";
+export const youTubeChannelIgnoredHint = "Not used for indexing while a playlist id is set: every video in the playlist is indexed. Still used to match submitted and discovered videos.";
 
 /**
  * Backend indexes when IndexAllEpisodes OR a non-whitespace EpisodeIncludeTitleRegex

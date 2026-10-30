@@ -238,7 +238,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   it('greys out the YouTube channel id with a hint while a playlist id is set (RPP #1177)', async () => {
     const { input, hint } = await channelInput('PLsyntheticplaylist0000000000000000');
     expect(input.disabled).toBe(true);
-    expect(hint?.textContent).toContain('Not used while a playlist id is set');
+    expect(hint?.textContent).toContain('Not used for indexing while a playlist id is set');
     expect(input.getAttribute('aria-describedby')).toContain('youtube-channel-ignored');
   });
 
