@@ -220,6 +220,34 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
+  async function channelInput(playlistId: string) {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    await loadWith({ id: showId, name: 'Nightly', youTubeChannelId: 'UCcccccccccccccccccccccc', youTubePlaylistId: playlistId });
+    await settle();
+    await showTab(fixture, 'Details');
+    await settle();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    return {
+      input: root.querySelector<HTMLInputElement>('input[name="youTubeChannelId"]')!,
+      hint: root.querySelector<HTMLElement>('#youtube-channel-ignored')
+    };
+  }
+
+  it('greys out the YouTube channel id with a hint while a playlist id is set (RPP #1177)', async () => {
+    const { input, hint } = await channelInput('PLsyntheticplaylist0000000000000000');
+    expect(input.disabled).toBe(true);
+    expect(hint?.textContent).toContain('Not used for indexing while a playlist id is set');
+    expect(input.getAttribute('aria-describedby')).toContain('youtube-channel-ignored');
+  });
+
+  it('keeps the YouTube channel id editable without a hint when there is no playlist id', async () => {
+    const { input, hint } = await channelInput('');
+    expect(input.disabled).toBe(false);
+    expect(hint).toBeNull();
+  });
+
   it('blocks Save on a non-numeric Apple id', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });

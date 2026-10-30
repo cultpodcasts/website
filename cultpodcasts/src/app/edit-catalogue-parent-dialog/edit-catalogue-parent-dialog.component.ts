@@ -38,7 +38,13 @@ import { imdbTitleUrl, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-for
 import { buildPodcastLanguageOptions } from "../language-options.util";
 import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
-import { filterSubjectsByTerm, noCompareFunction, PODCAST_REGEXS_TAB_INDEX } from "../podcast-form.util";
+import {
+  filterSubjectsByTerm,
+  noCompareFunction,
+  PODCAST_REGEXS_TAB_INDEX,
+  youTubeChannelIgnoredHint,
+  youTubePlaylistReplacesChannel
+} from "../podcast-form.util";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 
 export interface EditCatalogueParentDialogData {
@@ -120,6 +126,8 @@ export class EditCatalogueParentDialogComponent {
     this.identityInvalid.set(false);
   }
   protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
+  protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
+  protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
   protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
   protected readonly noCompareFunction = noCompareFunction;
