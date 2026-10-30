@@ -63,3 +63,12 @@ mark is the official 1-color stacked logo SVG from the brand portal.
 Prime Video (blue + `prime` / `video` + smile), TVNZ+ gradient plus, Play RTS
 (`RTS` on `#AF001E`), and Fawesome triangles live in
 `generate-svg-icon-literals.mjs`.
+
+## Official paths placed on the live app-icon tile
+
+ABC iview lives in `generate-svg-icon-literals.mjs`: the ABC lissajous and the
+`iview` wordmark (play triangle in the e) are the path data from the
+`ABCIviewLogo` masthead SVG on `https://iview.abc.net.au/`, rounded to 2dp and
+laid out like the live apple-touch icon (`/images/touchicon.png`): white
+lissajous above the wordmark on the `#2FB7B6` iview teal tile. Do not go back to
+a `<text>` wordmark on black — it rendered as unreadable "iview" text.

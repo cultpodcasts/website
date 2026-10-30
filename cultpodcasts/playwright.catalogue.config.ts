@@ -7,7 +7,7 @@ import { catalogueE2eOrigin as origin, catalogueE2ePort as port } from "./e2e/ca
  */
 export default defineConfig({
 	testDir: "./e2e",
-	testMatch: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts", "homepage-hero-expand.spec.ts", "home-chrome-dock.spec.ts", "catalogue-playable-edit.spec.ts", "search-suggestion-kinds.spec.ts", "film-trailers-rail.spec.ts"],
+	testMatch: ["catalogue-pages.spec.ts", "browse-filter-fragment.spec.ts", "homepage-hero-desc.spec.ts", "homepage-hero-expand.spec.ts", "home-chrome-dock.spec.ts", "catalogue-playable-edit.spec.ts", "search-suggestion-kinds.spec.ts", "film-trailers-rail.spec.ts", "abc-iview-icon.spec.ts"],
 	fullyParallel: false,
 	// One shared ng serve: parallel files starve chrome-dock's rAF walk and delay fragment tidy.
 	workers: 1,

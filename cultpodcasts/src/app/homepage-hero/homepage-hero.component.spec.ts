@@ -10,6 +10,9 @@ import { SEARCH_DESCRIPTION_SIZE } from '../search-description';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { PlayerService } from '../player.service';
 import { HERO_DESC_GROW } from './hero-desc-layout';
+import { MatIconRegistry } from '@angular/material/icon';
+import { DomSanitizer } from '@angular/platform-browser';
+import { registerSvgIcons } from '../register-svg-icons';
 
 const heroDir = dirname(fileURLToPath(import.meta.url));
 // Specs match indented Sass with \n; normalize CRLF so Windows checkouts still pass.
@@ -1058,6 +1061,26 @@ describe('HomepageHeroComponent', () => {
       // Apple uses the shared Apple mark, the rest the registered service icons.
       expect(links()[2].querySelector('app-apple-podcasts-svg')).toBeTruthy();
       expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('spotify');
+    });
+
+    it('shows a TV episode\'s ABC iview link beside YouTube with the teal iview mark (not the old black text tile)', () => {
+      registerSvgIcons(TestBed.inject(MatIconRegistry), TestBed.inject(DomSanitizer));
+      show(ep('a', {
+        contentKind: 'TvShowEpisode',
+        ids: undefined,
+        services: {
+          youtube: { url: 'https://www.youtube.com/watch?v=inventedTv' },
+          abcIview: { url: 'https://iview.abc.net.au/video/ZZ0000H000S00' },
+        },
+      }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['YouTube', 'ABC iview']);
+      expect(links()[1].href).toBe('https://iview.abc.net.au/video/ZZ0000H000S00');
+      const icon = links()[1].querySelector('mat-icon');
+      expect(icon?.getAttribute('data-mat-icon-name')).toBe('abc-iview');
+      const svg = icon?.querySelector('svg');
+      expect(svg?.querySelector('rect')?.getAttribute('fill')).toBe('#2FB7B6');
+      expect(svg?.querySelectorAll('text')).toHaveLength(0);
+      expect(svg?.querySelectorAll('path')).toHaveLength(2);
     });
 
     it('shows nothing for services the episode does not have', () => {
