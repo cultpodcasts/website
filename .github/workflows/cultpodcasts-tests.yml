@@ -6,9 +6,7 @@ on:
       - "cultpodcasts/**"
       - "scripts/**"
       - ".github/workflows/cultpodcasts-tests.yml"
-
-env:
-  NODE_VERSION: "22"
+  workflow_dispatch:
 
 jobs:
   test:
@@ -18,12 +16,12 @@ jobs:
         working-directory: cultpodcasts
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: cultpodcasts/.nvmrc
           cache: npm
           cache-dependency-path: cultpodcasts/package-lock.json
 

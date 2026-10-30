@@ -8,7 +8,20 @@ on:
       - 'cultpodcasts/tools/**'
       - 'cultpodcasts/angular.json'
       - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build.sh'
       - 'cultpodcasts/build-apk.sh'
+      - 'cultpodcasts/.nvmrc'
+      - '.github/workflows/mobile-build.yml'
+      - 'cultpodcasts/bubblewrap.json'
+  pull_request:
+    paths:
+      - 'cultpodcasts/src/**'
+      - 'cultpodcasts/tools/**'
+      - 'cultpodcasts/angular.json'
+      - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build.sh'
+      - 'cultpodcasts/build-apk.sh'
+      - 'cultpodcasts/.nvmrc'
       - '.github/workflows/mobile-build.yml'
       - 'cultpodcasts/bubblewrap.json'
   workflow_dispatch:
@@ -18,23 +31,23 @@ on:
         required: false
         default: 'false'
 
-env:
-  NODE_VERSION: '20' 
-
+# pull_request jobs never reference signing secrets. release-* jobs are separate
+# jobs (not skipped steps) and run only for push or workflow_dispatch on main.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-android:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: cultpodcasts/.nvmrc
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
@@ -44,138 +57,17 @@ jobs:
       - name: Build web app
         run: cd cultpodcasts && env=production ./build.sh
 
-      - name: Initialize Bubblewrap project
-        run: cd cultpodcasts && node tools/create-twa-manifest.js
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-
-      - name: Decode Android Keystore
-        run: |
-          cd cultpodcasts
-          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
-            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
-            echo "Keystore decoded successfully"
-            ls -lh android.keystore
-          fi
-
-      - name: Build APK with Bubblewrap (Docker - automated with expect)
-        run: |
-          cd cultpodcasts
-          
-          docker run --rm \
-            --entrypoint bash \
-            -v $(pwd)/build-apk.sh:/tmp/build-apk.sh:ro \
-            -v $(pwd):/workspace \
-            -w /workspace \
-            -e BUBBLEWRAP_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            -e BUBBLEWRAP_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
-            ghcr.io/googlechromelabs/bubblewrap:latest \
-            /tmp/build-apk.sh
-
-      - name: Read app version from package.json
-        id: app_version
-        run: |
-          VERSION=$(node -p "require('./cultpodcasts/package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-          echo "apk_name=cultpodcasts-android-v$VERSION.apk" >> "$GITHUB_OUTPUT"
-          echo "aab_name=cultpodcasts-android-v$VERSION.aab" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare versioned Android artifacts
-        run: |
-          cp "cultpodcasts/app-release-signed.apk" "cultpodcasts/${{ steps.app_version.outputs.apk_name }}"
-          cp "cultpodcasts/app-release-bundle.aab" "cultpodcasts/${{ steps.app_version.outputs.aab_name }}"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cultpodcasts-apk-v${{ steps.app_version.outputs.version }}
-          path: |
-            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
-            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
-          retention-days: 30
-
-      - name: Ensure semver tag exists
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-        run: |
-          TAG="${{ steps.app_version.outputs.tag }}"
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists on remote"
-          elif git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists locally"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "$TAG" -m "Release $TAG"
-            git push origin "$TAG"
-            echo "Created and pushed tag $TAG"
-          fi
-
-      - name: Publish Versioned Android Release
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
-          name: Android ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
-          body: |
-            Android build for `${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}`
-
-            Package version source: `cultpodcasts/package.json` (`${{ steps.app_version.outputs.version }}`).
-
-            Includes:
-            - `${{ steps.app_version.outputs.apk_name }}`
-            - `${{ steps.app_version.outputs.aab_name }}`
-          files: |
-            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
-            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Latest Android Build to Releases
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: android-latest
-          name: Android Latest Build (v${{ steps.app_version.outputs.version }})
-          body: |
-            Automated Android build from `main`.
-
-            Package version: `${{ steps.app_version.outputs.version }}`
-
-            Includes:
-            - `${{ steps.app_version.outputs.apk_name }}`
-            - `${{ steps.app_version.outputs.aab_name }}`
-          files: |
-            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
-            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
-          draft: false
-          prerelease: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload to Play Store (optional)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if [ ! -z "${{ secrets.PLAY_STORE_KEY }}" ]; then
-            echo "Play Store upload would be configured here"
-            echo "Requires: PLAY_STORE_KEY secret with service account JSON"
-          fi
-
   build-ios:
+    if: github.event_name == 'pull_request'
     runs-on: macos-latest
-    continue-on-error: true
-    
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: cultpodcasts/.nvmrc
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
@@ -230,24 +122,252 @@ jobs:
           cd ..
 
       - name: Build iOS app (Debug)
+        run: |
+          cd ios-app/platforms/ios
+          # Xcode 26 defaults to Mac Catalyst, which requires a development team.
+          # Debug CI has no signing secrets, so build the iOS Simulator unsigned.
+          xcodebuild \
+            -scheme App \
+            -project App.xcodeproj \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+          cd ../../..
+
+      - name: Upload iOS build artifact (Debug)
+        uses: actions/upload-artifact@v7
+        with:
+          name: cultpodcasts-ios-debug
+          path: ios-app/platforms/ios/build/Build/Products/Debug-iphonesimulator/**/*.app
+          if-no-files-found: error
+          retention-days: 7
+
+  release-android:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: cultpodcasts/.nvmrc
+          cache: 'npm'
+          cache-dependency-path: cultpodcasts/package-lock.json
+
+      - name: Install dependencies
+        run: cd cultpodcasts && npm ci
+
+      - name: Build web app
+        run: cd cultpodcasts && env=production ./build.sh
+
+      - name: Initialize Bubblewrap project
+        run: cd cultpodcasts && node tools/create-twa-manifest.js
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Decode Android Keystore
+        run: |
+          cd cultpodcasts
+          if [ ! -z "${{ secrets.JAVA_KEYSTORE }}" ]; then
+            echo "${{ secrets.JAVA_KEYSTORE }}" | base64 -d > android.keystore
+            echo "Keystore decoded successfully"
+            ls -lh android.keystore
+          fi
+
+      - name: Build APK with Bubblewrap (Docker - automated with expect)
+        run: |
+          cd cultpodcasts
+
+          docker run --rm \
+            --entrypoint bash \
+            -v $(pwd)/build-apk.sh:/tmp/build-apk.sh:ro \
+            -v $(pwd):/workspace \
+            -w /workspace \
+            -e BUBBLEWRAP_KEYSTORE_PASSWORD="${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            -e BUBBLEWRAP_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}" \
+            ghcr.io/googlechromelabs/bubblewrap:latest \
+            /tmp/build-apk.sh
+
+      - name: Read app version from package.json
+        id: app_version
+        run: |
+          VERSION=$(node -p "require('./cultpodcasts/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "apk_name=cultpodcasts-android-v$VERSION.apk" >> "$GITHUB_OUTPUT"
+          echo "aab_name=cultpodcasts-android-v$VERSION.aab" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare versioned Android artifacts
+        run: |
+          cp "cultpodcasts/app-release-signed.apk" "cultpodcasts/${{ steps.app_version.outputs.apk_name }}"
+          cp "cultpodcasts/app-release-bundle.aab" "cultpodcasts/${{ steps.app_version.outputs.aab_name }}"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cultpodcasts-apk-v${{ steps.app_version.outputs.version }}
+          path: |
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
+          retention-days: 30
+
+      - name: Ensure semver tag exists
+        run: |
+          TAG="${{ steps.app_version.outputs.tag }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists on remote"
+          elif git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists locally"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Created and pushed tag $TAG"
+          fi
+
+      - name: Publish Versioned Android Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.app_version.outputs.tag }}
+          name: Android ${{ steps.app_version.outputs.tag }}
+          body: |
+            Android build for `${{ steps.app_version.outputs.tag }}`
+
+            Package version source: `cultpodcasts/package.json` (`${{ steps.app_version.outputs.version }}`).
+
+            Includes:
+            - `${{ steps.app_version.outputs.apk_name }}`
+            - `${{ steps.app_version.outputs.aab_name }}`
+          files: |
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Latest Android Build to Releases
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: android-latest
+          name: Android Latest Build (v${{ steps.app_version.outputs.version }})
+          body: |
+            Automated Android build from `main`.
+
+            Package version: `${{ steps.app_version.outputs.version }}`
+
+            Includes:
+            - `${{ steps.app_version.outputs.apk_name }}`
+            - `${{ steps.app_version.outputs.aab_name }}`
+          files: |
+            cultpodcasts/${{ steps.app_version.outputs.apk_name }}
+            cultpodcasts/${{ steps.app_version.outputs.aab_name }}
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Play Store (optional)
+        if: github.event_name == 'push'
+        run: |
+          if [ ! -z "${{ secrets.PLAY_STORE_KEY }}" ]; then
+            echo "Play Store upload would be configured here"
+            echo "Requires: PLAY_STORE_KEY secret with service account JSON"
+          fi
+
+  release-ios:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: cultpodcasts/.nvmrc
+          cache: 'npm'
+          cache-dependency-path: cultpodcasts/package-lock.json
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcode-select --print-path
+
+      - name: Install dependencies
+        run: cd cultpodcasts && npm ci
+
+      - name: Build web app
+        run: cd cultpodcasts && env=production ./build.sh
+
+      - name: Install Bubblewrap (for HTML to Swift assets)
+        run: npm install -g @bubblewrap/cli
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      - name: Create iOS Xcode project (if needed)
+        run: |
+          if [ ! -d "ios-app/platforms/ios" ]; then
+            echo "Creating iOS Xcode project with Cordova..."
+            npm install -g cordova
+            rm -rf ios-app
+            cordova create ios-app com.cultpodcasts.app "CultPodcasts"
+            cd ios-app
+            cordova platform add ios
+            cd ..
+          else
+            echo "iOS project already exists"
+          fi
+          echo "iOS project structure:"
+          find ios-app/platforms/ios -name "*.xcodeproj" -type d 2>/dev/null || echo "No xcodeproj found"
+
+      - name: Copy web assets to iOS
+        run: |
+          cd cultpodcasts
+          cp -r dist/browser/* ../ios-app/www/ || true
+
+      - name: Install iOS dependencies
+        run: |
+          cd ios-app
+          if [ -f "Podfile" ]; then
+            pod install
+          fi
+          cd ..
+
+      - name: Build iOS app (Debug)
         if: github.event.inputs.release != 'true'
         run: |
           cd ios-app/platforms/ios
-          # Find the actual scheme name
-          SCHEME=$(find . -name "*.xcodeproj" -type d | head -1 | xargs basename | sed 's/\.xcodeproj$//')
-          echo "Building scheme: $SCHEME"
-          xcodebuild -scheme "$SCHEME" -configuration Debug -derivedDataPath build
+          xcodebuild \
+            -scheme App \
+            -project App.xcodeproj \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
           cd ../../..
 
       - name: Build iOS app (Release)
-        if: github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+        if: github.event.inputs.release == 'true'
         run: |
           cd ios-app/platforms/ios
-          # Find the actual scheme name
-          SCHEME=$(find . -name "*.xcodeproj" -type d | head -1 | xargs basename | sed 's/\.xcodeproj$//')
-          echo "Building scheme: $SCHEME"
-          
-          # For production, import signing certificate and provisioning profile
           if [ ! -z "${{ secrets.IOS_CERTIFICATE_P12 }}" ]; then
             echo "Setting up signing certificate..."
             echo "${{ secrets.IOS_CERTIFICATE_P12 }}" | base64 -d > Certificate.p12
@@ -257,9 +377,9 @@ jobs:
             security import Certificate.p12 -k build.keychain -P "${{ secrets.CERTIFICATE_PASSWORD }}" -A
             security set-key-partition-list -S apple-tool:,apple: -s lsa- -k "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
           fi
-          
-          xcodebuild -scheme "$SCHEME" -configuration Release -derivedDataPath build -archivePath build/CultPodcasts.xcarchive archive 2>&1 || echo "Archive may require provisioning profiles"
-          
+
+          xcodebuild -scheme App -project App.xcodeproj -configuration Release -derivedDataPath build -archivePath build/CultPodcasts.xcarchive archive 2>&1 || echo "Archive may require provisioning profiles"
+
           if [ -d "build/CultPodcasts.xcarchive" ]; then
             xcodebuild -exportArchive -archivePath build/CultPodcasts.xcarchive -exportOptionsPlist ../../ExportOptions.plist -exportPath build/ipa
           fi
@@ -267,32 +387,33 @@ jobs:
 
       - name: Upload iOS build artifact (Debug)
         if: github.event.inputs.release != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cultpodcasts-ios-debug
-          path: cultpodcasts/ios-app/platforms/ios/build/
+          path: ios-app/platforms/ios/build/Build/Products/Debug-iphonesimulator/**/*.app
+          if-no-files-found: error
           retention-days: 7
 
       - name: Upload iOS IPA artifact (Release)
-        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('cultpodcasts/ios-app/platforms/ios/build/ipa/') != ''
-        uses: actions/upload-artifact@v4
+        if: github.event.inputs.release == 'true' && hashFiles('ios-app/platforms/ios/build/ipa/') != ''
+        uses: actions/upload-artifact@v7
         with:
           name: cultpodcasts-ios-release
-          path: cultpodcasts/ios-app/platforms/ios/build/ipa/**/*.ipa
+          path: ios-app/platforms/ios/build/ipa/**/*.ipa
           retention-days: 30
 
       - name: Create Release (iOS)
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
-          files: cultpodcasts/ios-app/build/ipa/**/*.ipa
+          files: ios-app/platforms/ios/build/ipa/**/*.ipa
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to App Store (optional)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push'
         run: |
           if [ ! -z "${{ secrets.APP_STORE_KEY }}" ]; then
             echo "App Store upload would be configured here"

@@ -24,13 +24,24 @@ restore_api_host_rewrites() {
 }
 trap restore_api_host_rewrites EXIT
 
+# `sed -i` is GNU-only. macOS BSD sed treats the script as a backup suffix and
+# then parses the filename as the program (`n` in ngsw-config.json →
+# "extra characters at the end of n command").
+rewrite_inplace() {
+  local file="$1"
+  local tmp
+  tmp="$(mktemp)"
+  sed "s|${API_HOST_STAGING}|${API_HOST_PROD}|g" "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
 rewrite_api_host_for_production() {
   NGSW_BAK="$(mktemp)"
   INDEX_BAK="$(mktemp)"
   cp ngsw-config.json "${NGSW_BAK}"
   cp src/index.html "${INDEX_BAK}"
-  sed -i "s|${API_HOST_STAGING}|${API_HOST_PROD}|g" ngsw-config.json
-  sed -i "s|${API_HOST_STAGING}|${API_HOST_PROD}|g" src/index.html
+  rewrite_inplace ngsw-config.json
+  rewrite_inplace src/index.html
   echo "Rewrote API host ${API_HOST_STAGING} -> ${API_HOST_PROD} in ngsw-config.json and src/index.html"
 }
 
