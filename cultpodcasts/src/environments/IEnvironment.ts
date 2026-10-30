@@ -24,4 +24,6 @@ export interface CatalogueParentCurationFlags {
     submit: boolean;
     edit: boolean;
     rename: boolean;
+    /** Curator "Index {label}": run the indexer for this outlet / show now (Api `POST /{kind}/index/:identifier`). */
+    index: boolean;
 }

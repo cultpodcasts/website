@@ -202,6 +202,11 @@ export class SeriesHubComponent {
     this.load(this.seriesName(), this.hub(), true, false);
   }
 
+  /** After a curator's Index → Review: reload the list (and facets) with the current sort and filters. */
+  protected reload(): void {
+    this.load(this.seriesName(), this.hub(), true, true);
+  }
+
   clearSubjects(): void {
     if (this.subjects().length === 0) {
       return;

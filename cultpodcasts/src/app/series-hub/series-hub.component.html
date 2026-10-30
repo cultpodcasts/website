@@ -8,7 +8,7 @@
     <div class="browse-toolbar">
       <h2>{{ displayCatalogName(seriesName()) }} has {{ count() }} {{ itemNoun() }}@if (count() > 1 || count() == 0) {s}
         found by CultPodcasts.com</h2>
-      <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" />
+      <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" (indexed)="reload()" />
     </div>
 
     @if (facets().subjects && facets().subjects!.length > 0) {
@@ -53,6 +53,6 @@
 } @else if (count() === 0 && !isLoading()) {
 <section class="browse-empty">
   <h2>There were no results for "{{ displayCatalogName(seriesName()) }}"</h2>
-  <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sortable]="false" />
+  <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sortable]="false" (indexed)="reload()" />
 </section>
 }

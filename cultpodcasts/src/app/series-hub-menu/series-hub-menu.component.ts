@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, model } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, model, output } from "@angular/core";
 import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 import { Router } from "@angular/router";
 import { MatButtonModule } from "@angular/material/button";
@@ -9,6 +9,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { environment } from "../../environments/environment";
 import { AuthServiceWrapper } from "../auth-service-wrapper.class";
 import { CatalogueHub, hubParentKind, hubParentLabel, hubPathCommands } from "../catalogue-hub";
+import { CatalogueIndexDialogResult } from "../catalogue-index-response.interface";
 import { indexStateMessage } from "../catalogue-index-state-message";
 import {
   EditCatalogueParentDialogComponent,
@@ -21,6 +22,8 @@ import {
   RenameCatalogueParentDialogResponse
 } from "../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component";
 import { SendPodcastComponent } from "../send-podcast/send-podcast.component";
+import { PodcastIndexComponent } from "../podcast-index/podcast-index.component";
+import { SearchIndexerState } from "../search-indexer-state.interface";
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from "../submit-dialog-response.interface";
 import { parseSubmitDialogUrl } from "../submit-ingest-ux";
@@ -38,7 +41,7 @@ export type SeriesHubSort = typeof seriesHubSortNewest | typeof seriesHubSortOld
 
 /**
  * Sort + curator menu for /news/{name} and /tv/{name}, mirroring the podcast page menu.
- * Curator: Edit, Submit URL for this outlet/show. Admin: Rename. Each curation item is behind
+ * Curator: Index, Edit, Submit URL for this outlet/show. Admin: Rename. Each curation item is behind
  * a switch in `environment.catalogueParentCuration` (on in all environments).
  */
 @Component({
@@ -54,6 +57,8 @@ export class SeriesHubMenuComponent {
   readonly sort = model<SeriesHubSort>(seriesHubSortNewest);
   /** False on the empty hub: no sort items, and the trigger only appears when a curation item is available. */
   readonly sortable = input(true);
+  /** After an index, when the curator picks Review: the hub reloads its list. */
+  readonly indexed = output<void>();
 
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -67,14 +72,51 @@ export class SeriesHubMenuComponent {
   protected readonly isAdmin = computed(() => this.authRoles().includes("Admin"));
   protected readonly label = computed(() => hubParentLabel(this.hub()));
   protected readonly sortLabel = computed(() => (this.sort() === seriesHubSortOldest ? "Oldest first" : "Newest first"));
+  protected readonly showIndex = computed(() => this.flags.index && this.isCurator());
   protected readonly showEdit = computed(() => this.flags.edit && this.isCurator());
   protected readonly showSubmit = computed(() => this.flags.submit && this.isCurator());
   protected readonly showRename = computed(() => this.flags.rename && this.isAdmin());
-  protected readonly visible = computed(() => this.sortable() || this.showEdit() || this.showSubmit() || this.showRename());
+  protected readonly visible = computed(() => this.sortable() || this.showIndex() || this.showEdit() || this.showSubmit() || this.showRename());
   protected readonly triggerLabel = computed(() => (this.sortable() ? this.sortLabel() : "Curate"));
 
   protected setSort(sort: SeriesHubSort): void {
     this.sort.set(sort);
+  }
+
+  protected index(): void {
+    const label = this.label();
+    const name = this.seriesName();
+    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
+    dialogRef.componentInstance.indexCatalogueParent(this.hub(), name);
+    dialogRef
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result: CatalogueIndexDialogResult | undefined) => {
+        if (result?.updated) {
+          const count = result.itemIds?.length ?? 0;
+          if (count === 0) {
+            this.snackBar.open(`${label} indexed. Nothing new`, "Ok", { duration: 10000 });
+            return;
+          }
+          const searchNote = result.searchIndexerState === SearchIndexerState.Failure ? ` ${indexStateMessage(result.searchIndexerState)}` : "";
+          const ref = this.snackBar.open(
+            `${label} indexed. ${count} item${count > 1 ? "s" : ""} updated.${searchNote}`,
+            "Review",
+            { duration: 10000 }
+          );
+          ref.onAction().subscribe(() => {
+            void this.router.navigate(hubPathCommands(this.hub(), name));
+            this.indexed.emit();
+          });
+        } else if (result?.notIndexable) {
+          const why = result.reason === "SourcePodcastStillExists" ? " (its podcast still exists)" : "";
+          this.snackBar.open(`${label} not indexable${why}`, "Ok", { duration: 10000 });
+        } else if (result?.notFound) {
+          this.snackBar.open(`${label} not found`, "Ok", { duration: 10000 });
+        } else if (result?.ambiguous) {
+          this.snackBar.open(`More than one ${label.toLowerCase()} is called "${name}". Nothing was indexed.`, "Ok", { duration: 10000 });
+        }
+      });
   }
 
   protected edit(): void {
