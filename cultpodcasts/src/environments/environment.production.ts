@@ -10,5 +10,5 @@ export const environment: IEnvironment = {
    shortner: 'https://s.cultpodcasts.com',
    name: "prod",
    vapidPublicKey: "BKx7EI56y8biaGTAo_bagpNPTR9f4AkHqtuUoHaRM7nNduX5ExbAHO74-YAKa6_c9wLVYWHZklhrpPl6Bbx_3Is",
-   catalogueParentCuration: { submit: true, edit: true, rename: true }
+   catalogueParentCuration: { submit: true, edit: true, rename: true, index: true }
 };

@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Indexing Podcast</h2>
+<h2 mat-dialog-title>Indexing {{ subject() }}</h2>
 
 <mat-dialog-content>
 
@@ -7,7 +7,7 @@
     }
     @if (sendError()) {
     <div>
-        <p>An error occured indexing podcast</p>
+        <p>An error occured indexing {{ subject().toLowerCase() }}</p>
     </div>
     }
 

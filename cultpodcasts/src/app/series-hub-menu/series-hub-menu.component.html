@@ -5,6 +5,12 @@
 </button>
 }
 <mat-menu #hubMenu="matMenu">
+  @if (showIndex()) {
+  <button mat-menu-item id="index" (click)="index()">
+    <mat-icon>refresh</mat-icon>
+    <span>Index {{ label() }}</span>
+  </button>
+  }
   @if (showEdit()) {
   <button mat-menu-item id="edit" (click)="edit()">
     <mat-icon>edit</mat-icon>

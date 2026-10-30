@@ -112,12 +112,13 @@ async function openHubMenu(page: Page) {
 }
 
 test.describe("news and TV hub menu", () => {
-	test("curator + admin get Edit, Submit Url and Rename alongside sort on a news hub", async ({ page }) => {
+	test("curator + admin get Index, Edit, Submit Url and Rename alongside sort on a news hub", async ({ page }) => {
 		await signInAs(page, ["Curator", "Admin"]);
 		await page.goto(`/news/${encodeURIComponent("Desk")}`);
 		await expect(page.getByText("Bulletin")).toBeVisible();
 		const menu = await openHubMenu(page);
 		await expect(menu.getByRole("menuitem")).toHaveText([
+			/Index News Outlet/,
 			/Edit News Outlet/,
 			/Submit Url for News Outlet/,
 			/Rename News Outlet/,
@@ -125,6 +126,7 @@ test.describe("news and TV hub menu", () => {
 			/Oldest first/
 		]);
 		if (screenshotDir) {
+			await page.waitForTimeout(400); // menu open animation
 			await page.screenshot({ path: `${screenshotDir}/news-hub-menu-curator-admin.png` });
 		}
 	});
@@ -177,6 +179,59 @@ test.describe("news and TV hub menu", () => {
 			parentId: outletId,
 			parentName: "Desk"
 		});
+	});
+
+	test("Index News Outlet POSTs to the outlet index route by name and Review reloads the hub", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		let indexPosts = 0;
+		await page.route("**/newsorganisation/index/Desk", async (route) => {
+			expect(route.request().method()).toBe("POST");
+			indexPosts++;
+			await route.fulfill({
+				status: 200, contentType: "application/json",
+				body: JSON.stringify({ indexedItemIds: ["a", "b"], searchIndexerState: "Executed" })
+			});
+		});
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Index News Outlet/ }).click();
+		const snack = page.locator("mat-snack-bar-container");
+		await expect(snack).toContainText("News Outlet indexed. 2 items updated.");
+		expect(indexPosts).toBe(1);
+		await expect(page.getByRole("menu")).toHaveCount(0);
+		if (screenshotDir) {
+			await page.waitForTimeout(400); // let the menu fade and the snackbar settle for the evidence shot
+			await page.screenshot({ path: `${screenshotDir}/news-hub-index-snackbar.png` });
+		}
+		const reloaded = page.waitForRequest((r) => r.method() === "POST" && r.url().includes("/search"));
+		await snack.getByRole("button", { name: "Review" }).click();
+		await reloaded;
+		await expect(page).toHaveURL(/\/news\/Desk$/);
+	});
+
+	test("Index TV Show says when the show is not indexable", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		await page.route("**/tvshow/index/Nightly", (route) =>
+			route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ reason: "NotIndexable" }) }));
+		await page.goto(`/tv/${encodeURIComponent("Nightly")}`);
+		await expect(page.getByText("Part")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Index TV Show/ }).click();
+		await expect(page.locator("mat-snack-bar-container")).toContainText("TV Show not indexable");
+	});
+
+	test("Index News Outlet says to try again later when the index runs out of time (504)", async ({ page }) => {
+		await signInAs(page, ["Curator"]);
+		await page.route("**/newsorganisation/index/Desk", (route) =>
+			route.fulfill({
+				status: 504,
+				contentType: "application/json",
+				body: JSON.stringify({ reason: "TimedOut", message: "Indexing ran out of time. Try again later." })
+			}));
+		await page.goto(`/news/${encodeURIComponent("Desk")}`);
+		await expect(page.getByText("Bulletin")).toBeVisible();
+		await (await openHubMenu(page)).getByRole("menuitem", { name: /Index News Outlet/ }).click();
+		await expect(page.locator("mat-snack-bar-container"))
+			.toContainText("News Outlet indexing ran out of time. Anything it saved will appear shortly; try again later.");
 	});
 
 	test("admin Rename posts the new name to the TV show rename route", async ({ page }) => {
