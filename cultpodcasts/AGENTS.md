@@ -93,10 +93,10 @@ npm run test:all
 
 Runs **all** Vitest unit tests and **all** Playwright e2e (including hero layout geometry).
 
-- **Pre-push:** repo `.githooks/pre-push` runs `test:all` (enabled by `npm install` / `prepare` → `core.hooksPath=.githooks`).
-- **CI:** `.github/workflows/cultpodcasts-tests.yml` on PRs touching `cultpodcasts/**`.
+- **Pre-push:** repo `.githooks/pre-push` runs `test:all` (enabled by `npm install` / `prepare` → `core.hooksPath=.githooks`). `prepare` does not set that hook when `GITHUB_ACTIONS=true`.
+- **CI:** `.github/workflows/cultpodcasts-tests.yml` on PRs touching `cultpodcasts/**` (this job installs Playwright). The Android release tag push is not a test gate: `mobile-build.yml` publishes it with `SKIP_CLIENT_TESTS=1`.
 - **Do not** `git push --no-verify` / `-n` to skip (Cursor hook blocks that for agents).
-- Emergency only: `SKIP_CLIENT_TESTS=1 git push`.
+- Local emergency only: `SKIP_CLIENT_TESTS=1 git push`.
 
 During a development cycle, prefer `npm run test:watch` while iterating, then `npm run test:all` before every push.
 

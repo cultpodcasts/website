@@ -232,7 +232,14 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git tag -a "$TAG" -m "Release $TAG"
-            git push origin "$TAG"
+            # A developer clone's prepare script sets core.hooksPath=.githooks, and
+            # that pre-push hook runs npm run test:all (Playwright). This job's
+            # npm ci does not install the hook (GITHUB_ACTIONS), and this push
+            # only publishes the version tag. Client tests gate pull requests in
+            # cultpodcasts-tests.yml, which installs browsers; they do not gate
+            # the tag. SKIP_CLIENT_TESTS keeps the push from launching the suite
+            # if hooksPath is set anyway.
+            SKIP_CLIENT_TESTS=1 git push origin "$TAG"
             echo "Created and pushed tag $TAG"
           fi
 
