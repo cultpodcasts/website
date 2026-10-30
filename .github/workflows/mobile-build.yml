@@ -246,7 +246,17 @@ jobs:
           # Find the actual scheme name
           SCHEME=$(find . -name "*.xcodeproj" -type d | head -1 | xargs basename | sed 's/\.xcodeproj$//')
           echo "Building scheme: $SCHEME"
-          xcodebuild -scheme "$SCHEME" -configuration Debug -derivedDataPath build
+          # Xcode 26 defaults to Mac Catalyst, which requires a development team.
+          # Debug CI has no signing secrets, so build the iOS Simulator unsigned.
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
           cd ../../..
 
       - name: Build iOS app (Release)
