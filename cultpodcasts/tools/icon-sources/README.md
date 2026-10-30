@@ -26,12 +26,17 @@ flowchart LR
 | `vimeo-iris.svg` | Vimeo `iris_icon_v_64.svg` on the live apple-touch charcoal |
 | `play-suisse-icon.svg` | Play Suisse `ps-icon-with-srg.svg` chevron + plus on the live red tile |
 | `hbo-max-logo.svg` | HBO Max brand portal 1-color stacked logo (`HBO_Max_Vert_W_RGB.svg`) |
+| `abc-iview-logo.svg` | `ABCIviewLogo` masthead SVG on `https://iview.abc.net.au/`, as served. `abcIviewIcon()` lays the lissajous (paths 7–8) over the `iview` wordmark (paths 0–6) in white on the `#2FB7B6` teal of the live apple-touch icon (`/images/touchicon.png`), using the named `ABC_IVIEW_LAYOUT` transforms |
 
 Sources whose viewBox is already `0 0 24 24` (HBO Max) are clipped in a `<g>`;
 other viewBoxes keep a nested `<svg>` so slice mapping stays correct.
 
-Refresh Channel 4 / Vimeo / Play Suisse by re-downloading the storefront SVG,
-keeping geometry, then regenerating.
+Refresh Channel 4 / Vimeo / Play Suisse / ABC iview by re-downloading the
+storefront SVG, keeping geometry, then regenerating. ABC iview: copy the
+`<svg data-component="ABCIviewLogo">` element from the iview home page; if its
+path order or bounds change, update `ABC_IVIEW_LAYOUT` (its comment gives the
+formula). Do not go back to a `<text>` wordmark on black, which rendered as
+unreadable "iview" text.
 
 ## Official PNG (no colourful SVG)
 
@@ -63,3 +68,4 @@ mark is the official 1-color stacked logo SVG from the brand portal.
 Prime Video (blue + `prime` / `video` + smile), TVNZ+ gradient plus, Play RTS
 (`RTS` on `#AF001E`), and Fawesome triangles live in
 `generate-svg-icon-literals.mjs`.
+

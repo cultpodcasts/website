@@ -1060,6 +1060,20 @@ describe('HomepageHeroComponent', () => {
       expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('spotify');
     });
 
+    it('shows a TV episode\'s ABC iview link after YouTube in the billboard actions', () => {
+      show(ep('a', {
+        contentKind: 'TvShowEpisode',
+        ids: undefined,
+        services: {
+          youtube: { url: 'https://www.youtube.com/watch?v=inventedTv' },
+          abcIview: { url: 'https://iview.abc.net.au/video/ZZ0000H000S00' },
+        },
+      }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['YouTube', 'ABC iview']);
+      expect(links()[1].href).toBe('https://iview.abc.net.au/video/ZZ0000H000S00');
+      expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('abc-iview');
+    });
+
     it('shows nothing for services the episode does not have', () => {
       show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/onlyA' } } }));
       expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['Spotify']);

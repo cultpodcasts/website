@@ -85,6 +85,55 @@ function boxedOfficialPng(file, clipId) {
   );
 }
 
+/** Rounds every number in an SVG path `d` to 2dp (keeps the literal compact; geometry unchanged at 24 px). */
+function roundPathData(d) {
+  return d.replace(/-?\d*\.?\d+(?:e-?\d+)?/gi, (n) => String(Number(Number(n).toFixed(2))));
+}
+
+/** Path `d` strings of an icon-sources SVG, in document order. */
+function readSvgPathData(file) {
+  const { inner } = readSvgInner(file);
+  return [...inner.matchAll(/<path\b[^>]*\bd="([^"]+)"/g)].map((m) => m[1]);
+}
+
+/** iview teal sampled from the live apple-touch icon (/images/touchicon.png). */
+const ABC_IVIEW_TEAL = '#2FB7B6';
+
+/**
+ * Where each part of the ABC iview masthead SVG (viewBox 0 0 100 32) lands on the 24×24 tile.
+ * Both parts share one horizontal band, 14.4 wide (60% of the tile) from x 4.8 to 19.2, so the
+ * mark is centred like the live app icon. For each part:
+ *   scale      = 14.4 / source width
+ *   translateX = 4.8 - sourceLeft × scale
+ *   translateY = targetTop - sourceTop × scale
+ * Values are rounded (scale 4dp, translate 2dp).
+ *
+ * - lissajous: source paths 7–8 (the ABC symbol), bbox x 0.59–23.72, y 10.59–27.96.
+ *   Target top y 3.6, so it ends at y 14.4, the upper ~60% of the tile.
+ * - wordmark: source paths 0–6 (`iview`, including the i dot and the play triangle in the e),
+ *   bbox x 27.8–99.41, y 4–28. Target top y 15.4 (1 below the lissajous), baseline at y 20.23.
+ */
+const ABC_IVIEW_LAYOUT = {
+  lissajous: { paths: [7, 8], scale: 0.6226, translateX: 4.43, translateY: -3 },
+  wordmark: { paths: [0, 1, 2, 3, 4, 5, 6], scale: 0.2011, translateX: -0.79, translateY: 14.6 },
+};
+
+function abcIviewIcon() {
+  const sourcePaths = readSvgPathData('abc-iview-logo.svg');
+  const part = ({ paths, scale, translateX, translateY }) => {
+    const d = roundPathData(paths.map((i) => sourcePaths[i]).join(''));
+    const transform = `matrix(${scale} 0 0 ${scale} ${translateX} ${translateY})`;
+    return `<path fill="#fff" transform="${transform}" d="${d}"/>`;
+  };
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="${ABC_IVIEW_TEAL}"/>` +
+    part(ABC_IVIEW_LAYOUT.lissajous) +
+    part(ABC_IVIEW_LAYOUT.wordmark) +
+    `</svg>`
+  );
+}
+
 /**
  * Compact streaming / service mark SVGs (no separate asset files).
  * Prefer official storefront SVG. Raster app icons are PNG only when the
@@ -195,12 +244,10 @@ const streamingIconSvgs = {
     `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
     `<text x="12" y="15.6" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="8" font-weight="900" letter-spacing="0.1">C+</text>` +
     `</svg>`,
-  // ABC iview — black tile with iview wordmark (simple geometry; matches AU streamer tiles).
-  'abc-iview':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#000"/>` +
-    `<text x="12" y="15.2" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="5.2" font-weight="900" letter-spacing="-0.15">iview</text>` +
-    `</svg>`,
+  // ABC iview — live app icon (iview.abc.net.au/images/touchicon.png): white ABC lissajous over the
+  // iview wordmark (play triangle in the e) on the iview teal tile, built from the checked-in
+  // masthead SVG (icon-sources/abc-iview-logo.svg). See abcIviewIcon() for the layout numbers.
+  'abc-iview': abcIviewIcon(),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +
