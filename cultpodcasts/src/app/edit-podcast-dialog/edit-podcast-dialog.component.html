@@ -24,9 +24,14 @@
                     <mat-label>Apple Id</mat-label>
                     <input type="number" [formControl]="form()!.controls.appleId" matInput>
                 </mat-form-field>
-                <mat-form-field class="full-width">
+                @let channelIgnored = youTubePlaylistReplacesChannel(form()!.controls.youTubePlaylistId.value);
+                <mat-form-field class="full-width" [class.channel-ignored]="channelIgnored">
                     <mat-label>YouTube Id</mat-label>
-                    <input type="text" [formControl]="form()!.controls.youTubeChannelId" readonly matInput>
+                    <input type="text" [formControl]="form()!.controls.youTubeChannelId" readonly matInput
+                        [attr.aria-describedby]="channelIgnored ? 'youtube-channel-ignored' : null">
+                    @if (channelIgnored) {
+                    <mat-hint id="youtube-channel-ignored">{{ youTubeChannelIgnoredHint }}</mat-hint>
+                    }
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Playlist Id</mat-label>

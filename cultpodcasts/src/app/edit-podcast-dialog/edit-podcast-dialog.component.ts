@@ -44,7 +44,9 @@ import {
   normalizeHashTagControl,
   normalizePodcastSocialHandles,
   PODCAST_REGEXS_TAB_INDEX,
-  syncIndexAllEpisodesWithIncludeTitleRegex
+  syncIndexAllEpisodesWithIncludeTitleRegex,
+  youTubeChannelIgnoredHint,
+  youTubePlaylistReplacesChannel
 } from '../podcast-form.util';
 
 @Component({
@@ -98,6 +100,8 @@ export class EditPodcastDialogComponent {
   protected readonly CatalogueParentKind = CatalogueParentKind;
   readonly selectedTabIndex = signal(0);
   readonly indexAllOverriddenByIncludeTitle = signal(false);
+  protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
+  protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
   readonly highlightIncludeTitleRegex = signal(false);
   private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;

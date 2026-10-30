@@ -9,7 +9,8 @@ import {
   normalizeHandleControl,
   normalizeHashTagControl,
   normalizePodcastSocialHandles,
-  syncIndexAllEpisodesWithIncludeTitleRegex
+  syncIndexAllEpisodesWithIncludeTitleRegex,
+  youTubePlaylistReplacesChannel
 } from './podcast-form.util';
 import { Podcast } from './podcast.interface';
 
@@ -279,5 +280,18 @@ describe('buildPodcastFormControls hash tag prefix', () => {
 
     expect(form.enrichmentHashTags.validator).toBeNull();
     expect(form.enrichmentHashTags.valid).toBe(true);
+  });
+});
+
+describe('youTubePlaylistReplacesChannel (RPP #1177)', () => {
+  it('is true for a playlist id, because the playlist is then the only YouTube source', () => {
+    expect(youTubePlaylistReplacesChannel('PLsyntheticplaylist0000000000000000')).toBe(true);
+  });
+
+  it('is false for a blank, whitespace or missing playlist id', () => {
+    expect(youTubePlaylistReplacesChannel('')).toBe(false);
+    expect(youTubePlaylistReplacesChannel('   ')).toBe(false);
+    expect(youTubePlaylistReplacesChannel(null)).toBe(false);
+    expect(youTubePlaylistReplacesChannel(undefined)).toBe(false);
   });
 });

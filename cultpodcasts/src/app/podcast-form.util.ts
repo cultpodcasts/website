@@ -21,6 +21,17 @@ export function noCompareFunction(): number {
 export const PODCAST_REGEXS_TAB_INDEX = 5;
 
 /**
+ * RPP #1177: a podcast, news organisation or TV show with a YouTube playlist id indexes every video in that playlist,
+ * whichever channel uploaded it, and its YouTube channel id is not used for indexing. Blank or whitespace is no playlist.
+ */
+export function youTubePlaylistReplacesChannel(playlistId: string | null | undefined): boolean {
+  return !!(playlistId && playlistId.trim().length > 0);
+}
+
+/** Hint shown under the YouTube channel id while a playlist id is set (RPP #1177). */
+export const youTubeChannelIgnoredHint = "Not used while a playlist id is set: every video in the playlist is indexed.";
+
+/**
  * Backend indexes when IndexAllEpisodes OR a non-whitespace EpisodeIncludeTitleRegex
  * (`IsNullOrWhiteSpace`). Validity is not checked on save; an empty/whitespace pattern
  * does not override Index All Episodes.
