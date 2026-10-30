@@ -8,7 +8,20 @@ on:
       - 'cultpodcasts/tools/**'
       - 'cultpodcasts/angular.json'
       - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build.sh'
       - 'cultpodcasts/build-apk.sh'
+      - 'cultpodcasts/.nvmrc'
+      - '.github/workflows/mobile-build.yml'
+      - 'cultpodcasts/bubblewrap.json'
+  pull_request:
+    paths:
+      - 'cultpodcasts/src/**'
+      - 'cultpodcasts/tools/**'
+      - 'cultpodcasts/angular.json'
+      - 'cultpodcasts/package.json'
+      - 'cultpodcasts/build.sh'
+      - 'cultpodcasts/build-apk.sh'
+      - 'cultpodcasts/.nvmrc'
       - '.github/workflows/mobile-build.yml'
       - 'cultpodcasts/bubblewrap.json'
   workflow_dispatch:
@@ -18,9 +31,6 @@ on:
         required: false
         default: 'false'
 
-env:
-  NODE_VERSION: '20' 
-
 permissions:
   contents: write
 
@@ -29,12 +39,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: cultpodcasts/.nvmrc
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
@@ -89,7 +99,7 @@ jobs:
           cp "cultpodcasts/app-release-bundle.aab" "cultpodcasts/${{ steps.app_version.outputs.aab_name }}"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cultpodcasts-apk-v${{ steps.app_version.outputs.version }}
           path: |
@@ -115,7 +125,7 @@ jobs:
 
       - name: Publish Versioned Android Release
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
           name: Android ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || steps.app_version.outputs.tag }}
@@ -137,7 +147,7 @@ jobs:
 
       - name: Publish Latest Android Build to Releases
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: android-latest
           name: Android Latest Build (v${{ steps.app_version.outputs.version }})
@@ -170,12 +180,12 @@ jobs:
     continue-on-error: true
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: cultpodcasts/.nvmrc
           cache: 'npm'
           cache-dependency-path: cultpodcasts/package-lock.json
 
@@ -267,25 +277,25 @@ jobs:
 
       - name: Upload iOS build artifact (Debug)
         if: github.event.inputs.release != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cultpodcasts-ios-debug
-          path: cultpodcasts/ios-app/platforms/ios/build/
+          path: ios-app/platforms/ios/build/
           retention-days: 7
 
       - name: Upload iOS IPA artifact (Release)
-        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('cultpodcasts/ios-app/platforms/ios/build/ipa/') != ''
-        uses: actions/upload-artifact@v4
+        if: (github.event.inputs.release == 'true' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) && hashFiles('ios-app/platforms/ios/build/ipa/') != ''
+        uses: actions/upload-artifact@v7
         with:
           name: cultpodcasts-ios-release
-          path: cultpodcasts/ios-app/platforms/ios/build/ipa/**/*.ipa
+          path: ios-app/platforms/ios/build/ipa/**/*.ipa
           retention-days: 30
 
       - name: Create Release (iOS)
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
-          files: cultpodcasts/ios-app/build/ipa/**/*.ipa
+          files: ios-app/platforms/ios/build/ipa/**/*.ipa
           draft: false
           prerelease: false
         env:
