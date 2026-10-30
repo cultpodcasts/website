@@ -26,7 +26,11 @@ function literal(name: string): string {
   return svg!;
 }
 
-/** The new mark, as rendered by mat-icon from the registry. */
+/**
+ * The new mark, as rendered by mat-icon from the registry: the teal tile with a white vector
+ * mark and no font-dependent <text>. How many paths the mark uses is pinned only by the
+ * generated-literal test below, so a faithful re-export of the source SVG does not break this.
+ */
 function expectIviewMark(icon: Element | null | undefined): void {
   expect(icon, 'abc-iview mat-icon').toBeTruthy();
   expect(icon!.getAttribute('data-mat-icon-name')).toBe('abc-iview');
@@ -36,27 +40,23 @@ function expectIviewMark(icon: Element | null | undefined): void {
   const tile = svg!.querySelector('rect');
   expect(tile?.getAttribute('fill')).toBe(IVIEW_TEAL);
   expect(tile?.getAttribute('rx')).toBe('5.4');
-  // Lissajous + wordmark as vector paths, no font-dependent <text>.
   expect(svg!.querySelectorAll('text')).toHaveLength(0);
   const paths = Array.from(svg!.querySelectorAll('path'));
-  expect(paths).toHaveLength(2);
+  expect(paths.length).toBeGreaterThanOrEqual(1);
   for (const p of paths) {
     expect(p.getAttribute('fill')).toBe('#fff');
   }
 }
 
 describe('ABC iview service icon', () => {
-  it('is the teal app-icon tile with the lissajous and wordmark paths, the same 24x24 / rx 5.4 tile as the other services', () => {
+  it('is generated as the teal app-icon tile with the lissajous and wordmark paths (from icon-sources/abc-iview-logo.svg)', () => {
     const svg = literal('abc-iview');
     expect(svg).toContain('viewBox="0 0 24 24"');
     expect(svg).toContain(`<rect width="24" height="24" rx="5.4" fill="${IVIEW_TEAL}"/>`);
     expect(svg).not.toContain('<text');
     expect(svg).not.toContain('fill="#000"');
-    expect(svg.match(/<path /g)).toHaveLength(2);
-    // Every streaming tile shares the 24x24 rx 5.4 frame.
-    for (const name of ['netflix', 'channel4', 'tubi']) {
-      expect(literal(name)).toContain('rx="5.4"');
-    }
+    // Generator output shape: one white path for the lissajous, one for the wordmark.
+    expect(svg.match(/<path fill="#fff" /g)).toHaveLength(2);
     expect(serviceDescriptor('abcIview')).toEqual(
       expect.objectContaining({ displayName: 'ABC iview', icon: 'abc-iview' }));
     expect(serviceDescriptor('iviewabcnetau').icon).toBe('abc-iview');

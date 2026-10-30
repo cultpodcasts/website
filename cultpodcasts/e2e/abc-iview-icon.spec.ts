@@ -80,7 +80,7 @@ async function fakeApi(page: Page): Promise<void> {
 	});
 }
 
-/** The rendered mat-icon SVG: teal rx 5.4 tile, two white paths, no <text>. */
+/** The rendered mat-icon SVG: teal rx 5.4 tile, a white vector mark (any number of paths), no <text>. */
 async function expectIviewMark(link: Locator): Promise<void> {
 	const icon = link.locator("mat-icon");
 	await expect(icon).toHaveAttribute("data-mat-icon-name", "abc-iview");
@@ -102,7 +102,8 @@ async function expectIviewMark(link: Locator): Promise<void> {
 	expect(mark.fill).toBe(IVIEW_TEAL);
 	expect(mark.rx).toBe("5.4");
 	expect(mark.texts).toBe(0);
-	expect(mark.paths).toEqual(["#fff", "#fff"]);
+	expect(mark.paths.length).toBeGreaterThanOrEqual(1);
+	expect(mark.paths.every((fill) => fill === "#fff")).toBe(true);
 	expect(mark.width).toBeGreaterThan(0);
 	expect(mark.height).toBeGreaterThan(0);
 }
