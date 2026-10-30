@@ -1,6 +1,7 @@
 #!/bin/sh
-# Runs all cultpodcasts unit + Playwright e2e before push.
-# Emergency skip: SKIP_CLIENT_TESTS=1 git push
+# Runs all cultpodcasts unit + Playwright e2e before a developer push.
+# Opt out for a local emergency, or for the mobile release job's version-tag
+# push (that push is not a test gate): SKIP_CLIENT_TESTS=1 git push
 
 if [ "${SKIP_CLIENT_TESTS:-}" = "1" ]; then
   echo "SKIP_CLIENT_TESTS=1 — skipping cultpodcasts test:all"
