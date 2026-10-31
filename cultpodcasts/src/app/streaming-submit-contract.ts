@@ -428,6 +428,27 @@ export const streamingOrchestrationCases: StreamingOrchestrationCase[] =
 		};
 	});
 
+/** Worker StreamMeta KV key prefix. v2: entries carry `madeAsFilm`; v1 entries must not be reused. */
+export const STREAM_META_KV_PREFIX = "stream-meta:v2:";
+
+/**
+ * Fields the Worker caches from Azure prepare/extract and injects as `prefetchedMeta` on POST /submit.
+ * Each binds (case-insensitive) to RPP `NonPodcastServiceItemMetaData`. `madeAsFilm` keeps a cached
+ * streaming film classified as a Film rather than a podcast episode.
+ */
+export const prefetchedMetaFields = [
+	"title",
+	"description",
+	"duration",
+	"release",
+	"image",
+	"explicit",
+	"publisher",
+	"showName",
+	"madeAsFilm"
+] as const;
+export type PrefetchedMetaField = (typeof prefetchedMetaFields)[number];
+
 /** Membership shape arms every streaming service must support (wire contract). */
 export const streamingMembershipShapeArms = ["known", "unknown", "ambiguous"] as const;
 export type StreamingMembershipShapeArm = (typeof streamingMembershipShapeArms)[number];
@@ -488,7 +509,7 @@ export const streamingLookupByUrl: Record<string, StreamingMembershipUnknown> =
  */
 export function streamingSubmitContractJsonPayload() {
 	return {
-		version: 1,
+		version: 2,
 		copyFromTs: STREAMING_SUBMIT_CONTRACT_COPY_FROM,
 		copyFromJson: STREAMING_SUBMIT_CONTRACT_JSON_COPY_FROM,
 		streamingServiceKeys: [...streamingServiceKeys],
@@ -501,6 +522,8 @@ export function streamingSubmitContractJsonPayload() {
 		streamingSpecimenUrls: { ...streamingSpecimenUrls },
 		streamingMembershipShapeCaseIds: streamingMembershipShapeCases.map((c) => c.id),
 		streamingOrchestrationCaseIds: streamingOrchestrationCases.map((c) => c.id),
+		streamMetaKvKeyPrefix: STREAM_META_KV_PREFIX,
+		prefetchedMetaFields: [...prefetchedMetaFields],
 		rules: {
 			podcastServicesOutOfScope: true,
 			membershipReturnsService: true,
@@ -509,6 +532,7 @@ export function streamingSubmitContractJsonPayload() {
 			prepareFetchModeFromEnvAllowlist: true,
 			prepareUrlRewriteBeforeRegionalScrape: true,
 			submitUsesPrefetchedMetaWhenCached: true,
+			prefetchedMetaCarriesMadeAsFilm: true,
 			azureDoesNotCallCloudflare: true
 		}
 	};
