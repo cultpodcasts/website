@@ -258,7 +258,7 @@ test.describe("news and TV hub menu", () => {
 			route.fulfill({
 				status: 200,
 				contentType: "application/json",
-				body: JSON.stringify({ id: outletId, name: "Desk", publisher: "Desk Media", twitterHandle: "@desk" })
+				body: JSON.stringify({ id: outletId, name: "Desk", publisher: "Desk Media", twitterHandle: "@desk", youTubeChannelId: "UCaaaaaaaaaaaaaaaaaaaaaa" })
 			}));
 		// Same /subjects and /languages lookups as the podcast edit dialog.
 		await page.route("**/subjects", (route) =>
@@ -275,9 +275,10 @@ test.describe("news and TV hub menu", () => {
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta", "Regexs"]);
 		const channel = dialog.getByLabel("YouTube Id");
-		await expect(channel).toHaveValue("");
+		// Read-only, like the podcast edit dialog: shown, but never editable or sent.
+		await expect(channel).toHaveValue("UCaaaaaaaaaaaaaaaaaaaaaa");
+		await expect(channel).not.toBeEditable();
 		await expect(page.getByRole("menu")).toHaveCount(0);
-		await channel.fill("UCaaaaaaaaaaaaaaaaaaaaaa");
 		if (screenshotDir) {
 			await page.screenshot({ path: `${screenshotDir}/news-hub-edit-dialog.png` });
 		}
@@ -306,7 +307,6 @@ test.describe("news and TV hub menu", () => {
 		}
 		await dialog.getByRole("button", { name: "Save" }).click();
 		await expect.poll(() => patchBody).toEqual({
-			youTubeChannelId: "UCaaaaaaaaaaaaaaaaaaaaaa",
 			publisher: "Desk Media Group",
 			defaultSubject: "Politics",
 			ignoredSubjects: ["Sport"],
