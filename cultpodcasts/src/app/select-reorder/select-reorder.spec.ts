@@ -272,6 +272,30 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     expect(optionLabels().slice(0, 3)).toEqual(['Bravo', 'Alpha', 'Charlie']);
   });
 
+  it('after a keyboard move mat-select\'s key manager stays on the moved option: a plain arrow continues from it', async () => {
+    await openWithActive('Alpha');
+    altArrow('ArrowDown');
+    await settle();
+    expect(host.control.value).toEqual(['Bravo', 'Alpha', 'Charlie']);
+
+    key('ArrowDown');
+    await settle();
+    expect(option('Charlie').active).toBe(true);
+    expect(option('Alpha').active).toBe(false);
+    expect(selectHost().getAttribute('aria-activedescendant')).toBe(option('Charlie').id);
+
+    altArrow('ArrowUp');
+    await settle();
+    expect(host.control.value).toEqual(['Bravo', 'Charlie', 'Alpha']);
+
+    key('ArrowUp');
+    await settle();
+    expect(option('Bravo').active).toBe(true);
+    expect(option('Charlie').active).toBe(false);
+    expect(selectHost().getAttribute('aria-activedescendant')).toBe(option('Bravo').id);
+    expect(host.control.value).toEqual(['Bravo', 'Charlie', 'Alpha']);
+  });
+
   it('Alt+ArrowUp on the first selected option announces it is already first and changes nothing', async () => {
     await openWithActive('Alpha');
     altArrow('ArrowUp');
