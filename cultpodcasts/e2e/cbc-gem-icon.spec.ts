@@ -4,7 +4,8 @@ import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 /**
  * CBC Gem service button: the live CBC Gem app icon (white CBC gem on the Gem red tile),
  * centred in its round icon button exactly like its ABC iview / YouTube neighbours, on the
- * curator Review Episodes card (/episodes/:ids) and the homepage hero. Real app (ng serve),
+ * curator Review Episodes and Outgoing Episodes cards and the homepage hero, plus every
+ * service button on a Discovery card (same .curator-card__platforms rule). Real app (ng serve),
  * faked API and Auth0. Synthetic data only.
  *
  * Set CBC_GEM_SHOTS_DIR to save the button row as PNGs (PR evidence only).
@@ -61,6 +62,51 @@ const apiEpisode = {
 	subjects: ["Invented subject"]
 };
 
+/** One Discovery card with YouTube (plus the Views / Members meta beside it), Spotify and Apple links. */
+const discovery = {
+	ids: ["0cc11bb2-2cc3-4dd4-8ee5-ff66778899ac"],
+	hiddenCount: 0,
+	awaitingReview: [],
+	results: [{
+		id: "0cc11bb2-2cc3-4dd4-8ee5-ff66778899ad",
+		urls: {
+			youtube: YOUTUBE_URL,
+			spotify: "https://open.spotify.com/episode/inventedGem01",
+			apple: "https://podcasts.apple.com/podcast/id1?i=2"
+		},
+		episodeName: "Invented discovery episode",
+		showName: "Invented Show",
+		episodeDescription: "A synthetic discovery description.",
+		showDescription: "A synthetic show.",
+		released: "2026-10-27T00:00:00.000Z",
+		duration: "00:43:00",
+		subjects: ["Invented subject"],
+		subjectMatches: null,
+		youTubeViews: 1234,
+		youTubeChannelMembers: 56,
+		containsSyntheticMedia: false,
+		guests: [],
+		imageUrl: "https://img.example.test/discovery.png",
+		enrichedTimeFromApple: false,
+		enrichedUrlFromSpotify: false,
+		matchingPodcasts: null,
+		acceptProbability: null,
+		autoHidden: false,
+		isFocused: false
+	}]
+};
+
+/** Empty shared curation session (no selections, votes or presence). */
+const discoverySession = {
+	includedDocumentIds: discovery.ids,
+	pendingDocumentIds: [],
+	selectedResultIds: [],
+	votesByResultId: {},
+	presence: {},
+	rev: 1,
+	updatedAt: "2026-10-27T00:00:00.000Z"
+};
+
 async function fakeApi(page: Page): Promise<void> {
 	await page.addInitScript(() => {
 		(globalThis as { __E2E_CURATOR__?: boolean }).__E2E_CURATOR__ = true;
@@ -83,6 +129,22 @@ async function fakeApi(page: Page): Promise<void> {
 		}
 		if (route.request().method() === "GET" && path.startsWith("/episode/") && path.endsWith(EPISODE_ID)) {
 			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(apiEpisode) });
+			return;
+		}
+		if (route.request().method() === "GET" && path === "/episodes/outgoing") {
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([apiEpisode]) });
+			return;
+		}
+		if (route.request().method() === "GET" && path === "/discovery-curation") {
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(discovery) });
+			return;
+		}
+		if (path.startsWith("/discovery-curation/session")) {
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(discoverySession) });
+			return;
+		}
+		if (path === "/discovery-info") {
+			await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ documentCount: 1, numberOfResults: 1 }) });
 			return;
 		}
 		if (route.request().method() === "POST" && url.includes("/search")) {
@@ -134,6 +196,18 @@ async function expectCentredLikeNeighbours(links: Locator): Promise<void> {
 	}
 	expect(Math.abs(gem!.dx)).toBeLessThanOrEqual(1);
 	expect(Math.abs(gem!.dy)).toBeLessThanOrEqual(1);
+}
+
+/** Every service glyph in the row sits within 1px of its button's centre, at the same size. */
+async function expectAllCentred(links: Locator): Promise<void> {
+	const rows = await geometry(links);
+	expect(rows.length).toBeGreaterThanOrEqual(2);
+	for (const row of rows) {
+		expect(row.width, `${row.label} width`).toBe(40);
+		expect(row.svgW, `${row.label} svg width`).toBe(24);
+		expect(Math.abs(row.dx), `${row.label} dx`).toBeLessThanOrEqual(1);
+		expect(Math.abs(row.dy), `${row.label} dy`).toBeLessThanOrEqual(1);
+	}
 }
 
 /** The rendered mark: Gem red rx 5.4 tile, white vector gem, no font-dependent <text>. */
@@ -204,5 +278,28 @@ test.describe("CBC Gem service button", () => {
 		await shoot(page, links, "hero");
 		await expectCentredLikeNeighbours(links);
 		await expectGemMark(links.nth(2));
+	});
+
+	test("Outgoing Episodes card: CBC Gem mark is centred and sized like YouTube and ABC iview", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page);
+		await page.goto("/outgoingEpisodes");
+		const links = page.locator(".curator-card__platforms app-episode-podcast-links a");
+		await expect(links).toHaveCount(3);
+		await expect(links.nth(2)).toHaveAttribute("aria-label", "CBC Gem");
+		await expectCentredLikeNeighbours(links);
+		await expectAllCentred(links);
+	});
+
+	test("Discovery card: YouTube (with views meta), Spotify and Apple buttons are centred", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page);
+		await page.goto("/discovery");
+		const links = page.locator(".curator-card__platforms.discovery-service-links a[mat-icon-button]");
+		await expect(links).toHaveCount(3);
+		await expect(page.locator(".discovery-service-links .youtubemeta")).toBeVisible();
+		await links.first().scrollIntoViewIfNeeded();
+		await shoot(page, links, "discovery-card");
+		await expectAllCentred(links);
 	});
 });
