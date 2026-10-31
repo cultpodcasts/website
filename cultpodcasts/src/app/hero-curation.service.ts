@@ -18,7 +18,10 @@ export interface HeroCurationUpdate {
   expectedUpdatedAt?: Date | null;
 }
 
-/** PUT body: `expectedUpdatedAt` goes back as the UTC `Z` text the Worker compares (`toISOString()`). */
+/**
+ * PUT body: `expectedUpdatedAt` goes back as the UTC `Z` text the Worker compares (`toISOString()`). A value that is
+ * not a `Date` (it slipped past `JsonDateInterceptor`) is sent as its own text rather than throwing mid-save.
+ */
 export function toWireUpdate(update: HeroCurationUpdate): Omit<HeroCurationUpdate, 'expectedUpdatedAt'> & {
   expectedUpdatedAt?: string | null;
 } {
@@ -26,7 +29,11 @@ export function toWireUpdate(update: HeroCurationUpdate): Omit<HeroCurationUpdat
   if (expectedUpdatedAt === undefined) {
     return rest;
   }
-  return { ...rest, expectedUpdatedAt: expectedUpdatedAt === null ? null : expectedUpdatedAt.toISOString() };
+  if (expectedUpdatedAt === null) {
+    return { ...rest, expectedUpdatedAt: null };
+  }
+  const token: unknown = expectedUpdatedAt;
+  return { ...rest, expectedUpdatedAt: token instanceof Date ? token.toISOString() : String(token) };
 }
 
 /**

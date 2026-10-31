@@ -172,6 +172,7 @@ export class DiscoveryCurationSessionService implements OnDestroy {
           const msg = JSON.parse(String(ev.data)) as { type?: string; state?: DiscoveryCurationSessionSnapshot };
           if (msg.state) {
             // WebSocket frames skip JsonDateInterceptor; give them the same Dates as the HTTP snapshot.
+            // A new free-text snapshot field must be passed here as a keep-as-text key (see DiscoveryCurationSessionSnapshot).
             this.snapshot.set(convertJsonDates(msg.state));
           }
         } catch {

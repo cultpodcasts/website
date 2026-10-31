@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE, authInterceptor } from './auth.interceptor';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { HeroCurationService, toWireUpdate } from './hero-curation.service';
-import { JsonDateInterceptor } from './json-date.interceptor';
+import { JsonDateInterceptor, convertJsonDates } from './json-date.interceptor';
 import { of } from 'rxjs';
 
 describe('HeroCurationService', () => {
@@ -18,7 +18,9 @@ describe('HeroCurationService', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        provideHttpClient(withInterceptors([authInterceptor])),
+        // JsonDateInterceptor as in app.config.ts, so GET fixtures arrive as Dates like production.
+        provideHttpClient(withInterceptors([authInterceptor]), withInterceptorsFromDi()),
+        { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
         provideHttpClientTesting(),
         {
           provide: AuthServiceWrapper,
@@ -88,12 +90,12 @@ describe('HeroCurationService', () => {
     expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
     expect(req.request.responseType).toBe('text');
     await flushCommand(req);
-    flushGet({ episodeIds: ['a'], railSubjects: ['Cult'], updatedAt: '2026-01-01' });
+    flushGet({ episodeIds: ['a'], railSubjects: ['Cult'], updatedAt: '2026-10-31T09:00:00.000Z' });
 
     await expect(pending).resolves.toEqual({
       episodeIds: ['a'],
       railSubjects: ['Cult'],
-      updatedAt: '2026-01-01',
+      updatedAt: new Date('2026-10-31T09:00:00.000Z'),
     });
   });
 
@@ -102,7 +104,7 @@ describe('HeroCurationService', () => {
     const heroReq = httpMock.expectOne(url);
     expect(heroReq.request.body).toEqual({ episodeIds: ['e1'], expectedUpdatedAt: '2026-10-31T10:00:00.123Z' });
     await flushCommand(heroReq);
-    flushGet({ episodeIds: ['e1'], railSubjects: [], updatedAt: 't1' });
+    flushGet({ episodeIds: ['e1'], railSubjects: [], updatedAt: '2026-10-31T11:00:00.000Z' });
     await hero;
 
     const rails = service.setRailSubjects(['Scientology'], new Date('2026-10-31T11:00:00Z'));
@@ -112,7 +114,7 @@ describe('HeroCurationService', () => {
       expectedUpdatedAt: '2026-10-31T11:00:00.000Z',
     });
     await flushCommand(railsReq);
-    flushGet({ episodeIds: [], railSubjects: ['Scientology'], updatedAt: 't2' });
+    flushGet({ episodeIds: [], railSubjects: ['Scientology'], updatedAt: '2026-10-31T12:00:00.000Z' });
     await rails;
   });
 
@@ -123,14 +125,14 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['from-get'],
       railSubjects: ['day:0'],
-      updatedAt: 'from-get',
+      updatedAt: '2026-10-31T14:00:00.000Z',
     });
     await expect(pending).rejects.toMatchObject({
       name: 'HeroCurationConflictError',
       current: {
         episodeIds: ['from-get'],
         railSubjects: ['day:0'],
-        updatedAt: 'from-get',
+        updatedAt: new Date('2026-10-31T14:00:00.000Z'),
       },
     });
   });
@@ -141,7 +143,7 @@ describe('HeroCurationService', () => {
       JSON.stringify({
         error: 'Conflict',
         episodeIds: ['from-body'],
-        updatedAt: 'from-body',
+        updatedAt: '2026-10-31T15:00:00.000Z',
       }),
       { status: 400, statusText: 'Bad Request' }
     );
@@ -149,11 +151,11 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['from-get'],
       railSubjects: [],
-      updatedAt: 'from-get',
+      updatedAt: '2026-10-31T14:00:00.000Z',
     });
     await expect(pending).rejects.toMatchObject({
       name: 'HeroCurationConflictError',
-      current: { episodeIds: ['from-get'], updatedAt: 'from-get' },
+      current: { episodeIds: ['from-get'], updatedAt: new Date('2026-10-31T14:00:00.000Z') },
     });
   });
 
@@ -168,12 +170,12 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['e2', 'e1'],
       railSubjects: ['day:0'],
-      updatedAt: 't1',
+      updatedAt: '2026-10-31T11:00:00.000Z',
     });
     await expect(pending).resolves.toEqual({
       episodeIds: ['e2', 'e1'],
       railSubjects: ['day:0'],
-      updatedAt: 't1',
+      updatedAt: new Date('2026-10-31T11:00:00.000Z'),
     });
   });
 
@@ -188,12 +190,12 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['e2', 'e1'],
       railSubjects: [],
-      updatedAt: 't1',
+      updatedAt: '2026-10-31T11:00:00.000Z',
     });
     await expect(promote).resolves.toEqual({
       episodeIds: ['e2', 'e1'],
       railSubjects: [],
-      updatedAt: 't1',
+      updatedAt: new Date('2026-10-31T11:00:00.000Z'),
     });
 
     const demote = service.toggleEpisode('e2', ['e2', 'e1'], new Date('2026-10-31T11:00:00Z'));
@@ -204,12 +206,12 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['e1'],
       railSubjects: [],
-      updatedAt: 't2',
+      updatedAt: '2026-10-31T12:00:00.000Z',
     });
     await expect(demote).resolves.toEqual({
       episodeIds: ['e1'],
       railSubjects: [],
-      updatedAt: 't2',
+      updatedAt: new Date('2026-10-31T12:00:00.000Z'),
     });
   });
 
@@ -223,12 +225,12 @@ describe('HeroCurationService', () => {
     flushGet({
       episodeIds: ['e0'],
       railSubjects: ['day:0'],
-      updatedAt: 't3',
+      updatedAt: '2026-10-31T13:00:00.000Z',
     });
     await expect(pending).resolves.toEqual({
       episodeIds: ['e0'],
       railSubjects: ['day:0'],
-      updatedAt: 't3',
+      updatedAt: new Date('2026-10-31T13:00:00.000Z'),
     });
   });
 
@@ -236,7 +238,7 @@ describe('HeroCurationService', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const pending = service.setHeroCuration(['e1']);
     httpMock.expectOne(url).flush(
-      JSON.stringify({ episodeIds: ['from-body'], railSubjects: [], updatedAt: 'from-body' }),
+      JSON.stringify({ episodeIds: ['from-body'], railSubjects: [], updatedAt: '2026-10-31T15:00:00.000Z' }),
       { status: 200, statusText: 'OK' }
     );
     await expect(pending).rejects.toBeTruthy();
@@ -252,9 +254,24 @@ describe('HeroCurationService', () => {
     err.mockRestore();
   });
 
+  it('feeds a GET updatedAt back as the exact Z text on the next PUT', async () => {
+    const first = service.setHeroCuration(['e1']);
+    await flushCommand(httpMock.expectOne(url));
+    flushGet({ episodeIds: ['e1'], railSubjects: [], updatedAt: '2026-10-31T11:00:00.123Z' });
+    const read = await first;
+    expect(read.updatedAt).toBeInstanceOf(Date);
+
+    const second = service.setHeroCuration(['e1', 'e2'], read.updatedAt);
+    const req = httpMock.expectOne(url);
+    expect(req.request.body).toEqual({ episodeIds: ['e1', 'e2'], expectedUpdatedAt: '2026-10-31T11:00:00.123Z' });
+    await flushCommand(req);
+    flushGet({ episodeIds: ['e1', 'e2'], railSubjects: [], updatedAt: '2026-10-31T11:00:01.000Z' });
+    await second;
+  });
+
   describe('expectedUpdatedAt on the wire (#579)', () => {
     it('sends a Date back as the exact UTC Z text the GET returned', () => {
-      const body = new JsonDateInterceptor().convert({ updatedAt: '2026-10-31T10:00:00.123Z' }) as { updatedAt: Date };
+      const body = convertJsonDates({ updatedAt: '2026-10-31T10:00:00.123Z' }) as unknown as { updatedAt: Date };
       expect(body.updatedAt).toBeInstanceOf(Date);
       expect(toWireUpdate({ episodeIds: ['e1'], expectedUpdatedAt: body.updatedAt })).toEqual({
         episodeIds: ['e1'],
@@ -266,6 +283,14 @@ describe('HeroCurationService', () => {
       expect(toWireUpdate({ railSubjects: [], expectedUpdatedAt: null })).toEqual({ railSubjects: [], expectedUpdatedAt: null });
       expect(toWireUpdate({ railSubjects: [] })).toEqual({ railSubjects: [] });
       expect('expectedUpdatedAt' in toWireUpdate({ railSubjects: [] })).toBe(false);
+    });
+
+    it('passes a stray non-Date token through as text instead of throwing', () => {
+      const stray = '2026-10-31T10:00:00Z' as unknown as Date;
+      expect(toWireUpdate({ episodeIds: [], expectedUpdatedAt: stray })).toEqual({
+        episodeIds: [],
+        expectedUpdatedAt: '2026-10-31T10:00:00Z',
+      });
     });
 
     it('PUT body carries the token as text, not a Date', async () => {

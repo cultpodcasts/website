@@ -43,10 +43,6 @@ export class JsonDateInterceptor implements HttpInterceptor {
       return val;
     }));
   }
-
-  convert(body: any, keepAsText: ReadonlySet<string> = NO_KEYS) {
-    return convertJsonDates(body, keepAsText);
-  }
 }
 
 const isoDateFormat =
