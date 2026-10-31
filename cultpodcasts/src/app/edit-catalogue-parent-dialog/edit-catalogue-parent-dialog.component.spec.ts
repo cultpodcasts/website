@@ -206,16 +206,17 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(dialog.model()).toBeNull();
   });
 
-  it('PATCHes a YouTube channel id and clears the Apple id with nullAppleId', async () => {
+  it('never PATCHes the read-only YouTube channel id, even if the model changes or blanks it', async () => {
     const dialog = create();
-    await loadWith({ id: showId, name: 'Nightly', appleId: 55 });
+    await loadWith({ id: showId, name: 'Nightly', appleId: 55, youTubeChannelId: 'UCcccccccccccccccccccccc' });
     await settle();
     const model = dialog.model()!;
-    model.youTubeChannelId = 'UCcccccccccccccccccccccc';
+    model.youTubeChannelId = '';
     model.appleId = '';
     const done = dialog.save();
     const req = await expectSoon(patchUrl);
-    expect(req.request.body).toEqual({ youTubeChannelId: 'UCcccccccccccccccccccccc', nullAppleId: true });
+    expect(req.request.body).toEqual({ nullAppleId: true });
+    expect('youTubeChannelId' in req.request.body).toBe(false);
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
     expect(close).toHaveBeenCalledWith({ updated: true });
@@ -230,22 +231,34 @@ describe('EditCatalogueParentDialogComponent', () => {
     await settle();
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector<HTMLInputElement>('input[name="youTubeChannelId"]')!;
     return {
-      input: root.querySelector<HTMLInputElement>('input[name="youTubeChannelId"]')!,
+      input,
+      field: input.closest<HTMLElement>('mat-form-field')!,
       hint: root.querySelector<HTMLElement>('#youtube-channel-ignored')
     };
   }
 
-  it('greys out the YouTube channel id with a hint while a playlist id is set (RPP #1177)', async () => {
-    const { input, hint } = await channelInput('PLsyntheticplaylist0000000000000000');
-    expect(input.disabled).toBe(true);
+  it('shows the YouTube channel id read-only, like the podcast edit dialog', async () => {
+    const { input } = await channelInput('');
+    expect(input.readOnly).toBe(true);
+    expect(input.disabled).toBe(false);
+    expect(input.value).toBe('UCcccccccccccccccccccccc');
+  });
+
+  it('greys out the read-only YouTube channel id with a hint while a playlist id is set (RPP #1177)', async () => {
+    const { input, field, hint } = await channelInput('PLsyntheticplaylist0000000000000000');
+    expect(input.readOnly).toBe(true);
+    expect(input.value).toBe('UCcccccccccccccccccccccc');
+    expect(field.classList).toContain('channel-ignored');
     expect(hint?.textContent).toContain('Not used for indexing while a playlist id is set');
     expect(input.getAttribute('aria-describedby')).toContain('youtube-channel-ignored');
   });
 
-  it('keeps the YouTube channel id editable without a hint when there is no playlist id', async () => {
-    const { input, hint } = await channelInput('');
-    expect(input.disabled).toBe(false);
+  it('shows the YouTube channel id without greying or a hint when there is no playlist id', async () => {
+    const { input, field, hint } = await channelInput('');
+    expect(field.classList).not.toContain('channel-ignored');
+    expect(input.getAttribute('aria-describedby')).toBeNull();
     expect(hint).toBeNull();
   });
 
