@@ -248,6 +248,12 @@ const streamingIconSvgs = {
   // iview wordmark (play triangle in the e) on the iview teal tile, built from the checked-in
   // masthead SVG (icon-sources/abc-iview-logo.svg). See abcIviewIcon() for the layout numbers.
   'abc-iview': abcIviewIcon(),
+  // CBC Gem — near-black tile with GEM wordmark.
+  'cbc-gem':
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="#111"/>` +
+    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7" font-weight="900" letter-spacing="0.3">GEM</text>` +
+    `</svg>`,
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

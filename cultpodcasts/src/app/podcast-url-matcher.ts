@@ -26,6 +26,8 @@ const zdf = /^(?:https?:)?\/\/(?:www\.)?zdf\.de\/(?:(?:video|play)\/)?[a-z0-9\-]
 const ard = /^(?:https?:)?\/\/(?:www\.)?ardmediathek\.de\/(?:video(?:\/[^/\s?#]+){1,4}|serie\/[^/\s?#]+(?:\/[^/\s?#]+)+|sendung\/[^/\s?#]+\/[^/\s?#]+)\/?(?:[?#]|$)/;
 const canalPlus = /^(?:https?:)?\/\/(?:www\.)?canalplus\.com\/(?:[a-z]{2}\/)?(?:series|cinema|documentaires|emissions|sport|kids|films?)\/[^/\s?#]+\/h\/\d+(?:_\d+)?(?:\/[^/\s?#]+)*\/?(?:[?#]|$)/;
 const abcIview = /^(?:https?:)?\/\/(?:www\.)?iview\.abc\.net\.au\/(?:video|show)\/[^/\s?#]+\/?(?:[?#]|$)/;
+/** CBC Gem: /{slug} (film or series hub) or /{slug}/s{NN}e{NN} (episode); app shells excluded (mirrors RPP CbcGemUrlMatcher). */
+const cbcGem = /^(?:https?:)?\/\/(?:www\.)?gem\.cbc\.ca\/(?!(?:live|categor(?:y|ies)|sections?|collections?|browse|search|account|settings|login|logout|signin|signup|subscribe|premium|my-?list|schedule|faq|help|about|terms|privacy|movies|shows|kids|news|media|player|watch)(?:[/?#]|$))[a-z0-9]+(?:-[a-z0-9]+)*(?:\/s\d{1,3}e\d{1,4})?\/?(?:[?#]|$)/i;
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
@@ -58,6 +60,7 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: ard, useFullInput: true, kind: 'streaming' },
   { regex: canalPlus, useFullInput: true, kind: 'streaming' },
   { regex: abcIview, useFullInput: true, kind: 'streaming' },
+  { regex: cbcGem, useFullInput: true, kind: 'streaming' },
 ];
 
 export function isSubmittablePodcastUrl(input: string): boolean {

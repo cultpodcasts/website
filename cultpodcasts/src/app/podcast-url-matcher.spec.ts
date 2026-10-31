@@ -90,7 +90,11 @@ describe('podcast-url-matcher', () => {
       'https://www.canalplus.com/series/example-slug/h/12345_67890',
       'https://www.canalplus.com/fr/cinema/example-slug/h/12345_67890',
       'https://iview.abc.net.au/video/LE1717H003S00',
-      'https://iview.abc.net.au/show/you-cant-ask-that'
+      'https://iview.abc.net.au/show/you-cant-ask-that',
+      'https://gem.cbc.ca/example-slug',
+      'https://gem.cbc.ca/example-slug?autoplay=1',
+      'https://www.gem.cbc.ca/example-slug/',
+      'https://gem.cbc.ca/example-show/s01e01'
     ];
 
     for (const url of accepted) {
@@ -148,6 +152,13 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://www.canalplus.com/series/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://iview.abc.net.au/')).toBe(false);
     expect(isSubmittablePodcastUrl('https://iview.abc.net.au/categories/example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/live')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/search?q=example')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/category/documentaries')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/example-show/s01')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/example-show/s01e01/extra')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca.example.test/example-slug')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
@@ -198,6 +209,7 @@ describe('podcast-url-matcher', () => {
     expect(classifySubmittablePodcastUrl('https://www.ardmediathek.de/video/Y3JpZDovL2V4YW1wbGUvaWQ')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://www.canalplus.com/series/example-slug/h/12345_67890')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://iview.abc.net.au/video/LE1717H003S00')).toBe('streaming');
+    expect(classifySubmittablePodcastUrl('https://gem.cbc.ca/example-slug')).toBe('streaming');
     expect(classifySubmittablePodcastUrl('https://example.test/watch/1')).toBeUndefined();
   });
 
