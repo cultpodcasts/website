@@ -15,6 +15,10 @@ import { Homepage } from '../homepage.interface';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { RAIL_DISPLAY_SIZE, SUBJECT_RAIL_MIN_EPISODES } from '../rail-subjects';
 
+/** Hero CAS tokens: `updatedAt` is a `Date` once JsonDateInterceptor has read the GET (#579). */
+const STALE_TOKEN = new Date('2026-10-31T10:00:00Z');
+const FRESH_TOKEN = new Date('2026-10-31T11:00:00Z');
+
 function dayOffset(daysAgo: number): Date {
   const d = new Date();
   d.setUTCHours(12, 0, 0, 0);
@@ -199,12 +203,12 @@ describe('HomepageApiComponent', () => {
       ep(`p${i}`, { daysAgo: 0, subjects: [subject] })
     );
     apply(episodes, { episodeIds: ['p0'], railSubjects: ['day:0'] });
-    component['curatedUpdatedAt'].set('stale-token');
+    component['curatedUpdatedAt'].set(STALE_TOKEN);
     heroCuration.setRailSubjects.mockRejectedValueOnce(
       new HeroCurationConflictError({
         episodeIds: ['server-ep'],
         railSubjects: ['server-subject'],
-        updatedAt: 'fresh-token',
+        updatedAt: FRESH_TOKEN,
       })
     );
 
@@ -212,11 +216,11 @@ describe('HomepageApiComponent', () => {
 
     expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(
       ['day:0', subject],
-      'stale-token'
+      STALE_TOKEN
     );
     expect(component['curatedRailSubjects']()).toEqual(['server-subject']);
     expect(component['curatedEpisodeIds']()).toEqual(['server-ep']);
-    expect(component['curatedUpdatedAt']()).toBe('fresh-token');
+    expect(component['curatedUpdatedAt']()).toBe(FRESH_TOKEN);
   });
 
   it('rolls a rail pin back to the pre-image when persist fails for another reason', async () => {
@@ -226,14 +230,14 @@ describe('HomepageApiComponent', () => {
       ep(`p${i}`, { daysAgo: 0, subjects: [subject] })
     );
     apply(episodes, { episodeIds: ['p0'], railSubjects: ['day:0'] });
-    component['curatedUpdatedAt'].set('stale-token');
+    component['curatedUpdatedAt'].set(STALE_TOKEN);
     heroCuration.setRailSubjects.mockRejectedValueOnce(new Error('fail'));
 
     await component.toggleRailPin(subject);
 
     expect(component['curatedRailSubjects']()).toEqual(['day:0']);
     expect(component['curatedEpisodeIds']()).toEqual(['p0']);
-    expect(component['curatedUpdatedAt']()).toBe('stale-token');
+    expect(component['curatedUpdatedAt']()).toBe(STALE_TOKEN);
   });
 
   it('promotes then demotes an episode for curators', async () => {

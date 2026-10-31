@@ -8,7 +8,7 @@ export type DiscoverySubmissionStatus = 'Pending' | 'Applying' | 'Applied' | 'Pa
 /** A report held for supervisor review (GET /discovery-curation `awaitingReview`). */
 export interface DiscoveryAwaitingReview {
   id: string;
-  discoveryBegan: Date | string;
+  discoveryBegan: Date;
   resultCount: number;
 }
 
@@ -22,22 +22,22 @@ export interface DiscoverySubmissionSummary {
   id: string;
   status: DiscoverySubmissionStatus;
   submitterSubject: string;
-  submittedAt: string;
+  submittedAt: Date;
   discoveryResultsDocumentIds: string[];
   submitterAcceptedCount: number;
   supervisorSubject?: string | null;
-  appliedAt?: string | null;
+  appliedAt?: Date | null;
   reportComment?: string | null;
   itemCommentCount: number;
   applyError?: string | null;
   failedCount?: number | null;
   succeededCount?: number | null;
   abandonedCount?: number | null;
-  releasedAt?: string | null;
+  releasedAt?: Date | null;
   releaseReason?: string | null;
   /** Command currently running (status Applying). */
   inProgressOperation?: DiscoveryInProgressOperation | null;
-  inProgressSince?: string | null;
+  inProgressSince?: Date | null;
 }
 
 export type DiscoveryInProgressOperation = 'Apply' | 'Retry' | 'Release';
@@ -55,7 +55,7 @@ export interface DiscoverySubmissionItemComment {
 
 export interface DiscoverySubmissionReport {
   id: string;
-  discoveryBegan: string;
+  discoveryBegan: Date;
   state: 'Unprocessed' | 'PendingSupervisor' | 'Processed';
   results: DiscoveryResult[];
 }
@@ -70,11 +70,11 @@ export interface DiscoverySubmissionItemOutcome {
   message?: string | null;
   error?: string | null;
   attempts: number;
-  lastAttemptAt?: string | null;
+  lastAttemptAt?: Date | null;
 }
 
 export interface DiscoverySubmissionHistory {
-  at: string;
+  at: Date;
   actorSubject?: string | null;
   action: string;
   /** StateChanged only. */
@@ -89,7 +89,7 @@ export interface DiscoverySubmissionDetail {
   etag: string;
   canReview: boolean;
   submitterSubject: string;
-  submittedAt: string;
+  submittedAt: Date;
   submitterAcceptedResultIds: string[];
   supervisorAcceptedResultIds?: string[] | null;
   addedBySupervisorResultIds?: string[] | null;
@@ -97,14 +97,14 @@ export interface DiscoverySubmissionDetail {
   reportComment?: string | null;
   itemComments: DiscoverySubmissionItemComment[];
   supervisorSubject?: string | null;
-  appliedAt?: string | null;
+  appliedAt?: Date | null;
   applyError?: string | null;
   erroredResultIds?: string[] | null;
   itemOutcomes?: DiscoverySubmissionItemOutcome[] | null;
-  releasedAt?: string | null;
+  releasedAt?: Date | null;
   releaseReason?: string | null;
   inProgressOperation?: DiscoveryInProgressOperation | null;
-  inProgressSince?: string | null;
+  inProgressSince?: Date | null;
   reports: DiscoverySubmissionReport[];
   history: DiscoverySubmissionHistory[];
 }

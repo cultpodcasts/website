@@ -11,7 +11,7 @@ describe('SearchSuggestionsService', () => {
     const suggestionsUrl = new URL('/search-suggestions', environment.api).toString();
 
     const corpus: SuggestionsCorpus = {
-        generatedAtUtc: '2026-07-24T00:00:00Z',
+        generatedAtUtc: new Date('2026-07-24T00:00:00Z'),
         entries: [
             { type: 'subject', canonical: 'Scientology', searchText: 'scientology' },
             { type: 'subject', canonical: 'Scientology', searchText: 'cos', alias: 'CoS' },
@@ -93,7 +93,7 @@ describe('SearchSuggestionsService', () => {
         const filmA = '00112233-4455-4677-8899-aabbccddeeff';
         const filmB = '11112233-4455-4677-8899-aabbccddeeff';
         const kindsCorpus: SuggestionsCorpus = {
-            generatedAtUtc: '2026-10-21T00:00:00Z',
+            generatedAtUtc: new Date('2026-10-21T00:00:00Z'),
             entries: [
                 { type: 'tvShow', canonical: 'Synthetic Nightly', searchText: 'synthetic nightly' },
                 { type: 'newsOrganisation', canonical: 'Synthetic Desk', searchText: 'synthetic desk' },
@@ -132,7 +132,7 @@ describe('SearchSuggestionsService', () => {
         it('passes an unknown future kind through instead of dropping the corpus', async () => {
             const pending = service.suggest('future', 20);
             httpMock.expectOne(suggestionsUrl).flush({
-                generatedAtUtc: '2026-10-21T00:00:00Z',
+                generatedAtUtc: new Date('2026-10-21T00:00:00Z'),
                 entries: [{ type: 'person', canonical: 'Future Kind', searchText: 'future kind' }]
             });
             const results = await pending;

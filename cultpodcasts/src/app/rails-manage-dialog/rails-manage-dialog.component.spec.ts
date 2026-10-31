@@ -21,7 +21,7 @@ describe('RailsManageDialogComponent', () => {
       setRailSubjects: vi.fn().mockResolvedValue({
         episodeIds: [],
         railSubjects: ['day:0', 'Scientology', 'NXIVM', 'day:1'],
-        updatedAt: 't1',
+        updatedAt: new Date('2026-10-31T11:00:00Z'),
       }),
     };
     const data: RailsManageDialogData = {
@@ -29,7 +29,7 @@ describe('RailsManageDialogComponent', () => {
       eligible: ['Scientology', 'NXIVM', 'Flat Earth'],
       episodeCounts: { Scientology: 5, NXIVM: 4, 'Flat Earth': 3 },
       dayEpisodeCounts: [10, 8],
-      updatedAt: 't0',
+      updatedAt: new Date('2026-10-31T10:00:00Z'),
     };
 
     await TestBed.configureTestingModule({
@@ -108,12 +108,12 @@ describe('RailsManageDialogComponent', () => {
     await component.save();
     expect(heroCuration.setRailSubjects).toHaveBeenCalledWith(
       ['day:0', 'Scientology', 'day:1', 'NXIVM'],
-      't0'
+      new Date('2026-10-31T10:00:00Z')
     );
     expect(dialogRef.close).toHaveBeenCalledWith({
       saved: true,
       railSubjects: ['day:0', 'Scientology', 'NXIVM', 'day:1'],
-      updatedAt: 't1',
+      updatedAt: new Date('2026-10-31T11:00:00Z'),
     });
   });
 

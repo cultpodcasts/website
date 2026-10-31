@@ -30,9 +30,9 @@ function result(id: string, name: string) {
 function detail(overrides: Partial<DiscoverySubmissionDetail> = {}): DiscoverySubmissionDetail {
   return {
     id: 's1', status: 'Pending', etag: 'e1', canReview: true, submitterSubject: 'ai-bot',
-    submittedAt: '2026-10-11T10:00:00Z', submitterAcceptedResultIds: [A, B], itemComments: [],
-    reports: [{ id: 'r1', discoveryBegan: '2026-10-11T09:00:00Z', state: 'PendingSupervisor', results: [result(A, 'One'), result(B, 'Two'), result(C, 'Three')] as never }],
-    history: [{ at: '2026-10-11T10:00:00Z', action: 'Submitted', actorSubject: 'ai-bot' }],
+    submittedAt: new Date('2026-10-11T10:00:00Z'), submitterAcceptedResultIds: [A, B], itemComments: [],
+    reports: [{ id: 'r1', discoveryBegan: new Date('2026-10-11T09:00:00Z'), state: 'PendingSupervisor', results: [result(A, 'One'), result(B, 'Two'), result(C, 'Three')] as never }],
+    history: [{ at: new Date('2026-10-11T10:00:00Z'), action: 'Submitted', actorSubject: 'ai-bot' }],
     ...overrides
   };
 }
@@ -241,7 +241,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
   });
 
   it('shows Applying as in progress with every supervisor action unavailable', async () => {
-    await create(detail({ status: 'Applying', inProgressOperation: 'Retry', inProgressSince: '2026-10-11T10:00:00Z' }));
+    await create(detail({ status: 'Applying', inProgressOperation: 'Retry', inProgressSince: new Date('2026-10-11T10:00:00Z') }));
     expect(el().querySelector('.in-progress')?.textContent).toContain('Retrying failed items');
     for (const cls of ['apply', 'save-draft', 'retry', 'release', 'change-state']) {
       expect(button(cls)).toBeNull();
@@ -252,14 +252,14 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
   it('points admins at Change state while Applying', async () => {
     roles.next(['Admin']);
-    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z' }));
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date('2026-10-11T10:00:00Z') }));
     expect(el().querySelector('.in-progress-admin-note')?.textContent).toContain('Change state');
     expect(button('change-state')).not.toBeNull();
   });
 
   it('lets an admin change state after confirming, then reloads', async () => {
     roles.next(['Admin']);
-    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z' }));
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date('2026-10-11T10:00:00Z') }));
     const component = fixture.componentInstance as unknown as { newStatus: { set(v: string): void } };
     expect(button('change-state').disabled).toBe(true);
     component.newStatus.set('Pending');
@@ -288,7 +288,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
   it('hides Change state from non-admins and shows StateChanged history', async () => {
     await create(detail({ history: [
-      { at: '2026-10-11T10:00:00Z', action: 'StateChanged', actorSubject: 'jon', fromStatus: 'Applying', toStatus: 'Pending', reason: 'crashed' }
+      { at: new Date('2026-10-11T10:00:00Z'), action: 'StateChanged', actorSubject: 'jon', fromStatus: 'Applying', toStatus: 'Pending', reason: 'crashed' }
     ] }));
     expect(button('change-state')).toBeNull();
     expect(el().querySelector('.history')?.textContent).toContain('State changed Applying → Pending: crashed');
@@ -419,7 +419,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
   describe('redesigned layout', () => {
     it('shows friendly subject labels with the raw id only as a tooltip', async () => {
-      await create(detail({ status: 'Applied', supervisorSubject: 'google-oauth2|117468924423760161962', appliedAt: '2026-10-12T21:58:00Z' }));
+      await create(detail({ status: 'Applied', supervisorSubject: 'google-oauth2|117468924423760161962', appliedAt: new Date('2026-10-12T21:58:00Z') }));
       const meta = el().querySelector('.submission-header__meta') as HTMLElement;
       expect(meta.textContent).not.toContain('google-oauth2|');
       expect(meta.textContent).toContain('Google user …1962');

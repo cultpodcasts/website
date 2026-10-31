@@ -34,13 +34,13 @@ describe('HeroManageDialogComponent', () => {
       setHeroCuration: vi.fn().mockResolvedValue({
         episodeIds: ['b', 'a'],
         railSubjects: [],
-        updatedAt: 't1',
+        updatedAt: new Date('2026-10-31T11:00:00Z'),
       }),
     };
     const data: HeroManageDialogData = {
       curated: [ep('a'), ep('b')],
       autofilled: [ep('x')],
-      updatedAt: 't0',
+      updatedAt: new Date('2026-10-31T10:00:00Z'),
     };
 
     await TestBed.configureTestingModule({
@@ -73,11 +73,11 @@ describe('HeroManageDialogComponent', () => {
 
   it('saves curated ids and closes with the server response', async () => {
     await component.save();
-    expect(heroCuration.setHeroCuration).toHaveBeenCalledWith(['a', 'b'], 't0');
+    expect(heroCuration.setHeroCuration).toHaveBeenCalledWith(['a', 'b'], new Date('2026-10-31T10:00:00Z'));
     expect(dialogRef.close).toHaveBeenCalledWith({
       saved: true,
       episodeIds: ['b', 'a'],
-      updatedAt: 't1',
+      updatedAt: new Date('2026-10-31T11:00:00Z'),
     });
   });
 
