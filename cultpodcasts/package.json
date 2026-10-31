@@ -1,6 +1,6 @@
 {
   "name": "cultpodcasts",
-  "version": "1.24.27",
+  "version": "1.24.28",
   "scripts": {
     "ng": "ng",
     "start": "node ./tools/start-local.mjs",

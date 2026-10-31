@@ -87,7 +87,8 @@ export const SERVICE_CATALOG: CatalogServiceDescriptor[] = [
   { key: "zdf", displayName: "ZDF", icon: "zdf", wideImage: true },
   { key: "ard", displayName: "ARD", icon: "ard", wideImage: true },
   { key: "canalPlus", displayName: "Canal+", icon: "canal-plus", wideImage: true },
-  { key: "abcIview", displayName: "ABC iview", icon: "abc-iview", wideImage: true }
+  { key: "abcIview", displayName: "ABC iview", icon: "abc-iview", wideImage: true },
+  { key: "cbcGem", displayName: "CBC Gem", icon: "cbc-gem", wideImage: true }
 ];
 
 const byKey = new Map<string, CatalogServiceDescriptor>(SERVICE_CATALOG.map((d) => [d.key, d]));
@@ -226,6 +227,9 @@ export function resolveServiceKey(url: URL): KnownServiceKey | string | undefine
   if (host === "iview.abc.net.au" || host.endsWith(".iview.abc.net.au")) {
     return "abcIview";
   }
+  if (host === "gem.cbc.ca" || host.endsWith(".gem.cbc.ca")) {
+    return "cbcGem";
+  }
   return host.replace(/[^a-z0-9]/g, "") || undefined;
 }
 
@@ -249,7 +253,8 @@ const EXPAND: Partial<Record<StreamingServiceKey, (id: string) => string>> = {
   netflix: (id) => `https://www.netflix.com/title/${id}`,
   bitchute: (id) => `https://www.bitchute.com/video/${id}`,
   tubi: (id) => `https://tubitv.com/${id}`,
-  abcIview: (id) => `https://iview.abc.net.au/video/${id}`
+  abcIview: (id) => `https://iview.abc.net.au/video/${id}`,
+  cbcGem: (id) => `https://gem.cbc.ca/${id}`
 };
 
 /** Inverse of RPP SearchEpisodeServices compact `svc` field. */
