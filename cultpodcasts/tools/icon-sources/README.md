@@ -27,16 +27,19 @@ flowchart LR
 | `play-suisse-icon.svg` | Play Suisse `ps-icon-with-srg.svg` chevron + plus on the live red tile |
 | `hbo-max-logo.svg` | HBO Max brand portal 1-color stacked logo (`HBO_Max_Vert_W_RGB.svg`) |
 | `abc-iview-logo.svg` | `ABCIviewLogo` masthead SVG on `https://iview.abc.net.au/`, as served. `abcIviewIcon()` lays the lissajous (paths 7–8) over the `iview` wordmark (paths 0–6) in white on the `#2FB7B6` teal of the live apple-touch icon (`/images/touchicon.png`), using the named `ABC_IVIEW_LAYOUT` transforms |
+| `cbc-gem-logo.svg` | Header logo SVG (`<a aria-label="Home">`, viewBox `0 0 292 72`) on `https://gem.cbc.ca/`, as served. `cbcGemIcon()` draws the gem (path 0) in white, centred at 58.8% of the tile, on the `#E60505` red of the live app icon (`/android-chrome-512x512.png`), using `CBC_GEM_LAYOUT` |
 
 Sources whose viewBox is already `0 0 24 24` (HBO Max) are clipped in a `<g>`;
 other viewBoxes keep a nested `<svg>` so slice mapping stays correct.
 
-Refresh Channel 4 / Vimeo / Play Suisse / ABC iview by re-downloading the
+Refresh Channel 4 / Vimeo / Play Suisse / ABC iview / CBC Gem by re-downloading the
 storefront SVG, keeping geometry, then regenerating. ABC iview: copy the
 `<svg data-component="ABCIviewLogo">` element from the iview home page; if its
 path order or bounds change, update `ABC_IVIEW_LAYOUT` (its comment gives the
 formula). Do not go back to a `<text>` wordmark on black, which rendered as
-unreadable "iview" text.
+unreadable "iview" text. CBC Gem: copy the `viewBox="0 0 292 72"` header `<svg>`
+from the Gem home page; if the gem path's bounds change, update `CBC_GEM_LAYOUT`.
+Do not go back to the placeholder `GEM` `<text>` tile.
 
 ## Official PNG (no colourful SVG)
 
