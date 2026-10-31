@@ -129,10 +129,17 @@ describe('service ids', () => {
     expect(catalogueParentChanges(withIds, catalogueParentEditModel(withIds), false)).toEqual({});
   });
 
-  it('sends a set channel id on an outlet with no ids', () => {
-    const model = catalogueParentEditModel(outlet);
-    model.youTubeChannelId = ' UCbbbbbbbbbbbbbbbbbbbbbb ';
-    expect(catalogueParentChanges(outlet, model, false)).toEqual({ youTubeChannelId: 'UCbbbbbbbbbbbbbbbbbbbbbb' });
+  it('keeps the read-only channel id on the model but never sends it, set, changed or blanked', () => {
+    expect(catalogueParentEditModel(withIds).youTubeChannelId).toBe('UCaaaaaaaaaaaaaaaaaaaaaa');
+    const set = catalogueParentEditModel(outlet);
+    set.youTubeChannelId = 'UCbbbbbbbbbbbbbbbbbbbbbb';
+    expect(catalogueParentChanges(outlet, set, false)).toEqual({});
+    const changed = catalogueParentEditModel(withIds);
+    changed.youTubeChannelId = 'UCbbbbbbbbbbbbbbbbbbbbbb';
+    expect(catalogueParentChanges(withIds, changed, true)).toEqual({});
+    const blanked = catalogueParentEditModel(withIds);
+    blanked.youTubeChannelId = '';
+    expect(catalogueParentChanges(withIds, blanked, false)).toEqual({});
   });
 
   it('sends changed ids and "" for cleared string ids', () => {

@@ -32,11 +32,10 @@
                     }
                 </mat-form-field>
                 @let channelIgnored = youTubePlaylistReplacesChannel(m.youTubePlaylistId);
-                <mat-form-field class="full-width">
+                <mat-form-field class="full-width" [class.channel-ignored]="channelIgnored">
                     <mat-label>YouTube Id</mat-label>
-                    <input type="text" name="youTubeChannelId" placeholder="UC…" [(ngModel)]="m.youTubeChannelId"
-                        [disabled]="channelIgnored"
-                        [attr.aria-describedby]="channelIgnored ? 'youtube-channel-ignored' : null" matInput>
+                    <input type="text" name="youTubeChannelId" [value]="m.youTubeChannelId" readonly matInput
+                        [attr.aria-describedby]="channelIgnored ? 'youtube-channel-ignored' : null">
                     @if (channelIgnored) {
                     <mat-hint id="youtube-channel-ignored">{{ youTubeChannelIgnoredHint }}</mat-hint>
                     }
