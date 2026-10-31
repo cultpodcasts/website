@@ -66,10 +66,12 @@ import { AttachTrailerDialogClose, AttachTrailerDialogData } from '../episode-tr
 import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { MoveEpisodeToTvShowDialogClose, MoveEpisodeToTvShowDialogData } from '../episode-tv-show-move.interface';
+import { SELECT_REORDER } from '../select-reorder';
 
 @Component({
   selector: 'app-edit-episode-dialog',
   imports: [
+    SELECT_REORDER,
     MatDialogModule,
     MatProgressSpinnerModule,
     MatButtonModule,

@@ -305,6 +305,86 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 	});
 });
 
+test.describe("reorder selected subjects and guests", () => {
+	test("drag a selected subject by its right-hand handle and Alt+Arrow a guest; the PATCH sends only the new orders", async ({ page }) => {
+		const sink: { body?: unknown } = {};
+		await fakeLookups(page);
+		await fakePlayable(page, `newsreport/${reportId}`, {
+			...report,
+			subjects: ["Politics", "Sport", "Arts"],
+			guests: ["Ann Example", "Bob Sample"]
+		}, sink);
+		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
+		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
+
+		await dialog.getByRole("tab", { name: "Meta" }).click();
+		await dialog.getByRole("combobox", { name: "Subjects" }).click();
+		const listbox = page.getByRole("listbox");
+		const options = listbox.getByRole("option");
+		await expect(options.nth(0)).toHaveText("Politics");
+		await expect(options.nth(2)).toHaveText("Arts");
+
+		// Only the three selected options get a handle, and it sits on the right of the row.
+		const handles = listbox.locator("app-select-reorder-handle");
+		await expect(handles).toHaveCount(3);
+		const arts = listbox.getByRole("option", { name: "Arts" });
+		const handle = arts.locator("app-select-reorder-handle");
+		const optionBox = (await arts.boundingBox())!;
+		const handleBox = (await handle.boundingBox())!;
+		expect(handleBox.x).toBeGreaterThan(optionBox.x + optionBox.width / 2);
+
+		// Drag Arts from its handle to the top.
+		// (The outlet default, Politics, is also listed again in the hoisted group, so scope to the selected group.)
+		const target = (await listbox.locator(".select-reorder-list").getByRole("option", { name: "Politics" }).boundingBox())!;
+		await handle.hover();
+		await page.mouse.down();
+		const startX = handleBox.x + handleBox.width / 2;
+		const startY = handleBox.y + handleBox.height / 2;
+		await page.mouse.move(startX, startY - 6, { steps: 3 });
+		await page.mouse.move(startX, target.y + 4, { steps: 12 });
+		await page.mouse.up();
+		await shot(page, "reorder-subjects-dragged");
+
+		await expect(options.nth(0)).toHaveText("Arts");
+		await expect(options.nth(1)).toHaveText("Politics");
+		await expect(options.nth(2)).toHaveText("Sport");
+		// The drag neither toggled the option nor closed the panel.
+		await expect(listbox).toBeVisible();
+		await expect(arts).toHaveAttribute("aria-selected", "true");
+
+		// A plain click on the handle does not toggle the option either.
+		await arts.locator("app-select-reorder-handle").click();
+		await expect(arts).toHaveAttribute("aria-selected", "true");
+		await expect(listbox).toBeVisible();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+
+		// Keyboard: the panel opens with the first selected guest active; Alt+ArrowDown moves it down.
+		await dialog.getByRole("tab", { name: "Guests" }).click();
+		await dialog.getByRole("combobox", { name: "Guests" }).click();
+		const guestOptions = page.getByRole("listbox").getByRole("option");
+		await expect(guestOptions.nth(0)).toHaveText("Ann Example");
+		await page.keyboard.press("Alt+ArrowDown");
+		await expect(guestOptions.nth(0)).toHaveText("Bob Sample");
+		await expect(guestOptions.nth(1)).toHaveText("Ann Example");
+		await expect(page.getByRole("listbox")).toBeVisible();
+		await expect(page.locator(".cdk-live-announcer-element")).toHaveText("Ann Example moved to position 2 of 2");
+		await shot(page, "reorder-guests-keyboard");
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+
+		await dialog.getByRole("button", { name: "Submit" }).click();
+		await expect.poll(() => sink.body).toEqual({
+			subjects: ["Arts", "Politics", "Sport"],
+			guests: ["Bob Sample", "Ann Example"]
+		});
+	});
+});
+
 test.describe("film curator edit", () => {
 	const filmShort = guids.toCatalogueShortId(filmId, "Film");
 	const filmPath = `/film/${encodeURIComponent("One Off")}/${filmShort}`;
