@@ -5,8 +5,10 @@ import { moveItemInArray } from '@angular/cdk/drag-drop';
  *
  * `visible` is the selected values in the order the reorderable options are shown. It can be a subset of
  * `values` (for example a stored subject that is no longer in the subject list is still saved but has no
- * option), so the move maps the visible indices onto the value indices and then uses `moveItemInArray`
- * on a copy of the value. Values without an option keep their place relative to each other.
+ * option). Values without an option keep their absolute slots in the value; only the slots of the shown
+ * values are permuted, with `moveItemInArray` applied to the shown order. So a move can never promote a
+ * hidden value to first place: `['a', 'gone', 'b', 'c']` with `a` moved down one gives
+ * `['b', 'gone', 'a', 'c']`.
  *
  * Returns null when nothing would change.
  */
@@ -20,12 +22,17 @@ export function moveSelectedValue(
     return null;
   }
   const next = [...(values ?? [])];
-  const fromIndex = next.indexOf(visible[from]);
-  const toIndex = next.indexOf(visible[to]);
-  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+  const slots = visible.map(value => next.indexOf(value));
+  if (slots.some(slot => slot < 0) || new Set(slots).size !== slots.length) {
     return null;
   }
-  moveItemInArray(next, fromIndex, toIndex);
+  const order = [...visible];
+  moveItemInArray(order, from, to);
+  // Shown values are in value order (regroup keeps it), but sort the slots so the mapping holds anyway.
+  const sortedSlots = [...slots].sort((x, y) => x - y);
+  sortedSlots.forEach((slot, i) => {
+    next[slot] = order[i];
+  });
   return next;
 }
 
