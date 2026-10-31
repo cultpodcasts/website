@@ -136,14 +136,19 @@ export function isValidAppleIdText(text: string): boolean {
   return trimmed === "" || appleIdPattern.test(trimmed);
 }
 
-/** A date-time with no `Z` / `±hh:mm` designator (the API's DateTimes are UTC, so read it as UTC, not browser-local). */
+/** Strict `yyyy-MM-ddTHH:mm[:ss[.fff]]` with no `Z` / `±hh:mm`; only string input in exactly this form gets a `Z` appended. */
 const zonelessDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
 
 /**
- * `yyyy-MM-dd` (UTC) for a playlist history `replacedAt`. The API sends ISO text, but `JsonDateInterceptor`
- * has already turned it into a `Date` by the time the dialog renders, so accept either. Every input is parsed
- * to a `Date` and formatted in UTC: offset strings convert to their UTC date, and zone-less date-times are read
- * as UTC. Never throws: an unreadable value shows as "" rather than breaking the rest of the dialog.
+ * `yyyy-MM-dd` (UTC) for a playlist history `replacedAt`. The API sends ISO text ending in `Z`, and
+ * `JsonDateInterceptor` has already turned it into a `Date` by the time the dialog renders, so accept either:
+ * - `Date`: formatted as its UTC date. Note that the interceptor parses zone-less API values
+ *   (`...THH:mm:ss` without `Z`) as browser-local before they reach here, so those arrive on this branch.
+ * - ISO string with `Z` or `±hh:mm`: converted to its UTC date.
+ * - String in the strict zone-less `T` form above (string input only): read as UTC by appending `Z`.
+ * - Any other string (e.g. space-separated `yyyy-MM-dd HH:mm:ss`) is passed to `new Date()` as-is, which
+ *   may parse it as local time.
+ * Never throws: an invalid Date, unreadable text, null or undefined shows as "" rather than breaking the dialog.
  */
 export function historyDateText(value: Date | string | null | undefined): string {
   let date: Date | null = null;
