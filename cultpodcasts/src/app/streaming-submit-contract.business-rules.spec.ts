@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	STREAMING_SUBMIT_CONTRACT_COPY_FROM,
+	STREAM_META_KV_PREFIX,
 	defaultBrowserRenderingServices,
 	htmlFetchModeForService,
+	prefetchedMetaFields,
 	prepareUrlRewrites,
 	resolvePrepareFetchUrl,
 	resolveScrapeProfile,
@@ -26,6 +28,11 @@ describe("streaming-submit-contract (website consumer)", () => {
 		expect(STREAMING_SUBMIT_CONTRACT_COPY_FROM).toBe(
 			"Api/tests/fixtures/streaming-submit-contract.ts"
 		);
+	});
+
+	it("carries madeAsFilm in Worker prefetchedMeta (contract v2)", () => {
+		expect(prefetchedMetaFields).toContain("madeAsFilm");
+		expect(STREAM_META_KV_PREFIX).toBe("stream-meta:v2:");
 	});
 
 	it("exposes lookup fakes for every specimen streaming URL", () => {
