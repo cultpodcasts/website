@@ -315,37 +315,42 @@ test.describe("news and TV hub menu", () => {
 		await expect(page.getByText("News Outlet updated")).toBeVisible();
 	});
 
-	test("Edit News Outlet still renders when the outlet has previous playlist ids (dates arrive as Date objects)", async ({ page }) => {
-		await signInAs(page, ["Curator"]);
-		await page.route("**/newsorganisation/Desk", (route) =>
-			route.fulfill({
-				status: 200,
-				contentType: "application/json",
-				body: JSON.stringify({
-					id: outletId,
-					name: "Desk",
-					publisher: "Desk Media",
-					youTubePlaylistId: "PLsyntheticplaylistnew000000000000",
-					youTubePlaylistIdHistory: [{ id: "PLsyntheticplaylistold000000000000", replacedAt: "2026-10-30T23:45:12.345Z" }]
-				})
-			}));
-		await page.route("**/subjects", (route) =>
-			route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ name: "Politics" }]) }));
-		await page.route("**/languages", (route) =>
-			route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ en: "English" }) }));
-		const pageErrors: string[] = [];
-		page.on("pageerror", (error) => pageErrors.push(error.message));
-		await page.goto(`/news/${encodeURIComponent("Desk")}`);
-		await expect(page.getByText("Bulletin")).toBeVisible();
-		await (await openHubMenu(page)).getByRole("menuitem", { name: /Edit News Outlet/ }).click();
-		const dialog = page.locator("mat-dialog-container");
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta", "Regexs"]);
-		await expect(dialog.getByLabel("YouTube Playlist Id")).toHaveValue("PLsyntheticplaylistnew000000000000");
-		await expect(dialog.getByText("PLsyntheticplaylistold000000000000 (2026-10-30)")).toBeVisible();
-		await expect(dialog.getByLabel("YouTube Publication Delay")).toBeVisible();
-		await expect(dialog.getByRole("button", { name: "Save" })).toBeVisible();
-		// The bug threw "old.replacedAt.slice is not a function" while rendering the Details tab.
-		expect(pageErrors.filter((message) => /replacedAt|slice is not a function/.test(message))).toEqual([]);
+	test.describe("history dates in a timezone ahead of UTC", () => {
+		// UTC+14: 2026-10-30T23:45:12Z is 31 Oct locally, so local-date formatting would show (2026-10-31) and fail.
+		test.use({ timezoneId: "Pacific/Kiritimati" });
+
+		test("Edit News Outlet still renders when the outlet has previous playlist ids (dates arrive as Date objects)", async ({ page }) => {
+			await signInAs(page, ["Curator"]);
+			await page.route("**/newsorganisation/Desk", (route) =>
+				route.fulfill({
+					status: 200,
+					contentType: "application/json",
+					body: JSON.stringify({
+						id: outletId,
+						name: "Desk",
+						publisher: "Desk Media",
+						youTubePlaylistId: "PLsyntheticplaylistnew000000000000",
+						youTubePlaylistIdHistory: [{ id: "PLsyntheticplaylistold000000000000", replacedAt: "2026-10-30T23:45:12.345Z" }]
+					})
+				}));
+			await page.route("**/subjects", (route) =>
+				route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ name: "Politics" }]) }));
+			await page.route("**/languages", (route) =>
+				route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ en: "English" }) }));
+			const pageErrors: string[] = [];
+			page.on("pageerror", (error) => pageErrors.push(error.message));
+			await page.goto(`/news/${encodeURIComponent("Desk")}`);
+			await expect(page.getByText("Bulletin")).toBeVisible();
+			await (await openHubMenu(page)).getByRole("menuitem", { name: /Edit News Outlet/ }).click();
+			const dialog = page.locator("mat-dialog-container");
+			await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Subjects", "Social", "Meta", "Regexs"]);
+			await expect(dialog.getByLabel("YouTube Playlist Id")).toHaveValue("PLsyntheticplaylistnew000000000000");
+			await expect(dialog.getByText("PLsyntheticplaylistold000000000000 (2026-10-30)")).toBeVisible();
+			await expect(dialog.getByLabel("YouTube Publication Delay")).toBeVisible();
+			await expect(dialog.getByRole("button", { name: "Save" })).toBeVisible();
+			// The bug threw "old.replacedAt.slice is not a function" while rendering the Details tab.
+			expect(pageErrors.filter((message) => /replacedAt|slice is not a function/.test(message))).toEqual([]);
+		});
 	});
 });
 

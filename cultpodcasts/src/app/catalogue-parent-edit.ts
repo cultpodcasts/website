@@ -136,16 +136,24 @@ export function isValidAppleIdText(text: string): boolean {
   return trimmed === "" || appleIdPattern.test(trimmed);
 }
 
+/** A date-time with no `Z` / `±hh:mm` designator (the API's DateTimes are UTC, so read it as UTC, not browser-local). */
+const zonelessDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
+
 /**
  * `yyyy-MM-dd` (UTC) for a playlist history `replacedAt`. The API sends ISO text, but `JsonDateInterceptor`
- * has already turned it into a `Date` by the time the dialog renders, so accept either. Never throws:
- * an unreadable value shows as "" rather than breaking the rest of the dialog.
+ * has already turned it into a `Date` by the time the dialog renders, so accept either. Every input is parsed
+ * to a `Date` and formatted in UTC: offset strings convert to their UTC date, and zone-less date-times are read
+ * as UTC. Never throws: an unreadable value shows as "" rather than breaking the rest of the dialog.
  */
 export function historyDateText(value: Date | string | null | undefined): string {
+  let date: Date | null = null;
   if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? "" : value.toISOString().slice(0, 10);
+    date = value;
+  } else if (typeof value === "string") {
+    const text = value.trim();
+    date = new Date(zonelessDateTime.test(text) ? `${text}Z` : text);
   }
-  return typeof value === "string" ? value.slice(0, 10) : "";
+  return date === null || Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 }
 
 export function listToText(values: string[] | null | undefined): string {

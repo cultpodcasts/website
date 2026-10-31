@@ -280,8 +280,24 @@ describe('historyDateText (playlist id history)', () => {
     expect(historyDateText('2026-01-02T03:04:05Z')).toBe('2026-01-02');
   });
 
-  it('never throws: an invalid Date, null or undefined shows as ""', () => {
+  it('converts an offset string to its UTC date, not the offset-local date', () => {
+    // 23:45 at +01:00 is 22:45Z the same day; 23:30 at -02:00 is 01:30Z the next day.
+    expect(historyDateText('2026-10-30T23:45:12+01:00')).toBe('2026-10-30');
+    expect(historyDateText('2026-10-30T23:30:00-02:00')).toBe('2026-10-31');
+    // 00:30 at +01:00 is 23:30Z the previous day.
+    expect(historyDateText('2026-10-31T00:30:00+01:00')).toBe('2026-10-30');
+  });
+
+  it('reads a zone-less date-time as UTC, whatever the runner timezone', () => {
+    expect(historyDateText('2026-10-30T23:45:12')).toBe('2026-10-30');
+    expect(historyDateText('2026-10-31T00:15:00.5')).toBe('2026-10-31');
+    expect(historyDateText('2026-10-30')).toBe('2026-10-30');
+  });
+
+  it('never throws: an invalid Date, unparseable text, null or undefined shows as ""', () => {
     expect(historyDateText(new Date('not a date'))).toBe('');
+    expect(historyDateText('not a date')).toBe('');
+    expect(historyDateText('')).toBe('');
     expect(historyDateText(null)).toBe('');
     expect(historyDateText(undefined)).toBe('');
   });
