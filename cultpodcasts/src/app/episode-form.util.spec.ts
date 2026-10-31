@@ -268,6 +268,19 @@ describe('episode-form.util', () => {
     expect(merged.allSubjects).toContain('default-subject');
   });
 
+  it('regroupSubjects and regroupGuests keep the selected (reordered) value order, even while filtering', () => {
+    const subjects = regroupSubjects(['news', 'cult', 'comedy'], ['cult', 'comedy', 'news', 'default'], 'default', [], 'zzz');
+    expect(subjects.selectedSubjects).toEqual(['news', 'cult', 'comedy']);
+    const guests = regroupGuests(
+      [{ id: 'a', name: 'Alice' }, { id: 'b', name: 'Bob' }, { id: 'c', name: 'Cy' }],
+      undefined,
+      ['Cy', 'Alice'],
+      'bo'
+    );
+    expect(guests.selectedGuests.map(x => x.name)).toEqual(['Cy', 'Alice']);
+    expect(guests.otherPeople.map(x => x.name)).toEqual(['Bob']);
+  });
+
   it('regroupSubjects hoists default and selected, filters others by term', () => {
     const withFilter = regroupSubjects(
       ['cult'],
@@ -302,6 +315,15 @@ describe('episode-form.util', () => {
       expect(getEpisodeChanges(prev, now)).toEqual({
         title: 'New',
         description: 'New desc'
+      });
+    });
+
+    it('sends a subjects or guests reorder on its own as a change, in the new order', () => {
+      const prev = baseEpisode({ subjects: ['cult', 'comedy', 'news'], guests: ['Alice', 'Bob'] });
+      const now = baseEpisode({ subjects: ['news', 'cult', 'comedy'], guests: ['Bob', 'Alice'] });
+      expect(getEpisodeChanges(prev, now)).toEqual({
+        subjects: ['news', 'cult', 'comedy'],
+        guests: ['Bob', 'Alice']
       });
     });
 

@@ -40,6 +40,7 @@ import { Person } from '../person.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
 import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tmdbMovieUrl, tvdbEpisodeUrl } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
+import { SELECT_REORDER } from '../select-reorder';
 
 /** Filled parent-show identity ids after an immediate TV-show PATCH from episode Look up. */
 export interface ParentIdentityFilled {
@@ -59,6 +60,7 @@ export interface ParentIdentityFilled {
 @Component({
   selector: 'app-playable-edit-fields',
   imports: [
+    SELECT_REORDER,
     ReactiveFormsModule,
     KeyValuePipe,
     CdkTextareaAutosize,

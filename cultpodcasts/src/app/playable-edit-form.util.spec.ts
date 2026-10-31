@@ -46,6 +46,17 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({});
   });
 
+  it('sends a subjects or guests reorder on its own as a change, in the new order', () => {
+    const dto = report({ subjects: ['Politics', 'Cults', 'Media'], guests: ['Ann Example', 'Bo Example'] });
+    const form = buildPlayableEditForm(dto);
+    form.controls.subjects.setValue(['Media', 'Politics', 'Cults']);
+    form.controls.guests.setValue(['Bo Example', 'Ann Example']);
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({
+      subjects: ['Media', 'Politics', 'Cults'],
+      guests: ['Bo Example', 'Ann Example']
+    });
+  });
+
   it('sends only the changed fields in the PATCH wire shape', () => {
     const dto = report();
     const form = buildPlayableEditForm(dto);
