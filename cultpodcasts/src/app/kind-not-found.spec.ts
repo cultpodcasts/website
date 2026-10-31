@@ -13,7 +13,7 @@ import { NewsReportComponent } from './news-report/news-report.component';
 
 const id = '00112233-4455-4677-8899-aabbccddeeff';
 
-async function renderMissing(component: Type<unknown>): Promise<string> {
+async function renderMissingPage(component: Type<unknown>): Promise<HTMLElement> {
   const params = { slug: 'Synthetic', query: 'synthetic-short-id' };
   await TestBed.configureTestingModule({
     imports: [component],
@@ -34,12 +34,24 @@ async function renderMissing(component: Type<unknown>): Promise<string> {
   await fixture.whenStable();
   await new Promise(resolve => setTimeout(resolve));
   fixture.detectChanges();
-  return (fixture.nativeElement as HTMLElement).querySelector('.browse-empty h2')?.textContent?.trim() ?? '';
+  return fixture.nativeElement as HTMLElement;
+}
+
+async function renderMissing(component: Type<unknown>): Promise<string> {
+  const page = await renderMissingPage(component);
+  return page.querySelector('.browse-empty h2')?.textContent?.trim() ?? '';
 }
 
 describe('kind-specific not-found text', () => {
   it('a missing film says Film not found', async () => {
     expect(await renderMissing(FilmPageComponent)).toBe('Film not found.');
+  });
+
+  it('a missing film links to film search, because a film has no parent hub to try', async () => {
+    const page = await renderMissingPage(FilmPageComponent);
+    const link = page.querySelector<HTMLAnchorElement>('.browse-empty #cta-button a');
+    expect(link?.textContent?.trim()).toBe('Search films');
+    expect(link?.getAttribute('href')).toBe('/search/*#kind=Film');
   });
 
   it('a missing TV show episode says TV episode not found', async () => {
