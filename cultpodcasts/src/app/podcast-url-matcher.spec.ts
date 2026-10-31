@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cbcGemAppSegments,
   classifySubmittablePodcastUrl,
   extractUrlFromDataTransfer,
   isSubmittablePodcastUrl,
@@ -94,7 +95,9 @@ describe('podcast-url-matcher', () => {
       'https://gem.cbc.ca/example-slug',
       'https://gem.cbc.ca/example-slug?autoplay=1',
       'https://www.gem.cbc.ca/example-slug/',
-      'https://gem.cbc.ca/example-show/s01e01'
+      'https://gem.cbc.ca/example-show/s01e01',
+      'https://gem.cbc.ca/media/example-slug',
+      'https://gem.cbc.ca/media/example-show/s01e01?autoplay=1'
     ];
 
     for (const url of accepted) {
@@ -159,11 +162,26 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('https://gem.cbc.ca/example-show/s01')).toBe(false);
     expect(isSubmittablePodcastUrl('https://gem.cbc.ca/example-show/s01e01/extra')).toBe(false);
     expect(isSubmittablePodcastUrl('https://gem.cbc.ca.example.test/example-slug')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/media')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/media/example-show/s01')).toBe(false);
+    expect(isSubmittablePodcastUrl('https://gem.cbc.ca/media/example-show/s01e01/extra')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/info/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/clips')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.rts.ch/play/tv/example-show/video')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.playsuisse.ch/')).toBe(false);
     expect(isSubmittablePodcastUrl('')).toBe(false);
+  });
+
+  it('rejects every CBC Gem app-shell segment, bare and behind /media/, while slugs that merely start with one still match', () => {
+    expect(cbcGemAppSegments.length).toBeGreaterThan(0);
+    for (const segment of cbcGemAppSegments) {
+      expect(segment, 'segments are joined into the regex unescaped').toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+      expect(isSubmittablePodcastUrl(`https://gem.cbc.ca/${segment}`), segment).toBe(false);
+      expect(isSubmittablePodcastUrl(`https://gem.cbc.ca/${segment}/`), segment).toBe(false);
+      expect(isSubmittablePodcastUrl(`https://gem.cbc.ca/${segment}?q=example`), segment).toBe(false);
+      expect(isSubmittablePodcastUrl(`https://gem.cbc.ca/media/${segment}`), segment).toBe(false);
+      expect(isSubmittablePodcastUrl(`https://gem.cbc.ca/${segment}-example`), segment).toBe(true);
+    }
   });
 
   it('classifies Spotify/Apple/YouTube as podcast-service and BBC/Archive/Vimeo/Netflix/Prime as streaming', () => {

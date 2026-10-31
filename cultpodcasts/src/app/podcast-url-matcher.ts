@@ -26,8 +26,28 @@ const zdf = /^(?:https?:)?\/\/(?:www\.)?zdf\.de\/(?:(?:video|play)\/)?[a-z0-9\-]
 const ard = /^(?:https?:)?\/\/(?:www\.)?ardmediathek\.de\/(?:video(?:\/[^/\s?#]+){1,4}|serie\/[^/\s?#]+(?:\/[^/\s?#]+)+|sendung\/[^/\s?#]+\/[^/\s?#]+)\/?(?:[?#]|$)/;
 const canalPlus = /^(?:https?:)?\/\/(?:www\.)?canalplus\.com\/(?:[a-z]{2}\/)?(?:series|cinema|documentaires|emissions|sport|kids|films?)\/[^/\s?#]+\/h\/\d+(?:_\d+)?(?:\/[^/\s?#]+)*\/?(?:[?#]|$)/;
 const abcIview = /^(?:https?:)?\/\/(?:www\.)?iview\.abc\.net\.au\/(?:video|show)\/[^/\s?#]+\/?(?:[?#]|$)/;
-/** CBC Gem: /{slug} (film or series hub) or /{slug}/s{NN}e{NN} (episode); app shells excluded (mirrors RPP CbcGemUrlMatcher). */
-const cbcGem = /^(?:https?:)?\/\/(?:www\.)?gem\.cbc\.ca\/(?!(?:live|categor(?:y|ies)|sections?|collections?|browse|search|account|settings|login|logout|signin|signup|subscribe|premium|my-?list|schedule|faq|help|about|terms|privacy|movies|shows|kids|news|media|player|watch)(?:[/?#]|$))[a-z0-9]+(?:-[a-z0-9]+)*(?:\/s\d{1,3}e\d{1,4})?\/?(?:[?#]|$)/i;
+/**
+ * CBC Gem app-shell first segments that are never catalogue slugs.
+ * Keep in sync with RPP `CbcGemUrlMatcher.NonCatalogueSegments`
+ * (Class-Libraries/RedditPodcastPoster.CbcGem/Matching/CbcGemUrlMatcher.cs).
+ * Plain lower-case slugs only (they are joined into the regex unescaped; a spec enforces this).
+ */
+export const cbcGemAppSegments: readonly string[] = [
+  'live', 'category', 'categories', 'section', 'sections', 'collection', 'collections',
+  'browse', 'search', 'account', 'settings', 'login', 'logout', 'signin', 'signup',
+  'subscribe', 'premium', 'my-list', 'mylist', 'schedule', 'faq', 'help', 'about',
+  'terms', 'privacy', 'movies', 'shows', 'kids', 'news', 'media', 'player', 'watch'
+];
+/**
+ * CBC Gem: /{slug} (film or series hub) or /{slug}/s{NN}e{NN} (episode), optionally behind the legacy
+ * /media/ prefix (CBC redirects /media/{slug}[/sNNeNN] to the bare form; RPP normalises it). App shells excluded.
+ */
+const cbcGem = new RegExp(
+  '^(?:https?:)?\\/\\/(?:www\\.)?gem\\.cbc\\.ca\\/(?:media\\/)?' +
+  `(?!(?:${cbcGemAppSegments.join('|')})(?:[/?#]|$))` +
+  '[a-z0-9]+(?:-[a-z0-9]+)*(?:\\/s\\d{1,3}e\\d{1,4})?\\/?(?:[?#]|$)',
+  'i'
+);
 
 export type SubmittablePodcastUrlKind = 'podcast-service' | 'streaming';
 
