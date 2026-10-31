@@ -45,7 +45,11 @@ export function isValidNumericIdText(text: string): boolean {
   return digitsPattern.test(text.trim());
 }
 
-/** String service ids: "" clears, like the podcast edit API. `appleId` is numeric and handled on its own. */
+/**
+ * String service ids loaded into the form model. `youTubeChannelId` is display-only and is never sent on save (see
+ * `catalogueParentEditableServiceIdFields`); for the others "" clears, like the podcast edit API. `appleId` is numeric
+ * and handled on its own.
+ */
 export const catalogueParentServiceIdFields = ["youTubeChannelId", "youTubePlaylistId", "spotifyId"] as const;
 
 /**
