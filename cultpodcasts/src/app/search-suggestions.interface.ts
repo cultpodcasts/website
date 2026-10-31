@@ -19,7 +19,7 @@ export interface SuggestionIndexEntry {
 }
 
 export interface SuggestionsCorpus {
-  generatedAtUtc: string;
+  generatedAtUtc: Date;
   entries: SuggestionIndexEntry[];
 }
 

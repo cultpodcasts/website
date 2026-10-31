@@ -7,7 +7,7 @@ import { DiscoverySubmissionDetail } from './discovery-supervision.models';
 
 function detail(overrides: Partial<DiscoverySubmissionDetail> = {}): DiscoverySubmissionDetail {
   return {
-    id: 's1', status: 'Pending', etag: 'e1', canReview: true, submitterSubject: 'ai', submittedAt: '2026-10-11T10:00:00Z',
+    id: 's1', status: 'Pending', etag: 'e1', canReview: true, submitterSubject: 'ai', submittedAt: new Date('2026-10-11T10:00:00Z'),
     submitterAcceptedResultIds: ['a', 'b'], itemComments: [], reports: [], history: [], ...overrides
   };
 }
@@ -61,7 +61,7 @@ describe('discovery supervision helpers', () => {
   });
 
   it('blocks every supervisor action while Applying ', () => {
-    const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: '2026-10-11T10:00:00Z',
+    const applying = detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date('2026-10-11T10:00:00Z'),
       itemOutcomes: [{ resultId: 'a', state: 'Failed', attempts: 1 }] });
     expect(canEditReview(applying)).toBe(false);
     expect(canRetry(applying)).toBe(false);

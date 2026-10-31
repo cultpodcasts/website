@@ -1,7 +1,7 @@
 export interface DiscoverySessionVote {
   userId: string;
   role: string;
-  at: string;
+  at: Date;
 }
 
 export interface DiscoveryCurationSessionSnapshot {
@@ -12,7 +12,8 @@ export interface DiscoveryCurationSessionSnapshot {
     string,
     { votes: DiscoverySessionVote[]; rev: number; provisional: boolean }
   >;
-  presence: Record<string, string>;
+  /** userId → last seen. */
+  presence: Record<string, Date>;
   rev: number;
-  updatedAt: string;
+  updatedAt: Date;
 }

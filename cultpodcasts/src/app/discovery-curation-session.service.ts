@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 import { AuthServiceWrapper } from './auth-service-wrapper.class';
 import { DISCOVERY_SUBMIT_SCOPE } from './discovery-supervision/discovery-supervision';
 import { DiscoveryCurationSessionSnapshot } from './discovery-curation-session.interface';
+import { convertJsonDates } from './json-date.interceptor';
 
 /** Cap for WS reconnect delay (ms). */
 const RECONNECT_DELAY_CAP_MS = 30_000;
@@ -170,7 +171,8 @@ export class DiscoveryCurationSessionService implements OnDestroy {
         try {
           const msg = JSON.parse(String(ev.data)) as { type?: string; state?: DiscoveryCurationSessionSnapshot };
           if (msg.state) {
-            this.snapshot.set(msg.state);
+            // WebSocket frames skip JsonDateInterceptor; give them the same Dates as the HTTP snapshot.
+            this.snapshot.set(convertJsonDates(msg.state));
           }
         } catch {
           /* ignore malformed frames */

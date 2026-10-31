@@ -18,6 +18,9 @@ export const KEEP_AS_TEXT_KEYS = new HttpContextToken<ReadonlySet<string>>(() =>
 /**
  * Turns ISO-8601 date-time strings in API responses into `Date` objects.
  *
+ * The same rules apply to JSON that does not come through `HttpClient` (the discovery curation WebSocket): use
+ * {@link convertJsonDates}.
+ *
  * - The API emits every date-time as a UTC instant ending in `Z`; an explicit offset (`+01:00`) is also read as
  *   that instant.
  * - A zone-less date-time (`yyyy-MM-ddTHH:mm:ss[.fff]`) is read as UTC (a `Z` is appended), never as
@@ -31,49 +34,58 @@ export const KEEP_AS_TEXT_KEYS = new HttpContextToken<ReadonlySet<string>>(() =>
 @Injectable()
 export class JsonDateInterceptor implements HttpInterceptor {
 
-  private readonly _isoDateFormat =
-    /^(?<base>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(?<fraction>\d+))?(?<zone>Z|[+-]\d{2}:\d{2})?$/;
-
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const keepAsText = req.context.get(KEEP_AS_TEXT_KEYS);
     return next.handle(req).pipe(map((val: HttpEvent<any>) => {
       if (val instanceof HttpResponse) {
-        this.convert(val.body, keepAsText);
+        convertJsonDates(val.body, keepAsText);
       }
       return val;
     }));
   }
 
   convert(body: any, keepAsText: ReadonlySet<string> = NO_KEYS) {
-    if (body === null || body === undefined || typeof body !== 'object') {
-      return body;
-    }
-    for (const key of Object.keys(body)) {
-      if (keepAsText.has(key)) {
-        continue;
-      }
-      const value = body[key];
-      const date = this.tryParse(value);
-      if (date) {
-        body[key] = date;
-      } else if (typeof value === 'object') {
-        this.convert(value, keepAsText);
-      }
-    }
+    return convertJsonDates(body, keepAsText);
+  }
+}
+
+const isoDateFormat =
+  /^(?<base>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(?<fraction>\d+))?(?<zone>Z|[+-]\d{2}:\d{2})?$/;
+
+/**
+ * In place, at any depth: ISO-8601 date-time strings become `Date` objects, by the {@link JsonDateInterceptor}
+ * rules. Keys in `keepAsText` stay as text. Returns `body`.
+ */
+export function convertJsonDates<T>(body: T, keepAsText: ReadonlySet<string> = NO_KEYS): T {
+  if (body === null || body === undefined || typeof body !== 'object') {
     return body;
   }
-
-  /** `Date` for an ISO date-time string (zone-less read as UTC), or `null` to leave the value unchanged. */
-  private tryParse(value: unknown): Date | null {
-    if (typeof value !== 'string') {
-      return null;
+  const record = body as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (keepAsText.has(key)) {
+      continue;
     }
-    const groups = this._isoDateFormat.exec(value)?.groups;
-    if (!groups) {
-      return null;
+    const value = record[key];
+    const date = tryParseIsoDateTime(value);
+    if (date) {
+      record[key] = date;
+    } else if (typeof value === 'object') {
+      convertJsonDates(value, keepAsText);
     }
-    const millis = (groups['fraction'] ?? '').padEnd(3, '0').slice(0, 3);
-    const date = new Date(`${groups['base']}.${millis}${groups['zone'] ?? 'Z'}`);
-    return isNaN(date.getTime()) ? null : date;
   }
+  return body;
+}
+
+/** `Date` for an ISO date-time string (zone-less read as UTC), or `null` to leave the value unchanged. */
+function tryParseIsoDateTime(value: unknown): Date | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const groups = isoDateFormat.exec(value)?.groups;
+  if (!groups) {
+    return null;
+  }
+  const millis = (groups['fraction'] ?? '').padEnd(3, '0').slice(0, 3);
+  const date = new Date(`${groups['base']}.${millis}${groups['zone'] ?? 'Z'}`);
+  return isNaN(date.getTime()) ? null : date;
 }

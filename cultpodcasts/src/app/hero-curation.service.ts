@@ -12,10 +12,21 @@ export class HeroCurationConflictError extends Error {
   }
 }
 
-interface HeroCurationUpdate {
+export interface HeroCurationUpdate {
   episodeIds?: string[];
   railSubjects?: string[];
+  expectedUpdatedAt?: Date | null;
+}
+
+/** PUT body: `expectedUpdatedAt` goes back as the UTC `Z` text the Worker compares (`toISOString()`). */
+export function toWireUpdate(update: HeroCurationUpdate): Omit<HeroCurationUpdate, 'expectedUpdatedAt'> & {
   expectedUpdatedAt?: string | null;
+} {
+  const { expectedUpdatedAt, ...rest } = update;
+  if (expectedUpdatedAt === undefined) {
+    return rest;
+  }
+  return { ...rest, expectedUpdatedAt: expectedUpdatedAt === null ? null : expectedUpdatedAt.toISOString() };
 }
 
 /**
@@ -43,11 +54,11 @@ export class HeroCurationService {
   }
 
   /** Manage-hero reorder / set ordered list. Prefer append/remove for single-id changes. */
-  setHeroCuration(episodeIds: string[], expectedUpdatedAt?: string | null): Promise<HeroCuration> {
+  setHeroCuration(episodeIds: string[], expectedUpdatedAt?: Date | null): Promise<HeroCuration> {
     return this.put({ episodeIds, expectedUpdatedAt });
   }
 
-  setRailSubjects(railSubjects: string[], expectedUpdatedAt?: string | null): Promise<HeroCuration> {
+  setRailSubjects(railSubjects: string[], expectedUpdatedAt?: Date | null): Promise<HeroCuration> {
     return this.put({ railSubjects, expectedUpdatedAt });
   }
 
@@ -68,7 +79,7 @@ export class HeroCurationService {
   async toggleEpisode(
     episodeId: string,
     currentIds: readonly string[],
-    _expectedUpdatedAt?: string | null
+    _expectedUpdatedAt?: Date | null
   ): Promise<HeroCuration> {
     if (currentIds.includes(episodeId)) {
       return this.removeEpisodes([episodeId]);
@@ -92,7 +103,7 @@ export class HeroCurationService {
   /** Partial update: the worker merges, so hero and rail picks don't clobber each other. */
   private put(update: HeroCurationUpdate): Promise<HeroCuration> {
     const url = new URL('/hero-curation', environment.api).toString();
-    return this.commandThenRead('PUT', url, update);
+    return this.commandThenRead('PUT', url, toWireUpdate(update));
   }
 
   private async readHeroCuration(bypassCache = false): Promise<HeroCuration> {

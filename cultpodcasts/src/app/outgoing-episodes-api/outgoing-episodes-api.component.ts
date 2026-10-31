@@ -101,7 +101,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   protected updatingSubjectName = signal<string | null>(null);
   protected addingGuest = signal<{ [episodeId: string]: string }>({});
   protected readonly curatedEpisodeIds = signal<string[]>([]);
-  protected readonly curatedUpdatedAt = signal<string | null>(null);
+  protected readonly curatedUpdatedAt = signal<Date | null>(null);
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);

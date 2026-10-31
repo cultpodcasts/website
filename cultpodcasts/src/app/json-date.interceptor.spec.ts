@@ -1,6 +1,6 @@
 import { HttpContext, HttpRequest, HttpResponse } from '@angular/common/http';
 import { firstValueFrom, of } from 'rxjs';
-import { JsonDateInterceptor, KEEP_AS_TEXT_KEYS } from './json-date.interceptor';
+import { JsonDateInterceptor, KEEP_AS_TEXT_KEYS, convertJsonDates } from './json-date.interceptor';
 
 describe('JsonDateInterceptor', () => {
   const interceptor = new JsonDateInterceptor();
@@ -77,5 +77,29 @@ describe('JsonDateInterceptor', () => {
     const body = { parent: { history: [{ id: 'x', replacedAt: '2026-01-02T03:04:05Z' }] } };
     interceptor.convert(body);
     expect(body.parent.history[0].replacedAt).toBeInstanceOf(Date);
+  });
+
+  describe('convertJsonDates (JSON outside HttpClient, e.g. WebSocket frames)', () => {
+    it('applies the same rules in place and returns the body', () => {
+      const body = { state: { updatedAt: '2026-10-31T10:00:00Z', presence: { u1: '2026-10-31T10:00:01.5Z' }, day: '2026-10-31' } };
+      const out = convertJsonDates(body);
+      expect(out).toBe(body);
+      const state = body.state as unknown as { updatedAt: Date; presence: Record<string, Date>; day: string };
+      expect(state.updatedAt.toISOString()).toBe('2026-10-31T10:00:00.000Z');
+      expect(state.presence['u1'].toISOString()).toBe('2026-10-31T10:00:01.500Z');
+      expect(state.day).toBe('2026-10-31');
+    });
+
+    it('honours keep-as-text keys', () => {
+      const body = { slotStartUk: '2026-10-31T09:00:00+00:00', slotStartUtc: '2026-10-31T09:00:00Z' };
+      convertJsonDates(body, new Set(['slotStartUk']));
+      expect(body.slotStartUk).toBe('2026-10-31T09:00:00+00:00');
+      expect(body.slotStartUtc).toBeInstanceOf(Date);
+    });
+
+    it('leaves non-objects alone', () => {
+      expect(convertJsonDates(null)).toBeNull();
+      expect(convertJsonDates('2026-10-31T10:00:00Z')).toBe('2026-10-31T10:00:00Z');
+    });
   });
 });
