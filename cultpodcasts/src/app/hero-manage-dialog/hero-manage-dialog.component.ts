@@ -12,13 +12,13 @@ import { displayCatalogName } from '../display-catalog-name';
 export interface HeroManageDialogData {
   curated: HomepageEpisode[];
   autofilled: HomepageEpisode[];
-  updatedAt: string | null;
+  updatedAt: Date | null;
 }
 
 export interface HeroManageDialogResult {
   saved: boolean;
   episodeIds?: string[];
-  updatedAt?: string | null;
+  updatedAt?: Date | null;
   conflict?: boolean;
 }
 
@@ -45,7 +45,7 @@ export class HeroManageDialogComponent {
   protected readonly error = signal(false);
   protected readonly conflict = signal(false);
   protected readonly displayCatalogName = displayCatalogName;
-  private readonly expectedUpdatedAt: string | null;
+  private readonly expectedUpdatedAt: Date | null;
 
   constructor(@Inject(MAT_DIALOG_DATA) data: HeroManageDialogData) {
     this.curated.set([...data.curated]);

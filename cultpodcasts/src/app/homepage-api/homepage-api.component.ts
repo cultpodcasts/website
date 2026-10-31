@@ -152,7 +152,7 @@ export class HomepageApiComponent {
    * mixed with pinned subject names (may include stale entries).
    */
   protected readonly curatedRailSubjects = signal<string[]>([]);
-  protected readonly curatedUpdatedAt = signal<string | null>(null);
+  protected readonly curatedUpdatedAt = signal<Date | null>(null);
 
   protected readonly displayCatalogName = displayCatalogName;
 

@@ -23,13 +23,13 @@ export interface RailsManageDialogData {
   episodeCounts: Record<string, number>;
   /** Episode count per relative day offset (0 = n). */
   dayEpisodeCounts: number[];
-  updatedAt: string | null;
+  updatedAt: Date | null;
 }
 
 export interface RailsManageDialogResult {
   saved: boolean;
   railSubjects?: string[];
-  updatedAt?: string | null;
+  updatedAt?: Date | null;
   conflict?: boolean;
 }
 
@@ -66,7 +66,7 @@ export class RailsManageDialogComponent {
   private readonly eligible: string[];
   private readonly episodeCounts: Record<string, number>;
   private readonly dayEpisodeCounts: number[];
-  private readonly expectedUpdatedAt: string | null;
+  private readonly expectedUpdatedAt: Date | null;
   protected readonly saving = signal(false);
   protected readonly error = signal(false);
   protected readonly conflict = signal(false);

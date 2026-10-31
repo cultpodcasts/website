@@ -24,7 +24,7 @@ describe('DiscoveryCurationSessionService', () => {
     votesByResultId: {},
     presence: {},
     rev: 1,
-    updatedAt: '2026-10-24T00:00:00Z',
+    updatedAt: new Date('2026-10-24T00:00:00Z'),
     ...overrides
   });
 
@@ -117,6 +117,32 @@ describe('DiscoveryCurationSessionService', () => {
     expect(url).toContain('access_token=test-access-token');
     expect(url).not.toMatch(/bearer/i);
     expect(service.connected()).toBe(true);
+  });
+
+  it('gives WebSocket snapshots the same Dates as the HTTP snapshot (#579)', async () => {
+    const connectPromise = service.connect();
+    (await nextRequest(sessionUrl())).flush(snap());
+    await connectPromise;
+    await Promise.resolve();
+
+    sockets[0].onmessage?.({
+      data: JSON.stringify({
+        type: 'state',
+        state: {
+          ...snap({ rev: 3 }),
+          updatedAt: '2026-10-31T10:00:00.123Z',
+          presence: { u1: '2026-10-31T10:00:01Z' },
+          votesByResultId: { r1: { votes: [{ userId: 'u1', role: 'Curator', at: '2026-10-31T09:59:59Z' }], rev: 1, provisional: false } }
+        }
+      })
+    });
+
+    const state = service.snapshot()!;
+    expect(state.rev).toBe(3);
+    expect(state.updatedAt).toBeInstanceOf(Date);
+    expect(state.updatedAt.toISOString()).toBe('2026-10-31T10:00:00.123Z');
+    expect(state.presence['u1']).toBeInstanceOf(Date);
+    expect(state.votesByResultId['r1'].votes[0].at.toISOString()).toBe('2026-10-31T09:59:59.000Z');
   });
 
   it('votes over WebSocket when OPEN, otherwise POSTs /session/vote', async () => {
