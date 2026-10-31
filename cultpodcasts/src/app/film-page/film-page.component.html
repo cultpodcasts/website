@@ -10,7 +10,10 @@
   }
   } @else {
   <section class="browse-empty">
-    <h2>Episode not found.</h2>
+    <h2>Film not found.</h2>
+    <div id="cta-button">
+      <a mat-flat-button color="primary" [routerLink]="['/search', '*']" fragment="kind=Film">Search films</a>
+    </div>
   </section>
   }
 }

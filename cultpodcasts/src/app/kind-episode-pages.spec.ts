@@ -140,7 +140,7 @@ describe('kind episode pages', () => {
     expect(lookedUp).toEqual([{ episodeId: id, name: 'Old Show', kind: 'Film' }]);
     expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
     expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(fixture.nativeElement.textContent).not.toContain('Film not found');
     expect(fixture.nativeElement.querySelector('a.hero-pill')).toBeNull();
   });
 
@@ -171,7 +171,7 @@ describe('kind episode pages', () => {
     expect(moving.lookedUp).toEqual([{ episodeId: id, name: 'Old Show', kind: 'TvShowEpisode' }]);
     expect(responseInit.status).toBe(301);
     expect(responseInit.headers.get('Location')).toBe(`/tv/${encodeURIComponent('Nightly')}/${guids.toCatalogueShortId(id, 'TvShowEpisode')}`);
-    expect(moving.fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(moving.fixture.nativeElement.textContent).not.toContain('TV episode not found');
 
     const shortId = guids.toCatalogueShortId(id, 'TvShowEpisode');
     const stayed = await render(TvShowEpisodeComponent, {
@@ -195,7 +195,7 @@ describe('kind episode pages', () => {
     expect(lookedUp).toEqual([{ episodeId: id, name: 'One Off', kind: 'Film' }]);
     expect(String(nav.mock.calls[0][0])).toBe(`/film/${encodeURIComponent('One Off')}/${guids.toCatalogueShortId(id, 'Film')}`);
     expect(fixture.nativeElement.querySelector('[aria-label="Loading episode"]')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(fixture.nativeElement.textContent).not.toContain('Film not found');
     expect(fixture.nativeElement.querySelector('a.hero-pill')).toBeNull();
   });
 
@@ -212,7 +212,7 @@ describe('kind episode pages', () => {
     expect(moving.lookedUp).toEqual([{ episodeId: id, name: 'Old Desk', kind: 'NewsReport' }]);
     expect(responseInit.status).toBe(301);
     expect(responseInit.headers.get('Location')).toBe(`/news/${encodeURIComponent('Desk')}/${guids.toCatalogueShortId(id, 'NewsReport')}`);
-    expect(moving.fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(moving.fixture.nativeElement.textContent).not.toContain('News report not found');
 
     const shortId = guids.toCatalogueShortId(id, 'NewsReport');
     const stayed = await render(NewsReportComponent, {
@@ -233,7 +233,7 @@ describe('kind episode pages', () => {
       path: `/news/${encodeURIComponent('Desk')}/${shortId}`,
       params: { slug: 'Desk', query: shortId },
     });
-    expect(fixture.nativeElement.textContent).toContain('Episode not found');
+    expect(fixture.nativeElement.textContent).toContain('News report not found');
     const link = fixture.nativeElement.querySelector('#cta-button a') as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/news/Desk');
   });
@@ -250,7 +250,7 @@ describe('kind episode pages', () => {
     expect(idFallbacks).toEqual([id]);
     expect(nav).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('One Off');
-    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(fixture.nativeElement.textContent).not.toContain('Film not found');
   });
 
   it('still opens a news report from a full guid and moves it to the short id (SSR 301)', async () => {
@@ -265,7 +265,7 @@ describe('kind episode pages', () => {
     expect(lookedUp).toEqual([{ episodeId: id, name: 'Desk', kind: 'NewsReport' }]);
     expect(responseInit.status).toBe(301);
     expect(responseInit.headers.get('Location')).toBe(`/news/Desk/${guids.toCatalogueShortId(id, 'NewsReport')}`);
-    expect(fixture.nativeElement.textContent).not.toContain('Episode not found');
+    expect(fixture.nativeElement.textContent).not.toContain('News report not found');
   });
 
   it('still opens a TV episode from a full guid in the browser and replaces it with the short id', async () => {

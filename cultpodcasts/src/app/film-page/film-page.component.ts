@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
+import { MatButtonModule } from "@angular/material/button";
 import { MatDialog } from "@angular/material/dialog";
+import { RouterLink } from "@angular/router";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
@@ -19,7 +21,7 @@ import { FilmTrailersComponent } from "../film-trailers/film-trailers.component"
   templateUrl: "./film-page.component.html",
   styleUrl: "./film-page.component.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent, FilmTrailersComponent],
+  imports: [RouterLink, MatButtonModule, SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent, FilmTrailersComponent],
 })
 export class FilmPageComponent {
   private readonly dialog = inject(MatDialog);
