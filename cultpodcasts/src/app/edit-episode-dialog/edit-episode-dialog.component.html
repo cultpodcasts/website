@@ -293,6 +293,24 @@
                 </div>
                 }
             </mat-tab>
+            @if (canMoveToFilm && podcastId) {
+            <mat-tab label="Catalogue">
+                <div class="catalogue-actions">
+                    <div class="catalogue-action">
+                        <button type="button" matButton="filled" class="move-to-film" (click)="moveToFilm()">Move to film</button>
+                        <p class="catalogue-hint">Makes this episode a film. You confirm before anything moves.</p>
+                    </div>
+                    <div class="catalogue-action">
+                        <button type="button" matButton="filled" class="attach-trailer" (click)="attachAsTrailer()">Attach as trailer</button>
+                        <p class="catalogue-hint">Adds this episode to a film's Trailers. You confirm before anything moves.</p>
+                    </div>
+                    <div class="catalogue-action">
+                        <button type="button" matButton="filled" class="move-to-tv-show" (click)="moveToTvShow()">Move to TV show</button>
+                        <p class="catalogue-hint">Makes this episode an episode of a TV show. You confirm before anything moves.</p>
+                    </div>
+                </div>
+            </mat-tab>
+            }
         </mat-tab-group>
     </form>
     }
@@ -300,10 +318,5 @@
 
 <mat-dialog-actions>
     <button matButton="text" (click)="close()">Close</button>
-    @if (canMoveToFilm && form() && podcastId) {
-    <button type="button" matButton="text" class="move-to-film" (click)="moveToFilm()">Move to film</button>
-    <button type="button" matButton="text" class="attach-trailer" (click)="attachAsTrailer()">Attach as trailer</button>
-    <button type="button" matButton="text" class="move-to-tv-show" (click)="moveToTvShow()">Move to TV show</button>
-    }
     <button matButton="filled" [disabled]="!form() || !form()!.valid" (click)="onSubmit()">Submit</button>
 </mat-dialog-actions>
