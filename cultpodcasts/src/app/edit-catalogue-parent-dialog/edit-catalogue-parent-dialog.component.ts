@@ -17,11 +17,12 @@ import { KeyValuePipe } from "@angular/common";
 import { firstValueFrom, forkJoin } from "rxjs";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
-import { CatalogueParentDto } from "../catalogue-parent.interface";
+import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
 import {
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
+  historyDateText,
   includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
   isValidDurationText,
@@ -125,7 +126,8 @@ export class EditCatalogueParentDialogComponent {
     this.model.set({ ...model, [field]: "" });
     this.identityInvalid.set(false);
   }
-  protected readonly playlistHistory = signal<{ id: string; replacedAt: string }[]>([]);
+  protected readonly playlistHistory = signal<PlaylistIdHistoryEntry[]>([]);
+  protected readonly historyDateText = historyDateText;
   protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
   protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
   protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";

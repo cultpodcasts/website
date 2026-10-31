@@ -1,6 +1,15 @@
 import { SearchIndexerState } from "./search-indexer-state.interface";
 
 /**
+ * One replaced YouTube playlist id. `replacedAt` is ISO text on the wire, but `JsonDateInterceptor`
+ * turns it into a `Date` before the dialog sees it, so callers must handle both.
+ */
+export interface PlaylistIdHistoryEntry {
+  id: string;
+  replacedAt: Date | string;
+}
+
+/**
  * GET /newsorganisation/{identifier} or /tvshow/{identifier}: the shared publisher fields (RPP #1053).
  * TV adds the identity ids.
  */
@@ -31,7 +40,7 @@ export interface CatalogueParentDto {
   youTubeChannelId?: string | null;
   youTubePlaylistId?: string | null;
   /** Read-only: playlist ids replaced by an edit. */
-  youTubePlaylistIdHistory?: { id: string; replacedAt: string }[] | null;
+  youTubePlaylistIdHistory?: PlaylistIdHistoryEntry[] | null;
   spotifyId?: string | null;
   appleId?: number | null;
   /** From `indexing`: auto-index every item, or only titles matching the include regex. */

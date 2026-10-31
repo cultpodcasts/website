@@ -136,6 +136,18 @@ export function isValidAppleIdText(text: string): boolean {
   return trimmed === "" || appleIdPattern.test(trimmed);
 }
 
+/**
+ * `yyyy-MM-dd` (UTC) for a playlist history `replacedAt`. The API sends ISO text, but `JsonDateInterceptor`
+ * has already turned it into a `Date` by the time the dialog renders, so accept either. Never throws:
+ * an unreadable value shows as "" rather than breaking the rest of the dialog.
+ */
+export function historyDateText(value: Date | string | null | undefined): string {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toISOString().slice(0, 10);
+  }
+  return typeof value === "string" ? value.slice(0, 10) : "";
+}
+
 export function listToText(values: string[] | null | undefined): string {
   return (values ?? []).join(", ");
 }

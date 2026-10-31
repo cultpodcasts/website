@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, historyDateText, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -268,5 +268,21 @@ describe('catalogue hub helpers', () => {
       expect(hubApiRoot(hub)).toBe(root);
       expect(hubPathCommands(hub, 'X')).toEqual([`/${hub}`, 'X']);
     }
+  });
+});
+
+describe('historyDateText (playlist id history)', () => {
+  it('formats a Date (what JsonDateInterceptor hands the dialog) as its UTC yyyy-MM-dd', () => {
+    expect(historyDateText(new Date('2026-10-30T23:45:12.345Z'))).toBe('2026-10-30');
+  });
+
+  it('keeps the date part of ISO text', () => {
+    expect(historyDateText('2026-01-02T03:04:05Z')).toBe('2026-01-02');
+  });
+
+  it('never throws: an invalid Date, null or undefined shows as ""', () => {
+    expect(historyDateText(new Date('not a date'))).toBe('');
+    expect(historyDateText(null)).toBe('');
+    expect(historyDateText(undefined)).toBe('');
   });
 });
