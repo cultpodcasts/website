@@ -55,10 +55,12 @@ import {
 } from '../episode-form.util';
 import { normalizeHashTagControl } from '../podcast-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
+import { SELECT_REORDER } from '../select-reorder';
 
 @Component({
   selector: 'app-add-episode-dialog',
   imports: [
+    SELECT_REORDER,
     MatDialogModule,
     MatProgressSpinnerModule,
     MatButtonModule,

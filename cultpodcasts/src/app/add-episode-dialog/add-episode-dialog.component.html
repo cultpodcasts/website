@@ -177,7 +177,7 @@
                 </mat-form-field>
                 <mat-form-field class="full-width">
                     <mat-label>Subjects</mat-label>
-                    <mat-select [formControl]="form()!.controls.subjects" multiple [sortComparator]="noCompareFunction"
+                    <mat-select appSelectReorder [formControl]="form()!.controls.subjects" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onSubjectsSelectionChange()"
                         (openedChange)="onSubjectsDropdownOpenChange($event)"
                         (keydown)="onSubjectsDropdownKeydown($event)">
@@ -186,9 +186,11 @@
                         <mat-divider></mat-divider>
                         }
                         @if (selectedSubjects().length > 0) {
-                        @for (subject of selectedSubjects(); track subject) {
-                        <mat-option [value]="subject">{{subject}}</mat-option>
-                        }
+                        <div appSelectReorderList (reordered)="onSubjectsSelectionChange()">
+                            @for (subject of selectedSubjects(); track subject) {
+                            <mat-option appSelectReorderItem [value]="subject">{{subject}}<app-select-reorder-handle /></mat-option>
+                            }
+                        </div>
                         }
                         @if (hoistedSubjects().length > 0) {
                         @if (selectedSubjects().length > 0) {
@@ -232,7 +234,7 @@
             <mat-tab label="Guests">
                 <mat-form-field class="full-width">
                     <mat-label>Guests</mat-label>
-                    <mat-select [formControl]="form()!.controls.guests" multiple [sortComparator]="noCompareFunction"
+                    <mat-select appSelectReorder [formControl]="form()!.controls.guests" multiple [sortComparator]="noCompareFunction"
                         (selectionChange)="onGuestsSelectionChange()"
                         (openedChange)="onGuestsDropdownOpenChange($event)"
                         (keydown)="onGuestsDropdownKeydown($event)">
@@ -241,9 +243,11 @@
                         <mat-divider></mat-divider>
                         }
                         @if (selectedGuests().length > 0) {
-                        @for (person of selectedGuests(); track person.id) {
-                        <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
-                        }
+                        <div appSelectReorderList (reordered)="onGuestsSelectionChange()">
+                            @for (person of selectedGuests(); track person.id) {
+                            <mat-option appSelectReorderItem [value]="person.name">{{personLabel(person)}}<app-select-reorder-handle /></mat-option>
+                            }
+                        </div>
                         }
                         @if (otherPeople().length > 0) {
                         @if (selectedGuests().length > 0) {

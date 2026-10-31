@@ -1,0 +1,25 @@
+:host
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    flex: 0 0 auto
+    margin-inline-start: auto
+    width: 32px
+    height: 32px
+    border-radius: 4px
+    color: var(--mat-sys-on-surface-variant)
+    cursor: grab
+    // The handle starts the drag; the CDK also disables native touch scrolling on handles.
+    touch-action: none
+    -webkit-tap-highlight-color: transparent
+
+    &:hover
+        background: color-mix(in srgb, currentColor 10%, transparent)
+
+    &:active
+        cursor: grabbing
+
+.select-reorder-handle__icon
+    width: 20px
+    height: 20px
+    fill: currentColor
