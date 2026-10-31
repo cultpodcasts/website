@@ -45,8 +45,18 @@ export function isValidNumericIdText(text: string): boolean {
   return digitsPattern.test(text.trim());
 }
 
-/** String service ids: "" clears, like the podcast edit API. `appleId` is numeric and handled on its own. */
+/**
+ * String service ids loaded into the form model. `youTubeChannelId` is display-only and is never sent on save (see
+ * `catalogueParentEditableServiceIdFields`); for the others "" clears, like the podcast edit API. `appleId` is numeric
+ * and handled on its own.
+ */
 export const catalogueParentServiceIdFields = ["youTubeChannelId", "youTubePlaylistId", "spotifyId"] as const;
+
+/**
+ * Service ids a save may send. `youTubeChannelId` is shown read-only (podcast edit dialog parity): it is used for
+ * API calls, so the dialog never sends it and saving can never change or blank the stored channel id.
+ */
+export const catalogueParentEditableServiceIdFields = ["youTubePlaylistId", "spotifyId"] as const;
 
 /** Indexing regexes on the parent's `indexing` block (podcast Regexs tab parity). */
 export const catalogueParentRegexFields = [
@@ -215,6 +225,7 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
  * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
+ * `youTubeChannelId` is read-only and never sent.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -222,14 +233,15 @@ export function catalogueParentChanges(
   includeTvIdentity: boolean
 ): CatalogueParentChangeRequest {
   const changes: CatalogueParentChangeRequest = {};
-  const textFields: readonly TextField[] = includeTvIdentity
+  // Excluding the read-only channel id here means the compiler rejects any attempt to send it.
+  const textFields: readonly Exclude<TextField, "youTubeChannelId">[] = includeTvIdentity
     ? [
         ...catalogueParentTextFields,
         ...tvShowIdentityFields,
-        ...catalogueParentServiceIdFields,
+        ...catalogueParentEditableServiceIdFields,
         ...catalogueParentRegexFields
       ]
-    : [...catalogueParentTextFields, ...catalogueParentServiceIdFields, ...catalogueParentRegexFields];
+    : [...catalogueParentTextFields, ...catalogueParentEditableServiceIdFields, ...catalogueParentRegexFields];
   for (const field of textFields) {
     const before = (original[field] ?? "").toString().trim();
     const after = edited[field].trim();
