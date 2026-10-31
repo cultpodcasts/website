@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Component, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,14 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from './../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoverySchedule, DiscoveryScheduleNextRun, DiscoveryScheduleUpdate } from './discovery-schedule.interface';
+import { KEEP_AS_TEXT_KEYS } from '../json-date.interceptor';
+
+/**
+ * EXCEPTION to UTC-only: `slotStartUk` is UK local time with its UK offset, so `JsonDateInterceptor` must leave it
+ * as text on the discovery-schedule requests (a `Date` would drop the offset).
+ */
+const SCHEDULE_LOCAL_TIME_KEYS: ReadonlySet<string> = new Set(['slotStartUk']);
+
 
 @Component({
   selector: 'app-discovery-schedule',
@@ -93,7 +101,7 @@ export class DiscoveryScheduleComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.put(this.scheduleUrl(), body, { headers, observe: 'response' })
+        this.http.put(this.scheduleUrl(), body, { headers, observe: 'response', context: this.scheduleContext() })
       );
 
       if (resp.status !== 202) {
@@ -104,7 +112,7 @@ export class DiscoveryScheduleComponent {
       }
 
       const loaded = await firstValueFrom(
-        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response' })
+        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response', context: this.scheduleContext() })
       );
 
       if (loaded.status === 200 && loaded.body) {
@@ -125,6 +133,10 @@ export class DiscoveryScheduleComponent {
     }
   }
 
+  private scheduleContext(): HttpContext {
+    return new HttpContext().set(KEEP_AS_TEXT_KEYS, SCHEDULE_LOCAL_TIME_KEYS);
+  }
+
   private async load() {
     this.isLoading.set(true);
     this.isInError.set(false);
@@ -140,7 +152,7 @@ export class DiscoveryScheduleComponent {
       }
 
       const resp = await firstValueFrom(
-        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response' })
+        this.http.get<DiscoverySchedule>(this.scheduleUrl(), { headers, observe: 'response', context: this.scheduleContext() })
       );
 
       if (resp.status === 200 && resp.body) {

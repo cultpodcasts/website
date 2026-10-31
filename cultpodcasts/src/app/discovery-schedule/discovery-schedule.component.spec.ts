@@ -8,6 +8,7 @@ import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { DiscoveryScheduleComponent } from './discovery-schedule.component';
 import { DiscoverySchedule } from './discovery-schedule.interface';
+import { KEEP_AS_TEXT_KEYS } from '../json-date.interceptor';
 
 describe('DiscoveryScheduleComponent', () => {
   let fixture: ComponentFixture<DiscoveryScheduleComponent>;
@@ -23,7 +24,7 @@ describe('DiscoveryScheduleComponent', () => {
     enabled: true,
     isDefault: false,
     nextRuns: [
-      { slotId: '09:00', slotStartUtc: '2026-10-07T08:00:00Z', slotStartUk: '09:00' },
+      { slotId: '09:00', slotStartUtc: new Date('2026-10-07T08:00:00Z'), slotStartUk: '2026-10-07T09:00:00+01:00' },
     ],
   };
 
@@ -66,6 +67,7 @@ describe('DiscoveryScheduleComponent', () => {
     const initPromise = component.ngOnInit();
     const get = await expectOneSoon(scheduleUrl);
     expect(get.request.method).toBe('GET');
+    expect([...get.request.context.get(KEEP_AS_TEXT_KEYS)]).toEqual(['slotStartUk']);
     get.flush(loaded);
     await initPromise;
   });
@@ -79,6 +81,7 @@ describe('DiscoveryScheduleComponent', () => {
 
     const put = await expectOneSoon(scheduleUrl);
     expect(put.request.method).toBe('PUT');
+    expect([...put.request.context.get(KEEP_AS_TEXT_KEYS)]).toEqual(['slotStartUk']);
     expect(put.request.body).toEqual({
       runTimes: ['09:00'],
       enabled: true,
@@ -95,6 +98,7 @@ describe('DiscoveryScheduleComponent', () => {
 
     const reload = await expectOneSoon(scheduleUrl);
     expect(reload.request.method).toBe('GET');
+    expect([...reload.request.context.get(KEEP_AS_TEXT_KEYS)]).toEqual(['slotStartUk']);
     reload.flush({
       ...loaded,
       runTimes: ['10:30'],
