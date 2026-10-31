@@ -5,7 +5,8 @@ import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 /**
  * News report / TV episode / film curator edit against real routes with a faked API (synthetic data only):
  * hub submit → snackbar Review + Edit, the news report page Edit, the TV episode page Edit, and for films the
- * film page Edit, the toolbar submit snackbar and the review page row.
+ * film page Edit, the toolbar submit snackbar and the review page row. Also the podcast Edit Episode dialog's
+ * Catalogue tab (Move to film / Attach as trailer / Move to TV show).
  * Set CATALOGUE_EDIT_SCREENSHOTS=dir to save PR screenshots.
  */
 const guids = new GuidService();
@@ -14,6 +15,8 @@ const episodeId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const outletId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const showId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const filmId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+const podcastId = "abababab-abab-4bab-8bab-abababababab";
+const podcastEpisodeId = "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd";
 const screenshotDir = process.env["CATALOGUE_EDIT_SCREENSHOTS"];
 
 function searchDoc(id: string, kind: string, title: string, parent: string) {
@@ -83,7 +86,9 @@ test.beforeEach(async ({ page }) => {
 					? [searchDoc(episodeId, "TvShowEpisode", "Part", "Nightly")]
 					: filter.includes(filmId)
 						? [searchDoc(filmId, "Film", "One Off", "One Off")]
-						: [];
+						: filter.includes(podcastEpisodeId)
+							? [searchDoc(podcastEpisodeId, "Episode", "Pilot", "Show")]
+							: [];
 			await json(route, { value });
 			return;
 		}
@@ -253,6 +258,50 @@ test.describe("news report / TV episode curator edit", () => {
 		await search.fill("election");
 		await search.press("Enter");
 		await expect(page).toHaveURL(/\/search\/election$/);
+	});
+});
+
+test.describe("podcast Edit Episode Catalogue tab", () => {
+	test("the podcast Edit Episode dialog keeps Close next to Submit and puts the moves on a Catalogue tab", async ({ page }) => {
+		await fakeLookups(page);
+		// Any non-GET request to any route counts (POST /search is a read): Cancel must send nothing at all.
+		const writes: string[] = [];
+		page.on("request", (request) => {
+			const isSearchRead = request.method() === "POST" && new URL(request.url()).pathname.endsWith("/search");
+			if (!["GET", "HEAD", "OPTIONS"].includes(request.method()) && !isSearchRead) {
+				writes.push(`${request.method()} ${request.url()}`);
+			}
+		});
+		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) =>
+			json(route, {
+				...playable,
+				id: podcastEpisodeId,
+				title: "Pilot",
+				release: "2026-01-02T00:00:00Z",
+				bluesky: false,
+				urls: {},
+				images: {}
+			}));
+		await page.route(`**/podcast/Show/${podcastEpisodeId}`, (route) => json(route, { id: podcastId, name: "Show", defaultSubject: "Politics" }));
+		await page.goto(`/podcast/${encodeURIComponent("Show")}/${guids.toBase64(podcastEpisodeId)}`);
+		await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const dialog = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Edit Episode" }) });
+		await expect(dialog.getByRole("heading", { name: "Edit Episode" })).toBeVisible();
+		await expect(dialog.locator("mat-dialog-actions button")).toHaveText(["Close", "Submit"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Catalogue"]);
+		await shot(page, "episode-edit-details");
+		await dialog.getByRole("tab", { name: "Catalogue" }).click();
+		await expect(dialog.getByRole("tabpanel").getByRole("button")).toHaveText(["Move to film", "Attach as trailer", "Move to TV show"]);
+		await shot(page, "episode-edit-catalogue");
+		await dialog.getByRole("button", { name: "Move to film" }).click();
+		const confirm = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Move to film" }) });
+		await expect(confirm).toBeVisible();
+		await confirm.getByRole("button", { name: "Cancel" }).click();
+		await expect(confirm).toHaveCount(0);
+		await expect(dialog.getByRole("heading", { name: "Edit Episode" })).toBeVisible();
+		expect(writes).toEqual([]);
 	});
 });
 
