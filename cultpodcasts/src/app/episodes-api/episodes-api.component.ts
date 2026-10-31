@@ -99,7 +99,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   protected updatingSubjectName = signal<string | null>(null);
   protected addingGuest = signal<Record<string, string>>({});
   protected readonly curatedEpisodeIds = signal<string[]>([]);
-  protected readonly curatedUpdatedAt = signal<string | null>(null);
+  protected readonly curatedUpdatedAt = signal<Date | null>(null);
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);

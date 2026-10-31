@@ -13,7 +13,8 @@ export interface FilmTrailer {
   /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
   url: string | URL;
   image?: string | URL | null;
-  release?: string | null;
+  /** UTC instant; `JsonDateInterceptor` turns it into a `Date`. */
+  release?: Date | null;
   /** `h:mm:ss`. */
   duration: string;
 }

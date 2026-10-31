@@ -1,9 +1,15 @@
 export interface DiscoverySessionVote {
   userId: string;
   role: string;
-  at: string;
+  at: Date;
 }
 
+/**
+ * HTTP responses go through `JsonDateInterceptor` and WebSocket frames through `convertJsonDates`; both turn every
+ * ISO date-time-shaped string at any depth into a `Date`. Any free-text field added here later (for example a vote
+ * comment) must go in the keep-as-text set: `KEEP_AS_TEXT_KEYS` on the session HTTP requests and the second argument
+ * to `convertJsonDates` in `DiscoveryCurationSessionService`.
+ */
 export interface DiscoveryCurationSessionSnapshot {
   includedDocumentIds: string[];
   pendingDocumentIds: string[];
@@ -12,7 +18,8 @@ export interface DiscoveryCurationSessionSnapshot {
     string,
     { votes: DiscoverySessionVote[]; rev: number; provisional: boolean }
   >;
-  presence: Record<string, string>;
+  /** userId → last seen. */
+  presence: Record<string, Date>;
   rev: number;
-  updatedAt: string;
+  updatedAt: Date;
 }

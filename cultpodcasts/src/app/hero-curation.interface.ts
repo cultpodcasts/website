@@ -5,5 +5,6 @@ export interface HeroCuration {
    * (`day:0` = newest / n, `day:1` = n−1, …).
    */
   railSubjects: string[];
-  updatedAt: string | null;
+  /** Compare-and-swap token; sent back as `expectedUpdatedAt` (`toISOString()`, so `Z`). */
+  updatedAt: Date | null;
 }
