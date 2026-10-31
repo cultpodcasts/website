@@ -1022,6 +1022,36 @@ mat-card-actions:not(.curator-card__actions) {
     background: var(--mat-sys-surface-container);
 }
 
+// Reorderable selected options (app-select-reorder): the label text and the right-hand drag handle
+// share the option's primary text, so let it fill the row and push the handle to the end.
+.mat-mdc-option.select-reorder-option {
+    .mdc-list-item__primary-text {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: 8px;
+    }
+
+    &.cdk-drag-preview {
+        background: var(--mat-sys-surface-container-high);
+        box-shadow: var(--mat-sys-level3);
+        border-radius: 4px;
+    }
+
+    &.cdk-drag-placeholder {
+        opacity: 0.35;
+    }
+
+    &.cdk-drag-animating {
+        transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+    }
+}
+
+.select-reorder-list.cdk-drop-list-dragging .select-reorder-option:not(.cdk-drag-placeholder) {
+    transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
 select,
 option {
     color-scheme: light dark;
