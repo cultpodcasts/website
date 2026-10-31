@@ -297,17 +297,18 @@
             <mat-tab label="Catalogue">
                 <div class="catalogue-actions">
                     <div class="catalogue-action">
-                        <button type="button" matButton="filled" class="move-to-film" (click)="moveToFilm()">Move to film</button>
-                        <p class="catalogue-hint">Makes this episode a film. You confirm before anything moves.</p>
+                        <button type="button" matButton="filled" class="move-to-film" aria-describedby="catalogue-hint-film" (click)="moveToFilm()">Move to film</button>
+                        <p id="catalogue-hint-film" class="catalogue-hint">Takes this episode out of the podcast and makes it a new film.</p>
                     </div>
                     <div class="catalogue-action">
-                        <button type="button" matButton="filled" class="attach-trailer" (click)="attachAsTrailer()">Attach as trailer</button>
-                        <p class="catalogue-hint">Adds this episode to a film's Trailers. You confirm before anything moves.</p>
+                        <button type="button" matButton="filled" class="attach-trailer" aria-describedby="catalogue-hint-trailer" (click)="attachAsTrailer()">Attach as trailer</button>
+                        <p id="catalogue-hint-trailer" class="catalogue-hint">Takes this episode out of the podcast and adds it to an existing film's Trailers.</p>
                     </div>
                     <div class="catalogue-action">
-                        <button type="button" matButton="filled" class="move-to-tv-show" (click)="moveToTvShow()">Move to TV show</button>
-                        <p class="catalogue-hint">Makes this episode an episode of a TV show. You confirm before anything moves.</p>
+                        <button type="button" matButton="filled" class="move-to-tv-show" aria-describedby="catalogue-hint-tv-show" (click)="moveToTvShow()">Move to TV show</button>
+                        <p id="catalogue-hint-tv-show" class="catalogue-hint">Takes this episode out of the podcast and makes it an episode of a new or existing TV show.</p>
                     </div>
+                    <p class="catalogue-confirm-note">Each one asks you to confirm first.</p>
                 </div>
             </mat-tab>
             }

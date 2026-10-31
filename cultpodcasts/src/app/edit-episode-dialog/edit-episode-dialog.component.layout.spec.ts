@@ -145,6 +145,21 @@ describe('EditEpisodeDialogComponent layout', () => {
     expect(texts('.catalogue-actions button')).toEqual(['Move to film', 'Attach as trailer', 'Move to TV show']);
   });
 
+  it('describes each move by its hint, which says it takes the episode out of the podcast', async () => {
+    await loadAndFlush();
+    await openCatalogueTab();
+    const buttons = Array.from(el().querySelectorAll<HTMLButtonElement>('.catalogue-actions button'));
+    expect(buttons).toHaveLength(3);
+    for (const button of buttons) {
+      const id = button.getAttribute('aria-describedby');
+      expect(id).toBeTruthy();
+      const hint = el().querySelector(`#${id}`);
+      expect(hint?.classList.contains('catalogue-hint')).toBe(true);
+      expect(hint?.textContent?.trim()).toMatch(/^Takes this episode out of the podcast and /);
+    }
+    expect(texts('.catalogue-confirm-note')).toEqual(['Each one asks you to confirm first.']);
+  });
+
   it.each([
     ['.move-to-film', MoveEpisodeToFilmDialogComponent],
     ['.attach-trailer', AttachTrailerDialogComponent],

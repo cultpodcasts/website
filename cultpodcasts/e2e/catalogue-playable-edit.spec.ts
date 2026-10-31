@@ -86,7 +86,7 @@ test.beforeEach(async ({ page }) => {
 					? [searchDoc(episodeId, "TvShowEpisode", "Part", "Nightly")]
 					: filter.includes(filmId)
 						? [searchDoc(filmId, "Film", "One Off", "One Off")]
-						: filter.includes("'Show'") || filter.includes(podcastEpisodeId)
+						: filter.includes(podcastEpisodeId)
 							? [searchDoc(podcastEpisodeId, "Episode", "Pilot", "Show")]
 							: [];
 			await json(route, { value });
@@ -251,14 +251,29 @@ test.describe("news report / TV episode curator edit", () => {
 		await expect(page.getByText("TV episode updated")).toBeVisible();
 	});
 
+	test("searching from a news report page is a normal site search, not a podcast search on the outlet", async ({ page }) => {
+		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
+		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
+		const search = page.getByRole("combobox", { name: "Search" });
+		await search.fill("election");
+		await search.press("Enter");
+		await expect(page).toHaveURL(/\/search\/election$/);
+	});
+});
+
+test.describe("podcast Edit Episode Catalogue tab", () => {
 	test("the podcast Edit Episode dialog keeps Close next to Submit and puts the moves on a Catalogue tab", async ({ page }) => {
 		await fakeLookups(page);
-		let writes = 0;
-		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) => {
-			if (route.request().method() !== "GET") {
-				writes++;
+		// Any non-GET request to any route counts (POST /search is a read): Cancel must send nothing at all.
+		const writes: string[] = [];
+		page.on("request", (request) => {
+			const isSearchRead = request.method() === "POST" && new URL(request.url()).pathname.endsWith("/search");
+			if (!["GET", "HEAD", "OPTIONS"].includes(request.method()) && !isSearchRead) {
+				writes.push(`${request.method()} ${request.url()}`);
 			}
-			return json(route, {
+		});
+		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) =>
+			json(route, {
 				...playable,
 				id: podcastEpisodeId,
 				title: "Pilot",
@@ -266,8 +281,7 @@ test.describe("news report / TV episode curator edit", () => {
 				bluesky: false,
 				urls: {},
 				images: {}
-			});
-		});
+			}));
 		await page.route(`**/podcast/Show/${podcastEpisodeId}`, (route) => json(route, { id: podcastId, name: "Show", defaultSubject: "Politics" }));
 		await page.goto(`/podcast/${encodeURIComponent("Show")}/${guids.toBase64(podcastEpisodeId)}`);
 		await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
@@ -287,16 +301,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await confirm.getByRole("button", { name: "Cancel" }).click();
 		await expect(confirm).toHaveCount(0);
 		await expect(dialog.getByRole("heading", { name: "Edit Episode" })).toBeVisible();
-		expect(writes).toBe(0);
-	});
-
-	test("searching from a news report page is a normal site search, not a podcast search on the outlet", async ({ page }) => {
-		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
-		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
-		const search = page.getByRole("combobox", { name: "Search" });
-		await search.fill("election");
-		await search.press("Enter");
-		await expect(page).toHaveURL(/\/search\/election$/);
+		expect(writes).toEqual([]);
 	});
 });
 
