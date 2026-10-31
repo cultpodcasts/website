@@ -1,20 +1,25 @@
 import { CdkDrag } from '@angular/cdk/drag-drop';
-import { DestroyRef, Directive, inject, OnInit } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, inject, OnInit } from '@angular/core';
 import { MatOption } from '@angular/material/core';
 import { SelectReorderListDirective } from './select-reorder-list.directive';
 
 /**
  * A selected `mat-option` that can be dragged inside its `appSelectReorderList`. Dragging is limited
- * to the y axis and starts only from the option's `app-select-reorder-handle`.
+ * to the y axis and starts only from the option's `app-select-reorder-handle`. The option advertises
+ * the keyboard reorder to assistive tech with `aria-keyshortcuts` (the handle itself is aria-hidden).
  */
 @Directive({
   selector: 'mat-option[appSelectReorderItem]',
   hostDirectives: [CdkDrag],
-  host: { class: 'select-reorder-option' }
+  host: {
+    class: 'select-reorder-option',
+    'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown'
+  }
 })
 export class SelectReorderItemDirective implements OnInit {
   private readonly drag = inject(CdkDrag, { self: true });
   private readonly option = inject(MatOption, { self: true });
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly list = inject(SelectReorderListDirective);
 
   constructor() {
@@ -31,7 +36,6 @@ export class SelectReorderItemDirective implements OnInit {
   }
 
   ngOnInit(): void {
-    this.drag.data = this.option.value;
-    this.list.registerItem(this.option);
+    this.list.registerItem(this.option, this.element);
   }
 }

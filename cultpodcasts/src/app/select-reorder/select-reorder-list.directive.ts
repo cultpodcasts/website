@@ -1,4 +1,4 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import {
@@ -12,32 +12,34 @@ import {
   PLATFORM_ID
 } from '@angular/core';
 import { MatOption } from '@angular/material/core';
-import { MatSelect } from '@angular/material/select';
+import { SelectReorderDirective, SelectReorderKeyHandler } from './select-reorder.directive';
 import { moveSelectedValue, reorderAnnouncement, reorderEdgeAnnouncement } from './select-reorder.util';
-
-/** How long after a drag ends a stray click inside the list is swallowed (mouseup → click). */
-const CLICK_SUPPRESS_MS = 400;
 
 /**
  * Makes the selected options of a multi `mat-select` reorderable inside the open panel.
  *
- * Wrap the selected (hoisted) `mat-option`s in an element with this directive, mark each one
- * `appSelectReorderItem`, and give each a right-hand `app-select-reorder-handle`:
+ * Mark the `mat-select` with `appSelectReorder`, wrap the selected (hoisted) `mat-option`s in an element
+ * with this directive, mark each one `appSelectReorderItem`, and give each a right-hand
+ * `app-select-reorder-handle`:
  *
  * ```html
- * <div appSelectReorderList (reordered)="regroupSubjects()">
- *   @for (subject of selectedSubjects(); track subject) {
- *   <mat-option appSelectReorderItem [value]="subject">{{subject}}<app-select-reorder-handle /></mat-option>
- *   }
- * </div>
+ * <mat-select appSelectReorder [formControl]="subjects" multiple ...>
+ *   <div appSelectReorderList (reordered)="regroupSubjects()">
+ *     @for (subject of selectedSubjects(); track subject) {
+ *     <mat-option appSelectReorderItem [value]="subject">{{subject}}<app-select-reorder-handle /></mat-option>
+ *     }
+ *   </div>
+ *   ...
+ * </mat-select>
  * ```
  *
  * - Drag: a `CdkDropList` (host directive, y axis only). Dragging starts from the handle only, so touch
  *   scrolling of the panel still works everywhere else. On drop the select's form control value is
- *   reordered with `moveItemInArray` and set; `reordered` fires so the host can regroup.
+ *   reordered (only the shown values' slots move) and set; `reordered` fires so the host can regroup.
+ *   Known limit: the drag does not auto-scroll the select panel (cultpodcasts/website#585).
  * - Keyboard: while the panel is open and the active option is a selected (reorderable) one, Alt+ArrowUp
- *   and Alt+ArrowDown move it one place. mat-select itself closes the panel on Alt+Arrow, so this
- *   listens in the capture phase on the select's host element and stops the event when it handles it.
+ *   and Alt+ArrowDown move it one place. The keys arrive through `mat-select[appSelectReorder]`, which
+ *   listens in the capture phase ahead of mat-select's own Alt+Arrow close (see that directive).
  *   Alt+Arrow on an option that is not selected keeps mat-select's behaviour (close).
  * - Each move is announced through the CDK `LiveAnnouncer` (aria-live polite).
  */
@@ -46,44 +48,46 @@ const CLICK_SUPPRESS_MS = 400;
   hostDirectives: [CdkDropList],
   host: { class: 'select-reorder-list' }
 })
-export class SelectReorderListDirective {
+export class SelectReorderListDirective implements SelectReorderKeyHandler {
   /** The new control value after a drag or keyboard move. */
   readonly reordered = output<string[]>();
 
-  private readonly select = inject(MatSelect);
+  private readonly reorder = inject(SelectReorderDirective);
+  private readonly select = this.reorder.select;
   private readonly dropList = inject(CdkDropList, { self: true });
   private readonly announcer = inject(LiveAnnouncer);
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private readonly document = inject(DOCUMENT);
-  private readonly items = new Set<MatOption>();
+  private readonly items = new Map<MatOption, HTMLElement>();
   private dragging = false;
-  private suppressClicksUntil = 0;
+  private suppressNextClick = false;
+  private suppressTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor() {
     this.dropList.lockAxis = 'y';
     this.dropList.orientation = 'vertical';
     const dropped = this.dropList.dropped.subscribe(event => this.onDrop(event));
     const destroyRef = inject(DestroyRef);
-    destroyRef.onDestroy(() => dropped.unsubscribe());
+    destroyRef.onDestroy(() => {
+      dropped.unsubscribe();
+      clearTimeout(this.suppressTimer);
+    });
 
     if (!isPlatformBrowser(inject(PLATFORM_ID))) {
       return;
     }
-    const selectHost: HTMLElement = this.select._elementRef.nativeElement;
-    const keydown = (event: KeyboardEvent) => this.onSelectKeydown(event);
+    this.reorder.attach(this);
     const click = (event: MouseEvent) => this.onListClickCapture(event);
-    selectHost.addEventListener('keydown', keydown, true);
     this.host.addEventListener('click', click, true);
     destroyRef.onDestroy(() => {
-      selectHost.removeEventListener('keydown', keydown, true);
+      this.reorder.detach(this);
       this.host.removeEventListener('click', click, true);
     });
   }
 
   /** @internal Called by `appSelectReorderItem`. */
-  registerItem(option: MatOption): void {
-    this.items.add(option);
+  registerItem(option: MatOption, element: HTMLElement): void {
+    this.items.set(option, element);
   }
 
   /** @internal Called by `appSelectReorderItem`. */
@@ -96,10 +100,20 @@ export class SelectReorderListDirective {
     this.dragging = true;
   }
 
-  /** @internal Called by `appSelectReorderItem` when a drag ends (dropped or cancelled). */
+  /**
+   * @internal Called by `appSelectReorderItem` when a drag ends (dropped or cancelled).
+   *
+   * The browser fires the click that follows a drag's mouseup synchronously after it, in the same task
+   * as CDK's `ended`, so one click is swallowed, and the guard clears on the next macrotask in case no
+   * click follows (a touch drag fires none). A deliberate click after that works as normal.
+   */
   dragEnded(): void {
     this.dragging = false;
-    this.suppressClicksUntil = this.now() + CLICK_SUPPRESS_MS;
+    this.suppressNextClick = true;
+    clearTimeout(this.suppressTimer);
+    this.suppressTimer = setTimeout(() => {
+      this.suppressNextClick = false;
+    });
   }
 
   /** The reorderable (selected) options' values, in the order they are shown. */
@@ -126,18 +140,8 @@ export class SelectReorderListDirective {
     return true;
   }
 
-  private reorderableOptions(): MatOption[] {
-    return (this.select.options?.toArray() ?? []).filter(option => this.items.has(option));
-  }
-
-  private onDrop(event: CdkDragDrop<unknown>): void {
-    if (event.previousContainer !== event.container) {
-      return;
-    }
-    this.move(event.previousIndex, event.currentIndex);
-  }
-
-  private onSelectKeydown(event: KeyboardEvent): void {
+  /** @internal Called by `mat-select[appSelectReorder]` for keydowns on the select host (capture phase). */
+  handleSelectKeydown(event: KeyboardEvent): void {
     if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
       return;
     }
@@ -145,7 +149,7 @@ export class SelectReorderListDirective {
     if (step === 0 || !this.select.panelOpen) {
       return;
     }
-    const active = this.select._keyManager?.activeItem;
+    const active = this.activeOption();
     if (!active || !active.selected || !this.items.has(active)) {
       return;
     }
@@ -164,27 +168,62 @@ export class SelectReorderListDirective {
       return;
     }
     if (this.move(from, to)) {
-      afterNextRender({
-        write: () => {
-          const manager = this.select._keyManager;
-          if (manager && manager.activeItem !== active) {
-            manager.setActiveItem(active);
-          }
-          active._getHostElement().scrollIntoView?.({ block: 'nearest' });
-        }
-      }, { injector: this.injector });
+      this.keepActive(active);
     }
+  }
+
+  /**
+   * The active option, as mat-select reports it to assistive tech (`aria-activedescendant`). Writing
+   * the value makes mat-select clear every option's active styles (`option.active` turns false), while
+   * its key manager still points at the moved option, so `aria-activedescendant` is the reliable source.
+   */
+  private activeOption(): MatOption | undefined {
+    const options = this.select.options;
+    if (!options) {
+      return undefined;
+    }
+    const id = this.reorder.activeDescendantId();
+    return (id ? options.find(option => option.id === id) : undefined) ?? options.find(option => option.active);
+  }
+
+  /**
+   * After a keyboard move, mat-select re-applies the value (on the write and again, a microtask later,
+   * when the regrouped options change) and clears every option's active styles. Its key manager already
+   * follows the moved option across the options change, so only the public highlight is restored, after
+   * that microtask, and the option is kept in view.
+   */
+  private keepActive(active: MatOption): void {
+    afterNextRender({
+      write: () => {
+        void Promise.resolve().then(() => {
+          const element = this.items.get(active);
+          if (!element || !this.select.panelOpen || this.activeOption() !== active) {
+            return;
+          }
+          active.setActiveStyles();
+          element.scrollIntoView?.({ block: 'nearest' });
+        });
+      }
+    }, { injector: this.injector });
+  }
+
+  private reorderableOptions(): MatOption[] {
+    return (this.select.options?.toArray() ?? []).filter(option => this.items.has(option));
+  }
+
+  private onDrop(event: CdkDragDrop<unknown>): void {
+    if (event.previousContainer !== event.container) {
+      return;
+    }
+    this.move(event.previousIndex, event.currentIndex);
   }
 
   private onListClickCapture(event: MouseEvent): void {
-    if (this.dragging || this.now() < this.suppressClicksUntil) {
+    if (this.dragging || this.suppressNextClick) {
       // The mouseup that ends a drag must not toggle the option under the pointer.
+      this.suppressNextClick = false;
       event.preventDefault();
       event.stopPropagation();
     }
-  }
-
-  private now(): number {
-    return this.document.defaultView?.performance?.now() ?? Date.now();
   }
 }

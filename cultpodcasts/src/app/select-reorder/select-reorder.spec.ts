@@ -16,7 +16,7 @@ const ALL = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'];
   imports: [ReactiveFormsModule, MatSelectModule, SELECT_REORDER],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <mat-select [formControl]="control" multiple [sortComparator]="noCompare" (selectionChange)="regroup()">
+    <mat-select appSelectReorder [formControl]="control" multiple [sortComparator]="noCompare" (selectionChange)="regroup()">
       @if (selected().length > 0) {
       <div appSelectReorderList (reordered)="onReordered($event)">
         @for (value of selected(); track value) {
@@ -106,17 +106,34 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     list.dropped.emit({ previousIndex, currentIndex, container: list, previousContainer: list } as unknown as CdkDragDrop<unknown>);
   }
 
-  function altArrow(key: 'ArrowUp' | 'ArrowDown'): KeyboardEvent {
-    const event = new KeyboardEvent('keydown', { key, altKey: true, bubbles: true, cancelable: true });
+  function selectHost(): HTMLElement {
+    return fixture.nativeElement.querySelector('mat-select') as HTMLElement;
+  }
+
+  function key(key: 'ArrowUp' | 'ArrowDown', altKey = false): KeyboardEvent {
+    const event = new KeyboardEvent('keydown', { key, altKey, bubbles: true, cancelable: true });
     Object.defineProperty(event, 'keyCode', { get: () => (key === 'ArrowUp' ? 38 : 40) });
-    select()._elementRef.nativeElement.dispatchEvent(event);
+    selectHost().dispatchEvent(event);
     return event;
   }
 
+  function altArrow(arrow: 'ArrowUp' | 'ArrowDown'): KeyboardEvent {
+    return key(arrow, true);
+  }
+
+  /** Open the panel and walk the active option down with plain arrows (public behaviour only). */
   async function openWithActive(value: string): Promise<void> {
     select().open();
     await settle();
-    select()._keyManager.setActiveItem(option(value));
+    for (let i = 0; i < ALL.length && !option(value).active; i++) {
+      key('ArrowDown');
+      await settle();
+    }
+    expect(option(value).active).toBe(true);
+  }
+
+  function listDirective(): SelectReorderListDirective {
+    return fixture.debugElement.query(By.directive(SelectReorderListDirective)).injector.get(SelectReorderListDirective);
   }
 
   it('renders selected options first, with a right-hand handle that adds no text to the option label', async () => {
@@ -198,15 +215,40 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     expect(host.control.value).toEqual(['Alpha', 'Charlie']);
   });
 
-  it('swallows the stray click that follows the end of a drag', async () => {
+  it('swallows only the one stray click that follows the end of a drag; later clicks toggle again', async () => {
     select().open();
     await settle();
-    const list = fixture.debugElement.query(By.directive(SelectReorderListDirective)).injector.get(SelectReorderListDirective);
+    const list = listDirective();
     list.dragStarted();
     list.dragEnded();
     option('Bravo')._getHostElement().click();
     await settle();
     expect(host.control.value).toEqual(['Alpha', 'Bravo', 'Charlie']);
+
+    // One-shot: the very next click (same task) already toggles.
+    option('Bravo')._getHostElement().click();
+    await settle();
+    expect(host.control.value).toEqual(['Alpha', 'Charlie']);
+  });
+
+  it('clears the click guard on the next macrotask when no click follows the drag (touch drag)', async () => {
+    select().open();
+    await settle();
+    const list = listDirective();
+    list.dragStarted();
+    list.dragEnded();
+    await new Promise(resolve => setTimeout(resolve));
+    option('Charlie')._getHostElement().click();
+    await settle();
+    expect(host.control.value).toEqual(['Alpha', 'Bravo']);
+  });
+
+  it('advertises the keyboard reorder on reorderable options only (aria-keyshortcuts)', async () => {
+    select().open();
+    await settle();
+    expect(option('Alpha')._getHostElement().getAttribute('aria-keyshortcuts')).toBe('Alt+ArrowUp Alt+ArrowDown');
+    expect(option('Delta')._getHostElement().hasAttribute('aria-keyshortcuts')).toBe(false);
+    expect(option('Alpha').viewValue).toBe('Alpha');
   });
 
   it('Alt+ArrowDown / Alt+ArrowUp move the active selected option, keep the panel open and announce', async () => {
@@ -216,7 +258,8 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     expect(down.defaultPrevented).toBe(true);
     expect(host.control.value).toEqual(['Bravo', 'Alpha', 'Charlie']);
     expect(select().panelOpen).toBe(true);
-    expect(select()._keyManager.activeItem).toBe(option('Alpha'));
+    expect(option('Alpha').active).toBe(true);
+    expect(selectHost().getAttribute('aria-activedescendant')).toBe(option('Alpha').id);
     expect(announce).toHaveBeenLastCalledWith('Alpha moved to position 2 of 3', 'polite');
 
     altArrow('ArrowDown');
@@ -249,11 +292,9 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
 
   it('plain arrows still move the active option (no reorder)', async () => {
     await openWithActive('Alpha');
-    const event = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
-    Object.defineProperty(event, 'keyCode', { get: () => 40 });
-    select()._elementRef.nativeElement.dispatchEvent(event);
+    key('ArrowDown');
     await settle();
     expect(host.control.value).toEqual(['Alpha', 'Bravo', 'Charlie']);
-    expect(select()._keyManager.activeItem).toBe(option('Bravo'));
+    expect(option('Bravo').active).toBe(true);
   });
 });
