@@ -1,12 +1,12 @@
 import { SearchIndexerState } from "./search-indexer-state.interface";
 
 /**
- * One replaced YouTube playlist id. `replacedAt` is ISO text on the wire, but `JsonDateInterceptor`
- * turns it into a `Date` before the dialog sees it, so callers must handle both.
+ * One replaced YouTube playlist id. `replacedAt` is a UTC ISO instant (`...Z`) on the wire, and
+ * `JsonDateInterceptor` turns it into a `Date` before the dialog sees it.
  */
 export interface PlaylistIdHistoryEntry {
   id: string;
-  replacedAt: Date | string;
+  replacedAt: Date;
 }
 
 /**

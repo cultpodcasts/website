@@ -142,8 +142,8 @@ const zonelessDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
 /**
  * `yyyy-MM-dd` (UTC) for a playlist history `replacedAt`. The API sends ISO text ending in `Z`, and
  * `JsonDateInterceptor` has already turned it into a `Date` by the time the dialog renders, so accept either:
- * - `Date`: formatted as its UTC date. Note that the interceptor parses zone-less API values
- *   (`...THH:mm:ss` without `Z`) as browser-local before they reach here, so those arrive on this branch.
+ * - `Date`: formatted as its UTC date. The interceptor reads zone-less API values (`...THH:mm:ss` without `Z`)
+ *   as UTC, so they arrive here as the right instant.
  * - ISO string with `Z` or `±hh:mm`: converted to its UTC date.
  * - String in the strict zone-less `T` form above (string input only): read as UTC by appending `Z`.
  * - Any other string (e.g. space-separated `yyyy-MM-dd HH:mm:ss`) is passed to `new Date()` as-is, which
