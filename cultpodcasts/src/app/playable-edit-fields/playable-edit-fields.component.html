@@ -90,8 +90,12 @@
                 <mat-option disabled>{{subjectsFilterTerm()}}</mat-option>
                 <mat-divider></mat-divider>
                 }
-                @for (subject of selectedSubjects(); track subject) {
-                <mat-option [value]="subject">{{subject}}</mat-option>
+                @if (selectedSubjects().length > 0) {
+                <div appSelectReorderList (reordered)="regroupSubjects()">
+                    @for (subject of selectedSubjects(); track subject) {
+                    <mat-option appSelectReorderItem [value]="subject">{{subject}}<app-select-reorder-handle /></mat-option>
+                    }
+                </div>
                 }
                 @if (hoistedSubjects().length > 0) {
                 @if (selectedSubjects().length > 0) {
@@ -152,8 +156,12 @@
                 <mat-option disabled>{{guestsFilterTerm()}}</mat-option>
                 <mat-divider></mat-divider>
                 }
-                @for (person of selectedGuests(); track person.id) {
-                <mat-option [value]="person.name">{{personLabel(person)}}</mat-option>
+                @if (selectedGuests().length > 0) {
+                <div appSelectReorderList (reordered)="regroupGuests()">
+                    @for (person of selectedGuests(); track person.id) {
+                    <mat-option appSelectReorderItem [value]="person.name">{{personLabel(person)}}<app-select-reorder-handle /></mat-option>
+                    }
+                </div>
                 }
                 @if (otherPeople().length > 0) {
                 @if (selectedGuests().length > 0) {
