@@ -56,7 +56,7 @@ describe('DiscoveryApiComponent reconcile and confirm', () => {
       votesByResultId: {},
       presence: {},
       rev: 1,
-      updatedAt: '2026-10-24T00:00:00Z',
+      updatedAt: new Date('2026-10-24T00:00:00Z'),
       ...overrides
     };
   }
