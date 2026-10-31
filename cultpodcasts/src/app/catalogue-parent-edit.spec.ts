@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { catalogueParentChanges, catalogueParentEditModel, historyDateText, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -268,5 +268,37 @@ describe('catalogue hub helpers', () => {
       expect(hubApiRoot(hub)).toBe(root);
       expect(hubPathCommands(hub, 'X')).toEqual([`/${hub}`, 'X']);
     }
+  });
+});
+
+describe('historyDateText (playlist id history)', () => {
+  it('formats a Date (what JsonDateInterceptor hands the dialog) as its UTC yyyy-MM-dd', () => {
+    expect(historyDateText(new Date('2026-10-30T23:45:12.345Z'))).toBe('2026-10-30');
+  });
+
+  it('keeps the date part of ISO text', () => {
+    expect(historyDateText('2026-01-02T03:04:05Z')).toBe('2026-01-02');
+  });
+
+  it('converts an offset string to its UTC date, not the offset-local date', () => {
+    // 23:45 at +01:00 is 22:45Z the same day; 23:30 at -02:00 is 01:30Z the next day.
+    expect(historyDateText('2026-10-30T23:45:12+01:00')).toBe('2026-10-30');
+    expect(historyDateText('2026-10-30T23:30:00-02:00')).toBe('2026-10-31');
+    // 00:30 at +01:00 is 23:30Z the previous day.
+    expect(historyDateText('2026-10-31T00:30:00+01:00')).toBe('2026-10-30');
+  });
+
+  it('reads a zone-less date-time as UTC, whatever the runner timezone', () => {
+    expect(historyDateText('2026-10-30T23:45:12')).toBe('2026-10-30');
+    expect(historyDateText('2026-10-31T00:15:00.5')).toBe('2026-10-31');
+    expect(historyDateText('2026-10-30')).toBe('2026-10-30');
+  });
+
+  it('never throws: an invalid Date, unparseable text, null or undefined shows as ""', () => {
+    expect(historyDateText(new Date('not a date'))).toBe('');
+    expect(historyDateText('not a date')).toBe('');
+    expect(historyDateText('')).toBe('');
+    expect(historyDateText(null)).toBe('');
+    expect(historyDateText(undefined)).toBe('');
   });
 });

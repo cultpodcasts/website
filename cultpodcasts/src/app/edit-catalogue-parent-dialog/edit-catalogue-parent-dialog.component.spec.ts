@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -11,6 +11,7 @@ import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentEditModel } from '../catalogue-parent-edit';
+import { JsonDateInterceptor } from '../json-date.interceptor';
 import { PODCAST_REGEXS_TAB_INDEX } from '../podcast-form.util';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
@@ -457,5 +458,63 @@ describe('EditCatalogueParentDialogComponent (news outlet Flags tab)', () => {
     expect(text).not.toContain('New news organisations start with');
     expect(text).not.toContain('Skip Enriching From YouTube');
     expect(text).not.toContain("You'll be asked to confirm");
+  });
+});
+
+describe('EditCatalogueParentDialogComponent (previous playlist ids, with the app JSON date interceptor)', () => {
+  const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
+  const subjectsUrl = new URL('/subjects', environment.api).toString();
+  const languagesUrl = new URL('/languages', environment.api).toString();
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EditCatalogueParentDialogComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
+        // Same as app.config: JsonDateInterceptor turns ISO strings into Date objects before the dialog sees them.
+        provideHttpClient(withInterceptors([authInterceptor]), withInterceptorsFromDi()),
+        { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
+        provideHttpClientTesting(),
+        { provide: MAT_DIALOG_DATA, useValue: { hub: 'news', name: 'Desk' } },
+        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
+      ]
+    }).compileComponents();
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('renders the Details tab (history dates and the fields after them) when replacedAt arrives as a Date', async () => {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    (await expectSoon(getUrl)).flush({
+      id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      name: 'Desk',
+      youTubePlaylistId: 'PLsyntheticplaylistnew000000000000',
+      youTubePlaylistIdHistory: [
+        { id: 'PLsyntheticplaylistold000000000000', replacedAt: '2026-10-30T23:45:12.345Z' },
+        { id: 'PLsyntheticplaylistolder00000000000', replacedAt: '2026-01-02T03:04:05Z' }
+      ],
+      youTubePublicationDelay: '-1:00:00'
+    });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    const history = (fixture.componentInstance as unknown as { playlistHistory(): { replacedAt: unknown }[] }).playlistHistory();
+    expect(history[0].replacedAt).toBeInstanceOf(Date);
+    await showTab(fixture, 'Details');
+    await settle();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const items = Array.from(root.querySelectorAll('.history-item')).map((e) => e.textContent?.trim());
+    expect(items).toEqual([
+      'PLsyntheticplaylistold000000000000 (2026-10-30)',
+      'PLsyntheticplaylistolder00000000000 (2026-01-02)'
+    ]);
+    // The fields after the history line still render (the bug left the rest of the dialog blank).
+    expect(root.querySelector<HTMLInputElement>('input[name="youTubePublicationDelay"]')).not.toBeNull();
+    expect(root.querySelector<HTMLInputElement>('input[name="youTubePlaylistId"]')!.value).toBe('PLsyntheticplaylistnew000000000000');
   });
 });

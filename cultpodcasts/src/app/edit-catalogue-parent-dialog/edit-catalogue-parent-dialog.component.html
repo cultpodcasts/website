@@ -47,8 +47,8 @@
                 </mat-form-field>
                 @if (playlistHistory().length > 0) {
                 <p class="hint">Previous playlist ids:
-                    @for (old of playlistHistory(); track old.id + old.replacedAt) {
-                    <span class="history-item">{{ old.id }} ({{ old.replacedAt.slice(0, 10) }})</span>
+                    @for (old of playlistHistory(); track $index) {
+                    <span class="history-item">{{ old.id }} ({{ historyDateText(old.replacedAt) }})</span>
                     }
                 </p>
                 }
