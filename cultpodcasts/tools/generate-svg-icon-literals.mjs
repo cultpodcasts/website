@@ -134,6 +134,31 @@ function abcIviewIcon() {
   );
 }
 
+/** CBC Gem red sampled from the live app icon (gem.cbc.ca/android-chrome-512x512.png). */
+const CBC_GEM_RED = '#E60505';
+
+/**
+ * Where the CBC gem (path 0 of the gem.cbc.ca header logo, viewBox 0 0 292 72) lands on the
+ * 24×24 tile. Its bbox is x 0.03–71.81, y 0.03–71.81 (centre 35.92, 35.92). The live app icon
+ * draws the gem 301/512 = 58.8% of the tile wide, centred, so here it is 14.1 wide around (12, 12):
+ *   scale     = 14.1 / 71.78
+ *   translate = 12 - 35.92 × scale (same for x and y)
+ * Values are rounded (scale 4dp, translate 2dp). Path 1 is the white "Gem" wordmark, not used.
+ */
+const CBC_GEM_LAYOUT = { path: 0, scale: 0.1964, translate: 4.95 };
+
+function cbcGemIcon() {
+  const { path, scale, translate } = CBC_GEM_LAYOUT;
+  // Not roundPathData: the source packs arc flags (`0 0012.8`), which number rounding would merge.
+  const d = readSvgPathData('cbc-gem-logo.svg')[path];
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<rect width="24" height="24" rx="5.4" fill="${CBC_GEM_RED}"/>` +
+    `<path fill="#fff" transform="matrix(${scale} 0 0 ${scale} ${translate} ${translate})" d="${d}"/>` +
+    `</svg>`
+  );
+}
+
 /**
  * Compact streaming / service mark SVGs (no separate asset files).
  * Prefer official storefront SVG. Raster app icons are PNG only when the
@@ -248,12 +273,10 @@ const streamingIconSvgs = {
   // iview wordmark (play triangle in the e) on the iview teal tile, built from the checked-in
   // masthead SVG (icon-sources/abc-iview-logo.svg). See abcIviewIcon() for the layout numbers.
   'abc-iview': abcIviewIcon(),
-  // CBC Gem — near-black tile with GEM wordmark.
-  'cbc-gem':
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
-    `<rect width="24" height="24" rx="5.4" fill="#111"/>` +
-    `<text x="12" y="15.4" text-anchor="middle" fill="#fff" font-family="Arial Black, Impact, Arial, sans-serif" font-size="7" font-weight="900" letter-spacing="0.3">GEM</text>` +
-    `</svg>`,
+  // CBC Gem — live app icon (gem.cbc.ca/android-chrome-512x512.png): the white CBC gem on the
+  // Gem red tile, built from the checked-in header logo (icon-sources/cbc-gem-logo.svg). See
+  // cbcGemIcon() for the layout numbers.
+  'cbc-gem': cbcGemIcon(),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

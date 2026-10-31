@@ -454,6 +454,12 @@ mat-card.curator-card mat-card-title {
   --mdc-icon-button-icon-size: 24px;
   width: 40px !important;
   height: 40px !important;
+  /* padding: 0 drops Material's 8px inset that centres the 24px glyph, which left
+     the mat-icon on the 40px line box's baseline, 4px above centre (the state-layer
+     circle showed it off-centre). Centre the glyph with flex instead. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 !important;
   margin: 0 !important;
   transform: none !important;
