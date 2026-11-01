@@ -327,6 +327,8 @@ test.describe("reorder selected subjects and guests", () => {
 		const options = listbox.getByRole("option");
 		await expect(options.nth(0)).toHaveText("Politics");
 		await expect(options.nth(2)).toHaveText("Arts");
+		// The outlet default, Politics, is selected, so it is listed once, in the selected group only (#584).
+		await expect(listbox.getByRole("option", { name: "Politics", exact: true })).toHaveCount(1);
 
 		// Only the three selected options get a handle, and it sits on the right of the row.
 		const handles = listbox.locator("app-select-reorder-handle");
@@ -338,7 +340,6 @@ test.describe("reorder selected subjects and guests", () => {
 		expect(handleBox.x).toBeGreaterThan(optionBox.x + optionBox.width / 2);
 
 		// Drag Arts from its handle to the top.
-		// (The outlet default, Politics, is also listed again in the hoisted group, so scope to the selected group.)
 		const target = (await listbox.locator(".select-reorder-list").getByRole("option", { name: "Politics" }).boundingBox())!;
 		await handle.hover();
 		await page.mouse.down();

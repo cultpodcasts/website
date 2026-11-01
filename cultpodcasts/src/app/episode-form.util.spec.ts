@@ -303,6 +303,32 @@ describe('episode-form.util', () => {
     expect(unfiltered.hoistedSubjects).toContain('news');
   });
 
+  it('regroupSubjects lists a selected default subject once, in the selected group only (#584)', () => {
+    const grouped = regroupSubjects(
+      ['default', 'cult'],
+      ['cult', 'comedy', 'news', 'default'],
+      'default',
+      ['news'],
+      ''
+    );
+    expect(grouped.selectedSubjects).toEqual(['default', 'cult']);
+    expect(grouped.hoistedSubjects).toEqual(['news']);
+    expect(grouped.otherSubjects).toEqual(['comedy']);
+    const listed = [...grouped.selectedSubjects, ...grouped.hoistedSubjects, ...grouped.otherSubjects];
+    expect(listed.filter(x => x === 'default').length).toBe(1);
+  });
+
+  it('regroupSubjects still hoists the default subject first when it is not selected', () => {
+    const grouped = regroupSubjects(['cult'], ['cult', 'comedy', 'news', 'default'], 'default', ['news'], '');
+    expect(grouped.hoistedSubjects).toEqual(['default', 'news']);
+  });
+
+  it('regroupSubjects keeps a selected default out of the hoisted group while filtering', () => {
+    const grouped = regroupSubjects(['default'], ['cult', 'comedy', 'default'], 'default', [], 'zzz');
+    expect(grouped.selectedSubjects).toEqual(['default']);
+    expect(grouped.hoistedSubjects).toEqual([]);
+  });
+
   describe('getEpisodeChanges', () => {
     it('returns empty object when snapshots match', () => {
       const episode = baseEpisode();

@@ -287,7 +287,9 @@ export function regroupSubjects(
   const selectedSubjects = selectedValues.filter(subject => allSubjects.includes(subject));
 
   let hoistedSubjects: string[] = [];
-  if (podcastDefaultSubject) {
+  // A selected default is already listed in the selected group; hoisting it too would give mat-select two
+  // options for one value (#584).
+  if (podcastDefaultSubject && !selectedSet.has(podcastDefaultSubject)) {
     hoistedSubjects.push(podcastDefaultSubject);
   }
 
