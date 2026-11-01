@@ -47,6 +47,7 @@ If you “fix scroll jump” by re-adding unconditional copy-body `min-height` o
 | Path | Role |
 |------|------|
 | `src/app/homepage-hero/homepage-hero.component.{ts,html,sass}` | Billboard UI, transitions, swipe, layout |
+| `src/app/homepage-hero/hero-stage/hero-stage.component.{ts,html,sass}` | One art layer (`app-hero-stage`, host `.billboard__stage`): sharp art, blurred edge fills, contain framing, Ken Burns. The hero renders two in `.billboard__stages` and owns their state (front layer, image, aspect, Ken Burns) |
 | `src/app/homepage-hero/homepage-hero.component.spec.ts` | Behaviour + CSS-contract regressions |
 | `src/app/hero-slides.ts` | Build / prune curated week slides |
 | `src/app/hero-curation.service.ts` | Client for `/hero-curation` |
@@ -171,6 +172,7 @@ When description and subjects are both absent, actions follow meta directly.
 | Chevron dead | HERO-LIF-002 | Spec: next chevron does not cancel content transition |
 | Dwell stuck after pager | focus pause | Spec: releases chevron focus |
 | Blank / text ahead of art | HERO-LIF-001/003 | Image gate + hold-until-ready specs |
+| First image covers the whole hero on load, then snaps into its slot (Jon, 1 Nov 2026) | HERO-ART-001 | A stage paints its art only once the preload has measured its aspect, so the first painted frame already has the contain framing (right-pinned on wide). Unit (`hero-stage` + hero crossfade spec) + catalogue e2e `homepage-hero-first-paint.spec.ts` (slow images, every art paint recorded at 1920×1080, 16:9 and square) |
 | Can’t click dashes | HERO-CTL-001 | Sass `pointer-events: none` on stages |
 | Hover over title pauses carousel | HERO-CTL-003 | Spec: leave on copy does not keep pause; art hover does |
 | Pager below fold / after copy on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
@@ -201,8 +203,9 @@ npm run test:e2e:hero-layout
 |-------|------|
 | `e2e/hero-layout.spec.ts` | Viewport × fixture matrix; geometry + visibility asserts |
 | `e2e/hero-layout-expand.spec.ts` | Expanded description (HERO-DSC-002..006) with classic scrollbars, very long / medium notes and a tall card: card top kept (shared checks in `e2e/hero-expand-geometry.ts`); art / hero / strip unchanged and strip not painted over; text clears the scrollbar; no sideways overflow; chevron off the text; same text column and line breaks collapsed and expanded (classic and overlay scrollbars, 8 widths) |
+| `e2e/homepage-hero-first-paint.spec.ts` | HERO-ART-001 (catalogue suite, real app): the art's first painted frame is already framed and right-pinned, for 16:9 and square art with slow image responses |
 | `e2e/hero-layout/fixtures.ts` | Episode configs (empty desc, many subjects, short/long title, **very long show notes with long URLs** and the expander); mock stats strip + rails markup |
-| `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` (`:host` → `.hero-layout-host`) and `homepage-catalogue.component.sass` (mock strip); injects an expander script that mirrors `toggleDesc` using the component's own `measureCollapsedDesc` and `expandedDescLayout` (`window.heroLayoutHarness.toggleDesc()`, or click the chevron) |
+| `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` (`:host` → `.hero-layout-host`), `hero-stage.component.sass` (`:host` → `.billboard__stage`) and `homepage-catalogue.component.sass` (mock strip); injects an expander script that mirrors `toggleDesc` using the component's own `measureCollapsedDesc` and `expandedDescLayout` (`window.heroLayoutHarness.toggleDesc()`, or click the chevron) |
 
 **Viewports:** mobile (390×844), mobile-landscape (844×390), tablet (768×1024), stacked-desktop (1100×800), wide (1440×900), **full-hd (1920×1080)**; expand suite: 1024×700, 1440×900, 1920×1080, 768×1024, 390×844.
 
@@ -212,7 +215,7 @@ Tagged to **HERO-SCR-002 / 004 / 005**, **HERO-SUB-001 / 002** and **HERO-DSC-00
 
 ## Soft guideline — style budget
 
-Prefer compiled hero styles under ~16 kB; hard `anyComponentStyle` error budget is **17 kB** (`angular.json`). Do not sacrifice a layout invariant to shave a few hundred bytes.
+Prefer compiled hero styles under ~16 kB; hard `anyComponentStyle` error budget is **17 kB** (`angular.json`), and a spec fails the hero at 16 kB (#568). Do not sacrifice a layout invariant to shave a few hundred bytes. The art layers' styles live in `hero-stage.component.sass` (their own budget, under the 12 kB warning); keep stage rules there rather than adding them back to the hero stylesheet (#568: 16.95 kB → 13.34 kB in the production build).
 
 ## Regression checklist
 

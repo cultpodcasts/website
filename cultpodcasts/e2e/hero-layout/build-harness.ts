@@ -11,6 +11,14 @@ const heroSassPath = join(
   "homepage-hero",
   "homepage-hero.component.sass"
 );
+const heroStageSassPath = join(
+  process.cwd(),
+  "src",
+  "app",
+  "homepage-hero",
+  "hero-stage",
+  "hero-stage.component.sass"
+);
 const queueButtonSassPath = join(process.cwd(), "src", "app", "queue-button", "queue-button.component.sass");
 const stylesPath = join(process.cwd(), "src", "styles.scss");
 const catalogueSassPath = join(
@@ -26,6 +34,15 @@ export function compileHeroLayoutCss(): string {
   const heroCss = sass.compile(heroSassPath, { style: "expanded" }).css
     .replaceAll(":host-context(.cdk-global-scrollblock)", ".cdk-global-scrollblock .hero-layout-host")
     .replaceAll(":host", ".hero-layout-host");
+  // The hero's art layers (app-hero-stage, #568): the host is .billboard__stage.
+  // `[^)]*` does not support nested parens (e.g. `:host(:not(.x))`); the guard below fails loudly.
+  const heroStageCss = sass.compile(heroStageSassPath, { style: "expanded" }).css
+    .replace(/:host-context\(([^)]*)\)/g, "$1 .billboard__stage")
+    .replace(/:host\(([^)]*)\)/g, ".billboard__stage$1")
+    .replaceAll(":host", ".billboard__stage");
+  if (/:host|\.billboard__stage\)/.test(heroStageCss)) {
+    throw new Error("hero-stage harness CSS: a :host selector was not rewritten (nested parens?)");
+  }
   // The shared Add to Queue button (HERO-QUE-001), scoped to its host tag.
   const queueButtonCss = sass.compile(queueButtonSassPath, { style: "expanded" }).css
     .replace(/:host\(([^)]*)\)/g, "app-queue-button$1")
@@ -97,7 +114,7 @@ export function compileHeroLayoutCss(): string {
     /* optional */
   }
 
-  return `${tokenCss}\n${stylesSnippet}\n${heroCss}\n${queueButtonCss}\n${catalogueCss}`;
+  return `${tokenCss}\n${stylesSnippet}\n${heroCss}\n${heroStageCss}\n${queueButtonCss}\n${catalogueCss}`;
 }
 
 export function buildHeroLayoutDocument(c: HeroLayoutCase): string {

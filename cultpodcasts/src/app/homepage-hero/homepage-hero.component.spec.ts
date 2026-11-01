@@ -332,6 +332,44 @@ describe('HomepageHeroComponent', () => {
     expect(css.length).toBeLessThan(17_000);
   });
 
+  it('#568: compiled hero CSS keeps at least 1 kB of headroom under the 17 kB error budget', () => {
+    // The art layers' styles live in hero-stage (own budget); do not move them back.
+    // Sass `compressed` is a proxy for the CLI budget measure (~0.1 kB lower: 13,247 B vs the
+    // build's 13.34 kB at #568); the 1 kB headroom absorbs that gap.
+    const css = compileString(heroSass, { syntax: 'indented', style: 'compressed' }).css;
+    expect(css.length).toBeLessThan(16_000);
+    expect(heroSass).not.toMatch(/\.billboard__stage(?!s)/);
+  });
+
+  it('#568: renders both crossfade layers as app-hero-stage and moves the front layer with the crossfade', () => {
+    component['heroAspectA'].set(1.5);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const stages = () => [...root.querySelectorAll<HTMLElement>('.billboard__stages > app-hero-stage.billboard__stage')];
+    expect(stages().length).toBe(2);
+    expect(stages()[0].classList).toContain('is-active');
+    expect(stages()[1].classList).not.toContain('is-active');
+    expect(stages()[0].classList).toContain('has-edge-extend');
+    expect(stages()[0].style.getPropertyValue('--hero-art-aspect')).toBe('1.5');
+    expect(stages()[0].querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toContain('/a');
+
+    // The crossfade swaps the front layer onto B with the incoming art.
+    component['heroLayerB'].set('https://img.example/synthetic/b/art.jpg');
+    component['heroKenBurnsB'].set(true);
+    component['heroFrontLayer'].set('b');
+    fixture.detectChanges();
+    expect(stages()[1].classList).toContain('is-active');
+    expect(stages()[1].classList).toContain('is-kenburns');
+    expect(stages()[1].classList).not.toContain('has-edge-extend');
+    expect(stages()[0].classList).not.toContain('is-active');
+    // HERO-ART-001: B's art is unmeasured, so it paints nothing yet (no full-width frame).
+    expect(stages()[1].querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toBe('');
+    component['heroAspectB'].set(1.777);
+    fixture.detectChanges();
+    expect(stages()[1].classList).toContain('has-edge-extend');
+    expect(stages()[1].querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toContain('/b/');
+  });
+
   it('HERO-SCR-001/002/005 + HERO-CTL-001/003/004 + HERO-SWP-001: Sass keeps scroll-stability and hit-target contracts', () => {
     // Layout bugs often land in CSS; assert the source contracts stay present.
     expect(heroSass).toMatch(/\.billboard[\s\S]*?overflow-anchor:\s*none/);
