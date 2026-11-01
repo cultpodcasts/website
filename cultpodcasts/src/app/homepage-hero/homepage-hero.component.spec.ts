@@ -334,9 +334,11 @@ describe('HomepageHeroComponent', () => {
 
   it('#568: compiled hero CSS keeps at least 1 kB of headroom under the 17 kB error budget', () => {
     // The art layers' styles live in hero-stage (own budget); do not move them back.
+    // Sass `compressed` is a proxy for the CLI budget measure (~0.1 kB lower: 13,247 B vs the
+    // build's 13.34 kB at #568); the 1 kB headroom absorbs that gap.
     const css = compileString(heroSass, { syntax: 'indented', style: 'compressed' }).css;
     expect(css.length).toBeLessThan(16_000);
-    expect(heroSass).not.toMatch(/\.billboard__stage[-.\n]/);
+    expect(heroSass).not.toMatch(/\.billboard__stage(?!s)/);
   });
 
   it('#568: renders both crossfade layers as app-hero-stage and moves the front layer with the crossfade', () => {

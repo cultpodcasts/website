@@ -1,5 +1,6 @@
 // One art layer of the homepage hero (moved out of homepage-hero.component.sass, #568).
-// The host is `.billboard__stage`; `--hero-interval` is inherited from the hero's :host.
+// The host is `.billboard__stage`; `--hero-interval` is inherited from the hero's :host
+// (the 7.5s fallback keeps Ken Burns alive if the stage renders outside the hero).
 // Contract: docs/homepage-hero.md
 
 :host
@@ -17,7 +18,7 @@
     opacity: 1
 
 :host(.is-kenburns) .billboard__stage-motion
-    animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+    animation: nflx-ken-burns var(--hero-interval, 7.5s) ease-out forwards
 
 // Ken Burns zooms sharp art only. Edge fills stay outside this layer so
 // Firefox does not re-raster filters every animation frame.
@@ -141,7 +142,7 @@
             mask-image: linear-gradient(90deg, transparent, #000 36px, #000)
     // Wide: Ken Burns on sharp art only (edge fills stay static — cheaper in Firefox).
     :host(.has-edge-extend.is-kenburns) .billboard__stage-motion
-        animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+        animation: nflx-ken-burns var(--hero-interval, 7.5s) ease-out forwards
 
 // Reduced motion, and touch / narrow (continuous GPU effects fight dialog
 // compositing): no Ken Burns. Same query as the hero's grain / live pulse block.

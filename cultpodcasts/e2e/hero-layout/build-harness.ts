@@ -35,10 +35,14 @@ export function compileHeroLayoutCss(): string {
     .replaceAll(":host-context(.cdk-global-scrollblock)", ".cdk-global-scrollblock .hero-layout-host")
     .replaceAll(":host", ".hero-layout-host");
   // The hero's art layers (app-hero-stage, #568): the host is .billboard__stage.
+  // `[^)]*` does not support nested parens (e.g. `:host(:not(.x))`); the guard below fails loudly.
   const heroStageCss = sass.compile(heroStageSassPath, { style: "expanded" }).css
     .replace(/:host-context\(([^)]*)\)/g, "$1 .billboard__stage")
     .replace(/:host\(([^)]*)\)/g, ".billboard__stage$1")
     .replaceAll(":host", ".billboard__stage");
+  if (/:host|\.billboard__stage\)/.test(heroStageCss)) {
+    throw new Error("hero-stage harness CSS: a :host selector was not rewritten (nested parens?)");
+  }
   // The shared Add to Queue button (HERO-QUE-001), scoped to its host tag.
   const queueButtonCss = sass.compile(queueButtonSassPath, { style: "expanded" }).css
     .replace(/:host\(([^)]*)\)/g, "app-queue-button$1")

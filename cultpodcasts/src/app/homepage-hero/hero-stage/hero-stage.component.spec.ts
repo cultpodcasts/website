@@ -68,11 +68,15 @@ describe('HeroStageComponent', () => {
   });
 
   it('compiled stage CSS stays under the anyComponentStyle warning budget (12 kB)', () => {
+    // Proxy: Sass `compressed` runs ~0.1 kB under the CLI's anyComponentStyle measure (#568).
     const css = compileString(stageSass, { syntax: 'indented', style: 'compressed' }).css;
     expect(css.length).toBeLessThan(12_000);
   });
 
   it('keeps the stage layout contracts (contain framing, wide right pin, framed stacked gutters)', () => {
+    // Self-contained timing: a fallback if --hero-interval is not inherited (#592 review).
+    expect(stageSass).not.toMatch(/var\(--hero-interval\)/);
+    expect(stageSass.match(/nflx-ken-burns var\(--hero-interval, 7\.5s\)/g)?.length).toBe(2);
     // Narrow: Ken Burns would crop the contain slot.
     expect(stageSass).toMatch(/:host\(\.has-edge-extend\.is-kenburns\) \.billboard__stage-motion\n\s+animation: none/);
     // Wide: art pinned right, Ken Burns back on.
