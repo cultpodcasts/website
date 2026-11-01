@@ -172,6 +172,7 @@ When description and subjects are both absent, actions follow meta directly.
 | Chevron dead | HERO-LIF-002 | Spec: next chevron does not cancel content transition |
 | Dwell stuck after pager | focus pause | Spec: releases chevron focus |
 | Blank / text ahead of art | HERO-LIF-001/003 | Image gate + hold-until-ready specs |
+| First image covers the whole hero on load, then snaps into its slot (Jon, 1 Nov 2026) | HERO-ART-001 | A stage paints its art only once the preload has measured its aspect, so the first painted frame already has the contain framing (right-pinned on wide). Unit (`hero-stage` + hero crossfade spec) + catalogue e2e `homepage-hero-first-paint.spec.ts` (slow images, every art paint recorded at 1920×1080, 16:9 and square) |
 | Can’t click dashes | HERO-CTL-001 | Sass `pointer-events: none` on stages |
 | Hover over title pauses carousel | HERO-CTL-003 | Spec: leave on copy does not keep pause; art hover does |
 | Pager below fold / after copy on stacked desktop | HERO-CTL-004 | e2e stacked-desktop: controls intersect art band |
@@ -202,6 +203,7 @@ npm run test:e2e:hero-layout
 |-------|------|
 | `e2e/hero-layout.spec.ts` | Viewport × fixture matrix; geometry + visibility asserts |
 | `e2e/hero-layout-expand.spec.ts` | Expanded description (HERO-DSC-002..006) with classic scrollbars, very long / medium notes and a tall card: card top kept (shared checks in `e2e/hero-expand-geometry.ts`); art / hero / strip unchanged and strip not painted over; text clears the scrollbar; no sideways overflow; chevron off the text; same text column and line breaks collapsed and expanded (classic and overlay scrollbars, 8 widths) |
+| `e2e/homepage-hero-first-paint.spec.ts` | HERO-ART-001 (catalogue suite, real app): the art's first painted frame is already framed and right-pinned, for 16:9 and square art with slow image responses |
 | `e2e/hero-layout/fixtures.ts` | Episode configs (empty desc, many subjects, short/long title, **very long show notes with long URLs** and the expander); mock stats strip + rails markup |
 | `e2e/hero-layout/build-harness.ts` | Compiles **real** `homepage-hero.component.sass` (`:host` → `.hero-layout-host`), `hero-stage.component.sass` (`:host` → `.billboard__stage`) and `homepage-catalogue.component.sass` (mock strip); injects an expander script that mirrors `toggleDesc` using the component's own `measureCollapsedDesc` and `expandedDescLayout` (`window.heroLayoutHarness.toggleDesc()`, or click the chevron) |
 

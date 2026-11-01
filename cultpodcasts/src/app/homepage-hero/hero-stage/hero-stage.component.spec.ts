@@ -36,8 +36,25 @@ describe('HeroStageComponent', () => {
     }
   });
 
+  it('HERO-ART-001: paints nothing until the art aspect is known (no full-width first frame)', async () => {
+    fixture.componentRef.setInput('active', true);
+    fixture.componentRef.setInput('image', 'https://img.example/synthetic-a.jpg');
+    await fixture.whenStable();
+    expect(host.classList).not.toContain('has-edge-extend');
+    for (const el of host.querySelectorAll<HTMLElement>('.billboard__stage-focus, .billboard__stage-edge-sample')) {
+      expect(el.style.backgroundImage).toBe('');
+    }
+
+    // The aspect and the paint arrive together, so the first painted frame is already framed.
+    fixture.componentRef.setInput('aspect', 1.777);
+    await fixture.whenStable();
+    expect(host.classList).toContain('has-edge-extend');
+    expect(host.querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toContain('synthetic-a.jpg');
+  });
+
   it('paints the art on the focus layer and both edge samples', async () => {
     fixture.componentRef.setInput('image', 'https://img.example/synthetic-a.jpg');
+    fixture.componentRef.setInput('aspect', 1.5);
     await fixture.whenStable();
     const painted = [...host.querySelectorAll<HTMLElement>('.billboard__stage-focus, .billboard__stage-edge-sample')];
     expect(painted.length).toBe(3);

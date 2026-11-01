@@ -25,15 +25,23 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 export class HeroStageComponent {
   /** Art URL for this layer; unset leaves the layer blank. */
   readonly image = input<string | undefined>(undefined);
-  /** Width / height of the art once known; turns on the contain framing and edge fills. */
+  /**
+   * Width / height of the art once known; turns on the contain framing and edge fills.
+   * Until it is known the layer paints nothing (see `backgroundImage`).
+   */
   readonly aspect = input<number | undefined>(undefined);
   /** Front layer of the crossfade. */
   readonly active = input(false);
   /** Ken Burns zoom on this layer (the parent turns it off for reduced motion / save-GPU). */
   readonly kenBurns = input(false);
 
+  /**
+   * Paint the art only once its aspect is known (HERO-ART-001). Without the aspect the
+   * host has no `.has-edge-extend`, so the art would cover the whole stage and then snap
+   * into its contain slot (right-pinned on wide screens) when the preload measures it.
+   */
   protected readonly backgroundImage = computed(() => {
     const image = this.image();
-    return image ? 'url(' + image + ')' : null;
+    return image && this.aspect() != null ? 'url(' + image + ')' : null;
   });
 }

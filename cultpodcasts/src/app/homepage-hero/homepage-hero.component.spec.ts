@@ -362,6 +362,11 @@ describe('HomepageHeroComponent', () => {
     expect(stages()[1].classList).toContain('is-kenburns');
     expect(stages()[1].classList).not.toContain('has-edge-extend');
     expect(stages()[0].classList).not.toContain('is-active');
+    // HERO-ART-001: B's art is unmeasured, so it paints nothing yet (no full-width frame).
+    expect(stages()[1].querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toBe('');
+    component['heroAspectB'].set(1.777);
+    fixture.detectChanges();
+    expect(stages()[1].classList).toContain('has-edge-extend');
     expect(stages()[1].querySelector<HTMLElement>('.billboard__stage-focus')?.style.backgroundImage).toContain('/b/');
   });
 
