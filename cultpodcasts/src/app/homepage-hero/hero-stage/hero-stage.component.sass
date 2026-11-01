@@ -1,0 +1,173 @@
+// One art layer of the homepage hero (moved out of homepage-hero.component.sass, #568).
+// The host is `.billboard__stage`; `--hero-interval` is inherited from the hero's :host.
+// Contract: docs/homepage-hero.md
+
+:host
+    position: absolute
+    inset: 0
+    background-color: #121212
+    opacity: 0
+    overflow: hidden
+    container-type: size
+    // Width/height ratio of the sharp art (set from naturalWidth/naturalHeight).
+    --hero-art-aspect: 1.777
+    transition: opacity 1.15s cubic-bezier(0.33, 0.1, 0.25, 1)
+
+:host(.is-active)
+    opacity: 1
+
+:host(.is-kenburns) .billboard__stage-motion
+    animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+
+// Ken Burns zooms sharp art only. Edge fills stay outside this layer so
+// Firefox does not re-raster filters every animation frame.
+.billboard__stage-motion
+    position: absolute
+    inset: 0
+    transform: scale(1.08)
+    transform-origin: center 40%
+    z-index: 1
+
+// Side fills: sample a thin column at the art edge, blur that small bitmap,
+// then scaleX the already-blurred result across the gutter.
+// (CSS applies transform before filter on one element — scaleX(400)+blur(28)
+// forces a huge Gaussian and is especially slow in Firefox.)
+.billboard__stage-edge
+    display: none
+    position: absolute
+    top: 0
+    bottom: 0
+    overflow: hidden
+    pointer-events: none
+    contain: paint
+    z-index: 0
+
+.billboard__stage-edge-strip
+    position: absolute
+    top: -10%
+    bottom: -10%
+    // Wider sample → smaller scaleX → practical inner blur (≥1px) browsers handle well.
+    width: 64px
+    background-color: #121212
+
+.billboard__stage-edge-sample
+    position: absolute
+    inset: 0
+    background-color: #121212
+    background-size: auto 100%
+    background-repeat: no-repeat
+    // Blur on the unscaled sample; parent scaleX multiplies the visual radius.
+    // ~1.5px × scaleX(50) ≈ 75px soft wash (close to the old post-scale blur look).
+    filter: blur(1.5px) saturate(1.2) brightness(0.95)
+    transform: translateZ(0)
+
+.billboard__stage-edge--left
+    left: 0
+    .billboard__stage-edge-strip
+        right: 0
+        left: auto
+        transform-origin: right center
+        transform: scaleX(50)
+    .billboard__stage-edge-sample
+        background-position: left center
+
+.billboard__stage-edge--right
+    right: 0
+    .billboard__stage-edge-strip
+        left: 0
+        right: auto
+        transform-origin: left center
+        transform: scaleX(50)
+    .billboard__stage-edge-sample
+        background-position: right center
+
+// Slot sizes/positions the sharp art; Ken Burns scales the motion wrapper.
+.billboard__stage-focus-slot
+    position: absolute
+    inset: 0
+
+.billboard__stage-focus
+    position: absolute
+    inset: 0
+    background-color: transparent
+    background-size: cover
+    background-position: center 20%
+    background-repeat: no-repeat
+
+// Full-image framing whenever art aspect is known: largest aspect-correct slot
+// that fits the stage (contain), with edge blur only in leftover side gutters.
+// Avoid cover-cropping which shows only the left/centre of wide collage art.
+:host(.has-edge-extend)
+    .billboard__stage-motion
+        transform: none
+        transform-origin: center center
+    .billboard__stage-edge
+        display: block
+    .billboard__stage-edge--left,
+    .billboard__stage-edge--right
+        width: max(0px, calc((100% - min(100cqw, 100cqh * var(--hero-art-aspect))) / 2))
+    .billboard__stage-focus-slot
+        inset: auto
+        top: 50%
+        left: 50%
+        width: min(100cqw, calc(100cqh * var(--hero-art-aspect)))
+        height: min(100cqh, calc(100cqw / var(--hero-art-aspect)))
+        transform: translate(-50%, -50%)
+    .billboard__stage-focus
+        background-size: 100% 100%
+        background-position: center center
+
+// Narrow: Ken Burns zoom would crop the contain slot — keep the whole image.
+:host(.has-edge-extend.is-kenburns) .billboard__stage-motion
+    animation: none
+    transform: none
+
+@media screen and (min-width: 1280px)
+    :host(.has-edge-extend)
+        .billboard__stage-motion
+            // Zoom toward the right-anchored art edge so scale does not crop it off.
+            transform-origin: 90% 40%
+        // Prefer a wide left fill under copy; pin sharp art to the right edge.
+        .billboard__stage-edge--left
+            width: max(0px, calc(100% - min(100cqw, 100cqh * var(--hero-art-aspect))))
+        .billboard__stage-edge--right
+            width: 0
+        .billboard__stage-focus-slot
+            left: auto
+            right: 0
+            transform: translateY(-50%)
+            // Soften the hard seam where sharp art meets the left fill.
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000)
+            mask-image: linear-gradient(90deg, transparent, #000 36px, #000)
+    // Wide: Ken Burns on sharp art only (edge fills stay static — cheaper in Firefox).
+    :host(.has-edge-extend.is-kenburns) .billboard__stage-motion
+        animation: nflx-ken-burns var(--hero-interval) ease-out forwards
+
+// Reduced motion, and touch / narrow (continuous GPU effects fight dialog
+// compositing): no Ken Burns. Same query as the hero's grain / live pulse block.
+@media (prefers-reduced-motion: reduce), screen and (max-width: 900px), (hover: none) and (pointer: coarse)
+    :host(.is-kenburns) .billboard__stage-motion
+        animation: none
+    .billboard__stage-motion
+        transform: scale(1.05)
+    :host(.has-edge-extend) .billboard__stage-motion
+        transform: none
+
+@media (prefers-reduced-motion: reduce)
+    :host
+        transition: none
+
+// While a Material dialog holds scroll-lock, freeze any leftover stage motion.
+:host-context(.cdk-global-scrollblock)
+    &.is-kenburns .billboard__stage-motion
+        animation-play-state: paused
+
+// Stacked (≤1280) framed art: the hero sets .has-art-aspect. Art is contained in the
+// frame (the .has-edge-extend rules above), so 4:3 and square cover art letterbox
+// instead of being cropped or stretched. Plain gutters — the blurred edge fill is a
+// wide-layout effect.
+@media screen and (max-width: 1280px)
+    :host-context(.billboard.has-art-aspect)
+        background-color: #0b0b0b
+        .billboard__stage-edge
+            display: none

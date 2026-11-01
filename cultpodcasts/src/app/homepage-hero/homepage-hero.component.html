@@ -13,52 +13,11 @@
   (pointercancel)="onHeroSwipeCancel($event)">
 
   <div class="billboard__stages" aria-hidden="true">
-    <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'a'"
-      [class.is-kenburns]="heroKenBurnsA()"
-      [class.has-edge-extend]="heroAspectA() != null"
-      [style.--hero-art-aspect]="heroAspectA() ?? null">
-      <div class="billboard__stage-edge billboard__stage-edge--left">
-        <div class="billboard__stage-edge-strip">
-          <div class="billboard__stage-edge-sample"
-            [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-        </div>
-      </div>
-      <div class="billboard__stage-edge billboard__stage-edge--right">
-        <div class="billboard__stage-edge-strip">
-          <div class="billboard__stage-edge-sample"
-            [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-        </div>
-      </div>
-      <div class="billboard__stage-motion">
-        <div class="billboard__stage-focus-slot">
-          <div class="billboard__stage-focus"
-            [style.background-image]="heroLayerA() ? 'url(' + heroLayerA() + ')' : null"></div>
-        </div>
-      </div>
-    </div>
-    <div class="billboard__stage" [class.is-active]="heroFrontLayer() === 'b'"
-      [class.is-kenburns]="heroKenBurnsB()"
-      [class.has-edge-extend]="heroAspectB() != null"
-      [style.--hero-art-aspect]="heroAspectB() ?? null">
-      <div class="billboard__stage-edge billboard__stage-edge--left">
-        <div class="billboard__stage-edge-strip">
-          <div class="billboard__stage-edge-sample"
-            [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-        </div>
-      </div>
-      <div class="billboard__stage-edge billboard__stage-edge--right">
-        <div class="billboard__stage-edge-strip">
-          <div class="billboard__stage-edge-sample"
-            [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-        </div>
-      </div>
-      <div class="billboard__stage-motion">
-        <div class="billboard__stage-focus-slot">
-          <div class="billboard__stage-focus"
-            [style.background-image]="heroLayerB() ? 'url(' + heroLayerB() + ')' : null"></div>
-        </div>
-      </div>
-    </div>
+    <!-- Two crossfade layers; each paints its own art, edge fills and Ken Burns (#568). -->
+    <app-hero-stage [image]="heroLayerA()" [aspect]="heroAspectA()"
+      [active]="heroFrontLayer() === 'a'" [kenBurns]="heroKenBurnsA()" />
+    <app-hero-stage [image]="heroLayerB()" [aspect]="heroAspectB()"
+      [active]="heroFrontLayer() === 'b'" [kenBurns]="heroKenBurnsB()" />
   </div>
   <div class="billboard__grain" aria-hidden="true"></div>
   <div class="billboard__scrim" aria-hidden="true"></div>
