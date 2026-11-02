@@ -1,4 +1,4 @@
-import { CataloguePlayableKind, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
+import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
 import { SimplePodcast } from './simple-podcast.interface';
 import { Suggestion } from './search-suggestions.interface';
 import { SubmittablePodcastUrlKind } from './podcast-url-matcher';
@@ -26,21 +26,21 @@ export function showSubmitSeriesPicker(roles: readonly string[] | null | undefin
 }
 
 /**
- * Read-only line for a known lookup: Film / TV / News catalogue ownership, or podcast Series name.
- * Returns null when the lookup is not known unique (caller should hide the line).
+ * Read-only label for a known-unique lookup: Film / TV / News catalogue ownership, or podcast Series name.
+ * Always returns a non-empty string; the caller shows this only when `known: true` and Series UI is readonly.
  */
 export function submitKnownCatalogueLabel(
   lookup: Extract<SubmitUrlLookupResponse, { known: true }>
 ): string {
   const kind = lookup.contentKind;
-  if (kind === CataloguePlayableKind.Film || kind === 'Film') {
+  if (kind === CataloguePlayableKind.Film) {
     return 'Already in the catalogue as Film';
   }
-  if (kind === CataloguePlayableKind.TvShowEpisode || kind === 'TvShowEpisode') {
+  if (kind === CataloguePlayableKind.TvShowEpisode) {
     const parent = lookup.parentName?.trim();
     return parent ? `TV: ${parent}` : 'TV';
   }
-  if (kind === CataloguePlayableKind.NewsReport || kind === 'NewsReport') {
+  if (kind === CataloguePlayableKind.NewsReport) {
     const parent = lookup.parentName?.trim();
     return parent ? `News: ${parent}` : 'News';
   }
@@ -48,20 +48,10 @@ export function submitKnownCatalogueLabel(
   return series ? `Series: ${series}` : 'Series';
 }
 
-/** True when a known lookup is a non-podcast catalogue playable (no Series picker). */
-export function isKnownNonPodcastCatalogueLookup(
-  lookup: SubmitUrlLookupResponse | 'error' | 'pending' | null
-): boolean {
-  return !!lookup
-    && lookup !== 'error'
-    && lookup !== 'pending'
-    && lookup.known
-    && isNonPodcastPlayableKind(lookup.contentKind);
-}
-
 /**
  * Add Podcast Series field from URL membership lookup.
- * Known unique → read-only name (do not send podcastName); never a picker for Film/TV/News.
+ * Known unique → read-only (do not send podcastName). Film / TV / News use the same readonly mode;
+ * their label comes from `submitKnownCatalogueLabel`.
  * Unknown streaming or ambiguous → picker.
  * Unknown podcast-service / unrecognised / pending → hide.
  */

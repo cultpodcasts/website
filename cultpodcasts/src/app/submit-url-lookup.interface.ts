@@ -11,12 +11,9 @@ export type SubmitUrlStreamingService = StreamingServiceKey;
 
 type NonStreamingLookupKind = Exclude<SubmitUrlLookupKind, 'streaming'>;
 
-/** Optional catalogue hint on a known lookup (RPP #1222 / website #591). */
-export type SubmitUrlLookupContentKind = CataloguePlayableKind | string;
-
 type SubmitUrlLookupCatalogueFields = {
   /** Playable kind when the URL is already in the catalogue (Film / TV / News / Episode). */
-  contentKind?: SubmitUrlLookupContentKind | null;
+  contentKind?: CataloguePlayableKind | null;
   /** Parent show / outlet name for TV / News; omitted for Film. */
   parentName?: string | null;
 };

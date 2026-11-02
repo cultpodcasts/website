@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   displaySeriesFormValue,
-  isKnownNonPodcastCatalogueLookup,
   seriesNameFromForm,
   showSubmitSeriesPicker,
   submitDialogResult,
@@ -175,33 +174,6 @@ describe('submitKnownCatalogueLabel', () => {
       throw new Error('expected known');
     }
     expect(submitKnownCatalogueLabel(lookup)).toBe('Series: Stored Show Name');
-  });
-});
-
-describe('isKnownNonPodcastCatalogueLookup', () => {
-  it('is true for known Film / TV / News and false for Episode or unknown', () => {
-    expect(isKnownNonPodcastCatalogueLookup({
-      known: true,
-      contentKind: CataloguePlayableKind.Film
-    })).toBe(true);
-    expect(isKnownNonPodcastCatalogueLookup({
-      known: true,
-      contentKind: CataloguePlayableKind.TvShowEpisode,
-      parentName: 'Nightly'
-    })).toBe(true);
-    expect(isKnownNonPodcastCatalogueLookup({
-      known: true,
-      contentKind: CataloguePlayableKind.NewsReport,
-      parentName: 'Desk'
-    })).toBe(true);
-    expect(isKnownNonPodcastCatalogueLookup({
-      known: true,
-      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      podcastName: 'Show',
-      contentKind: CataloguePlayableKind.Episode
-    })).toBe(false);
-    expect(isKnownNonPodcastCatalogueLookup({ known: false, kind: 'podcast-service' })).toBe(false);
-    expect(isKnownNonPodcastCatalogueLookup(null)).toBe(false);
   });
 });
 

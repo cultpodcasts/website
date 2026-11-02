@@ -16,7 +16,7 @@ import {
   shouldCallSubmitUrlPrepare,
   lookupWithPreparedPodcastName
 } from './submit-ingest-ux';
-import { isCataloguePlayableKindValue, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
+import { CataloguePlayableKind, isCataloguePlayableKindValue, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
 
 const pageId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const otherId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -222,13 +222,13 @@ describe('pageDropPlan', () => {
   it('submits to this podcast when a known Film / TV / News lookup has no podcast id', () => {
     expect(pageDropPlan({
       known: true,
-      contentKind: 'Film',
+      contentKind: CataloguePlayableKind.Film,
       podcastId: null,
       podcastName: null
     }, pageId)).toEqual({ kind: 'submit-to-page' });
     expect(pageDropPlan({
       known: true,
-      contentKind: 'TvShowEpisode',
+      contentKind: CataloguePlayableKind.TvShowEpisode,
       parentName: 'Nightly'
     }, pageId)).toEqual({ kind: 'submit-to-page' });
   });
