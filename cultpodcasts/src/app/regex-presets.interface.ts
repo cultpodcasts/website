@@ -5,10 +5,10 @@
  * Two placeholder families exist and they behave differently:
  *
  * - `{podcastName}` is **client-side**. `RegexPresetsService.resolveRegexPlaceholders`
- *   replaces it once, when the curator picks the preset, with the **raw, unescaped**
- *   podcast name, so the name is frozen into the saved pattern and any regex
- *   metacharacters in it (`.`, `(`, `?`, `|`, `+`, `[`) become regex syntax.
- *   It is kept for **title** presets only.
+ *   replaces it once, when the curator picks the preset, with the podcast name
+ *   escaped so metacharacters (`.`, `(`, `?`, `|`, `+`, `[`, …) stay literal.
+ *   The name is still frozen into the saved TitleRegex (a rename will not update it).
+ *   It is kept for **title** presets only until TitleRegex supports server tokens.
  * - `{podcast-name}` and `{episode-title}` are **server-side** tokens. They are stored
  *   verbatim and resolved by the Api **per episode**, `Regex.Escape`d and tolerant of
  *   dash, quote and whitespace variants. They are only recognised in **DescriptionRegex**.
