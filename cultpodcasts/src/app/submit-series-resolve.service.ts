@@ -95,14 +95,8 @@ export class SubmitSeriesResolveService {
   }
 
   async loadByIds(ids: string[]): Promise<Podcast[]> {
-    const podcasts: Podcast[] = [];
-    for (const id of ids) {
-      const podcast = await this.getById(id);
-      if (podcast) {
-        podcasts.push(podcast);
-      }
-    }
-    return podcasts;
+    const results = await Promise.all(ids.map((id) => this.getById(id)));
+    return results.filter((podcast): podcast is Podcast => podcast != null);
   }
 
   async getById(id: string): Promise<Podcast | undefined> {

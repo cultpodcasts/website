@@ -160,4 +160,61 @@ describe('SubmitSeriesResolveService', () => {
 
     await expect(pending).resolves.toEqual({ kind: 'error' });
   });
+
+  it('issues conflict UUID GETs in parallel and preserves id order', async () => {
+    const first = cataloguePodcast(firstConflictId, 'Shared Title A', { spotifyId: 'show-one' });
+    const second = cataloguePodcast(secondConflictId, 'Shared Title B', { appleId: 9990001112223 });
+    const pending = service.loadByIds([firstConflictId, secondConflictId]);
+
+    const outstanding: ReturnType<HttpTestingController['match']> = [];
+    for (let i = 0; i < 8 && outstanding.length < 2; i++) {
+      await Promise.resolve();
+      outstanding.push(
+        ...httpMock.match(
+          (req) =>
+            req.url.endsWith(`/podcast/${firstConflictId}`) ||
+            req.url.endsWith(`/podcast/${secondConflictId}`)
+        )
+      );
+    }
+    expect(outstanding.length).toBe(2);
+
+    for (const req of outstanding) {
+      expect(req.request.method).toBe('GET');
+      expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    }
+
+    const firstReq = outstanding.find((req) => req.request.url.endsWith(`/podcast/${firstConflictId}`));
+    const secondReq = outstanding.find((req) => req.request.url.endsWith(`/podcast/${secondConflictId}`));
+    expect(firstReq).toBeTruthy();
+    expect(secondReq).toBeTruthy();
+    // Complete out of id order so Promise.all still returns [first, second].
+    secondReq!.flush(second);
+    firstReq!.flush(first);
+
+    await expect(pending).resolves.toEqual([first, second]);
+  });
+
+  it('omits failed UUID loads so callers can reject a partial picker', async () => {
+    const first = cataloguePodcast(firstConflictId, 'Shared Title', { spotifyId: 'show-one' });
+    const pending = service.loadByIds([firstConflictId, secondConflictId]);
+
+    await Promise.resolve();
+    const outstanding = httpMock.match(
+      (req) =>
+        req.url.endsWith(`/podcast/${firstConflictId}`) ||
+        req.url.endsWith(`/podcast/${secondConflictId}`)
+    );
+    expect(outstanding.length).toBe(2);
+
+    for (const req of outstanding) {
+      if (req.request.url.endsWith(`/podcast/${firstConflictId}`)) {
+        req.flush(first);
+      } else {
+        req.flush({ error: 'Unable to retrieve podcast' }, { status: 404, statusText: 'Not Found' });
+      }
+    }
+
+    await expect(pending).resolves.toEqual([first]);
+  });
 });
