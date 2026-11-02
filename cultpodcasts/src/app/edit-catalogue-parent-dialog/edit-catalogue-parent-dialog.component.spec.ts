@@ -18,6 +18,14 @@ import {
   PODCAST_META_TAB_INDEX,
   PODCAST_REGEXS_TAB_INDEX
 } from '../podcast-form.util';
+import {
+  YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
+  YOU_TUBE_PLAYLIST_ID_INVALID,
+  YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+  YOU_TUBE_PLAYLIST_NOT_FOUND,
+  YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
+  YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
+} from '../youtube-playlist-edit-error';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -37,7 +45,7 @@ type Internals = {
   tmdbUrl(id: string): string;
   selectedTabIndex: { (): number; set(index: number): void };
   identityInvalid(): boolean;
-  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; saveErrorMessage(): string; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
 /** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
 async function expectSoon(url: string) {
@@ -202,6 +210,65 @@ describe('EditCatalogueParentDialogComponent', () => {
     await settle();
     await dialog.save();
     expect(close).toHaveBeenCalledWith({ noChange: true });
+  });
+
+  it('surfaces YouTube playlist ownership Api errors and keeps the curator edits in place', async () => {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    await loadWith({ id: showId, name: 'Nightly', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
+    await settle();
+    const dialog = fixture.componentInstance as unknown as Internals;
+    const model = dialog.model()!;
+    model.youTubePlaylistId = 'PLsyntheticplaylistnew000000000000';
+    const invalid =
+      "YouTube playlist id 'not-a-playlist' is invalid. Use a playlist id like PL… (Did you mean UC… as a channel id?).";
+    let done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: invalid, code: YOU_TUBE_PLAYLIST_ID_INVALID },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(dialog.saveError()).toBe(true);
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(invalid);
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    expect(close).not.toHaveBeenCalled();
+
+    const mismatch = 'Playlist PLsyntheticplaylistnew000000000000 is owned by channel UCsyntheticother.';
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: mismatch, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(mismatch);
+
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: 'not found', code: YOU_TUBE_PLAYLIST_NOT_FOUND },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE);
+
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: 'lookup failed', code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED, retryable: true },
+      { status: 503, statusText: 'Service Unavailable' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim())
+      .toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    // Save-as-retry: no separate Try again; Save stays present and enabled after a retryable 503.
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => b.textContent?.trim() === 'Save'
+    );
+    expect(save).toBeTruthy();
+    expect(save!.disabled).toBe(false);
   });
 
   it('shows not found on 404 and offers no form', async () => {
