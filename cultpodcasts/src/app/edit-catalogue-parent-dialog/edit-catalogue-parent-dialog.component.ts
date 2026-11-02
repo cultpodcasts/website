@@ -40,8 +40,11 @@ import { buildPodcastLanguageOptions } from "../language-options.util";
 import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
 import {
+  CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
   filterSubjectsByTerm,
   noCompareFunction,
+  PODCAST_DETAILS_TAB_INDEX,
+  PODCAST_META_TAB_INDEX,
   PODCAST_REGEXS_TAB_INDEX,
   youTubeChannelIgnoredHint,
   youTubePlaylistReplacesChannel
@@ -243,17 +246,24 @@ export class EditCatalogueParentDialogComponent {
     }
     this.appleIdInvalid.set(!isValidAppleIdText(model.appleId));
     if (this.appleIdInvalid()) {
+      // Apple Id is on Details; switch so the error is visible when Save is blocked from another tab.
+      this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
       return;
     }
     this.minimumDurationInvalid.set(!isValidDurationText(model.minimumDuration));
     this.publicationDelayInvalid.set(!isValidDurationText(model.youTubePublicationDelay));
     if (this.minimumDurationInvalid() || this.publicationDelayInvalid()) {
+      // Publication delay (Details) before minimum duration (Meta) when both are invalid.
+      this.selectedTabIndex.set(
+        this.publicationDelayInvalid() ? PODCAST_DETAILS_TAB_INDEX : PODCAST_META_TAB_INDEX
+      );
       return;
     }
     this.identityInvalid.set(
       this.isTv && !(isValidImdbIdText(model.imdbId) && isValidNumericIdText(model.tvdbId) && isValidNumericIdText(model.tmdbId))
     );
     if (this.identityInvalid()) {
+      this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
     const changes = catalogueParentChanges(this.original, model, this.isTv);
