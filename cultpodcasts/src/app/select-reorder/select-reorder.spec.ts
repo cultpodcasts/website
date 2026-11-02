@@ -321,4 +321,43 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     expect(host.control.value).toEqual(['Alpha', 'Bravo', 'Charlie']);
     expect(option('Bravo').active).toBe(true);
   });
+
+  it('registers the open select panel as a CDK scrollable parent so drag can auto-scroll it (#585)', async () => {
+    select().open();
+    await settle();
+    const panel = select().panel.nativeElement as HTMLElement;
+    expect(panel.classList.contains('mat-mdc-select-panel')).toBe(true);
+    expect(dropList()._dropListRef.getScrollableParents()).toContain(panel);
+  });
+
+  it('re-registers the open panel after close/open and after CDK\'s one-shot scrollable resolve (#585)', async () => {
+    select().open();
+    await settle();
+    expect(dropList()._dropListRef.getScrollableParents()).toContain(select().panel.nativeElement);
+
+    select().close();
+    await settle();
+    select().open();
+    await settle();
+    const panel = select().panel.nativeElement as HTMLElement;
+    expect(dropList()._dropListRef.getScrollableParents()).toContain(panel);
+
+    // CdkDropList resolves parents once on the first beforeStarted via ScrollDispatcher (empty here —
+    // the panel is not a cdkScrollable ancestor). Our beforeStarted subscription runs after that and
+    // must put the live panel back (mat-select also recreates the panel DOM on some opens).
+    dropList()._dropListRef.withScrollableParents([]);
+    expect(dropList()._dropListRef.getScrollableParents()).not.toContain(panel);
+    dropList()._dropListRef.beforeStarted.next();
+    expect(dropList()._dropListRef.getScrollableParents()).toContain(panel);
+
+    // Union: an existing scrollable parent must survive re-registration of the live panel.
+    const sentinel = document.createElement('div');
+    document.body.appendChild(sentinel);
+    dropList()._dropListRef.withScrollableParents([sentinel]);
+    dropList()._dropListRef.beforeStarted.next();
+    const parents = dropList()._dropListRef.getScrollableParents();
+    expect(parents).toContain(panel);
+    expect(parents).toContain(sentinel);
+    sentinel.remove();
+  });
 });
