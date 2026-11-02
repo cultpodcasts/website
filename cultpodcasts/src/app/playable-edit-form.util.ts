@@ -96,6 +96,9 @@ export function tmdbTvShowUrl(tmdbId: string | number | null | undefined): strin
 
 const digitsPattern = /^\d*$/;
 
+/** Signed int32 max: server DTOs bind TMDB ids as `int?` (overflow fails model binding). */
+export const int32Max = 2_147_483_647;
+
 function idText(id: number | null | undefined): string {
   return id ? String(id) : '';
 }
@@ -104,6 +107,25 @@ function idText(id: number | null | undefined): string {
 function numericIdValue(text: string): number {
   const trimmed = text.trim();
   return trimmed === '' ? 0 : Number(trimmed);
+}
+
+/**
+ * Blank clears; otherwise digits only, and at most {@link int32Max} so the value fits a server `int?`.
+ * `{ pattern: true }` for non-digits; `{ int32Max: true }` when above the bound.
+ */
+export function tmdbIdTextValidator(control: AbstractControl): ValidationErrors | null {
+  const text = String(control.value ?? '').trim();
+  if (text === '') {
+    return null;
+  }
+  if (!/^\d+$/.test(text)) {
+    return { pattern: true };
+  }
+  // Length gate first: huge digit strings lose Number precision before comparing to int32Max.
+  if (text.length > 10 || Number(text) > int32Max) {
+    return { int32Max: true };
+  }
+  return null;
 }
 
 /**
@@ -185,10 +207,19 @@ export function newFilmLinkControl(value = '', existing: ReadonlySet<string> = n
   return newFilmLinkGroup(value, '', existing);
 }
 
+/**
+ * Like `Validators.required`, but whitespace-only counts as empty. Needed because `filmTrailerChanges` trims and
+ * omits blank titles (`{ id }` only), so spaces-only would otherwise look savable while the server keeps the old title.
+ */
+export function requiredTrimmed(control: AbstractControl): ValidationErrors | null {
+  return String(control.value ?? '').trim() ? null : { required: true };
+}
+
 export function newFilmTrailerGroup(id: string, title: string): FilmTrailerEditGroup {
   return new FormGroup({
     id: new FormControl(id, { nonNullable: true }),
-    title: new FormControl(title, { nonNullable: true })
+    // Required (trim-aware): a blank/whitespace title is omitted from the patch (server keeps the old one).
+    title: new FormControl(title, { nonNullable: true, validators: [requiredTrimmed] })
   });
 }
 
@@ -256,7 +287,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     });
     controls.tmdbId = new FormControl(idText(film.tmdbId), {
       nonNullable: true,
-      validators: [Validators.pattern(digitsPattern)]
+      validators: [tmdbIdTextValidator]
     });
     controls.trailers = new FormArray(
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
@@ -273,7 +304,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     });
     controls.tmdbId = new FormControl(idText(tv.tmdbId), {
       nonNullable: true,
-      validators: [Validators.pattern(digitsPattern)]
+      validators: [tmdbIdTextValidator]
     });
   }
   return new FormGroup<PlayableEditForm>(controls);
