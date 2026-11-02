@@ -326,14 +326,14 @@ export function playableFieldsChanges(
   pendingUnBluesky = false
 ): PlayableFieldsChangeRequest {
   const changes: PlayableFieldsChangeRequest = {};
-  const title = next.title.trim();
+  const title = String(next.title ?? '').trim();
   if (title && title !== previous.title) changes.title = title;
   if (next.description !== (previous.description ?? '')) changes.description = next.description;
-  const release = next.release.trim();
-  // Compare the editor shape (date/year), not a raw DateTimeUtc GET string, so an untouched timed
-  // release does not ride along on every unrelated film/news/TV save.
+  // Form release may still be a Date if JsonDateInterceptor ran and the control was not normalized
+  // (production bug: Submit / unBluesky threw `release.trim is not a function`). Always calendar-text first.
+  const release = utcCalendarDateText(next.release as string | Date | null | undefined);
   if (release && release !== utcCalendarDateText(previous.release)) changes.release = release;
-  const duration = next.duration.trim();
+  const duration = String(next.duration ?? '').trim();
   if (duration && duration !== (previous.duration ?? '')) changes.duration = duration;
   if (next.posted !== !!previous.posted) changes.posted = next.posted;
   if (next.tweeted !== !!previous.tweeted) changes.tweeted = next.tweeted;
@@ -342,7 +342,7 @@ export function playableFieldsChanges(
   if (next.ignored !== !!previous.ignored) changes.ignored = next.ignored;
   if (next.removed !== !!previous.removed) changes.removed = next.removed;
   if (!sameStrings(previous.subjects, next.subjects)) changes.subjects = [...next.subjects];
-  const searchTerms = next.searchTerms.trim();
+  const searchTerms = String(next.searchTerms ?? '').trim();
   if (searchTerms !== (previous.searchTerms ?? '').trim()) changes.searchTerms = searchTerms;
   const hashTag = ensureHashPrefix(next.hashTag);
   if (hashTag !== ensureHashPrefix(previous.hashTag)) changes.hashTag = hashTag;

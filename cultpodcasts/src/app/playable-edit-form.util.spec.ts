@@ -107,6 +107,21 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
   });
 
+  it('unBluesky / Submit does not throw when form release is still a Date (JsonDateInterceptor)', () => {
+    const dto = report({
+      release: new Date('2026-11-02T00:00:00Z'),
+      blueskyPosted: true
+    });
+    const form = buildPlayableEditForm(dto);
+    const next = {
+      ...form.getRawValue(),
+      // Pre-normalize bug: control held a Date and Submit called release.trim()
+      release: new Date('2026-11-02T00:00:00Z') as unknown as string
+    };
+    expect(() => playableFieldsChanges(dto, next, true)).not.toThrow();
+    expect(playableFieldsChanges(dto, next, true)).toEqual({ unBluesky: true });
+  });
+
   it('news and TV Urls tab PATCH services the same way as film', () => {
     const archive = 'https://archive.org/details/synthetic-playable';
     const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
