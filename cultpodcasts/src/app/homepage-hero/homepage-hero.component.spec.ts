@@ -1112,6 +1112,22 @@ describe('HomepageHeroComponent', () => {
       expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('abc-iview');
     });
 
+    it('shows a Film\'s CBC Gem link with the cbc-gem mark after YouTube in the billboard actions', () => {
+      show(ep('a', {
+        contentKind: 'Film',
+        podcastName: 'Synthetic Film',
+        episodeTitle: 'Synthetic Film',
+        ids: undefined,
+        services: {
+          youtube: { url: 'https://www.youtube.com/watch?v=inventedFilm' },
+          cbcGem: { url: 'https://gem.cbc.ca/invented-film' },
+        },
+      }));
+      expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['YouTube', 'CBC Gem']);
+      expect(links()[1].href).toBe('https://gem.cbc.ca/invented-film');
+      expect(links()[1].querySelector('mat-icon')?.getAttribute('data-mat-icon-name')).toBe('cbc-gem');
+    });
+
     it('shows nothing for services the episode does not have', () => {
       show(ep('a', { ids: undefined, services: { spotify: { url: 'https://open.spotify.com/episode/onlyA' } } }));
       expect(links().map((a) => a.getAttribute('aria-label'))).toEqual(['Spotify']);

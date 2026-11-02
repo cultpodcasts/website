@@ -449,7 +449,10 @@ mat-card.curator-card mat-card-title {
 .curator-card__platforms a[mat-icon-button],
 .curator-card__platforms button[mat-icon-button],
 .curator-card__platforms.discovery-service-links a[mat-icon-button],
-.curator-card__platforms.discovery-service-links button[mat-icon-button] {
+.curator-card__platforms.discovery-service-links button[mat-icon-button],
+/* Homepage hero service row (#595): same Material inset leaves CBC Gem 2px low. */
+.billboard__actions app-episode-links a[mat-icon-button],
+.billboard__actions app-episode-links button[mat-icon-button] {
   --mdc-icon-button-state-layer-size: 40px;
   --mdc-icon-button-icon-size: 24px;
   width: 40px !important;
