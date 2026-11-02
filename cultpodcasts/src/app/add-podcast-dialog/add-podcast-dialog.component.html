@@ -160,6 +160,7 @@
                         aria-label="Title regex presets">
                         <mat-icon>arrow_drop_down</mat-icon>
                     </button>
+                    <mat-hint>Supported token: {{ '{podcastName}' }} (escaped when a preset is applied)</mat-hint>
                 </mat-form-field>
                 <mat-menu #titleRegexPresetMenu="matMenu">
                     @if (titleRegexPresets().length == 0) {
@@ -177,6 +178,7 @@
                         aria-label="Description regex presets">
                         <mat-icon>arrow_drop_down</mat-icon>
                     </button>
+                    <mat-hint>Supported tokens: {{ '{episode-title}' }}, {{ '{podcast-name}' }} (resolved per episode on the server)</mat-hint>
                 </mat-form-field>
                 <mat-menu #descriptionRegexPresetMenu="matMenu">
                     @if (descriptionRegexPresets().length == 0) {

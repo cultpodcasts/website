@@ -29,6 +29,40 @@ describe('RegexPresetsService', () => {
       .toBe('^My Pod {episode-title}$');
   });
 
+  it('escapes regex metacharacters in {podcastName} so the saved pattern stays literal', () => {
+    // Synthetic name with .NET/JS metacharacters; never real podcast data.
+    const podcastName = 'Foo.Bar (Baz)?+|[]{}^$';
+    const resolved = service.resolveRegexPlaceholders(
+      "^(?'title'.*?)(?'suffix' \\| {podcastName})?$",
+      podcastName
+    );
+
+    expect(resolved).toBe("^(?'title'.*?)(?'suffix' \\| Foo\\.Bar \\(Baz\\)\\?\\+\\|\\[\\]\\{\\}\\^\\$)?$");
+    expect(resolved).not.toContain(podcastName);
+  });
+
+  it.each([
+    // Synthetic names that would corrupt a string-replacement replaceAll via $&, $`, $'.
+    { name: 'x$&y', escaped: 'x\\$&y' },
+    { name: 'pre$`suf', escaped: 'pre\\$`suf' },
+    { name: "a$'b", escaped: "a\\$'b" },
+    { name: 'plain$end', escaped: 'plain\\$end' },
+  ])('inserts escaped podcast name containing $ sequences without replaceAll reinterpretation ($name)', ({ name, escaped }) => {
+    expect(service.resolveRegexPlaceholders('PREFIX|{podcastName}|SUFFIX', name))
+      .toBe(`PREFIX|${escaped}|SUFFIX`);
+  });
+
+  it('applies the title preset with an escaped podcast name', () => {
+    const preset = service.loadRegexPresets().title.find(x => x.name === 'Podcast Name Suffix')!;
+    const control = new FormControl<string>('', { nonNullable: true });
+    // Synthetic; includes $& which must not be reinterpreted by replaceAll.
+    const podcastName = 'Example.Podcast (x$&y)?';
+
+    service.applyTitleRegexPreset(preset.pattern, control, podcastName);
+
+    expect(control.value).toBe("^(?'title'.*?)(?'suffix' \\| Example\\.Podcast \\(x\\$&y\\)\\?)?$");
+  });
+
   it('every description preset compiles as a JS regex after normalising .NET-only syntax (smoke check; .NET validity is covered by RPP DescriptionRegexTokens tests)', () => {
     for (const preset of service.loadRegexPresets().description) {
       const pattern = preset.pattern
