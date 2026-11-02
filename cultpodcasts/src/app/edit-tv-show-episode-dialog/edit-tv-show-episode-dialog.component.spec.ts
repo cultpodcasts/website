@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { newFilmLinkControl } from '../playable-edit-form.util';
+import { newPlayableLinkGroup } from '../playable-edit-form.util';
 import { EditTvShowEpisodeDialogComponent } from './edit-tv-show-episode-dialog.component';
 
 const episodeId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -136,7 +136,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, response: { blueskyPostDeleted: true }, parentName: 'Nightly' });
   });
 
-  it('PATCHes Urls edits as film-shaped services on tvshowepisode/{id}', async () => {
+  it('PATCHes Urls edits as services on tvshowepisode/{id}', async () => {
     const dialog = await load({
       ...synthetic,
       services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
@@ -147,7 +147,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
       { url: iplayerUrl, image: '' }
     ]);
     links.removeAt(1);
-    links.push(newFilmLinkControl(youtubeUrl));
+    links.push(newPlayableLinkGroup(youtubeUrl));
     const saving = dialog.onSubmit();
     const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
     expect(patch.request.body).toEqual({

@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { newFilmLinkControl } from '../playable-edit-form.util';
+import { newPlayableLinkGroup } from '../playable-edit-form.util';
 import { EditNewsReportDialogComponent } from './edit-news-report-dialog.component';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -122,7 +122,7 @@ describe('EditNewsReportDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, response: { searchIndexerState: 'Executed' }, parentName: 'Desk' });
   });
 
-  it('PATCHes Urls edits as film-shaped services on newsreport/{id}', async () => {
+  it('PATCHes Urls edits as services on newsreport/{id}', async () => {
     const dialog = await load({
       ...synthetic,
       services: { internetArchive: { url: archiveUrl }, bbcIplayer: { url: iplayerUrl } }
@@ -133,7 +133,7 @@ describe('EditNewsReportDialogComponent', () => {
       { url: iplayerUrl, image: '' }
     ]);
     links.removeAt(1);
-    links.push(newFilmLinkControl(youtubeUrl));
+    links.push(newPlayableLinkGroup(youtubeUrl));
     const saving = dialog.onSubmit();
     const patch = await expectSoon(api(`/newsreport/${reportId}`), 'PATCH');
     expect(patch.request.body).toEqual({

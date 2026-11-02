@@ -129,10 +129,10 @@ export function tmdbIdTextValidator(control: AbstractControl): ValidationErrors 
 }
 
 /**
- * A film link must be an absolute http(s) URL whose service key resolves (a known service, else a key derived from the
- * host, as the episode editor does); the film's existing links pass as they are, whatever key they are stored under.
+ * A playable link must be an absolute http(s) URL whose service key resolves (a known service, else a key derived from
+ * the host, as the episode editor does); existing catalogue links pass as they are, whatever key they are stored under.
  */
-export function filmLinkValidator(existing: ReadonlySet<string> = new Set()): ValidatorFn {
+export function playableLinkValidator(existing: ReadonlySet<string> = new Set()): ValidatorFn {
   return (control: AbstractControl<string>): ValidationErrors | null => {
     const text = (control.value ?? '').trim();
     if (!text || existing.has(text)) {
@@ -140,24 +140,24 @@ export function filmLinkValidator(existing: ReadonlySet<string> = new Set()): Va
     }
     const url = absoluteHttpUrl(text);
     if (!url) {
-      return { filmLinkUrl: true };
+      return { playableLinkUrl: true };
     }
-    return resolveServiceKey(url) ? null : { filmLinkService: true };
+    return resolveServiceKey(url) ? null : { playableLinkService: true };
   };
 }
 
 /** Two links for one service would overwrite each other in the PATCH. */
-export function filmLinksDistinctValidator(existing: ReadonlyMap<string, string> = new Map()): ValidatorFn {
+export function playableLinksDistinctValidator(existing: ReadonlyMap<string, string> = new Map()): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const seen = new Set<string>();
     for (const row of (control as FormArray<PlayableServiceLinkGroup>).getRawValue()) {
       const value = (row.url ?? '').trim();
-      const key = existing.get(value) ?? filmLinkKey(value);
+      const key = existing.get(value) ?? playableLinkKey(value);
       if (!key) {
         continue;
       }
       if (seen.has(key)) {
-        return { filmLinkDuplicate: key };
+        return { playableLinkDuplicate: key };
       }
       seen.add(key);
     }
@@ -175,13 +175,13 @@ function absoluteHttpUrl(text: string): URL | undefined {
 }
 
 /** The service key a link files under, or undefined for blank / invalid / unknown links. */
-export function filmLinkKey(value: string | null | undefined): string | undefined {
+export function playableLinkKey(value: string | null | undefined): string | undefined {
   const url = absoluteHttpUrl((value ?? '').trim());
   return url ? resolveServiceKey(url) ?? undefined : undefined;
 }
 
 /** Stored playable links (news / TV / film share `services`): URL text → the key it is stored under. */
-export function filmExistingLinks(services: PlayableFieldsDto['services']): Map<string, string> {
+export function playableExistingLinks(services: PlayableFieldsDto['services']): Map<string, string> {
   const links = new Map<string, string>();
   for (const [key, link] of Object.entries(services ?? {})) {
     const url = uriText(link?.url);
@@ -191,20 +191,15 @@ export function filmExistingLinks(services: PlayableFieldsDto['services']): Map<
 }
 
 /** One Urls/Images row: absolute URL (+ optional image). Existing catalogue URLs skip re-validation. */
-export function newFilmLinkGroup(
+export function newPlayableLinkGroup(
   url = '',
   image = '',
   existing: ReadonlySet<string> = new Set()
 ): PlayableServiceLinkGroup {
   return new FormGroup({
-    url: new FormControl(url, { nonNullable: true, validators: [filmLinkValidator(existing)] }),
+    url: new FormControl(url, { nonNullable: true, validators: [playableLinkValidator(existing)] }),
     image: new FormControl(image, { nonNullable: true })
   });
-}
-
-/** @deprecated Prefer `newFilmLinkGroup`; kept for call sites that only set a URL. */
-export function newFilmLinkControl(value = '', existing: ReadonlySet<string> = new Set()): PlayableServiceLinkGroup {
-  return newFilmLinkGroup(value, '', existing);
 }
 
 /**
@@ -266,13 +261,13 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     guests: new FormControl<string[]>([...(dto.guests ?? [])], { nonNullable: true })
   };
   // Film / TV / news all edit `services` via Urls + Images tabs (same wire shape as film PATCH).
-  const existingLinks = filmExistingLinks(dto.services);
+  const existingLinks = playableExistingLinks(dto.services);
   const existingUrls = new Set(existingLinks.keys());
   controls.links = new FormArray(
     [...existingLinks.entries()].map(([url, key]) =>
-      newFilmLinkGroup(url, uriText(dto.services?.[key]?.image), existingUrls)
+      newPlayableLinkGroup(url, uriText(dto.services?.[key]?.image), existingUrls)
     ),
-    { validators: [filmLinksDistinctValidator(existingLinks)] }
+    { validators: [playableLinksDistinctValidator(existingLinks)] }
   );
   if (variant === 'film') {
     const film = dto as FilmDto;
@@ -348,7 +343,7 @@ export function playableFieldsChanges(
   const lang = episodeLanguageFormValue(next.lang === 'unset' ? null : next.lang);
   if (lang !== episodeLanguageFormValue(previous.language)) changes.language = lang === 'unset' ? '' : lang;
   if (next.links !== undefined) {
-    const services = filmServiceChanges(previous.services, next.links);
+    const services = playableServiceChanges(previous.services, next.links);
     if (services) changes.services = services;
   }
   return changes;
@@ -416,11 +411,11 @@ export function filmChanges(
  * `image` independently (emit only changed members) so image-only edits do not wipe `url` and vice versa.
  * Null when unchanged.
  */
-export function filmServiceChanges(
+export function playableServiceChanges(
   previous: PlayableFieldsDto['services'],
   links: readonly { url: string; image?: string }[]
 ): Record<string, { url?: string; image?: string }> | null {
-  const existing = filmExistingLinks(previous);
+  const existing = playableExistingLinks(previous);
   const beforeUrl = new Map<string, string>([...existing].map(([url, key]) => [key, url]));
   const beforeImage = new Map<string, string>();
   for (const [key, link] of Object.entries(previous ?? {})) {
@@ -431,7 +426,7 @@ export function filmServiceChanges(
   for (const row of links) {
     const url = (row.url ?? '').trim();
     // An unchanged link keeps the key it is stored under; a new one files under the key its URL resolves to.
-    const key = existing.get(url) ?? filmLinkKey(url);
+    const key = existing.get(url) ?? playableLinkKey(url);
     if (key) {
       afterUrl.set(key, url);
       afterImage.set(key, (row.image ?? '').trim());

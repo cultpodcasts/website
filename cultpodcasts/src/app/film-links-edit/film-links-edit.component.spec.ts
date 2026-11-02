@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { FormArray } from '@angular/forms';
-import { newFilmLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
+import { newPlayableLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { FilmLinksEditComponent } from './film-links-edit.component';
 
 describe('FilmLinksEditComponent', () => {
@@ -13,7 +13,7 @@ describe('FilmLinksEditComponent', () => {
       imports: [FilmLinksEditComponent],
       providers: [provideZonelessChangeDetection()],
     }).compileComponents();
-    links = new FormArray([newFilmLinkGroup('https://www.youtube.com/watch?v=synthetic01')]);
+    links = new FormArray([newPlayableLinkGroup('https://www.youtube.com/watch?v=synthetic01')]);
     fixture = TestBed.createComponent(FilmLinksEditComponent);
     fixture.componentRef.setInput('links', links);
     fixture.detectChanges();

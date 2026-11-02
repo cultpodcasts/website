@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { hasNonEmptyUrlValue, openExternalUrl } from '../episode-form.util';
-import { newFilmLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
+import { newPlayableLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
 
 /**
@@ -29,7 +29,7 @@ export class FilmLinksEditComponent {
   }
 
   add(): void {
-    this.links().push(newFilmLinkGroup());
+    this.links().push(newPlayableLinkGroup());
     this.links().markAsDirty();
   }
 
