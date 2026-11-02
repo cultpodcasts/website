@@ -385,14 +385,13 @@ test.describe("reorder selected subjects and guests", () => {
 		});
 	});
 
-	test("overflowing selected subjects: drag auto-scrolls the panel and a mid-drag wheel scroll still drops at the right index (#585)", async ({ page }) => {
+	test("overflowing selected subjects: drag near the panel top edge auto-scrolls the panel (#585)", async ({ page }) => {
 		const many = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"];
 		await page.route("**/subjects", (route) => json(route, many.map((name) => ({ name }))));
 		await page.route("**/people", (route) => json(route, [{ id: "p1", name: "Ann Example" }]));
 		await page.route("**/languages", (route) => json(route, { en: "English" }));
 		await page.route(`**/newsorganisation/${outletId}`, (route) => json(route, { id: outletId, name: "Desk", defaultSubject: "Alpha" }));
-		const sink: { body?: unknown } = {};
-		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, sink);
+		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, {});
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await page.getByRole("button", { name: "Episode actions" }).click();
 		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
@@ -423,8 +422,53 @@ test.describe("reorder selected subjects and guests", () => {
 		// Hold the pointer near the panel's top edge so CDK auto-scrolls the registered panel upward.
 		await page.mouse.move(startX, panelBox.y + 6, { steps: 8 });
 		await expect.poll(async () => panel.evaluate((el) => el.scrollTop)).toBeLessThan(scrollBefore);
+		// Auto-scroll alone — do not assert final order (CDK may already have sorted while pinned).
+		await page.mouse.up();
+		await page.keyboard.press("Escape");
+		await expect(page.getByRole("listbox")).toHaveCount(0);
+		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
+	});
 
-		// Mid-drag wheel scroll: without the panel as a scrollable parent, CDK's cached positions go stale.
+	test("overflowing selected subjects: mid-drag panel scroll still drops at the right index (#585)", async ({ page }) => {
+		const many = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"];
+		await page.route("**/subjects", (route) => json(route, many.map((name) => ({ name }))));
+		await page.route("**/people", (route) => json(route, [{ id: "p1", name: "Ann Example" }]));
+		await page.route("**/languages", (route) => json(route, { en: "English" }));
+		await page.route(`**/newsorganisation/${outletId}`, (route) => json(route, { id: outletId, name: "Desk", defaultSubject: "Alpha" }));
+		const sink: { body?: unknown } = {};
+		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, sink);
+		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const dialog = page.locator("mat-dialog-container");
+		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
+		await dialog.getByRole("tab", { name: "Meta" }).click();
+		await dialog.getByRole("combobox", { name: "Subjects" }).click();
+
+		const listbox = page.getByRole("listbox");
+		const panel = page.locator(".mat-mdc-select-panel");
+		await expect(listbox.getByRole("option")).toHaveCount(many.length);
+		// Selected group alone must overflow the panel (~275px) so scroll invalidation matters.
+		const overflow = await panel.evaluate((el) => el.scrollHeight > el.clientHeight + 8);
+		expect(overflow).toBe(true);
+
+		const hotel = listbox.getByRole("option", { name: "Hotel" });
+		await hotel.scrollIntoViewIfNeeded();
+		const handle = hotel.locator("app-select-reorder-handle");
+		const handleBox = (await handle.boundingBox())!;
+		const panelBox = (await panel.boundingBox())!;
+		const startX = handleBox.x + handleBox.width / 2;
+		const startY = handleBox.y + handleBox.height / 2;
+		// Stay clear of the auto-scroll edge so this drag does not promote Hotel via edge scroll.
+		const midPanelY = panelBox.y + panelBox.height / 2;
+
+		await handle.hover();
+		await page.mouse.down();
+		await page.mouse.move(startX, startY - 4, { steps: 2 });
+		await page.mouse.move(startX, midPanelY, { steps: 6 });
+
+		// Mid-drag scroll (programmatic scrollTop + synthetic scroll — not a wheel): without the panel
+		// as a scrollable parent, CDK's cached positions go stale and the drop index is wrong.
 		await panel.evaluate((el) => {
 			el.scrollTop = 0;
 			el.dispatchEvent(new Event("scroll", { bubbles: true }));

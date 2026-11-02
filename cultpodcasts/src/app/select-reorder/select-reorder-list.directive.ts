@@ -90,7 +90,8 @@ export class SelectReorderListDirective implements SelectReorderKeyHandler {
     //
     // Fix: on each open, and again on beforeStarted (after CDK's one-shot resolve, because this
     // subscription is registered after CdkDropList's host-directive setup), call
-    // CdkDropList._dropListRef.withScrollableParents([panel]) with the current panel element.
+    // CdkDropList._dropListRef.withScrollableParents with the live panel unioned onto any existing
+    // scrollable parents (underscore _dropListRef coupling accepted in #585).
     const opened = this.select.openedChange.subscribe(open => {
       if (!open) {
         return;
@@ -111,13 +112,21 @@ export class SelectReorderListDirective implements SelectReorderKeyHandler {
   /**
    * Registers the open `.mat-mdc-select-panel` with the drop list so CDK auto-scrolls it and invalidates
    * cached positions when it scrolls (see constructor note / #585).
+   *
+   * Unions the live panel with existing scrollable parents rather than replacing them, so a future
+   * cdkScrollable ancestor (dialog body, nested scroll layout) is not dropped. Detached / stale nodes
+   * and the drop-list container are omitted — `withScrollableParents` re-prepends the container.
    */
   private syncPanelScrollParent(): void {
     const panel = this.select.panel?.nativeElement as HTMLElement | undefined;
     if (!panel) {
       return;
     }
-    this.dropList._dropListRef.withScrollableParents([panel]);
+    const dropListRef = this.dropList._dropListRef;
+    const rest = dropListRef.getScrollableParents().filter(
+      el => el !== panel && el !== this.host && el.isConnected
+    );
+    dropListRef.withScrollableParents([panel, ...rest]);
   }
 
   /** @internal Called by `appSelectReorderItem`. */

@@ -349,5 +349,15 @@ describe('select reorder (appSelectReorderList / appSelectReorderItem / app-sele
     expect(dropList()._dropListRef.getScrollableParents()).not.toContain(panel);
     dropList()._dropListRef.beforeStarted.next();
     expect(dropList()._dropListRef.getScrollableParents()).toContain(panel);
+
+    // Union: an existing scrollable parent must survive re-registration of the live panel.
+    const sentinel = document.createElement('div');
+    document.body.appendChild(sentinel);
+    dropList()._dropListRef.withScrollableParents([sentinel]);
+    dropList()._dropListRef.beforeStarted.next();
+    const parents = dropList()._dropListRef.getScrollableParents();
+    expect(parents).toContain(panel);
+    expect(parents).toContain(sentinel);
+    sentinel.remove();
   });
 });
