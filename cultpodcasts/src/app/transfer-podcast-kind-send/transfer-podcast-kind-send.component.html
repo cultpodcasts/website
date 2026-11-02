@@ -4,6 +4,9 @@
 
     @if (isSending()) {
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    @if (progressMessage()) {
+    <p class="transfer-progress">{{ progressMessage() }}</p>
+    }
     }
     @if (sendError()) {
     <div>

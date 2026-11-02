@@ -7,6 +7,10 @@ export function hubParentKind(hub: CatalogueHub): CatalogueParentKind {
   return hub === "news" ? CatalogueParentKind.NewsOrganisation : CatalogueParentKind.TvShow;
 }
 
+export function hubForParentKind(kind: CatalogueParentKind): CatalogueHub {
+  return kind === CatalogueParentKind.NewsOrganisation ? "news" : "tv";
+}
+
 /** Menu / dialog noun: "News Outlet" or "TV Show". */
 export function hubParentLabel(hub: CatalogueHub): string {
   return hub === "news" ? "News Outlet" : "TV Show";

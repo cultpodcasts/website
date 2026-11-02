@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
 import { catalogueParentChanges, catalogueParentEditModel, historyDateText, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
-import { CatalogueHub, hubApiRoot, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
+import { CatalogueHub, hubApiRoot, hubForParentKind, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
 const outlet: CatalogueParentDto = {
@@ -271,6 +271,7 @@ describe('catalogue hub helpers', () => {
     ];
     for (const [hub, kind, label, root] of cases) {
       expect(hubParentKind(hub)).toBe(kind);
+      expect(hubForParentKind(kind)).toBe(hub);
       expect(hubParentLabel(hub)).toBe(label);
       expect(hubApiRoot(hub)).toBe(root);
       expect(hubPathCommands(hub, 'X')).toEqual([`/${hub}`, 'X']);

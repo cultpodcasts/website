@@ -65,6 +65,12 @@ export class CurationSubmitService {
     });
   }
 
+  /** Curator GET of a podcast by guid or name (404 when the row is gone after a kind transfer). */
+  getPodcast(podcastId: string) {
+    const url = new URL(`/podcast/${encodeURIComponent(podcastId)}`, environment.api).toString();
+    return this.http.get<{ id?: string; name?: string }>(url, { context: this.curateContext() });
+  }
+
   postPodcastKind(podcastId: string, targetKind: CatalogueParentKind) {
     const url = new URL(`/podcast/${encodeURIComponent(podcastId)}/kind`, environment.api).toString();
     const body: PodcastKindTransferRequest = { targetKind: targetKind };
