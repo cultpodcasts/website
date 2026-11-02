@@ -40,14 +40,16 @@ import { buildPodcastLanguageOptions } from "../language-options.util";
 import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
 import {
+  CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
   filterSubjectsByTerm,
   noCompareFunction,
+  PODCAST_DETAILS_TAB_INDEX,
+  PODCAST_META_TAB_INDEX,
   PODCAST_REGEXS_TAB_INDEX,
   youTubeChannelIgnoredHint,
   youTubePlaylistReplacesChannel
 } from "../podcast-form.util";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
-import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
 export interface EditCatalogueParentDialogData {
   hub: CatalogueHub;
@@ -106,8 +108,6 @@ export class EditCatalogueParentDialogComponent {
   protected readonly conflict = signal(false);
   protected readonly isInError = signal(false);
   protected readonly saveError = signal(false);
-  /** Curator-facing save failure copy; playlist ownership codes replace the generic line. */
-  protected readonly saveErrorMessage = signal("Saving failed. Nothing was changed.");
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
@@ -243,17 +243,24 @@ export class EditCatalogueParentDialogComponent {
     }
     this.appleIdInvalid.set(!isValidAppleIdText(model.appleId));
     if (this.appleIdInvalid()) {
+      // Apple Id is on Details; switch so the error is visible when Save is blocked from another tab.
+      this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
       return;
     }
     this.minimumDurationInvalid.set(!isValidDurationText(model.minimumDuration));
     this.publicationDelayInvalid.set(!isValidDurationText(model.youTubePublicationDelay));
     if (this.minimumDurationInvalid() || this.publicationDelayInvalid()) {
+      // Publication delay (Details) before minimum duration (Meta) when both are invalid.
+      this.selectedTabIndex.set(
+        this.publicationDelayInvalid() ? PODCAST_DETAILS_TAB_INDEX : PODCAST_META_TAB_INDEX
+      );
       return;
     }
     this.identityInvalid.set(
       this.isTv && !(isValidImdbIdText(model.imdbId) && isValidNumericIdText(model.tvdbId) && isValidNumericIdText(model.tmdbId))
     );
     if (this.identityInvalid()) {
+      this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
     const changes = catalogueParentChanges(this.original, model, this.isTv);
@@ -266,7 +273,6 @@ export class EditCatalogueParentDialogComponent {
     }
     this.isSending.set(true);
     this.saveError.set(false);
-    this.saveErrorMessage.set("Saving failed. Nothing was changed.");
     try {
       const resp = await firstValueFrom(this.curation.patchCatalogueParent(this.data.hub, this.original.id, changes));
       if (resp.status === 202 || resp.status === 200) {
@@ -274,12 +280,7 @@ export class EditCatalogueParentDialogComponent {
         return;
       }
       this.saveError.set(true);
-    } catch (error) {
-      const playlist = youtubePlaylistEditError(error);
-      if (playlist) {
-        // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
-        this.saveErrorMessage.set(playlist.message);
-      }
+    } catch {
       this.saveError.set(true);
     } finally {
       this.isSending.set(false);

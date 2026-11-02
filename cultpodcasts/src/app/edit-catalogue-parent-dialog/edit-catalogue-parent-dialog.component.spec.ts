@@ -12,15 +12,12 @@ import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentEditModel } from '../catalogue-parent-edit';
 import { JsonDateInterceptor } from '../json-date.interceptor';
-import { PODCAST_REGEXS_TAB_INDEX } from '../podcast-form.util';
 import {
-  YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
-  YOU_TUBE_PLAYLIST_ID_INVALID,
-  YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
-  YOU_TUBE_PLAYLIST_NOT_FOUND,
-  YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
-  YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
-} from '../youtube-playlist-edit-error';
+  CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
+  PODCAST_DETAILS_TAB_INDEX,
+  PODCAST_META_TAB_INDEX,
+  PODCAST_REGEXS_TAB_INDEX
+} from '../podcast-form.util';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -38,7 +35,9 @@ type Internals = {
   imdbUrl(id: string): string;
   tvdbUrl(id: string): string;
   tmdbUrl(id: string): string;
-  save(): Promise<void>; notFound(): boolean; saveError(): boolean; saveErrorMessage(): string; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
+  selectedTabIndex: { (): number; set(index: number): void };
+  identityInvalid(): boolean;
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
 /** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
 async function expectSoon(url: string) {
@@ -180,7 +179,9 @@ describe('EditCatalogueParentDialogComponent', () => {
     fixture.detectChanges();
     const tabs = tabLabels(fixture);
     expect(tabs).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs', 'Identity']);
+    expect(tabs.indexOf('Meta')).toBe(PODCAST_META_TAB_INDEX);
     expect(tabs.indexOf('Regexs')).toBe(PODCAST_REGEXS_TAB_INDEX);
+    expect(tabs.indexOf('Identity')).toBe(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
   });
 
   it('keeps a stored skipEnrichingFromYouTube out of the PATCH when other flags change', async () => {
@@ -201,65 +202,6 @@ describe('EditCatalogueParentDialogComponent', () => {
     await settle();
     await dialog.save();
     expect(close).toHaveBeenCalledWith({ noChange: true });
-  });
-
-  it('surfaces YouTube playlist ownership Api errors and keeps the curator edits in place', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
-    fixture.detectChanges();
-    await loadWith({ id: showId, name: 'Nightly', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
-    await settle();
-    const dialog = fixture.componentInstance as unknown as Internals;
-    const model = dialog.model()!;
-    model.youTubePlaylistId = 'PLsyntheticplaylistnew000000000000';
-    const invalid =
-      "YouTube playlist id 'not-a-playlist' is invalid. Use a playlist id like PL… (Did you mean UC… as a channel id?).";
-    let done = dialog.save();
-    (await expectSoon(patchUrl)).flush(
-      { message: invalid, code: YOU_TUBE_PLAYLIST_ID_INVALID },
-      { status: 400, statusText: 'Bad Request' }
-    );
-    await done;
-    fixture.detectChanges();
-    expect(dialog.saveError()).toBe(true);
-    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(invalid);
-    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
-    expect(close).not.toHaveBeenCalled();
-
-    const mismatch = 'Playlist PLsyntheticplaylistnew000000000000 is owned by channel UCsyntheticother.';
-    done = dialog.save();
-    (await expectSoon(patchUrl)).flush(
-      { message: mismatch, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH },
-      { status: 400, statusText: 'Bad Request' }
-    );
-    await done;
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(mismatch);
-
-    done = dialog.save();
-    (await expectSoon(patchUrl)).flush(
-      { message: 'not found', code: YOU_TUBE_PLAYLIST_NOT_FOUND },
-      { status: 400, statusText: 'Bad Request' }
-    );
-    await done;
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE);
-
-    done = dialog.save();
-    (await expectSoon(patchUrl)).flush(
-      { message: 'lookup failed', code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED, retryable: true },
-      { status: 503, statusText: 'Service Unavailable' }
-    );
-    await done;
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim())
-      .toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
-    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
-    // Save-as-retry: no separate Try again; Save stays present and enabled after a retryable 503.
-    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
-      (b) => b.textContent?.trim() === 'Save'
-    );
-    expect(save).toBeTruthy();
-    expect(save!.disabled).toBe(false);
   });
 
   it('shows not found on 404 and offers no form', async () => {
@@ -329,13 +271,15 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(hint).toBeNull();
   });
 
-  it('blocks Save on a non-numeric Apple id', async () => {
+  it('blocks Save on a non-numeric Apple id and switches to the Details tab', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
+    dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
     dialog.model()!.appleId = 'abc';
     await dialog.save();
     expect(dialog.appleIdInvalid()).toBe(true);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
     expect(close).not.toHaveBeenCalled();
   });
 
@@ -365,25 +309,55 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
-  it('blocks Save on an invalid minimum duration and flags only that field', async () => {
+  it('blocks Save on an invalid minimum duration, flags only that field, and switches to Meta', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
+    dialog.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
     dialog.model()!.minimumDuration = 'ninety';
     await dialog.save();
     expect(dialog.minimumDurationInvalid()).toBe(true);
     expect(dialog.publicationDelayInvalid()).toBe(false);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_META_TAB_INDEX);
     expect(close).not.toHaveBeenCalled();
   });
 
-  it('blocks Save on an invalid publication delay and flags only that field', async () => {
+  it('blocks Save on an invalid publication delay, flags only that field, and switches to Details', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
+    dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
     dialog.model()!.youTubePublicationDelay = 'an hour';
     await dialog.save();
     expect(dialog.publicationDelayInvalid()).toBe(true);
     expect(dialog.minimumDurationInvalid()).toBe(false);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('when both durations are invalid, switches to Details (publication delay) before Meta', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.selectedTabIndex.set(PODCAST_REGEXS_TAB_INDEX);
+    dialog.model()!.minimumDuration = 'ninety';
+    dialog.model()!.youTubePublicationDelay = 'an hour';
+    await dialog.save();
+    expect(dialog.publicationDelayInvalid()).toBe(true);
+    expect(dialog.minimumDurationInvalid()).toBe(true);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('blocks Save on invalid Identity ids and switches to the Identity tab', async () => {
+    const dialog = create();
+    await loadWith({ id: showId, name: 'Nightly' });
+    await settle();
+    dialog.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
+    dialog.model()!.imdbId = 'not-an-imdb-id';
+    await dialog.save();
+    expect(dialog.identityInvalid()).toBe(true);
+    expect(dialog.selectedTabIndex()).toBe(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
     expect(close).not.toHaveBeenCalled();
   });
 

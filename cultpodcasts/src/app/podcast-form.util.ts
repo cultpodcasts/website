@@ -17,8 +17,13 @@ export function noCompareFunction(): number {
   return 0;
 }
 
+/** Tab indices shared by add/edit podcast and edit news/TV parent dialogs (Details … Meta, Regexs; Identity last on TV). */
+export const PODCAST_DETAILS_TAB_INDEX = 0;
+export const PODCAST_META_TAB_INDEX = 4;
 /** Tab index of Regexs in add/edit podcast dialogs (Details … Meta, then Regexs). */
 export const PODCAST_REGEXS_TAB_INDEX = 5;
+/** Identity tab on edit TV show dialog (after Regexs). */
+export const CATALOGUE_PARENT_IDENTITY_TAB_INDEX = 6;
 
 /**
  * RPP #1177: a podcast, news organisation or TV show with a YouTube playlist id indexes every video in that playlist,
