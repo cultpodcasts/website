@@ -45,8 +45,9 @@ export interface TvShowEpisodeDto extends PlayableFieldsDto {
  * Curator GET `film/{id}` (RPP `FilmDto`): a film is a publisher that is also playable, so the GET has the
  * publisher fields (`name`, `publisher`, `defaultSubject`, …) and the playable fields a film has. There is no
  * `title`: the display name is `name`, renamed only by the admin rename screen (`POST film/name/{id}`). The
- * dialog copies `name` into `title` so the shared form can show it read-only. Release is `yyyy` (year-only)
- * or `yyyy-MM-dd`.
+ * dialog copies `name` into `title` so the shared form can show it read-only. Release wire/editor shapes are
+ * `yyyy` (year-only), `yyyy-MM-dd`, or DateTimeUtc; after `JsonDateInterceptor`, a DateTimeUtc value is a
+ * `Date` — normalize with `utcCalendarDateText` before binding the form control.
  */
 export interface FilmDto extends PlayableFieldsDto {
   name: string;

@@ -12,8 +12,18 @@ import {
 import { resolveServiceKey } from './service-catalog';
 import { utcCalendarDateText } from './utc-calendar-date';
 
-/** Playable release for the shared edit form — see {@link utcCalendarDateText}. */
-export const filmReleaseFormValue = utcCalendarDateText;
+/**
+ * Calendar text for a form or DTO release that may still be a `Date` after
+ * {@link JsonDateInterceptor} (production bug: Submit / unBluesky threw
+ * `release.trim is not a function`). Accepts `unknown` so callers need not cast
+ * through `FormControl<string>`.
+ */
+function releaseFormText(value: unknown): string {
+  if (value instanceof Date || typeof value === 'string' || value == null) {
+    return utcCalendarDateText(value);
+  }
+  return '';
+}
 
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
@@ -329,10 +339,8 @@ export function playableFieldsChanges(
   const title = String(next.title ?? '').trim();
   if (title && title !== previous.title) changes.title = title;
   if (next.description !== (previous.description ?? '')) changes.description = next.description;
-  // Form release may still be a Date if JsonDateInterceptor ran and the control was not normalized
-  // (production bug: Submit / unBluesky threw `release.trim is not a function`). Always calendar-text first.
-  const release = utcCalendarDateText(next.release as string | Date | null | undefined);
-  if (release && release !== utcCalendarDateText(previous.release)) changes.release = release;
+  const release = releaseFormText(next.release);
+  if (release && release !== releaseFormText(previous.release)) changes.release = release;
   const duration = String(next.duration ?? '').trim();
   if (duration && duration !== (previous.duration ?? '')) changes.duration = duration;
   if (next.posted !== !!previous.posted) changes.posted = next.posted;

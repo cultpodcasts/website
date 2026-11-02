@@ -10,6 +10,10 @@ describe('utcCalendarDateText', () => {
     expect(utcCalendarDateText('2026-10-30T23:30:00-02:00')).toBe('2026-10-31');
   });
 
+  it('reads zoneless DateTime as UTC (append Z)', () => {
+    expect(utcCalendarDateText('2026-10-30T23:45:12')).toBe('2026-10-30');
+  });
+
   it('keeps year-only and date-only editor shapes', () => {
     expect(utcCalendarDateText('1999')).toBe('1999');
     expect(utcCalendarDateText('2026-10-27')).toBe('2026-10-27');
