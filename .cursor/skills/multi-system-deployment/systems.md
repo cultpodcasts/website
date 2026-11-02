@@ -55,10 +55,10 @@ Set-Location -LiteralPath $dest
 
 No `--overwrite`. Default containers include people when the freeze-branch tool supports it. Activities are not downloaded.
 
-## Version bumps on PRs
+## Version bumps
 
 - Api: bump `package.json` + `package-lock.json` (semver patch unless the change warrants more) before opening/pushing.
-- Website: bump `cultpodcasts/package.json` + lockfile the same way.
+- Website: **do not** bump `cultpodcasts/package.json` / lockfile in feature PRs. Patch bumps run on merge to `main` via `.github/workflows/bump-version-on-merge.yml`. Minor/major: `workflow_dispatch` on that workflow.
 - Website tests before push: `npm run test:all` from `cultpodcasts/` (do not `--no-verify`).
 
 ## Website no-merge
