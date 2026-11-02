@@ -47,6 +47,7 @@ import {
   youTubePlaylistReplacesChannel
 } from "../podcast-form.util";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
+import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
 export interface EditCatalogueParentDialogData {
   hub: CatalogueHub;
@@ -105,6 +106,8 @@ export class EditCatalogueParentDialogComponent {
   protected readonly conflict = signal(false);
   protected readonly isInError = signal(false);
   protected readonly saveError = signal(false);
+  /** Curator-facing save failure copy; playlist ownership codes replace the generic line. */
+  protected readonly saveErrorMessage = signal("Saving failed. Nothing was changed.");
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
@@ -263,6 +266,7 @@ export class EditCatalogueParentDialogComponent {
     }
     this.isSending.set(true);
     this.saveError.set(false);
+    this.saveErrorMessage.set("Saving failed. Nothing was changed.");
     try {
       const resp = await firstValueFrom(this.curation.patchCatalogueParent(this.data.hub, this.original.id, changes));
       if (resp.status === 202 || resp.status === 200) {
@@ -270,7 +274,11 @@ export class EditCatalogueParentDialogComponent {
         return;
       }
       this.saveError.set(true);
-    } catch {
+    } catch (error) {
+      const playlist = youtubePlaylistEditError(error);
+      if (playlist) {
+        this.saveErrorMessage.set(playlist.message);
+      }
       this.saveError.set(true);
     } finally {
       this.isSending.set(false);

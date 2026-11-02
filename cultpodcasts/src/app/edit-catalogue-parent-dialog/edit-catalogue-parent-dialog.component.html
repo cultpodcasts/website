@@ -14,7 +14,7 @@
     } @else if (model(); as m) {
     <p>{{ data.name }}</p>
     @if (saveError()) {
-    <p id="error" role="alert">Saving failed. Nothing was changed.</p>
+    <p id="error" role="alert">{{ saveErrorMessage() }}</p>
     }
     <form id="edit" (ngSubmit)="save()">
         <mat-tab-group [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="selectedTabIndex.set($event)">

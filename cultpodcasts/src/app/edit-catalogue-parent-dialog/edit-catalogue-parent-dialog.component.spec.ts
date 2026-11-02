@@ -13,6 +13,13 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentEditModel } from '../catalogue-parent-edit';
 import { JsonDateInterceptor } from '../json-date.interceptor';
 import { PODCAST_REGEXS_TAB_INDEX } from '../podcast-form.util';
+import {
+  YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
+  YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+  YOU_TUBE_PLAYLIST_NOT_FOUND,
+  YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
+  YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
+} from '../youtube-playlist-edit-error';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -30,7 +37,7 @@ type Internals = {
   imdbUrl(id: string): string;
   tvdbUrl(id: string): string;
   tmdbUrl(id: string): string;
-  save(): Promise<void>; notFound(): boolean; saveError(): boolean; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
+  save(): Promise<void>; notFound(): boolean; saveError(): boolean; saveErrorMessage(): string; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
 /** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
 async function expectSoon(url: string) {
@@ -193,6 +200,48 @@ describe('EditCatalogueParentDialogComponent', () => {
     await settle();
     await dialog.save();
     expect(close).toHaveBeenCalledWith({ noChange: true });
+  });
+
+  it('surfaces YouTube playlist ownership Api errors and keeps the curator edits in place', async () => {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    await loadWith({ id: showId, name: 'Nightly', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
+    await settle();
+    const dialog = fixture.componentInstance as unknown as Internals;
+    const model = dialog.model()!;
+    model.youTubePlaylistId = 'PLsyntheticplaylistnew000000000000';
+    const mismatch = 'Playlist PLsyntheticplaylistnew000000000000 is owned by channel UCsyntheticother.';
+    let done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: mismatch, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(dialog.saveError()).toBe(true);
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(mismatch);
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    expect(close).not.toHaveBeenCalled();
+
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: 'not found', code: YOU_TUBE_PLAYLIST_NOT_FOUND },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE);
+
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: 'lookup failed', code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED, retryable: true },
+      { status: 503, statusText: 'Service Unavailable' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim())
+      .toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
   });
 
   it('shows not found on 404 and offers no form', async () => {
