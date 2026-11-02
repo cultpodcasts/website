@@ -70,6 +70,17 @@ describe('CurationSubmitService', () => {
     expect(resp.body?.parentId).toBe('parent-1');
   });
 
+  it('GETs /podcast/{id} with curate interceptor', async () => {
+    const podcastId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const pending = firstValueFrom(service.getPodcast(podcastId));
+    const expected = new URL('/podcast/' + encodeURIComponent(podcastId), environment.api).toString();
+    const req = httpMock.expectOne(expected);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ id: podcastId, name: 'Synthetic Show' });
+    expect((await pending).name).toBe('Synthetic Show');
+  });
+
   it('POSTs /episode/{podcastId}/{episodeId}/film with the title, or {} without one', async () => {
     const pending = firstValueFrom(service.postEpisodeToFilm('podcast-1', 'episode-1', { title: 'Synthetic Film' }));
     const expected = new URL('/episode/podcast-1/episode-1/film', environment.api).toString();

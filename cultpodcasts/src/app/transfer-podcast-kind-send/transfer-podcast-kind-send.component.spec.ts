@@ -13,16 +13,30 @@ describe('TransferPodcastKindSendComponent', () => {
   let component: TransferPodcastKindSendComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let postPodcastKind: ReturnType<typeof vi.fn>;
+  let getCatalogueParent: ReturnType<typeof vi.fn>;
+  let getPodcast: ReturnType<typeof vi.fn>;
+
+  const podcastId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const parentDto = { id: podcastId, name: 'Synthetic Show' };
 
   beforeEach(async () => {
     dialogRef = { close: vi.fn() };
     postPodcastKind = vi.fn();
+    getCatalogueParent = vi.fn();
+    getPodcast = vi.fn();
     await TestBed.configureTestingModule({
       imports: [TransferPodcastKindSendComponent],
       providers: [
         provideZonelessChangeDetection(),
         { provide: MatDialogRef, useValue: dialogRef },
-        { provide: CurationSubmitService, useValue: { postPodcastKind: postPodcastKind } }
+        {
+          provide: CurationSubmitService,
+          useValue: {
+            postPodcastKind,
+            getCatalogueParent,
+            getPodcast
+          }
+        }
       ]
     }).compileComponents();
 
@@ -30,34 +44,181 @@ describe('TransferPodcastKindSendComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('closes transferred:true with targetKind on 202 even when failureIndexingPlayables', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function expectTransferredClose(body: PodcastKindTransferResponse | null | undefined) {
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      transferred: true,
+      targetKind: CatalogueParentKind.TvShow,
+      parentId: body?.parentId,
+      response: body
+    });
+  }
+
+  it('closes transferred:true with targetKind on 202 even when failureIndexingPlayables', async () => {
     const body: PodcastKindTransferResponse = {
       parentId: 'parent-1',
       targetKind: CatalogueParentKind.TvShow,
       failureIndexingPlayables: true
     };
-    postPodcastKind.mockReturnValue(of({ status: 202, body: body }));
+    postPodcastKind.mockReturnValue(of({ status: 202, body }));
 
-    component.submit('podcast-1', CatalogueParentKind.TvShow);
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await Promise.resolve();
 
-    expect(dialogRef.close).toHaveBeenCalledWith({
-      transferred: true,
-      targetKind: CatalogueParentKind.TvShow,
-      parentId: 'parent-1',
-      response: body
-    });
+    expectTransferredClose(body);
     expect(component.sendError()).toBe(false);
   });
 
-  it('sets sendError on HTTP error', () => {
+  it('sets sendError on a non-recoverable HTTP error', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' })));
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request'
+    })));
 
-    component.submit('podcast-1', CatalogueParentKind.NewsOrganisation);
+    component.submit(podcastId, CatalogueParentKind.NewsOrganisation);
+    await Promise.resolve();
 
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(component.sendError()).toBe(true);
     expect(component.isSending()).toBe(false);
     errorSpy.mockRestore();
+  });
+
+  it('recovers from a 5xx when the target parent exists and the podcast is gone', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 500,
+      statusText: 'Server Error'
+    })));
+    getCatalogueParent.mockReturnValue(of(parentDto));
+    getPodcast.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expect(component.progressMessage()).toBe('Checking transfer status…');
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      transferred: true,
+      targetKind: CatalogueParentKind.TvShow,
+      parentId: podcastId,
+      response: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+    });
+    expect(component.sendError()).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('recovers from a network drop (status 0) the same way as a 5xx', async () => {
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 0,
+      statusText: 'Unknown Error'
+    })));
+    getCatalogueParent.mockReturnValue(of(parentDto));
+    getPodcast.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    component.submit(podcastId, CatalogueParentKind.NewsOrganisation);
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      transferred: true,
+      targetKind: CatalogueParentKind.NewsOrganisation,
+      parentId: podcastId,
+      response: { parentId: podcastId, targetKind: CatalogueParentKind.NewsOrganisation }
+    });
+  });
+
+  it('fails a 5xx when the target parent is missing', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 504,
+      statusText: 'Gateway Timeout'
+    })));
+    getCatalogueParent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    getPodcast.mockReturnValue(of({ id: podcastId, name: 'Still Here' }));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('treats 409 without transferInProgress as already transferred when the target exists and podcast is gone', async () => {
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+    })));
+    getCatalogueParent.mockReturnValue(of(parentDto));
+    getPodcast.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expect(component.progressMessage()).toBe('Checking whether the podcast was already transferred…');
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      transferred: true,
+      targetKind: CatalogueParentKind.TvShow,
+      parentId: podcastId,
+      response: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+    });
+  });
+
+  it('does not treat Incomplete-style 409 as success when the podcast still exists', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: { parentId: podcastId, retryRequired: true }
+    })));
+    getCatalogueParent.mockReturnValue(of(parentDto));
+    getPodcast.mockReturnValue(of({ id: podcastId, name: 'Still Here' }));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it('shows Transfer already running on 409 transferInProgress and polls until the target exists', async () => {
+    vi.useFakeTimers();
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: { transferInProgress: true, parentId: podcastId }
+    })));
+    getCatalogueParent
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 404 })))
+      .mockReturnValue(of(parentDto));
+    getPodcast
+      .mockReturnValueOnce(of({ id: podcastId, name: 'Still Here' }))
+      .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await Promise.resolve();
+    expect(component.progressMessage()).toBe('Transfer already running');
+    expect(dialogRef.close).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      transferred: true,
+      targetKind: CatalogueParentKind.TvShow,
+      parentId: podcastId,
+      response: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+    });
+    expect(getCatalogueParent.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('keeps the spinner and progress text while sending (disableClose dialog stays open)', () => {
+    postPodcastKind.mockReturnValue(of({ status: 202, body: { parentId: podcastId } }));
+    expect(component.isSending()).toBe(true);
+    expect(component.progressMessage()).toBe('Transferring podcast…');
   });
 });
