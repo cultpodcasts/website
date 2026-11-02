@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { CurationSubmitService } from '../curation-submit.service';
 import { PodcastKindTransferResponse } from '../podcast-kind-transfer-response.interface';
@@ -216,9 +216,25 @@ describe('TransferPodcastKindSendComponent', () => {
     expect(getCatalogueParent.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('keeps the spinner and progress text while sending (disableClose dialog stays open)', () => {
-    postPodcastKind.mockReturnValue(of({ status: 202, body: { parentId: podcastId } }));
+  it('keeps the spinner and progress text while sending (disableClose dialog stays open)', async () => {
+    const deferred = new Subject<{ status: number; body: PodcastKindTransferResponse }>();
+    postPodcastKind.mockReturnValue(deferred.asObservable());
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await Promise.resolve();
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
     expect(component.isSending()).toBe(true);
+    expect(component.sendError()).toBe(false);
     expect(component.progressMessage()).toBe('Transferring podcast…');
+
+    deferred.next({
+      status: 202,
+      body: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+    });
+    deferred.complete();
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expectTransferredClose({ parentId: podcastId, targetKind: CatalogueParentKind.TvShow });
   });
 });

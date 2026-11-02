@@ -116,12 +116,8 @@ export class TransferPodcastKindSendComponent {
     const parentExists = await firstValueFrom(
       this.curationSubmit.getCatalogueParent(hub, podcastId).pipe(
         map(() => true),
-        catchError((err: unknown) => {
-          if (err instanceof HttpErrorResponse && err.status === 404) {
-            return of(false);
-          }
-          return of(false);
-        })
+        // Fail-safe: any probe error (404 or otherwise) means parent not confirmed present.
+        catchError(() => of(false))
       )
     );
     const podcastGone = await firstValueFrom(
