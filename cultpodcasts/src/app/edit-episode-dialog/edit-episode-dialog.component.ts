@@ -298,14 +298,8 @@ export class EditEpisodeDialogComponent {
     this.pendingUnBluesky.set(false);
   }
 
-  clearField(control: FormControl<string | URL | null>) {
-    clearFormControl(control);
-  }
-
-  clearAdditionalText(control: FormControl<string>) {
-    clearNonNullableStringControl(control);
-  }
-
+  protected readonly clearField = clearFormControl;
+  protected readonly clearAdditionalText = clearNonNullableStringControl;
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
   protected readonly additionalServicePreviewKey = additionalServicePreviewKey;
 
