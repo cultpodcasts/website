@@ -12,6 +12,7 @@ import {
   seriesNameFromForm,
   showSubmitSeriesPicker,
   submitDialogResult,
+  submitKnownCatalogueLabel,
   submitSaveReady,
   submitSeriesUiFromLookup,
   SubmitSeriesFormValue
@@ -106,9 +107,13 @@ export class SubmitPodcastComponent {
       classifySubmittablePodcastUrl(this.urlText())
     );
   });
-  protected readonly knownSeriesName = computed(() => {
+  /** Read-only Series / Film / TV / News line for a known lookup. */
+  protected readonly knownCatalogueLabel = computed(() => {
     const lookup = this.lookup();
-    return lookup && lookup !== 'error' && lookup.known ? lookup.podcastName : '';
+    if (!lookup || lookup === 'error' || !lookup.known) {
+      return '';
+    }
+    return submitKnownCatalogueLabel(lookup);
   });
   /** Blocks Save until lookup for this URL finished (Submitter/Curator) or while POST resolve runs. */
   protected readonly saveDisabled = computed(() => {

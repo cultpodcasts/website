@@ -1,3 +1,4 @@
+import { CataloguePlayableKind, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
 import { SimplePodcast } from './simple-podcast.interface';
 import { Suggestion } from './search-suggestions.interface';
 import { SubmittablePodcastUrlKind } from './podcast-url-matcher';
@@ -25,8 +26,42 @@ export function showSubmitSeriesPicker(roles: readonly string[] | null | undefin
 }
 
 /**
+ * Read-only line for a known lookup: Film / TV / News catalogue ownership, or podcast Series name.
+ * Returns null when the lookup is not known unique (caller should hide the line).
+ */
+export function submitKnownCatalogueLabel(
+  lookup: Extract<SubmitUrlLookupResponse, { known: true }>
+): string {
+  const kind = lookup.contentKind;
+  if (kind === CataloguePlayableKind.Film || kind === 'Film') {
+    return 'Already in the catalogue as Film';
+  }
+  if (kind === CataloguePlayableKind.TvShowEpisode || kind === 'TvShowEpisode') {
+    const parent = lookup.parentName?.trim();
+    return parent ? `TV: ${parent}` : 'TV';
+  }
+  if (kind === CataloguePlayableKind.NewsReport || kind === 'NewsReport') {
+    const parent = lookup.parentName?.trim();
+    return parent ? `News: ${parent}` : 'News';
+  }
+  const series = lookup.podcastName?.trim() || lookup.parentName?.trim() || '';
+  return series ? `Series: ${series}` : 'Series';
+}
+
+/** True when a known lookup is a non-podcast catalogue playable (no Series picker). */
+export function isKnownNonPodcastCatalogueLookup(
+  lookup: SubmitUrlLookupResponse | 'error' | 'pending' | null
+): boolean {
+  return !!lookup
+    && lookup !== 'error'
+    && lookup !== 'pending'
+    && lookup.known
+    && isNonPodcastPlayableKind(lookup.contentKind);
+}
+
+/**
  * Add Podcast Series field from URL membership lookup.
- * Known unique → read-only name (do not send podcastName).
+ * Known unique → read-only name (do not send podcastName); never a picker for Film/TV/News.
  * Unknown streaming or ambiguous → picker.
  * Unknown podcast-service / unrecognised / pending → hide.
  */

@@ -20,8 +20,8 @@
     <p class="known-series" id="submit-target">{{ target.label }}: {{ target.name }}</p>
     }
 
-    @if (isCurator() && seriesUi() === 'readonly') {
-    <p class="known-series">Series: {{ knownSeriesName() }}</p>
+    @if (isCurator() && seriesUi() === 'readonly' && knownCatalogueLabel()) {
+    <p class="known-series" id="submit-known-catalogue">{{ knownCatalogueLabel() }}</p>
     }
 
     @if (isCurator() && seriesUi() === 'picker') {

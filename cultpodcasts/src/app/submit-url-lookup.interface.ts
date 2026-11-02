@@ -1,4 +1,5 @@
 import type { StreamingServiceKey } from './streaming-submit-contract';
+import type { CataloguePlayableKind } from './catalogue-playable-kind.enum';
 
 export type SubmitUrlLookupKind = 'podcast-service' | 'streaming' | 'unrecognised';
 
@@ -10,18 +11,29 @@ export type SubmitUrlStreamingService = StreamingServiceKey;
 
 type NonStreamingLookupKind = Exclude<SubmitUrlLookupKind, 'streaming'>;
 
+/** Optional catalogue hint on a known lookup (RPP #1222 / website #591). */
+export type SubmitUrlLookupContentKind = CataloguePlayableKind | string;
+
+type SubmitUrlLookupCatalogueFields = {
+  /** Playable kind when the URL is already in the catalogue (Film / TV / News / Episode). */
+  contentKind?: SubmitUrlLookupContentKind | null;
+  /** Parent show / outlet name for TV / News; omitted for Film. */
+  parentName?: string | null;
+};
+
 /**
  * Lookup 200 body. Streaming arms require `service` (Api membership wire).
  * Podcast-service / unrecognised arms omit `service`.
+ * Known Film / TV / News may omit `podcastId` / `podcastName`.
  */
 export type SubmitUrlLookupResponse =
-  | {
+  | ({
       known: true;
-      podcastId: string;
-      podcastName: string;
+      podcastId?: string | null;
+      podcastName?: string | null;
       kind: 'streaming';
       service: SubmitUrlStreamingService;
-    }
+    } & SubmitUrlLookupCatalogueFields)
   | {
       known: false;
       kind: 'streaming';
@@ -37,12 +49,12 @@ export type SubmitUrlLookupResponse =
       kind: 'streaming';
       service: SubmitUrlStreamingService;
     }
-  | {
+  | ({
       known: true;
-      podcastId: string;
-      podcastName: string;
+      podcastId?: string | null;
+      podcastName?: string | null;
       kind?: NonStreamingLookupKind;
-    }
+    } & SubmitUrlLookupCatalogueFields)
   | {
       known: false;
       kind: NonStreamingLookupKind;

@@ -110,11 +110,13 @@ export function pageDropPlan(
   pagePodcastId: string
 ): PageDropPlan {
   if (lookup && lookup !== 'error' && lookup.known) {
-    if (!samePodcastId(lookup.podcastId, pagePodcastId)) {
+    const otherId = lookup.podcastId?.trim();
+    // Known Film / TV / News may omit podcastId — not a podcast-series conflict.
+    if (otherId && !samePodcastId(otherId, pagePodcastId)) {
       return {
         kind: 'confirm-other-series',
-        otherPodcastId: lookup.podcastId,
-        otherPodcastName: lookup.podcastName
+        otherPodcastId: otherId,
+        otherPodcastName: lookup.podcastName?.trim() || lookup.parentName?.trim() || ''
       };
     }
   }

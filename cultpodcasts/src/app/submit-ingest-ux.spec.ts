@@ -218,6 +218,20 @@ describe('pageDropPlan', () => {
       otherPodcastName: 'Other Show'
     });
   });
+
+  it('submits to this podcast when a known Film / TV / News lookup has no podcast id', () => {
+    expect(pageDropPlan({
+      known: true,
+      contentKind: 'Film',
+      podcastId: null,
+      podcastName: null
+    }, pageId)).toEqual({ kind: 'submit-to-page' });
+    expect(pageDropPlan({
+      known: true,
+      contentKind: 'TvShowEpisode',
+      parentName: 'Nightly'
+    }, pageId)).toEqual({ kind: 'submit-to-page' });
+  });
 });
 
 describe('podcastPageAttachAfterDialog', () => {
