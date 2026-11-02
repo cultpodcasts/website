@@ -3,6 +3,9 @@
     <mat-form-field class="title">
         <mat-label>Trailer {{ i + 1 }}</mat-label>
         <input type="text" matInput [formControl]="group.controls.title">
+        @if (group.controls.title.hasError('required')) {
+        <mat-error>A title is required</mat-error>
+        }
     </mat-form-field>
     <button type="button" matIconButton aria-label="Move trailer up" [disabled]="first" (click)="move(i, -1)">
         <mat-icon>arrow_upward</mat-icon>

@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, imdbTitleUrl, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -194,6 +194,10 @@ describe('playable edit form', () => {
     expect(form.controls.imdbId!.hasError('pattern')).toBe(true);
     expect(form.controls.tvdbId!.hasError('pattern')).toBe(true);
     expect(form.controls.tmdbId!.hasError('pattern')).toBe(true);
+    form.controls.tmdbId!.setValue(String(int32Max + 1));
+    expect(form.controls.tmdbId!.hasError('int32Max')).toBe(true);
+    form.controls.tmdbId!.setValue(String(int32Max));
+    expect(form.controls.tmdbId!.valid).toBe(true);
   });
 
   it('generates page URLs from ids, and nothing for a blank or invalid id', () => {
@@ -288,6 +292,10 @@ describe('playable edit form', () => {
       form.controls.tmdbId!.setValue('-3');
       expect(form.controls.imdbId!.hasError('pattern')).toBe(true);
       expect(form.controls.tmdbId!.hasError('pattern')).toBe(true);
+      form.controls.tmdbId!.setValue(String(int32Max + 1));
+      expect(form.controls.tmdbId!.hasError('int32Max')).toBe(true);
+      form.controls.tmdbId!.setValue(String(int32Max));
+      expect(form.controls.tmdbId!.valid).toBe(true);
     });
 
     it('patches links per service: a new URL files under its service, a removed one clears its key, an unchanged one is not sent', () => {
@@ -363,6 +371,32 @@ describe('playable edit form', () => {
       array.clear();
       expect(filmChanges(previous, form.getRawValue()).trailers).toEqual([]);
       expect(filmChanges(previous, form.getRawValue()).expectedTrailerIds).toEqual(['t1', 't2', 't3']);
+    });
+
+    it('requires a trailer title so blanking cannot look saved while the server keeps the old title', () => {
+      const previous = film({
+        trailers: [
+          { id: 't1', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' }
+        ]
+      });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.valid).toBe(true);
+      form.controls.trailers!.at(0).controls.title.setValue('');
+      expect(form.controls.trailers!.at(0).controls.title.hasError('required')).toBe(true);
+      expect(form.valid).toBe(false);
+    });
+
+    it('rejects a whitespace-only trailer title so spaces cannot look saved while the server keeps the old title', () => {
+      const previous = film({
+        trailers: [
+          { id: 't1', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' }
+        ]
+      });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.valid).toBe(true);
+      form.controls.trailers!.at(0).controls.title.setValue('   ');
+      expect(form.controls.trailers!.at(0).controls.title.hasError('required')).toBe(true);
+      expect(form.valid).toBe(false);
     });
   });
 });

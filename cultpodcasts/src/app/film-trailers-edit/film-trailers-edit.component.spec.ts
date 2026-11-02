@@ -28,6 +28,25 @@ describe('FilmTrailersEditComponent', () => {
     expect(inputs.map(i => i.value)).toEqual(['Synthetic Teaser', 'Synthetic Clip']);
   });
 
+  it('marks a blank trailer title required and shows the error', async () => {
+    trailers.at(0).controls.title.setValue('');
+    trailers.at(0).controls.title.markAsTouched();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(trailers.at(0).controls.title.hasError('required')).toBe(true);
+    expect(fixture.nativeElement.querySelector('mat-error')?.textContent).toContain('A title is required');
+  });
+
+  it('marks a whitespace-only trailer title required and shows the error', async () => {
+    trailers.at(0).controls.title.setValue('   ');
+    trailers.at(0).controls.title.markAsTouched();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(trailers.at(0).controls.title.hasError('required')).toBe(true);
+    expect(trailers.valid).toBe(false);
+    expect(fixture.nativeElement.querySelector('mat-error')?.textContent).toContain('A title is required');
+  });
+
   it('moves a trailer within bounds and removes one, marking the list dirty', () => {
     const component = fixture.componentInstance;
     component.move(0, -1);

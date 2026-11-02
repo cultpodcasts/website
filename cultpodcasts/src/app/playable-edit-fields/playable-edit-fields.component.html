@@ -233,6 +233,9 @@
             @if (f.controls.tmdbId.hasError('pattern')) {
             <mat-error>Digits only</mat-error>
             }
+            @if (f.controls.tmdbId.hasError('int32Max')) {
+            <mat-error>At most 2147483647</mat-error>
+            }
         </mat-form-field>
         }
         @if (f.controls.tvdbId) {
