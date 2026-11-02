@@ -124,9 +124,11 @@ Curation KV deploy notes only: [docs/flix-prototype.md](docs/flix-prototype.md).
 
 Build: `ng build`. Mobile/TWA notes: `MOBILE_BUILDS.md`.
 
-## Version bumps (HARD for PRs)
+## Version bumps (HARD — merge-time only)
 
-Every website PR that changes shipped client code **MUST** bump `cultpodcasts/package.json` (and `package-lock.json` to match) — patch unless the change warrants minor/major. A new cross-client contract is a **minor** bump. Do this in the same PR before opening or as the last commit before ready-for-review.
+Shipping PRs **MUST NOT** change `cultpodcasts/package.json` / `package-lock.json` version lines. Parallel PR bumps caused stacked merge conflicts on every merge.
+
+Patch bumps are owned by `.github/workflows/bump-version-on-merge.yml` on push to `main` (paths under shipped client code). Minor/major: run that workflow via `workflow_dispatch` with the bump kind (or a one-line manual commit on `main`). Do not bump in feature PRs.
 
 ## Cursor Cloud specific instructions
 

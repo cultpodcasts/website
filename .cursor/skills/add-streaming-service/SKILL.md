@@ -30,7 +30,7 @@ Api owns the contract TS source: `Api/tests/fixtures/streaming-submit-contract.t
 3. `cultpodcasts/src/app/podcast-url-matcher.ts` — series + episode regex (streaming kind).
 4. Icon: prefer `cultpodcasts/tools/icon-sources/paths.json` path data for the `icon` slug when an SI/path glyph exists; otherwise an inline wordmark/SVG in `cultpodcasts/tools/generate-svg-icon-literals.mjs` is allowed (e.g. France TV text tile). Regenerate literals when the icon pipeline requires it.
 5. Update `service-catalog.spec.ts` / matcher specs.
-6. Bump `cultpodcasts/package.json` + lockfile patch when shipping client code.
+6. Do **not** bump `cultpodcasts/package.json` / lockfile (merge-time workflow owns patch bumps).
 7. Assert: from website git root `pwsh ./scripts/assert-streaming-submit-contract-copy.ps1`
 8. Before push: `cd cultpodcasts && npm run test:all`
 

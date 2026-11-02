@@ -1,0 +1,83 @@
+name: Bump cultpodcasts version on merge
+
+# Patch-bumps cultpodcasts/package.json (+ lockfile) after shipping changes land on
+# main so feature PRs never touch the version lines (avoids stacked merge conflicts).
+# Minor/major: workflow_dispatch with bump input.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cultpodcasts/src/**"
+      - "cultpodcasts/public/**"
+      - "cultpodcasts/e2e/**"
+      - "cultpodcasts/angular.json"
+      - "cultpodcasts/build.sh"
+      - "cultpodcasts/build-apk.sh"
+      - "cultpodcasts/update-version.js"
+      - "cultpodcasts/tools/**"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semver bump kind
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bump-version-on-merge
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       !startsWith(github.event.head_commit.message, 'chore: bump cultpodcasts to '))
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Need a token that can push to main after merge.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: cultpodcasts/.nvmrc
+
+      - name: Bump version
+        id: bump
+        working-directory: cultpodcasts
+        env:
+          BUMP: ${{ github.event_name == 'workflow_dispatch' && inputs.bump || 'patch' }}
+        run: |
+          set -euo pipefail
+          BEFORE="$(node -p "require('./package.json').version")"
+          npm version "$BUMP" --no-git-tag-version
+          AFTER="$(node -p "require('./package.json').version")"
+          echo "before=$BEFORE" >> "$GITHUB_OUTPUT"
+          echo "after=$AFTER" >> "$GITHUB_OUTPUT"
+          echo "Bumped $BEFORE → $AFTER ($BUMP)"
+
+      - name: Commit and push
+        env:
+          AFTER: ${{ steps.bump.outputs.after }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cultpodcasts/package.json cultpodcasts/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No version change to commit"
+            exit 0
+          fi
+          git commit -m "chore: bump cultpodcasts to ${AFTER}"
+          git push
