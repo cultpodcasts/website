@@ -255,6 +255,32 @@ describe('playable edit form', () => {
       expect(form.controls.release.hasError('pattern')).toBe(true);
     });
 
+    it('normalizes DateTimeUtc release (Date after JsonDateInterceptor, or ISO string) to yyyy-MM-dd so Submit stays enabled', () => {
+      const fromDate = buildPlayableEditForm(
+        film({ release: new Date('2026-10-27T13:00:00Z') }),
+        'film'
+      );
+      expect(fromDate.controls.release.value).toBe('2026-10-27');
+      expect(fromDate.valid).toBe(true);
+
+      const fromIso = buildPlayableEditForm(
+        film({ release: '2026-10-27T13:00:00Z' }),
+        'film'
+      );
+      expect(fromIso.controls.release.value).toBe('2026-10-27');
+      expect(fromIso.valid).toBe(true);
+    });
+
+    it('does not PATCH release when the GET had DateTimeUtc and the form still shows the same calendar day', () => {
+      const previous = film({
+        release: new Date('2026-10-27T13:00:00Z'),
+        description: 'Before'
+      });
+      const form = buildPlayableEditForm(previous, 'film');
+      form.controls.description.setValue('After');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ description: 'After' });
+    });
+
     it('never sends title; sends publisher (trimmed, empty clears) and the IMDb id patch', () => {
       const previous = film();
       const form = buildPlayableEditForm(previous, 'film');

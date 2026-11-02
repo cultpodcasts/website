@@ -10,6 +10,10 @@ import {
   TvShowEpisodeDto
 } from './playable-edit.interface';
 import { resolveServiceKey } from './service-catalog';
+import { utcCalendarDateText } from './utc-calendar-date';
+
+/** Playable release for the shared edit form — see {@link utcCalendarDateText}. */
+export const filmReleaseFormValue = utcCalendarDateText;
 
 /**
  * Reactive form for the news report / TV episode edit dialogs. Same control names as the podcast
@@ -249,7 +253,8 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     ignored: new FormControl(!!dto.ignored, { nonNullable: true }),
     removed: new FormControl(!!dto.removed, { nonNullable: true }),
     explicit: new FormControl(!!dto.explicit, { nonNullable: true }),
-    release: new FormControl(dto.release ?? '', { nonNullable: true }),
+    // DateTimeUtc arrives as Date via JsonDateInterceptor; never put a raw Date in the control.
+    release: new FormControl(utcCalendarDateText(dto.release), { nonNullable: true }),
     duration: new FormControl(dto.duration ?? '', { nonNullable: true }),
     subjects: new FormControl<string[]>([...(dto.subjects ?? [])], { nonNullable: true }),
     searchTerms: new FormControl(dto.searchTerms ?? '', { nonNullable: true }),
@@ -325,7 +330,9 @@ export function playableFieldsChanges(
   if (title && title !== previous.title) changes.title = title;
   if (next.description !== (previous.description ?? '')) changes.description = next.description;
   const release = next.release.trim();
-  if (release && release !== (previous.release ?? '')) changes.release = release;
+  // Compare the editor shape (date/year), not a raw DateTimeUtc GET string, so an untouched timed
+  // release does not ride along on every unrelated film/news/TV save.
+  if (release && release !== utcCalendarDateText(previous.release)) changes.release = release;
   const duration = next.duration.trim();
   if (duration && duration !== (previous.duration ?? '')) changes.duration = duration;
   if (next.posted !== !!previous.posted) changes.posted = next.posted;

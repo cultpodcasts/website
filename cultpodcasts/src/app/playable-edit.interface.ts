@@ -3,13 +3,14 @@ import { FilmTrailer } from './film-trailer';
 
 /**
  * Curator GET body shared by `newsreport/{id}` and `tvshowepisode/{id}` (RPP `PlayableFieldsDto`).
- * Release is a calendar date `yyyy-MM-dd`; duration is `h:mm:ss`. English language is null.
+ * Release is a calendar date `yyyy-MM-dd` (or year / UTC DateTimeUtc for film). After
+ * `JsonDateInterceptor`, a DateTimeUtc wire value is a `Date`. Duration is `h:mm:ss`. English language is null.
  */
 export interface PlayableFieldsDto {
   id: string;
   title: string;
   description: string;
-  release?: string | null;
+  release?: string | Date | null;
   duration: string;
   explicit: boolean;
   ignored: boolean;
