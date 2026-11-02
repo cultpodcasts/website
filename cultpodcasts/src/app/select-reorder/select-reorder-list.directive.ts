@@ -36,7 +36,8 @@ import { moveSelectedValue, reorderAnnouncement, reorderEdgeAnnouncement } from 
  * - Drag: a `CdkDropList` (host directive, y axis only). Dragging starts from the handle only, so touch
  *   scrolling of the panel still works everywhere else. On drop the select's form control value is
  *   reordered (only the shown values' slots move) and set; `reordered` fires so the host can regroup.
- *   Known limit: the drag does not auto-scroll the select panel (cultpodcasts/website#585).
+ *   The open `.mat-mdc-select-panel` is registered as a CDK scrollable parent so edge auto-scroll and
+ *   mid-drag wheel scrolls keep drop indices correct (cultpodcasts/website#585).
  * - Keyboard: while the panel is open and the active option is a selected (reorderable) one, Alt+ArrowUp
  *   and Alt+ArrowDown move it one place. The keys arrive through `mat-select[appSelectReorder]`, which
  *   listens in the capture phase ahead of mat-select's own Alt+Arrow close (see that directive).
@@ -79,10 +80,44 @@ export class SelectReorderListDirective implements SelectReorderKeyHandler {
     this.reorder.attach(this);
     const click = (event: MouseEvent) => this.onListClickCapture(event);
     this.host.addEventListener('click', click, true);
+    // Wire the live mat-select panel into CDK drag auto-scroll / scroll tracking (#585).
+    //
+    // CdkDropList resolves scrollable parents once on the first DropListRef.beforeStarted via
+    // ScrollDispatcher.getAncestorScrollContainers, then sets _scrollableParentsResolved so later
+    // opens never refresh them. The panel is none of: the drop list, the document, or a cdkScrollable
+    // ancestor — and mat-select recreates it on every open (`cdk-connected-overlay`). Registering a
+    // CdkScrollable for the panel therefore only works for the first open.
+    //
+    // Fix: on each open, and again on beforeStarted (after CDK's one-shot resolve, because this
+    // subscription is registered after CdkDropList's host-directive setup), call
+    // CdkDropList._dropListRef.withScrollableParents([panel]) with the current panel element.
+    const opened = this.select.openedChange.subscribe(open => {
+      if (!open) {
+        return;
+      }
+      afterNextRender(() => this.syncPanelScrollParent(), { injector: this.injector });
+    });
+    const beforeStarted = this.dropList._dropListRef.beforeStarted.subscribe(() => {
+      this.syncPanelScrollParent();
+    });
     destroyRef.onDestroy(() => {
       this.reorder.detach(this);
       this.host.removeEventListener('click', click, true);
+      opened.unsubscribe();
+      beforeStarted.unsubscribe();
     });
+  }
+
+  /**
+   * Registers the open `.mat-mdc-select-panel` with the drop list so CDK auto-scrolls it and invalidates
+   * cached positions when it scrolls (see constructor note / #585).
+   */
+  private syncPanelScrollParent(): void {
+    const panel = this.select.panel?.nativeElement as HTMLElement | undefined;
+    if (!panel) {
+      return;
+    }
+    this.dropList._dropListRef.withScrollableParents([panel]);
   }
 
   /** @internal Called by `appSelectReorderItem`. */
