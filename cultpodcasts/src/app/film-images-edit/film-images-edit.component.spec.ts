@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { FormArray } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { newFilmLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
+import { newPlayableLinkGroup, PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { FilmImagesEditComponent } from './film-images-edit.component';
 
 describe('FilmImagesEditComponent', () => {
@@ -19,7 +19,7 @@ describe('FilmImagesEditComponent', () => {
       ],
     }).compileComponents();
     links = new FormArray([
-      newFilmLinkGroup('https://www.youtube.com/watch?v=synthetic01', 'https://cdn.example.test/yt.jpg')
+      newPlayableLinkGroup('https://www.youtube.com/watch?v=synthetic01', 'https://cdn.example.test/yt.jpg')
     ]);
     fixture = TestBed.createComponent(FilmImagesEditComponent);
     fixture.componentRef.setInput('links', links);

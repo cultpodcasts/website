@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newFilmLinkControl, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newPlayableLinkGroup, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -119,7 +119,7 @@ describe('playable edit form', () => {
     ]);
     expect(playableFieldsChanges(news, newsForm.getRawValue())).toEqual({});
     newsForm.controls.links!.removeAt(1);
-    newsForm.controls.links!.push(newFilmLinkControl(youtube));
+    newsForm.controls.links!.push(newPlayableLinkGroup(youtube));
     expect(playableFieldsChanges(news, newsForm.getRawValue()).services).toEqual({
       youtube: { url: youtube },
       bbcIplayer: { url: '', image: '' }
@@ -136,7 +136,7 @@ describe('playable edit form', () => {
     const tvForm = buildPlayableEditForm(tv, 'tv');
     expect(tvShowEpisodeChanges(tv, tvForm.getRawValue())).toEqual({});
     tvForm.controls.links!.removeAt(1);
-    tvForm.controls.links!.push(newFilmLinkControl(youtube));
+    tvForm.controls.links!.push(newPlayableLinkGroup(youtube));
     expect(tvShowEpisodeChanges(tv, tvForm.getRawValue()).services).toEqual({
       youtube: { url: youtube },
       bbcIplayer: { url: '', image: '' }
@@ -310,7 +310,7 @@ describe('playable edit form', () => {
       expect(filmChanges(previous, form.getRawValue())).toEqual({});
 
       form.controls.links!.removeAt(1);
-      form.controls.links!.push(newFilmLinkControl('https://www.youtube.com/watch?v=synthetic01'));
+      form.controls.links!.push(newPlayableLinkGroup('https://www.youtube.com/watch?v=synthetic01'));
 
       expect(form.valid).toBe(true);
       expect(filmChanges(previous, form.getRawValue()).services).toEqual({
@@ -323,16 +323,16 @@ describe('playable edit form', () => {
       const film0 = film({ services: null });
       const form = buildPlayableEditForm(film0, 'film');
       const links = form.controls.links!;
-      links.push(newFilmLinkControl('not a url'));
-      expect(links.at(0).controls.url.hasError('filmLinkUrl')).toBe(true);
+      links.push(newPlayableLinkGroup('not a url'));
+      expect(links.at(0).controls.url.hasError('playableLinkUrl')).toBe(true);
       links.at(0).controls.url.setValue('https://synthetic-unknown-service.example/watch/1');
       expect(links.at(0).valid).toBe(true);
       expect(filmChanges(film0, form.getRawValue()).services).toEqual({
         syntheticunknownserviceexample: { url: 'https://synthetic-unknown-service.example/watch/1' }
       });
       links.at(0).controls.url.setValue('https://www.youtube.com/watch?v=synthetic01');
-      links.push(newFilmLinkControl('https://www.youtube.com/watch?v=synthetic02'));
-      expect(links.hasError('filmLinkDuplicate')).toBe(true);
+      links.push(newPlayableLinkGroup('https://www.youtube.com/watch?v=synthetic02'));
+      expect(links.hasError('playableLinkDuplicate')).toBe(true);
       expect(form.valid).toBe(false);
     });
 
