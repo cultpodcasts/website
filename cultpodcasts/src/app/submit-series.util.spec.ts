@@ -5,6 +5,7 @@ import {
   showSubmitSeriesPicker,
   submitDialogResult,
   submitEpisodePostBody,
+  submitKnownCatalogueLabel,
   submitParentPostBody,
   submitLookupReadyForSave,
   submitSaveReady,
@@ -12,6 +13,8 @@ import {
   submitSeriesUiFromLookup
 } from './submit-series.util';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
+import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
+import type { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
 
 describe('showSubmitSeriesPicker', () => {
   it('shows Series picker only for the Curator role, because attaching or naming a series is curator work', () => {
@@ -113,6 +116,67 @@ describe('submitEpisodePostBody', () => {
   });
 });
 
+describe('submitKnownCatalogueLabel', () => {
+  it('labels a known Film without podcast id/name as already in the catalogue', () => {
+    const lookup: SubmitUrlLookupResponse = {
+      known: true,
+      kind: 'podcast-service',
+      contentKind: CataloguePlayableKind.Film,
+      podcastId: null,
+      podcastName: null,
+      parentName: null
+    };
+    expect(lookup.known).toBe(true);
+    if (!lookup.known) {
+      throw new Error('expected known');
+    }
+    expect(submitKnownCatalogueLabel(lookup)).toBe('Already in the catalogue as Film');
+  });
+
+  it('labels a known TV episode with the parent show name', () => {
+    const lookup: SubmitUrlLookupResponse = {
+      known: true,
+      kind: 'streaming',
+      service: 'netflix',
+      contentKind: CataloguePlayableKind.TvShowEpisode,
+      parentName: 'Nightly Synthetic'
+    };
+    expect(lookup.known).toBe(true);
+    if (!lookup.known) {
+      throw new Error('expected known');
+    }
+    expect(submitKnownCatalogueLabel(lookup)).toBe('TV: Nightly Synthetic');
+  });
+
+  it('labels a known news report with the parent outlet name', () => {
+    const lookup: SubmitUrlLookupResponse = {
+      known: true,
+      contentKind: CataloguePlayableKind.NewsReport,
+      parentName: 'Synthetic Desk'
+    };
+    expect(lookup.known).toBe(true);
+    if (!lookup.known) {
+      throw new Error('expected known');
+    }
+    expect(submitKnownCatalogueLabel(lookup)).toBe('News: Synthetic Desk');
+  });
+
+  it('keeps Series: {podcastName} for a known podcast Episode', () => {
+    const lookup: SubmitUrlLookupResponse = {
+      known: true,
+      podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      podcastName: 'Stored Show Name',
+      contentKind: CataloguePlayableKind.Episode,
+      parentName: 'Stored Show Name'
+    };
+    expect(lookup.known).toBe(true);
+    if (!lookup.known) {
+      throw new Error('expected known');
+    }
+    expect(submitKnownCatalogueLabel(lookup)).toBe('Series: Stored Show Name');
+  });
+});
+
 describe('submitSeriesUiFromLookup', () => {
   it('known unique → readonly Series (URL-only submit)', () => {
     expect(submitSeriesUiFromLookup({
@@ -125,6 +189,25 @@ describe('submitSeriesUiFromLookup', () => {
       podcastId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       podcastName: 'Stored Show Name'
     }, 'streaming')).toBe('readonly');
+  });
+
+  it('known Film / TV / News stay readonly and never open the Series picker', () => {
+    expect(submitSeriesUiFromLookup({
+      known: true,
+      contentKind: CataloguePlayableKind.Film
+    }, 'podcast-service')).toBe('readonly');
+    expect(submitSeriesUiFromLookup({
+      known: true,
+      contentKind: CataloguePlayableKind.TvShowEpisode,
+      parentName: 'Nightly',
+      kind: 'streaming',
+      service: 'netflix'
+    }, 'streaming')).toBe('readonly');
+    expect(submitSeriesUiFromLookup({
+      known: true,
+      contentKind: CataloguePlayableKind.NewsReport,
+      parentName: 'Desk'
+    }, 'podcast-service')).toBe('readonly');
   });
 
   it('hides Series for unknown podcast-service URLs, because platform metadata creates the series', () => {

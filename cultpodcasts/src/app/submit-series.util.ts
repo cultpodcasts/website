@@ -1,3 +1,4 @@
+import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
 import { SimplePodcast } from './simple-podcast.interface';
 import { Suggestion } from './search-suggestions.interface';
 import { SubmittablePodcastUrlKind } from './podcast-url-matcher';
@@ -25,8 +26,32 @@ export function showSubmitSeriesPicker(roles: readonly string[] | null | undefin
 }
 
 /**
+ * Read-only label for a known-unique lookup: Film / TV / News catalogue ownership, or podcast Series name.
+ * Always returns a non-empty string; the caller shows this only when `known: true` and Series UI is readonly.
+ */
+export function submitKnownCatalogueLabel(
+  lookup: Extract<SubmitUrlLookupResponse, { known: true }>
+): string {
+  const kind = lookup.contentKind;
+  if (kind === CataloguePlayableKind.Film) {
+    return 'Already in the catalogue as Film';
+  }
+  if (kind === CataloguePlayableKind.TvShowEpisode) {
+    const parent = lookup.parentName?.trim();
+    return parent ? `TV: ${parent}` : 'TV';
+  }
+  if (kind === CataloguePlayableKind.NewsReport) {
+    const parent = lookup.parentName?.trim();
+    return parent ? `News: ${parent}` : 'News';
+  }
+  const series = lookup.podcastName?.trim() || lookup.parentName?.trim() || '';
+  return series ? `Series: ${series}` : 'Series';
+}
+
+/**
  * Add Podcast Series field from URL membership lookup.
- * Known unique → read-only name (do not send podcastName).
+ * Known unique → read-only (do not send podcastName). Film / TV / News use the same readonly mode;
+ * their label comes from `submitKnownCatalogueLabel`.
  * Unknown streaming or ambiguous → picker.
  * Unknown podcast-service / unrecognised / pending → hide.
  */

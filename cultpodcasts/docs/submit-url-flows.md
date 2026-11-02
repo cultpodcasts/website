@@ -50,7 +50,7 @@ Worker **forwards** Azure 400 / 404 / 409 on POST (and lookup 400 / 404). Those 
 
 Lookup **200** shapes:
 
-- Known unique: `{ known: true, podcastId, podcastName, kind, service? }` — `service` when streaming
+- Known unique: `{ known: true, podcastId?, podcastName?, kind?, service?, contentKind?, parentName? }` — `podcastId` / `podcastName` optional (often absent for Film / TV / News); `contentKind` is `Episode` \| `Film` \| `TvShowEpisode` \| `NewsReport`; `parentName` is the TV show / news outlet (omitted for Film); `service` when streaming
 - Unknown: `{ known: false, kind: "podcast-service" \| "streaming" \| "unrecognised", service?, podcastName? }` — streaming includes `service` (ServiceKeys)
 - Ambiguous: `{ known: false, ambiguous: true, kind, service?, podcastIds }` (**200**, not 409)
 
@@ -178,7 +178,7 @@ where the name is the film's own (from the dialog, else `GET /film/{id}`, else s
 
 | Call | Response | Next |
 | --- | --- | --- |
-| **GET `/submit/lookup`** | `known: true` | Add Podcast: URL-only POST, Series read-only. General drop: URL-only POST. Page drop: if **other** `podcastId` → confirm; if **same** → POST to page. |
+| **GET `/submit/lookup`** | `known: true` | Add Podcast: URL-only POST; Series read-only via `submitKnownCatalogueLabel` (Film / TV / News labels, or `Series: {podcastName}`). General drop: URL-only POST. Page drop: if **other** `podcastId` → confirm; if **same** → POST to page; Film/TV/News without a podcast id skip the other-podcast confirm. |
 | | `known: false`, `kind: podcast-service` | Add Podcast / general drop: URL-only POST. Page drop: POST to page (no picker). |
 | | `known: false`, `kind: streaming` | Add Podcast Curator: Series picker. General drop / public Add Podcast: use extracted `podcastName` on POST when present (no picker). Page drop: POST to page. |
 | | `ambiguous: true` + `podcastIds` | Add Podcast: load ids, picker, then POST with chosen id. Page drop: **ignore picker**, POST to page. |
@@ -200,7 +200,7 @@ Curator Series field is driven by lookup (`submitSeriesUiFromLookup` / `submitDi
 
 1. **Submitter or Curator:** debounced `GET /submit/lookup` after a valid parsed URL. Signed-out never calls lookup (`shouldCallSubmitUrlLookup`).
 2. Curator Save waits until lookup finished for **this** href (`submitSaveReady`). Non-Curator Save needs a valid URL only.
-3. Known unique → POST `{ url }` only (never leftover `podcastName`).
+3. Known unique → POST `{ url }` only (never leftover `podcastName`). Series line is read-only via `submitKnownCatalogueLabel` (Film / TV:{parent} / News:{parent}, or `Series: {podcastName}`).
 4. Unknown podcast-service → POST `{ url }` only (platform metadata creates the show).
 5. Unknown streaming + typed name → `GET /podcast/{name}` then POST with id or name.
 6. Ambiguous lookup → `GET /podcast/{id}` for each id, picker, then POST with chosen id.
