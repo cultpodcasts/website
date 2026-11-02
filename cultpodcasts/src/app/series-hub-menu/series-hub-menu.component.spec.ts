@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
-import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
+import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EditCatalogueParentDialogComponent } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
 import { RenameCatalogueParentDialogComponent } from '../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component';
@@ -43,7 +43,6 @@ describe('SeriesHubMenuComponent', () => {
   let sendSubmit: ReturnType<typeof vi.fn>;
   let submitDialogResult: unknown;
   let indexDialogResult: unknown;
-  let indexCatalogueParent: ReturnType<typeof vi.fn>;
   let snackAction: Subject<void>;
   const savedFlags = { ...environment.catalogueParentCuration };
 
@@ -52,14 +51,13 @@ describe('SeriesHubMenuComponent', () => {
     sendSubmit = vi.fn(async () => undefined);
     submitDialogResult = { url: videoUrl };
     indexDialogResult = undefined;
-    indexCatalogueParent = vi.fn();
     snackAction = new Subject<void>();
     dialogOpen = vi.fn((component: unknown) => {
       if (component === SubmitPodcastComponent) {
         return { afterClosed: () => of(submitDialogResult) };
       }
-      if (component === PodcastIndexComponent) {
-        return { afterClosed: () => of(indexDialogResult), componentInstance: { indexCatalogueParent } };
+      if (component === IndexDialogComponent) {
+        return { afterClosed: () => of(indexDialogResult) };
       }
       if (component === SendPodcastComponent) {
         return { afterClosed: () => of({ submitted: true }), componentInstance: { submit: sendSubmit } };
@@ -136,8 +134,8 @@ describe('SeriesHubMenuComponent', () => {
     fixture.componentInstance.indexed.subscribe(() => reloads++);
     indexDialogResult = { updated: true, itemIds: ['a', 'b'], searchIndexerState: SearchIndexerState.Executed };
     menu.index();
-    expect(dialogOpen.mock.calls[0][0]).toBe(PodcastIndexComponent);
-    expect(indexCatalogueParent).toHaveBeenCalledWith('news', 'Desk One');
+    expect(dialogOpen.mock.calls[0][0]).toBe(IndexDialogComponent);
+    expect(dialogOpen.mock.calls[0][1].data).toEqual({ kind: 'catalogueParent', hub: 'news', name: 'Desk One' });
     expect(snackOpen).toHaveBeenCalledWith('News Outlet indexed. 2 items updated.', 'Review', { duration: 10000 });
     snackAction.next();
     expect(navigate).toHaveBeenCalledWith(['/news', 'Desk One']);

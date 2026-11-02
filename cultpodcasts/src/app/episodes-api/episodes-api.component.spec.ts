@@ -10,6 +10,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SiteService } from '../site.service';
 import { HeroCurationService } from '../hero-curation.service';
 import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
+import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { EpisodesApiComponent } from './episodes-api.component';
 import { GuidService } from '../guid.service';
 
@@ -173,6 +174,16 @@ describe('EpisodesApiComponent (embedded)', () => {
     slug: 'One Off',
     path: '/film/One%20Off/fexample'
   };
+
+  it('Index opens the index dialog for the podcast name', () => {
+    dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentInstance.index('Synthetic Pod');
+    expect(dialog.open).toHaveBeenCalledWith(
+      IndexDialogComponent,
+      expect.objectContaining({ data: { kind: 'podcast', name: 'Synthetic Pod' } })
+    );
+  });
 
   it('a film row gets the curator menu; Edit opens the film dialog (PATCH /film), not the podcast editor, then refreshes the row', async () => {
     dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, parentName: 'One Off' }) });
