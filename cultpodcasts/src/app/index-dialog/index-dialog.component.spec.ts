@@ -2,29 +2,31 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { PodcastIndexComponent } from './podcast-index.component';
+import { IndexDialogComponent, IndexDialogData } from './index-dialog.component';
 
-describe('PodcastIndexComponent', () => {
+describe('IndexDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
 
-  beforeEach(async () => {
+  async function configure(data: IndexDialogData) {
     close = vi.fn();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
-      imports: [PodcastIndexComponent],
+      imports: [IndexDialogComponent],
       providers: [
         provideZonelessChangeDetection(),
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: MatDialogRef, useValue: { close } },
+        { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
       ]
     }).compileComponents();
-  });
+  }
 
   afterEach(() => {
     TestBed.inject(HttpTestingController).verify();
@@ -46,54 +48,64 @@ describe('PodcastIndexComponent', () => {
   }
 
   it('indexes a podcast by name and closes with the episode ids, as before', async () => {
-    const sut = TestBed.createComponent(PodcastIndexComponent).componentInstance;
-    sut.index('Show & Co');
+    await configure({ kind: 'podcast', name: 'Show & Co' });
+    const sut = TestBed.createComponent(IndexDialogComponent).componentInstance;
     await settle();
     expectPost('/podcast/index/Show%20%26%20Co').flush({
       indexedEpisodes: [{ podcastId: 'p', episodeId: 'e', spotify: true, apple: false, youtube: false, subjects: [] }],
       indexStatus: 'Performed'
     });
+    await settle();
     expect(sut.subject()).toBe('Podcast');
     expect(close).toHaveBeenCalledWith({ updated: true, episodeIds: ['p/e'] });
   });
 
   it('maps a podcast 400 and 404 as before', async () => {
-    const sut = TestBed.createComponent(PodcastIndexComponent).componentInstance;
-    sut.index('Show');
+    await configure({ kind: 'podcast', name: 'Show' });
+    TestBed.createComponent(IndexDialogComponent);
     await settle();
     expectPost('/podcast/index/Show').flush(null, { status: 400, statusText: 'Bad Request' });
-    sut.index('Show');
+    await settle();
+    expect(close).toHaveBeenCalledWith({ podcastNotAutoIndex: true });
+
+    await configure({ kind: 'podcast', name: 'Show' });
+    TestBed.createComponent(IndexDialogComponent);
     await settle();
     expectPost('/podcast/index/Show').flush(null, { status: 404, statusText: 'Not Found' });
-    expect(close.mock.calls.map((c) => c[0])).toEqual([{ podcastNotAutoIndex: true }, { podcastNotFound: true }]);
+    await settle();
+    expect(close).toHaveBeenCalledWith({ podcastNotFound: true });
   });
 
   it('indexes a news outlet by name on the newsorganisation route and closes with the item ids', async () => {
-    const sut = TestBed.createComponent(PodcastIndexComponent).componentInstance;
-    sut.indexCatalogueParent('news', 'Desk 24/7');
+    await configure({ kind: 'catalogueParent', hub: 'news', name: 'Desk 24/7' });
+    const sut = TestBed.createComponent(IndexDialogComponent).componentInstance;
     await settle();
     expectPost('/newsorganisation/index/Desk%2024%2F7').flush({ indexedItemIds: ['a'], searchIndexerState: 'Executed' });
+    await settle();
     expect(sut.subject()).toBe('News Outlet');
     expect(close).toHaveBeenCalledWith({ updated: true, itemIds: ['a'], searchIndexerState: 'Executed' });
   });
 
   it('maps a TV show 400 (with reason), 404, 409 and 504 (timed out), and stays open with an error otherwise', async () => {
-    const sut = TestBed.createComponent(PodcastIndexComponent).componentInstance;
-    for (const [status, body] of [[400, { reason: 'SourcePodcastStillExists' }], [404, null], [409, ['x', 'y']], [504, { reason: 'TimedOut', message: 'Indexing ran out of time.' }]] as const) {
-      sut.indexCatalogueParent('tv', 'Nightly');
+    for (const [status, body, expected] of [
+      [400, { reason: 'SourcePodcastStillExists' }, { notIndexable: true, reason: 'SourcePodcastStillExists' }],
+      [404, null, { notFound: true }],
+      [409, ['x', 'y'], { ambiguous: true }],
+      [504, { reason: 'TimedOut', message: 'Indexing ran out of time.' }, { timedOut: true }]
+    ] as const) {
+      await configure({ kind: 'catalogueParent', hub: 'tv', name: 'Nightly' });
+      TestBed.createComponent(IndexDialogComponent);
       await settle();
       expectPost('/tvshow/index/Nightly').flush(body, { status, statusText: 'Error' });
+      await settle();
+      expect(close).toHaveBeenCalledWith(expected);
     }
-    expect(close.mock.calls.map((c) => c[0])).toEqual([
-      { notIndexable: true, reason: 'SourcePodcastStillExists' },
-      { notFound: true },
-      { ambiguous: true },
-      { timedOut: true }
-    ]);
-    sut.indexCatalogueParent('tv', 'Nightly');
+
+    await configure({ kind: 'catalogueParent', hub: 'tv', name: 'Nightly' });
+    const sut = TestBed.createComponent(IndexDialogComponent).componentInstance;
     await settle();
     expectPost('/tvshow/index/Nightly').flush({ error: 'Unable to index TV show' }, { status: 500, statusText: 'Error' });
-    expect(close).toHaveBeenCalledTimes(4);
+    await settle();
     expect(sut.sendError()).toBe(true);
     expect(sut.isSending()).toBe(false);
     expect(sut.subject()).toBe('TV Show');

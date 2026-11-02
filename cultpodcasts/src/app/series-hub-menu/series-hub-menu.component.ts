@@ -22,7 +22,7 @@ import {
   RenameCatalogueParentDialogResponse
 } from "../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component";
 import { SendPodcastComponent } from "../send-podcast/send-podcast.component";
-import { PodcastIndexComponent } from "../podcast-index/podcast-index.component";
+import { IndexDialogComponent, IndexDialogData } from "../index-dialog/index-dialog.component";
 import { SearchIndexerState } from "../search-indexer-state.interface";
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from "../submit-dialog-response.interface";
@@ -86,12 +86,15 @@ export class SeriesHubMenuComponent {
   protected index(): void {
     const label = this.label();
     const name = this.seriesName();
-    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.indexCatalogueParent(this.hub(), name);
+    const data: IndexDialogData = { kind: 'catalogueParent', hub: this.hub(), name };
+    const dialogRef = this.dialog.open<IndexDialogComponent, IndexDialogData, CatalogueIndexDialogResult>(
+      IndexDialogComponent,
+      { disableClose: true, autoFocus: true, data }
+    );
     dialogRef
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result: CatalogueIndexDialogResult | undefined) => {
+      .subscribe((result) => {
         if (result?.updated) {
           const count = result.itemIds?.length ?? 0;
           if (count === 0) {

@@ -32,7 +32,8 @@ import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.compone
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
-import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
+import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dialog.component';
+import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
 import { EpisodeUpdateService, SavedPodcastRef } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
@@ -693,9 +694,15 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   }
 
   index(podcastName: string) {
-    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.index(podcastName);
+    const data: IndexDialogData = { kind: 'podcast', name: podcastName };
+    const dialogRef = this.dialog.open<IndexDialogComponent, IndexDialogData, PodcastIndexDialogResult>(
+      IndexDialogComponent,
+      { disableClose: true, autoFocus: true, data }
+    );
     dialogRef.afterClosed().subscribe(async result => {
+      if (!result) {
+        return;
+      }
       if (result.updated) {
         let message = "Podcast Indexed";
         let action = "Ok";

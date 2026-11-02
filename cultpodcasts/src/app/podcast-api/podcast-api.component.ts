@@ -16,7 +16,8 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
-import { PodcastIndexComponent } from '../podcast-index/podcast-index.component';
+import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dialog.component';
+import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
@@ -349,9 +350,15 @@ export class PodcastApiComponent {
   }
 
   index() {
-    const dialogRef = this.dialog.open(PodcastIndexComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.index(this.results()[0].podcastName);
+    const data: IndexDialogData = { kind: 'podcast', name: this.results()[0].podcastName };
+    const dialogRef = this.dialog.open<IndexDialogComponent, IndexDialogData, PodcastIndexDialogResult>(
+      IndexDialogComponent,
+      { disableClose: true, autoFocus: true, data }
+    );
     dialogRef.afterClosed().subscribe(async result => {
+      if (!result) {
+        return;
+      }
       if (result.updated) {
         let message = "Podcast Indexed";
         let action = "Ok";

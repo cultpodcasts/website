@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
+import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { PodcastApiComponent } from './podcast-api.component';
 import { ODataService } from '../odata.service';
 import { SiteService } from '../site.service';
@@ -147,6 +148,24 @@ describe('PodcastApiComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/news', 'Show A']);
   });
+
+  it('Index opens the index dialog for the podcast name from results', () => {
+    fixture.detectChanges();
+    const dialog = TestBed.inject(MatDialog);
+    vi.mocked(dialog.open).mockReturnValue({
+      afterClosed: () => of(undefined)
+    } as ReturnType<MatDialog['open']>);
+    (fixture.componentInstance as unknown as { results: { set: (v: { podcastName: string }[]) => void } })
+      .results.set([{ podcastName: 'Show A' }]);
+
+    fixture.componentInstance.index();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      IndexDialogComponent,
+      expect.objectContaining({ data: { kind: 'podcast', name: 'Show A' } })
+    );
+  });
+
   describe('subject chips in the URL fragment', () => {
     let navigate: ReturnType<typeof vi.fn>;
 
