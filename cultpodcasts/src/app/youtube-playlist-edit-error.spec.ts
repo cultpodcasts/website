@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
+  YOU_TUBE_PLAYLIST_ID_INVALID,
   YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
   YOU_TUBE_PLAYLIST_NOT_FOUND,
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
@@ -14,21 +15,31 @@ function httpError(status: number, body: unknown): HttpErrorResponse {
 }
 
 describe('youtubePlaylistEditError', () => {
-  it('shows the Api message for a channel-mismatch 400 (podcast error field)', () => {
+  it('shows the Api message for youTubePlaylistIdInvalid 400 (podcast error field)', () => {
+    const message =
+      "YouTube playlist id 'not-a-playlist' is invalid. Use a playlist id like PL… (Did you mean UC… as a channel id?).";
+    expect(
+      youtubePlaylistEditError(
+        httpError(400, { error: message, code: YOU_TUBE_PLAYLIST_ID_INVALID })
+      )
+    ).toEqual({ message, retryable: false, code: YOU_TUBE_PLAYLIST_ID_INVALID });
+  });
+
+  it('shows the Api message for youTubePlaylistIdInvalid 400 (news/TV message field)', () => {
+    const message = 'YouTube playlist id is invalid. Use a playlist id like PL…';
+    expect(
+      youtubePlaylistEditError(
+        httpError(400, { message, code: YOU_TUBE_PLAYLIST_ID_INVALID })
+      )
+    ).toEqual({ message, retryable: false, code: YOU_TUBE_PLAYLIST_ID_INVALID });
+  });
+
+  it('shows the Api message for a legacy channel-mismatch 400 (podcast error field)', () => {
     const message =
       "Playlist PLsynthetic is owned by channel UCsyntheticother; change the playlist or the parent's YouTube channel.";
     expect(
       youtubePlaylistEditError(
         httpError(400, { error: message, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH })
-      )
-    ).toEqual({ message, retryable: false, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH });
-  });
-
-  it('shows the Api message for a channel-mismatch 400 (news/TV message field)', () => {
-    const message = 'Playlist owned by another channel; fix the playlist id.';
-    expect(
-      youtubePlaylistEditError(
-        httpError(400, { message, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH })
       )
     ).toEqual({ message, retryable: false, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH });
   });

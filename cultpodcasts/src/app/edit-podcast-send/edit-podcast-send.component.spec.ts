@@ -9,6 +9,7 @@ import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import {
   YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
+  YOU_TUBE_PLAYLIST_ID_INVALID,
   YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
   YOU_TUBE_PLAYLIST_NOT_FOUND,
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
@@ -46,7 +47,20 @@ describe('EditPodcastSendComponent', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('shows the Api mismatch message and keeps the dialog open (edits stay on the parent)', async () => {
+  it('shows the Api id-invalid message and keeps the dialog open (edits stay on the parent)', async () => {
+    const message =
+      "YouTube playlist id 'not-a-playlist' is invalid. Use a playlist id like PL… (Did you mean UC… as a channel id?).";
+    fixture.componentInstance.submit(podcastId, { youTubePlaylistId: 'not-a-playlist' });
+    fixture.detectChanges();
+    const req = http.expectOne(patchUrl);
+    req.flush({ error: message, code: YOU_TUBE_PLAYLIST_ID_INVALID }, { status: 400, statusText: 'Bad Request' });
+    fixture.detectChanges();
+    expect(root().querySelector('#error')?.textContent?.trim()).toBe(message);
+    expect(root().textContent).not.toContain('Try again');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('shows the Api mismatch message for a legacy channel-mismatch 400', async () => {
     const message = 'Playlist PLsynthetic is owned by channel UCsyntheticother; change the playlist.';
     fixture.componentInstance.submit(podcastId, { youTubePlaylistId: 'PLsyntheticplaylist0001' });
     fixture.detectChanges();

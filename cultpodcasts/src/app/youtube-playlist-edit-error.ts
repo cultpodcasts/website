@@ -1,11 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-/** Api refuse codes when a parent YouTube playlist id cannot be saved (RPP playlist guard / website #575). */
+/**
+ * Api refuse codes when a parent YouTube playlist id cannot be saved (RPP playlist guard / website #575).
+ *
+ * Live Api codes today: youTubePlaylistIdInvalid (400), youTubePlaylistNotFound (400),
+ * youTubePlaylistLookupFailed (503). Ownership mismatch was dropped — any owner channel is accepted.
+ *
+ * Legacy / defensive arms (not emitted by current Api): ChannelMismatch, OwnerLookupFailed.
+ */
+export const YOU_TUBE_PLAYLIST_ID_INVALID = 'youTubePlaylistIdInvalid';
+/** @deprecated Live Api no longer emits channel-mismatch; kept for defensive mapping. */
 export const YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH = 'youTubePlaylistChannelMismatch';
 export const YOU_TUBE_PLAYLIST_NOT_FOUND = 'youTubePlaylistNotFound';
-/** Issue #575 name; Api may still send this. */
+/** @deprecated Prefer LOOKUP_FAILED; issue #575 name kept for defensive mapping. */
 export const YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED = 'youTubePlaylistOwnerLookupFailed';
-/** Current Api code for a retryable YouTube lookup failure. */
+/** Live Api code for a retryable YouTube lookup failure. */
 export const YOU_TUBE_PLAYLIST_LOOKUP_FAILED = 'youTubePlaylistLookupFailed';
 
 export const YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE =
@@ -54,6 +63,7 @@ export function youtubePlaylistEditError(error: unknown): YouTubePlaylistEditErr
   }
 
   switch (code) {
+    case YOU_TUBE_PLAYLIST_ID_INVALID:
     case YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH: {
       const message = bodyText(body);
       if (!message) {

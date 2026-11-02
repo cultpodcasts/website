@@ -15,6 +15,7 @@ import { JsonDateInterceptor } from '../json-date.interceptor';
 import { PODCAST_REGEXS_TAB_INDEX } from '../podcast-form.util';
 import {
   YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH,
+  YOU_TUBE_PLAYLIST_ID_INVALID,
   YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
   YOU_TUBE_PLAYLIST_NOT_FOUND,
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
@@ -210,18 +211,29 @@ describe('EditCatalogueParentDialogComponent', () => {
     const dialog = fixture.componentInstance as unknown as Internals;
     const model = dialog.model()!;
     model.youTubePlaylistId = 'PLsyntheticplaylistnew000000000000';
-    const mismatch = 'Playlist PLsyntheticplaylistnew000000000000 is owned by channel UCsyntheticother.';
+    const invalid =
+      "YouTube playlist id 'not-a-playlist' is invalid. Use a playlist id like PL… (Did you mean UC… as a channel id?).";
     let done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: invalid, code: YOU_TUBE_PLAYLIST_ID_INVALID },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    fixture.detectChanges();
+    expect(dialog.saveError()).toBe(true);
+    expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(invalid);
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    expect(close).not.toHaveBeenCalled();
+
+    const mismatch = 'Playlist PLsyntheticplaylistnew000000000000 is owned by channel UCsyntheticother.';
+    done = dialog.save();
     (await expectSoon(patchUrl)).flush(
       { message: mismatch, code: YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH },
       { status: 400, statusText: 'Bad Request' }
     );
     await done;
     fixture.detectChanges();
-    expect(dialog.saveError()).toBe(true);
     expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim()).toBe(mismatch);
-    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
-    expect(close).not.toHaveBeenCalled();
 
     done = dialog.save();
     (await expectSoon(patchUrl)).flush(
@@ -242,6 +254,12 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(fixture.nativeElement.querySelector('#error')?.textContent?.trim())
       .toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
     expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    // Save-as-retry: no separate Try again; Save stays present and enabled after a retryable 503.
+    const save = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => b.textContent?.trim() === 'Save'
+    );
+    expect(save).toBeTruthy();
+    expect(save!.disabled).toBe(false);
   });
 
   it('shows not found on 404 and offers no form', async () => {

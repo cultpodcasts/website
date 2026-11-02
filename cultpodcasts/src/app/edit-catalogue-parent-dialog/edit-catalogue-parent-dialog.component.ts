@@ -277,6 +277,7 @@ export class EditCatalogueParentDialogComponent {
     } catch (error) {
       const playlist = youtubePlaylistEditError(error);
       if (playlist) {
+        // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
         this.saveErrorMessage.set(playlist.message);
       }
       this.saveError.set(true);
