@@ -18,6 +18,7 @@ import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
+import { ContentKindBadgeComponent } from '../content-kind-badge/content-kind-badge.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
@@ -33,7 +34,7 @@ import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetec
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
-import { isFilmKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { CataloguePlayableKind, isFilmKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -58,6 +59,7 @@ const MAX_SUBJECT_RAILS = 4;
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
     SubjectChipComponent,
+    ContentKindBadgeComponent,
     QueueButtonComponent,
     SearchDescriptionPipe
   ],
@@ -168,8 +170,25 @@ export class PodcastEpisodeComponent {
     languageFlagBadgeForEpisode(this._episode() ?? {}, this.viewerLocale())
   );
 
-  /** "More from this podcast" rail — other episodes from the same show. */
+  /**
+   * Parent "More from" rail — other items from the same show (podcast / news org / TV).
+   * Accessible name: `moreFromAriaLabel`. Film has no parent rail.
+   */
   protected readonly morePodcastEpisodes = signal<SearchResult[]>([]);
+  /**
+   * Aria label for the parent "More from" rail. News and TV name the parent kind;
+   * podcast stays "More from this podcast". Film has no parent rail.
+   */
+  protected readonly moreFromAriaLabel = computed(() => {
+    const kind = this._episode()?.contentKind;
+    if (kind === CataloguePlayableKind.NewsReport) {
+      return 'More from this news organisation';
+    }
+    if (kind === CataloguePlayableKind.TvShowEpisode) {
+      return 'More from this TV show';
+    }
+    return 'More from this podcast';
+  });
   /** "More on <subject>" rails — one per subject, in the episode's subject order. */
   protected readonly subjectRails = signal<SubjectRail[]>([]);
   protected readonly relatedLoading = signal<boolean>(false);

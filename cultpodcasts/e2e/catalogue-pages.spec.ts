@@ -68,6 +68,11 @@ test.describe("catalogue pages with a faked search API", () => {
 		await page.goto(`/film/${encodeURIComponent("One Off")}/${shortId}`);
 		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
 		await expect(page.locator("a.hero-pill")).toHaveCount(0);
+
+		const badge = page.locator(".hero-show .kind-badge");
+		await expect(badge).toBeVisible();
+		await expect(badge.locator("mat-icon")).toHaveText("movie");
+		await expect(badge).toContainText("Film");
 	});
 
 	test("an old podcast short id for a film leaves for /film/ without saying not found", async ({ page }) => {
@@ -91,6 +96,35 @@ test.describe("catalogue pages with a faked search API", () => {
 		await expect(page.getByText("Part")).toBeVisible();
 		await expect(page.getByText("Episode not found")).toHaveCount(0);
 	});
+
+	for (const [kind, parent, title, root, icon, label] of [
+		["NewsReport", "Desk", "Bulletin", "/news", "newspaper", "News"],
+		["TvShowEpisode", "Nightly", "Part", "/tv", "live_tv", "TV"],
+	] as const) {
+		test(`a ${kind} episode hero shows the ${label} kind badge with a non-24px icon`, async ({ page }) => {
+			const shortId = guids.toCatalogueShortId(id, kind);
+			await page.goto(`${root}/${encodeURIComponent(parent)}/${shortId}`);
+			await expect(page.getByRole("heading", { name: title })).toBeVisible();
+
+			const show = page.locator(".hero-show");
+			const badge = show.locator(".kind-badge");
+			await expect(badge).toBeVisible();
+			await expect(badge.locator("mat-icon")).toHaveText(icon);
+			await expect(badge).toContainText(label);
+
+			const geo = await show.evaluate((el) => {
+				const iconBox = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+				return {
+					fontSize: parseFloat(getComputedStyle(el).fontSize),
+					iconW: iconBox.width,
+					iconH: iconBox.height,
+				};
+			});
+			expect(geo.iconW, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+			expect(geo.iconH, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+			expect(geo.iconH).toBeLessThan(24);
+		});
+	}
 });
 
 const outletId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";

@@ -58,6 +58,8 @@
 
     <div class="episode-hero">
       <p class="hero-show">
+        <!-- HERO-KND-001 follow-up (#561): news / TV / film say what they are. Podcast renders nothing. -->
+        <app-content-kind-badge [kind]="episode.contentKind" />
         @if (parentLink(); as parent) {
         <a class="hero-pill" [routerLink]="parent">
           {{ displayCatalogName(showName()) }}
@@ -111,7 +113,7 @@
     [title]="'More from ' + displayCatalogName(showName())"
     [episodes]="morePodcastEpisodes()"
     [titleLink]="parentLink() ?? undefined"
-    [ariaLabel]="'More from this podcast'"
+    [ariaLabel]="moreFromAriaLabel()"
     [displayTitle]="true"
     [showShow]="false"
     [playingEpisodeId]="playingEpisodeId()"

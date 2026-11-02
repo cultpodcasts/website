@@ -81,7 +81,8 @@ body {
 
 /* Hero copy shared by the homepage billboard and the episode page: a podcast
    pill above the title, then a date/duration meta line. Global rather than
-   per-component so the two heroes cannot drift apart. */
+   per-component so the two heroes cannot drift apart. Episode-only flex /
+   badge parent typography lives under `.episode-hero` in the episode sass. */
 .hero-show {
   margin: 0 0 10px;
 }

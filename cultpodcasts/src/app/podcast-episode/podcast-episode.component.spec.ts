@@ -138,6 +138,7 @@ describe('PodcastEpisodeComponent', () => {
     const metaText = meta!.textContent?.replace(/\s+/g, ' ').trim();
 
     expect(query('.billboard__eyebrow')).toBeNull();
+    expect(query('.kind-badge')).toBeNull();
     expect(pill!.textContent?.trim()).toBe('Show A');
     expect(pill!.getAttribute('href')).toBe('/podcast/Show%20A');
     expect(title!.textContent?.trim()).toBe('Episode A');
@@ -146,6 +147,32 @@ describe('PodcastEpisodeComponent', () => {
     expect(meta!.querySelector('a')).toBeNull();
     expect(pill!.compareDocumentPosition(title!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(title!.compareDocumentPosition(meta!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  for (const [kind, icon, label] of [
+    ['NewsReport', 'newspaper', 'News'],
+    ['TvShowEpisode', 'live_tv', 'TV'],
+    ['Film', 'movie', 'Film'],
+  ] as const) {
+    it(`shows the ${icon} kind badge and "${label}" for a ${kind} hero`, () => {
+      fixture.componentRef.setInput('episode', ep({
+        contentKind: kind,
+        podcastName: kind === 'Film' ? 'One Off' : 'Synthetic Parent',
+      }));
+      fixture.detectChanges();
+
+      const show = query('.hero-show');
+      const badge = show?.querySelector('.kind-badge') as HTMLElement | null;
+      expect(badge).toBeTruthy();
+      expect(badge!.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
+      expect(badge!.textContent?.replace(icon, '').trim()).toBe(label);
+    });
+  }
+
+  it('renders no kind badge for a podcast episode', () => {
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'Episode' }));
+    fixture.detectChanges();
+    expect(query('.kind-badge')).toBeNull();
   });
 
   function dialogOpen() {
@@ -255,6 +282,40 @@ describe('PodcastEpisodeComponent', () => {
       duration: '00:10:00',
       ...fields,
     };
+  }
+
+  function moreFromRail(): HTMLElement | null {
+    return query('app-episode-rail section.rail');
+  }
+
+  function stubMoreFromRail(): void {
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      if (request.filter.includes('id ne') && !request.filter.includes('subjects/any')) {
+        return of({
+          entities: [rawHit({ id: 'more', episodeTitle: 'Sibling', podcastName: 'Show A' })],
+        });
+      }
+      return of({ entities: [] as SearchResult[] });
+    });
+  }
+
+  for (const [kind, aria] of [
+    ['Episode', 'More from this podcast'],
+    ['NewsReport', 'More from this news organisation'],
+    ['TvShowEpisode', 'More from this TV show'],
+  ] as const) {
+    it(`labels the More from rail "${aria}" for ${kind}`, () => {
+      stubMoreFromRail();
+      fixture.componentRef.setInput('episode', ep({
+        id: `ep-${kind}`,
+        contentKind: kind,
+        podcastName: kind === 'NewsReport' ? 'Desk' : kind === 'TvShowEpisode' ? 'Nightly' : 'Show A',
+        subjects: [],
+      }));
+      fixture.detectChanges();
+
+      expect(moreFromRail()?.getAttribute('aria-label')).toBe(aria);
+    });
   }
 
   it('loads More from with seriesName and normalizes both related rails', () => {
