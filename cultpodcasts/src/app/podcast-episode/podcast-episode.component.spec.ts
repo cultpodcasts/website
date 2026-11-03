@@ -2,11 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { PodcastEpisodeComponent } from './podcast-episode.component';
+import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-detail-shell.component';
 import { SearchResult } from '../search-result.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { SiteService } from '../site.service';
@@ -127,6 +129,12 @@ describe('PodcastEpisodeComponent', () => {
     return fixture.nativeElement.querySelector(selector);
   }
 
+  function shell(): PlayableDetailShellComponent {
+    const debug = fixture.debugElement.query(By.directive(PlayableDetailShellComponent));
+    expect(debug).toBeTruthy();
+    return debug.componentInstance as PlayableDetailShellComponent;
+  }
+
   it('places a podcast pill above the title, then date and duration in the meta line', () => {
     const pill = query('a.hero-pill') as HTMLAnchorElement | null;
     const title = query('h1.episode-hero__title');
@@ -185,7 +193,7 @@ describe('PodcastEpisodeComponent', () => {
     fixture.componentRef.setInput('episode', ep({ id: 'ep-pod', contentKind: 'Episode' }));
     fixture.detectChanges();
 
-    fixture.componentInstance.edit('Show A', 'ep-pod');
+    shell().edit('Show A', 'ep-pod');
 
     expect(open).toHaveBeenCalledWith(
       EditEpisodeDialogComponent,
@@ -203,7 +211,7 @@ describe('PodcastEpisodeComponent', () => {
     fixture.componentRef.setInput('episode', ep({ id: 'ep-tv', contentKind: 'TvShowEpisode' }));
     fixture.detectChanges();
 
-    fixture.componentInstance.edit('Nightly', 'ep-tv');
+    shell().edit('Nightly', 'ep-tv');
 
     expect(received).toEqual(['ep-tv']);
     expect(open).not.toHaveBeenCalled();
@@ -214,7 +222,7 @@ describe('PodcastEpisodeComponent', () => {
     open.mockReturnValue({ afterClosed: () => of(undefined) });
     fixture.componentInstance.curatorEdit.subscribe(() => undefined);
 
-    fixture.componentInstance.edit('Show A', 'ep-pod');
+    shell().edit('Show A', 'ep-pod');
 
     expect(open).toHaveBeenCalledWith(
       EditEpisodeDialogComponent,
@@ -226,15 +234,18 @@ describe('PodcastEpisodeComponent', () => {
 
   it('shows kind-aware Edit/Post menu labels for podcast, film, news and TV', () => {
     const labels = () => ({
-      edit: (fixture.componentInstance as unknown as { editMenuLabel(): string }).editMenuLabel(),
-      post: (fixture.componentInstance as unknown as { postMenuLabel(): string }).postMenuLabel(),
+      edit: shell().editMenuLabel(),
+      post: shell().postMenuLabel(),
     });
     expect(labels()).toEqual({ edit: 'Edit Episode', post: 'Post Episode' });
     fixture.componentRef.setInput('episode', ep({ contentKind: 'Film' }));
+    fixture.detectChanges();
     expect(labels()).toEqual({ edit: 'Edit Film', post: 'Post Film' });
     fixture.componentRef.setInput('episode', ep({ contentKind: 'NewsReport' }));
+    fixture.detectChanges();
     expect(labels()).toEqual({ edit: 'Edit News Report', post: 'Post News Report' });
     fixture.componentRef.setInput('episode', ep({ contentKind: 'TvShowEpisode' }));
+    fixture.detectChanges();
     expect(labels()).toEqual({ edit: 'Edit TV Episode', post: 'Post TV Episode' });
   });
 
@@ -269,7 +280,7 @@ describe('PodcastEpisodeComponent', () => {
     morePodcastEpisodes(): SearchResult[];
     subjectRails(): { subject: string; episodes: SearchResult[] }[];
   } {
-    return fixture.componentInstance as unknown as {
+    return shell() as unknown as {
       morePodcastEpisodes(): SearchResult[];
       subjectRails(): { subject: string; episodes: SearchResult[] }[];
     };
@@ -392,5 +403,14 @@ describe('PodcastEpisodeComponent', () => {
     expect(button!.classList).not.toContain('queue-button--pill');
     const actions = query('.episode-hero__actions')!;
     expect(actions.querySelector('.episode-hero__play')!.compareDocumentPosition(button!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('selects the film leaf with no parent pill', () => {
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'Film', podcastName: 'One Off', subjects: [] }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-playable-detail-film')).toBeTruthy();
+    expect(query('a.hero-pill')).toBeNull();
+    expect(moreFromRail()).toBeNull();
   });
 });

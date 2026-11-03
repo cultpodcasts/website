@@ -171,7 +171,7 @@ test.describe("ABC iview service button", () => {
 			await fakeApi(page);
 			const shortId = guids.toCatalogueShortId(EPISODE_ID, "TvShowEpisode");
 			await page.goto(`/tv/${encodeURIComponent(SHOW)}/${shortId}`);
-			const links = page.locator("app-podcast-episode app-episode-links #episodelinks a");
+			const links = page.locator("app-playable-detail-tv app-episode-links #episodelinks a");
 			await expect(links.first()).toBeVisible();
 			await links.first().scrollIntoViewIfNeeded();
 			await shoot(page, links, `episode-${vp.name}`);

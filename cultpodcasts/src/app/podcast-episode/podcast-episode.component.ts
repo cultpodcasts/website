@@ -1,86 +1,45 @@
 import { SearchResult } from '../search-result.interface';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
-import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { combineLatest } from 'rxjs';
-import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
-import { SiteService } from '../site.service';
-import { ODataService } from '../odata.service';
-import { environment } from './../../environments/environment';
-import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
-import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
-import { BookmarkComponent } from "../bookmark/bookmark.component";
-import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
+import { Router } from '@angular/router';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
-import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
-import { ContentKindBadgeComponent } from '../content-kind-badge/content-kind-badge.component';
-import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
-import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
-import { SearchDescriptionPipe } from '../search-description.pipe';
-import { displayCatalogName } from '../display-catalog-name';
-import { releaseDateLabel } from '../release-label';
-import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
-import { QueueButtonComponent } from '../queue-button/queue-button.component';
-import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
-import { PlayerService } from '../player.service';
-import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser } from '@angular/common';
+import { CataloguePlayableKind } from '../catalogue-playable-kind.enum';
 import { catalogueParentLink } from '../catalogue-links';
-import { CataloguePlayableKind, isFilmKind } from '../catalogue-playable-kind.enum';
-import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
-import { playableCuratorActionLabel } from '../content-kind-label';
-import { ViewerLocaleService } from '../viewer-locale';
+import { PlayableDetailEpisodeComponent } from '../playable-detail-episode/playable-detail-episode.component';
+import { PlayableDetailFilmComponent } from '../playable-detail-film/playable-detail-film.component';
+import { PlayableDetailNewsComponent } from '../playable-detail-news/playable-detail-news.component';
+import { PlayableDetailTvComponent } from '../playable-detail-tv/playable-detail-tv.component';
 
-interface SubjectRail {
-  subject: string;
-  episodes: SearchResult[];
-}
-
-const RELATED_RAIL_SIZE = 12;
-const MAX_SUBJECT_RAILS = 4;
-
+/**
+ * Shared playable detail facade for hosts that do not know the kind up front
+ * (podcast episode route, load/empty states).
+ *
+ * Dual entry (intentional):
+ * - Known-kind routes (`film-page`, `news-report`, `tv-show-episode`) mount the
+ *   kind leaf (`app-playable-detail-film` etc.) directly and bind curator wiring there.
+ * - This facade keeps load/empty chrome and `@switch (contentKind)` onto the same
+ *   leaves for the podcast route (and any other shared host).
+ */
 @Component({
   selector: 'app-podcast-episode',
   imports: [
     MatButtonModule,
-    MatMenuModule,
-    MatIconModule,
-    RouterLink,
-    EpisodeLinksComponent,
-    BookmarkComponent,
-    EpisodeRailComponent,
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
-    SubjectChipComponent,
-    ContentKindBadgeComponent,
-    QueueButtonComponent,
-    SearchDescriptionPipe
+    PlayableDetailEpisodeComponent,
+    PlayableDetailFilmComponent,
+    PlayableDetailNewsComponent,
+    PlayableDetailTvComponent,
   ],
   templateUrl: './podcast-episode.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './podcast-episode.component.sass',
-  // Episode body is client-fetched; skip hydration to avoid SSR/client tree mismatches.
   host: { ngSkipHydration: 'true' }
 })
 export class PodcastEpisodeComponent {
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly viewerLocale = inject(ViewerLocaleService).locale;
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly auth = inject(AuthServiceWrapper);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly dialog = inject(MatDialog);
-  private readonly siteService = inject(SiteService);
-  private readonly oDataService = inject(ODataService);
-  protected readonly playerService = inject(PlayerService);
+
+  protected readonly CataloguePlayableKind = CataloguePlayableKind;
 
   @Input()
   get episode(): SearchResult | undefined {
@@ -99,367 +58,30 @@ export class PodcastEpisodeComponent {
 
   /**
    * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
-   * The news report and TV-show-episode shells set this next to `(curatorEdit)`.
+   * Kind pages bind this on the leaf, not here; set on this facade only when a host
+   * still mounts `app-podcast-episode` and needs the same emit-instead-of-dialog behaviour.
    */
   @Input() emitCuratorEdit = false;
 
   /**
-   * Curator edit for a parent shell (news report / TV episode dialog). Unbound by default.
+   * Curator edit bubbled from the selected kind leaf. Unbound by default on the podcast route.
    */
   @Output() curatorEdit = new EventEmitter<string>();
 
   private _episode = signal<SearchResult | undefined>(undefined);
-  private _parentLoaded: boolean = false;
+  private _parentLoaded = false;
 
-  podcastName = signal("");
-  protected readonly showName = computed(() => this._episode()?.podcastName || this.podcastName());
-  /** A film has no parent: no hero pill, no "More from" rail, no /podcast/{slug} fallback (the slug is the film name). */
-  protected readonly isFilm = computed(() => isFilmKind(this._episode()?.contentKind));
-  protected readonly parentLink = computed(() => {
-    const ep = this._episode();
-    if (this.isFilm()) {
-      return null;
-    }
-    return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
-  });
-  protected readonly displayCatalogName = displayCatalogName;
-  protected readonly editMenuLabel = computed(() =>
-    playableCuratorActionLabel(this._episode()?.contentKind, 'Edit'));
-  protected readonly postMenuLabel = computed(() =>
-    playableCuratorActionLabel(this._episode()?.contentKind, 'Post'));
-  protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
-  protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
 
-  protected readonly playable = computed(() => {
-    const ep = this._episode();
-    return ep ? canPlayEpisode(ep) : false;
-  });
-
-  protected readonly playLabel = computed(() => {
-    const ep = this._episode();
-    return ep ? playActionLabel(ep) : 'Listen';
-  });
-
-  protected readonly duration = computed(() => {
-    const ep = this._episode();
-    if (!ep) {
-      return '';
-    }
-    const cleaned = (ep.duration ?? '').split('.')[0];
-    return cleaned.startsWith('0') ? cleaned.substring(1) : cleaned;
-  });
-
-  /** Locale-safe release label (avoids DatePipe/locale hydration issues). */
-  protected readonly releaseLabel = computed(() =>
-    releaseDateLabel(this._episode()?.release)
-  );
-
-  protected readonly backdropUrl = computed(() => {
-    const ep = this._episode();
-    return ep ? episodeImageUrl(ep)?.toString() : undefined;
-  });
-
-  /** naturalWidth/naturalHeight for edge-extend framing (same as homepage hero). */
-  protected readonly backdropAspect = signal<number | undefined>(undefined);
-  /** Slow Ken Burns on the shared motion layer (wide only; skipped when reduced-motion / mobile GPU). */
-  protected readonly backdropKenBurns = signal(false);
-
-  protected readonly visibleSubjects = computed(() =>
-    (this._episode()?.subjects ?? []).filter((s) => !s.startsWith('_'))
-  );
-
-  protected readonly languageFlag = computed(() =>
-    languageFlagBadgeForEpisode(this._episode() ?? {}, this.viewerLocale())
-  );
-
-  /**
-   * Parent "More from" rail — other items from the same show (podcast / news org / TV).
-   * Accessible name: `moreFromAriaLabel`. Film has no parent rail.
-   */
-  protected readonly morePodcastEpisodes = signal<SearchResult[]>([]);
-  /**
-   * Aria label for the parent "More from" rail. News and TV name the parent kind;
-   * podcast stays "More from this podcast". Film has no parent rail.
-   */
-  protected readonly moreFromAriaLabel = computed(() => {
-    const kind = this._episode()?.contentKind;
-    if (kind === CataloguePlayableKind.NewsReport) {
-      return 'More from this news organisation';
-    }
-    if (kind === CataloguePlayableKind.TvShowEpisode) {
-      return 'More from this TV show';
-    }
-    return 'More from this podcast';
-  });
-  /** "More on <subject>" rails — one per subject, in the episode's subject order. */
-  protected readonly subjectRails = signal<SubjectRail[]>([]);
-  protected readonly relatedLoading = signal<boolean>(false);
-
-  private lastRelatedKey: string | undefined;
-  private readonly platformId = inject(PLATFORM_ID);
-  private backdropAspectToken = 0;
-  private motionQuery: MediaQueryList | undefined;
-  private gpuQuery: MediaQueryList | undefined;
-  private reduceMotion = false;
-  private saveGpu = false;
-
-  constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      this.gpuQuery = window.matchMedia(
-        '(max-width: 900px), (hover: none) and (pointer: coarse)'
-      );
-      this.syncMotionFlags();
-      this.motionQuery.addEventListener('change', this.onMotionQueryChange);
-      this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
-      this.destroyRef.onDestroy(() => {
-        this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
-        this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
-      });
-    }
-
-    effect(() => {
-      const url = this.backdropUrl();
-      this.loadBackdropAspect(url);
-    });
-
-    effect(() => {
-      const ep = this._episode();
-      const podcast = ep?.podcastName || this.podcastName();
-      if (!ep || !podcast) {
-        return;
-      }
-      const key = `${podcast}::${ep.id}`;
-      if (key === this.lastRelatedKey) {
-        return;
-      }
-      this.lastRelatedKey = key;
-      this.loadRelated(ep, podcast);
-    });
-  }
-
-  private readonly onMotionQueryChange = () => {
-    this.syncMotionFlags();
-    this.backdropKenBurns.set(!!this.backdropUrl() && this.kenBurnsAllowed());
-  };
-
-  private syncMotionFlags(): void {
-    this.reduceMotion = !!this.motionQuery?.matches;
-    this.saveGpu = !!this.gpuQuery?.matches;
-  }
-
-  private kenBurnsAllowed(): boolean {
-    return !this.reduceMotion && !this.saveGpu;
-  }
-
-  private loadBackdropAspect(url: string | undefined): void {
-    const token = ++this.backdropAspectToken;
-    this.backdropAspect.set(undefined);
-    this.backdropKenBurns.set(false);
-    if (!url || !isPlatformBrowser(this.platformId)) {
-      return;
-    }
-    const img = new Image();
-    img.decoding = 'async';
-    const apply = () => {
-      if (token !== this.backdropAspectToken) {
-        return;
-      }
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        this.backdropAspect.set(img.naturalWidth / img.naturalHeight);
-      }
-      this.backdropKenBurns.set(this.kenBurnsAllowed());
-    };
-    img.onload = apply;
-    img.onerror = () => {
-      if (token === this.backdropAspectToken) {
-        this.backdropAspect.set(undefined);
-        this.backdropKenBurns.set(this.kenBurnsAllowed());
-      }
-    };
-    img.src = url;
-    if (img.complete) {
-      apply();
-    }
-  }
-
-  async ngOnInit(): Promise<any> {
-    this.populatePage();
-  }
-
-  populatePage() {
-    combineLatest(
-      [this.route.params, this.route.queryParams],
-      (params: Params, queryParams: Params) => ({ params, queryParams })
-    ).pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe((res: { params: Params; queryParams: Params }) => {
-      const { params } = res;
-      this.podcastName.set(params["podcastName"] ?? params["slug"] ?? "");
-      this.siteService.setQuery(null);
-      // Podcast-scoped search only on /podcast/ routes. News / TV pages (`slug`) use normal site search:
-      // /podcast/{outlet}/{term} would redirect to the hub and drop the term.
-      this.siteService.setPodcast(params["podcastName"] ? this.podcastName() : null);
-      this.siteService.setSubject(null);
-    });
-  }
-
-  /** "More from this podcast". Asks for seriesName, and once for podcastName if that field is missing. */
-  private loadMoreFromShow(episode: SearchResult, podcastName: string, field: "seriesName" | "podcastName"): void {
-    const nameFilter = field === "seriesName" ? seriesNameEquals(podcastName) : podcastNameEquals(podcastName);
-    const kind = episode.contentKind === "TvShowEpisode" || episode.contentKind === "NewsReport"
-      ? episode.contentKind
-      : undefined;
-    const kindFilter = kind ? `${contentKindEquals(kind)} and ` : "";
-    this.oDataService.getEntities<SearchResult>(
-      new URL("/search", environment.api).toString(),
-      {
-        search: "",
-        filter: `${kindFilter}${nameFilter} and id ne '${episode.id}'`,
-        searchMode: 'any',
-        queryType: 'simple',
-        count: false,
-        skip: 0,
-        top: RELATED_RAIL_SIZE,
-        facets: [],
-        orderby: "release desc"
-      }
-    ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => this.morePodcastEpisodes.set(
-        data.entities
-          .filter((e) => e.id !== episode.id)
-          .map((hit) => normalizePlayableHit(hit))
-      ),
-      error: (error) => {
-        if (field === "seriesName" && isUnknownSearchFieldError(error)) {
-          this.loadMoreFromShow(episode, podcastName, "podcastName");
-          return;
-        }
-        this.morePodcastEpisodes.set([]);
-      }
-    });
-  }
-
-  /** Fetches "more from this podcast" + one rail per subject, without blocking the hero. */
-  private loadRelated(episode: SearchResult, podcastName: string): void {
-    this.relatedLoading.set(true);
-    this.morePodcastEpisodes.set([]);
-    this.subjectRails.set([]);
-
-    const escape = (value: string) => value.replaceAll("'", "''");
-    if (!isFilmKind(episode.contentKind)) {
-      this.loadMoreFromShow(episode, podcastName, "seriesName");
-    }
-
-    const subjects = this.visibleSubjects().slice(0, MAX_SUBJECT_RAILS);
-    if (subjects.length === 0) {
-      this.relatedLoading.set(false);
-      return;
-    }
-
-    const found: SubjectRail[] = [];
-    let remaining = subjects.length;
-    subjects.forEach((subject) => {
-      this.oDataService.getEntities<SearchResult>(
-        new URL("/search", environment.api).toString(),
-        {
-          search: "",
-          filter: `subjects/any(s: s eq '${escape(subject)}') and id ne '${episode.id}'`,
-          searchMode: 'any',
-          queryType: 'simple',
-          count: false,
-          skip: 0,
-          top: RELATED_RAIL_SIZE,
-          facets: [],
-          orderby: "release desc"
-        }
-      ).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (data) => {
-          const episodes = data.entities
-            .filter((e) => e.id !== episode.id)
-            .map((hit) => normalizePlayableHit(hit));
-          if (episodes.length > 0) {
-            found.push({ subject, episodes });
-          }
-        },
-        error: () => { /* Skip this rail on failure — the rest can still render. */ },
-        complete: () => {
-          remaining--;
-          if (remaining === 0) {
-            const ordered = subjects
-              .map((s) => found.find((r) => r.subject === s))
-              .filter((r): r is SubjectRail => !!r);
-            this.subjectRails.set(ordered);
-            this.relatedLoading.set(false);
-          }
-        }
-      });
-    });
-  }
-
-  playEpisode(episode?: SearchDisplayEpisode): void {
-    const ep = episode ?? this._episode();
-    if (ep) {
-      startEpisodePlayback(ep, (playable) => this.playerService.play(playable));
-    }
-  }
-
-  protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
-
-  edit(podcastName: string, episodeId: string) {
-    if (this.emitCuratorEdit) {
-      this.curatorEdit.emit(episodeId);
-      return;
-    }
-
-    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { episodeId: episodeId, podcastIdentifier: podcastName },
-      disableClose: true,
-      autoFocus: true,
-      width: '90%'
-    });
-    dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result) {
-        if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-        } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-        }
-        if (snackBarRef) {
-          snackBarRef.onAction().subscribe(() => {
-            const episode = JSON.stringify([`${result.podcastId}/${episodeId}`]);
-            this.router.navigate(["/episodes", episode])
-          });
-        }
-      }
-    });
-  }
-
+  /** Empty-state CTA: navigate to parent hub when one exists (no-op for Film). */
   podcastPage() {
-    if (this.isFilm()) {
+    const ep = this._episode();
+    if (ep?.contentKind === CataloguePlayableKind.Film) {
       return;
     }
-    const commands = this.parentLink() ?? (this.showName() ? ["/podcast", this.showName()] : null);
+    const commands = catalogueParentLink(ep) ?? (ep?.podcastName ? ["/podcast", ep.podcastName] : null);
     if (commands) {
       this.router.navigate(commands);
     }
-  }
-
-  post(episodeId: string) {
-    const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId },
-        disableClose: true,
-        autoFocus: true
-      });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (!result || result.closed) {
-        return;
-      }
-      this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId: episodeId } });
-    });
   }
 }

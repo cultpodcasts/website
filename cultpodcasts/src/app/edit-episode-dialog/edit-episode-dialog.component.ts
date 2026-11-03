@@ -120,7 +120,6 @@ export class EditEpisodeDialogComponent {
   readonly guestSuggestions = signal<PersonMatch[]>([]);
   readonly languages = signal<{ [key: string]: string }>({});
   readonly blueskyOriginallyPosted = signal(false);
-  readonly pendingUnBluesky = signal(false);
 
   readonly form = signal<FormGroup<EpisodeForm> | undefined>(undefined);
   originalEpisode: ApiEpisode | undefined;
@@ -182,8 +181,12 @@ export class EditEpisodeDialogComponent {
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));
-      this.blueskyOriginallyPosted.set(!!resp.episode.bluesky);
-      this.pendingUnBluesky.set(false);
+      const blueskyPosted = !!resp.episode.bluesky;
+      this.blueskyOriginallyPosted.set(blueskyPosted);
+      // API can only clear Bluesky via unBluesky — never set true from the editor.
+      if (!blueskyPosted) {
+        this.form()!.controls.blueskyPosted.disable({ emitEvent: false });
+      }
       this.allPeople = episodeCataloguePeople(
         resp.people,
         resp.episode.guestPeople,
@@ -287,17 +290,6 @@ export class EditEpisodeDialogComponent {
     this.dialogRef.close({ closed: true });
   }
 
-  markRemoveBlueskyPost() {
-    if (!this.blueskyOriginallyPosted()) {
-      return;
-    }
-    this.pendingUnBluesky.set(true);
-  }
-
-  cancelRemoveBlueskyPost() {
-    this.pendingUnBluesky.set(false);
-  }
-
   protected readonly clearField = clearFormControl;
   protected readonly clearAdditionalText = clearNonNullableStringControl;
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
@@ -370,7 +362,7 @@ export class EditEpisodeDialogComponent {
       };
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
-      if (this.pendingUnBluesky()) {
+      if (this.blueskyOriginallyPosted() && !form.controls.blueskyPosted.value) {
         changes.unBluesky = true;
       }
       if (Object.keys(changes).length == 0) {

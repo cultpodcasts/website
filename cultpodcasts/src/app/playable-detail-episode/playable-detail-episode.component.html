@@ -1,0 +1,11 @@
+<app-playable-detail-shell
+  [playable]="episode()"
+  [includeParentRail]="true"
+  moreFromAriaLabel="More from this podcast"
+  actionsAriaLabel="Episode actions"
+  editMenuLabel="Edit Episode"
+  postMenuLabel="Post Episode"
+  [emitCuratorEdit]="emitCuratorEdit()"
+  (curatorEdit)="curatorEdit.emit($event)">
+  <ng-content />
+</app-playable-detail-shell>

@@ -38,7 +38,11 @@ export class EpisodePublishResponseSnackbarComponent {
     if (response.noChange) {
       this.message.set("No change made");
     } else if (response.response && response.expectation) {
-      this.message.set(this.messageBuilder.createMessage(response.response, response.expectation));
+      this.message.set(this.messageBuilder.createMessage(
+        response.response,
+        response.expectation,
+        response.contentKind,
+      ));
       if (response.expectation.tweet && response.response.failedTweetContent) {
         if (!response.response.tweeted) {
           this.showManualTweet.set(true);

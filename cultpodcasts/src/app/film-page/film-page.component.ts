@@ -5,14 +5,14 @@ import { RouterLink } from "@angular/router";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
-import { PodcastEpisodeComponent } from "../podcast-episode/podcast-episode.component";
+import { PlayableDetailFilmComponent } from "../playable-detail-film/playable-detail-film.component";
 import { connectKindEpisode } from "../kind-episode-page";
 import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 import { FilmTrailersComponent } from "../film-trailers/film-trailers.component";
 
 /**
- * /film/{title}/{short id}: the shared episode shell, like the news report and TV episode pages. Curator Edit opens
+ * /film/{title}/{short id}: film detail leaf + shared shell. Curator Edit opens
  * the film dialog (film/{id}); Post Film uses the shared publish dialog (GET/POST episode/{id}). Projected into the shell
  * under the hero, above the related rails, the Trailers rail shows the film's trailers from its search document.
  */
@@ -21,7 +21,7 @@ import { FilmTrailersComponent } from "../film-trailers/film-trailers.component"
   templateUrl: "./film-page.component.html",
   styleUrl: "./film-page.component.sass",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatButtonModule, SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PodcastEpisodeComponent, FilmTrailersComponent],
+  imports: [RouterLink, MatButtonModule, SiteLoadingComponent, EpisodeLoadingSkeletonComponent, PlayableDetailFilmComponent, FilmTrailersComponent],
 })
 export class FilmPageComponent {
   private readonly dialog = inject(MatDialog);

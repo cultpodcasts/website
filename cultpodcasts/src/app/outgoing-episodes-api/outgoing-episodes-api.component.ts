@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 import { SiteService } from '../site.service';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
@@ -527,10 +528,11 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     });
   }
 
-  post(episodeId: string) {
+  post(episode: ApiEpisode) {
+    const episodeId = episode.id;
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId },
+      .open<PostEpisodeDialogComponent, PostEpisodeDialogData, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId, contentKind: episode.contentKind },
         disableClose: true,
         autoFocus: true
       });

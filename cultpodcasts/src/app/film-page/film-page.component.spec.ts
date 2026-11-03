@@ -13,7 +13,8 @@ import { EpisodeService } from '../episode.service';
 import { GuidService } from '../guid.service';
 import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
-import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
+import { PlayableDetailFilmComponent } from '../playable-detail-film/playable-detail-film.component';
+import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-detail-shell.component';
 import { ProfileService } from '../profile.service';
 import { SearchResult } from '../search-result.interface';
 import { SeoService } from '../seo.service';
@@ -151,7 +152,7 @@ describe('FilmPageComponent', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
 
-      const child = fixture.debugElement.query(By.directive(PodcastEpisodeComponent));
+      const child = fixture.debugElement.query(By.directive(PlayableDetailFilmComponent));
       expect(child).toBeTruthy();
       const trailers = fixture.debugElement.query(By.directive(FilmTrailersComponent));
       expect(trailers.componentInstance.trailers()).toEqual([
@@ -160,16 +161,17 @@ describe('FilmPageComponent', () => {
       expect(trailers.componentInstance.filmId()).toBe(id);
       expect(trailers.componentInstance.filmTitle()).toBe('One Off');
       // Projected into the shell, under the hero, as a rail card.
-      const shell = child.nativeElement as HTMLElement;
-      const rail = shell.querySelector('section.episode app-film-trailers app-episode-rail');
+      const shellHost = child.nativeElement as HTMLElement;
+      const rail = shellHost.querySelector('section.episode app-film-trailers app-episode-rail');
       expect(rail?.querySelector('.rail__title')?.textContent?.trim()).toBe('Trailers');
       expect(rail?.querySelectorAll('app-film-trailer-card').length).toBe(1);
-      expect(child.componentInstance.emitCuratorEdit).toBe(true);
+      expect(child.componentInstance.emitCuratorEdit()).toBe(true);
 
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
       open.mockReturnValue({ afterClosed: () => of(undefined) });
 
-      child.componentInstance.edit('One Off', id);
+      const shell = fixture.debugElement.query(By.directive(PlayableDetailShellComponent));
+      shell.componentInstance.edit('One Off', id);
 
       expect(open).toHaveBeenCalledWith(
         EditFilmDialogComponent,

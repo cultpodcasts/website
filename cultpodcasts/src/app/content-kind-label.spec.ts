@@ -5,6 +5,7 @@ import {
   contentKindIcon,
   contentKindLabel,
   playableCuratorActionLabel,
+  playablePublishSubjectNoun,
 } from "./content-kind-label";
 
 describe("content kind labels", () => {
@@ -38,6 +39,16 @@ describe("catalogueSubmitOutcomePhrase", () => {
     expect(`${contentKindLabel("TvShowEpisode")} ${catalogueSubmitOutcomePhrase("Created")}.`).toBe("TV created.");
     expect(`${contentKindLabel("Film")} ${catalogueSubmitOutcomePhrase("Enriched")}.`).toBe("Film enriched.");
     expect(`${contentKindLabel("NewsReport")} ${catalogueSubmitOutcomePhrase("Ignored")}.`).toBe("News ignored.");
+  });
+});
+
+describe("playablePublishSubjectNoun", () => {
+  it("matches publish snackbar nouns", () => {
+    expect(playablePublishSubjectNoun(CataloguePlayableKind.Episode)).toBe("Episode");
+    expect(playablePublishSubjectNoun(CataloguePlayableKind.Film)).toBe("Film");
+    expect(playablePublishSubjectNoun(CataloguePlayableKind.NewsReport)).toBe("News Report");
+    expect(playablePublishSubjectNoun(CataloguePlayableKind.TvShowEpisode)).toBe("TV Episode");
+    expect(playablePublishSubjectNoun(undefined)).toBe("Episode");
   });
 });
 

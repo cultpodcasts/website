@@ -13,6 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 import { BookmarkComponent } from '../bookmark/bookmark.component';
 import { ScrollDispatcher, ScrollingModule } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
@@ -270,10 +271,11 @@ export class BookmarksApiComponent {
     });
   }
 
-  post(episodeId: string) {
+  post(episode: ApiEpisode) {
+    const episodeId = episode.id;
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId },
+      .open<PostEpisodeDialogComponent, PostEpisodeDialogData, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId, contentKind: episode.contentKind },
         disableClose: true,
         autoFocus: true
       });

@@ -1,0 +1,10 @@
+<app-playable-detail-shell
+  [playable]="film()"
+  [includeParentRail]="false"
+  actionsAriaLabel="Film actions"
+  editMenuLabel="Edit Film"
+  postMenuLabel="Post Film"
+  [emitCuratorEdit]="emitCuratorEdit()"
+  (curatorEdit)="curatorEdit.emit($event)">
+  <ng-content />
+</app-playable-detail-shell>

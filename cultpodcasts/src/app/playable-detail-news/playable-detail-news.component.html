@@ -1,0 +1,12 @@
+<app-playable-detail-shell
+  [playable]="newsReport()"
+  [includeParentRail]="true"
+  moreFromAriaLabel="More from this news organisation"
+  [moreFromKindFilter]="moreFromKind"
+  actionsAriaLabel="News report actions"
+  editMenuLabel="Edit News Report"
+  postMenuLabel="Post News Report"
+  [emitCuratorEdit]="emitCuratorEdit()"
+  (curatorEdit)="curatorEdit.emit($event)">
+  <ng-content />
+</app-playable-detail-shell>
