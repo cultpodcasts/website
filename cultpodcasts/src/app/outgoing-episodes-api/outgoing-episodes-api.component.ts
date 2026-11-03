@@ -49,6 +49,7 @@ import { HeroCurationService } from '../hero-curation.service';
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
 import { ViewerLocaleService } from '../viewer-locale';
+import { playableCuratorActionLabel } from '../content-kind-label';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -85,6 +86,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected FeatureSwitch = FeatureSwitch;
+  protected readonly playableCuratorActionLabel = playableCuratorActionLabel;
 
   protected episodes = signal<ApiEpisode[] | undefined>(undefined);
   protected error = signal<boolean>(false);
@@ -537,10 +539,10 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     });
   }
 
-  post(podcastId: string, episodeId: string) {
+  post(episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastIdentifier: podcastId, episodeId: episodeId },
+        data: { episodeId },
         disableClose: true,
         autoFocus: true
       });
@@ -549,7 +551,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return;
       }
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: podcastId, episodeId: episodeId } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId } });
     });
   }
 

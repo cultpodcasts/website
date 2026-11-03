@@ -13,7 +13,7 @@ import { FilmTrailersComponent } from "../film-trailers/film-trailers.component"
 
 /**
  * /film/{title}/{short id}: the shared episode shell, like the news report and TV episode pages. Curator Edit opens
- * the film dialog (film/{id}); Post Episode is podcast-only, so the shell hides it for films. Projected into the shell
+ * the film dialog (film/{id}); Post Film uses the shared publish dialog (GET/POST episode/{id}). Projected into the shell
  * under the hero, above the related rails, the Trailers rail shows the film's trailers from its search document.
  */
 @Component({

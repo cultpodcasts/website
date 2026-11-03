@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CataloguePlayableKind } from "./catalogue-playable-kind.enum";
-import { catalogueSubmitOutcomePhrase, contentKindIcon, contentKindLabel } from "./content-kind-label";
+import {
+  catalogueSubmitOutcomePhrase,
+  contentKindIcon,
+  contentKindLabel,
+  playableCuratorActionLabel,
+} from "./content-kind-label";
 
 describe("content kind labels", () => {
   it("names the public kinds", () => {
@@ -33,6 +38,19 @@ describe("catalogueSubmitOutcomePhrase", () => {
     expect(`${contentKindLabel("TvShowEpisode")} ${catalogueSubmitOutcomePhrase("Created")}.`).toBe("TV created.");
     expect(`${contentKindLabel("Film")} ${catalogueSubmitOutcomePhrase("Enriched")}.`).toBe("Film enriched.");
     expect(`${contentKindLabel("NewsReport")} ${catalogueSubmitOutcomePhrase("Ignored")}.`).toBe("News ignored.");
+  });
+});
+
+describe("playableCuratorActionLabel", () => {
+  it("matches edit-dialog titles for Edit and Post", () => {
+    expect(playableCuratorActionLabel(CataloguePlayableKind.Episode, "Edit")).toBe("Edit Episode");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.Film, "Edit")).toBe("Edit Film");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.NewsReport, "Edit")).toBe("Edit News Report");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.TvShowEpisode, "Edit")).toBe("Edit TV Episode");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.Film, "Post")).toBe("Post Film");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.NewsReport, "Post")).toBe("Post News Report");
+    expect(playableCuratorActionLabel(CataloguePlayableKind.TvShowEpisode, "Post")).toBe("Post TV Episode");
+    expect(playableCuratorActionLabel(undefined, "Post")).toBe("Post Episode");
   });
 });
 

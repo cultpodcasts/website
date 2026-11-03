@@ -224,15 +224,18 @@ describe('PodcastEpisodeComponent', () => {
     );
   });
 
-  it('hides Post Episode (podcast-only publish) for news, TV and film, and keeps it for podcast episodes', () => {
-    const canPost = () => (fixture.componentInstance as unknown as { canPostEpisode(): boolean }).canPostEpisode();
-    expect(canPost()).toBe(true);
-    for (const contentKind of ['NewsReport', 'TvShowEpisode', 'Film']) {
-      fixture.componentRef.setInput('episode', ep({ contentKind }));
-      expect(canPost()).toBe(false);
-    }
-    fixture.componentRef.setInput('episode', ep({ contentKind: 'Episode' }));
-    expect(canPost()).toBe(true);
+  it('shows kind-aware Edit/Post menu labels for podcast, film, news and TV', () => {
+    const labels = () => ({
+      edit: (fixture.componentInstance as unknown as { editMenuLabel(): string }).editMenuLabel(),
+      post: (fixture.componentInstance as unknown as { postMenuLabel(): string }).postMenuLabel(),
+    });
+    expect(labels()).toEqual({ edit: 'Edit Episode', post: 'Post Episode' });
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'Film' }));
+    expect(labels()).toEqual({ edit: 'Edit Film', post: 'Post Film' });
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'NewsReport' }));
+    expect(labels()).toEqual({ edit: 'Edit News Report', post: 'Post News Report' });
+    fixture.componentRef.setInput('episode', ep({ contentKind: 'TvShowEpisode' }));
+    expect(labels()).toEqual({ edit: 'Edit TV Episode', post: 'Post TV Episode' });
   });
 
   it('scopes the search bar to the podcast only on /podcast/ routes, not on news / TV slug routes', () => {
