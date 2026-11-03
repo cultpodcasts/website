@@ -8,6 +8,6 @@
 </mat-dialog-content>
 
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
-    <button mat-raised-button (click)="markAsTweeted()">Mark As Tweeted</button>
+    <button mat-raised-button (click)="close()" [disabled]="isMarking()">Close</button>
+    <button mat-raised-button (click)="markAsTweeted()" [disabled]="isMarking()">Mark As Tweeted</button>
 </mat-dialog-actions>

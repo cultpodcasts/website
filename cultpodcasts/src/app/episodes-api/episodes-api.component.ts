@@ -577,15 +577,12 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
         return;
       }
       if (result.failedTweetContent) {
-        // Film projection uses film id as podcastId; fall back to playable id when absent.
-        const parentId = episode.podcastId ?? episode.id;
-        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string }, any>(
           ManualTweetEpisodeDialogComponent,
           {
             data: {
               tweet: result.failedTweetContent,
-              episodeId: episode.id,
-              podcastId: parentId
+              episodeId: episode.id
             },
             disableClose: true,
             autoFocus: true

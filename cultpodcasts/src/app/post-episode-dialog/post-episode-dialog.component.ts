@@ -48,7 +48,7 @@ export class PostEpisodeDialogComponent {
     private http: HttpClient,
     protected featureSwitchService: FeatureSwitchService,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string; podcastIdentifier?: string }) {
+    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
     this.episodeId = data.episodeId;
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),

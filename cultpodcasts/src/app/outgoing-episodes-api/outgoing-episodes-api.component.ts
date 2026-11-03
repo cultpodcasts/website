@@ -50,6 +50,7 @@ import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-
 import { isWithinHeroWeek } from '../hero-slides';
 import { ViewerLocaleService } from '../viewer-locale';
 import { playableCuratorActionLabel } from '../content-kind-label';
+import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -204,6 +205,23 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return b.release.getTime() - a.release.getTime();
       }));
     }
+  }
+
+  editRow(episode: ApiEpisode) {
+    const kind = episode.contentKind;
+    if (isEditableCataloguePlayableKind(kind)) {
+      openCataloguePlayableEditDialog(this.dialog, kind, episode.id).afterClosed().subscribe(async result => {
+        const message = playableEditResultMessage(kind, result);
+        if (message) {
+          this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+        }
+        if (result?.updated) {
+          await this.refreshEpisode(episode.id);
+        }
+      });
+      return;
+    }
+    this.edit(episode.podcastId!, episode.id);
   }
 
   edit(podcastId: string, episodeId: string) {
@@ -478,10 +496,6 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    if (!episode.podcastId) {
-      this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
-      return;
-    }
     this.updatingEpisodeId.set(episode.id);
     this.updatingFlag.set('tweeted');
     try {
@@ -492,14 +506,12 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return;
       }
       if (result.failedTweetContent) {
-        const parentId = episode.podcastId ?? episode.id;
-        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string }, any>(
           ManualTweetEpisodeDialogComponent,
           {
             data: {
               tweet: result.failedTweetContent,
-              episodeId: episode.id,
-              podcastId: parentId
+              episodeId: episode.id
             },
             disableClose: true,
             autoFocus: true

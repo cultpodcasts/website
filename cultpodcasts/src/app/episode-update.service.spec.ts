@@ -62,6 +62,62 @@ describe('EpisodeUpdateService review-page routing', () => {
   });
 });
 
+describe('EpisodeUpdateService guid-only publish', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting()]
+    });
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('publishTweet POSTs /episode/publish/{id} with no podcast segment for Film and podcast rows', async () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const http = TestBed.inject(HttpTestingController);
+    const film = row('Film');
+    const podcast = row('Episode');
+
+    const filmDone = service.publishTweet(film);
+    await Promise.resolve();
+    const filmReq = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
+    expect(filmReq.request.url).not.toContain(`/${podcastId}/`);
+    expect(filmReq.request.body).toEqual({ tweet: true });
+    filmReq.flush({ tweeted: true });
+    expect((await filmDone).tweeted).toBe(true);
+
+    const podDone = service.publishTweet(podcast);
+    await Promise.resolve();
+    const podReq = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
+    expect(podReq.request.url).not.toContain(`/${podcastId}/`);
+    expect(podReq.request.body).toEqual({ tweet: true });
+    podReq.flush({ tweeted: true });
+    expect((await podDone).tweeted).toBe(true);
+  });
+
+  it('postBluesky POSTs /episode/publish/{id} then GETs /episode/{id} for a Film specimen', async () => {
+    const service = TestBed.inject(EpisodeUpdateService);
+    const http = TestBed.inject(HttpTestingController);
+    const film = row('Film');
+
+    const done = service.postBluesky(film);
+    await Promise.resolve();
+    const post = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
+    expect(post.request.url).not.toContain(`/${podcastId}/`);
+    expect(post.request.body).toEqual({ blueskyPost: true });
+    post.flush({ blueskyPosted: true });
+
+    let refresh = http.match(api(`/episode/${id}`));
+    for (let i = 0; i < 10 && refresh.length === 0; i++) {
+      await Promise.resolve();
+      refresh = http.match(api(`/episode/${id}`));
+    }
+    expect(refresh).toHaveLength(1);
+    expect(refresh[0].request.method).toBe('GET');
+    refresh[0].flush({ ...film, bluesky: true });
+    expect((await done).bluesky).toBe(true);
+  });
+});
+
 describe('EpisodeUpdateService podcast-save card refresh', () => {
   const pod = '66666666-6666-4666-8666-666666666666';
   const card = (cid: string, extra: Partial<ApiEpisode> = {}): ApiEpisode => ({

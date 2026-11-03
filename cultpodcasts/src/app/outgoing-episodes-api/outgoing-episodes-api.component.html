@@ -84,7 +84,7 @@
             <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-            <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
+            <button mat-menu-item (click)="editRow(result)">
                 <mat-icon>edit</mat-icon>
                 <span>{{ playableCuratorActionLabel(result.contentKind, 'Edit') }}</span>
             </button>

@@ -1,9 +1,8 @@
 import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
-import { EpisodeChangeResponse } from '../episode-change-response.interface';
+import { EpisodeUpdateService } from '../episode-update.service';
 
 @Component({
   selector: 'app-manual-tweet-episode-dialog',
@@ -14,15 +13,14 @@ import { EpisodeChangeResponse } from '../episode-change-response.interface';
 })
 export class ManualTweetEpisodeDialogComponent {
   readonly isInError = signal(false);
-  podcastId: string;
+  readonly isMarking = signal(false);
   episodeId: string;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { tweet: string, podcastId: string, episodeId: string },
+    @Inject(MAT_DIALOG_DATA) public data: { tweet: string, episodeId: string, podcastId?: string },
     private dialogRef: MatDialogRef<ManualTweetEpisodeDialogComponent, any>,
-    private dialog: MatDialog
+    private episodeUpdate: EpisodeUpdateService
   ) {
-    this.podcastId = data.podcastId;
     this.episodeId = data.episodeId;
   }
 
@@ -37,15 +35,24 @@ export class ManualTweetEpisodeDialogComponent {
     return `https://twitter.com/intent/tweet?text=${encodeURIComponent(this.data.tweet)}`;
   }
 
-  markAsTweeted() {
-    const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
-    dialogRef.componentInstance.submit(this.podcastId, this.episodeId, { tweeted: true });
-    dialogRef.afterClosed().subscribe(async result => {
-      if (result && result.updated) {
-        this.dialogRef.close({ updated: true, response: result.response });
-      } else {
-        this.isInError.set(true);
-      }
-    });
+  /**
+   * Mark tweeted via EpisodeUpdateService so Film / News / TV use playable PATCH routes
+   * (not podcast-only PATCH /episode/{podcastId}/{episodeId}).
+   */
+  async markAsTweeted() {
+    if (this.isMarking()) {
+      return;
+    }
+    this.isMarking.set(true);
+    this.isInError.set(false);
+    try {
+      const episode = await this.episodeUpdate.fetchEpisode(this.episodeId);
+      await this.episodeUpdate.markTweeted(episode);
+      this.dialogRef.close({ updated: true });
+    } catch {
+      this.isInError.set(true);
+    } finally {
+      this.isMarking.set(false);
+    }
   }
 }
