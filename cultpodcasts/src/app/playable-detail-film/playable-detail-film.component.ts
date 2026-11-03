@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { SearchResult } from '../search-result.interface';
 import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-detail-shell.component';
 
@@ -11,6 +11,6 @@ import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-
 export class PlayableDetailFilmComponent {
   /** Search hit for this film (shared SearchResult wire; no separate Film search DTO). */
   readonly film = input.required<SearchResult>();
-  @Input() emitCuratorEdit = false;
-  @Output() curatorEdit = new EventEmitter<string>();
+  readonly emitCuratorEdit = input(false);
+  readonly curatorEdit = output<string>();
 }

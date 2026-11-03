@@ -6,7 +6,7 @@
   actionsAriaLabel="TV episode actions"
   editMenuLabel="Edit TV Episode"
   postMenuLabel="Post TV Episode"
-  [emitCuratorEdit]="emitCuratorEdit"
+  [emitCuratorEdit]="emitCuratorEdit()"
   (curatorEdit)="curatorEdit.emit($event)">
   <ng-content />
 </app-playable-detail-shell>

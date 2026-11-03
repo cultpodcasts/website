@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CataloguePlayableKind } from '../catalogue-playable-kind.enum';
 import { SearchResult } from '../search-result.interface';
 import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-detail-shell.component';
@@ -12,7 +12,7 @@ import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-
 export class PlayableDetailNewsComponent {
   /** Search hit for this news report (shared SearchResult wire; curator edit uses NewsReportDto). */
   readonly newsReport = input.required<SearchResult>();
-  @Input() emitCuratorEdit = false;
-  @Output() curatorEdit = new EventEmitter<string>();
+  readonly emitCuratorEdit = input(false);
+  readonly curatorEdit = output<string>();
   protected readonly moreFromKind = CataloguePlayableKind.NewsReport;
 }

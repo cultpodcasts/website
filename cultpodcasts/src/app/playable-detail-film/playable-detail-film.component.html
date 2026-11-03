@@ -4,7 +4,7 @@
   actionsAriaLabel="Film actions"
   editMenuLabel="Edit Film"
   postMenuLabel="Post Film"
-  [emitCuratorEdit]="emitCuratorEdit"
+  [emitCuratorEdit]="emitCuratorEdit()"
   (curatorEdit)="curatorEdit.emit($event)">
   <ng-content />
 </app-playable-detail-shell>

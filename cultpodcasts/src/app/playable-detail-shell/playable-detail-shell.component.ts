@@ -12,6 +12,7 @@ import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service';
 import { environment } from './../../environments/environment';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
 import { BookmarkComponent } from "../bookmark/bookmark.component";
 import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
@@ -28,7 +29,7 @@ import { QueueButtonComponent } from '../queue-button/queue-button.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input } from '@angular/core';
+import { Component, DestroyRef, inject, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input, output } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
@@ -92,10 +93,11 @@ export class PlayableDetailShellComponent {
 
   /**
    * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
+   * Kind pages bind this on the leaf; podcast facade forwards when set.
    */
-  @Input() emitCuratorEdit = false;
+  readonly emitCuratorEdit = input(false);
 
-  @Output() curatorEdit = new EventEmitter<string>();
+  readonly curatorEdit = output<string>();
 
   podcastName = signal("");
   protected readonly showName = computed(() => this.playable()?.podcastName || this.podcastName());
@@ -347,7 +349,7 @@ export class PlayableDetailShellComponent {
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);
 
   edit(podcastName: string, episodeId: string) {
-    if (this.emitCuratorEdit) {
+    if (this.emitCuratorEdit()) {
       this.curatorEdit.emit(episodeId);
       return;
     }
@@ -380,7 +382,7 @@ export class PlayableDetailShellComponent {
     const hit = this.playable();
     const episodeId = hit.id;
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, { episodeId: string; contentKind?: string | null }, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+      .open<PostEpisodeDialogComponent, PostEpisodeDialogData, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
         data: { episodeId, contentKind: hit.contentKind },
         disableClose: true,
         autoFocus: true

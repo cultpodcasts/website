@@ -12,8 +12,14 @@ import { PlayableDetailNewsComponent } from '../playable-detail-news/playable-de
 import { PlayableDetailTvComponent } from '../playable-detail-tv/playable-detail-tv.component';
 
 /**
- * Playable detail facade: `@switch (contentKind)` onto kind leaves (curator-playable-card pattern).
- * Route shells keep using `app-podcast-episode`.
+ * Shared playable detail facade for hosts that do not know the kind up front
+ * (podcast episode route, load/empty states).
+ *
+ * Dual entry (intentional):
+ * - Known-kind routes (`film-page`, `news-report`, `tv-show-episode`) mount the
+ *   kind leaf (`app-playable-detail-film` etc.) directly and bind curator wiring there.
+ * - This facade keeps load/empty chrome and `@switch (contentKind)` onto the same
+ *   leaves for the podcast route (and any other shared host).
  */
 @Component({
   selector: 'app-podcast-episode',
@@ -52,12 +58,13 @@ export class PodcastEpisodeComponent {
 
   /**
    * When true, curator Edit emits `curatorEdit` instead of opening the podcast editor.
-   * The news report and TV-show-episode shells set this next to `(curatorEdit)`.
+   * Kind pages bind this on the leaf, not here; set on this facade only when a host
+   * still mounts `app-podcast-episode` and needs the same emit-instead-of-dialog behaviour.
    */
   @Input() emitCuratorEdit = false;
 
   /**
-   * Curator edit for a parent shell (news report / TV episode dialog). Unbound by default.
+   * Curator edit bubbled from the selected kind leaf. Unbound by default on the podcast route.
    */
   @Output() curatorEdit = new EventEmitter<string>();
 

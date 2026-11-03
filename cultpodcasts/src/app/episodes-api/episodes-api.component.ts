@@ -15,6 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
+import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 import { SiteService } from '../site.service';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
@@ -586,7 +587,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   post(episode: ApiEpisode) {
     const episodeId = episode.id;
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, { episodeId: string; contentKind?: string | null }, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+      .open<PostEpisodeDialogComponent, PostEpisodeDialogData, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
         data: { episodeId, contentKind: episode.contentKind },
         disableClose: true,
         autoFocus: true

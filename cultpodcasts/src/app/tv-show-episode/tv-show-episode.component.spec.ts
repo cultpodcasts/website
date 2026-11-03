@@ -151,7 +151,7 @@ describe('TvShowEpisodeComponent', () => {
 
       const child = fixture.debugElement.query(By.directive(PlayableDetailTvComponent));
       expect(child).toBeTruthy();
-      expect(child.componentInstance.emitCuratorEdit).toBe(true);
+      expect(child.componentInstance.emitCuratorEdit()).toBe(true);
 
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
       open.mockReturnValue({ afterClosed: () => of(undefined) });

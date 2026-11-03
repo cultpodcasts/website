@@ -210,3 +210,75 @@ describe('PlayableEditFieldsComponent lookUpIdentity', () => {
     expect(component.identityLookupMessage()).toBe('Filled blank episode identity. Save to keep.');
   });
 });
+
+type BlueskyInternals = {
+  onBlueskyPostedChange(checked: boolean): void;
+};
+
+describe('PlayableEditFieldsComponent Bluesky posted checkbox', () => {
+  let fixture: ComponentFixture<PlayableEditFieldsComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [PlayableEditFieldsComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: CurationSubmitService,
+          useValue: {
+            lookupCatalogueIdentity: vi.fn(),
+            patchCatalogueParent: vi.fn(),
+            getPeople: () => of([])
+          }
+        },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: MatDialog, useValue: { open: vi.fn() } }
+      ]
+    }).compileComponents();
+  });
+
+  function createFilmWithBluesky(blueskyPosted: boolean) {
+    const form = buildPlayableEditForm({
+      id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+      name: 'Synthetic Film',
+      title: 'Synthetic Film',
+      description: '',
+      release: '2021',
+      duration: '1:30:00',
+      publisher: 'Studio',
+      imdbId: null,
+      tmdbId: null,
+      blueskyPosted
+    } as FilmDto, 'film');
+    fixture = TestBed.createComponent(PlayableEditFieldsComponent);
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('parentLabel', 'Film');
+    fixture.componentRef.setInput('variant', 'film');
+    fixture.componentRef.setInput('subjectNames', []);
+    fixture.componentRef.setInput('people', []);
+    fixture.componentRef.setInput('languages', {});
+    fixture.componentRef.setInput('blueskyPosted', blueskyPosted);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('uncheck sets pendingUnBluesky and re-check clears it when originally posted', () => {
+    const component = createFilmWithBluesky(true);
+    const bluesky = component as unknown as BlueskyInternals;
+
+    bluesky.onBlueskyPostedChange(false);
+    expect(component.pendingUnBluesky()).toBe(true);
+
+    bluesky.onBlueskyPostedChange(true);
+    expect(component.pendingUnBluesky()).toBe(false);
+  });
+
+  it('no-ops the Bluesky handler when never posted (checkbox stays driven by blueskyPosted false)', () => {
+    const component = createFilmWithBluesky(false);
+    const bluesky = component as unknown as BlueskyInternals;
+
+    expect(component.blueskyPosted()).toBe(false);
+    bluesky.onBlueskyPostedChange(false);
+    expect(component.pendingUnBluesky()).toBe(false);
+  });
+});
