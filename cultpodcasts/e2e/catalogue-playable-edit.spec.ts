@@ -594,7 +594,8 @@ test.describe("film curator edit", () => {
 		await page.goto(`/episodes/${encodeURIComponent(JSON.stringify([filmId]))}`);
 		// The API path is already encoded: the row link must not encode it again (%2520).
 		await expect(page.locator("mat-card-title a")).toHaveAttribute("href", filmPath);
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		// Review film row uses app-curator-film-card (kind-specific overflow label).
+		await page.getByRole("button", { name: "Film actions" }).click();
 		// Edit Podcast / Delete stay podcast-only; Edit Film + Post Film are on the film row.
 		await expect(page.getByRole("menuitem")).toHaveText([/Edit Film/, /Post Film/]);
 		await page.getByRole("menuitem", { name: "Edit Film" }).click();
