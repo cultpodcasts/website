@@ -146,11 +146,8 @@ export class EpisodeUpdateService {
 
   /** Attempt auto-tweet via publish; 400 bodies with failedTweetContent enable the manual-tweet dialog. */
   async publishTweet(episode: ApiEpisode): Promise<EpisodePublishResponse> {
-    const podcastId = episode.podcastId;
-    if (!podcastId) {
-      throw new Error('Episode podcastId is required for updates.');
-    }
-    const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
+    // Guid-only: podcast episodes and catalogue Film / News / TV.
+    const endpoint = new URL(`/episode/publish/${episode.id}`, environment.api).toString();
     const body: PostEpisodeModel = { tweet: true };
     try {
       return await firstValueFrom(
@@ -166,11 +163,7 @@ export class EpisodeUpdateService {
   }
 
   async postBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
-    const podcastId = episode.podcastId;
-    if (!podcastId) {
-      throw new Error('Episode podcastId is required for updates.');
-    }
-    const endpoint = new URL(`/episode/publish/${podcastId}/${episode.id}`, environment.api).toString();
+    const endpoint = new URL(`/episode/publish/${episode.id}`, environment.api).toString();
     const body: PostEpisodeModel = { blueskyPost: true };
     const response = await firstValueFrom(
       this.http.post<EpisodePublishResponse>(endpoint, body, { context: this.curateContext() })

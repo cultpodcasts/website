@@ -39,19 +39,16 @@ export class PostEpisodeDialogComponent {
   readonly isInError = signal<boolean>(false);
   readonly isSending = signal<boolean>(true);
   form: FormGroup<PostForm> | undefined;
-  podcastIdentifier: string;
   episodeId: string;
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
   hasBlueskyPosted: boolean = false;
-  podcastId: string | undefined;
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     protected featureSwitchService: FeatureSwitchService,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastIdentifier: string, episodeId: string }) {
-    this.podcastIdentifier = data.podcastIdentifier;
+    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
     this.episodeId = data.episodeId;
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
@@ -70,7 +67,8 @@ export class PostEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`, environment.api).toString();
+      // Guid-only GET resolves podcast episodes and catalogue Film / News / TV (same as outgoing).
+      const episodeEndpoint = new URL(`/episode/${this.episodeId}`, environment.api).toString();
       this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers })
         .subscribe({
           next: resp => {
@@ -78,7 +76,6 @@ export class PostEpisodeDialogComponent {
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
-            this.podcastId = resp.podcastId!;
             if (this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
               if (this.hasPosted) {
                 this.form?.controls.post.disable();
@@ -157,7 +154,8 @@ export class PostEpisodeDialogComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        const episodeEndpoint = new URL(`/episode/publish/${this.podcastId!}/${this.episodeId}`, environment.api).toString();
+        // Guid-only publish: podcast episodes and catalogue playables (api-infra catalogue fallback).
+        const episodeEndpoint = new URL(`/episode/publish/${this.episodeId}`, environment.api).toString();
         this.http.post<EpisodePublishResponse>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {

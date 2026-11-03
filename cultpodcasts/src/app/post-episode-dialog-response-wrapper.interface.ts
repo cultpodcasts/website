@@ -3,5 +3,6 @@ import { PostEpisodeDialogResponse } from "./post-episode-dialog-response.interf
 export interface PostEpisodeDialogResponseWrapper {
     postEpisodeDialogResponse: PostEpisodeDialogResponse;
     episodeId: string;
-    podcastId: string;
+    /** Optional; Manual Tweet marks via guid-only GET + playable-aware markTweeted. */
+    podcastId?: string;
 }

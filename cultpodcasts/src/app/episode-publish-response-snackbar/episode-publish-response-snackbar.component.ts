@@ -50,13 +50,12 @@ export class EpisodePublishResponseSnackbarComponent {
   }
 
   async manualTweet() {
-    this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+    this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string }, any>(
       ManualTweetEpisodeDialogComponent,
       {
         data: {
           tweet: this.data.postEpisodeDialogResponse.response!.failedTweetContent!,
-          episodeId: this.data.episodeId,
-          podcastId: this.data.podcastId
+          episodeId: this.data.episodeId
         },
         disableClose: true, autoFocus: true
       });

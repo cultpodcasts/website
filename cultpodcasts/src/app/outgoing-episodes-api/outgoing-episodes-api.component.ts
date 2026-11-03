@@ -49,6 +49,8 @@ import { HeroCurationService } from '../hero-curation.service';
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
 import { ViewerLocaleService } from '../viewer-locale';
+import { playableCuratorActionLabel } from '../content-kind-label';
+import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -85,6 +87,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected FeatureSwitch = FeatureSwitch;
+  protected readonly playableCuratorActionLabel = playableCuratorActionLabel;
 
   protected episodes = signal<ApiEpisode[] | undefined>(undefined);
   protected error = signal<boolean>(false);
@@ -202,6 +205,23 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return b.release.getTime() - a.release.getTime();
       }));
     }
+  }
+
+  editRow(episode: ApiEpisode) {
+    const kind = episode.contentKind;
+    if (isEditableCataloguePlayableKind(kind)) {
+      openCataloguePlayableEditDialog(this.dialog, kind, episode.id).afterClosed().subscribe(async result => {
+        const message = playableEditResultMessage(kind, result);
+        if (message) {
+          this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+        }
+        if (result?.updated) {
+          await this.refreshEpisode(episode.id);
+        }
+      });
+      return;
+    }
+    this.edit(episode.podcastId!, episode.id);
   }
 
   edit(podcastId: string, episodeId: string) {
@@ -476,10 +496,6 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     if (this.isUpdating(episode.id)) {
       return;
     }
-    if (!episode.podcastId) {
-      this.snackBar.open("Episode podcastId is required to tweet", "Ok", { duration: 5000 });
-      return;
-    }
     this.updatingEpisodeId.set(episode.id);
     this.updatingFlag.set('tweeted');
     try {
@@ -490,13 +506,12 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return;
       }
       if (result.failedTweetContent) {
-        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
+        const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string }, any>(
           ManualTweetEpisodeDialogComponent,
           {
             data: {
               tweet: result.failedTweetContent,
-              episodeId: episode.id,
-              podcastId: episode.podcastId
+              episodeId: episode.id
             },
             disableClose: true,
             autoFocus: true
@@ -537,10 +552,10 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     });
   }
 
-  post(podcastId: string, episodeId: string) {
+  post(episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastIdentifier: podcastId, episodeId: episodeId },
+        data: { episodeId },
         disableClose: true,
         autoFocus: true
       });
@@ -549,7 +564,7 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return;
       }
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: podcastId, episodeId: episodeId } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId } });
     });
   }
 

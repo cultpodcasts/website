@@ -270,10 +270,10 @@ export class BookmarksApiComponent {
     });
   }
 
-  post(podcastId: string, episodeId: string) {
+  post(episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastIdentifier: podcastId, episodeId: episodeId },
+        data: { episodeId },
         disableClose: true,
         autoFocus: true
       });
@@ -282,7 +282,7 @@ export class BookmarksApiComponent {
         return;
       }
       this.snackBar.openFromComponent(EpisodePublishResponseSnackbarComponent,
-        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: podcastId, episodeId: episodeId } });
+        { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId } });
     });
   }
 

@@ -34,8 +34,9 @@ import { Component, DestroyRef, EventEmitter, inject, Input, Output, ChangeDetec
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
-import { CataloguePlayableKind, isFilmKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { CataloguePlayableKind, isFilmKind } from '../catalogue-playable-kind.enum';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
+import { playableCuratorActionLabel } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 
 interface SubjectRail {
@@ -122,8 +123,10 @@ export class PodcastEpisodeComponent {
     return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
   });
   protected readonly displayCatalogName = displayCatalogName;
-  /** Post Episode (podcast-only GET /episode/{podcast}/{id} + publish) is hidden for news, TV and film. */
-  protected readonly canPostEpisode = computed(() => !isNonPodcastPlayableKind(this._episode()?.contentKind));
+  protected readonly editMenuLabel = computed(() =>
+    playableCuratorActionLabel(this._episode()?.contentKind, 'Edit'));
+  protected readonly postMenuLabel = computed(() =>
+    playableCuratorActionLabel(this._episode()?.contentKind, 'Post'));
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   isLoading = signal(true);
@@ -444,10 +447,10 @@ export class PodcastEpisodeComponent {
     }
   }
 
-  post(podcastName: string, episodeId: string) {
+  post(episodeId: string) {
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { podcastIdentifier: podcastName, episodeId: episodeId },
+        data: { episodeId },
         disableClose: true,
         autoFocus: true
       });

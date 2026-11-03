@@ -84,13 +84,13 @@
             <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-            <button mat-menu-item (click)="edit(result.podcastId!, result.id)">
+            <button mat-menu-item (click)="editRow(result)">
                 <mat-icon>edit</mat-icon>
-                <span>Edit Episode</span>
+                <span>{{ playableCuratorActionLabel(result.contentKind, 'Edit') }}</span>
             </button>
-            <button mat-menu-item (click)="post(result.podcastId!, result.id)">
+            <button mat-menu-item (click)="post(result.id)">
                 <mat-icon>send</mat-icon>
-                <span>Post Episode</span>
+                <span>{{ playableCuratorActionLabel(result.contentKind, 'Post') }}</span>
             </button>
             @if (authRoles().includes("Curator") && result.podcastName) {
             <button mat-menu-item id="edit" (click)="editPodcast({ podcastName: result.podcastName!, podcastId: result.podcastId })">

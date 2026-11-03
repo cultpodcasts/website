@@ -32,6 +32,26 @@ export function contentKindIcon(kind: string | null | undefined): string | undef
   }
 }
 
+/**
+ * Curator overflow labels for Edit / Post on playable pages and outgoing rows.
+ * Matches edit-dialog titles: Episode, Film, News Report, TV Episode.
+ */
+export function playableCuratorActionLabel(
+  kind: string | null | undefined,
+  action: "Edit" | "Post",
+): string {
+  switch (kind) {
+    case CataloguePlayableKind.Film:
+      return `${action} Film`;
+    case CataloguePlayableKind.NewsReport:
+      return `${action} News Report`;
+    case CataloguePlayableKind.TvShowEpisode:
+      return `${action} TV Episode`;
+    default:
+      return `${action} Episode`;
+  }
+}
+
 /** Catalogue snackbar verb after POST /submit. Unknown outcomes stay “saved”. */
 export function catalogueSubmitOutcomePhrase(episode: string | undefined): string {
   switch (episode) {

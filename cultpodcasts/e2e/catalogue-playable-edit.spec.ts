@@ -212,9 +212,8 @@ test.describe("news report / TV episode curator edit", () => {
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		// Post Episode is podcast-only (GET /episode/{podcast}/{id} + publish), so it is not offered here.
-		await expect(page.getByRole("menuitem")).toHaveText([/Edit Episode/]);
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await expect(page.getByRole("menuitem")).toHaveText([/Edit News Report/, /Post News Report/]);
+		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
 		await dialog.getByRole("tab", { name: "Flags" }).click();
@@ -232,7 +231,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await page.goto(`/tv/${encodeURIComponent("Nightly")}/${guids.toCatalogueShortId(episodeId, "TvShowEpisode")}`);
 		await expect(page.getByRole("heading", { name: "Part" })).toBeVisible();
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await page.getByRole("menuitem", { name: "Edit TV Episode" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit TV Episode" })).toBeVisible();
 		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Identity"]);
@@ -317,7 +316,7 @@ test.describe("reorder selected subjects and guests", () => {
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
 
@@ -394,7 +393,7 @@ test.describe("reorder selected subjects and guests", () => {
 		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, {});
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
 		await dialog.getByRole("tab", { name: "Meta" }).click();
@@ -439,7 +438,7 @@ test.describe("reorder selected subjects and guests", () => {
 		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, sink);
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
 		await dialog.getByRole("tab", { name: "Meta" }).click();
@@ -490,13 +489,13 @@ test.describe("film curator edit", () => {
 	const filmShort = guids.toCatalogueShortId(filmId, "Film");
 	const filmPath = `/film/${encodeURIComponent("One Off")}/${filmShort}`;
 
-	/** Opens the film dialog from the film page menu; Post Episode is podcast-only and not offered. */
+	/** Opens the film dialog from the film page menu (Edit Film + Post Film). */
 	async function openFromFilmPage(page: Page) {
 		await page.goto(filmPath);
 		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		await expect(page.getByRole("menuitem")).toHaveText([/Edit Episode/]);
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		await expect(page.getByRole("menuitem")).toHaveText([/Edit Film/, /Post Film/]);
+		await page.getByRole("menuitem", { name: "Edit Film" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit Film" })).toBeVisible();
 		return dialog;
@@ -577,7 +576,7 @@ test.describe("film curator edit", () => {
 		expect(sink.body).toBeUndefined();
 	});
 
-	test("the review page film row has the curator menu; Edit Episode opens the film dialog and saves via PATCH /film", async ({ page }) => {
+	test("the review page film row has the curator menu; Edit Film opens the film dialog and saves via PATCH /film", async ({ page }) => {
 		const sink: { body?: unknown } = {};
 		await fakeLookups(page);
 		await fakePlayable(page, `film/${filmId}`, film, sink);
@@ -596,9 +595,9 @@ test.describe("film curator edit", () => {
 		// The API path is already encoded: the row link must not encode it again (%2520).
 		await expect(page.locator("mat-card-title a")).toHaveAttribute("href", filmPath);
 		await page.getByRole("button", { name: "Episode actions" }).click();
-		// Post / Edit Podcast / Delete are podcast-only.
-		await expect(page.getByRole("menuitem")).toHaveText([/Edit Episode/]);
-		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		// Edit Podcast / Delete stay podcast-only; Edit Film + Post Film are on the film row.
+		await expect(page.getByRole("menuitem")).toHaveText([/Edit Film/, /Post Film/]);
+		await page.getByRole("menuitem", { name: "Edit Film" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit Film" })).toBeVisible();
 		await dialog.getByRole("tab", { name: "Flags" }).click();
