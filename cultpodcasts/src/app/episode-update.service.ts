@@ -8,6 +8,7 @@ import { EpisodePublishResponse } from './episode-publish-response.interface';
 import { PostEpisodeModel } from './post-episode-model.interface';
 import { AUTH_SCOPE } from './auth.interceptor';
 import { isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
+import { playablePublishPath } from './playable-publish-path';
 
 /** The podcast a review-page edit-podcast dialog saved (id when the card had one, else its name). */
 export interface SavedPodcastRef {
@@ -146,8 +147,11 @@ export class EpisodeUpdateService {
 
   /** Attempt auto-tweet via publish; 400 bodies with failedTweetContent enable the manual-tweet dialog. */
   async publishTweet(episode: ApiEpisode): Promise<EpisodePublishResponse> {
-    // Guid-only: podcast episodes and catalogue Film / News / TV.
-    const endpoint = new URL(`/episode/publish/${episode.id}`, environment.api).toString();
+    // Kind publish for Film / News / TV; podcast episodes stay on guid-only /episode/publish/:id.
+    const endpoint = new URL(
+      playablePublishPath(episode.id, episode.contentKind),
+      environment.api
+    ).toString();
     const body: PostEpisodeModel = { tweet: true };
     try {
       return await firstValueFrom(
@@ -163,7 +167,11 @@ export class EpisodeUpdateService {
   }
 
   async postBluesky(episode: ApiEpisode): Promise<ApiEpisode> {
-    const endpoint = new URL(`/episode/publish/${episode.id}`, environment.api).toString();
+    // Kind publish for Film / News / TV; podcast episodes stay on guid-only /episode/publish/:id.
+    const endpoint = new URL(
+      playablePublishPath(episode.id, episode.contentKind),
+      environment.api
+    ).toString();
     const body: PostEpisodeModel = { blueskyPost: true };
     const response = await firstValueFrom(
       this.http.post<EpisodePublishResponse>(endpoint, body, { context: this.curateContext() })

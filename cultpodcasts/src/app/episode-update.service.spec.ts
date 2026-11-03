@@ -62,7 +62,7 @@ describe('EpisodeUpdateService review-page routing', () => {
   });
 });
 
-describe('EpisodeUpdateService guid-only publish', () => {
+describe('EpisodeUpdateService kind-aware publish', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideHttpClient(), provideHttpClientTesting()]
@@ -71,37 +71,34 @@ describe('EpisodeUpdateService guid-only publish', () => {
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('publishTweet POSTs /episode/publish/{id} with no podcast segment for Film and podcast rows', async () => {
+  async function publishTweetFor(contentKind: string | undefined, expectedPath: string) {
     const service = TestBed.inject(EpisodeUpdateService);
     const http = TestBed.inject(HttpTestingController);
-    const film = row('Film');
-    const podcast = row('Episode');
-
-    const filmDone = service.publishTweet(film);
+    const specimen = row(contentKind);
+    const done = service.publishTweet(specimen);
     await Promise.resolve();
-    const filmReq = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
-    expect(filmReq.request.url).not.toContain(`/${podcastId}/`);
-    expect(filmReq.request.body).toEqual({ tweet: true });
-    filmReq.flush({ tweeted: true });
-    expect((await filmDone).tweeted).toBe(true);
+    const req = http.expectOne((r) => r.method === 'POST' && r.url === api(expectedPath));
+    expect(req.request.url).not.toContain(`/${podcastId}/`);
+    expect(req.request.body).toEqual({ tweet: true });
+    req.flush({ tweeted: true });
+    expect((await done).tweeted).toBe(true);
+  }
 
-    const podDone = service.publishTweet(podcast);
-    await Promise.resolve();
-    const podReq = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
-    expect(podReq.request.url).not.toContain(`/${podcastId}/`);
-    expect(podReq.request.body).toEqual({ tweet: true });
-    podReq.flush({ tweeted: true });
-    expect((await podDone).tweeted).toBe(true);
+  it('publishTweet POSTs kind publish routes for Film / News / TV and guid-only for podcast Episode', async () => {
+    await publishTweetFor('Film', `/film/${id}/publish`);
+    await publishTweetFor('NewsReport', `/newsreport/${id}/publish`);
+    await publishTweetFor('TvShowEpisode', `/tvshowepisode/${id}/publish`);
+    await publishTweetFor('Episode', `/episode/publish/${id}`);
   });
 
-  it('postBluesky POSTs /episode/publish/{id} then GETs /episode/{id} for a Film specimen', async () => {
+  it('postBluesky POSTs /film/{id}/publish then GETs /episode/{id} for a Film specimen', async () => {
     const service = TestBed.inject(EpisodeUpdateService);
     const http = TestBed.inject(HttpTestingController);
     const film = row('Film');
 
     const done = service.postBluesky(film);
     await Promise.resolve();
-    const post = http.expectOne((r) => r.method === 'POST' && r.url === api(`/episode/publish/${id}`));
+    const post = http.expectOne((r) => r.method === 'POST' && r.url === api(`/film/${id}/publish`));
     expect(post.request.url).not.toContain(`/${podcastId}/`);
     expect(post.request.body).toEqual({ blueskyPost: true });
     post.flush({ blueskyPosted: true });
