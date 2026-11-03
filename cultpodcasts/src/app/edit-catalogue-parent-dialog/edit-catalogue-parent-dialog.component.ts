@@ -18,6 +18,8 @@ import { firstValueFrom, forkJoin } from "rxjs";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
 import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
+import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
+import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
 import {
   CatalogueParentEditModel,
   catalogueParentChanges,
@@ -133,6 +135,9 @@ export class EditCatalogueParentDialogComponent {
     this.identityInvalid.set(false);
   }
   protected readonly playlistHistory = signal<PlaylistIdHistoryEntry[]>([]);
+  protected readonly indexingHints = signal<YouTubeIndexingHints | null>(null);
+  protected readonly clearingIndexingHints = signal(false);
+  protected readonly formatHintInstant = formatIndexingHintInstant;
   protected readonly historyDateText = historyDateText;
   protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
   protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
@@ -178,6 +183,7 @@ export class EditCatalogueParentDialogComponent {
       this.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
       this.languages.set(buildPodcastLanguageOptions(resp.languages));
       this.playlistHistory.set(dto.youTubePlaylistIdHistory ?? []);
+      this.indexingHints.set(dto.youTubeIndexingHints ?? null);
     } catch (error) {
       const status = error instanceof HttpErrorResponse ? error.status : 0;
       this.notFound.set(status === 404);
@@ -293,6 +299,48 @@ export class EditCatalogueParentDialogComponent {
       this.saveError.set(true);
     } finally {
       this.isSending.set(false);
+    }
+  }
+
+  protected displayIndexingHints(): YouTubeIndexingHints | null {
+    return effectiveYouTubeIndexingHints(this.indexingHints(), this.model()?.youTubePlaylistId);
+  }
+
+  /** Clears indexer hints immediately so the next hourly pass walks the playlist in full. */
+  protected async forceFullYouTubeWalk(): Promise<void> {
+    if (!this.original || this.clearingIndexingHints() || !this.displayIndexingHints()) {
+      return;
+    }
+    const closed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmComponent, {
+          data: {
+            title: "Force full YouTube walk?",
+            question:
+              "Clear indexing hints for this playlist? The next indexing pass will walk the whole playlist and write fresh hints."
+          }
+        })
+        .afterClosed()
+    );
+    if ((closed as { result?: boolean } | undefined)?.result !== true) {
+      return;
+    }
+    this.clearingIndexingHints.set(true);
+    try {
+      await firstValueFrom(
+        this.curation.patchCatalogueParent(this.data.hub, this.original.id, {
+          clearYouTubeIndexingHints: true
+        })
+      );
+      this.indexingHints.set(null);
+      if (this.original) {
+        this.original = { ...this.original, youTubeIndexingHints: null };
+      }
+      this.snackBar.open("Indexing hints cleared. Next pass will do a full walk.", "Ok", { duration: 8000 });
+    } catch {
+      this.snackBar.open("Could not clear indexing hints.", "Ok", { duration: 8000 });
+    } finally {
+      this.clearingIndexingHints.set(false);
     }
   }
 

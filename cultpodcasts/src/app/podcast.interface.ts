@@ -1,3 +1,5 @@
+import { YouTubeIndexingHints } from './youtube-indexing-hints.interface';
+
 export interface Podcast {
     id?: string;
     name?: string;
@@ -21,6 +23,8 @@ export interface Podcast {
     ignoreAllEpisodes: boolean;
     youTubeChannelId: string;
     youTubePlaylistId: string;
+    /** Indexer-owned; read-only. Clear via PATCH `clearYouTubeIndexingHints`. */
+    youTubeIndexingHints?: YouTubeIndexingHints | null;
     ignoredAssociatedSubjects?: string[];
     ignoredSubjects?: string[];
     lang?: string | null;
