@@ -18,6 +18,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { playableCuratorActionLabel } from '../content-kind-label';
+import { playablePublishPath } from '../playable-publish-path';
 import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 
 @Component({
@@ -162,8 +163,11 @@ export class PostEpisodeDialogComponent {
       token.then(_token => {
         let headers: HttpHeaders = new HttpHeaders();
         headers = headers.set("Authorization", "Bearer " + _token);
-        // Guid-only publish: podcast episodes and catalogue playables (api-infra catalogue fallback).
-        const episodeEndpoint = new URL(`/episode/publish/${this.episodeId}`, environment.api).toString();
+        // Kind publish for Film / News / TV; podcast episodes stay on guid-only /episode/publish/:id.
+        const episodeEndpoint = new URL(
+          playablePublishPath(this.episodeId, this.contentKind),
+          environment.api
+        ).toString();
         this.http.post<EpisodePublishResponse>(episodeEndpoint, model, { headers: headers })
           .subscribe(
             {

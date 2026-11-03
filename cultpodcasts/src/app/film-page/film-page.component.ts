@@ -13,7 +13,7 @@ import { FilmTrailersComponent } from "../film-trailers/film-trailers.component"
 
 /**
  * /film/{title}/{short id}: film detail leaf + shared shell. Curator Edit opens
- * the film dialog (film/{id}); Post Film uses the shared publish dialog (GET/POST episode/{id}). Projected into the shell
+ * the film dialog (film/{id}); Post Film uses the shared publish dialog (GET episode/{id}, POST film/{id}/publish). Projected into the shell
  * under the hero, above the related rails, the Trailers rail shows the film's trailers from its search document.
  */
 @Component({
