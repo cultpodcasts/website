@@ -11,11 +11,11 @@
   <mat-menu #menu="matMenu">
     <button mat-menu-item (click)="edit.emit(episode())">
       <mat-icon>edit</mat-icon>
-      <span>Edit Episode</span>
+      <span>{{ editLabel() }}</span>
     </button>
     <button mat-menu-item (click)="post.emit(episode())">
       <mat-icon>send</mat-icon>
-      <span>Post Episode</span>
+      <span>{{ postLabel() }}</span>
     </button>
     @if (isCurator() && podcastName()) {
     <button mat-menu-item id="edit" (click)="editPodcast.emit({
@@ -54,9 +54,9 @@
           <span [outerHTML]="episode().displayTitle"></span>
           }
         </mat-card-title>
-        @if (podcastName(); as name) {
+        @if (parentLink(); as link) {
         <mat-card-subtitle>
-          <a [routerLink]="['/podcast', name]">{{ name }}</a>
+          <a [routerLink]="link">{{ link[1] }}</a>
         </mat-card-subtitle>
         }
         <mat-card-subtitle class="curator-card__meta">

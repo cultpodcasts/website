@@ -7,10 +7,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink } from '@angular/router';
 import { ApiEpisode } from '../api-episode.interface';
 import { reviewPlayableLink } from '../catalogue-links';
+import { playableCuratorActionLabel } from '../content-kind-label';
 import { CuratorPlayableCardBodyComponent } from '../curator-playable-card-body/curator-playable-card-body.component';
-import { curatorCardDuration, curatorCardLanguageBadge } from '../curator-playable-card-meta';
+import { curatorCardDuration } from '../curator-playable-card-meta';
 import { EpisodeImageComponent } from '../episode-image/episode-image.component';
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
+import { languageFlagBadgeForEpisode } from '../language-flag';
 import { ViewerLocaleService } from '../viewer-locale';
 
 @Component({
@@ -59,7 +61,13 @@ export class CuratorFilmCardComponent {
 
   protected readonly duration = computed(() => curatorCardDuration(this.episode().duration));
   protected readonly languageBadge = computed(() =>
-    curatorCardLanguageBadge(this.episode(), this.locale())
+    languageFlagBadgeForEpisode(this.episode(), this.locale())
+  );
+  protected readonly editLabel = computed(() =>
+    playableCuratorActionLabel(this.episode().contentKind, 'Edit')
+  );
+  protected readonly postLabel = computed(() =>
+    playableCuratorActionLabel(this.episode().contentKind, 'Post')
   );
   protected readonly titleLink = computed(() => {
     const link = reviewPlayableLink(this.episode());

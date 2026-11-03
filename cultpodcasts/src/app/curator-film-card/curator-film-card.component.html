@@ -11,11 +11,11 @@
   <mat-menu #menu="matMenu">
     <button mat-menu-item (click)="edit.emit(episode())">
       <mat-icon>edit</mat-icon>
-      <span>Edit Film</span>
+      <span>{{ editLabel() }}</span>
     </button>
     <button mat-menu-item (click)="post.emit(episode())">
       <mat-icon>send</mat-icon>
-      <span>Post Film</span>
+      <span>{{ postLabel() }}</span>
     </button>
   </mat-menu>
   <div class="curator-card__body">
