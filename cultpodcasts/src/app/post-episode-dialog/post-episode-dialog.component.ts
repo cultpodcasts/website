@@ -18,6 +18,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { playableCuratorActionLabel } from '../content-kind-label';
+import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -42,6 +43,7 @@ export class PostEpisodeDialogComponent {
   readonly dialogTitle = signal(playableCuratorActionLabel(undefined, 'Post'));
   form: FormGroup<PostForm> | undefined;
   episodeId: string;
+  contentKind: string | null | undefined;
   hasPosted: boolean = false;
   hasTweeted: boolean = false;
   hasBlueskyPosted: boolean = false;
@@ -50,8 +52,10 @@ export class PostEpisodeDialogComponent {
     private http: HttpClient,
     protected featureSwitchService: FeatureSwitchService,
     private dialogRef: MatDialogRef<PostEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { episodeId: string }) {
+    @Inject(MAT_DIALOG_DATA) public data: PostEpisodeDialogData) {
     this.episodeId = data.episodeId;
+    this.contentKind = data.contentKind;
+    this.dialogTitle.set(playableCuratorActionLabel(data.contentKind, 'Post'));
     this.form = new FormGroup<PostForm>({
       tweet: new FormControl(false, { nonNullable: true }),
       post: new FormControl(false, { nonNullable: true }),
@@ -75,6 +79,7 @@ export class PostEpisodeDialogComponent {
         .subscribe({
           next: resp => {
             this.isSending.set(false);
+            this.contentKind = resp.contentKind;
             this.dialogTitle.set(playableCuratorActionLabel(resp.contentKind, 'Post'));
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
@@ -112,7 +117,7 @@ export class PostEpisodeDialogComponent {
             }
             const redditPostComplete = !this.featureSwitchService.IsEnabled(FeatureSwitch.redditPost) || this.hasPosted;
             if (this.hasTweeted && redditPostComplete && this.hasBlueskyPosted) {
-              this.dialogRef.close({ noChange: true });
+              this.dialogRef.close({ noChange: true, contentKind: this.contentKind });
             }
           },
           error: e => {
@@ -164,7 +169,7 @@ export class PostEpisodeDialogComponent {
             {
               next: resp => {
                 this.isSending.set(false);
-                this.dialogRef.close({ response: resp, expectation: model })
+                this.dialogRef.close({ response: resp, expectation: model, contentKind: this.contentKind })
               },
               error: e => {
                 console.error(e);
@@ -172,7 +177,7 @@ export class PostEpisodeDialogComponent {
                 if (e.status == 400) {
                   const _resp = e.error as EpisodePublishResponse;
                   console.error(_resp);
-                  this.dialogRef.close({ response: _resp, expectation: model })
+                  this.dialogRef.close({ response: _resp, expectation: model, contentKind: this.contentKind })
                 } else {
                   this.isInError.set(true);
                 }
@@ -184,7 +189,7 @@ export class PostEpisodeDialogComponent {
         this.isInError.set(true);
       });
     } else {
-      this.dialogRef.close({ noChange: true });
+      this.dialogRef.close({ noChange: true, contentKind: this.contentKind });
     }
   }
 }

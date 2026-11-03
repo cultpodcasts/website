@@ -89,7 +89,7 @@
         [loadingBluesky]="isLoadingBluesky(result.id)"
         [statusActionLoading]="isStatusActionLoading(result.id)"
         (edit)="editRow($event)"
-        (post)="post($event.id)"
+        (post)="post($event)"
         (editPodcast)="editPodcast($event)"
         (deleteEpisode)="delete($event.podcastId, $event.episodeId)"
         (promoteToggle)="togglePromote($event)"

@@ -172,8 +172,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await dialog.getByLabel("Title").fill("Bulletin (edited)");
 		await shot(page, "news-edit-details");
 		await dialog.getByRole("tab", { name: "Flags" }).click();
-		await dialog.getByRole("button", { name: "Remove" }).click();
-		await expect(dialog.getByText("Will remove on save")).toBeVisible();
+		await dialog.getByRole("checkbox", { name: "Bluesky posted" }).uncheck();
 		await shot(page, "news-edit-flags");
 		await dialog.getByRole("tab", { name: "Meta" }).click();
 		await dialog.getByRole("combobox", { name: "Subjects" }).click();
@@ -211,7 +210,7 @@ test.describe("news report / TV episode curator edit", () => {
 		});
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "News report actions" }).click();
 		await expect(page.getByRole("menuitem")).toHaveText([/Edit News Report/, /Post News Report/]);
 		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
@@ -230,7 +229,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await fakePlayable(page, `tvshowepisode/${episodeId}`, tvEpisode, sink);
 		await page.goto(`/tv/${encodeURIComponent("Nightly")}/${guids.toCatalogueShortId(episodeId, "TvShowEpisode")}`);
 		await expect(page.getByRole("heading", { name: "Part" })).toBeVisible();
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "TV episode actions" }).click();
 		await page.getByRole("menuitem", { name: "Edit TV Episode" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit TV Episode" })).toBeVisible();
@@ -315,7 +314,7 @@ test.describe("reorder selected subjects and guests", () => {
 		}, sink);
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
 		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "News report actions" }).click();
 		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
@@ -392,7 +391,7 @@ test.describe("reorder selected subjects and guests", () => {
 		await page.route(`**/newsorganisation/${outletId}`, (route) => json(route, { id: outletId, name: "Desk", defaultSubject: "Alpha" }));
 		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, {});
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "News report actions" }).click();
 		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
@@ -437,7 +436,7 @@ test.describe("reorder selected subjects and guests", () => {
 		const sink: { body?: unknown } = {};
 		await fakePlayable(page, `newsreport/${reportId}`, { ...report, subjects: many, guests: ["Ann Example"] }, sink);
 		await page.goto(`/news/${encodeURIComponent("Desk")}/${guids.toCatalogueShortId(reportId, "NewsReport")}`);
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "News report actions" }).click();
 		await page.getByRole("menuitem", { name: "Edit News Report" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
@@ -493,7 +492,7 @@ test.describe("film curator edit", () => {
 	async function openFromFilmPage(page: Page) {
 		await page.goto(filmPath);
 		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
-		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("button", { name: "Film actions" }).click();
 		await expect(page.getByRole("menuitem")).toHaveText([/Edit Film/, /Post Film/]);
 		await page.getByRole("menuitem", { name: "Edit Film" }).click();
 		const dialog = page.locator("mat-dialog-container");
@@ -521,8 +520,7 @@ test.describe("film curator edit", () => {
 		await shot(page, "film-edit-details");
 		await dialog.getByRole("tab", { name: "Flags" }).click();
 		await dialog.getByRole("checkbox", { name: "Tweeted" }).uncheck();
-		await dialog.getByRole("button", { name: "Remove" }).click();
-		await expect(dialog.getByText("Will remove on save")).toBeVisible();
+		await dialog.getByRole("checkbox", { name: "Bluesky posted" }).uncheck();
 		await shot(page, "film-edit-flags");
 		await dialog.getByRole("tab", { name: "Meta" }).click();
 		const release = dialog.getByRole("textbox", { name: "Release" });

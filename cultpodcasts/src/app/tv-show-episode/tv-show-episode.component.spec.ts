@@ -13,7 +13,8 @@ import { EpisodeService } from '../episode.service';
 import { GuidService } from '../guid.service';
 import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
-import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
+import { PlayableDetailTvComponent } from '../playable-detail-tv/playable-detail-tv.component';
+import { PlayableDetailShellComponent } from '../playable-detail-shell/playable-detail-shell.component';
 import { ProfileService } from '../profile.service';
 import { SearchResult } from '../search-result.interface';
 import { SeoService } from '../seo.service';
@@ -148,14 +149,15 @@ describe('TvShowEpisodeComponent', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
 
-      const child = fixture.debugElement.query(By.directive(PodcastEpisodeComponent));
+      const child = fixture.debugElement.query(By.directive(PlayableDetailTvComponent));
       expect(child).toBeTruthy();
       expect(child.componentInstance.emitCuratorEdit).toBe(true);
 
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
       open.mockReturnValue({ afterClosed: () => of(undefined) });
 
-      child.componentInstance.edit('Nightly', id);
+      const shell = fixture.debugElement.query(By.directive(PlayableDetailShellComponent));
+      shell.componentInstance.edit('Nightly', id);
 
       expect(open).toHaveBeenCalledWith(
         EditTvShowEpisodeDialogComponent,

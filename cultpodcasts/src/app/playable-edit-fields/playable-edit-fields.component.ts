@@ -150,14 +150,12 @@ export class PlayableEditFieldsComponent implements OnInit {
     this.regroupGuests();
   }
 
-  protected markRemoveBlueskyPost(): void {
-    if (this.blueskyPosted()) {
-      this.pendingUnBluesky.set(true);
+  /** Same UX as Tweeted: uncheck clears Bluesky on save (API only supports unBluesky). */
+  protected onBlueskyPostedChange(checked: boolean): void {
+    if (!this.blueskyPosted()) {
+      return;
     }
-  }
-
-  protected cancelRemoveBlueskyPost(): void {
-    this.pendingUnBluesky.set(false);
+    this.pendingUnBluesky.set(!checked);
   }
 
   protected normalizeHashTag(): void {

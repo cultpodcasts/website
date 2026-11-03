@@ -33,6 +33,22 @@ export function contentKindIcon(kind: string | null | undefined): string | undef
 }
 
 /**
+ * Noun for curator publish snackbars / dialog titles: Episode, Film, News Report, TV Episode.
+ */
+export function playablePublishSubjectNoun(kind: string | null | undefined): string {
+  switch (kind) {
+    case CataloguePlayableKind.Film:
+      return "Film";
+    case CataloguePlayableKind.NewsReport:
+      return "News Report";
+    case CataloguePlayableKind.TvShowEpisode:
+      return "TV Episode";
+    default:
+      return "Episode";
+  }
+}
+
+/**
  * Curator overflow labels for Edit / Post on playable pages and outgoing rows.
  * Matches edit-dialog titles: Episode, Film, News Report, TV Episode.
  */
@@ -40,16 +56,7 @@ export function playableCuratorActionLabel(
   kind: string | null | undefined,
   action: "Edit" | "Post",
 ): string {
-  switch (kind) {
-    case CataloguePlayableKind.Film:
-      return `${action} Film`;
-    case CataloguePlayableKind.NewsReport:
-      return `${action} News Report`;
-    case CataloguePlayableKind.TvShowEpisode:
-      return `${action} TV Episode`;
-    default:
-      return `${action} Episode`;
-  }
+  return `${action} ${playablePublishSubjectNoun(kind)}`;
 }
 
 /** Catalogue snackbar verb after POST /submit. Unknown outcomes stay “saved”. */

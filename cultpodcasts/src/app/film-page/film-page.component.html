@@ -1,8 +1,8 @@
 @if (isEpisode()) {
   @if (episode(); as ep) {
-  <app-podcast-episode [episode]="ep" [parentLoaded]="true" [emitCuratorEdit]="true" (curatorEdit)="editFilm($event)">
+  <app-playable-detail-film [film]="ep" [emitCuratorEdit]="true" (curatorEdit)="editFilm($event)">
     <app-film-trailers [trailers]="ep.trailers" [filmId]="ep.id" [filmTitle]="ep.episodeTitle"></app-film-trailers>
-  </app-podcast-episode>
+  </app-playable-detail-film>
   } @else if (isLoading()) {
   <app-site-loading [active]="true" label="Loading episode" />
   @if (showEpisodeSkeleton()) {

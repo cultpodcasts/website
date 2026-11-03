@@ -6,5 +6,7 @@ export interface PostEpisodeDialogResponse {
     expectation?: PostEpisodeModel,
     noChange?: boolean,
     /** User dismissed without posting (Close). Callers should treat as no-op. */
-    closed?: boolean
+    closed?: boolean,
+    /** From GET /episode/{id}; drives publish snackbar noun (Film / News Report / TV Episode). */
+    contentKind?: string | null,
 }

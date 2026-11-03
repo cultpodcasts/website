@@ -7,7 +7,7 @@ import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
-import { PodcastEpisodeComponent } from "../podcast-episode/podcast-episode.component";
+import { PlayableDetailTvComponent } from "../playable-detail-tv/playable-detail-tv.component";
 import { connectKindEpisode } from "../kind-episode-page";
 
 @Component({
@@ -19,7 +19,7 @@ import { connectKindEpisode } from "../kind-episode-page";
     MatButtonModule,
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
-    PodcastEpisodeComponent,
+    PlayableDetailTvComponent,
   ],
 })
 export class TvShowEpisodeComponent {

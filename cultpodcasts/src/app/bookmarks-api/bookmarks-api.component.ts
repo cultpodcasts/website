@@ -270,10 +270,11 @@ export class BookmarksApiComponent {
     });
   }
 
-  post(episodeId: string) {
+  post(episode: ApiEpisode) {
+    const episodeId = episode.id;
     const dialogRef = this.dialog
-      .open<PostEpisodeDialogComponent, any, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
-        data: { episodeId },
+      .open<PostEpisodeDialogComponent, { episodeId: string; contentKind?: string | null }, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {
+        data: { episodeId, contentKind: episode.contentKind },
         disableClose: true,
         autoFocus: true
       });

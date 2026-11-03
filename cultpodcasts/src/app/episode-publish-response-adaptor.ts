@@ -1,11 +1,17 @@
+import { playablePublishSubjectNoun } from "./content-kind-label";
 import { EpisodePublishResponse } from "./episode-publish-response.interface";
 import { PostEpisodeModel } from "./post-episode-model.interface";
 
 export class EpisodePublishResponseAdaptor {
-    createMessage(response: EpisodePublishResponse, expectation: PostEpisodeModel): string {
+    createMessage(
+        response: EpisodePublishResponse,
+        expectation: PostEpisodeModel,
+        contentKind?: string | null,
+    ): string {
         let successes: string[] = [];
         let failures: string[] = [];
         let message: string;
+        const subject = playablePublishSubjectNoun(contentKind);
         if (expectation.post) {
             if (response.posted) {
                 successes.push("posted");
@@ -28,12 +34,12 @@ export class EpisodePublishResponseAdaptor {
             }
         }
         if (failures.length == 0) {
-            message = `Episode ${successes.join(" and ")}`;
+            message = `${subject} ${successes.join(" and ")}`;
         } else {
             if (successes.length == 0) {
-                message = `Episode failed to ${failures.join(" and ")}`
+                message = `${subject} failed to ${failures.join(" and ")}`
             } else {
-                message = `Episode ${successes.join(" and ")}`;
+                message = `${subject} ${successes.join(" and ")}`;
                 if (failures.length > 0) {
                     message += `. Failed to ${failures.join(" and ")}`;
                 }

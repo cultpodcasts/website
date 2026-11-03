@@ -5,7 +5,7 @@ import { RouterLink } from "@angular/router";
 import { MatButtonModule } from "@angular/material/button";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
-import { PodcastEpisodeComponent } from "../podcast-episode/podcast-episode.component";
+import { PlayableDetailNewsComponent } from "../playable-detail-news/playable-detail-news.component";
 import { connectKindEpisode } from "../kind-episode-page";
 import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
@@ -19,7 +19,7 @@ import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
     MatButtonModule,
     SiteLoadingComponent,
     EpisodeLoadingSkeletonComponent,
-    PodcastEpisodeComponent,
+    PlayableDetailNewsComponent,
   ],
 })
 export class NewsReportComponent {
