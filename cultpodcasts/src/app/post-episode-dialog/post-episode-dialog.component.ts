@@ -17,6 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
+import { playableCuratorActionLabel } from '../content-kind-label';
 
 @Component({
   selector: 'app-post-episode-dialog',
@@ -38,6 +39,7 @@ export class PostEpisodeDialogComponent {
   protected FeatureSwitch = FeatureSwitch;
   readonly isInError = signal<boolean>(false);
   readonly isSending = signal<boolean>(true);
+  readonly dialogTitle = signal(playableCuratorActionLabel(undefined, 'Post'));
   form: FormGroup<PostForm> | undefined;
   episodeId: string;
   hasPosted: boolean = false;
@@ -73,6 +75,7 @@ export class PostEpisodeDialogComponent {
         .subscribe({
           next: resp => {
             this.isSending.set(false);
+            this.dialogTitle.set(playableCuratorActionLabel(resp.contentKind, 'Post'));
             this.hasPosted = resp.posted;
             this.hasTweeted = resp.tweeted;
             this.hasBlueskyPosted = resp.bluesky == true;
