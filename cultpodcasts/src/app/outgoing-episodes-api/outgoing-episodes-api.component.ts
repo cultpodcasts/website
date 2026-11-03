@@ -492,13 +492,14 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
         return;
       }
       if (result.failedTweetContent) {
+        const parentId = episode.podcastId ?? episode.id;
         const dialogRef = this.dialog.open<ManualTweetEpisodeDialogComponent, { tweet: string, episodeId: string, podcastId: string }, any>(
           ManualTweetEpisodeDialogComponent,
           {
             data: {
               tweet: result.failedTweetContent,
               episodeId: episode.id,
-              podcastId: episode.podcastId
+              podcastId: parentId
             },
             disableClose: true,
             autoFocus: true
