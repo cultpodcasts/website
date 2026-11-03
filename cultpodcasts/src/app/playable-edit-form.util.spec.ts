@@ -107,6 +107,21 @@ describe('playable edit form', () => {
     expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
   });
 
+  it('unBluesky / Submit does not throw when form release is still a Date (JsonDateInterceptor)', () => {
+    const dto = report({
+      release: new Date('2026-11-02T00:00:00Z'),
+      blueskyPosted: true
+    });
+    const form = buildPlayableEditForm(dto);
+    const next = {
+      ...form.getRawValue(),
+      // Pre-normalize bug: control held a Date and Submit called release.trim()
+      release: new Date('2026-11-02T00:00:00Z') as unknown as string
+    };
+    expect(() => playableFieldsChanges(dto, next, true)).not.toThrow();
+    expect(playableFieldsChanges(dto, next, true)).toEqual({ unBluesky: true });
+  });
+
   it('news and TV Urls tab PATCH services the same way as film', () => {
     const archive = 'https://archive.org/details/synthetic-playable';
     const iplayer = 'https://www.bbc.co.uk/iplayer/episode/p0synth1/synthetic-playable';
@@ -253,6 +268,32 @@ describe('playable edit form', () => {
       expect(form.valid).toBe(true);
       form.controls.release.setValue('May 1999');
       expect(form.controls.release.hasError('pattern')).toBe(true);
+    });
+
+    it('normalizes DateTimeUtc release (Date after JsonDateInterceptor, or ISO string) to yyyy-MM-dd so Submit stays enabled', () => {
+      const fromDate = buildPlayableEditForm(
+        film({ release: new Date('2026-10-27T13:00:00Z') }),
+        'film'
+      );
+      expect(fromDate.controls.release.value).toBe('2026-10-27');
+      expect(fromDate.valid).toBe(true);
+
+      const fromIso = buildPlayableEditForm(
+        film({ release: '2026-10-27T13:00:00Z' }),
+        'film'
+      );
+      expect(fromIso.controls.release.value).toBe('2026-10-27');
+      expect(fromIso.valid).toBe(true);
+    });
+
+    it('does not PATCH release when the GET had DateTimeUtc and the form still shows the same calendar day', () => {
+      const previous = film({
+        release: new Date('2026-10-27T13:00:00Z'),
+        description: 'Before'
+      });
+      const form = buildPlayableEditForm(previous, 'film');
+      form.controls.description.setValue('After');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ description: 'After' });
     });
 
     it('never sends title; sends publisher (trimmed, empty clears) and the IMDb id patch', () => {

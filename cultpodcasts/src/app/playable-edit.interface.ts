@@ -3,13 +3,14 @@ import { FilmTrailer } from './film-trailer';
 
 /**
  * Curator GET body shared by `newsreport/{id}` and `tvshowepisode/{id}` (RPP `PlayableFieldsDto`).
- * Release is a calendar date `yyyy-MM-dd`; duration is `h:mm:ss`. English language is null.
+ * Release is a calendar date `yyyy-MM-dd` (or year / UTC DateTimeUtc for film). After
+ * `JsonDateInterceptor`, a DateTimeUtc wire value is a `Date`. Duration is `h:mm:ss`. English language is null.
  */
 export interface PlayableFieldsDto {
   id: string;
   title: string;
   description: string;
-  release?: string | null;
+  release?: string | Date | null;
   duration: string;
   explicit: boolean;
   ignored: boolean;
@@ -44,8 +45,9 @@ export interface TvShowEpisodeDto extends PlayableFieldsDto {
  * Curator GET `film/{id}` (RPP `FilmDto`): a film is a publisher that is also playable, so the GET has the
  * publisher fields (`name`, `publisher`, `defaultSubject`, …) and the playable fields a film has. There is no
  * `title`: the display name is `name`, renamed only by the admin rename screen (`POST film/name/{id}`). The
- * dialog copies `name` into `title` so the shared form can show it read-only. Release is `yyyy` (year-only)
- * or `yyyy-MM-dd`.
+ * dialog copies `name` into `title` so the shared form can show it read-only. Release wire/editor shapes are
+ * `yyyy` (year-only), `yyyy-MM-dd`, or DateTimeUtc; after `JsonDateInterceptor`, a DateTimeUtc value is a
+ * `Date` — normalize with `utcCalendarDateText` before binding the form control.
  */
 export interface FilmDto extends PlayableFieldsDto {
   name: string;

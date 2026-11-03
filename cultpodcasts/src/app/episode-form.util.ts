@@ -27,9 +27,14 @@ export function uniqueStrings(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-export function dateToLocalISO(date: Date): string {
-  const off = date.getTimezoneOffset();
-  return new Date(date.getTime() - off * 60 * 1000).toISOString().substring(0, 23);
+/**
+ * `datetime-local` value from a release that {@link JsonDateInterceptor} turned into a `Date`
+ * (or a leftover ISO string). Local wall-clock, no `Z` — what `<input type="datetime-local">` expects.
+ */
+export function dateToLocalISO(date: Date | string): string {
+  const instant = date instanceof Date ? date : new Date(date);
+  const off = instant.getTimezoneOffset();
+  return new Date(instant.getTime() - off * 60 * 1000).toISOString().substring(0, 23);
 }
 
 export function noCompareFunction(): number {

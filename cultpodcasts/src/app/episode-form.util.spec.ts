@@ -59,6 +59,12 @@ describe('episode-form.util', () => {
     expect(uniqueStrings(['a', 'b', 'a', 'c'])).toEqual(['a', 'b', 'c']);
   });
 
+  it('dateToLocalISO accepts an ISO string the same as a Date (interceptor slip)', () => {
+    const fromDate = dateToLocalISO(new Date('2026-07-01T12:00:00.000Z'));
+    const fromIso = dateToLocalISO('2026-07-01T12:00:00.000Z');
+    expect(fromIso).toBe(fromDate);
+  });
+
   it('dateToLocalISO returns a local-offset ISO substring without Z', () => {
     const iso = dateToLocalISO(new Date('2026-07-01T12:00:00.000Z'));
     expect(iso.length).toBe(23);
