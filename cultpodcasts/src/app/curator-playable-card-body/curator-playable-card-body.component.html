@@ -1,0 +1,33 @@
+<mat-card-content class="resultdescription">
+  <div class="curator-card__desc">
+    <app-clampable-text [maxLines]="3" [html]="episode().displayDescription"></app-clampable-text>
+  </div>
+  @if (episode().subjects?.length) {
+  <div class="curator-card__subjects">
+    <app-subjects [subjects]="episode().subjects!" [showHidden]="true" [editable]="true"
+      [disabled]="updating()" [loadingSubjectName]="loadingSubjectName()"
+      (removeSubject)="removeSubject.emit($event)"></app-subjects>
+  </div>
+  }
+  @if ((episode().guestPeople?.length ?? 0) > 0 || (episode().guestSuggestions?.length ?? 0) > 0) {
+  <div class="curator-card__guests">
+    <app-episode-guests [guestPeople]="episode().guestPeople" [guestSuggestions]="episode().guestSuggestions"
+      [editable]="true" [disabled]="updating()" [loadingGuestName]="loadingGuestName()"
+      (removeGuest)="removeGuest.emit($event)"
+      (addSuggestedGuest)="addSuggestedGuest.emit($event)"></app-episode-guests>
+  </div>
+  }
+</mat-card-content>
+<div class="curator-card__platforms" aria-label="Podcast services">
+  <app-episode-podcast-links [episode]="episode()"></app-episode-podcast-links>
+</div>
+<mat-card-actions class="curator-card__actions">
+  <div class="curator-card__status">
+    <app-episode-status [episode]="episode()" [editable]="true"
+      [disabled]="updating() && !statusActionLoading()"
+      [loadingIgnored]="loadingIgnored()" [loadingRemoved]="loadingRemoved()"
+      [loadingTweeted]="loadingTweeted()" [loadingBluesky]="loadingBluesky()"
+      (toggleIgnored)="toggleIgnored.emit()" (toggleRemoved)="toggleRemoved.emit()"
+      (toggleTweeted)="toggleTweeted.emit()" (toggleBluesky)="toggleBluesky.emit()"></app-episode-status>
+  </div>
+</mat-card-actions>

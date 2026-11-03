@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnChanges, PLATFORM_ID, SimpleChanges, ViewChild, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink, UrlTree } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, firstValueFrom, forkJoin, map, Observable, of, Subject, switchMap, take } from 'rxjs';
@@ -9,27 +9,20 @@ import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe, isPlatformBrowser } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { isPlatformBrowser } from '@angular/common';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { PostEpisodeDialogComponent } from '../post-episode-dialog/post-episode-dialog.component';
 import { SiteService } from '../site.service';
-import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
-import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
-import { applyTransferredPodcastKindClose, reviewParentLink, reviewPlayableLink } from '../catalogue-links';
-import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
-import { playableCuratorActionLabel } from '../content-kind-label';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
-import { EpisodeGuestsComponent } from "../episode-guests/episode-guests.component";
+import { CuratorPlayableCardComponent } from '../curator-playable-card/curator-playable-card.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
@@ -37,8 +30,6 @@ import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dia
 import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
 import { EpisodeUpdateService, SavedPodcastRef } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
-import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
-import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import {
   armCuratorSnapAfterScroll,
   observeCuratorSnapToolbar,
@@ -46,9 +37,7 @@ import {
   toggleCuratorSnapClass
 } from '../curator-snap';
 import { HeroCurationService } from '../hero-curation.service';
-import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
-import { ViewerLocaleService } from '../viewer-locale';
 
 function sameIds(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i]);
@@ -64,16 +53,7 @@ const sortParamDateDesc: string = "date-desc";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
-    EpisodeStatusComponent,
-    EpisodePodcastLinksComponent,
-    EpisodeImageComponent,
-    SubjectsComponent,
-    EpisodeGuestsComponent,
-    ClampableTextComponent,
-    HeroPromoteButtonComponent
+    CuratorPlayableCardComponent,
   ],
   templateUrl: './episodes-api.component.html',
   styleUrl: './episodes-api.component.sass',
@@ -105,20 +85,11 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);
-  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   private readonly platformId = inject(PLATFORM_ID);
   private readonly heroCuration = inject(HeroCurationService);
-  /** Row title link by kind (/podcast, /news, /tv, /film); needs `contentKind` from GET /episode/{id}. Podcast episodes use the short id, so the click does not take the GUID 301. */
-  protected readonly playableLink = (episode: ApiEpisode): string[] | UrlTree => {
-    const link = reviewPlayableLink(episode);
-    // The API `path` is already percent-encoded (e.g. /film/One%20Off/…). A plain string routerLink is split into
-    // segments and encoded again (%2520), so parse it into a UrlTree, which routerLink uses as-is.
-    return typeof link === 'string' ? this.router.parseUrl(link) : link;
-  };
-  protected readonly parentLink = reviewParentLink;
   private snapOffsetObserver: ResizeObserver | undefined;
   /** Single cancellable load stream: a newer request (ids change / Refresh) cancels any in-flight one. */
   private readonly loadRequests = new Subject<string[]>();
@@ -274,13 +245,6 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  /** Podcast episode rows (no contentKind, or `Episode`): delete and podcast menu items are podcast-only. */
-  protected readonly isPodcastRow = (episode: ApiEpisode) => !isNonPodcastPlayableKind(episode.contentKind);
-  /** News report / TV episode / film rows edit through their own dialogs (PATCH /newsreport, /tvshowepisode or /film). */
-  protected readonly hasEditDialog = (episode: ApiEpisode) =>
-    this.isPodcastRow(episode) || isEditableCataloguePlayableKind(episode.contentKind);
-  protected readonly playableCuratorActionLabel = playableCuratorActionLabel;
-
   editRow(episode: ApiEpisode) {
     const kind = episode.contentKind;
     if (isEditableCataloguePlayableKind(kind)) {
@@ -342,10 +306,6 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
       || this.isLoadingRemoved(episodeId)
       || this.isLoadingTweeted(episodeId)
       || this.isLoadingBluesky(episodeId);
-  }
-
-  languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   showHeroPromote(episode: ApiEpisode): boolean {

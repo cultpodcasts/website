@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -9,8 +9,7 @@ import { ApiEpisode } from '../api-episode.interface';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule, MatMenuItem } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { DatePipe, isPlatformBrowser } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { isPlatformBrowser } from '@angular/common';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -21,24 +20,18 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
-import { EpisodeStatusComponent } from "../episode-status/episode-status.component";
-import { EpisodePodcastLinksComponent } from "../episode-podcast-links/episode-podcast-links.component";
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
-import { EpisodeImageComponent } from "../episode-image/episode-image.component";
-import { SubjectsComponent } from "../subjects/subjects.component";
+import { CuratorPlayableCardComponent } from '../curator-playable-card/curator-playable-card.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
-import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.component';
 import { EpisodeUpdateService, SavedPodcastRef } from '../episode-update.service';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
-import { ClampableTextComponent } from '../clampable-text/clampable-text.component';
-import { languageFlagBadgeForEpisode, LanguageFlagBadge } from '../language-flag';
 import {
   armCuratorSnapAfterScroll,
   observeCuratorSnapToolbar,
@@ -46,10 +39,7 @@ import {
   toggleCuratorSnapClass
 } from '../curator-snap';
 import { HeroCurationService } from '../hero-curation.service';
-import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { isWithinHeroWeek } from '../hero-slides';
-import { ViewerLocaleService } from '../viewer-locale';
-import { playableCuratorActionLabel } from '../content-kind-label';
 import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 
 const sortParamDateAsc: string = "date-asc";
@@ -63,19 +53,10 @@ const daysKey: string = "pref.outgoing-episodes.days";
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
-    MatCardModule,
-    RouterLink,
-    DatePipe,
     MatCheckboxModule,
     MatMenuItem,
     FormsModule,
-    EpisodeStatusComponent,
-    EpisodePodcastLinksComponent,
-    EpisodeImageComponent,
-    SubjectsComponent,
-    EpisodeGuestsComponent,
-    ClampableTextComponent,
-    HeroPromoteButtonComponent
+    CuratorPlayableCardComponent,
   ],
   templateUrl: './outgoing-episodes-api.component.html',
   styleUrl: './outgoing-episodes-api.component.sass',
@@ -87,7 +68,6 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   sortParamDateAsc: string = sortParamDateAsc;
   sortParamDateDesc: string = sortParamDateDesc;
   protected FeatureSwitch = FeatureSwitch;
-  protected readonly playableCuratorActionLabel = playableCuratorActionLabel;
 
   protected episodes = signal<ApiEpisode[] | undefined>(undefined);
   protected error = signal<boolean>(false);
@@ -108,7 +88,6 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
   protected readonly curatedIdSet = computed(() => new Set(this.curatedEpisodeIds()));
 
   private destroyRef = inject(DestroyRef);
-  private readonly viewerLocale = inject(ViewerLocaleService).locale;
   private route = inject(ActivatedRoute);
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
@@ -268,10 +247,6 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
       || this.isLoadingRemoved(episodeId)
       || this.isLoadingTweeted(episodeId)
       || this.isLoadingBluesky(episodeId);
-  }
-
-  languageBadge(episode: ApiEpisode): LanguageFlagBadge | undefined {
-    return languageFlagBadgeForEpisode(episode, this.viewerLocale());
   }
 
   showHeroPromote(episode: ApiEpisode): boolean {
