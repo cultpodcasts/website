@@ -1,0 +1,66 @@
+<mat-card class="result curator-card">
+  @if (showPromote()) {
+  <div class="curator-card__promote">
+    <app-hero-promote-button [promoted]="promoted()" (promoteToggle)="promoteToggle.emit(episode())" />
+  </div>
+  }
+  <button mat-icon-button type="button" class="curator-card__overflow" [matMenuTriggerFor]="menu"
+    aria-label="News report actions">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item (click)="edit.emit(episode())">
+      <mat-icon>edit</mat-icon>
+      <span>Edit News Report</span>
+    </button>
+    <button mat-menu-item (click)="post.emit(episode())">
+      <mat-icon>send</mat-icon>
+      <span>Post News Report</span>
+    </button>
+  </mat-menu>
+  <div class="curator-card__body">
+    <div class="curator-card__art">
+      <app-episode-image [apiEpisode]="episode()" layout="tile"></app-episode-image>
+    </div>
+    <div class="curator-card__main">
+      <mat-card-header>
+        <mat-card-title>
+          @if (titleAsLink()) {
+          <a [routerLink]="titleLink()" [innerHTML]="episode().displayTitle"></a>
+          } @else {
+          <span [outerHTML]="episode().displayTitle"></span>
+          }
+        </mat-card-title>
+        @if (parentName(); as name) {
+        <mat-card-subtitle>
+          <a [routerLink]="['/news', name]">{{ name }}</a>
+        </mat-card-subtitle>
+        }
+        <mat-card-subtitle class="curator-card__meta">
+          <span>{{ episode().release | date:'d MMM yyyy H:mm' }} [{{ duration() }}]</span>
+          @if (languageBadge(); as lang) {
+          <span class="curator-card__lang" [class.curator-card__lang--code]="lang.isCode"
+            [attr.title]="lang.label" [attr.aria-label]="lang.label">{{ lang.flag }}</span>
+          }
+        </mat-card-subtitle>
+      </mat-card-header>
+      <app-curator-playable-card-body
+        [episode]="episode()"
+        [updating]="updating()"
+        [loadingSubjectName]="loadingSubjectName()"
+        [loadingGuestName]="loadingGuestName()"
+        [loadingIgnored]="loadingIgnored()"
+        [loadingRemoved]="loadingRemoved()"
+        [loadingTweeted]="loadingTweeted()"
+        [loadingBluesky]="loadingBluesky()"
+        [statusActionLoading]="statusActionLoading()"
+        (removeSubject)="removeSubject.emit({ episode: episode(), subject: $event })"
+        (removeGuest)="removeGuest.emit({ episode: episode(), guestName: $event })"
+        (addSuggestedGuest)="addSuggestedGuest.emit({ episode: episode(), name: $event })"
+        (toggleIgnored)="toggleIgnored.emit(episode())"
+        (toggleRemoved)="toggleRemoved.emit(episode())"
+        (toggleTweeted)="toggleTweeted.emit(episode())"
+        (toggleBluesky)="toggleBluesky.emit(episode())" />
+    </div>
+  </div>
+</mat-card>

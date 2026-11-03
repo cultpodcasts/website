@@ -46,111 +46,35 @@
 
     <div class="curator-card-grid">
     @for (result of episodes(); track result.id) {
-    <mat-card class="result curator-card">
-        @if (showHeroPromote(result)) {
-        <div class="curator-card__promote">
-            <app-hero-promote-button [promoted]="curatedIdSet().has(result.id)"
-                (promoteToggle)="togglePromote(result)" />
-        </div>
-        }
-        @if (hasEditDialog(result)) {
-        <button mat-icon-button type="button" class="curator-card__overflow" [matMenuTriggerFor]="menu"
-            aria-label="Episode actions">
-            <mat-icon>more_vert</mat-icon>
-        </button>
-        }
-        <mat-menu #menu="matMenu">
-            @if (hasEditDialog(result)) {
-            <button mat-menu-item (click)="editRow(result)">
-                <mat-icon>edit</mat-icon>
-                <span>{{ playableCuratorActionLabel(result.contentKind, 'Edit') }}</span>
-            </button>
-            <button mat-menu-item (click)="post(result.id)">
-                <mat-icon>send</mat-icon>
-                <span>{{ playableCuratorActionLabel(result.contentKind, 'Post') }}</span>
-            </button>
-            }
-            @if (authRoles().includes("Curator") && result.podcastName && isPodcastRow(result)) {
-            <button mat-menu-item id="edit" (click)="editPodcast({ podcastName: result.podcastName, podcastId: result.podcastId, episodeId: result.id })">
-                <mat-icon>edit</mat-icon>
-                <span>Edit Podcast</span>
-            </button>
-            <button mat-menu-item id="index" (click)="index(result.podcastName!)">
-                <mat-icon>refresh</mat-icon>
-                <span>Index Podcast</span>
-            </button>
-            }
-            @if (authRoles().includes("Admin") && isPodcastRow(result)) {
-            <button [disabled]="result.tweeted" mat-menu-item
-                (click)="delete(result.podcastId!, result.id)">
-                <mat-icon>delete</mat-icon>
-                <span>Delete Episode</span>
-            </button>
-            }
-        </mat-menu>
-        <div class="curator-card__body">
-            <div class="curator-card__art">
-                <app-episode-image [apiEpisode]="result" layout="tile"></app-episode-image>
-            </div>
-            <div class="curator-card__main">
-                <mat-card-header>
-                    <mat-card-title>
-                        <a [routerLink]="playableLink(result)"
-                            [innerHTML]="result.displayTitle"></a>
-                    </mat-card-title>
-                    @if (parentLink(result); as parent) {
-                    <mat-card-subtitle>
-                        <a [routerLink]="parent">
-                            {{result.podcastName}}
-                        </a>
-                    </mat-card-subtitle>
-                    }
-                    <mat-card-subtitle class="curator-card__meta">
-                        <span>{{result.release | date:'d MMM yyyy H:mm'}}
-                            [{{result.duration.startsWith("0")?result.duration.split(".")[0].substring(1):result.duration.split(".")[0]}}]</span>
-                        @if (languageBadge(result); as lang) {
-                        <span class="curator-card__lang" [class.curator-card__lang--code]="lang.isCode"
-                            [attr.title]="lang.label"
-                            [attr.aria-label]="lang.label">{{lang.flag}}</span>
-                        }
-                    </mat-card-subtitle>
-                </mat-card-header>
-                <mat-card-content class="resultdescription">
-                    <div class="curator-card__desc">
-                        <app-clampable-text [maxLines]="3" [html]="result.displayDescription"></app-clampable-text>
-                    </div>
-                    @if (result.subjects?.length) {
-                    <div class="curator-card__subjects">
-                        <app-subjects [subjects]="result.subjects!" [showHidden]="true" [editable]="true"
-                            [disabled]="isUpdating(result.id)" [loadingSubjectName]="loadingSubjectName(result.id)"
-                            (removeSubject)="removeSubject(result, $event)"></app-subjects>
-                    </div>
-                    }
-                    @if ((result.guestPeople?.length ?? 0) > 0 || (result.guestSuggestions?.length ?? 0) > 0) {
-                    <div class="curator-card__guests">
-                        <app-episode-guests [guestPeople]="result.guestPeople" [guestSuggestions]="result.guestSuggestions"
-                            [editable]="true" [disabled]="isUpdating(result.id)" [loadingGuestName]="loadingGuestName(result.id)"
-                            (removeGuest)="removeGuest(result, $event)"
-                            (addSuggestedGuest)="addSuggestedGuest(result, $event)"></app-episode-guests>
-                    </div>
-                    }
-                </mat-card-content>
-                <div class="curator-card__platforms" aria-label="Podcast services">
-                    <app-episode-podcast-links [episode]="result"></app-episode-podcast-links>
-                </div>
-                <mat-card-actions class="curator-card__actions">
-                    <div class="curator-card__status">
-                        <app-episode-status [episode]="result" [editable]="true"
-                            [disabled]="isUpdating(result.id) && !isStatusActionLoading(result.id)"
-                            [loadingIgnored]="isLoadingIgnored(result.id)" [loadingRemoved]="isLoadingRemoved(result.id)"
-                            [loadingTweeted]="isLoadingTweeted(result.id)" [loadingBluesky]="isLoadingBluesky(result.id)"
-                            (toggleIgnored)="toggleIgnored(result)" (toggleRemoved)="toggleRemoved(result)"
-                            (toggleTweeted)="toggleTweeted(result)" (toggleBluesky)="toggleBluesky(result)"></app-episode-status>
-                    </div>
-                </mat-card-actions>
-            </div>
-        </div>
-    </mat-card>
+    <app-curator-playable-card
+        [episode]="result"
+        [showPromote]="showHeroPromote(result)"
+        [promoted]="curatedIdSet().has(result.id)"
+        [titleAsLink]="true"
+        [showIndexPodcast]="true"
+        [showDeleteEpisode]="true"
+        [authRoles]="authRoles()"
+        [updating]="isUpdating(result.id)"
+        [loadingSubjectName]="loadingSubjectName(result.id)"
+        [loadingGuestName]="loadingGuestName(result.id)"
+        [loadingIgnored]="isLoadingIgnored(result.id)"
+        [loadingRemoved]="isLoadingRemoved(result.id)"
+        [loadingTweeted]="isLoadingTweeted(result.id)"
+        [loadingBluesky]="isLoadingBluesky(result.id)"
+        [statusActionLoading]="isStatusActionLoading(result.id)"
+        (edit)="editRow($event)"
+        (post)="post($event.id)"
+        (editPodcast)="editPodcast($event)"
+        (indexPodcast)="index($event)"
+        (deleteEpisode)="delete($event.podcastId, $event.episodeId)"
+        (promoteToggle)="togglePromote($event)"
+        (removeSubject)="removeSubject($event.episode, $event.subject)"
+        (removeGuest)="removeGuest($event.episode, $event.guestName)"
+        (addSuggestedGuest)="addSuggestedGuest($event.episode, $event.name)"
+        (toggleIgnored)="toggleIgnored($event)"
+        (toggleRemoved)="toggleRemoved($event)"
+        (toggleTweeted)="toggleTweeted($event)"
+        (toggleBluesky)="toggleBluesky($event)" />
     }
     </div>
 </section>
