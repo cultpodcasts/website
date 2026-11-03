@@ -83,8 +83,17 @@ body {
    pill above the title, then a date/duration meta line. Global rather than
    per-component so the two heroes cannot drift apart. Episode-only flex /
    badge parent typography lives under `.episode-hero` in the episode sass. */
+/* Kind badge (display:contents) + series pill share this row on homepage and episode heroes. */
 .hero-show {
   margin: 0 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nflx-accent);
 }
 
 .hero-pill {

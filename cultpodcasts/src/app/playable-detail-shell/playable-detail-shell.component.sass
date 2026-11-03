@@ -267,18 +267,8 @@
         max-width: 640px
 
 // Podcast pill and date/duration meta are shared with the homepage billboard
-// (.hero-show / .hero-pill / .hero-meta in styles.scss). Episode-only: kind badge
-// (display:contents) + parent pill share one flex row; badge inherits this type
-// so the 1.25em icon matches the pill scale (#561 — no new global styles).
-.episode-hero .hero-show
-    display: inline-flex
-    align-items: center
-    gap: 10px
-    font-size: 0.8rem
-    font-weight: 700
-    letter-spacing: 0.04em
-    text-transform: uppercase
-    color: var(--nflx-accent)
+// (.hero-show / .hero-pill / .hero-meta in styles.scss). Kind + series row flex
+// lives on the global `.hero-show` so both heroes stay aligned.
 
 .episode-hero__title
     margin: 0 0 12px

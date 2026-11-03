@@ -134,7 +134,7 @@ describe('HomepageHeroComponent', () => {
     expect((root.querySelector('a.billboard__play') as HTMLAnchorElement).getAttribute('href')).toBe('/film/One%20Off/a');
   });
 
-  it('HERO-KND-001: labels a film hero "Film" with the movie icon in the eyebrow, with no parent pill', () => {
+  it('HERO-KND-001: labels a film hero "Film" with the movie icon on the series row, with no parent pill', () => {
     const film = ep('a', { contentKind: 'Film', podcastName: 'Synthetic Film', episodeTitle: 'Synthetic Film' });
     film.playableLink = ['/film', 'Synthetic Film', 'a'];
     film.parentLink = null;
@@ -143,8 +143,9 @@ describe('HomepageHeroComponent', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.hero-pill')).toBeNull();
-    expect(root.querySelector('.hero-show')).toBeNull();
-    const badge = root.querySelector('.billboard__eyebrow .kind-badge') as HTMLElement;
+    expect(root.querySelector('.billboard__eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
+    const show = root.querySelector('.hero-show') as HTMLElement;
+    const badge = show.querySelector('.kind-badge') as HTMLElement;
     expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe('movie');
     expect(badge.textContent).toContain('Film');
     // HERO-TTL-001 still holds: the title opens the film page.
@@ -156,7 +157,7 @@ describe('HomepageHeroComponent', () => {
     ['NewsReport', 'newspaper', '/news', 'News'],
     ['TvShowEpisode', 'live_tv', '/tv', 'TV'],
   ] as const) {
-    it(`shows the ${icon} icon in a ${kind} hero's parent pill, linking to the parent hub`, () => {
+    it(`HERO-KND-001: puts ${label} beside the ${kind} series pill on one row, with no duplicate icon in the pill`, () => {
       const slide = ep('a', { contentKind: kind, podcastName: 'Synthetic Parent' });
       slide.playableLink = [root, 'Synthetic Parent', 'a'];
       slide.parentLink = [root, 'Synthetic Parent'];
@@ -164,26 +165,17 @@ describe('HomepageHeroComponent', () => {
       fixture.detectChanges();
 
       const el = fixture.nativeElement as HTMLElement;
-      const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
-      expect(pill.getAttribute('href')).toBe(`${root}/Synthetic%20Parent`);
-      expect(pill.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
-      expect(pill.textContent).toContain('Synthetic Parent');
-      expect((el.querySelector('a.billboard__title-link') as HTMLAnchorElement).getAttribute('href'))
-        .toBe(`${root}/Synthetic%20Parent/a`);
-    });
-
-    it(`HERO-KND-001: labels a ${kind} hero "${label}" with the ${icon} icon in the eyebrow`, () => {
-      const slide = ep('a', { contentKind: kind, podcastName: 'Synthetic Parent' });
-      slide.playableLink = [root, 'Synthetic Parent', 'a'];
-      slide.parentLink = [root, 'Synthetic Parent'];
-      fixture.componentRef.setInput('slides', [slide, ep('b'), ep('c')]);
-      fixture.detectChanges();
-
-      const eyebrow = (fixture.nativeElement as HTMLElement).querySelector('.billboard__eyebrow') as HTMLElement;
-      const badge = eyebrow.querySelector('.kind-badge') as HTMLElement;
+      expect(el.querySelector('.billboard__eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
+      const show = el.querySelector('.hero-show') as HTMLElement;
+      const badge = show.querySelector('.kind-badge') as HTMLElement;
+      const pill = show.querySelector('a.hero-pill') as HTMLAnchorElement;
       expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
       expect(badge.textContent?.replace(icon, '').trim()).toBe(label);
-      expect(eyebrow.textContent).toContain('Now featuring');
+      expect(pill.getAttribute('href')).toBe(`${root}/Synthetic%20Parent`);
+      expect(pill.querySelector('mat-icon')).toBeNull();
+      expect(pill.textContent?.trim()).toBe('Synthetic Parent');
+      expect((el.querySelector('a.billboard__title-link') as HTMLAnchorElement).getAttribute('href'))
+        .toBe(`${root}/Synthetic%20Parent/a`);
     });
   }
 
@@ -194,7 +186,7 @@ describe('HomepageHeroComponent', () => {
     fixture.componentRef.setInput('slides', [news, ep('b'), ep('c')]);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.kind-badge')?.textContent).toContain('News');
+    expect(el.querySelector('.hero-show .kind-badge')?.textContent).toContain('News');
 
     component['heroIndex'].set(1);
     fixture.detectChanges();
@@ -208,7 +200,7 @@ describe('HomepageHeroComponent', () => {
     const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.querySelector('mat-icon')).toBeNull();
     expect(el.querySelector('.kind-badge')).toBeNull();
-    expect(el.querySelector('.billboard__eyebrow')?.textContent?.trim()).toBe('Now featuring');
+    expect(el.querySelector('.billboard__eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
   });
 
   it('starts on the first slide', () => {
