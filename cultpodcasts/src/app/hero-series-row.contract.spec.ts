@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const styles = readFileSync(join(appDir, '../styles.scss'), 'utf8').replaceAll('\r\n', '\n');
+const heroSass = readFileSync(
+  join(appDir, 'homepage-hero/homepage-hero.component.sass'),
+  'utf8',
+).replaceAll('\r\n', '\n');
 const badgeSass = readFileSync(
   join(appDir, 'content-kind-badge/content-kind-badge.component.sass'),
   'utf8',
@@ -30,13 +34,32 @@ describe('hero series row (HERO-SER-*)', () => {
   const show = scssRuleBody(styles, '.hero-show');
   const pill = scssRuleBody(styles, '.hero-pill');
 
-  it('HERO-SER-001: series row is block flex, nowrap, 12px gap, centred', () => {
+  it('HERO-SER-001: series row is block flex, full width, nowrap, 12px gap, centred', () => {
     expect(show).toMatch(/display:\s*flex\s*;/);
     expect(show).not.toMatch(/display:\s*inline-flex/);
     expect(show).toMatch(/flex-wrap:\s*nowrap/);
     expect(show).toMatch(/align-items:\s*center/);
     expect(show).toMatch(/gap:\s*12px/);
+    expect(show).toMatch(/width:\s*100%/);
     expect(show).toMatch(/min-width:\s*0/);
+  });
+
+  it('HERO-SER-001: homepage copy column stacks eyebrow above series row (Firefox-safe)', () => {
+    const copyStart = heroSass.indexOf('.billboard__copy\n');
+    expect(copyStart).toBeGreaterThanOrEqual(0);
+    const afterCopy = heroSass.slice(copyStart + '.billboard__copy\n'.length);
+    const copyNext = afterCopy.search(/\n\.billboard__/);
+    const copyBody = copyNext >= 0 ? afterCopy.slice(0, copyNext) : afterCopy;
+    expect(copyBody).toMatch(/^\s+display: flex$/m);
+    expect(copyBody).toMatch(/^\s+flex-direction: column$/m);
+
+    const eyebrowStart = heroSass.indexOf('.billboard__eyebrow\n');
+    expect(eyebrowStart).toBeGreaterThanOrEqual(0);
+    const afterEyebrow = heroSass.slice(eyebrowStart + '.billboard__eyebrow\n'.length);
+    const nextRule = afterEyebrow.search(/\n\.billboard__/);
+    const eyebrowBody = nextRule >= 0 ? afterEyebrow.slice(0, nextRule) : afterEyebrow;
+    expect(eyebrowBody).toMatch(/^\s+display: flex$/m);
+    expect(eyebrowBody).not.toMatch(/display:\s*inline-flex/);
   });
 
   it('HERO-SER-003/004: series pill never wraps; long names ellipsize and may shrink', () => {

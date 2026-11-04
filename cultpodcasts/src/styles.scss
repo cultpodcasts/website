@@ -83,12 +83,15 @@ body {
    Contract: docs/hero-series-row.md (HERO-SER-001 … 007). */
 .hero-show {
   margin: 0 0 10px;
-  /* Block flex (not inline-flex): homepage eyebrow is inline-flex; two inline-flex
-     siblings sat on one line with the pill flush against "Now featuring". */
+  /* Block flex + full width: must not sit beside the homepage eyebrow.
+     Homepage `.billboard__copy` is also a column flex so Firefox cannot keep them
+     on one line (HERO-SER-001). */
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
   min-width: 0;
   font-size: 0.8rem;
   font-weight: 700;

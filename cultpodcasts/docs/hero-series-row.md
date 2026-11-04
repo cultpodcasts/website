@@ -19,7 +19,7 @@ Homepage only: an eyebrow (“Now featuring”) sits **above** this row on its o
 
 | ID | Rule |
 |----|------|
-| **HERO-SER-001** | One horizontal flex row: `display: flex` (block-level, not `inline-flex`), `flex-wrap: nowrap`, `align-items: center`, `gap: 12px`. Block-level so the homepage eyebrow cannot share a line with the pill. |
+| **HERO-SER-001** | One horizontal flex row: `display: flex` (block-level, not `inline-flex`), `width: 100%`, `flex-wrap: nowrap`, `align-items: center`, `gap: 12px`. Homepage `.billboard__copy` is a **column flex** and the eyebrow is block `flex` (not `inline-flex`) so Firefox cannot keep “Now featuring” beside the pill. |
 | **HERO-SER-002** | Kind badge and series pill are **vertically centred** to each other (midpoints within 3px). The pill is usually taller (padding); the badge centres to it. |
 | **HERO-SER-003** | **Never wrap** label text inside the pill or the kind badge. `white-space: nowrap` on both. |
 | **HERO-SER-004** | Long series names **truncate with an ellipsis** (`overflow: hidden; text-overflow: ellipsis`). The pill may shrink (`flex: 0 1 auto; min-width: 0`); the kind badge does **not** shrink (`flex-shrink: 0`). Full name stays on `title` for hover. |

@@ -114,6 +114,12 @@
         transition-duration: 0.55s
 
 .billboard__copy
+    // Column flex so eyebrow + series row always stack (HERO-SER / HERO-KND-001).
+    // Firefox kept an inline-flex eyebrow on one line with the series row even when
+    // `.hero-show` was block-level `display: flex`.
+    display: flex
+    flex-direction: column
+    align-items: stretch
     min-width: 0
 
 .billboard__copy-body
@@ -127,8 +133,9 @@
 
 .billboard__eyebrow
     // Sits directly above the podcast pill — the pill carries the gap to the title.
+    // Block flex (not inline-flex): must be a full-width flex item of `.billboard__copy`.
     margin: 0 0 8px
-    display: inline-flex
+    display: flex
     align-items: center
     gap: 10px
     font-size: 0.8rem

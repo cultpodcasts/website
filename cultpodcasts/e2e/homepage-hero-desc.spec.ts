@@ -607,6 +607,7 @@ test.describe("homepage hero description", () => {
 				const geo = await page.evaluate(() => {
 					const showEl = document.querySelector(".hero-show") as HTMLElement;
 					const eyebrowEl = document.querySelector(".billboard__eyebrow") as HTMLElement;
+					const copyEl = document.querySelector(".billboard__copy") as HTMLElement;
 					const cs = getComputedStyle(showEl);
 					const showBox = showEl.getBoundingClientRect();
 					const eyebrowBox = eyebrowEl.getBoundingClientRect();
@@ -619,6 +620,9 @@ test.describe("homepage hero description", () => {
 						display: cs.display,
 						gap: cs.gap,
 						fontSize: parseFloat(cs.fontSize),
+						copyDisplay: getComputedStyle(copyEl).display,
+						copyFlexDirection: getComputedStyle(copyEl).flexDirection,
+						eyebrowDisplay: getComputedStyle(eyebrowEl).display,
 						eyebrowBottom: eyebrowBox.bottom,
 						showTop: showBox.top,
 						badgeTop: badgeBox.top, badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
@@ -634,7 +638,11 @@ test.describe("homepage hero description", () => {
 				});
 				expect(geo.pillHasIcon, JSON.stringify(geo)).toBe(false);
 				expect(geo.display, JSON.stringify(geo)).toBe("flex");
-				// Eyebrow stacks above the series row (not beside an inline-flex .hero-show).
+				// Firefox-safe stack: copy is a column flex; eyebrow is block flex (not inline-flex).
+				expect(geo.copyDisplay, JSON.stringify(geo)).toBe("flex");
+				expect(geo.copyFlexDirection, JSON.stringify(geo)).toBe("column");
+				expect(geo.eyebrowDisplay, JSON.stringify(geo)).toBe("flex");
+				// Eyebrow stacks above the series row (not beside it).
 				// 1px slack: same spirit as the chevron viewport assert.
 				expect(geo.showTop, JSON.stringify(geo)).toBeGreaterThanOrEqual(geo.eyebrowBottom - 1);
 				if (k.parent) {
