@@ -77,5 +77,7 @@ describe('hero series row (HERO-SER-*)', () => {
     // Property form only — comments may mention contents as forbidden.
     expect(badgeSass).not.toMatch(/^\s*display:\s*contents\b/m);
     expect(badgeSass).toMatch(/:host:empty\n\s+display: none/);
+    // Separator lived on the old eyebrow placement; badge sits alone on `.hero-show` now.
+    expect(badgeSass).not.toMatch(/\.kind-badge__sep/);
   });
 });

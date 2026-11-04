@@ -191,7 +191,6 @@ describe('HomepageHeroComponent', () => {
     component['heroIndex'].set(1);
     fixture.detectChanges();
     expect(el.querySelector('.kind-badge')).toBeNull();
-    expect(el.querySelector('.kind-badge__sep')).toBeNull();
     expect((el.querySelector('a.hero-pill') as HTMLAnchorElement).getAttribute('href')).toBe('/podcast/Show%20b');
   });
 

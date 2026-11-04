@@ -19,9 +19,6 @@ export class ContentKindBadgeComponent {
   /** `contentKind` of the playable (NewsReport / TvShowEpisode / Film). Absent means podcast. */
   readonly kind = input<string | null | undefined>(undefined);
 
-  /** Puts a middle-dot separator in front, as after "Now featuring". */
-  readonly separator = input(false);
-
   protected readonly icon = computed(() => contentKindIcon(this.kind()));
 
   protected readonly label = computed(() => {
