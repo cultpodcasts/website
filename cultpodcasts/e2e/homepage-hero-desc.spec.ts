@@ -604,17 +604,23 @@ test.describe("homepage hero description", () => {
 				await expect(badge).toBeVisible();
 				await expect(badge.locator("mat-icon")).toHaveText(k.icon);
 				await expect(badge).toContainText(k.label);
-				const geo = await show.evaluate((el) => {
-					const cs = getComputedStyle(el);
-					const badgeBox = el.querySelector(".kind-badge")!.getBoundingClientRect();
-					const icon = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
-					const pill = el.querySelector("a.hero-pill") as HTMLElement | null;
+				const geo = await page.evaluate(() => {
+					const showEl = document.querySelector(".hero-show") as HTMLElement;
+					const eyebrowEl = document.querySelector(".billboard__eyebrow") as HTMLElement;
+					const cs = getComputedStyle(showEl);
+					const showBox = showEl.getBoundingClientRect();
+					const eyebrowBox = eyebrowEl.getBoundingClientRect();
+					const badgeBox = showEl.querySelector(".kind-badge")!.getBoundingClientRect();
+					const icon = showEl.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+					const pill = showEl.querySelector("a.hero-pill") as HTMLElement | null;
 					const pillBox = pill?.getBoundingClientRect();
 					const pillCs = pill ? getComputedStyle(pill) : null;
 					return {
 						display: cs.display,
 						gap: cs.gap,
 						fontSize: parseFloat(cs.fontSize),
+						eyebrowBottom: eyebrowBox.bottom,
+						showTop: showBox.top,
 						badgeTop: badgeBox.top, badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
 						badgeRight: badgeBox.right,
 						pillTop: pillBox?.top ?? null, pillMid: pillBox ? (pillBox.top + pillBox.bottom) / 2 : null,
@@ -628,6 +634,9 @@ test.describe("homepage hero description", () => {
 				});
 				expect(geo.pillHasIcon, JSON.stringify(geo)).toBe(false);
 				expect(geo.display, JSON.stringify(geo)).toBe("flex");
+				// Eyebrow stacks above the series row (not beside an inline-flex .hero-show).
+				// 1px slack: same spirit as the chevron viewport assert.
+				expect(geo.showTop, JSON.stringify(geo)).toBeGreaterThanOrEqual(geo.eyebrowBottom - 1);
 				if (k.parent) {
 					await expect(page.locator("a.hero-pill")).toHaveAttribute("href", `${k.root}/${encodeURIComponent(k.parent)}`);
 					await expect(page.locator("a.hero-pill")).toHaveAttribute("title", k.parent);

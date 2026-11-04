@@ -36,7 +36,7 @@
         </p>
         <!-- HERO-KND-001: kind badge + series pill share one row (same as the episode-page hero).
              Film has a badge and no parent pill; podcast has a pill and no badge. -->
-        @if (feature.parentLink || kindIcon(feature)) {
+        @if (feature.parentLink || showsSeriesKindRow(feature)) {
         <p class="hero-show">
           <app-content-kind-badge [kind]="feature.contentKind" />
           @if (feature.parentLink; as parent) {
