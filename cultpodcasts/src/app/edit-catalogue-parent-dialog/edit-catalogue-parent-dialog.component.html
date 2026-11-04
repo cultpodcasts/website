@@ -51,6 +51,26 @@
                     }
                 </p>
                 }
+                <div class="indexing-hints" aria-live="polite">
+                    <p class="hint"><strong>YouTube indexing hints</strong> (read-only)</p>
+                    @if (displayIndexingHints(); as hints) {
+                    <ul class="hint-list">
+                        <li>Playlist id: {{ hints.playlistId }}</li>
+                        <li>Last full walk: {{ formatHintInstant(hints.lastFullWalk) }}</li>
+                        <li>Playlist item count: {{ hints.playlistItemCount ?? '—' }}</li>
+                        <li>Uploads checked through: {{ formatHintInstant(hints.uploadsCheckedThrough) }}
+                            @if (hints.uploadsCheckedThroughVideoId) {
+                            ({{ hints.uploadsCheckedThroughVideoId }})
+                            }
+                        </li>
+                    </ul>
+                    <button type="button" mat-stroked-button color="primary"
+                        [disabled]="clearingIndexingHints()"
+                        (click)="forceFullYouTubeWalk()">Force full walk</button>
+                    } @else {
+                    <p class="hint">No hints (next pass does a full walk)</p>
+                    }
+                </div>
                 <mat-form-field class="full-width">
                     <mat-label>YouTube Publication Delay</mat-label>
                     <input type="text" name="youTubePublicationDelay" placeholder="-1:00:00"

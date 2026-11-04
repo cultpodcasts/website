@@ -338,6 +338,63 @@ describe('EditCatalogueParentDialogComponent', () => {
     expect(hint).toBeNull();
   });
 
+  it('Force full walk confirms, PATCHes clearYouTubeIndexingHints, re-GETs, and shows the empty hints copy', async () => {
+    const playlistId = 'PLsyntheticplaylist0000000000000000';
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    await loadWith({
+      id: showId,
+      name: 'Nightly',
+      youTubePlaylistId: playlistId,
+      youTubeIndexingHints: {
+        playlistId,
+        playlistItemCount: 12,
+        lastFullWalk: '2026-11-01T12:00:00Z'
+      }
+    });
+    await settle();
+    await showTab(fixture, 'Details');
+    await settle();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Playlist item count: 12');
+    const forceBtn = Array.from(root.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => b.textContent?.trim() === 'Force full walk'
+    );
+    expect(forceBtn).toBeTruthy();
+    forceBtn!.click();
+    await settle();
+    expect(confirmOpen).toHaveBeenCalled();
+    expect(confirmOpen.mock.calls[confirmOpen.mock.calls.length - 1][1].data.title).toContain('Force full YouTube walk');
+    const patchReq = await expectSoon(patchUrl);
+    expect(patchReq.request.method).toBe('PATCH');
+    expect(patchReq.request.body).toEqual({ clearYouTubeIndexingHints: true });
+    patchReq.flush(null, { status: 202, statusText: 'Accepted' });
+    await settle();
+    const refreshUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
+    const refreshReq = await expectSoon(refreshUrl);
+    expect(refreshReq.request.method).toBe('GET');
+    refreshReq.flush({
+      id: showId,
+      name: 'Nightly',
+      youTubePlaylistId: playlistId,
+      youTubeIndexingHints: null
+    });
+    await settle();
+    fixture.detectChanges();
+    expect(root.textContent).toContain('No hints (next pass does a full walk)');
+    expect(
+      Array.from(root.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+        (b) => b.textContent?.trim() === 'Force full walk'
+      )
+    ).toBeUndefined();
+    expect(snackOpen).toHaveBeenCalledWith(
+      'Indexing hints cleared. Next pass will do a full walk.',
+      'Ok',
+      { duration: 8000 }
+    );
+  });
+
   it('blocks Save on a non-numeric Apple id and switches to the Details tab', async () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly' });

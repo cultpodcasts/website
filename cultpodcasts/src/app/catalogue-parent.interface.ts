@@ -1,4 +1,5 @@
 import { SearchIndexerState } from "./search-indexer-state.interface";
+import { YouTubeIndexingHints } from "./youtube-indexing-hints.interface";
 
 /**
  * One replaced YouTube playlist id. `replacedAt` is a UTC ISO instant (`...Z`) on the wire, and
@@ -41,6 +42,8 @@ export interface CatalogueParentDto {
   youTubePlaylistId?: string | null;
   /** Read-only: playlist ids replaced by an edit. */
   youTubePlaylistIdHistory?: PlaylistIdHistoryEntry[] | null;
+  /** Indexer-owned YouTube playlist walk hints (read-only). Clear via `clearYouTubeIndexingHints`. */
+  youTubeIndexingHints?: YouTubeIndexingHints | null;
   spotifyId?: string | null;
   appleId?: number | null;
   /** From `indexing`: auto-index every item, or only titles matching the include regex. */
@@ -67,16 +70,27 @@ export interface CatalogueParentDto {
 
 /**
  * PATCH body. Omitted = unchanged; "" clears a string; [] clears a list; `nullAppleId: true` clears `appleId`.
- * No `name` (rename is separate), no `youTubePlaylistIdHistory` (server-kept), no `skipEnrichingFromYouTube`
- * (not edited on news / TV, so it is never sent and a stored value is kept) and no `youTubeChannelId`
- * (read-only, like the podcast edit dialog: it is used for API calls, so it is never sent and the stored value is kept).
+ * No `name` (rename is separate), no `youTubePlaylistIdHistory` / `youTubeIndexingHints` (server-kept),
+ * no `skipEnrichingFromYouTube` (not edited on news / TV, so it is never sent and a stored value is kept)
+ * and no `youTubeChannelId` (read-only, like the podcast edit dialog: it is used for API calls, so it is
+ * never sent and the stored value is kept).
  */
 export type CatalogueParentChangeRequest = Partial<
-  Omit<CatalogueParentDto, "id" | "name" | "youTubePlaylistIdHistory" | "skipEnrichingFromYouTube" | "youTubeChannelId">
+  Omit<
+    CatalogueParentDto,
+    | "id"
+    | "name"
+    | "youTubePlaylistIdHistory"
+    | "youTubeIndexingHints"
+    | "skipEnrichingFromYouTube"
+    | "youTubeChannelId"
+  >
 > & {
   nullAppleId?: boolean;
   /** `true` clears `releaseAuthority`. */
   unsetReleaseAuthority?: boolean;
+  /** `true` clears indexer-owned `youTubeIndexingHints` (force full playlist walk). */
+  clearYouTubeIndexingHints?: boolean;
 };
 
 /** POST /newsorganisation/name/{identifier} or /tvshow/name/{identifier} (admin). */

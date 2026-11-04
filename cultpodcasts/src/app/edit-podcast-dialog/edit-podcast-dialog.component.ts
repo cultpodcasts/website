@@ -25,6 +25,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
@@ -33,6 +34,9 @@ import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
 import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
 import { podcastGetPathFromEditData } from '../podcast-get-path';
+import { CurationSubmitService } from '../curation-submit.service';
+import { YouTubeIndexingHints } from '../youtube-indexing-hints.interface';
+import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from '../youtube-indexing-hints.util';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -102,6 +106,9 @@ export class EditPodcastDialogComponent {
   readonly indexAllOverriddenByIncludeTitle = signal(false);
   protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
   protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
+  protected readonly indexingHints = signal<YouTubeIndexingHints | null>(null);
+  protected readonly clearingIndexingHints = signal(false);
+  protected readonly formatHintInstant = formatIndexingHintInstant;
   readonly highlightIncludeTitleRegex = signal(false);
   private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
@@ -113,6 +120,8 @@ export class EditPodcastDialogComponent {
     private dialogRef: MatDialogRef<EditPodcastDialogComponent, EditPodcastDialogResponse>,
     @Inject(MAT_DIALOG_DATA) public data: EditPodcastDialogData,
     private dialog: MatDialog,
+    private curation: CurationSubmitService,
+    private snackBar: MatSnackBar,
   ) {
     this.podcastName = data.podcastName;
     this.podcastId = data.podcastId;
@@ -148,6 +157,7 @@ export class EditPodcastDialogComponent {
       if (resp.podcast.status == 200 && resp.podcast.body) {
         this.podcastId = resp.podcast.body.id;
         this.originalPodcast = resp.podcast.body;
+        this.indexingHints.set(resp.podcast.body.youTubeIndexingHints ?? null);
         const form = new FormGroup<EditPodcastForm>(buildPodcastFormControls(resp.podcast.body));
         this.form.set(form);
         this.wireIndexAllIncludeTitleSync(form);
@@ -318,6 +328,55 @@ export class EditPodcastDialogComponent {
 
   getChanges(prev: Podcast, now: Podcast): EditPodcastPost {
     return getPodcastChanges(prev, now);
+  }
+
+  protected displayIndexingHints(): YouTubeIndexingHints | null {
+    return effectiveYouTubeIndexingHints(
+      this.indexingHints(),
+      this.form()?.controls.youTubePlaylistId.value
+    );
+  }
+
+  /** Clears indexer hints immediately so the next hourly pass walks the playlist in full. */
+  protected async forceFullYouTubeWalk(): Promise<void> {
+    const id = this.podcastId;
+    if (!id || this.clearingIndexingHints() || !this.displayIndexingHints()) {
+      return;
+    }
+    const closed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmComponent, {
+          data: {
+            title: 'Force full YouTube walk?',
+            question:
+              'Clear indexing hints for this playlist? The next indexing pass will walk the whole playlist and write fresh hints.'
+          }
+        })
+        .afterClosed()
+    );
+    if ((closed as { result?: boolean } | undefined)?.result !== true) {
+      return;
+    }
+    this.clearingIndexingHints.set(true);
+    try {
+      await firstValueFrom(this.curation.patchPodcast(id, { clearYouTubeIndexingHints: true }));
+      // CQRS: acknowledgement is not the read model — re-GET and bind hints.
+      const refreshed = await firstValueFrom(this.curation.getPodcast(id));
+      const hints = refreshed.youTubeIndexingHints ?? null;
+      this.indexingHints.set(hints);
+      if (this.originalPodcast) {
+        this.originalPodcast = { ...this.originalPodcast, youTubeIndexingHints: hints };
+      }
+      if (hints != null) {
+        this.snackBar.open('Could not clear indexing hints.', 'Ok', { duration: 8000 });
+        return;
+      }
+      this.snackBar.open('Indexing hints cleared. Next pass will do a full walk.', 'Ok', { duration: 8000 });
+    } catch {
+      this.snackBar.open('Could not clear indexing hints.', 'Ok', { duration: 8000 });
+    } finally {
+      this.clearingIndexingHints.set(false);
+    }
   }
 
   send(id: string, changes: EditPodcastPost) {

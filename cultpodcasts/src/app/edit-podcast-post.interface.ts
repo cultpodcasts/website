@@ -21,6 +21,8 @@ export interface EditPodcastPost {
     defaultSubject?: string | null;
     ignoreAllEpisodes?: boolean;
     youTubePlaylistId?: string;
+    /** `true` clears indexer-owned `youTubeIndexingHints` (force full playlist walk). */
+    clearYouTubeIndexingHints?: boolean;
     ignoredAssociatedSubjects?: string[];
     ignoredSubjects?: string[];
     lang?: string;
