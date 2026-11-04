@@ -327,14 +327,20 @@ export class EditCatalogueParentDialogComponent {
     }
     this.clearingIndexingHints.set(true);
     try {
+      const id = this.original.id;
       await firstValueFrom(
-        this.curation.patchCatalogueParent(this.data.hub, this.original.id, {
+        this.curation.patchCatalogueParent(this.data.hub, id, {
           clearYouTubeIndexingHints: true
         })
       );
-      this.indexingHints.set(null);
-      if (this.original) {
-        this.original = { ...this.original, youTubeIndexingHints: null };
+      // CQRS: acknowledgement is not the read model — re-GET and bind hints.
+      const refreshed = await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
+      const hints = refreshed.youTubeIndexingHints ?? null;
+      this.indexingHints.set(hints);
+      this.original = { ...this.original, youTubeIndexingHints: hints };
+      if (hints != null) {
+        this.snackBar.open("Could not clear indexing hints.", "Ok", { duration: 8000 });
+        return;
       }
       this.snackBar.open("Indexing hints cleared. Next pass will do a full walk.", "Ok", { duration: 8000 });
     } catch {

@@ -15,8 +15,10 @@ describe('youtube-indexing-hints.util', () => {
     expect(effectiveYouTubeIndexingHints(hints, 'PLabc')).toEqual(hints);
   });
 
-  it('formats instants for display and uses an em dash when unset', () => {
+  it('formats instants for display and uses an em dash when unset or invalid', () => {
     expect(formatIndexingHintInstant(null)).toBe('—');
+    expect(formatIndexingHintInstant('')).toBe('—');
+    expect(formatIndexingHintInstant('not-a-date')).toBe('—');
     expect(formatIndexingHintInstant(new Date('2026-11-01T12:00:00Z'))).toContain('2026');
   });
 });
