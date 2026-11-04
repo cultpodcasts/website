@@ -79,17 +79,34 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Hero copy shared by the homepage billboard and the episode page: a podcast
-   pill above the title, then a date/duration meta line. Global rather than
-   per-component so the two heroes cannot drift apart. Episode-only flex /
-   badge parent typography lives under `.episode-hero` in the episode sass. */
+/* Hero series row — homepage billboard + playable item page.
+   Contract: docs/hero-series-row.md (HERO-SER-001 … 007). */
 .hero-show {
   margin: 0 0 10px;
+  /* Block flex + full width: must not sit beside the homepage eyebrow.
+     Homepage `.billboard__copy` is also a column flex so Firefox cannot keep them
+     on one line (HERO-SER-001). */
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nflx-accent);
 }
 
 .hero-pill {
   display: inline-flex;
   align-items: center;
+  /* Shrink + ellipsis for long series names; never wrap (Firefox pill balloon). */
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   padding: 4px 12px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -100,6 +117,9 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   backdrop-filter: blur(6px);
   transition: border-color 0.15s ease, color 0.15s ease;
 }
@@ -108,15 +128,6 @@ body {
 .hero-pill:focus-visible {
   border-color: var(--nflx-accent);
   color: var(--nflx-accent);
-}
-
-/* TV / news / film icon inside the parent pill (same icons as search suggestions). */
-.hero-pill__icon {
-  width: 1.1em;
-  height: 1.1em;
-  margin-right: 6px;
-  font-size: 1.1em;
-  line-height: 1;
 }
 
 .hero-meta {

@@ -33,18 +33,21 @@
         <p class="billboard__eyebrow">
           <span class="billboard__live" aria-hidden="true"></span>
           <span class="billboard__eyebrow-text">Now featuring</span>
-          <!-- HERO-KND-001: news reports, TV episodes and films say what they are. Podcasts show nothing extra. -->
-          <app-content-kind-badge [kind]="feature.contentKind" [separator]="true" />
         </p>
-        <!-- A film has no parent page, so it has no pill: the eyebrow already says Film. -->
-        @if (feature.parentLink; as parent) {
+        <!-- HERO-KND-001: kind badge + series pill share one row (same as the episode-page hero).
+             Film has a badge and no parent pill; podcast has a pill and no badge. -->
+        @if (feature.parentLink || showsSeriesKindRow(feature)) {
         <p class="hero-show">
-          <a class="hero-pill" [routerLink]="parent">
-            @if (kindIcon(feature); as icon) {
-            <mat-icon class="hero-pill__icon" aria-hidden="true">{{ icon }}</mat-icon>
-            }
+          <!-- Omit the host for podcast: an empty inline-flex still eats the 12px flex gap. -->
+          @if (showsSeriesKindRow(feature)) {
+          <app-content-kind-badge [kind]="feature.contentKind" />
+          }
+          @if (feature.parentLink; as parent) {
+          <a class="hero-pill" [routerLink]="parent"
+            [attr.title]="displayCatalogName(feature.podcastName)">
             {{ displayCatalogName(feature.podcastName) }}
           </a>
+          }
         </p>
         }
         <!-- HERO-TTL-001: the title opens the episode page (where More info used to go). -->

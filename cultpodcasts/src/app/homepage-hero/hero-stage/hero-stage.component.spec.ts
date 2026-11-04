@@ -101,6 +101,9 @@ describe('HeroStageComponent', () => {
     expect(stageSass).toMatch(/@media screen and \(min-width: 1280px\)[\s\S]*?:host\(\.has-edge-extend\.is-kenburns\) \.billboard__stage-motion\n\s+animation: nflx-ken-burns/);
     // Stacked framed art: plain gutters, no blurred edge fill.
     expect(stageSass).toMatch(/@media screen and \(max-width: 1280px\)\n\s+:host-context\(\.billboard\.has-art-aspect\)[\s\S]*?\.billboard__stage-edge\n\s+display: none/);
+    // Firefox: no scaleX(50)+tiny blur (horizontal streaks); soft wash instead.
+    expect(stageSass).toMatch(/@supports \(-moz-appearance: none\)[\s\S]*?transform: none/);
+    expect(stageSass).toMatch(/@supports \(-moz-appearance: none\)[\s\S]*?blur\(36px\)/);
     // Dialog scroll-lock freezes leftover motion.
     expect(stageSass).toMatch(/:host-context\(\.cdk-global-scrollblock\)[\s\S]*?animation-play-state: paused/);
   });

@@ -168,7 +168,8 @@ async function expectToggleVisible(page: Page, when: string): Promise<void> {
 		return { top: b.top, bottom: b.bottom, vh: window.innerHeight, onTop: !!hit && button.contains(hit) };
 	});
 	expect(r.top, `${when}: chevron above the viewport`).toBeGreaterThanOrEqual(0);
-	expect(r.bottom, `${when}: chevron below the viewport`).toBeLessThanOrEqual(r.vh);
+	// 1px slack: getBoundingClientRect can sit a fraction past innerHeight (subpixel).
+	expect(r.bottom, `${when}: chevron below the viewport`).toBeLessThanOrEqual(r.vh + 1);
 	expect(r.onTop, `${when}: chevron covered`).toBe(true);
 }
 
@@ -568,7 +569,7 @@ test.describe("homepage hero description", () => {
 	] as const;
 	for (const layout of layouts) {
 		for (const k of kinds) {
-			test(`${layout.name}: a ${k.kind} hero links to ${k.root} with its short id and says ${k.label} in the eyebrow (HERO-KND-001)`, async ({ page }) => {
+			test(`${layout.name}: a ${k.kind} hero links to ${k.root} with its short id and puts ${k.label} on the series row (HERO-KND-001)`, async ({ page }) => {
 				await page.setViewportSize({ width: layout.width, height: layout.height });
 				await fakeApi(page, SHORT_DESC);
 				// Every slide is this kind, so whichever the time bucket features is one.
@@ -595,33 +596,72 @@ test.describe("homepage hero description", () => {
 				await expect(page.locator(`a[href^="/podcast/"]`)).toHaveCount(0);
 
 				const eyebrow = page.locator(".billboard__eyebrow");
-				const badge = eyebrow.locator(".kind-badge");
+				await expect(eyebrow).toHaveText(/Now featuring/);
+				await expect(eyebrow.locator(".kind-badge")).toHaveCount(0);
+
+				const show = page.locator(".hero-show");
+				const badge = show.locator(".kind-badge");
 				await expect(badge).toBeVisible();
 				await expect(badge.locator("mat-icon")).toHaveText(k.icon);
 				await expect(badge).toContainText(k.label);
-				const geo = await eyebrow.evaluate((el) => {
-					const text = el.querySelector(".billboard__eyebrow-text")!.getBoundingClientRect();
-					const badgeBox = el.querySelector(".kind-badge")!.getBoundingClientRect();
-					const icon = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+				const geo = await page.evaluate(() => {
+					const showEl = document.querySelector(".hero-show") as HTMLElement;
+					const eyebrowEl = document.querySelector(".billboard__eyebrow") as HTMLElement;
+					const copyEl = document.querySelector(".billboard__copy") as HTMLElement;
+					const cs = getComputedStyle(showEl);
+					const showBox = showEl.getBoundingClientRect();
+					const eyebrowBox = eyebrowEl.getBoundingClientRect();
+					const badgeBox = showEl.querySelector(".kind-badge")!.getBoundingClientRect();
+					const icon = showEl.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+					const pill = showEl.querySelector("a.hero-pill") as HTMLElement | null;
+					const pillBox = pill?.getBoundingClientRect();
+					const pillCs = pill ? getComputedStyle(pill) : null;
 					return {
-						fontSize: parseFloat(getComputedStyle(el).fontSize),
-						textTop: text.top, textMid: (text.top + text.bottom) / 2,
+						display: cs.display,
+						gap: cs.gap,
+						fontSize: parseFloat(cs.fontSize),
+						copyDisplay: getComputedStyle(copyEl).display,
+						copyFlexDirection: getComputedStyle(copyEl).flexDirection,
+						eyebrowDisplay: getComputedStyle(eyebrowEl).display,
+						eyebrowBottom: eyebrowBox.bottom,
+						showTop: showBox.top,
 						badgeTop: badgeBox.top, badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
-						iconW: icon.width, iconH: icon.height
+						badgeRight: badgeBox.right,
+						pillTop: pillBox?.top ?? null, pillMid: pillBox ? (pillBox.top + pillBox.bottom) / 2 : null,
+						pillLeft: pillBox?.left ?? null,
+						pillHeight: pillBox?.height ?? null,
+						pillWhiteSpace: pillCs?.whiteSpace ?? null,
+						pillOverflow: pillCs?.overflow ?? null,
+						iconW: icon.width, iconH: icon.height,
+						pillHasIcon: !!pill?.querySelector("mat-icon")
 					};
 				});
-				// Same row as "Now featuring": a wrapped badge would start a whole line (> 1 font-size) lower.
-				expect(Math.abs(geo.badgeTop - geo.textTop), JSON.stringify(geo)).toBeLessThan(geo.fontSize);
-				expect(Math.abs(geo.badgeMid - geo.textMid), JSON.stringify(geo)).toBeLessThanOrEqual(3);
-				// The icon box is 1.25em of the eyebrow, not MatIcon's default 24x24.
-				expect(geo.iconW, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
-				expect(geo.iconH, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
-				expect(geo.iconH).toBeLessThan(24);
+				expect(geo.pillHasIcon, JSON.stringify(geo)).toBe(false);
+				expect(geo.display, JSON.stringify(geo)).toBe("flex");
+				// Firefox-safe stack: copy is a column flex; eyebrow is block flex (not inline-flex).
+				expect(geo.copyDisplay, JSON.stringify(geo)).toBe("flex");
+				expect(geo.copyFlexDirection, JSON.stringify(geo)).toBe("column");
+				expect(geo.eyebrowDisplay, JSON.stringify(geo)).toBe("flex");
+				// Eyebrow stacks above the series row (not beside it).
+				// 1px slack: same spirit as the chevron viewport assert.
+				expect(geo.showTop, JSON.stringify(geo)).toBeGreaterThanOrEqual(geo.eyebrowBottom - 1);
 				if (k.parent) {
 					await expect(page.locator("a.hero-pill")).toHaveAttribute("href", `${k.root}/${encodeURIComponent(k.parent)}`);
+					await expect(page.locator("a.hero-pill")).toHaveAttribute("title", k.parent);
+					// HERO-SER: one row, centred, 12px gap, single-line pill (no Firefox wrap).
+					expect(Math.abs(geo.badgeTop - (geo.pillTop as number)), JSON.stringify(geo)).toBeLessThan(geo.fontSize);
+					expect(Math.abs(geo.badgeMid - (geo.pillMid as number)), JSON.stringify(geo)).toBeLessThanOrEqual(3);
+					expect((geo.pillLeft as number) - geo.badgeRight, JSON.stringify(geo)).toBeGreaterThanOrEqual(11);
+					expect((geo.pillLeft as number) - geo.badgeRight, JSON.stringify(geo)).toBeLessThanOrEqual(13);
+					expect(geo.pillWhiteSpace, JSON.stringify(geo)).toBe("nowrap");
+					expect(geo.pillHeight!, JSON.stringify(geo)).toBeLessThan(geo.fontSize * 2.5);
 				} else {
 					await expect(page.locator(".hero-pill")).toHaveCount(0);
 				}
+				// The icon box is 1.25em of the series row, not MatIcon's default 24x24.
+				expect(geo.iconW, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+				expect(geo.iconH, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
+				expect(geo.iconH).toBeLessThan(24);
 				if (shots) {
 					await page.screenshot({ path: `${shots}/hero-${layout.name}-kind-${k.kind}.png` });
 				}

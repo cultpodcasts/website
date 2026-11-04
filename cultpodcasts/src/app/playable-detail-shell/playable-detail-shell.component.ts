@@ -34,6 +34,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
 import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
+import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 
 interface SubjectRail {
@@ -108,6 +109,8 @@ export class PlayableDetailShellComponent {
     const ep = this.playable();
     return catalogueParentLink(ep) ?? (this.podcastName() ? ["/podcast", this.podcastName()] : null);
   });
+  /** News / TV / film only — empty podcast host must not sit in the series flex row. */
+  protected readonly showsKindBadge = computed(() => contentKindIcon(this.playable()?.contentKind) != null);
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 

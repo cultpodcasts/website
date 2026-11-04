@@ -75,6 +75,21 @@
     filter: blur(1.5px) saturate(1.2) brightness(0.95)
     transform: translateZ(0)
 
+// Same Firefox streak fix as homepage `.billboard__stage-edge` (HERO stage).
+@supports (-moz-appearance: none)
+    .episode-backdrop__edge--left .episode-backdrop__edge-strip,
+    .episode-backdrop__edge--right .episode-backdrop__edge-strip
+        width: 100%
+        left: 0
+        right: 0
+        transform: none
+    .episode-backdrop__edge--left .episode-backdrop__edge-sample,
+    .episode-backdrop__edge--right .episode-backdrop__edge-sample
+        filter: blur(36px) saturate(1.15) brightness(0.92)
+        background-size: cover
+        background-position: center
+        transform: scale(1.25)
+
 .episode-backdrop__edge--left
     left: 0
     .episode-backdrop__edge-strip
@@ -267,18 +282,8 @@
         max-width: 640px
 
 // Podcast pill and date/duration meta are shared with the homepage billboard
-// (.hero-show / .hero-pill / .hero-meta in styles.scss). Episode-only: kind badge
-// (display:contents) + parent pill share one flex row; badge inherits this type
-// so the 1.25em icon matches the pill scale (#561 — no new global styles).
-.episode-hero .hero-show
-    display: inline-flex
-    align-items: center
-    gap: 10px
-    font-size: 0.8rem
-    font-weight: 700
-    letter-spacing: 0.04em
-    text-transform: uppercase
-    color: var(--nflx-accent)
+// (.hero-show / .hero-pill / .hero-meta in styles.scss). Series-row layout:
+// docs/hero-series-row.md (HERO-SER-*).
 
 .episode-hero__title
     margin: 0 0 12px

@@ -22,27 +22,20 @@ describe('ContentKindBadgeComponent (HERO-KND-001)', () => {
       expect(badge.querySelector('mat-icon')?.textContent?.trim()).toBe(icon);
       expect(badge.querySelector('mat-icon')?.getAttribute('aria-hidden')).toBe('true');
       expect(badge.textContent?.replace(icon, '').trim()).toBe(label);
-      expect(el().querySelector('.kind-badge__sep')).toBeNull();
     });
   }
 
   for (const kind of [undefined, null, '', 'Episode', 'Unknown']) {
     it(`renders nothing for ${JSON.stringify(kind)}`, () => {
       fixture.componentRef.setInput('kind', kind);
-      fixture.componentRef.setInput('separator', true);
       fixture.detectChanges();
       expect(el().querySelector('.kind-badge')).toBeNull();
-      expect(el().querySelector('.kind-badge__sep')).toBeNull();
     });
   }
 
-  it('puts an aria-hidden middle dot in front when separator is set', () => {
+  it('HERO-SER-007: host is a real inline-flex item (not display:contents)', () => {
     fixture.componentRef.setInput('kind', 'NewsReport');
-    fixture.componentRef.setInput('separator', true);
     fixture.detectChanges();
-    const sep = el().querySelector('.kind-badge__sep') as HTMLElement;
-    expect(sep.textContent).toBe('\u00b7');
-    expect(sep.getAttribute('aria-hidden')).toBe('true');
-    expect(sep.nextElementSibling?.classList.contains('kind-badge')).toBe(true);
+    expect(getComputedStyle(el()).display).toBe('inline-flex');
   });
 });

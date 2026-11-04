@@ -132,9 +132,12 @@ export class HomepageHeroComponent {
 
   protected readonly displayCatalogName = displayCatalogName;
 
-  /** TV / news / film icon in the parent pill (undefined for a podcast episode). */
-  protected kindIcon(slide: HomepageEpisode): string | undefined {
-    return contentKindIcon(slide.contentKind);
+  /**
+   * Whether the slide needs a series row for its kind badge (film / TV / news).
+   * Podcasts rely on `parentLink` alone; film has a badge and no parent pill.
+   */
+  protected showsSeriesKindRow(slide: HomepageEpisode): boolean {
+    return contentKindIcon(slide.contentKind) != null;
   }
 
 
