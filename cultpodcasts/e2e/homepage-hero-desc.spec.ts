@@ -168,7 +168,8 @@ async function expectToggleVisible(page: Page, when: string): Promise<void> {
 		return { top: b.top, bottom: b.bottom, vh: window.innerHeight, onTop: !!hit && button.contains(hit) };
 	});
 	expect(r.top, `${when}: chevron above the viewport`).toBeGreaterThanOrEqual(0);
-	expect(r.bottom, `${when}: chevron below the viewport`).toBeLessThanOrEqual(r.vh);
+	// 1px slack: getBoundingClientRect can sit a fraction past innerHeight (subpixel).
+	expect(r.bottom, `${when}: chevron below the viewport`).toBeLessThanOrEqual(r.vh + 1);
 	expect(r.onTop, `${when}: chevron covered`).toBe(true);
 }
 
