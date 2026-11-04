@@ -149,6 +149,7 @@ describe('PodcastEpisodeComponent', () => {
     expect(query('.kind-badge')).toBeNull();
     expect(pill!.textContent?.trim()).toBe('Show A');
     expect(pill!.getAttribute('href')).toBe('/podcast/Show%20A');
+    expect(pill!.getAttribute('title')).toBe('Show A');
     expect(title!.textContent?.trim()).toBe('Episode A');
     expect(metaText).toContain('31 Jul 2026');
     expect(metaText).toContain('1:06:12');

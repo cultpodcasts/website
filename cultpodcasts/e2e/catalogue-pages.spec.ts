@@ -101,28 +101,52 @@ test.describe("catalogue pages with a faked search API", () => {
 		["NewsReport", "Desk", "Bulletin", "/news", "newspaper", "News"],
 		["TvShowEpisode", "Nightly", "Part", "/tv", "live_tv", "TV"],
 	] as const) {
-		test(`a ${kind} episode hero shows the ${label} kind badge with a non-24px icon`, async ({ page }) => {
+		test(`a ${kind} episode hero shows the ${label} kind badge beside a single-line series pill`, async ({ page }) => {
 			const shortId = guids.toCatalogueShortId(id, kind);
 			await page.goto(`${root}/${encodeURIComponent(parent)}/${shortId}`);
 			await expect(page.getByRole("heading", { name: title })).toBeVisible();
 
 			const show = page.locator(".hero-show");
 			const badge = show.locator(".kind-badge");
+			const pill = show.locator("a.hero-pill");
 			await expect(badge).toBeVisible();
 			await expect(badge.locator("mat-icon")).toHaveText(icon);
 			await expect(badge).toContainText(label);
+			await expect(pill).toHaveAttribute("href", `${root}/${encodeURIComponent(parent)}`);
+			await expect(pill).toHaveAttribute("title", parent);
 
 			const geo = await show.evaluate((el) => {
+				const cs = getComputedStyle(el);
+				const badgeBox = el.querySelector(".kind-badge")!.getBoundingClientRect();
 				const iconBox = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
+				const pillEl = el.querySelector("a.hero-pill") as HTMLElement;
+				const pillBox = pillEl.getBoundingClientRect();
+				const pillCs = getComputedStyle(pillEl);
 				return {
-					fontSize: parseFloat(getComputedStyle(el).fontSize),
+					display: cs.display,
+					fontSize: parseFloat(cs.fontSize),
 					iconW: iconBox.width,
 					iconH: iconBox.height,
+					badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
+					badgeRight: badgeBox.right,
+					pillMid: (pillBox.top + pillBox.bottom) / 2,
+					pillLeft: pillBox.left,
+					pillHeight: pillBox.height,
+					pillWhiteSpace: pillCs.whiteSpace,
+					overlapX: Math.max(0, Math.min(badgeBox.right, pillBox.right) - Math.max(badgeBox.left, pillBox.left)),
 				};
 			});
+			expect(geo.display, JSON.stringify(geo)).toBe("flex");
 			expect(geo.iconW, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
 			expect(geo.iconH, JSON.stringify(geo)).toBeCloseTo(geo.fontSize * 1.25, 0);
 			expect(geo.iconH).toBeLessThan(24);
+			// HERO-SER: centred, 12px gap, single-line pill (Firefox must not wrap the label).
+			expect(Math.abs(geo.badgeMid - geo.pillMid), JSON.stringify(geo)).toBeLessThanOrEqual(3);
+			expect(geo.pillLeft - geo.badgeRight, JSON.stringify(geo)).toBeGreaterThanOrEqual(11);
+			expect(geo.pillLeft - geo.badgeRight, JSON.stringify(geo)).toBeLessThanOrEqual(13);
+			expect(geo.overlapX, JSON.stringify(geo)).toBe(0);
+			expect(geo.pillWhiteSpace, JSON.stringify(geo)).toBe("nowrap");
+			expect(geo.pillHeight, JSON.stringify(geo)).toBeLessThan(geo.fontSize * 2.5);
 		});
 	}
 });

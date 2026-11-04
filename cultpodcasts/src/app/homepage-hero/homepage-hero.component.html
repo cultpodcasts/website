@@ -40,7 +40,8 @@
         <p class="hero-show">
           <app-content-kind-badge [kind]="feature.contentKind" />
           @if (feature.parentLink; as parent) {
-          <a class="hero-pill" [routerLink]="parent">
+          <a class="hero-pill" [routerLink]="parent"
+            [attr.title]="displayCatalogName(feature.podcastName)">
             {{ displayCatalogName(feature.podcastName) }}
           </a>
           }

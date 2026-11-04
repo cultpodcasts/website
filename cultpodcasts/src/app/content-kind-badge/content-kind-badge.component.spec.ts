@@ -45,4 +45,10 @@ describe('ContentKindBadgeComponent (HERO-KND-001)', () => {
     expect(sep.getAttribute('aria-hidden')).toBe('true');
     expect(sep.nextElementSibling?.classList.contains('kind-badge')).toBe(true);
   });
+
+  it('HERO-SER-007: host is a real inline-flex item (not display:contents)', () => {
+    fixture.componentRef.setInput('kind', 'NewsReport');
+    fixture.detectChanges();
+    expect(getComputedStyle(el()).display).toBe('inline-flex');
+  });
 });

@@ -54,7 +54,8 @@
         <!-- HERO-KND-001 follow-up (#561): news / TV / film say what they are. Podcast renders nothing. -->
         <app-content-kind-badge [kind]="playable().contentKind" />
         @if (parentLink(); as parent) {
-        <a class="hero-pill" [routerLink]="parent">
+        <a class="hero-pill" [routerLink]="parent"
+          [attr.title]="displayCatalogName(showName())">
           {{ displayCatalogName(showName()) }}
         </a>
         }

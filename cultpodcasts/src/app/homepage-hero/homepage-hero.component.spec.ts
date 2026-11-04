@@ -208,7 +208,7 @@ describe('HomepageHeroComponent', () => {
     expect(component['featured']()?.id).toBe('a');
   });
 
-  it('keeps Now featuring above a podcast pill, then date and duration in the meta line', () => {
+  it('HERO-SER: keeps Now featuring above a podcast pill (title on pill), then date and duration in the meta line', () => {
     const root = fixture.nativeElement as HTMLElement;
     const eyebrow = root.querySelector('.billboard__eyebrow');
     const pill = root.querySelector('a.hero-pill') as HTMLAnchorElement | null;
@@ -224,6 +224,7 @@ describe('HomepageHeroComponent', () => {
     expect(eyebrow!.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
     expect(pill!.textContent?.trim()).toBe('Show a');
     expect(pill!.getAttribute('href')).toBe('/podcast/Show%20a');
+    expect(pill!.getAttribute('title')).toBe('Show a');
     expect(title!.textContent?.trim()).toBe('Episode a');
     expect(metaText).toContain('31 Jul 2026');
     expect(metaText).toContain('1:00:00');

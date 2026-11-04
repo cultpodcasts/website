@@ -605,24 +605,39 @@ test.describe("homepage hero description", () => {
 				await expect(badge.locator("mat-icon")).toHaveText(k.icon);
 				await expect(badge).toContainText(k.label);
 				const geo = await show.evaluate((el) => {
+					const cs = getComputedStyle(el);
 					const badgeBox = el.querySelector(".kind-badge")!.getBoundingClientRect();
 					const icon = el.querySelector(".kind-badge__icon")!.getBoundingClientRect();
-					const pill = el.querySelector("a.hero-pill");
+					const pill = el.querySelector("a.hero-pill") as HTMLElement | null;
 					const pillBox = pill?.getBoundingClientRect();
+					const pillCs = pill ? getComputedStyle(pill) : null;
 					return {
-						fontSize: parseFloat(getComputedStyle(el).fontSize),
+						display: cs.display,
+						gap: cs.gap,
+						fontSize: parseFloat(cs.fontSize),
 						badgeTop: badgeBox.top, badgeMid: (badgeBox.top + badgeBox.bottom) / 2,
+						badgeRight: badgeBox.right,
 						pillTop: pillBox?.top ?? null, pillMid: pillBox ? (pillBox.top + pillBox.bottom) / 2 : null,
+						pillLeft: pillBox?.left ?? null,
+						pillHeight: pillBox?.height ?? null,
+						pillWhiteSpace: pillCs?.whiteSpace ?? null,
+						pillOverflow: pillCs?.overflow ?? null,
 						iconW: icon.width, iconH: icon.height,
 						pillHasIcon: !!pill?.querySelector("mat-icon")
 					};
 				});
 				expect(geo.pillHasIcon, JSON.stringify(geo)).toBe(false);
+				expect(geo.display, JSON.stringify(geo)).toBe("flex");
 				if (k.parent) {
 					await expect(page.locator("a.hero-pill")).toHaveAttribute("href", `${k.root}/${encodeURIComponent(k.parent)}`);
-					// Kind badge and series pill share one row (wrapped badge would be >1 font-size lower).
+					await expect(page.locator("a.hero-pill")).toHaveAttribute("title", k.parent);
+					// HERO-SER: one row, centred, 12px gap, single-line pill (no Firefox wrap).
 					expect(Math.abs(geo.badgeTop - (geo.pillTop as number)), JSON.stringify(geo)).toBeLessThan(geo.fontSize);
 					expect(Math.abs(geo.badgeMid - (geo.pillMid as number)), JSON.stringify(geo)).toBeLessThanOrEqual(3);
+					expect((geo.pillLeft as number) - geo.badgeRight, JSON.stringify(geo)).toBeGreaterThanOrEqual(11);
+					expect((geo.pillLeft as number) - geo.badgeRight, JSON.stringify(geo)).toBeLessThanOrEqual(13);
+					expect(geo.pillWhiteSpace, JSON.stringify(geo)).toBe("nowrap");
+					expect(geo.pillHeight!, JSON.stringify(geo)).toBeLessThan(geo.fontSize * 2.5);
 				} else {
 					await expect(page.locator(".hero-pill")).toHaveCount(0);
 				}
