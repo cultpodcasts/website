@@ -38,7 +38,10 @@
              Film has a badge and no parent pill; podcast has a pill and no badge. -->
         @if (feature.parentLink || showsSeriesKindRow(feature)) {
         <p class="hero-show">
+          <!-- Omit the host for podcast: an empty inline-flex still eats the 12px flex gap. -->
+          @if (showsSeriesKindRow(feature)) {
           <app-content-kind-badge [kind]="feature.contentKind" />
+          }
           @if (feature.parentLink; as parent) {
           <a class="hero-pill" [routerLink]="parent"
             [attr.title]="displayCatalogName(feature.podcastName)">

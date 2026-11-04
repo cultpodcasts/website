@@ -62,6 +62,23 @@
     filter: blur(1.5px) saturate(1.2) brightness(0.95)
     transform: translateZ(0)
 
+// Firefox: scaleX(50)+tiny blur composites as hard horizontal streaks under the
+// copy card. Use a soft full-edge wash instead (no extreme scale).
+// Specificity must beat `.billboard__stage-edge--left/right .…-strip`.
+@supports (-moz-appearance: none)
+    .billboard__stage-edge--left .billboard__stage-edge-strip,
+    .billboard__stage-edge--right .billboard__stage-edge-strip
+        width: 100%
+        left: 0
+        right: 0
+        transform: none
+    .billboard__stage-edge--left .billboard__stage-edge-sample,
+    .billboard__stage-edge--right .billboard__stage-edge-sample
+        filter: blur(36px) saturate(1.15) brightness(0.92)
+        background-size: cover
+        background-position: center
+        transform: scale(1.25)
+
 .billboard__stage-edge--left
     left: 0
     .billboard__stage-edge-strip

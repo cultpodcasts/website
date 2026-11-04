@@ -31,11 +31,13 @@ Homepage only: an eyebrow (“Now featuring”) sits **above** this row on its o
 
 ```
 [eyebrow — homepage only]
-        ↕ 8px (eyebrow margin-bottom)
+        ↕ 12px (eyebrow margin-bottom)
 [.kind-badge]  ↔12px↔  [series pill …]
         ↕ 10px (.hero-show margin-bottom)
 [title]
 ```
+
+Podcast: do **not** leave an empty `app-content-kind-badge` host in the row — a zero-size `inline-flex` still consumes the 12px flex gap and indents the pill.
 
 Subject chips below the description keep their own **8px** wrap gap — independent of the 12px series-row gap.
 

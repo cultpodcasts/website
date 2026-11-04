@@ -75,6 +75,21 @@
     filter: blur(1.5px) saturate(1.2) brightness(0.95)
     transform: translateZ(0)
 
+// Same Firefox streak fix as homepage `.billboard__stage-edge` (HERO stage).
+@supports (-moz-appearance: none)
+    .episode-backdrop__edge--left .episode-backdrop__edge-strip,
+    .episode-backdrop__edge--right .episode-backdrop__edge-strip
+        width: 100%
+        left: 0
+        right: 0
+        transform: none
+    .episode-backdrop__edge--left .episode-backdrop__edge-sample,
+    .episode-backdrop__edge--right .episode-backdrop__edge-sample
+        filter: blur(36px) saturate(1.15) brightness(0.92)
+        background-size: cover
+        background-position: center
+        transform: scale(1.25)
+
 .episode-backdrop__edge--left
     left: 0
     .episode-backdrop__edge-strip

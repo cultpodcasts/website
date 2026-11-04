@@ -147,6 +147,7 @@ describe('PodcastEpisodeComponent', () => {
 
     expect(query('.billboard__eyebrow')).toBeNull();
     expect(query('.kind-badge')).toBeNull();
+    expect(query('app-content-kind-badge')).toBeNull();
     expect(pill!.textContent?.trim()).toBe('Show A');
     expect(pill!.getAttribute('href')).toBe('/podcast/Show%20A');
     expect(pill!.getAttribute('title')).toBe('Show A');
@@ -182,6 +183,7 @@ describe('PodcastEpisodeComponent', () => {
     fixture.componentRef.setInput('episode', ep({ contentKind: 'Episode' }));
     fixture.detectChanges();
     expect(query('.kind-badge')).toBeNull();
+    expect(query('app-content-kind-badge')).toBeNull();
   });
 
   function dialogOpen() {

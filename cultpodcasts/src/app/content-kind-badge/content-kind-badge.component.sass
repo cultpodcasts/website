@@ -8,6 +8,11 @@
     white-space: nowrap
     max-width: 100%
 
+// Podcast / unknown kind render no children. Hide the host so it cannot eat the
+// series-row flex gap (parents should also omit the component).
+:host:empty
+    display: none
+
 .kind-badge__sep
     opacity: 0.7
 

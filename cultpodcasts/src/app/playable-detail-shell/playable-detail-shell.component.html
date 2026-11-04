@@ -51,8 +51,10 @@
 
     <div class="episode-hero">
       <p class="hero-show">
-        <!-- HERO-KND-001 follow-up (#561): news / TV / film say what they are. Podcast renders nothing. -->
+        <!-- HERO-KND-001: news / TV / film only. Omit empty podcast host (eats flex gap). -->
+        @if (showsKindBadge()) {
         <app-content-kind-badge [kind]="playable().contentKind" />
+        }
         @if (parentLink(); as parent) {
         <a class="hero-pill" [routerLink]="parent"
           [attr.title]="displayCatalogName(showName())">

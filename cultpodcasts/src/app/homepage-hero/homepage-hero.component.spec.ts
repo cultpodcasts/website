@@ -200,6 +200,8 @@ describe('HomepageHeroComponent', () => {
     const pill = el.querySelector('a.hero-pill') as HTMLAnchorElement;
     expect(pill.querySelector('mat-icon')).toBeNull();
     expect(el.querySelector('.kind-badge')).toBeNull();
+    // Empty host would still eat the series-row flex gap and indent the pill.
+    expect(el.querySelector('app-content-kind-badge')).toBeNull();
     expect(el.querySelector('.billboard__eyebrow')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Now featuring');
   });
 

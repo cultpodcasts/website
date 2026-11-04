@@ -76,5 +76,6 @@ describe('hero series row (HERO-SER-*)', () => {
     expect(badgeSass).toMatch(/white-space: nowrap/);
     // Property form only — comments may mention contents as forbidden.
     expect(badgeSass).not.toMatch(/^\s*display:\s*contents\b/m);
+    expect(badgeSass).toMatch(/:host:empty\n\s+display: none/);
   });
 });
