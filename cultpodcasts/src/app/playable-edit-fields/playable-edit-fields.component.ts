@@ -28,6 +28,7 @@ import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.compo
 import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
 import {
   applyGuestSelection,
+  episodeCataloguePeople,
   noCompareFunction,
   openExternalUrl,
   personLabel,
@@ -152,7 +153,11 @@ export class PlayableEditFieldsComponent implements OnInit {
   protected readonly remainingGuestSuggestions = signal<PersonMatch[]>([]);
 
   ngOnInit(): void {
-    this.allPeople = [...this.people()];
+    this.allPeople = episodeCataloguePeople(
+      this.people(),
+      this.guestPeople(),
+      this.guestSuggestions()
+    );
     this.remainingGuestSuggestions.set([...(this.guestSuggestions() ?? [])]);
     this.regroupSubjects();
     this.regroupGuests();
@@ -465,6 +470,7 @@ export class PlayableEditFieldsComponent implements OnInit {
       currentGuests: this.form().controls.guests.value,
       personName,
       person: created,
+      episodeGuestPeople: this.guestPeople(),
       filterTerm: ''
     });
     this.allPeople = result.allPeople;

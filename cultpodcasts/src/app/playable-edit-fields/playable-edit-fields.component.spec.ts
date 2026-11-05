@@ -282,3 +282,70 @@ describe('PlayableEditFieldsComponent Bluesky posted checkbox', () => {
     expect(component.pendingUnBluesky()).toBe(false);
   });
 });
+
+type GuestSuggestionInternals = {
+  addSuggestedGuest(person: { id: string; name: string }): void;
+  remainingGuestSuggestions(): { person: { id: string; name: string } }[];
+  otherPeople(): { id: string; name: string }[];
+};
+
+describe('PlayableEditFieldsComponent guest suggestion chips', () => {
+  let fixture: ComponentFixture<PlayableEditFieldsComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [PlayableEditFieldsComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: CurationSubmitService,
+          useValue: {
+            lookupCatalogueIdentity: vi.fn(),
+            patchCatalogueParent: vi.fn(),
+            getPeople: () => of([])
+          }
+        },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: MatDialog, useValue: { open: vi.fn() } }
+      ]
+    }).compileComponents();
+  });
+
+  it('Add suggestion chip appends guests, marks dirty, and clears that remaining suggestion', () => {
+    const form = buildPlayableEditForm({
+      id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+      name: 'Synthetic Film',
+      title: 'Synthetic Film',
+      description: '',
+      release: '2021',
+      duration: '1:30:00',
+      publisher: 'Studio',
+      imdbId: null,
+      tmdbId: null,
+      guests: ['Ann Example']
+    } as FilmDto, 'film');
+    const suggested = { id: 'person-suggested', name: 'Chris Suggested' };
+    fixture = TestBed.createComponent(PlayableEditFieldsComponent);
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('parentLabel', 'Film');
+    fixture.componentRef.setInput('variant', 'film');
+    fixture.componentRef.setInput('subjectNames', []);
+    fixture.componentRef.setInput('people', [{ id: 'person-ann', name: 'Ann Example' }]);
+    fixture.componentRef.setInput('guestPeople', [{ id: 'person-ann', name: 'Ann Example' }]);
+    fixture.componentRef.setInput('guestSuggestions', [
+      { person: suggested, matchResults: [{ term: 'Chris', matches: 1 }] }
+    ]);
+    fixture.componentRef.setInput('languages', {});
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance as unknown as GuestSuggestionInternals;
+    expect(component.remainingGuestSuggestions()).toHaveLength(1);
+    expect(component.otherPeople().some((p) => p.name === 'Chris Suggested')).toBe(true);
+
+    component.addSuggestedGuest(suggested);
+
+    expect(form.controls.guests.value).toEqual(['Ann Example', 'Chris Suggested']);
+    expect(form.controls.guests.dirty).toBe(true);
+    expect(component.remainingGuestSuggestions()).toEqual([]);
+  });
+});
