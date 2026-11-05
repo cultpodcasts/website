@@ -6,6 +6,12 @@ import { Subject, of, throwError } from 'rxjs';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { CurationSubmitService } from '../curation-submit.service';
 import { PodcastKindTransferResponse } from '../podcast-kind-transfer-response.interface';
+import {
+  YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+  YOU_TUBE_PLAYLIST_NOT_FOUND,
+  YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
+  YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
+} from '../youtube-playlist-edit-error';
 import { TransferPodcastKindSendComponent } from './transfer-podcast-kind-send.component';
 
 describe('TransferPodcastKindSendComponent', () => {
@@ -85,6 +91,82 @@ describe('TransferPodcastKindSendComponent', () => {
     expect(dialogRef.close).not.toHaveBeenCalled();
     expect(component.sendError()).toBe(true);
     expect(component.isSending()).toBe(false);
+    errorSpy.mockRestore();
+  });
+
+  it('surfaces playlist lookup-failed 503 via youtubePlaylistEditError without polling', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 503,
+      statusText: 'Service Unavailable',
+      error: {
+        error: 'Could not check YouTube playlist',
+        code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+        retryable: true
+      }
+    })));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
+    expect(getPodcast).not.toHaveBeenCalled();
+    expect(component.retryable()).toBe(true);
+    expect(component.errorMessage()).toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
+    errorSpy.mockRestore();
+  });
+
+  it('offers Try again on lookup-failed 503 and re-POSTs the same transfer', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind
+      .mockReturnValueOnce(throwError(() => new HttpErrorResponse({
+        status: 503,
+        statusText: 'Service Unavailable',
+        error: {
+          error: 'Could not check YouTube playlist',
+          code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+          retryable: true
+        }
+      })))
+      .mockReturnValueOnce(of({
+        status: 202,
+        body: { parentId: podcastId, targetKind: CatalogueParentKind.TvShow }
+      }));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+    expect(postPodcastKind).toHaveBeenCalledTimes(1);
+    expect(postPodcastKind).toHaveBeenCalledWith(podcastId, CatalogueParentKind.TvShow);
+
+    component.retry();
+    await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
+
+    expect(postPodcastKind).toHaveBeenCalledTimes(2);
+    expect(postPodcastKind).toHaveBeenNthCalledWith(2, podcastId, CatalogueParentKind.TvShow);
+    expect(getCatalogueParent).not.toHaveBeenCalled();
+    expectTransferredClose({ parentId: podcastId, targetKind: CatalogueParentKind.TvShow });
+    errorSpy.mockRestore();
+  });
+
+  it('surfaces playlist not-found 400 without treating it as transfer recovery', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: {
+        error: "YouTube playlist 'PLx' was not found (it does not exist or is private).",
+        code: YOU_TUBE_PLAYLIST_NOT_FOUND
+      }
+    })));
+
+    component.submit(podcastId, CatalogueParentKind.NewsOrganisation);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
+    expect(component.retryable()).toBe(false);
+    expect(component.errorMessage()).toBe(YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE);
     errorSpy.mockRestore();
   });
 

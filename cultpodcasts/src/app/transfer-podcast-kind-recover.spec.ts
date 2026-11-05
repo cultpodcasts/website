@@ -7,6 +7,10 @@ import {
   transferKindPollDelaysMs,
   TRANSFER_KIND_POLL_BUDGET_MS
 } from './transfer-podcast-kind-recover';
+import {
+  YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+  YOU_TUBE_PLAYLIST_NOT_FOUND
+} from './youtube-playlist-edit-error';
 
 describe('transfer-podcast-kind-recover', () => {
   it('builds backoff delays that sum to the ~2 minute poll budget', () => {
@@ -16,7 +20,7 @@ describe('transfer-podcast-kind-recover', () => {
     expect(delays.every(ms => ms <= 30_000)).toBe(true);
   });
 
-  it('treats network, timeout, 499 and 5xx as recoverable transport errors', () => {
+  it('treats network, timeout, 499 and plain 5xx as recoverable transport errors', () => {
     expect(isRecoverableTransferTransportError(new HttpErrorResponse({ status: 0 }))).toBe(true);
     expect(isRecoverableTransferTransportError(new HttpErrorResponse({ status: 408 }))).toBe(true);
     expect(isRecoverableTransferTransportError(new HttpErrorResponse({ status: 499 }))).toBe(true);
@@ -25,6 +29,21 @@ describe('transfer-podcast-kind-recover', () => {
     expect(isRecoverableTransferTransportError(new HttpErrorResponse({ status: 400 }))).toBe(false);
     expect(isRecoverableTransferTransportError(new HttpErrorResponse({ status: 404 }))).toBe(false);
     expect(isRecoverableTransferTransportError(new Error('boom'))).toBe(false);
+  });
+
+  it('does not treat playlist ownership ApiErrors as recoverable transport (transfer never wrote)', () => {
+    expect(isRecoverableTransferTransportError(new HttpErrorResponse({
+      status: 503,
+      error: {
+        error: 'Could not check',
+        code: YOU_TUBE_PLAYLIST_LOOKUP_FAILED,
+        retryable: true
+      }
+    }))).toBe(false);
+    expect(isRecoverableTransferTransportError(new HttpErrorResponse({
+      status: 400,
+      error: { error: 'Playlist missing', code: YOU_TUBE_PLAYLIST_NOT_FOUND }
+    }))).toBe(false);
   });
 
   it('reads transferInProgress only from a 409 body', () => {

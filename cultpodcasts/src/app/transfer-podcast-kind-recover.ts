@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
+import { youtubePlaylistEditError } from './youtube-playlist-edit-error';
 
 /** Total wait while polling an in-progress transfer (~2 minutes). */
 export const TRANSFER_KIND_POLL_BUDGET_MS = 120_000;
@@ -24,9 +25,16 @@ export function transferKindPollDelaysMs(
   return delays;
 }
 
-/** Network drop, client timeout, Cloudflare 499, or upstream 5xx / gateway timeout. */
+/**
+ * Network drop, client timeout, Cloudflare 499, or upstream 5xx / gateway timeout.
+ * Playlist ownership ApiErrors (400/503 with playlist codes, including retryable lookup-failed)
+ * are not transport recoveries — the transfer never wrote; do not poll for completion.
+ */
 export function isRecoverableTransferTransportError(error: unknown): boolean {
   if (!(error instanceof HttpErrorResponse)) {
+    return false;
+  }
+  if (youtubePlaylistEditError(error)) {
     return false;
   }
   return error.status === 0
