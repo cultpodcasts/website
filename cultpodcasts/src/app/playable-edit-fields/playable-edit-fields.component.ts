@@ -32,11 +32,13 @@ import {
   openExternalUrl,
   personLabel,
   regroupGuests,
-  regroupSubjects
+  regroupSubjects,
+  withoutGuestSuggestion
 } from '../episode-form.util';
 import { FeatureSwitch } from '../feature-switch.enum';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { Person } from '../person.interface';
+import { PersonMatch } from '../person-match.interface';
 import { normalizeHashTagControl } from '../podcast-form.util';
 import { imdbTitleUrl, PlayableEditForm, playableEditHasIdentity, PlayableEditVariant, tmdbMovieUrl, tvdbEpisodeUrl } from '../playable-edit-form.util';
 import { applySubjectFilterKey, isDesktopSubjectTypingEnabled } from '../subject-filter.util';
@@ -98,6 +100,10 @@ export class PlayableEditFieldsComponent implements OnInit {
   /** The parent's default subject, hoisted to the top like the podcast default. */
   readonly defaultSubject = input<string | null>(null);
   readonly people = input<Person[]>([]);
+  /** From playable GET: resolved people for stored guest names. */
+  readonly guestPeople = input<Person[]>([]);
+  /** From playable GET: people matched in title/description who are not already guests. */
+  readonly guestSuggestions = input<PersonMatch[]>([]);
   readonly languages = input<Record<string, string>>({});
   readonly blueskyPosted = input(false);
   /** Bold underline on the Meta tab when this create stored a detected default language. */
@@ -143,11 +149,35 @@ export class PlayableEditFieldsComponent implements OnInit {
   protected readonly selectedGuests = signal<Person[]>([]);
   protected readonly otherPeople = signal<Person[]>([]);
   protected readonly guestsFilterTerm = signal('');
+  protected readonly remainingGuestSuggestions = signal<PersonMatch[]>([]);
 
   ngOnInit(): void {
     this.allPeople = [...this.people()];
+    this.remainingGuestSuggestions.set([...(this.guestSuggestions() ?? [])]);
     this.regroupSubjects();
     this.regroupGuests();
+  }
+
+  protected addSuggestedGuest(person: Person): void {
+    if (!person?.name) {
+      return;
+    }
+    const result = applyGuestSelection({
+      allPeople: this.allPeople,
+      currentGuests: this.form().controls.guests.value,
+      personName: person.name,
+      person,
+      episodeGuestPeople: this.guestPeople(),
+      filterTerm: ''
+    });
+    this.allPeople = result.allPeople;
+    this.guestsFilterTerm.set('');
+    this.selectedGuests.set(result.selectedGuests);
+    this.otherPeople.set(result.otherPeople);
+    this.form().controls.guests.setValue(result.guests);
+    this.form().controls.guests.markAsDirty();
+    this.remainingGuestSuggestions.set(
+      withoutGuestSuggestion(this.remainingGuestSuggestions(), person.name));
   }
 
   /** Same UX as Tweeted: uncheck clears Bluesky on save (API only supports unBluesky). */
@@ -375,7 +405,11 @@ export class PlayableEditFieldsComponent implements OnInit {
   }
 
   protected regroupGuests(): void {
-    const grouped = regroupGuests(this.allPeople, undefined, this.form().controls.guests.value, this.guestsFilterTerm());
+    const grouped = regroupGuests(
+      this.allPeople,
+      this.guestPeople(),
+      this.form().controls.guests.value,
+      this.guestsFilterTerm());
     this.selectedGuests.set(grouped.selectedGuests);
     this.otherPeople.set(grouped.otherPeople);
   }

@@ -1,5 +1,7 @@
 import { EpisodeChangeResponse } from './episode-change-response.interface';
 import { FilmTrailer } from './film-trailer';
+import { Person } from './person.interface';
+import { PersonMatch } from './person-match.interface';
 
 /**
  * Curator GET body shared by `newsreport/{id}` and `tvshowepisode/{id}` (RPP `PlayableFieldsDto`).
@@ -22,8 +24,12 @@ export interface PlayableFieldsDto {
   searchTerms?: string | null;
   hashTag?: string | null;
   language?: string | null;
-  /** Guest person names (null when none). The GET has no guestPeople / guestSuggestions. */
+  /** Guest person names (null when none). */
   guests?: string[] | null;
+  /** Resolved people for `guests` (same as podcast episode GET). */
+  guestPeople?: Person[] | null;
+  /** People matched from title/description who are not already in `guests`. */
+  guestSuggestions?: PersonMatch[] | null;
   services?: Record<string, { url?: string; image?: string; lang?: string }> | null;
 }
 

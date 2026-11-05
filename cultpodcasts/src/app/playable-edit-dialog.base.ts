@@ -8,6 +8,7 @@ import { CurationSubmitService } from './curation-submit.service';
 import { mergeEpisodeSubjects } from './episode-form.util';
 import { buildEpisodeLanguageOptions } from './language-options.util';
 import { Person } from './person.interface';
+import { PersonMatch } from './person-match.interface';
 import { Subject } from './subject.interface';
 import { buildPlayableEditForm, PlayableEditForm, PlayableEditFormValue, PlayableEditVariant } from './playable-edit-form.util';
 import {
@@ -55,6 +56,8 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   readonly subjectNames = signal<string[]>([]);
   readonly defaultSubject = signal<string | null>(null);
   readonly people = signal<Person[]>([]);
+  readonly guestPeople = signal<Person[]>([]);
+  readonly guestSuggestions = signal<PersonMatch[]>([]);
   readonly languages = signal<Record<string, string>>({});
   readonly blueskyPosted = signal(false);
   readonly pendingUnBluesky = signal(false);
@@ -99,6 +102,8 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
       const { allSubjects } = mergeEpisodeSubjects(resp.dto.subjects ?? [], resp.subjects as Subject[], defaultSubject);
       this.subjectNames.set(allSubjects);
       this.people.set(resp.people ?? []);
+      this.guestPeople.set(resp.dto.guestPeople ?? []);
+      this.guestSuggestions.set(resp.dto.guestSuggestions ?? []);
       this.languages.set(buildEpisodeLanguageOptions(resp.languages ?? {}));
       this.blueskyPosted.set(!!resp.dto.blueskyPosted);
       this.pendingUnBluesky.set(false);

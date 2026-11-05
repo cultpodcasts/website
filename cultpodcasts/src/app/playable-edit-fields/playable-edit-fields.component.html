@@ -180,6 +180,17 @@
             }
         </div>
         }
+        @if (remainingGuestSuggestions().length > 0) {
+        <div class="guest-suggestions">
+            <span>Suggested from title/description:</span>
+            @for (suggestion of remainingGuestSuggestions(); track suggestion.person.id) {
+            <div class="guest-row">
+                <span>{{personLabel(suggestion.person)}} ({{suggestion.matchResults[0]?.term}})</span>
+                <button type="button" matButton="text" (click)="addSuggestedGuest(suggestion.person)">Add</button>
+            </div>
+            }
+        </div>
+        }
     </mat-tab>
     @if (identity() && f.controls.imdbId) {
     <mat-tab label="Identity">
