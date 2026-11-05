@@ -37,26 +37,10 @@ export function isRecoverableTransferTransportError(error: unknown): boolean {
   if (youtubePlaylistEditError(error)) {
     return false;
   }
-  if (isRetryableApiRefuseBody(error)) {
-    return false;
-  }
   return error.status === 0
     || error.status === 408
     || error.status === 499
     || error.status >= 500;
-}
-
-/** Intentional Api refuse with retryable:true (e.g. 503) — not a mid-write transport drop. */
-function isRetryableApiRefuseBody(error: HttpErrorResponse): boolean {
-  if (error.status < 500) {
-    return false;
-  }
-  const raw = error.error;
-  if (!raw || typeof raw !== 'object') {
-    return false;
-  }
-  const body = raw as Record<string, unknown>;
-  return body['retryable'] === true;
 }
 
 export function transferInProgressFromError(error: unknown): boolean {

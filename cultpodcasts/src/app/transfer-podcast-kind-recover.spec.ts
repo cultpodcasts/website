@@ -44,10 +44,6 @@ describe('transfer-podcast-kind-recover', () => {
       status: 400,
       error: { error: 'Playlist missing', code: YOU_TUBE_PLAYLIST_NOT_FOUND }
     }))).toBe(false);
-    expect(isRecoverableTransferTransportError(new HttpErrorResponse({
-      status: 503,
-      error: { error: 'try again', retryable: true }
-    }))).toBe(false);
   });
 
   it('reads transferInProgress only from a 409 body', () => {
