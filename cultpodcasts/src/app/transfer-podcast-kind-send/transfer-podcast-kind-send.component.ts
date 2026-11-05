@@ -17,6 +17,7 @@ import {
   transferKindPollDelaysMs
 } from '../transfer-podcast-kind-recover';
 import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
+import { youtubePlaylistEditError } from '../youtube-playlist-edit-error';
 
 @Component({
   selector: 'app-transfer-podcast-kind-send',
@@ -29,6 +30,10 @@ export class TransferPodcastKindSendComponent {
   readonly isSending = signal(true);
   readonly sendError = signal(false);
   readonly progressMessage = signal('Transferring podcast…');
+  readonly errorMessage = signal('An error occurred transferring the podcast');
+  readonly retryable = signal(false);
+  private podcastId: string | undefined;
+  private targetKind: CatalogueParentKind | undefined;
 
   constructor(
     private dialogRef: MatDialogRef<TransferPodcastKindSendComponent, TransferPodcastKindSendClose>,
@@ -36,12 +41,24 @@ export class TransferPodcastKindSendComponent {
   }
 
   public submit(podcastId: string, targetKind: CatalogueParentKind) {
+    this.podcastId = podcastId;
+    this.targetKind = targetKind;
     void this.runTransfer(podcastId, targetKind);
+  }
+
+  /** Re-posts the same transfer when the Api said the playlist ownership check was retryable. */
+  retry() {
+    if (!this.podcastId || this.targetKind === undefined || !this.retryable()) {
+      return;
+    }
+    void this.runTransfer(this.podcastId, this.targetKind);
   }
 
   private async runTransfer(podcastId: string, targetKind: CatalogueParentKind) {
     this.isSending.set(true);
     this.sendError.set(false);
+    this.retryable.set(false);
+    this.errorMessage.set('An error occurred transferring the podcast');
     this.progressMessage.set('Transferring podcast…');
     try {
       const resp = await firstValueFrom(this.curationSubmit.postPodcastKind(podcastId, targetKind));
@@ -150,6 +167,11 @@ export class TransferPodcastKindSendComponent {
     this.isSending.set(false);
     this.sendError.set(true);
     this.progressMessage.set('');
+    const playlist = youtubePlaylistEditError(error);
+    if (playlist) {
+      this.errorMessage.set(playlist.message);
+      this.retryable.set(playlist.retryable);
+    }
     console.error(error);
   }
 

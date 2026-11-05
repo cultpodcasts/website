@@ -88,6 +88,50 @@ describe('TransferPodcastKindSendComponent', () => {
     errorSpy.mockRestore();
   });
 
+  it('surfaces playlist lookup-failed 503 via youtubePlaylistEditError without polling', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 503,
+      statusText: 'Service Unavailable',
+      error: {
+        error: 'Could not check YouTube playlist',
+        code: 'youTubePlaylistLookupFailed',
+        retryable: true
+      }
+    })));
+
+    component.submit(podcastId, CatalogueParentKind.TvShow);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
+    expect(getPodcast).not.toHaveBeenCalled();
+    expect(component.retryable()).toBe(true);
+    expect(component.errorMessage()).toContain("Couldn't check who owns the playlist");
+    errorSpy.mockRestore();
+  });
+
+  it('surfaces playlist not-found 400 without treating it as transfer recovery', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: {
+        error: "YouTube playlist 'PLx' was not found (it does not exist or is private).",
+        code: 'youTubePlaylistNotFound'
+      }
+    })));
+
+    component.submit(podcastId, CatalogueParentKind.NewsOrganisation);
+    await vi.waitFor(() => expect(component.sendError()).toBe(true));
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
+    expect(component.retryable()).toBe(false);
+    expect(component.errorMessage()).toContain('YouTube playlist not found');
+    errorSpy.mockRestore();
+  });
+
   it('recovers from a 5xx when the target parent exists and the podcast is gone', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     postPodcastKind.mockReturnValue(throwError(() => new HttpErrorResponse({

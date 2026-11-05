@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
+import { youtubePlaylistEditError } from './youtube-playlist-edit-error';
 
 /** Total wait while polling an in-progress transfer (~2 minutes). */
 export const TRANSFER_KIND_POLL_BUDGET_MS = 120_000;
@@ -24,15 +25,38 @@ export function transferKindPollDelaysMs(
   return delays;
 }
 
-/** Network drop, client timeout, Cloudflare 499, or upstream 5xx / gateway timeout. */
+/**
+ * Network drop, client timeout, Cloudflare 499, or upstream 5xx / gateway timeout.
+ * Playlist ownership ApiErrors (400/503 with playlist codes, including retryable lookup-failed)
+ * are not transport recoveries — the transfer never wrote; do not poll for completion.
+ */
 export function isRecoverableTransferTransportError(error: unknown): boolean {
   if (!(error instanceof HttpErrorResponse)) {
+    return false;
+  }
+  if (youtubePlaylistEditError(error)) {
+    return false;
+  }
+  if (isRetryableApiRefuseBody(error)) {
     return false;
   }
   return error.status === 0
     || error.status === 408
     || error.status === 499
     || error.status >= 500;
+}
+
+/** Intentional Api refuse with retryable:true (e.g. 503) — not a mid-write transport drop. */
+function isRetryableApiRefuseBody(error: HttpErrorResponse): boolean {
+  if (error.status < 500) {
+    return false;
+  }
+  const raw = error.error;
+  if (!raw || typeof raw !== 'object') {
+    return false;
+  }
+  const body = raw as Record<string, unknown>;
+  return body['retryable'] === true;
 }
 
 export function transferInProgressFromError(error: unknown): boolean {

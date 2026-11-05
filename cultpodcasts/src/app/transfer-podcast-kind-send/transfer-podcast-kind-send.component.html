@@ -10,7 +10,7 @@
     }
     @if (sendError()) {
     <div>
-        <p>An error occurred transferring the podcast</p>
+        <p id="error" role="alert">{{ errorMessage() }}</p>
     </div>
     }
 
@@ -18,6 +18,9 @@
 
 @if (sendError()) {
 <mat-dialog-actions>
-    <button mat-raised-button (click)="close()">Close</button>
+    @if (retryable()) {
+    <button mat-raised-button type="button" (click)="retry()">Try again</button>
+    }
+    <button mat-raised-button type="button" (click)="close()">Close</button>
 </mat-dialog-actions>
 }
