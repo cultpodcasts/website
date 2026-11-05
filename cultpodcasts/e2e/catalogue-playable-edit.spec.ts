@@ -37,7 +37,14 @@ const playable = {
 	searchTerms: null,
 	hashTag: "#desk",
 	language: null,
-	guests: ["Ann Example"]
+	guests: ["Ann Example"],
+	guestPeople: [{ id: "p1", name: "Ann Example" }],
+	guestSuggestions: [
+		{
+			person: { id: "p3", name: "Chris Suggested" },
+			matchResults: [{ term: "Chris", matches: 1 }]
+		}
+	]
 };
 const report = { ...playable, id: reportId, title: "Bulletin", newsOrganisationId: outletId, newsOrganisationName: "Desk" };
 const tvEpisode = {
