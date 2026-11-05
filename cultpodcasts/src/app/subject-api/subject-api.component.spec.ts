@@ -88,10 +88,61 @@ describe('SubjectApiComponent', () => {
 
     fixture.detectChanges();
 
-    expect(missed).toBe(1);
-    expect(textOf(calls[0])).toContain('seriesName,count:1000');
-    expect(textOf(calls[1])).toContain('podcastName,count:1000');
+    expect(missed).toBe(2);
+    expect(textOf(calls[0])).toContain('contentKind,count:10');
+    expect(textOf(calls[1])).toContain('seriesName,count:1000');
+    expect(textOf(calls[1])).not.toContain('contentKind');
+    expect(textOf(calls[2])).toContain('podcastName,count:1000');
     expect(calls.some((call) => (call.facets ?? []).length === 0)).toBe(true);
+  });
+
+  it('offers Podcast, TV, News and Film and filters results by the chosen kind', () => {
+    respond = () => of({
+      ...searchPage(),
+      facets: {
+        ...searchPage().facets,
+        contentKind: [
+          { value: 'Episode', count: 4 },
+          { value: 'TvShowEpisode', count: 1 },
+          { value: 'NewsReport', count: 2 },
+          { value: 'Film', count: 1 },
+        ],
+      },
+    });
+
+    fixture.detectChanges();
+    const kindFacet = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by kind"]');
+    expect(kindFacet?.textContent).toContain('Podcast');
+    expect(kindFacet?.textContent).toContain('TV');
+    expect(kindFacet?.textContent).toContain('News');
+    expect(kindFacet?.textContent).toContain('Film');
+
+    fixture.componentInstance.toggleKind('NewsReport');
+    fixture.componentInstance.togglePodcast('Show A');
+
+    const results = calls.filter((call) => (call.top ?? 0) > 0);
+    const resultFilter = results.at(-1)?.filter ?? '';
+    expect(resultFilter).toContain("search.in(contentKind, 'NewsReport'");
+    expect(resultFilter).toContain("search.in(seriesName, 'Show A'");
+    const fragment = navigate.mock.calls.at(-1)?.[1]?.fragment as string;
+    expect(fragment).toContain('kind=NewsReport');
+    expect(fragment).toContain('show=Show A');
+  });
+
+  it('still loads the subject when the index has no contentKind field', () => {
+    respond = (request) => {
+      if ((request.facets ?? []).some((facet) => facet.startsWith('contentKind'))) {
+        return throwError(() => unknownField());
+      }
+      return of(searchPage());
+    };
+
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Something went wrong');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by kind"]')).toBeNull();
+    expect(calls.some((call) => (call.facets ?? []).some((facet) => facet.startsWith('contentKind')))).toBe(true);
+    expect(calls.some((call) => !(call.facets ?? []).some((facet) => facet.startsWith('contentKind')))).toBe(true);
   });
 
   it('rewrites the show filter and searches once when language facets fail on seriesName', () => {
