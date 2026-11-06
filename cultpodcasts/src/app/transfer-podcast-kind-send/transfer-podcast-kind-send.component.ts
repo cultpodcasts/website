@@ -62,7 +62,8 @@ export class TransferPodcastKindSendComponent {
     this.progressMessage.set('Transferring podcast…');
     try {
       const resp = await firstValueFrom(this.curationSubmit.postPodcastKind(podcastId, targetKind));
-      this.closeTransferred(targetKind, resp.body);
+      // 202 means the move was queued. The podcast row is still there until the worker finishes.
+      await this.finishWhenDestinationExists(podcastId, targetKind, resp.body);
     } catch (error) {
       await this.handleFailure(error, podcastId, targetKind);
     }
@@ -122,6 +123,30 @@ export class TransferPodcastKindSendComponent {
       }
     }
     return false;
+  }
+
+  /**
+   * Queued acceptance is not a finished transfer. Wait until the destination parent exists
+   * and the podcast row is gone. If that does not happen, say so: the episodes were not confirmed moved.
+   */
+  private async finishWhenDestinationExists(
+    podcastId: string,
+    targetKind: CatalogueParentKind,
+    body: PodcastKindTransferResponse | null | undefined
+  ) {
+    this.progressMessage.set('Transfer queued. Checking that it finished…');
+    const completed = await this.pollUntilTransferred(podcastId, targetKind);
+    if (completed) {
+      this.closeTransferred(targetKind, body ?? { parentId: podcastId, targetKind });
+      return;
+    }
+    this.isSending.set(false);
+    this.sendError.set(true);
+    this.retryable.set(true);
+    this.progressMessage.set('');
+    this.errorMessage.set(
+      'The transfer has not finished. The podcast was not confirmed as moved, so the episodes should still be on the podcast. Wait a few minutes and try again.'
+    );
   }
 
   /** True when the target parent exists and the podcast row is gone. */
