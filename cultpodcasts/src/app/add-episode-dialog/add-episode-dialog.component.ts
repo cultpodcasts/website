@@ -202,7 +202,7 @@ export class AddEpisodeDialogComponent {
   }
 
   protected readonly clearField = clearFormControl;
-  protected readonly clearAdditionalText = clearNonNullableStringControl;
+  protected readonly clearNonNullableStringControl = clearNonNullableStringControl;
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
   protected readonly additionalServicePreviewKey = additionalServicePreviewKey;
 
