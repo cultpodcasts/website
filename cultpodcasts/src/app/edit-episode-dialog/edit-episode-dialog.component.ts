@@ -36,7 +36,7 @@ import { ImagePreviewDialogComponent } from '../image-preview-dialog/image-previ
 import {
   buildEpisodeForm,
   clearFormControl,
-  EpisodeFormDialogHost,
+  clearNonNullableStringControl,
   additionalServicePreviewKey,
   collectEpisodeImagePreviews,
   episodeCataloguePeople,
@@ -92,7 +92,7 @@ import { SELECT_REORDER } from '../select-reorder';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './edit-episode-dialog.component.sass'
 })
-export class EditEpisodeDialogComponent extends EpisodeFormDialogHost {
+export class EditEpisodeDialogComponent {
   protected FeatureSwitch = FeatureSwitch;
   readonly hoistedSubjectNames: string[] = subjectNamesConfig.hostedSubjectNames;
   readonly enableDesktopSubjectTypingFilter: boolean = typeof window !== 'undefined'
@@ -138,7 +138,6 @@ export class EditEpisodeDialogComponent extends EpisodeFormDialogHost {
     private router: Router,
     private snackBar: MatSnackBar,
   ) {
-    super();
     this.episodeId = data.episodeId;
     this.podcastIdentifier = data.podcastIdentifier;
   }
@@ -292,6 +291,7 @@ export class EditEpisodeDialogComponent extends EpisodeFormDialogHost {
   }
 
   protected readonly clearField = clearFormControl;
+  protected readonly clearNonNullableStringControl = clearNonNullableStringControl;
   protected readonly serviceLabelForUrl = serviceLabelForUrl;
   protected readonly additionalServicePreviewKey = additionalServicePreviewKey;
 

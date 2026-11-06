@@ -77,11 +77,6 @@ export function clearNonNullableStringControl(control: FormControl<string>): voi
   control.markAsDirty();
 }
 
-/** One host for the add and edit episode dialogs, so both templates call this clear. */
-export abstract class EpisodeFormDialogHost {
-  protected readonly clearNonNullableStringControl = clearNonNullableStringControl;
-}
-
 export function parseFormUrl(value: string | URL | null | undefined): URL | undefined {
   if (!value) {
     return undefined;
