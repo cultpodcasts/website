@@ -239,6 +239,8 @@ export class SubjectApiComponent {
         }).subscribe(
           {
             next: data => {
+              // The click already wrote `#kind=`. Replace it once the field is dropped.
+              this.finishContentKindProbe(true);
               const count = data.metadata.get("count");
               this.count.set(count);
               if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -301,10 +303,9 @@ export class SubjectApiComponent {
           orderby: sort
         }).subscribe({
           next: facetData => {
-            if (this.contentKindMode === "probing") {
-              this.contentKindMode = "omit";
-              this.setKinds([]);
-            }
+            // Omit before pending shows are applied. Tidying `#kind=` here would
+            // replace the fragment while `#show=` is still pending and drop it.
+            this.finishContentKindProbe(false);
             if (this.applyPendingFilters(facetData.facets)) {
               return;
             }
@@ -396,6 +397,13 @@ export class SubjectApiComponent {
       default:
         return 'Newest first';
     }
+  });
+
+  /** A kind chip narrows films and news as well as episodes, so the count is not "episodes". */
+  protected resultCountNoun = computed(() => {
+    const noun = this.kinds().length > 0 ? "result" : "episode";
+    const count = this.count();
+    return count > 1 || count === 0 ? `${noun}s` : noun;
   });
 
   clearKinds(): void {
@@ -629,13 +637,16 @@ export class SubjectApiComponent {
   /**
    * Applies shows and kinds restored from the URL against the subject-wide facets.
    * Show chips stay subject-wide; language facets are re-scoped to the shows.
-   * Unknown shows and kinds are dropped and the URL tidied. Returns true when it
-   * took over loading the page.
+   * Unknown shows and kinds are dropped and the URL tidied. A `#kind=` bookmark
+   * is measured against the URL list even when contentKind is omitted, so the
+   * fragment is replaced when no kind is applied. Returns true when it took
+   * over loading the page.
    */
   private applyPendingFilters(facets: SearchResultsFacets): boolean {
     const requestedShows = this.pendingShows;
-    const requestedKinds = this.contentKindMode === "include" ? this.pendingKinds : [];
-    if (requestedShows.length === 0 && requestedKinds.length === 0) {
+    const urlKinds = this.pendingKinds;
+    const requestedKinds = this.contentKindMode === "include" ? urlKinds : [];
+    if (requestedShows.length === 0 && urlKinds.length === 0) {
       return false;
     }
     this.pendingShows = [];
@@ -656,7 +667,7 @@ export class SubjectApiComponent {
     if (kinds.length > 0) {
       this.setKinds(kinds);
     }
-    const dropped = shows.length !== requestedShows.length || kinds.length !== requestedKinds.length;
+    const dropped = shows.length !== requestedShows.length || kinds.length !== urlKinds.length;
     if (shows.length === 0 && kinds.length === 0) {
       if (dropped) {
         this.syncFilterUrl();
@@ -688,6 +699,22 @@ export class SubjectApiComponent {
   }
 
   /**
+   * A successful response ends the one retry without contentKind.
+   * The facet path tidies `#kind=` from applyPendingFilters, after pending shows
+   * are applied. The results path already wrote the fragment, so replace it here.
+   */
+  private finishContentKindProbe(tidyUrl: boolean): void {
+    if (this.contentKindMode !== "probing") {
+      return;
+    }
+    this.contentKindMode = "omit";
+    this.setKinds([]);
+    if (tidyUrl) {
+      this.syncFilterUrl();
+    }
+  }
+
+  /**
    * A missing contentKind field is not a series-name miss. Drop the facet and the kind
    * filter and retry once. Only a later unknown-field response flips the series latch.
    */
@@ -701,7 +728,7 @@ export class SubjectApiComponent {
     }
     if (this.contentKindMode === "include" && isUnknownContentKindField(error)) {
       this.contentKindMode = "probing";
-      this.pendingKinds = [];
+      // Keep the URL list. Clearing it here leaves `#kind=` in the fragment after the probe.
       this.setKinds([]);
       return true;
     }

@@ -12,7 +12,7 @@
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
     <div class="browse-toolbar">
-      <h2>{{ displayCatalogName(subjectName()) }} has {{count()}} episode@if (count()>1 || count()==0){s}
+      <h2>{{ displayCatalogName(subjectName()) }} has {{count()}} {{ resultCountNoun() }}
         @if (query() && query()!='') {
         matching "{{query()}}"
         }</h2>
