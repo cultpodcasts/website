@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { Location } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
-import { nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
+import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
 import { SiteService } from '../site.service';
@@ -34,6 +34,7 @@ import {
 } from '../subject-language-filter';
 import { SearchResultFacet } from '../search-result-facet.interface';
 import {
+  KIND_PARAM,
   LANG_PARAM,
   SHOW_PARAM,
   decodeLanguageParam,
@@ -54,6 +55,7 @@ import { BrowseFacetScrollerDirective } from '../browse-facet-scroller.directive
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { displayCatalogName } from '../display-catalog-name';
+import { contentKindLabel } from '../content-kind-label';
 import { PlayerService } from '../player.service';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -95,9 +97,14 @@ export class SubjectApiComponent {
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected isSignedIn = toSignal(this.auth.isSignedIn, { initialValue: false });
   protected podcasts = signal<string[]>([]);
+  protected kinds = signal<string[]>([]);
+  protected readonly contentKindLabel = contentKindLabel;
   protected readonly playerService = inject(PlayerService);
   protected readonly displayCatalogName = displayCatalogName;
   private podcastFilter: string = "";
+  private kindsFilter: string = "";
+  /** include until the index says contentKind is missing. probing is the one retry without it. */
+  private contentKindMode: "include" | "probing" | "omit" = "include";
   private legacyNames = false;
   protected languageSelection = signal<SubjectLanguageSelection>({ mode: "english" });
   protected langFilter = computed(() => buildSubjectLangFilter(this.languageSelection()));
@@ -108,6 +115,8 @@ export class SubjectApiComponent {
   private pruneRestoredLanguages = false;
   /** Shows from the URL, applied once the subject-wide show facets are known. */
   private pendingShows: string[] = [];
+  /** Kinds from the URL, applied once the subject-wide contentKind facets are known. */
+  private pendingKinds: string[] = [];
   private routeParams: Params = {};
   private routeQueryParams: Params = {};
   private routeKey: string | null = null;
@@ -209,9 +218,10 @@ export class SubjectApiComponent {
 
     const baseFilter = this.filter + this.podcastFilter;
     // Facets must omit the language filter so Azure returns non-null lang buckets.
+    // Kind narrows results only, so Shows and Language chips stay subject-wide.
     // Result filter is read at request time so an All-language fallback can widen it first.
     const runResults = (facetsFromResponse?: SearchResultsFacets, facetCount?: number) => {
-      const resultFilter = baseFilter + this.langFilter();
+      const resultFilter = baseFilter + this.requestedKindsFilter() + this.langFilter();
       this.oDataService.getEntitiesWithFacets<SearchResult>(
         new URL("/search", environment.api).toString(),
         {
@@ -229,6 +239,8 @@ export class SubjectApiComponent {
         }).subscribe(
           {
             next: data => {
+              // The click already wrote `#kind=`. Replace it once the field is dropped.
+              this.finishContentKindProbe(true);
               const count = data.metadata.get("count");
               this.count.set(count);
               if (!this.scrollSubscribed && data.entities.length && !this.results().length) {
@@ -254,7 +266,8 @@ export class SubjectApiComponent {
                 const newFacets: SearchResultsFacets = {
                   podcastName: facetsFromResponse.seriesName ?? facetsFromResponse.podcastName,
                   subjects: facetsFromResponse.subjects?.filter(x => !x.value.startsWith("_")),
-                  lang: facetsFromResponse.lang
+                  lang: facetsFromResponse.lang,
+                  contentKind: this.contentKindMode === "include" ? facetsFromResponse.contentKind : undefined
                 };
                 this.facets.set(newFacets);
                 this.languageOptions.set(newFacets.lang ?? []);
@@ -264,7 +277,7 @@ export class SubjectApiComponent {
               this.isLoading.set(false);
             },
             error: (e) => {
-              if (this.adoptLegacyField(e)) {
+              if (this.recoverSearch(e)) {
                 this.execSearch(initial, subsequent);
                 return;
               }
@@ -286,15 +299,14 @@ export class SubjectApiComponent {
           count: true,
           skip: 0,
           top: 0,
-          facets: [
-            `${playableSeriesField(this.legacyNames)},count:1000,sort:count`,
-            "subjects,count:10,sort:count",
-            "lang,count:50,sort:count"
-          ],
+          facets: this.subjectFacets(),
           orderby: sort
         }).subscribe({
           next: facetData => {
-            if (this.applyPendingShows(facetData.facets)) {
+            // Omit before pending shows are applied. Tidying `#kind=` here would
+            // replace the fragment while `#show=` is still pending and drop it.
+            this.finishContentKindProbe(false);
+            if (this.applyPendingFilters(facetData.facets)) {
               return;
             }
             const langFacets = facetData.facets.lang ?? [];
@@ -305,7 +317,7 @@ export class SubjectApiComponent {
             runResults(facetData.facets, scopedTotal);
           },
           error: (e) => {
-            if (this.adoptLegacyField(e)) {
+            if (this.recoverSearch(e)) {
               this.execSearch(initial, subsequent);
               return;
             }
@@ -387,6 +399,34 @@ export class SubjectApiComponent {
     }
   });
 
+  /** A kind chip narrows films and news as well as episodes, so the count is not "episodes". */
+  protected resultCountNoun = computed(() => {
+    const noun = this.kinds().length > 0 ? "result" : "episode";
+    const count = this.count();
+    return count > 1 || count === 0 ? `${noun}s` : noun;
+  });
+
+  clearKinds(): void {
+    if (this.kinds().length === 0) {
+      return;
+    }
+    this.setKinds([]);
+    this.page = 1;
+    this.syncFilterUrl('push');
+    this.execSearch(true, false);
+  }
+
+  toggleKind(value: string): void {
+    const current = this.kinds();
+    const next = current.includes(value)
+      ? current.filter((kind) => kind !== value)
+      : [...current, value];
+    this.setKinds(next);
+    this.page = 1;
+    this.syncFilterUrl('push');
+    this.execSearch(true, false);
+  }
+
   clearPodcasts(): void {
     if (this.podcasts().length === 0) {
       return;
@@ -415,6 +455,7 @@ export class SubjectApiComponent {
    */
   clearAllFilters(): void {
     this.setPodcasts([]);
+    this.setKinds([]);
     this.setLanguageSelection([ALL_LANGUAGES_VALUE]);
     this.languageTouched = true;
     this.pruneRestoredLanguages = false;
@@ -588,45 +629,125 @@ export class SubjectApiComponent {
     this.languageTouched = languages !== null;
     this.pruneRestoredLanguages = languages !== null;
     this.setPodcasts([]);
+    this.setKinds([]);
     this.pendingShows = readParamList(filters, SHOW_PARAM);
+    this.pendingKinds = readParamList(filters, KIND_PARAM);
   }
 
   /**
-   * Applies shows restored from the URL against the subject-wide show facets.
+   * Applies shows and kinds restored from the URL against the subject-wide facets.
    * Show chips stay subject-wide; language facets are re-scoped to the shows.
-   * Unknown shows are dropped and the URL tidied. Returns true when it took
+   * Unknown shows and kinds are dropped and the URL tidied. A `#kind=` bookmark
+   * is measured against the URL list even when contentKind is omitted, so the
+   * fragment is replaced when no kind is applied. Returns true when it took
    * over loading the page.
    */
-  private applyPendingShows(facets: SearchResultsFacets): boolean {
-    if (this.pendingShows.length === 0) {
+  private applyPendingFilters(facets: SearchResultsFacets): boolean {
+    const requestedShows = this.pendingShows;
+    const urlKinds = this.pendingKinds;
+    const requestedKinds = this.contentKindMode === "include" ? urlKinds : [];
+    if (requestedShows.length === 0 && urlKinds.length === 0) {
       return false;
     }
-    const requested = this.pendingShows;
     this.pendingShows = [];
+    this.pendingKinds = [];
     const showFacets = facets.seriesName ?? facets.podcastName;
-    const shows = keepOffered(requested, showFacets);
-    if (shows.length === 0) {
-      this.syncFilterUrl();
-      return false;
-    }
+    const shows = keepOffered(requestedShows, showFacets);
+    const kinds = keepOffered(requestedKinds, facets.contentKind);
     this.facets.set({
       podcastName: showFacets,
       subjects: facets.subjects?.filter(x => !x.value.startsWith("_")),
-      lang: facets.lang
+      lang: facets.lang,
+      contentKind: this.contentKindMode === "include" ? facets.contentKind : undefined
     });
-    this.setPodcasts(shows);
-    if (shows.length !== requested.length) {
+    this.languageOptions.set(facets.lang ?? []);
+    if (shows.length > 0) {
+      this.setPodcasts(shows);
+    }
+    if (kinds.length > 0) {
+      this.setKinds(kinds);
+    }
+    const dropped = shows.length !== requestedShows.length || kinds.length !== urlKinds.length;
+    if (shows.length === 0 && kinds.length === 0) {
+      if (dropped) {
+        this.syncFilterUrl();
+      }
+      return false;
+    }
+    if (dropped) {
       this.syncFilterUrl();
     }
     this.refreshLanguageFacets({ reconcileSelection: true, thenSearch: true });
     return true;
   }
 
+  private subjectFacets(): string[] {
+    const facets = [
+      `${playableSeriesField(this.legacyNames)},count:1000,sort:count`,
+      "subjects,count:10,sort:count",
+      "lang,count:50,sort:count"
+    ];
+    if (this.contentKindMode === "include") {
+      facets.push("contentKind,count:10");
+    }
+    return facets;
+  }
+
+  /** Kind filter uses contentKind. Leave it off while that field is being dropped. */
+  private requestedKindsFilter(): string {
+    return this.contentKindMode === "include" ? this.kindsFilter : "";
+  }
+
+  /**
+   * A successful response ends the one retry without contentKind.
+   * The facet path tidies `#kind=` from applyPendingFilters, after pending shows
+   * are applied. The results path already wrote the fragment, so replace it here.
+   */
+  private finishContentKindProbe(tidyUrl: boolean): void {
+    if (this.contentKindMode !== "probing") {
+      return;
+    }
+    this.contentKindMode = "omit";
+    this.setKinds([]);
+    if (tidyUrl) {
+      this.syncFilterUrl();
+    }
+  }
+
+  /**
+   * A missing contentKind field is not a series-name miss. Drop the facet and the kind
+   * filter and retry once. Only a later unknown-field response flips the series latch.
+   */
+  private recoverSearch(error: unknown): boolean {
+    if (this.contentKindMode === "probing") {
+      this.contentKindMode = "include";
+      if (!isUnknownSearchFieldError(error)) {
+        return false;
+      }
+      return this.adoptLegacyField(error);
+    }
+    if (this.contentKindMode === "include" && isUnknownContentKindField(error)) {
+      this.contentKindMode = "probing";
+      // Keep the URL list. Clearing it here leaves `#kind=` in the fragment after the probe.
+      this.setKinds([]);
+      return true;
+    }
+    return this.adoptLegacyField(error);
+  }
+
   private filterParams(): Record<string, string | string[] | null> {
     return {
       [SHOW_PARAM]: this.podcasts(),
+      [KIND_PARAM]: this.kinds(),
       [LANG_PARAM]: this.languageTouched ? encodeLanguageParam(this.selectedLanguageValues()) : null,
     };
+  }
+
+  private setKinds(next: string[]): void {
+    this.kinds.set(next);
+    this.kindsFilter = next.length === 0
+      ? ""
+      : ` and search.in(contentKind, '${next.map((kind) => kind.replaceAll("'", "''")).join("£")}', '£')`;
   }
 
   /**

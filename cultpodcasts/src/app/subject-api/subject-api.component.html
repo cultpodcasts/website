@@ -12,7 +12,7 @@
   [class.is-updating]="isLoading() && results().length > 0" id="results">
   <div class="browse-filters">
     <div class="browse-toolbar">
-      <h2>{{ displayCatalogName(subjectName()) }} has {{count()}} episode@if (count()>1 || count()==0){s}
+      <h2>{{ displayCatalogName(subjectName()) }} has {{count()}} {{ resultCountNoun() }}
         @if (query() && query()!='') {
         matching "{{query()}}"
         }</h2>
@@ -46,6 +46,23 @@
         }
       </mat-menu>
     </div>
+
+    @if ((facets().contentKind?.length ?? 0) > 1 || kinds().length > 0) {
+    <div class="browse-facet" aria-label="Filter by kind">
+      <span class="browse-facet__label">Kind</span>
+      <div class="browse-facet__scroller" tabindex="0">
+        <button type="button" class="browse-pill" [class.is-active]="kinds().length === 0"
+          (click)="clearKinds()">All</button>
+        @for (kind of facets().contentKind; track kind.value) {
+        <button type="button" class="browse-pill"
+          [class.is-active]="kinds().indexOf(kind.value) >= 0"
+          (click)="toggleKind(kind.value)">
+          {{ contentKindLabel(kind.value) }}
+        </button>
+        }
+      </div>
+    </div>
+    }
 
     @if (facets().podcastName && facets().podcastName!.length > 0) {
     <div class="browse-facet" aria-label="Filter by podcast">
@@ -87,7 +104,7 @@
     </div>
     }
 
-    @if (podcasts().length > 0 || (languageSelection().mode !== 'all' && showLanguageSelector())) {
+    @if (podcasts().length > 0 || kinds().length > 0 || (languageSelection().mode !== 'all' && showLanguageSelector())) {
     <button type="button" class="browse-clear" (click)="clearAllFilters()">Clear filters</button>
     }
   </div>

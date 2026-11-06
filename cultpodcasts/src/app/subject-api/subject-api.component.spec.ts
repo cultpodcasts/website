@@ -88,10 +88,124 @@ describe('SubjectApiComponent', () => {
 
     fixture.detectChanges();
 
-    expect(missed).toBe(1);
-    expect(textOf(calls[0])).toContain('seriesName,count:1000');
-    expect(textOf(calls[1])).toContain('podcastName,count:1000');
+    expect(missed).toBe(2);
+    expect(textOf(calls[0])).toContain('contentKind,count:10');
+    expect(textOf(calls[1])).toContain('seriesName,count:1000');
+    expect(textOf(calls[1])).not.toContain('contentKind');
+    expect(textOf(calls[2])).toContain('podcastName,count:1000');
     expect(calls.some((call) => (call.facets ?? []).length === 0)).toBe(true);
+  });
+
+  it('offers Podcast, TV, News and Film and filters results by the chosen kind', () => {
+    respond = () => of({
+      ...searchPage(),
+      facets: {
+        ...searchPage().facets,
+        contentKind: [
+          { value: 'Episode', count: 4 },
+          { value: 'TvShowEpisode', count: 1 },
+          { value: 'NewsReport', count: 2 },
+          { value: 'Film', count: 1 },
+        ],
+      },
+    });
+
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const kindFacet = root.querySelector('[aria-label="Filter by kind"]');
+    expect(kindFacet?.textContent).toContain('Podcast');
+    expect(kindFacet?.textContent).toContain('TV');
+    expect(kindFacet?.textContent).toContain('News');
+    expect(kindFacet?.textContent).toContain('Film');
+    expect(root.querySelector('h2')?.textContent).toContain('1 episode');
+
+    fixture.componentInstance.toggleKind('NewsReport');
+    fixture.detectChanges();
+    expect(root.querySelector('h2')?.textContent).toContain('1 result');
+    expect(root.querySelector('h2')?.textContent).not.toContain('episode');
+
+    fixture.componentInstance.togglePodcast('Show A');
+
+    const results = calls.filter((call) => (call.top ?? 0) > 0);
+    const resultFilter = results.at(-1)?.filter ?? '';
+    expect(resultFilter).toContain("search.in(contentKind, 'NewsReport'");
+    expect(resultFilter).toContain("search.in(seriesName, 'Show A'");
+    const fragment = navigate.mock.calls.at(-1)?.[1]?.fragment as string;
+    expect(fragment).toContain('kind=NewsReport');
+    expect(fragment).toContain('show=Show A');
+  });
+
+  it('still loads the subject when the index has no contentKind field', () => {
+    respond = (request) => {
+      if ((request.facets ?? []).some((facet) => facet.startsWith('contentKind'))) {
+        return throwError(() => unknownField());
+      }
+      return of(searchPage());
+    };
+
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Something went wrong');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by kind"]')).toBeNull();
+    expect(calls.some((call) => (call.facets ?? []).some((facet) => facet.startsWith('contentKind')))).toBe(true);
+    expect(calls.some((call) => !(call.facets ?? []).some((facet) => facet.startsWith('contentKind')))).toBe(true);
+  });
+
+  it('removes a bookmarked kind when contentKind is missing and keeps the live series name', () => {
+    fragment$.next('kind=NewsReport');
+    respond = (request) => {
+      if ((request.facets ?? []).some((facet) => facet.startsWith('contentKind'))) {
+        return throwError(() => unknownField());
+      }
+      return of(searchPage());
+    };
+
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).not.toContain('Something went wrong');
+    expect(root.querySelector('[aria-label="Filter by kind"]')).toBeNull();
+    expect((calls[1].facets ?? []).join(' ')).toContain('seriesName,count:1000');
+    expect((calls[1].facets ?? []).join(' ')).not.toContain('podcastName');
+    expect((calls[1].facets ?? []).join(' ')).not.toContain('contentKind');
+    expect(navigate).toHaveBeenCalled();
+    expect((navigate.mock.calls.at(-1)?.[1]?.fragment as string | undefined) ?? '').not.toContain('kind=');
+  });
+
+  it('drops kind after a results query reports a missing contentKind and does not send it again', () => {
+    let contentKindResultFailures = 0;
+    respond = (request) => {
+      if ((request.top ?? 0) > 0 && (request.filter ?? '').includes('contentKind')) {
+        contentKindResultFailures++;
+        return throwError(() => unknownField());
+      }
+      return of({
+        ...searchPage(),
+        facets: {
+          ...searchPage().facets,
+          contentKind: [
+            { value: 'Episode', count: 4 },
+            { value: 'NewsReport', count: 2 },
+            { value: 'Film', count: 1 },
+          ],
+        },
+      });
+    };
+
+    fixture.detectChanges();
+    fixture.componentInstance.toggleKind('NewsReport');
+
+    expect(contentKindResultFailures).toBe(1);
+    const retry = calls.filter((call) => (call.top ?? 0) > 0).at(-1);
+    expect(retry?.filter ?? '').not.toContain('contentKind');
+    expect((navigate.mock.calls.at(-1)?.[1]?.fragment as string | undefined) ?? '').not.toContain('kind=');
+
+    fixture.componentInstance.toggleKind('Film');
+
+    const later = calls.filter((call) => (call.top ?? 0) > 0).at(-1);
+    expect(later?.filter ?? '').not.toContain('contentKind');
+    expect((later?.facets ?? []).join(' ')).toContain('seriesName');
+    expect((later?.facets ?? []).join(' ')).not.toContain('podcastName');
   });
 
   it('rewrites the show filter and searches once when language facets fail on seriesName', () => {
@@ -259,6 +373,51 @@ describe('SubjectApiComponent', () => {
       fixture.componentInstance.toggleLanguage('ki');
       expect(resultFilter()).toContain("lang eq 'sw'");
       expect(lastFragment()).toBe('show=Show A&lang=sw');
+    });
+
+    it('restores a bookmarked kind and show, with the News chip active', () => {
+      respond = () => of({
+        ...languagePage(),
+        facets: {
+          ...languagePage().facets,
+          contentKind: [
+            { value: 'Episode', count: 4 },
+            { value: 'NewsReport', count: 2 },
+            { value: 'Film', count: 1 },
+          ],
+        },
+      });
+      fragment$.next('kind=NewsReport&show=Show A');
+      fixture.detectChanges();
+
+      expect(resultFilter()).toContain("search.in(contentKind, 'NewsReport'");
+      expect(resultFilter()).toContain("search.in(seriesName, 'Show A'");
+      const kindFacet = (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by kind"]');
+      const active = [...(kindFacet?.querySelectorAll('.browse-pill.is-active') ?? [])].map((chip) => chip.textContent!.trim());
+      expect(active).toContain('News');
+      expect(fixture.nativeElement.textContent).toContain('Show B');
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('drops an unknown bookmarked kind and does not send it', () => {
+      respond = () => of({
+        ...languagePage(),
+        facets: {
+          ...languagePage().facets,
+          contentKind: [
+            { value: 'Episode', count: 4 },
+            { value: 'NewsReport', count: 2 },
+          ],
+        },
+      });
+      fragment$.next('kind=NotAKind');
+      fixture.detectChanges();
+
+      expect(resultFilter()).not.toContain('NotAKind');
+      expect(resultFilter()).not.toContain('contentKind');
+      expect(navigate).toHaveBeenCalled();
+      expect(lastFragment() ?? '').not.toContain('kind=');
+      expect(lastFragment() ?? '').not.toContain('NotAKind');
     });
 
     it('ignores unknown shows and malformed languages in the fragment and tidies it', () => {
