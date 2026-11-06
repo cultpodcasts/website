@@ -157,6 +157,10 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
         this.submitError.set(playableEditApiErrorMessage(e) ?? 'The change was rejected');
         return;
       }
+      if (e instanceof HttpErrorResponse && e.status === 404 && this.variant === 'film') {
+        this.submitError.set('This film no longer exists');
+        return;
+      }
       this.submitError.set('An error occurred saving the change');
     }
   }
