@@ -7,10 +7,16 @@ import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { hubForParentKind } from '../catalogue-hub';
 import { CurationSubmitService } from '../curation-submit.service';
-import { PodcastKindTransferResponse } from '../podcast-kind-transfer-response.interface';
+import {
+  PodcastKindTransferJobStatusResponse,
+  PodcastKindTransferResponse
+} from '../podcast-kind-transfer-response.interface';
 import {
   delayMs,
+  enqueueShapeFromJob,
   isConflictStatus,
+  isJobCompleted,
+  isJobFailed,
   isRecoverableTransferTransportError,
   isTransferComplete,
   transferInProgressFromError,
@@ -62,8 +68,8 @@ export class TransferPodcastKindSendComponent {
     this.progressMessage.set('Transferring podcast…');
     try {
       const resp = await firstValueFrom(this.curationSubmit.postPodcastKind(podcastId, targetKind));
-      // 202 means the move was queued. The podcast row is still there until the worker finishes.
-      await this.finishWhenDestinationExists(podcastId, targetKind, resp.body);
+      // 202 Queued: poll GET /podcast/:id/kind until a terminal status.
+      await this.finishFromJobStatus(podcastId, targetKind, resp.body);
     } catch (error) {
       await this.handleFailure(error, podcastId, targetKind);
     }
@@ -76,12 +82,13 @@ export class TransferPodcastKindSendComponent {
   ) {
     if (transferInProgressFromError(error)) {
       this.progressMessage.set('Transfer already running');
-      const completed = await this.pollUntilTransferred(podcastId, targetKind);
-      if (completed) {
-        this.closeTransferred(targetKind, {
-          parentId: podcastId,
-          targetKind
-        });
+      const job = await this.pollJobUntilTerminal(podcastId);
+      if (job && isJobCompleted(job.status)) {
+        this.closeTransferred(targetKind, enqueueShapeFromJob(job));
+        return;
+      }
+      if (job && isJobFailed(job.status)) {
+        this.failJob(job);
         return;
       }
       this.fail(error);
@@ -94,6 +101,16 @@ export class TransferPodcastKindSendComponent {
       } else {
         this.progressMessage.set('Checking whether the podcast was already transferred…');
       }
+      const job = await this.pollJobUntilTerminal(podcastId);
+      if (job && isJobCompleted(job.status)) {
+        this.closeTransferred(targetKind, enqueueShapeFromJob(job));
+        return;
+      }
+      if (job && isJobFailed(job.status)) {
+        this.failJob(job);
+        return;
+      }
+      // Fallback when GET status is Idle/404 but the row move already finished.
       const completed = await this.checkTransferred(podcastId, targetKind);
       if (completed) {
         this.closeTransferred(targetKind, {
@@ -109,35 +126,19 @@ export class TransferPodcastKindSendComponent {
     this.fail(error);
   }
 
-  private async pollUntilTransferred(
-    podcastId: string,
-    targetKind: CatalogueParentKind
-  ): Promise<boolean> {
-    if (await this.checkTransferred(podcastId, targetKind)) {
-      return true;
-    }
-    for (const waitMs of transferKindPollDelaysMs()) {
-      await delayMs(waitMs);
-      if (await this.checkTransferred(podcastId, targetKind)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Queued acceptance is not a finished transfer. Wait until the destination parent exists
-   * and the podcast row is gone. If that does not happen, say so: the episodes were not confirmed moved.
-   */
-  private async finishWhenDestinationExists(
+  private async finishFromJobStatus(
     podcastId: string,
     targetKind: CatalogueParentKind,
     body: PodcastKindTransferResponse | null | undefined
   ) {
     this.progressMessage.set('Transfer queued. Checking that it finished…');
-    const completed = await this.pollUntilTransferred(podcastId, targetKind);
-    if (completed) {
-      this.closeTransferred(targetKind, body ?? { parentId: podcastId, targetKind });
+    const job = await this.pollJobUntilTerminal(podcastId);
+    if (job && isJobCompleted(job.status)) {
+      this.closeTransferred(targetKind, enqueueShapeFromJob(job) ?? body ?? { parentId: podcastId, targetKind });
+      return;
+    }
+    if (job && isJobFailed(job.status)) {
+      this.failJob(job);
       return;
     }
     this.isSending.set(false);
@@ -149,7 +150,38 @@ export class TransferPodcastKindSendComponent {
     );
   }
 
-  /** True when the target parent exists and the podcast row is gone. */
+  private async pollJobUntilTerminal(
+    podcastId: string
+  ): Promise<PodcastKindTransferJobStatusResponse | null> {
+    let latest = await this.readJob(podcastId);
+    if (latest && (isJobCompleted(latest.status) || isJobFailed(latest.status))) {
+      return latest;
+    }
+    for (const waitMs of transferKindPollDelaysMs()) {
+      await delayMs(waitMs);
+      latest = await this.readJob(podcastId);
+      if (latest && (isJobCompleted(latest.status) || isJobFailed(latest.status))) {
+        return latest;
+      }
+    }
+    return latest;
+  }
+
+  private async readJob(podcastId: string): Promise<PodcastKindTransferJobStatusResponse | null> {
+    return firstValueFrom(
+      this.curationSubmit.getPodcastKind(podcastId).pipe(
+        map(job => job),
+        catchError((err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 404) {
+            return of(null);
+          }
+          return of(null);
+        })
+      )
+    );
+  }
+
+  /** True when the target parent exists and the podcast row is gone (legacy fallback). */
   private async checkTransferred(
     podcastId: string,
     targetKind: CatalogueParentKind
@@ -158,7 +190,6 @@ export class TransferPodcastKindSendComponent {
     const parentExists = await firstValueFrom(
       this.curationSubmit.getCatalogueParent(hub, podcastId).pipe(
         map(() => true),
-        // Fail-safe: any probe error (404 or otherwise) means parent not confirmed present.
         catchError(() => of(false))
       )
     );
@@ -186,6 +217,19 @@ export class TransferPodcastKindSendComponent {
       parentId: body?.parentId,
       response: body
     });
+  }
+
+  private failJob(job: PodcastKindTransferJobStatusResponse) {
+    this.isSending.set(false);
+    this.sendError.set(true);
+    this.retryable.set(job.status === 'Incomplete');
+    this.progressMessage.set('');
+    this.errorMessage.set(
+      job.failureReason?.trim()
+        || (job.status === 'Incomplete'
+          ? 'The transfer did not finish. Wait a few minutes and try again.'
+          : 'The transfer failed.')
+    );
   }
 
   private fail(error: unknown) {

@@ -46,10 +46,14 @@ describe('transfer-podcast-kind-recover', () => {
     }))).toBe(false);
   });
 
-  it('reads transferInProgress only from a 409 body', () => {
+  it('reads transferInProgress or status AlreadyRunning from a 409 body', () => {
     expect(transferInProgressFromError(new HttpErrorResponse({
       status: 409,
       error: { transferInProgress: true }
+    }))).toBe(true);
+    expect(transferInProgressFromError(new HttpErrorResponse({
+      status: 409,
+      error: { status: 'AlreadyRunning' }
     }))).toBe(true);
     expect(transferInProgressFromError(new HttpErrorResponse({
       status: 409,

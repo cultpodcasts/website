@@ -8,7 +8,10 @@ import { EpisodeChangeResponse } from './episode-change-response.interface';
 import { AddPodcastPost } from './add-podcast-post.interface';
 import { PodcastPostResponse } from './podcast-post-response.interface';
 import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
-import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
+import {
+  PodcastKindTransferJobStatusResponse,
+  PodcastKindTransferResponse
+} from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
 import { EpisodeTrailerAttachRequest, EpisodeTrailerAttachResponse } from './episode-trailer-attach.interface';
@@ -79,6 +82,12 @@ export class CurationSubmitService {
       context: this.curateContext(),
       observe: 'response'
     });
+  }
+
+  /** Curator GET of kind-transfer job status (poll after 202 Queued / 409 AlreadyRunning). */
+  getPodcastKind(podcastId: string) {
+    const url = new URL(`/podcast/${encodeURIComponent(podcastId)}/kind`, environment.api).toString();
+    return this.http.get<PodcastKindTransferJobStatusResponse>(url, { context: this.curateContext() });
   }
 
   /** Moves one podcast episode into a new Film with the same id. */

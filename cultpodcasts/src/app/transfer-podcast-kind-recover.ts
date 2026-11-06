@@ -1,5 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { PodcastKindTransferResponse } from './podcast-kind-transfer-response.interface';
+import {
+  PodcastKindTransferJobStatus,
+  PodcastKindTransferJobStatusResponse,
+  PodcastKindTransferResponse
+} from './podcast-kind-transfer-response.interface';
 import { youtubePlaylistEditError } from './youtube-playlist-edit-error';
 
 /** Total wait while polling an in-progress transfer (~2 minutes). */
@@ -7,6 +11,19 @@ export const TRANSFER_KIND_POLL_BUDGET_MS = 120_000;
 
 const POLL_CAP_MS = 30_000;
 const POLL_START_MS = 2_000;
+
+const IN_FLIGHT: ReadonlySet<PodcastKindTransferJobStatus> = new Set([
+  'Idle',
+  'Queued',
+  'Running'
+]);
+
+const TERMINAL_SUCCESS: ReadonlySet<PodcastKindTransferJobStatus> = new Set(['Completed']);
+
+const TERMINAL_FAILURE: ReadonlySet<PodcastKindTransferJobStatus> = new Set([
+  'Failed',
+  'Incomplete'
+]);
 
 /** Backoff delays that sum to about {@link TRANSFER_KIND_POLL_BUDGET_MS}. */
 export function transferKindPollDelaysMs(
@@ -48,11 +65,35 @@ export function transferInProgressFromError(error: unknown): boolean {
     return false;
   }
   const body = error.error as PodcastKindTransferResponse | null | undefined;
-  return body?.transferInProgress === true;
+  return body?.transferInProgress === true || body?.status === 'AlreadyRunning';
 }
 
 export function isConflictStatus(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === 409;
+}
+
+export function isJobInFlight(status: PodcastKindTransferJobStatus): boolean {
+  return IN_FLIGHT.has(status);
+}
+
+export function isJobCompleted(status: PodcastKindTransferJobStatus): boolean {
+  return TERMINAL_SUCCESS.has(status);
+}
+
+export function isJobFailed(status: PodcastKindTransferJobStatus): boolean {
+  return TERMINAL_FAILURE.has(status);
+}
+
+/** Close-dialog body when GET status says Completed. */
+export function enqueueShapeFromJob(
+  job: PodcastKindTransferJobStatusResponse
+): PodcastKindTransferResponse {
+  return {
+    parentId: job.parentId ?? undefined,
+    targetKind: job.targetKind ?? undefined,
+    playableCount: job.playableCount,
+    failureIndexingPlayables: job.failureIndexingPlayables
+  };
 }
 
 /** Transfer succeeded when the target parent exists and the podcast row is gone. */
