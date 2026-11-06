@@ -118,11 +118,11 @@ describe('EditEpisodeDialogComponent layout', () => {
   const texts = (selector: string) =>
     Array.from(el().querySelectorAll(selector)).map((e) => (e.textContent ?? '').trim());
 
-  /** Clicks the Catalogue tab header and waits for its lazy body to render. */
-  async function openCatalogueTab() {
+  /** Clicks a tab header and waits for its lazy body to render. */
+  async function openTab(label: string) {
     fixture.detectChanges();
     const tab = Array.from(el().querySelectorAll<HTMLElement>('[role="tab"]'))
-      .find((t) => (t.textContent ?? '').trim() === 'Catalogue');
+      .find((t) => (t.textContent ?? '').trim() === label);
     expect(tab).toBeTruthy();
     tab!.click();
     for (let i = 0; i < 5; i++) {
@@ -132,6 +132,26 @@ describe('EditEpisodeDialogComponent layout', () => {
     }
     fixture.detectChanges();
   }
+
+  /** Clicks the Catalogue tab header and waits for its lazy body to render. */
+  async function openCatalogueTab() {
+    await openTab('Catalogue');
+  }
+
+  it('clears an extra-row image to empty text when Remove image is clicked', async () => {
+    await loadAndFlush();
+    fixture.componentInstance.addAdditionalUrl();
+    const image = fixture.componentInstance.form()!.controls.additionalUrls.at(0)!.controls.image;
+    image.setValue('https://cdn.example.test/art.jpg');
+    await openTab('Images');
+    const button = el().querySelector<HTMLButtonElement>('button[aria-label="Remove image"]');
+    expect(button).toBeTruthy();
+    expect(button!.disabled).toBe(false);
+    button!.click();
+    fixture.detectChanges();
+    expect(image.value).toBe('');
+    expect(image.dirty).toBe(true);
+  });
 
   it('puts Close next to Submit and nothing else in the dialog actions', async () => {
     await loadAndFlush();
