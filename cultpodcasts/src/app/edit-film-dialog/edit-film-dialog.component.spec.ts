@@ -235,6 +235,17 @@ describe('EditFilmDialogComponent', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('says the film no longer exists when the save returns 404, and keeps the dialog open', async () => {
+    const dialog = await load();
+    dialog.form()!.patchValue({ duration: '1:02:03' });
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/film/${filmId}`), 'PATCH'))
+      .flush({ message: 'not found' }, { status: 404, statusText: 'Not Found' });
+    await saving;
+    expect(dialog.submitError()).toBe('This film no longer exists');
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('shows the API message on a 400 and keeps the dialog open', async () => {
     const dialog = await load();
     dialog.form()!.patchValue({ duration: 'nonsense' });
