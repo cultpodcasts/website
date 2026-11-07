@@ -21,10 +21,17 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
+import { ConfirmComponent } from '../confirm/confirm.component';
+import { TransferPodcastKindSendComponent } from '../transfer-podcast-kind-send/transfer-podcast-kind-send.component';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
+import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
+import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
+import { notifyPodcastIndexDialogResult, openPodcastIndexDialog } from '../podcast-index-from-dialog';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -89,6 +96,8 @@ export class AddPodcastDialogComponent {
   readonly selectedTabIndex = signal(0);
   readonly indexAllOverriddenByIncludeTitle = signal(false);
   readonly highlightIncludeTitleRegex = signal(false);
+  readonly transferTarget = signal<CatalogueParentKind | null>(null);
+  protected readonly CatalogueParentKind = CatalogueParentKind;
   private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -96,7 +105,7 @@ export class AddPodcastDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
-    private dialogRef: MatDialogRef<AddPodcastDialogComponent, any>,
+    private dialogRef: MatDialogRef<AddPodcastDialogComponent, EditPodcastDialogResponse>,
     @Inject(MAT_DIALOG_DATA) public data: {
       podcastName: string,
       defaultSubjectFromEpisode?: string,
@@ -107,6 +116,7 @@ export class AddPodcastDialogComponent {
       defaultLanguageFromDetection?: boolean
     },
     private dialog: MatDialog,
+    private snackBar: MatSnackBar,
   ) {
     this.podcastName = data.podcastName;
     this.podcastId = data.podcastId;
@@ -310,6 +320,56 @@ export class AddPodcastDialogComponent {
       if (result.updated) {
         await this.applyEpisodeLanguageFromPodcast(podcastId, changes);
         this.dialogRef.close({ updated: true, response: result.response });
+      }
+    });
+  }
+
+  /** Podcast name for Index backlog (rename field wins over create name). */
+  indexBacklogName(): string {
+    const fromForm = this.form()?.controls.podcastName.value?.trim();
+    return fromForm || this.podcastName?.trim() || '';
+  }
+
+  indexBacklog() {
+    const name = this.indexBacklogName();
+    if (!name) {
+      return;
+    }
+    openPodcastIndexDialog(this.dialog, name).afterClosed().subscribe(result => {
+      notifyPodcastIndexDialogResult(this.snackBar, result);
+    });
+  }
+
+  async transferKind() {
+    const targetKind = this.transferTarget();
+    if (!this.podcastId || targetKind == null) {
+      return;
+    }
+
+    const isTvShow = targetKind === CatalogueParentKind.TvShow;
+    const title = isTvShow ? 'Transfer to TV show' : 'Transfer to news organisation';
+    const question = isTvShow
+      ? 'Move this podcast and all of its episodes to a TV show? The podcast id becomes the TV show id. Episode ids stay the same.'
+      : 'Move this podcast and all of its episodes to a news organisation? The podcast id becomes the news organisation id. Episode ids stay the same.';
+
+    const confirmed = await firstValueFrom(this.dialog.open(ConfirmComponent, {
+      data: { title: title, question: question },
+      disableClose: true,
+      autoFocus: true
+    }).afterClosed());
+    if (!confirmed?.result) {
+      return;
+    }
+
+    const sendRef = this.dialog.open(TransferPodcastKindSendComponent, { disableClose: true, autoFocus: true });
+    sendRef.componentInstance.submit(this.podcastId, targetKind);
+    sendRef.afterClosed().subscribe((result: TransferPodcastKindSendClose | undefined) => {
+      if (result?.transferred) {
+        this.dialogRef.close({
+          transferred: true,
+          targetKind: result.targetKind ?? targetKind,
+          response: result.response ?? undefined
+        });
       }
     });
   }
