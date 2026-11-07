@@ -37,7 +37,7 @@ import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-clos
 import { podcastGetPathFromEditData } from '../podcast-get-path';
 import { parseAmbiguousPodcastIds } from '../parse-ambiguous-podcast-ids';
 import { CurationSubmitService } from '../curation-submit.service';
-import { chooseAmbiguousNameOnConflict } from '../submit-series-conflict';
+import { resolveAmbiguousEditRows } from '../resolve-ambiguous-edit-rows';
 import { YouTubeIndexingHints } from '../youtube-indexing-hints.interface';
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from '../youtube-indexing-hints.util';
 import {
@@ -207,33 +207,33 @@ export class EditPodcastDialogComponent {
         this.isInError.set(true);
         return null;
       }
-      const podcasts = (
-        await Promise.all(
-          ids.map(async (id) => {
-            try {
-              return await firstValueFrom(this.curation.getPodcast(id));
-            } catch {
-              return null;
-            }
-          })
-        )
-      ).filter((row): row is Podcast => row != null && !!row.id);
-      if (podcasts.length !== ids.length) {
+      const outcome = await resolveAmbiguousEditRows(
+        ids,
+        async (id) => {
+          try {
+            return await firstValueFrom(this.curation.getPodcast(id));
+          } catch {
+            return null;
+          }
+        },
+        this.dialog,
+        this.podcastName,
+        {
+          toCandidate: ambiguousCandidateFromPodcast,
+          title: 'Choose podcast',
+          itemNounPlural: 'podcasts'
+        }
+      );
+      if (outcome.kind === 'unrecoverable') {
         this.conflict.set(true);
         this.isInError.set(true);
         return null;
       }
-      const picked = await chooseAmbiguousNameOnConflict(
-        this.dialog,
-        podcasts.map(ambiguousCandidateFromPodcast),
-        this.podcastName,
-        { title: 'Choose podcast', itemNounPlural: 'podcasts' }
-      );
-      if (!picked?.id) {
+      if (outcome.kind === 'cancelled') {
         this.dialogRef.close({ closed: true });
         return null;
       }
-      return podcasts.find((row) => row.id === picked.id) ?? null;
+      return outcome.row;
     }
   }
 

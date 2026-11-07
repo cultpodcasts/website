@@ -53,7 +53,7 @@ import {
   youTubeChannelIgnoredHint,
   youTubePlaylistReplacesChannel
 } from "../podcast-form.util";
-import { chooseAmbiguousNameOnConflict } from "../submit-series-conflict";
+import { resolveAmbiguousEditRows } from "../resolve-ambiguous-edit-rows";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
@@ -216,36 +216,33 @@ export class EditCatalogueParentDialogComponent {
         this.isInError.set(true);
         return null;
       }
-      const parents = (
-        await Promise.all(
-          ids.map(async (id) => {
-            try {
-              return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
-            } catch {
-              return null;
-            }
-          })
-        )
-      ).filter((parent): parent is CatalogueParentDto => parent != null);
-      if (parents.length !== ids.length) {
-        this.conflict.set(true);
-        this.isInError.set(true);
-        return null;
-      }
-      const picked = await chooseAmbiguousNameOnConflict(
+      const outcome = await resolveAmbiguousEditRows(
+        ids,
+        async (id) => {
+          try {
+            return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
+          } catch {
+            return null;
+          }
+        },
         this.dialog,
-        parents.map(ambiguousCandidateFromCatalogueParent),
         this.data.name,
         {
+          toCandidate: ambiguousCandidateFromCatalogueParent,
           title: `Choose ${this.label.toLowerCase()}`,
           itemNounPlural: this.data.hub === "news" ? "news outlets" : "TV shows"
         }
       );
-      if (!picked?.id) {
+      if (outcome.kind === "unrecoverable") {
+        this.conflict.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      if (outcome.kind === "cancelled") {
         this.dialogRef.close({ closed: true });
         return null;
       }
-      return parents.find((parent) => parent.id === picked.id) ?? null;
+      return outcome.row;
     }
   }
 

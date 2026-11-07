@@ -304,6 +304,24 @@ describe('EditCatalogueParentDialogComponent', () => {
     (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
     (await expectSoon(languagesUrl)).flush({ en: 'English' });
     await settle();
+    expect(confirmOpen).toHaveBeenCalled();
+    const pickerData = confirmOpen.mock.calls[0][1].data;
+    expect(pickerData.title).toBe('Choose tv show');
+    expect(pickerData.itemNounPlural).toBe('TV shows');
+    expect(pickerData.candidates).toEqual([
+      expect.objectContaining({
+        id: firstId,
+        name: 'Nightly',
+        youTubeChannelId: 'UC-first',
+        twitterHandle: '@one'
+      }),
+      expect.objectContaining({
+        id: secondId,
+        name: 'Nightly',
+        youTubeChannelId: 'UC-second',
+        twitterHandle: '@two'
+      })
+    ]);
     expect(dialog.model()?.youTubeChannelId).toBe('UC-second');
     expect(close).not.toHaveBeenCalled();
   });
