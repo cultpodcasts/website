@@ -1,20 +1,22 @@
-<h2 mat-dialog-title>Choose series</h2>
+<h2 mat-dialog-title>{{ title }}</h2>
 
 <mat-dialog-content>
   <p class="series-conflict__lede">
-    Several catalogue rows share this name. Pick by platform ids or removed status — do not guess.
+    Several {{ itemNounPlural }} share this name. Pick by platform ids or removed status — do not guess.
   </p>
   <ul class="series-conflict__list">
-    @for (podcast of data.podcasts; track podcast.id) {
+    @for (candidate of data.candidates; track candidate.id) {
     <li class="series-conflict__item">
-      <button type="button" class="series-conflict__pick" (click)="pick(podcast)">
-        <span class="series-conflict__title">{{ displayCatalogName(podcast.name) }}</span>
-        <span class="series-conflict__meta">id: {{ podcast.id }}</span>
-        <span class="series-conflict__meta">Spotify: {{ podcast.spotifyId || '—' }}</span>
-        <span class="series-conflict__meta">Apple: {{ podcast.appleId ?? '—' }}</span>
-        <span class="series-conflict__meta">YouTube channel: {{ podcast.youTubeChannelId || '—' }}</span>
-        <span class="series-conflict__meta">YouTube playlist: {{ podcast.youTubePlaylistId || '—' }}</span>
-        <span class="series-conflict__meta">Removed: {{ podcast.removed ? 'yes' : 'no' }}</span>
+      <button type="button" class="series-conflict__pick" (click)="pick(candidate)">
+        <span class="series-conflict__title">{{ displayCatalogName(candidate.name ?? data.name) }}</span>
+        <span class="series-conflict__meta">id: {{ candidate.id }}</span>
+        <span class="series-conflict__meta">Spotify: {{ candidate.spotifyId || '—' }}</span>
+        <span class="series-conflict__meta">Apple: {{ candidate.appleId ?? '—' }}</span>
+        <span class="series-conflict__meta">YouTube channel: {{ candidate.youTubeChannelId || '—' }}</span>
+        <span class="series-conflict__meta">YouTube playlist: {{ candidate.youTubePlaylistId || '—' }}</span>
+        <span class="series-conflict__meta">Twitter: {{ candidate.twitterHandle || '—' }}</span>
+        <span class="series-conflict__meta">Bluesky: {{ candidate.blueskyHandle || '—' }}</span>
+        <span class="series-conflict__meta">Removed: {{ candidate.removed ? 'yes' : 'no' }}</span>
       </button>
     </li>
     }

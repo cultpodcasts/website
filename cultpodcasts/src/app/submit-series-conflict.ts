@@ -1,6 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
+import {
+  AmbiguousNameCandidate,
+  ambiguousCandidateFromPodcast
+} from './ambiguous-name-candidate';
 import { parseAmbiguousPodcastIds } from './parse-ambiguous-podcast-ids';
 import { Podcast } from './podcast.interface';
 import { SimplePodcast } from './simple-podcast.interface';
@@ -146,22 +150,47 @@ export async function resolveSubmitNameConflict(
   return resolveAmbiguousPodcastIds(resolve, dialog, ids, name);
 }
 
+/** Curator picks one same-name row (submit attach, edit podcast / news / TV). */
+export async function chooseAmbiguousNameOnConflict(
+  dialog: MatDialog,
+  candidates: AmbiguousNameCandidate[],
+  name: string,
+  options?: { title?: string; itemNounPlural?: string }
+): Promise<AmbiguousNameCandidate | undefined> {
+  return firstValueFrom(
+    dialog.open<
+      SubmitSeriesConflictDialogComponent,
+      SubmitSeriesConflictDialogData,
+      AmbiguousNameCandidate | undefined
+    >(SubmitSeriesConflictDialogComponent, {
+      data: {
+        candidates,
+        name,
+        title: options?.title,
+        itemNounPlural: options?.itemNounPlural
+      },
+      disableClose: true,
+      autoFocus: true,
+      width: '90%'
+    }).afterClosed()
+  );
+}
+
 export async function chooseSeriesOnConflict(
   dialog: MatDialog,
   podcasts: Podcast[],
   name: string
 ): Promise<SimplePodcast | undefined> {
-  return firstValueFrom(
-    dialog.open<SubmitSeriesConflictDialogComponent, SubmitSeriesConflictDialogData, SimplePodcast | undefined>(
-      SubmitSeriesConflictDialogComponent,
-      {
-        data: { podcasts, name },
-        disableClose: true,
-        autoFocus: true,
-        width: '90%'
-      }
-    ).afterClosed()
+  const picked = await chooseAmbiguousNameOnConflict(
+    dialog,
+    podcasts.map(ambiguousCandidateFromPodcast).filter((c) => c.id),
+    name,
+    { title: 'Choose series', itemNounPlural: 'catalogue rows' }
   );
+  if (!picked?.id) {
+    return undefined;
+  }
+  return { id: picked.id, name: picked.name ?? name };
 }
 
 export { seriesNameFromForm };

@@ -15,6 +15,7 @@ import { MatTabsModule } from "@angular/material/tabs";
 import { TextFieldModule } from "@angular/cdk/text-field";
 import { KeyValuePipe } from "@angular/common";
 import { firstValueFrom, forkJoin } from "rxjs";
+import { ambiguousCandidateFromCatalogueParent } from "../ambiguous-name-candidate";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
 import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
@@ -41,6 +42,7 @@ import { imdbTitleUrl, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-for
 import { buildPodcastLanguageOptions } from "../language-options.util";
 import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
+import { parseAmbiguousPodcastIds } from "../parse-ambiguous-podcast-ids";
 import {
   CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
   filterSubjectsByTerm,
@@ -51,6 +53,7 @@ import {
   youTubeChannelIgnoredHint,
   youTubePlaylistReplacesChannel
 } from "../podcast-form.util";
+import { resolveAmbiguousEditRows } from "../resolve-ambiguous-edit-rows";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
 import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
@@ -168,14 +171,16 @@ export class EditCatalogueParentDialogComponent {
 
   private async load(): Promise<void> {
     try {
+      const dto = await this.resolveParentDto();
+      if (!dto) {
+        return;
+      }
       const resp = await firstValueFrom(
         forkJoin({
-          dto: this.curation.getCatalogueParent(this.data.hub, this.data.name),
           subjects: this.curation.getSubjects(),
           languages: this.curation.getLanguages()
         })
       );
-      const dto = resp.dto;
       const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
       this.model.set(catalogueParentEditModel(dto));
@@ -191,6 +196,53 @@ export class EditCatalogueParentDialogComponent {
       this.isInError.set(true);
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * GET by hub name; on 409 load each id and let the curator pick (same picker as submit).
+   * Cancel closes the edit dialog. Returns null when closed or unrecoverable.
+   */
+  private async resolveParentDto(): Promise<CatalogueParentDto | null> {
+    try {
+      return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, this.data.name));
+    } catch (error) {
+      if (!(error instanceof HttpErrorResponse) || error.status !== 409) {
+        throw error;
+      }
+      const ids = parseAmbiguousPodcastIds(error.error);
+      if (!ids) {
+        this.conflict.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      const outcome = await resolveAmbiguousEditRows(
+        ids,
+        async (id) => {
+          try {
+            return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
+          } catch {
+            return null;
+          }
+        },
+        this.dialog,
+        this.data.name,
+        {
+          toCandidate: ambiguousCandidateFromCatalogueParent,
+          title: `Choose ${this.label.toLowerCase()}`,
+          itemNounPlural: this.data.hub === "news" ? "news outlets" : "TV shows"
+        }
+      );
+      if (outcome.kind === "unrecoverable") {
+        this.conflict.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      if (outcome.kind === "cancelled") {
+        this.dialogRef.close({ closed: true });
+        return null;
+      }
+      return outcome.row;
     }
   }
 
