@@ -2,15 +2,18 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl, FormGroup } from '@angular/forms';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
+import { AddPodcastForm } from '../add-podcast-form.interface';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
+import { Podcast } from '../podcast.interface';
 import { TransferPodcastKindSendComponent } from '../transfer-podcast-kind-send/transfer-podcast-kind-send.component';
 import { AddPodcastDialogComponent } from './add-podcast-dialog.component';
 
@@ -69,6 +72,24 @@ describe('AddPodcastDialogComponent', () => {
       'Podcast Indexed. 2 episodes updated',
       'Ok',
       { duration: 10000 }
+    );
+  });
+
+  it('indexBacklog keeps IndexDialog on persisted name when form rename is dirty', () => {
+    dialogOpen.mockReturnValue({ afterClosed: () => of(undefined) });
+    const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
+    sut.originalPodcast = { name: 'Clothesline Desk' } as Podcast;
+    sut.form.set(new FormGroup({
+      podcastName: new FormControl('Unsaved Rename', { nonNullable: true })
+    }) as unknown as FormGroup<AddPodcastForm>);
+
+    sut.indexBacklog();
+
+    expect(dialogOpen).toHaveBeenCalledWith(
+      IndexDialogComponent,
+      expect.objectContaining({
+        data: { kind: 'podcast', name: 'Clothesline Desk' }
+      })
     );
   });
 

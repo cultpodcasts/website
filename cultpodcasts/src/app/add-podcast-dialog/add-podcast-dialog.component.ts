@@ -26,12 +26,10 @@ import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
-import { ConfirmComponent } from '../confirm/confirm.component';
-import { TransferPodcastKindSendComponent } from '../transfer-podcast-kind-send/transfer-podcast-kind-send.component';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
-import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
 import { notifyPodcastIndexDialogResult, openPodcastIndexDialog } from '../podcast-index-from-dialog';
+import { confirmAndTransferPodcastKind } from '../podcast-transfer-from-dialog';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -324,10 +322,9 @@ export class AddPodcastDialogComponent {
     });
   }
 
-  /** Podcast name for Index backlog (rename field wins over create name). */
+  /** Podcast name for Index backlog — persisted/create name only (unsaved rename is not indexed). */
   indexBacklogName(): string {
-    const fromForm = this.form()?.controls.podcastName.value?.trim();
-    return fromForm || this.podcastName?.trim() || '';
+    return this.originalPodcast?.name?.trim() || this.podcastName?.trim() || '';
   }
 
   indexBacklog() {
@@ -346,32 +343,10 @@ export class AddPodcastDialogComponent {
       return;
     }
 
-    const isTvShow = targetKind === CatalogueParentKind.TvShow;
-    const title = isTvShow ? 'Transfer to TV show' : 'Transfer to news organisation';
-    const question = isTvShow
-      ? 'Move this podcast and all of its episodes to a TV show? The podcast id becomes the TV show id. Episode ids stay the same.'
-      : 'Move this podcast and all of its episodes to a news organisation? The podcast id becomes the news organisation id. Episode ids stay the same.';
-
-    const confirmed = await firstValueFrom(this.dialog.open(ConfirmComponent, {
-      data: { title: title, question: question },
-      disableClose: true,
-      autoFocus: true
-    }).afterClosed());
-    if (!confirmed?.result) {
-      return;
+    const transferred = await confirmAndTransferPodcastKind(this.dialog, this.podcastId, targetKind);
+    if (transferred) {
+      this.dialogRef.close(transferred);
     }
-
-    const sendRef = this.dialog.open(TransferPodcastKindSendComponent, { disableClose: true, autoFocus: true });
-    sendRef.componentInstance.submit(this.podcastId, targetKind);
-    sendRef.afterClosed().subscribe((result: TransferPodcastKindSendClose | undefined) => {
-      if (result?.transferred) {
-        this.dialogRef.close({
-          transferred: true,
-          targetKind: result.targetKind ?? targetKind,
-          response: result.response ?? undefined
-        });
-      }
-    });
   }
 
   private async applyEpisodeLanguageFromPodcast(podcastId: string, changes: AddPodcastPost) {
