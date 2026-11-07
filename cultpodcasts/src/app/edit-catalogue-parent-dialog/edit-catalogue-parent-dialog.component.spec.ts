@@ -273,13 +273,39 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('shows not found on 404 and offers no form', async () => {
     const dialog = create();
-    // Answer the lookups sent alongside first, so none is left open or cancelled mid-flight.
-    (await expectSoon(subjectsUrl)).flush([]);
-    (await expectSoon(languagesUrl)).flush({});
     (await expectSoon(getUrl)).flush(null, { status: 404, statusText: 'Not Found' });
     await settle();
     expect(dialog.notFound()).toBe(true);
     expect(dialog.model()).toBeNull();
+  });
+
+  it('on 409 loads each id, lets the curator pick, then opens the form for that outlet', async () => {
+    const firstId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const secondId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    confirmOpen.mockReturnValue({
+      afterClosed: () => of({ id: secondId, name: 'Nightly', youTubeChannelId: 'UC-second' })
+    });
+    const dialog = create();
+    (await expectSoon(getUrl)).flush([firstId, secondId], { status: 409, statusText: 'Conflict' });
+    const firstGet = await expectSoon(new URL(`/tvshow/${firstId}`, environment.api).toString());
+    firstGet.flush({
+      id: firstId,
+      name: 'Nightly',
+      youTubeChannelId: 'UC-first',
+      twitterHandle: '@one'
+    });
+    const secondGet = await expectSoon(new URL(`/tvshow/${secondId}`, environment.api).toString());
+    secondGet.flush({
+      id: secondId,
+      name: 'Nightly',
+      youTubeChannelId: 'UC-second',
+      twitterHandle: '@two'
+    });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    expect(dialog.model()?.youTubeChannelId).toBe('UC-second');
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('never PATCHes the read-only YouTube channel id, even if the model changes or blanks it', async () => {

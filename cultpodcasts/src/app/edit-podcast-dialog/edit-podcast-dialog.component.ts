@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Component, Inject, ChangeDetectionStrategy, signal, WritableSignal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTabsModule } from '@angular/material/tabs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { ambiguousCandidateFromPodcast } from '../ambiguous-name-candidate';
 import { EditPodcastForm } from "../edit-podcast-form.interface";
 import { Podcast } from '../podcast.interface';
 import { firstValueFrom, forkJoin } from 'rxjs';
@@ -34,7 +35,9 @@ import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
 import { TransferPodcastKindSendClose } from '../transfer-podcast-kind-send-close.interface';
 import { podcastGetPathFromEditData } from '../podcast-get-path';
+import { parseAmbiguousPodcastIds } from '../parse-ambiguous-podcast-ids';
 import { CurationSubmitService } from '../curation-submit.service';
+import { chooseAmbiguousNameOnConflict } from '../submit-series-conflict';
 import { YouTubeIndexingHints } from '../youtube-indexing-hints.interface';
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from '../youtube-indexing-hints.util';
 import {
@@ -139,52 +142,128 @@ export class EditPodcastDialogComponent {
     try {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + token);
-      const episodeEndpoint = new URL(
-        podcastGetPathFromEditData(this.data),
-        environment.api
-      ).toString();
+      const podcast = await this.resolvePodcast(headers);
+      if (!podcast) {
+        this.isLoading.set(false);
+        return;
+      }
       const subjectsEndpoint = new URL("/subjects", environment.api).toString();
       const languagesEndpoint = new URL("/languages", environment.api).toString();
-
-      var resp = await firstValueFrom(forkJoin(
-        {
-          podcast: this.http.get<Podcast>(episodeEndpoint, { headers: headers, observe: "response" }),
-          subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }),
-          languages: this.http.get<{ [key: string]: string }>(languagesEndpoint, { headers: headers })
-        }
-      ));
-
-      if (resp.podcast.status == 200 && resp.podcast.body) {
-        this.podcastId = resp.podcast.body.id;
-        this.originalPodcast = resp.podcast.body;
-        this.indexingHints.set(resp.podcast.body.youTubeIndexingHints ?? null);
-        const form = new FormGroup<EditPodcastForm>(buildPodcastFormControls(resp.podcast.body));
-        this.form.set(form);
-        this.wireIndexAllIncludeTitleSync(form);
-        let initial: string[] = [];
-        if (resp.podcast.body && resp.podcast.body.defaultSubject != null) {
-          initial.push(resp.podcast.body.defaultSubject);
-        }
-        this.defaultSubjects.set([...initial].concat(resp.subjects.filter(x => resp.podcast.body!.defaultSubject == null || resp.podcast.body!.defaultSubject != x.name).map(x => x.name)));
-        const ignoredSubjects = resp.podcast.body.ignoredSubjects ?? [];
-        this.ignoredSubjects.set(ignoredSubjects.concat(resp.subjects.filter(x => !ignoredSubjects.includes(x.name)).map(x => x.name)));
-        this.languages.set(buildPodcastLanguageOptions(resp.languages));
-
-        this.isLoading.set(false);
-      } else {
-        this.isLoading.set(false);
-        this.isInError.set(true);
-        if (resp.podcast.status == 404) {
-          this.notFound.set(true);
-        } else if (resp.podcast.status == 409) {
-          this.conflict.set(true);
-        }
-      }
+      const resp = await firstValueFrom(forkJoin({
+        subjects: this.http.get<Subject[]>(subjectsEndpoint, { headers: headers }),
+        languages: this.http.get<{ [key: string]: string }>(languagesEndpoint, { headers: headers })
+      }));
+      this.bindPodcast(podcast, resp.subjects, resp.languages);
+      this.isLoading.set(false);
     } catch (e) {
       console.error(e);
       this.isLoading.set(false);
       this.isInError.set(true);
+      if (e instanceof HttpErrorResponse) {
+        this.notFound.set(e.status === 404);
+        this.conflict.set(e.status === 409);
+      }
     }
+  }
+
+  /**
+   * GET by name or id from dialog data. On 409 UUID list, curator picks (same picker as submit).
+   * Cancel closes the dialog. Returns null when closed or unrecoverable conflict.
+   */
+  private async resolvePodcast(headers: HttpHeaders): Promise<Podcast | null> {
+    const episodeEndpoint = new URL(
+      podcastGetPathFromEditData(this.data),
+      environment.api
+    ).toString();
+    try {
+      const resp = await firstValueFrom(
+        this.http.get<Podcast>(episodeEndpoint, { headers: headers, observe: "response" })
+      );
+      if (resp.status === 200 && resp.body) {
+        return resp.body;
+      }
+      this.isInError.set(true);
+      if (resp.status === 404) {
+        this.notFound.set(true);
+      } else if (resp.status === 409) {
+        this.conflict.set(true);
+      }
+      return null;
+    } catch (e) {
+      if (!(e instanceof HttpErrorResponse)) {
+        throw e;
+      }
+      if (e.status === 404) {
+        this.notFound.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      if (e.status !== 409) {
+        throw e;
+      }
+      const ids = parseAmbiguousPodcastIds(e.error);
+      if (!ids) {
+        this.conflict.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      const podcasts = (
+        await Promise.all(
+          ids.map(async (id) => {
+            try {
+              return await firstValueFrom(this.curation.getPodcast(id));
+            } catch {
+              return null;
+            }
+          })
+        )
+      ).filter((row): row is Podcast => row != null && !!row.id);
+      if (podcasts.length !== ids.length) {
+        this.conflict.set(true);
+        this.isInError.set(true);
+        return null;
+      }
+      const picked = await chooseAmbiguousNameOnConflict(
+        this.dialog,
+        podcasts.map(ambiguousCandidateFromPodcast),
+        this.podcastName,
+        { title: 'Choose podcast', itemNounPlural: 'podcasts' }
+      );
+      if (!picked?.id) {
+        this.dialogRef.close({ closed: true });
+        return null;
+      }
+      return podcasts.find((row) => row.id === picked.id) ?? null;
+    }
+  }
+
+  private bindPodcast(
+    podcast: Podcast,
+    subjects: Subject[],
+    languages: { [key: string]: string }
+  ): void {
+    this.podcastId = podcast.id;
+    this.originalPodcast = podcast;
+    this.indexingHints.set(podcast.youTubeIndexingHints ?? null);
+    const form = new FormGroup<EditPodcastForm>(buildPodcastFormControls(podcast));
+    this.form.set(form);
+    this.wireIndexAllIncludeTitleSync(form);
+    let initial: string[] = [];
+    if (podcast.defaultSubject != null) {
+      initial.push(podcast.defaultSubject);
+    }
+    this.defaultSubjects.set(
+      [...initial].concat(
+        subjects
+          .filter((x) => podcast.defaultSubject == null || podcast.defaultSubject != x.name)
+          .map((x) => x.name)
+      )
+    );
+    const ignoredSubjects = podcast.ignoredSubjects ?? [];
+    this.ignoredSubjects.set(
+      ignoredSubjects.concat(subjects.filter((x) => !ignoredSubjects.includes(x.name)).map((x) => x.name))
+    );
+    this.languages.set(buildPodcastLanguageOptions(languages));
   }
 
   close() {
