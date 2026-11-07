@@ -1,13 +1,16 @@
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { AmbiguousNameCandidate } from '../ambiguous-name-candidate';
 import { displayCatalogName } from '../display-catalog-name';
-import { Podcast } from '../podcast.interface';
-import { SimplePodcast } from '../simple-podcast.interface';
 
 export interface SubmitSeriesConflictDialogData {
   name: string;
-  podcasts: Podcast[];
+  candidates: AmbiguousNameCandidate[];
+  /** Dialog title; default "Choose series". */
+  title?: string;
+  /** Noun in the lede, e.g. "news outlets", "TV shows", "catalogue rows". */
+  itemNounPlural?: string;
 }
 
 @Component({
@@ -19,21 +22,20 @@ export interface SubmitSeriesConflictDialogData {
 })
 export class SubmitSeriesConflictDialogComponent {
   protected readonly displayCatalogName = displayCatalogName;
+  protected readonly title = this.data.title ?? 'Choose series';
+  protected readonly itemNounPlural = this.data.itemNounPlural ?? 'catalogue rows';
 
   constructor(
-    private readonly dialogRef: MatDialogRef<SubmitSeriesConflictDialogComponent, SimplePodcast | undefined>,
+    private readonly dialogRef: MatDialogRef<SubmitSeriesConflictDialogComponent, AmbiguousNameCandidate | undefined>,
     @Inject(MAT_DIALOG_DATA) protected readonly data: SubmitSeriesConflictDialogData
   ) {
   }
 
-  pick(podcast: Podcast): void {
-    if (!podcast.id) {
+  pick(candidate: AmbiguousNameCandidate): void {
+    if (!candidate.id) {
       return;
     }
-    this.dialogRef.close({
-      id: podcast.id,
-      name: podcast.name ?? this.data.name
-    });
+    this.dialogRef.close(candidate);
   }
 
   close(): void {
