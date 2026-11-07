@@ -37,6 +37,7 @@ import { podcastGetPathFromEditData } from '../podcast-get-path';
 import { CurationSubmitService } from '../curation-submit.service';
 import { YouTubeIndexingHints } from '../youtube-indexing-hints.interface';
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from '../youtube-indexing-hints.util';
+import { notifyPodcastIndexDialogResult, openPodcastIndexDialog } from '../podcast-index-from-dialog';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -386,6 +387,21 @@ export class EditPodcastDialogComponent {
       if (result.updated) {
         this.dialogRef.close({ updated: true, response: result.response });
       }
+    });
+  }
+
+  /** Podcast name for Index backlog (edit loads by name; no rename field). */
+  indexBacklogName(): string {
+    return this.podcastName?.trim() || '';
+  }
+
+  indexBacklog() {
+    const name = this.indexBacklogName();
+    if (!name) {
+      return;
+    }
+    openPodcastIndexDialog(this.dialog, name).afterClosed().subscribe(result => {
+      notifyPodcastIndexDialogResult(this.snackBar, result);
     });
   }
 

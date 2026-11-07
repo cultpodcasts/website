@@ -6,6 +6,9 @@ import { provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
 import { GuidService } from '../guid.service';
+import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dialog.component';
+import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dialog.component';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
 import { EditNewsReportDialogComponent } from '../edit-news-report-dialog/edit-news-report-dialog.component';
 import { EditTvShowEpisodeDialogComponent } from '../edit-tv-show-episode-dialog/edit-tv-show-episode-dialog.component';
@@ -159,5 +162,45 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
       component.action();
       expect(dialogOpen).not.toHaveBeenCalled();
     }
+  });
+
+  it('after Add Podcast transfer, navigates to the news hub instead of the episode Review snack', async () => {
+    const podcastId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const episodeId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    const { component, navigate } = await create({
+      existingPodcast: false,
+      response: {
+        episode: 'Created',
+        podcast: 'Created',
+        podcastId,
+        episodeId
+      },
+      roles: ['Curator']
+    });
+    dialogOpen
+      .mockReturnValueOnce({
+        afterClosed: () =>
+          of({
+            isNewPodcast: true,
+            podcastName: 'AP Archive Desk',
+            podcastId,
+            updated: true
+          })
+      })
+      .mockReturnValueOnce({
+        afterClosed: () =>
+          of({
+            transferred: true,
+            targetKind: CatalogueParentKind.NewsOrganisation
+          })
+      });
+    component.action();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(dialogOpen.mock.calls[0][0]).toBe(AddEpisodeDialogComponent);
+    expect(dialogOpen.mock.calls[1][0]).toBe(AddPodcastDialogComponent);
+    expect(snackOpen).toHaveBeenCalledWith('Podcast transferred', 'Ok', { duration: 10000 });
+    expect(navigate).toHaveBeenCalledWith(['/news', 'AP Archive Desk']);
   });
 });

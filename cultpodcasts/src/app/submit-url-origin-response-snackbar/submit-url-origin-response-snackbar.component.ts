@@ -11,7 +11,8 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { CataloguePlayableKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
-import { cataloguePlayableCommands } from '../catalogue-links';
+import { applyTransferredPodcastKindClose, cataloguePlayableCommands } from '../catalogue-links';
+import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
 import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
 import { EditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
@@ -106,23 +107,30 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     }
     dialogRef.afterClosed().subscribe(async result => {
       if (result.isNewPodcast) {
-        const podcastDialog = this.dialog.open(AddPodcastDialogComponent, {
-          data: {
-            podcastName: result.podcastName,
-            podcastId: result.podcastId!,
-            defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
-            forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking,
-            episodeId: episodeId,
-            episodeLangUnset: result.episodeLangUnset,
-            defaultLanguageFromDetection: this.data.response.defaultLanguageFromDetection === true
-          },
-          disableClose: true,
-          autoFocus: true,
-          width: '90%'
-        });
+        const podcastDialog = this.dialog.open<AddPodcastDialogComponent, unknown, EditPodcastDialogResponse>(
+          AddPodcastDialogComponent,
+          {
+            data: {
+              podcastName: result.podcastName,
+              podcastId: result.podcastId!,
+              defaultSubjectFromEpisode: result.defaultSubjectFromEpisode,
+              forceBypassShortEpisodeChecking: result.forceBypassShortEpisodeChecking,
+              episodeId: episodeId,
+              episodeLangUnset: result.episodeLangUnset,
+              defaultLanguageFromDetection: this.data.response.defaultLanguageFromDetection === true
+            },
+            disableClose: true,
+            autoFocus: true,
+            width: '90%'
+          }
+        );
         podcastDialog.afterClosed().subscribe(async podcastResult => {
+          const slug = (result.podcastName as string | undefined)?.trim() || '';
+          if (applyTransferredPodcastKindClose(podcastResult, slug, this.snackBar, this.router)) {
+            return;
+          }
           let message: string;
-          if (podcastResult.noChange) {
+          if (podcastResult?.noChange) {
             if (result.updated) {
               message = "Episode updated. Podcast unchanged";
             } else {
@@ -134,10 +142,12 @@ export class SubmitUrlOriginResponseSnackbarComponent {
             } else {
               message = "Episode unchanged. Podcast updated";
             }
-            if (podcastResult.response?.failureIndexingEpisodes) {
+            if (podcastResult?.response && 'failureIndexingEpisodes' in podcastResult.response
+              && podcastResult.response.failureIndexingEpisodes) {
               message += ". Some episodes failed to index";
             }
-            if (podcastResult.response?.failureDeletingFromIndex) {
+            if (podcastResult?.response && 'failureDeletingFromIndex' in podcastResult.response
+              && podcastResult.response.failureDeletingFromIndex) {
               message += ". Some episodes failed to delete from index";
             }
           }

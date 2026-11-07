@@ -43,12 +43,16 @@
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
                     <div class="flag-row">
                         <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                        <button type="button" matButton="outlined" class="index-backlog"
+                            [disabled]="!indexBacklogName()"
+                            (click)="indexBacklog()">Index backlog now</button>
                         @if (indexAllOverriddenByIncludeTitle()) {
                         <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
                             Overridden by Episode Include Title Regex
                         </button>
                         }
                     </div>
+                    <p class="index-backlog-hint">Index All covers future runs. Use Index backlog now for a one-shot walk of episodes already on the feeds.</p>
                     <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking">Bypass Short Episode Checking</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube">Skip Enriching From YouTube</mat-checkbox>
@@ -211,6 +215,20 @@
                         (click)="applyIncludeTitleRegexPreset(preset.pattern)">{{preset.name}}</button>
                     }
                 </mat-menu>
+            </mat-tab>
+            <mat-tab label="Catalogue">
+                <mat-form-field class="full-width">
+                    <mat-label>Transfer to</mat-label>
+                    <mat-select [value]="transferTarget()" (selectionChange)="transferTarget.set($event.value)">
+                        <mat-option [value]="null">Keep as podcast</mat-option>
+                        <mat-option [value]="CatalogueParentKind.TvShow">TV show</mat-option>
+                        <mat-option [value]="CatalogueParentKind.NewsOrganisation">News organisation</mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <p class="transfer-hint">The podcast id becomes the new parent id. Episode ids stay the same. This cannot be Film.</p>
+                <button type="button" matButton="filled"
+                    [disabled]="!podcastId || transferTarget() == null"
+                    (click)="transferKind()">Transfer</button>
             </mat-tab>
         </mat-tab-group>
     </form>
