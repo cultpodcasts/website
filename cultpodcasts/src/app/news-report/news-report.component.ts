@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { MatButtonModule } from "@angular/material/button";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
@@ -25,6 +25,7 @@ import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 export class NewsReportComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   private readonly page = connectKindEpisode({
     parentHub: (slug) => slug ? ["/news", slug] : null,
     seoName: (_episode, slug) => slug,
@@ -42,8 +43,8 @@ export class NewsReportComponent {
     this.page.start();
   }
 
-  /** Curator Edit: the news report dialog (newsreport/{id}), not the podcast Edit Episode dialog. */
+  /** Curator Edit: the news report dialog (newsreport/{id}), then Review on `/episodes`. */
   editReport(reportId: string): void {
-    editCataloguePlayableFromPage(this.dialog, this.snackBar, CataloguePlayableKind.NewsReport, reportId);
+    editCataloguePlayableFromPage(this.dialog, this.snackBar, this.router, CataloguePlayableKind.NewsReport, reportId);
   }
 }

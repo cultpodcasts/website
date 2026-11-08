@@ -1,4 +1,6 @@
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { CataloguePlayableKind } from './catalogue-playable-kind.enum';
 import { EditFilmDialogComponent } from './edit-film-dialog/edit-film-dialog.component';
 import { EditNewsReportDialogComponent } from './edit-news-report-dialog/edit-news-report-dialog.component';
@@ -64,17 +66,45 @@ export function playableEditResultMessage(
   return null;
 }
 
-/** News report / TV episode / film page: curator Edit opens the dialog, then a short result snackbar. */
+/**
+ * Review list for a news report, TV episode or film: same `/episodes` route as a podcast episode.
+ * `GET /episode/{id}` already returns those kinds by guid.
+ */
+export function cataloguePlayableReviewListCommands(playableId: string): (string | string[])[] {
+  return ['/episodes', JSON.stringify([playableId])];
+}
+
+export async function navigateToCataloguePlayableReviewList(
+  router: Pick<Router, 'navigate'>,
+  playableId: string
+): Promise<boolean> {
+  return router.navigate(cataloguePlayableReviewListCommands(playableId));
+}
+
+type PageEditSnackBar = {
+  open: (
+    message: string,
+    action?: string,
+    config?: { duration: number }
+  ) => MatSnackBarRef<TextOnlySnackBar> | { onAction: () => { subscribe: (fn: () => void) => unknown } };
+};
+
+/** News report / TV episode / film page: curator Edit opens the dialog, then Review on the review list. */
 export function editCataloguePlayableFromPage(
   dialog: MatDialog,
-  snackBar: { open: (message: string, action?: string, config?: { duration: number }) => unknown },
+  snackBar: PageEditSnackBar,
+  router: Pick<Router, 'navigate'>,
   kind: EditableCataloguePlayableKind,
   playableId: string
 ): void {
   openCataloguePlayableEditDialog(dialog, kind, playableId).afterClosed().subscribe((result) => {
     const message = playableEditResultMessage(kind, result);
-    if (message) {
-      snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+    if (!message) {
+      return;
     }
+    const ref = snackBar.open(message, 'Review', { duration: result?.updated ? 10000 : 3000 });
+    ref.onAction().subscribe(() => {
+      void navigateToCataloguePlayableReviewList(router, playableId);
+    });
   });
 }

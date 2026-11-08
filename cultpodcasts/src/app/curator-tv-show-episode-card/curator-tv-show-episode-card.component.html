@@ -17,6 +17,13 @@
       <mat-icon>send</mat-icon>
       <span>{{ postLabel() }}</span>
     </button>
+    @if (isAdmin() && showDeleteEpisode()) {
+    <button [disabled]="episode().tweeted" mat-menu-item
+      (click)="deleteEpisode.emit({ episodeId: episode().id })">
+      <mat-icon>delete</mat-icon>
+      <span>{{ deleteLabel() }}</span>
+    </button>
+    }
   </mat-menu>
   <div class="curator-card__body">
     <div class="curator-card__art">

@@ -1,4 +1,4 @@
-import { Component, Inject, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -9,12 +9,11 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
-import { CataloguePlayableKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
+import { isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
-import { applyTransferredPodcastKindClose, cataloguePlayableCommands } from '../catalogue-links';
+import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
-import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
-import { EditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
+import { EditableCataloguePlayableKind, navigateToCataloguePlayableReviewList, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 import { catalogueSubmitOutcomePhrase, contentKindLabel } from '../content-kind-label';
 import { submitEpisodeServiceIconRows, type SubmitEpisodeServiceIconRow } from '../submit-episode-service-icons';
 
@@ -25,7 +24,7 @@ export interface SubmitUrlOriginResponseSnackbarData {
   existingPodcast: boolean;
   response: SubmitUrlOriginSuccessResponse;
   roles?: readonly string[];
-  /** Hub submit: the outlet / show the URL was sent to, so Review needs no lookup. */
+  /** Hub submit: the outlet / show the URL was sent to (legacy; Review now goes to `/episodes`). */
   parentName?: string;
 }
 
@@ -49,7 +48,6 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   readonly catalogueOutcomePhrase: string;
   /** News report / TV episode / film Review + Edit target (Curator, playable guid, created or existing). */
   readonly cataloguePlayable: { kind: EditableCataloguePlayableKind; playableId: string } | null;
-  private readonly parents = inject(CataloguePlayableParentService);
   constructor(
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
@@ -175,7 +173,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   async review() {
     this.snackBarRef.dismiss();
     if (this.cataloguePlayable) {
-      await this.navigateToPlayableReview(this.cataloguePlayable.kind, this.cataloguePlayable.playableId);
+      await navigateToCataloguePlayableReviewList(this.router, this.cataloguePlayable.playableId);
       return;
     }
     if (!canReviewSubmittedEpisode(
@@ -193,7 +191,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
     await this.router.navigate(["/episodes", id])
   }
 
-  /** News report / TV episode / film: open its edit dialog, then offer Review on the playable page. */
+  /** News report / TV episode / film: open its edit dialog, then Review on `/episodes` for remove-then-delete. */
   editSubmittedPlayable(kind: EditableCataloguePlayableKind, playableId: string) {
     openCataloguePlayableEditDialog(
       this.dialog,
@@ -207,19 +205,7 @@ export class SubmitUrlOriginResponseSnackbarComponent {
       }
       const ref = this.snackBar.open(message, "Review", { duration: result?.updated ? long : medium });
       ref.onAction().subscribe(async () =>
-        await this.navigateToPlayableReview(kind, playableId, result?.parentName ?? undefined));
+        await navigateToCataloguePlayableReviewList(this.router, playableId));
     });
-  }
-
-  private async navigateToPlayableReview(kind: EditableCataloguePlayableKind, playableId: string, knownParent?: string) {
-    // A film's Review slug is its own name, never the hub the URL was sent from.
-    const hubParent = kind === CataloguePlayableKind.Film ? undefined : this.data.parentName;
-    const parentName = hubParent || knownParent || await this.parents.parentName(kind, playableId);
-    const commands = cataloguePlayableCommands(kind, parentName, playableId);
-    if (!commands) {
-      this.snackBar.open("Could not find the page for this item", "Ok", { duration: 5000 });
-      return;
-    }
-    await this.router.navigate(commands);
   }
 }

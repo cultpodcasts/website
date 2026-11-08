@@ -39,6 +39,8 @@ export class CuratorNewsReportCardComponent {
   readonly showPromote = input(false);
   readonly promoted = input(false);
   readonly titleAsLink = input(true);
+  readonly showDeleteEpisode = input(false);
+  readonly authRoles = input<readonly string[]>([]);
   readonly updating = input(false);
   readonly loadingSubjectName = input<string | null>(null);
   readonly loadingGuestName = input<string | null>(null);
@@ -50,6 +52,7 @@ export class CuratorNewsReportCardComponent {
 
   readonly edit = output<ApiEpisode>();
   readonly post = output<ApiEpisode>();
+  readonly deleteEpisode = output<{ episodeId: string }>();
   readonly promoteToggle = output<ApiEpisode>();
   readonly removeSubject = output<{ episode: ApiEpisode; subject: string }>();
   readonly removeGuest = output<{ episode: ApiEpisode; guestName: string }>();
@@ -69,6 +72,10 @@ export class CuratorNewsReportCardComponent {
   protected readonly postLabel = computed(() =>
     playableCuratorActionLabel(this.episode().contentKind, 'Post')
   );
+  protected readonly deleteLabel = computed(() =>
+    playableCuratorActionLabel(this.episode().contentKind, 'Delete')
+  );
+  protected readonly isAdmin = computed(() => this.authRoles().includes('Admin'));
   protected readonly titleLink = computed(() => {
     const link = reviewPlayableLink(this.episode());
     return typeof link === 'string' ? this.router.parseUrl(link) : link;
