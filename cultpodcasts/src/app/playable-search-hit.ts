@@ -76,10 +76,11 @@ const UNKNOWN_SEARCH_FIELD = /could not find a property named/i;
 const NAMED_SEARCH_FIELD = /could not find a property named ['"]([^'"]+)['"]/i;
 
 /**
- * Azure Search says a missing field with "Could not find a property named …".
- * The /search proxy forwards that failure as HTTP 400 with an empty object.
+ * Azure Search names a missing field with "Could not find a property named '…'".
+ * Api `/search` forwards that envelope (cultpodcasts/Api#215); do not treat opaque
+ * empty 400 bodies as an unknown-field signal.
  */
-/** Property Azure named in "Could not find a property named '…'". Empty proxy bodies have no name. */
+/** Property Azure named in "Could not find a property named '…'". */
 export function unknownSearchFieldName(error: unknown): string | null {
   const body = errorBody(error);
   const message = error && typeof error === "object" && "message" in error
@@ -93,16 +94,12 @@ export function isUnknownSearchFieldError(error: unknown): boolean {
   const message = error && typeof error === "object" && "message" in error
     ? (error as { message: unknown }).message
     : undefined;
-  if (containsUnknownFieldMessage(body) || containsUnknownFieldMessage(message)) {
-    return true;
-  }
-  const status = errorStatus(error);
-  return status === 400 && (body == null || isEmptyJsonObject(body));
+  return containsUnknownFieldMessage(body) || containsUnknownFieldMessage(message);
 }
 
 /**
- * A missing contentKind field is not a series-name miss. Named contentKind, or an
- * empty 400 while the filter still includes kind, should drop kind — not latch podcastName.
+ * A missing contentKind field is not a series-name miss. Named contentKind (or any
+ * other non-series field) should drop kind — not latch podcastName.
  */
 export function isUnknownContentKindField(error: unknown): boolean {
   if (!isUnknownSearchFieldError(error)) {
@@ -112,23 +109,16 @@ export function isUnknownContentKindField(error: unknown): boolean {
   return field !== "seriesName" && field !== "podcastName";
 }
 
-/** Retry the live field once. A later failure drops the latch so the next search tries the new name again. */
+/** Retry podcastName once only when Azure names seriesName/podcastName as missing. */
 export function nextLegacyNameLatch(legacyNames: boolean, error: unknown): { legacyNames: boolean; retry: boolean } {
-  if (!legacyNames && isUnknownSearchFieldError(error)) {
-    return { legacyNames: true, retry: true };
-  }
-  if (legacyNames) {
+  if (!legacyNames) {
+    const field = unknownSearchFieldName(error);
+    if (field === "seriesName" || field === "podcastName") {
+      return { legacyNames: true, retry: true };
+    }
     return { legacyNames: false, retry: false };
   }
   return { legacyNames: false, retry: false };
-}
-
-function errorStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object" && "status" in error) {
-    const status = (error as { status: unknown }).status;
-    return typeof status === "number" ? status : undefined;
-  }
-  return undefined;
 }
 
 function errorBody(error: unknown): unknown {
@@ -175,6 +165,3 @@ function containsUnknownFieldMessage(value: unknown): boolean {
   return false;
 }
 
-function isEmptyJsonObject(value: unknown): boolean {
-  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length === 0;
-}

@@ -54,7 +54,7 @@ describe("playable search hits", () => {
     );
   });
 
-  it("treats Azure's missing property message and the search proxy's empty 400 as an unknown field", () => {
+  it("treats Azure's named missing-property message as an unknown field", () => {
     const named = new HttpErrorResponse({
       status: 400,
       statusText: "Bad Request",
@@ -64,13 +64,9 @@ describe("playable search hits", () => {
         },
       },
     });
-    const proxied = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
     expect(isUnknownSearchFieldError(named)).toBe(true);
-    expect(isUnknownSearchFieldError(proxied)).toBe(true);
     expect(unknownSearchFieldName(named)).toBe("seriesName");
-    expect(unknownSearchFieldName(proxied)).toBeNull();
     expect(isUnknownContentKindField(named)).toBe(false);
-    expect(isUnknownContentKindField(proxied)).toBe(true);
 
     const kindNamed = new HttpErrorResponse({
       status: 400,
@@ -85,17 +81,39 @@ describe("playable search hits", () => {
     expect(isUnknownContentKindField(kindNamed)).toBe(true);
   });
 
-  it("does not treat a timeout, a 500, or a bad request as an unknown field", () => {
+  it("does not treat an opaque empty 400, timeout, 500, or generic bad request as an unknown field", () => {
+    expect(isUnknownSearchFieldError(new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} }))).toBe(false);
     expect(isUnknownSearchFieldError(new HttpErrorResponse({ status: 0, statusText: "Unknown Error", error: null }))).toBe(false);
     expect(isUnknownSearchFieldError(new HttpErrorResponse({ status: 500, statusText: "Server Error", error: { message: "timeout" } }))).toBe(false);
     expect(isUnknownSearchFieldError(new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: { error: "Bad request" } }))).toBe(false);
+    expect(isUnknownContentKindField(new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} }))).toBe(false);
   });
 
-  it("retries the live field once and clears the latch when that retry fails", () => {
-    const unknown = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
+  it("retries podcastName only when Azure names seriesName or podcastName, then clears the latch", () => {
+    const seriesMissing = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Could not find a property named 'seriesName' on type 'search.document'.",
+        },
+      },
+    });
+    const opaque = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
+    const kindMissing = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Could not find a property named 'contentKind' on type 'search.document'.",
+        },
+      },
+    });
     const server = new HttpErrorResponse({ status: 500, statusText: "Server Error", error: { message: "timeout" } });
     expect(nextLegacyNameLatch(false, server)).toEqual({ legacyNames: false, retry: false });
-    expect(nextLegacyNameLatch(false, unknown)).toEqual({ legacyNames: true, retry: true });
+    expect(nextLegacyNameLatch(false, opaque)).toEqual({ legacyNames: false, retry: false });
+    expect(nextLegacyNameLatch(false, kindMissing)).toEqual({ legacyNames: false, retry: false });
+    expect(nextLegacyNameLatch(false, seriesMissing)).toEqual({ legacyNames: true, retry: true });
     expect(nextLegacyNameLatch(true, server)).toEqual({ legacyNames: false, retry: false });
     expect(playableSeriesField(false)).toBe("seriesName");
     expect(playableSeriesField(true)).toBe("podcastName");
