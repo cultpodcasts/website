@@ -25,7 +25,10 @@ export function openPodcastIndexDialog(
   );
 }
 
-/** Snackbar for an Index dialog close from Edit / Add Podcast (no episode Review navigation). */
+/**
+ * Snackbar for Index dialog closes that are not hub `updated` + Review navigation:
+ * Edit/Add backlog, and hub Index non-success outcomes (including 409/504).
+ */
 export function notifyPodcastIndexDialogResult(
   snackBar: MatSnackBar,
   result: PodcastIndexDialogResult | undefined

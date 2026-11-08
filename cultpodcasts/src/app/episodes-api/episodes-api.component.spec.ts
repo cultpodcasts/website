@@ -185,6 +185,27 @@ describe('EpisodesApiComponent (embedded)', () => {
     );
   });
 
+  it('Index afterClosed alreadyRunning / timedOut snacks (no silent close)', () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+
+    dialog.open.mockReturnValue({ afterClosed: () => of({ alreadyRunning: true }) });
+    fixture.componentInstance.index('Synthetic Pod');
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Podcast indexing already running. Try again shortly.',
+      'Ok',
+      { duration: 10000 }
+    );
+
+    snackBar.open.mockClear();
+    dialog.open.mockReturnValue({ afterClosed: () => of({ timedOut: true }) });
+    fixture.componentInstance.index('Synthetic Pod');
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Podcast indexing ran out of time. Anything it saved will appear shortly; try again later.',
+      'Ok',
+      { duration: 10000 }
+    );
+  });
+
   it('a film row gets the curator menu; Edit opens the film dialog (PATCH /film), not the podcast editor, then refreshes the row', async () => {
     dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true, parentName: 'One Off' }) });
     const fixture = TestBed.createComponent(EpisodesApiComponent);

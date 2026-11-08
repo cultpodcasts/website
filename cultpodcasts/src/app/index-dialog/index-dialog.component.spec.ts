@@ -103,6 +103,23 @@ describe('IndexDialogComponent', () => {
     }
   });
 
+  it('maps short-lookback podcast 409 / 504 the same as backlog (hub Index)', async () => {
+    for (const [status, expected] of [
+      [409, { alreadyRunning: true }],
+      [504, { timedOut: true }]
+    ] as const) {
+      await configure({ kind: 'podcast', name: 'Show' });
+      TestBed.createComponent(IndexDialogComponent);
+      await settle();
+      expectPost('/podcast/index/Show').flush(
+        { reason: status === 409 ? 'indexingInProgress' : 'TimedOut', message: 'x' },
+        { status, statusText: 'Error' }
+      );
+      await settle();
+      expect(close).toHaveBeenCalledWith(expected);
+    }
+  });
+
   it('indexes a news outlet by name on the newsorganisation route and closes with the item ids', async () => {
     await configure({ kind: 'catalogueParent', hub: 'news', name: 'Desk 24/7' });
     const sut = TestBed.createComponent(IndexDialogComponent).componentInstance;
