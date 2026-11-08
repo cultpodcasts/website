@@ -6,6 +6,7 @@ import { EditFilmDialogComponent } from './edit-film-dialog/edit-film-dialog.com
 import { EditNewsReportDialogComponent } from './edit-news-report-dialog/edit-news-report-dialog.component';
 import { EditTvShowEpisodeDialogComponent } from './edit-tv-show-episode-dialog/edit-tv-show-episode-dialog.component';
 import { EditPlayableDialogResponse } from './playable-edit.interface';
+import { socialRetractFailureMessage } from './social-retract-result';
 
 /** Playable kinds with a curator edit dialog (news report, TV episode, film). */
 export type EditableCataloguePlayableKind =
@@ -52,13 +53,13 @@ const updatedMessages: Record<EditableCataloguePlayableKind, string> = {
   [CataloguePlayableKind.Film]: 'Film updated'
 };
 
-/** "News report updated" / "TV episode updated" / "Film updated" / "No change"; null when the dialog was just closed. */
+/** Updated / retract-failure / "No change"; null when the dialog was just closed. */
 export function playableEditResultMessage(
   kind: EditableCataloguePlayableKind,
   result: EditPlayableDialogResponse | null | undefined
 ): string | null {
   if (result?.updated) {
-    return updatedMessages[kind];
+    return socialRetractFailureMessage(result.response) ?? updatedMessages[kind];
   }
   if (result?.noChange) {
     return 'No change';

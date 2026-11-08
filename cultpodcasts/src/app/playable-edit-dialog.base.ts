@@ -17,6 +17,7 @@ import {
   PlayableFieldsChangeRequest,
   PlayableFieldsDto
 } from './playable-edit.interface';
+import { socialRetractFailed } from './social-retract-result';
 
 export function playableEditApiErrorMessage(error: unknown): string | undefined {
   if (!(error instanceof HttpErrorResponse)) {
@@ -142,7 +143,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
     try {
       const response = await firstValueFrom(this.patch(this.playableId(), changes));
       const body = response.body ?? null;
-      if (body && (body.tweetDeleted === false || body.blueskyPostDeleted === false)) {
+      if (socialRetractFailed(body)) {
         console.error('Failure to remove tweet/bluesky-post', body);
       }
       this.dialogRef.close({ updated: true, response: body, parentName: this.parentName() });

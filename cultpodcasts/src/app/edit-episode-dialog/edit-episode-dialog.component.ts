@@ -21,6 +21,7 @@ import { EpisodePost } from '../episode-post.interface';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { EpisodeChangeResponse } from '../episode-change-response.interface';
+import { socialRetractFailed } from '../social-retract-result';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
 import subjectNamesConfig from '../hoisted-subject-names.json';
@@ -369,7 +370,7 @@ export class EditEpisodeDialogComponent {
     dialogRef.componentInstance.submit(podcastId, episodeId, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {
-        if (result.response && (result.response.blueskyPostDeleted == false || !result.response.tweetDeleted == false)) {
+        if (socialRetractFailed(result.response)) {
           console.error("Failure to remove tweet/bluesky-post", result.response);
         }
         this.dialogRef.close({ updated: true, response: result.response, podcastId: podcastId });

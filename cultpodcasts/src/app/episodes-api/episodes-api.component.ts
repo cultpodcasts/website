@@ -23,6 +23,7 @@ import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
 import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
+import { episodeEditResultMessage } from '../social-retract-result';
 import { CuratorPlayableCardComponent } from '../curator-playable-card/curator-playable-card.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
@@ -272,13 +273,12 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result) {
-        if (result.updated) {
-          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-          await this.refreshEpisode(episodeId);
-        } else if (result.noChange) {
-          this.snackBar.open("No change", "Ok", { duration: 3000 });
-        }
+      const message = episodeEditResultMessage(result);
+      if (message) {
+        this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+      }
+      if (result?.updated) {
+        await this.refreshEpisode(episodeId);
       }
     });
   }

@@ -28,6 +28,7 @@ import { apiEpisodeToHomepageEpisode } from '../api-episode-display';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
+import { episodeEditResultMessage } from '../social-retract-result';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -261,12 +262,9 @@ export class BookmarksApiComponent {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result) {
-        if (result.updated) {
-          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-        } else if (result.noChange) {
-          this.snackBar.open("No change", "Ok", { duration: 3000 });
-        }
+      const message = episodeEditResultMessage(result);
+      if (message) {
+        this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
       }
     });
   }
