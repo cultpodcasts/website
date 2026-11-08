@@ -67,12 +67,16 @@
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
                     <div class="flag-row">
                         <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                        <button type="button" matButton="outlined" class="index-backlog"
+                            [disabled]="!indexBacklogName()"
+                            (click)="indexBacklog()">Index backlog now</button>
                         @if (indexAllOverriddenByIncludeTitle()) {
                         <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
                             Overridden by Episode Include Title Regex
                         </button>
                         }
                     </div>
+                    <p class="index-backlog-hint">Index All covers future runs. Use Index backlog now for a one-shot walk of episodes already on the feeds.</p>
                     <mat-checkbox [formControl]="form()!.controls.bypassShortEpisodeChecking">Bypass Short Episode Checking</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.alwaysPromoteAsHero">Always promote as hero</mat-checkbox>
                     <mat-checkbox [formControl]="form()!.controls.skipEnrichingFromYouTube">Skip Enriching From YouTube</mat-checkbox>

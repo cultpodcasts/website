@@ -21,10 +21,15 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { NamedRegexPreset } from '../regex-presets.interface';
 import { RegexPresetsService } from '../regex-presets.service';
 import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
+import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
+import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
+import { notifyPodcastIndexDialogResult, openPodcastIndexDialog } from '../podcast-index-from-dialog';
+import { confirmAndTransferPodcastKind } from '../podcast-transfer-from-dialog';
 import {
   buildPodcastFormControls,
   filterSubjectsByTerm,
@@ -89,6 +94,8 @@ export class AddPodcastDialogComponent {
   readonly selectedTabIndex = signal(0);
   readonly indexAllOverriddenByIncludeTitle = signal(false);
   readonly highlightIncludeTitleRegex = signal(false);
+  readonly transferTarget = signal<CatalogueParentKind | null>(null);
+  protected readonly CatalogueParentKind = CatalogueParentKind;
   private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -96,7 +103,7 @@ export class AddPodcastDialogComponent {
     private auth: AuthServiceWrapper,
     private http: HttpClient,
     private regexPresetsService: RegexPresetsService,
-    private dialogRef: MatDialogRef<AddPodcastDialogComponent, any>,
+    private dialogRef: MatDialogRef<AddPodcastDialogComponent, EditPodcastDialogResponse>,
     @Inject(MAT_DIALOG_DATA) public data: {
       podcastName: string,
       defaultSubjectFromEpisode?: string,
@@ -107,6 +114,7 @@ export class AddPodcastDialogComponent {
       defaultLanguageFromDetection?: boolean
     },
     private dialog: MatDialog,
+    private snackBar: MatSnackBar,
   ) {
     this.podcastName = data.podcastName;
     this.podcastId = data.podcastId;
@@ -312,6 +320,33 @@ export class AddPodcastDialogComponent {
         this.dialogRef.close({ updated: true, response: result.response });
       }
     });
+  }
+
+  /** Podcast name for Index backlog — persisted/create name only (unsaved rename is not indexed). */
+  indexBacklogName(): string {
+    return this.originalPodcast?.name?.trim() || this.podcastName?.trim() || '';
+  }
+
+  indexBacklog() {
+    const name = this.indexBacklogName();
+    if (!name) {
+      return;
+    }
+    openPodcastIndexDialog(this.dialog, name).afterClosed().subscribe(result => {
+      notifyPodcastIndexDialogResult(this.snackBar, result);
+    });
+  }
+
+  async transferKind() {
+    const targetKind = this.transferTarget();
+    if (!this.podcastId || targetKind == null) {
+      return;
+    }
+
+    const transferred = await confirmAndTransferPodcastKind(this.dialog, this.podcastId, targetKind);
+    if (transferred) {
+      this.dialogRef.close(transferred);
+    }
   }
 
   private async applyEpisodeLanguageFromPodcast(podcastId: string, changes: AddPodcastPost) {

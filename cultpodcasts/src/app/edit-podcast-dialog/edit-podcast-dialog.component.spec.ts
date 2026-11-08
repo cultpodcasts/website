@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { Podcast } from '../podcast.interface';
 import { EditPodcastDialogComponent } from './edit-podcast-dialog.component';
 
@@ -16,9 +17,11 @@ type Internals = {
   form(): { value: Partial<Podcast> } | undefined;
   originalPodcast: Podcast | undefined;
   podcastId: string | undefined;
+  podcastName: string;
   conflict(): boolean;
   isInError(): boolean;
   isLoading(): boolean;
+  indexBacklog(): void;
 };
 
 /** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
@@ -64,7 +67,8 @@ function syntheticPodcast(overrides: Partial<Podcast> & { id: string; name: stri
 
 describe('EditPodcastDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
-  let confirmOpen: ReturnType<typeof vi.fn>;
+  let dialogOpen: ReturnType<typeof vi.fn>;
+  let snackOpen: ReturnType<typeof vi.fn>;
   const podcastName = 'Nightly Desk';
   const getUrl = new URL(`/podcast/${encodeURIComponent(podcastName)}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
@@ -72,7 +76,8 @@ describe('EditPodcastDialogComponent', () => {
 
   beforeEach(async () => {
     close = vi.fn();
-    confirmOpen = vi.fn(() => ({ afterClosed: () => of(undefined) }));
+    dialogOpen = vi.fn(() => ({ afterClosed: () => of(undefined) }));
+    snackOpen = vi.fn();
     await TestBed.configureTestingModule({
       imports: [EditPodcastDialogComponent],
       providers: [
@@ -82,7 +87,7 @@ describe('EditPodcastDialogComponent', () => {
         provideHttpClientTesting(),
         { provide: MAT_DIALOG_DATA, useValue: { podcastName } },
         { provide: MatDialogRef, useValue: { close } },
-        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: MatSnackBar, useValue: { open: snackOpen } },
         {
           provide: AuthServiceWrapper,
           useValue: { authService: { getAccessTokenSilently: () => of('test-token') } }
@@ -91,7 +96,7 @@ describe('EditPodcastDialogComponent', () => {
     })
       .overrideProvider(MatDialog, {
         useValue: {
-          open: (...args: unknown[]) => (confirmOpen as unknown as (...a: unknown[]) => unknown)(...args)
+          open: (...args: unknown[]) => (dialogOpen as unknown as (...a: unknown[]) => unknown)(...args)
         }
       })
       .compileComponents();
@@ -105,10 +110,33 @@ describe('EditPodcastDialogComponent', () => {
     return fixture.componentInstance as unknown as Internals;
   }
 
+  it('indexBacklog opens IndexDialog for the podcast name and snacks the result', () => {
+    dialogOpen.mockReturnValue({
+      afterClosed: () => of({ updated: true, episodeIds: ['p/e'] })
+    });
+    const fixture = TestBed.createComponent(EditPodcastDialogComponent);
+    const sut = fixture.componentInstance;
+    sut.podcastName = 'Clothesline Desk';
+
+    sut.indexBacklog();
+
+    expect(dialogOpen).toHaveBeenCalledWith(
+      IndexDialogComponent,
+      expect.objectContaining({
+        data: { kind: 'podcast', name: 'Clothesline Desk' }
+      })
+    );
+    expect(snackOpen).toHaveBeenCalledWith(
+      'Podcast Indexed. 1 episode updated',
+      'Ok',
+      { duration: 10000 }
+    );
+  });
+
   it('on 409 loads each id, lets the curator pick, then binds the chosen podcast', async () => {
     const firstId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const secondId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    confirmOpen.mockReturnValue({
+    dialogOpen.mockReturnValue({
       afterClosed: () =>
         of({
           id: secondId,
@@ -145,8 +173,8 @@ describe('EditPodcastDialogComponent', () => {
     (await expectSoon(languagesUrl)).flush({ en: 'English' });
     await settle();
 
-    expect(confirmOpen).toHaveBeenCalled();
-    const pickerData = confirmOpen.mock.calls[0][1].data;
+    expect(dialogOpen).toHaveBeenCalled();
+    const pickerData = dialogOpen.mock.calls[0][1].data;
     expect(pickerData.title).toBe('Choose podcast');
     expect(pickerData.itemNounPlural).toBe('podcasts');
     expect(pickerData.candidates).toEqual([
