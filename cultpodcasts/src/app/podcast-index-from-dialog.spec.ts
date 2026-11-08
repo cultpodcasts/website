@@ -15,6 +15,17 @@ describe('podcast-index-from-dialog', () => {
     );
   });
 
+  it('openPodcastIndexDialog with backlog: true passes backlog on IndexDialogData', () => {
+    const open = vi.fn();
+    openPodcastIndexDialog({ open } as never, 'Clothesline Desk', { backlog: true });
+    expect(open).toHaveBeenCalledWith(
+      IndexDialogComponent,
+      expect.objectContaining({
+        data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true }
+      })
+    );
+  });
+
   it('notifyPodcastIndexDialogResult reports updated episode count', () => {
     const open = vi.fn();
     notifyPodcastIndexDialogResult(
@@ -28,5 +39,22 @@ describe('podcast-index-from-dialog', () => {
     const open = vi.fn();
     notifyPodcastIndexDialogResult({ open } as never, { podcastNotAutoIndex: true });
     expect(open).toHaveBeenCalledWith('Podcast not indexable', 'Ok', { duration: 10000 });
+  });
+
+  it('notifyPodcastIndexDialogResult reports already running and timed out', () => {
+    const open = vi.fn();
+    notifyPodcastIndexDialogResult({ open } as never, { alreadyRunning: true });
+    expect(open).toHaveBeenCalledWith(
+      'Podcast indexing already running. Try again shortly.',
+      'Ok',
+      { duration: 10000 }
+    );
+    open.mockClear();
+    notifyPodcastIndexDialogResult({ open } as never, { timedOut: true });
+    expect(open).toHaveBeenCalledWith(
+      'Podcast indexing ran out of time. Anything it saved will appear shortly; try again later.',
+      'Ok',
+      { duration: 10000 }
+    );
   });
 });

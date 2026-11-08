@@ -478,7 +478,7 @@ export class EditPodcastDialogComponent {
     if (!name) {
       return;
     }
-    openPodcastIndexDialog(this.dialog, name).afterClosed().subscribe(result => {
+    openPodcastIndexDialog(this.dialog, name, { backlog: true }).afterClosed().subscribe(result => {
       notifyPodcastIndexDialogResult(this.snackBar, result);
     });
   }
