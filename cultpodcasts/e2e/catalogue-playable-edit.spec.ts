@@ -198,7 +198,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({
 			title: "Bulletin (edited)",
-			unBluesky: true,
+			blueskyPosted: false,
 			subjects: ["Politics", "Sport"],
 			guests: ["Ann Example", "Bob Sample"],
 			language: "fr"
@@ -561,7 +561,7 @@ test.describe("film curator edit", () => {
 		await expect.poll(() => sink.body).toEqual({
 			release: "1999-05-01",
 			tweeted: false,
-			unBluesky: true,
+			blueskyPosted: false,
 			subjects: ["Arts", "Film"],
 			guests: ["Ann Example", "Bob Sample"],
 			publisher: "Other Pictures",

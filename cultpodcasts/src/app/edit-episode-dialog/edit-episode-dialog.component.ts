@@ -181,12 +181,7 @@ export class EditEpisodeDialogComponent {
       this.podcastId = podcast.id!;
 
       this.form.set(buildEpisodeForm(resp.episode));
-      const blueskyPosted = !!resp.episode.bluesky;
-      this.blueskyOriginallyPosted.set(blueskyPosted);
-      // API can only clear Bluesky via unBluesky — never set true from the editor.
-      if (!blueskyPosted) {
-        this.form()!.controls.blueskyPosted.disable({ emitEvent: false });
-      }
+      this.blueskyOriginallyPosted.set(!!resp.episode.bluesky);
       this.allPeople = episodeCataloguePeople(
         resp.people,
         resp.episode.guestPeople,
@@ -362,8 +357,8 @@ export class EditEpisodeDialogComponent {
       };
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
-      if (this.blueskyOriginallyPosted() && !form.controls.blueskyPosted.value) {
-        changes.unBluesky = true;
+      if (form.controls.blueskyPosted.value !== this.blueskyOriginallyPosted()) {
+        changes.blueskyPosted = form.controls.blueskyPosted.value;
       }
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });

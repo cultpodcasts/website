@@ -41,8 +41,8 @@ export class EditTvShowEpisodeDialogComponent extends PlayableEditDialogBase<TvS
     return this.curation.patchTvShowEpisode(id, changes);
   }
 
-  protected changes(original: TvShowEpisodeDto, value: PlayableEditFormValue, pendingUnBluesky: boolean): TvShowEpisodeChangeRequest {
-    return tvShowEpisodeChanges(original, value, pendingUnBluesky);
+  protected changes(original: TvShowEpisodeDto, value: PlayableEditFormValue): TvShowEpisodeChangeRequest {
+    return tvShowEpisodeChanges(original, value);
   }
 
   protected parentOf(dto: TvShowEpisodeDto) {

@@ -33,7 +33,7 @@ function baseEpisode(overrides: Partial<ApiEpisode> = {}): ApiEpisode {
   };
 }
 
-describe('EditEpisodeDialogComponent Bluesky unBluesky', () => {
+describe('EditEpisodeDialogComponent Bluesky posted', () => {
   let component: EditEpisodeDialogComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let send: ReturnType<typeof vi.fn>;
@@ -54,7 +54,7 @@ describe('EditEpisodeDialogComponent Bluesky unBluesky', () => {
     send = vi.spyOn(component, 'send').mockImplementation(() => undefined);
   });
 
-  it('submits unBluesky when originally posted and Bluesky posted is unchecked', () => {
+  it('submits blueskyPosted false when originally posted and Bluesky posted is unchecked', () => {
     const episode = baseEpisode({ bluesky: true });
     component.originalEpisode = episode;
     component.blueskyOriginallyPosted.set(true);
@@ -63,20 +63,31 @@ describe('EditEpisodeDialogComponent Bluesky unBluesky', () => {
 
     component.onSubmit();
 
-    expect(send).toHaveBeenCalledWith(podcastId, episodeId, expect.objectContaining({ unBluesky: true }));
+    expect(send).toHaveBeenCalledWith(podcastId, episodeId, expect.objectContaining({ blueskyPosted: false }));
   });
 
-  it('keeps Bluesky control disabled when never posted and does not send unBluesky', () => {
+  it('submits blueskyPosted true when never posted and Bluesky posted is checked', () => {
     const episode = baseEpisode({ bluesky: false });
     component.originalEpisode = episode;
     component.blueskyOriginallyPosted.set(false);
     const form = buildEpisodeForm(episode);
-    form.controls.blueskyPosted.disable({ emitEvent: false });
     component.form.set(form);
+    form.controls.blueskyPosted.setValue(true);
 
     component.onSubmit();
 
-    expect(form.controls.blueskyPosted.disabled).toBe(true);
+    expect(form.controls.blueskyPosted.disabled).toBe(false);
+    expect(send).toHaveBeenCalledWith(podcastId, episodeId, expect.objectContaining({ blueskyPosted: true }));
+  });
+
+  it('does not send blueskyPosted when unchanged', () => {
+    const episode = baseEpisode({ bluesky: false });
+    component.originalEpisode = episode;
+    component.blueskyOriginallyPosted.set(false);
+    component.form.set(buildEpisodeForm(episode));
+
+    component.onSubmit();
+
     expect(send).not.toHaveBeenCalled();
     expect(dialogRef.close).toHaveBeenCalledWith({ noChange: true, podcastId });
   });

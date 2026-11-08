@@ -111,11 +111,11 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     }));
   });
 
-  it('PATCHes playable fields, unBluesky and identity changes together', async () => {
+  it('PATCHes playable fields, blueskyPosted and identity changes together', async () => {
     const dialog = await load();
-    dialog.pendingUnBluesky.set(true);
     dialog.form()!.patchValue({
       description: 'Edited',
+      blueskyPosted: false,
       lang: 'unset',
       imdbId: '',
       tvdbId: '4242',
@@ -125,7 +125,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
     expect(patch.request.body).toEqual({
       description: 'Edited',
-      unBluesky: true,
+      blueskyPosted: false,
       language: '',
       imdbId: '',
       tvdbId: 4242,

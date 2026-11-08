@@ -37,6 +37,7 @@ export interface PlayableEditForm {
   description: FormControl<string>;
   posted: FormControl<boolean>;
   tweeted: FormControl<boolean>;
+  blueskyPosted: FormControl<boolean>;
   ignored: FormControl<boolean>;
   removed: FormControl<boolean>;
   explicit: FormControl<boolean>;
@@ -260,6 +261,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     description: new FormControl(dto.description ?? '', { nonNullable: true }),
     posted: new FormControl(!!dto.posted, { nonNullable: true }),
     tweeted: new FormControl(!!dto.tweeted, { nonNullable: true }),
+    blueskyPosted: new FormControl(!!dto.blueskyPosted, { nonNullable: true }),
     ignored: new FormControl(!!dto.ignored, { nonNullable: true }),
     removed: new FormControl(!!dto.removed, { nonNullable: true }),
     explicit: new FormControl(!!dto.explicit, { nonNullable: true }),
@@ -328,12 +330,11 @@ function sameStrings(a: readonly string[] | null | undefined, b: readonly string
 
 /**
  * Only the changed playable fields, in the PATCH wire shape. Blank title / release / duration are
- * never sent (the API cannot clear them). Bluesky can only be removed (`unBluesky`), never set.
+ * never sent (the API cannot clear them). Bluesky mirrors Tweeted via `blueskyPosted`.
  */
 export function playableFieldsChanges(
   previous: PlayableFieldsDto,
-  next: PlayableEditFormValue,
-  pendingUnBluesky = false
+  next: PlayableEditFormValue
 ): PlayableFieldsChangeRequest {
   const changes: PlayableFieldsChangeRequest = {};
   const title = String(next.title ?? '').trim();
@@ -345,7 +346,7 @@ export function playableFieldsChanges(
   if (duration && duration !== (previous.duration ?? '')) changes.duration = duration;
   if (next.posted !== !!previous.posted) changes.posted = next.posted;
   if (next.tweeted !== !!previous.tweeted) changes.tweeted = next.tweeted;
-  if (pendingUnBluesky && previous.blueskyPosted) changes.unBluesky = true;
+  if (next.blueskyPosted !== !!previous.blueskyPosted) changes.blueskyPosted = next.blueskyPosted;
   if (next.explicit !== !!previous.explicit) changes.explicit = next.explicit;
   if (next.ignored !== !!previous.ignored) changes.ignored = next.ignored;
   if (next.removed !== !!previous.removed) changes.removed = next.removed;
@@ -367,10 +368,9 @@ export function playableFieldsChanges(
 /** Playable fields plus the Identity tab ids (omit = unchanged; `imdbId: ''`, `tvdbId: 0`, `tmdbId: 0` clear). */
 export function tvShowEpisodeChanges(
   previous: TvShowEpisodeDto,
-  next: PlayableEditFormValue,
-  pendingUnBluesky = false
+  next: PlayableEditFormValue
 ): TvShowEpisodeChangeRequest {
-  const changes: TvShowEpisodeChangeRequest = playableFieldsChanges(previous, next, pendingUnBluesky);
+  const changes: TvShowEpisodeChangeRequest = playableFieldsChanges(previous, next);
   if (next.imdbId !== undefined) {
     const imdbId = next.imdbId.trim();
     if (imdbId !== (previous.imdbId ?? '')) changes.imdbId = imdbId;
@@ -392,10 +392,9 @@ export function tvShowEpisodeChanges(
  */
 export function filmChanges(
   previous: FilmDto,
-  next: PlayableEditFormValue,
-  pendingUnBluesky = false
+  next: PlayableEditFormValue
 ): FilmChangeRequest {
-  const { title: _title, ...changes }: PlayableFieldsChangeRequest = playableFieldsChanges(previous, next, pendingUnBluesky);
+  const { title: _title, ...changes }: PlayableFieldsChangeRequest = playableFieldsChanges(previous, next);
   const film: FilmChangeRequest = changes;
   const publisher = (next.publisher ?? '').trim();
   if (next.publisher !== undefined && publisher !== (previous.publisher ?? '').trim()) film.publisher = publisher;
