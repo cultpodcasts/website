@@ -350,6 +350,19 @@ describe('episode-form.util', () => {
       });
     });
 
+    it('emits blueskyPosted when bluesky changes', () => {
+      const prev = baseEpisode({ bluesky: true });
+      const now = baseEpisode({ bluesky: false });
+      expect(getEpisodeChanges(prev, now)).toEqual({ blueskyPosted: false });
+      expect(getEpisodeChanges(now, prev)).toEqual({ blueskyPosted: true });
+    });
+
+    it('does not emit blueskyPosted when null and false bluesky are equivalent', () => {
+      const prev = baseEpisode({ bluesky: null });
+      const now = baseEpisode({ bluesky: false });
+      expect(getEpisodeChanges(prev, now)).toEqual({});
+    });
+
     it('sends a subjects or guests reorder on its own as a change, in the new order', () => {
       const prev = baseEpisode({ subjects: ['cult', 'comedy', 'news'], guests: ['Alice', 'Bob'] });
       const now = baseEpisode({ subjects: ['news', 'cult', 'comedy'], guests: ['Bob', 'Alice'] });

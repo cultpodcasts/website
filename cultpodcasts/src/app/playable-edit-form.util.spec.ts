@@ -65,6 +65,7 @@ describe('playable edit form', () => {
       release: '2026-01-03',
       duration: '0:07:00',
       tweeted: false,
+      blueskyPosted: false,
       removed: true,
       subjects: ['Politics', 'Sport'],
       searchTerms: ' desk ',
@@ -72,12 +73,12 @@ describe('playable edit form', () => {
       guests: ['Ann Example'],
       lang: 'fr'
     });
-    expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({
       title: 'Bulletin two',
       release: '2026-01-03',
       duration: '0:07:00',
       tweeted: false,
-      unBluesky: true,
+      blueskyPosted: false,
       removed: true,
       subjects: ['Politics', 'Sport'],
       searchTerms: 'desk',
@@ -100,14 +101,21 @@ describe('playable edit form', () => {
     });
   });
 
-  it('never sends a blank title, release or duration, and ignores unBluesky when there is no post', () => {
+  it('never sends a blank title, release or duration', () => {
     const dto = report({ blueskyPosted: false });
     const form = buildPlayableEditForm(dto);
     form.patchValue({ title: '  ', release: '', duration: '' });
-    expect(playableFieldsChanges(dto, form.getRawValue(), true)).toEqual({});
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({});
   });
 
-  it('unBluesky / Submit does not throw when form release is still a Date (JsonDateInterceptor)', () => {
+  it('sends blueskyPosted true when ticking Bluesky posted on an unposted item', () => {
+    const dto = report({ blueskyPosted: false });
+    const form = buildPlayableEditForm(dto);
+    form.patchValue({ blueskyPosted: true });
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({ blueskyPosted: true });
+  });
+
+  it('blueskyPosted / Submit does not throw when form release is still a Date (JsonDateInterceptor)', () => {
     const dto = report({
       release: new Date('2026-11-02T00:00:00Z'),
       blueskyPosted: true
@@ -116,10 +124,11 @@ describe('playable edit form', () => {
     const next = {
       ...form.getRawValue(),
       // Pre-normalize bug: control held a Date and Submit called release.trim()
-      release: new Date('2026-11-02T00:00:00Z') as unknown as string
+      release: new Date('2026-11-02T00:00:00Z') as unknown as string,
+      blueskyPosted: false
     };
-    expect(() => playableFieldsChanges(dto, next, true)).not.toThrow();
-    expect(playableFieldsChanges(dto, next, true)).toEqual({ unBluesky: true });
+    expect(() => playableFieldsChanges(dto, next)).not.toThrow();
+    expect(playableFieldsChanges(dto, next)).toEqual({ blueskyPosted: false });
   });
 
   it('news and TV Urls tab PATCH services the same way as film', () => {

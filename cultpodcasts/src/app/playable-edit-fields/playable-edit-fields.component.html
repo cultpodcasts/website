@@ -38,12 +38,7 @@
             <mat-checkbox [formControl]="f.controls.posted">Posted</mat-checkbox>
             }
             <mat-checkbox [formControl]="f.controls.tweeted">Tweeted</mat-checkbox>
-            <mat-checkbox
-              [checked]="blueskyPosted() && !pendingUnBluesky()"
-              [disabled]="!blueskyPosted()"
-              (change)="onBlueskyPostedChange($event.checked)">
-              Bluesky posted
-            </mat-checkbox>
+            <mat-checkbox [formControl]="f.controls.blueskyPosted">Bluesky posted</mat-checkbox>
             <mat-checkbox [formControl]="f.controls.ignored">Ignored</mat-checkbox>
             <mat-checkbox [formControl]="f.controls.removed">Removed</mat-checkbox>
             <mat-checkbox [formControl]="f.controls.explicit">Explicit</mat-checkbox>

@@ -59,8 +59,6 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   readonly guestPeople = signal<Person[]>([]);
   readonly guestSuggestions = signal<PersonMatch[]>([]);
   readonly languages = signal<Record<string, string>>({});
-  readonly blueskyPosted = signal(false);
-  readonly pendingUnBluesky = signal(false);
   protected original: TDto | undefined;
 
   /** Parent hub for the default-subject lookup; null for films (no parent). */
@@ -70,7 +68,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   protected abstract playableId(): string;
   protected abstract load(id: string): Observable<TDto>;
   protected abstract patch(id: string, changes: TChange): Observable<HttpResponse<PlayableChangeResponse | null>>;
-  protected abstract changes(original: TDto, value: PlayableEditFormValue, pendingUnBluesky: boolean): TChange;
+  protected abstract changes(original: TDto, value: PlayableEditFormValue): TChange;
   protected abstract parentOf(dto: TDto): { id: string; name: string };
 
   /** Default subject carried on the item itself (a film is its own publisher); parents are looked up instead. */
@@ -105,8 +103,6 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
       this.guestPeople.set(resp.dto.guestPeople ?? []);
       this.guestSuggestions.set(resp.dto.guestSuggestions ?? []);
       this.languages.set(buildEpisodeLanguageOptions(resp.languages ?? {}));
-      this.blueskyPosted.set(!!resp.dto.blueskyPosted);
-      this.pendingUnBluesky.set(false);
       this.form.set(buildPlayableEditForm(resp.dto, this.variant));
       this.isLoading.set(false);
     } catch (e) {
@@ -136,7 +132,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
     if (!form || !form.valid || !this.original || this.isSaving()) {
       return;
     }
-    const changes = this.changes(this.original, form.getRawValue(), this.pendingUnBluesky());
+    const changes = this.changes(this.original, form.getRawValue());
     if (Object.keys(changes).length === 0) {
       this.dialogRef.close({ noChange: true, parentName: this.parentName() });
       return;

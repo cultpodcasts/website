@@ -76,8 +76,8 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
     );
   }
 
-  protected changes(original: FilmDto, value: PlayableEditFormValue, pendingUnBluesky: boolean): FilmChangeRequest {
-    return filmChanges(original, value, pendingUnBluesky);
+  protected changes(original: FilmDto, value: PlayableEditFormValue): FilmChangeRequest {
+    return filmChanges(original, value);
   }
 
   protected parentOf(dto: FilmDto) {

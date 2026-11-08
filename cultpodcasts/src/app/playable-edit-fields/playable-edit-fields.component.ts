@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, model, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -106,10 +106,8 @@ export class PlayableEditFieldsComponent implements OnInit {
   /** From playable GET: people matched in title/description who are not already guests. */
   readonly guestSuggestions = input<PersonMatch[]>([]);
   readonly languages = input<Record<string, string>>({});
-  readonly blueskyPosted = input(false);
   /** Bold underline on the Meta tab when this create stored a detected default language. */
   readonly highlightDefaultLanguage = input(false);
-  readonly pendingUnBluesky = model(false);
   /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
   readonly variant = input<PlayableEditVariant>('news');
   /** TV / film: the Identity tab (IMDb id; TheTVDB id shows when the form has `tvdbId`). */
@@ -183,14 +181,6 @@ export class PlayableEditFieldsComponent implements OnInit {
     this.form().controls.guests.markAsDirty();
     this.remainingGuestSuggestions.set(
       withoutGuestSuggestion(this.remainingGuestSuggestions(), person.name));
-  }
-
-  /** Same UX as Tweeted: uncheck clears Bluesky on save (API only supports unBluesky). */
-  protected onBlueskyPostedChange(checked: boolean): void {
-    if (!this.blueskyPosted()) {
-      return;
-    }
-    this.pendingUnBluesky.set(!checked);
   }
 
   protected normalizeHashTag(): void {

@@ -38,8 +38,8 @@ export class EditNewsReportDialogComponent extends PlayableEditDialogBase<NewsRe
     return this.curation.patchNewsReport(id, changes);
   }
 
-  protected changes(original: NewsReportDto, value: PlayableEditFormValue, pendingUnBluesky: boolean): NewsReportChangeRequest {
-    return playableFieldsChanges(original, value, pendingUnBluesky);
+  protected changes(original: NewsReportDto, value: PlayableEditFormValue): NewsReportChangeRequest {
+    return playableFieldsChanges(original, value);
   }
 
   protected parentOf(dto: NewsReportDto) {

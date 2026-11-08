@@ -508,6 +508,7 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
   if (prev.ignored != now.ignored) changes.ignored = now.ignored;
   if (prev.posted != now.posted) changes.posted = now.posted;
   if (prev.tweeted != now.tweeted) changes.tweeted = now.tweeted;
+  if (!!prev.bluesky != !!now.bluesky) changes.blueskyPosted = !!now.bluesky;
   if (prev.release.toISOString() != nowReleaseDate) changes.release = nowReleaseDate;
   if (prev.removed != now.removed) changes.removed = now.removed;
   if (prev.searchTerms != now.searchTerms) changes.searchTerms = now.searchTerms;

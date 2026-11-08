@@ -128,15 +128,15 @@ describe('EditFilmDialogComponent', () => {
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
       tweeted: false,
+      blueskyPosted: false,
       imdbId: ''
     });
-    dialog.pendingUnBluesky.set(true);
     const saving = dialog.onSubmit();
     const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
     expect(patch.request.body).toEqual({
       release: '1999-05-01',
       tweeted: false,
-      unBluesky: true,
+      blueskyPosted: false,
       subjects: ['Arts', 'Sport'],
       guests: ['Ann Example'],
       publisher: 'Other Pictures',

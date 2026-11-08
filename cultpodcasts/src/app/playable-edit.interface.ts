@@ -77,6 +77,9 @@ export interface PlayableFieldsChangeRequest {
   duration?: string;
   posted?: boolean;
   tweeted?: boolean;
+  /** Same as tweeted: true marks Bluesky posted; false deletes when posted. */
+  blueskyPosted?: boolean;
+  /** Backward-compat alias for blueskyPosted: false. */
   unBluesky?: boolean;
   explicit?: boolean;
   ignored?: boolean;

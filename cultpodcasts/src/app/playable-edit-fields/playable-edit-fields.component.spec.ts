@@ -211,10 +211,6 @@ describe('PlayableEditFieldsComponent lookUpIdentity', () => {
   });
 });
 
-type BlueskyInternals = {
-  onBlueskyPostedChange(checked: boolean): void;
-};
-
 describe('PlayableEditFieldsComponent Bluesky posted checkbox', () => {
   let fixture: ComponentFixture<PlayableEditFieldsComponent>;
 
@@ -257,29 +253,23 @@ describe('PlayableEditFieldsComponent Bluesky posted checkbox', () => {
     fixture.componentRef.setInput('subjectNames', []);
     fixture.componentRef.setInput('people', []);
     fixture.componentRef.setInput('languages', {});
-    fixture.componentRef.setInput('blueskyPosted', blueskyPosted);
     fixture.detectChanges();
-    return fixture.componentInstance;
+    return form;
   }
 
-  it('uncheck sets pendingUnBluesky and re-check clears it when originally posted', () => {
-    const component = createFilmWithBluesky(true);
-    const bluesky = component as unknown as BlueskyInternals;
-
-    bluesky.onBlueskyPostedChange(false);
-    expect(component.pendingUnBluesky()).toBe(true);
-
-    bluesky.onBlueskyPostedChange(true);
-    expect(component.pendingUnBluesky()).toBe(false);
+  it('exposes an enabled blueskyPosted FormControl like tweeted when never posted', () => {
+    const form = createFilmWithBluesky(false);
+    expect(form.controls.blueskyPosted.enabled).toBe(true);
+    expect(form.controls.blueskyPosted.value).toBe(false);
+    form.controls.blueskyPosted.setValue(true);
+    expect(form.controls.blueskyPosted.value).toBe(true);
   });
 
-  it('no-ops the Bluesky handler when never posted (checkbox stays driven by blueskyPosted false)', () => {
-    const component = createFilmWithBluesky(false);
-    const bluesky = component as unknown as BlueskyInternals;
-
-    expect(component.blueskyPosted()).toBe(false);
-    bluesky.onBlueskyPostedChange(false);
-    expect(component.pendingUnBluesky()).toBe(false);
+  it('allows unticking blueskyPosted when originally posted', () => {
+    const form = createFilmWithBluesky(true);
+    expect(form.controls.blueskyPosted.value).toBe(true);
+    form.controls.blueskyPosted.setValue(false);
+    expect(form.controls.blueskyPosted.value).toBe(false);
   });
 });
 
