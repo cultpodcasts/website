@@ -132,6 +132,8 @@ export function attachErrorMessage(e: HttpErrorResponse): string {
       return body?.error ?? 'The episode cannot be attached as a trailer.';
     case 404:
       return body?.error ?? 'The episode or film was not found. The episode may already be a trailer.';
+    case 409:
+      return body?.error ?? 'This episode is already a trailer of another film.';
     default:
       return 'An error occurred attaching the trailer. Sending again resumes an interrupted attach.';
   }

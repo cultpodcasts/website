@@ -114,4 +114,11 @@ describe('attachErrorMessage', () => {
   it('explains a 500 as resumable', () => {
     expect(attachErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
   });
+
+  it('surfaces the server message when another film already holds the trailer (409)', () => {
+    expect(attachErrorMessage(new HttpErrorResponse({
+      status: 409,
+      error: { error: 'This episode is already a trailer of another film', filmId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }
+    }))).toBe('This episode is already a trailer of another film');
+  });
 });
