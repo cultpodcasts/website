@@ -160,7 +160,7 @@ async function submitToDeskHub(page: Page) {
 test.describe("news report / TV episode curator edit", () => {
 	test("hub submit shows Review + Edit; Review opens the review list for the report id", async ({ page }) => {
 		const row = {
-			id: reportId, title: "Bulletin", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			id: reportId, title: "Bulletin", displayTitle: "Bulletin", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
 			explicit: false, release: "2026-01-02T00:00:00Z", duration: "00:06:30", subjects: ["Politics"],
 			contentKind: "NewsReport", podcastName: "Desk", parentId: outletId, parentName: "Desk"
 		};
@@ -169,7 +169,8 @@ test.describe("news report / TV episode curator edit", () => {
 		await shot(page, "snackbar-review-edit");
 		await snack.getByRole("button", { name: "Review" }).click();
 		await expect(page).toHaveURL(new RegExp(`/episodes/${encodeURIComponent(JSON.stringify([reportId]))}$`));
-		await expect(page.getByText("Bulletin").first()).toBeVisible();
+		// Curator news card (displayTitle from GET /episode/{id}); actions prove the review row rendered.
+		await expect(page.getByRole("button", { name: "News report actions" })).toBeVisible();
 	});
 
 	test("hub submit Edit opens the news report dialog and PATCHes only the changed fields", async ({ page }) => {
@@ -592,7 +593,7 @@ test.describe("film curator edit", () => {
 		await fakeLookups(page);
 		await fakePlayable(page, `film/${filmId}`, film, sink);
 		const row = {
-			id: filmId, title: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			id: filmId, title: "One Off", displayTitle: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
 			explicit: false, release: "1999-01-01T00:00:00Z", duration: "01:42:00", subjects: ["Arts"],
 			contentKind: "Film", slug: "One Off", path: filmPath
 		};
@@ -626,7 +627,7 @@ test.describe("film curator edit", () => {
 		await fakeLookups(page);
 		await fakePlayable(page, `film/${filmId}`, film, sink);
 		const row = {
-			id: filmId, title: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			id: filmId, title: "One Off", displayTitle: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
 			explicit: false, release: "1999-01-01T00:00:00Z", duration: "01:42:00", subjects: ["Arts"],
 			contentKind: "Film", slug: "One Off", path: filmPath
 		};
@@ -656,6 +657,7 @@ test.describe("film curator edit", () => {
 		await expect.poll(() => sink.body).toEqual({ explicit: true });
 		await page.getByRole("button", { name: "Review" }).click();
 		await expect(page).toHaveURL(new RegExp(`/episodes/${encodeURIComponent(JSON.stringify([filmId]))}$`));
-		await expect(page.getByText("One Off").first()).toBeVisible();
+		// Curator film card (displayTitle from GET /episode/{id}); actions prove the review row rendered.
+		await expect(page.getByRole("button", { name: "Film actions" })).toBeVisible();
 	});
 });
