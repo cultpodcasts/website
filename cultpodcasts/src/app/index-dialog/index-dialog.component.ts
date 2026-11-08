@@ -12,7 +12,7 @@ import { CatalogueIndexDialogResult, CatalogueIndexResponse } from '../catalogue
 
 /** What the index dialog should index: a podcast, or a news outlet / TV show. */
 export type IndexDialogData =
-  | { kind: 'podcast'; name: string }
+  | { kind: 'podcast'; name: string; /** When true, POST `?backlog=true` for a full-catalogue walk (Edit/Add). */ backlog?: boolean }
   | { kind: 'catalogueParent'; hub: CatalogueHub; name: string };
 
 export type IndexDialogResult = PodcastIndexDialogResult | CatalogueIndexDialogResult;
@@ -51,10 +51,18 @@ export class IndexDialogComponent {
   }
 
   private indexPodcast(podcastName: string) {
+    const backlog = this.data.kind === 'podcast' && this.data.backlog === true;
+    const path =
+      `/podcast/index/${encodeURIComponent(podcastName)}` + (backlog ? '?backlog=true' : '');
     return this.post<IndexPodcastResponse, PodcastIndexDialogResult>(
-      `/podcast/index/${encodeURIComponent(podcastName)}`,
+      path,
       body => ({ updated: true, episodeIds: body?.indexedEpisodes?.map(x => `${x.podcastId}/${x.episodeId}`) }),
-      e => e.status === 400 ? { podcastNotAutoIndex: true } : e.status === 404 ? { podcastNotFound: true } : undefined);
+      e =>
+        e.status === 400 ? { podcastNotAutoIndex: true }
+          : e.status === 404 ? { podcastNotFound: true }
+            : e.status === 409 ? { alreadyRunning: true }
+              : e.status === 504 ? { timedOut: true }
+                : undefined);
   }
 
   private indexCatalogueParent(hub: CatalogueHub, name: string) {

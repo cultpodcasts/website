@@ -123,7 +123,7 @@ describe('EditPodcastDialogComponent', () => {
     expect(dialogOpen).toHaveBeenCalledWith(
       IndexDialogComponent,
       expect.objectContaining({
-        data: { kind: 'podcast', name: 'Clothesline Desk' }
+        data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true }
       })
     );
     expect(snackOpen).toHaveBeenCalledWith(

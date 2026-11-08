@@ -10,6 +10,10 @@ export interface PodcastIndexDialogResult {
     episodeIds?: string[];
     podcastNotAutoIndex?: boolean;
     podcastNotFound?: boolean;
+    /** 409 — another curator index is already running for this podcast. */
+    alreadyRunning?: boolean;
+    /** 504 — on-demand budget cut the walk off (common for full backlog). */
+    timedOut?: boolean;
 }
 
 

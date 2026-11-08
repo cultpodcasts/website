@@ -170,6 +170,35 @@ describe('PodcastApiComponent', () => {
     );
   });
 
+  it('Index afterClosed alreadyRunning / timedOut snacks (no silent close)', () => {
+    fixture.detectChanges();
+    const dialog = TestBed.inject(MatDialog);
+    const snackBar = TestBed.inject(MatSnackBar);
+    (fixture.componentInstance as unknown as { results: { set: (v: { podcastName: string }[]) => void } })
+      .results.set([{ podcastName: 'Show A' }]);
+
+    vi.mocked(dialog.open).mockReturnValue({
+      afterClosed: () => of({ alreadyRunning: true })
+    } as ReturnType<MatDialog['open']>);
+    fixture.componentInstance.index();
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Podcast indexing already running. Try again shortly.',
+      'Ok',
+      { duration: 10000 }
+    );
+
+    vi.mocked(snackBar.open).mockClear();
+    vi.mocked(dialog.open).mockReturnValue({
+      afterClosed: () => of({ timedOut: true })
+    } as ReturnType<MatDialog['open']>);
+    fixture.componentInstance.index();
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'Podcast indexing ran out of time. Anything it saved will appear shortly; try again later.',
+      'Ok',
+      { duration: 10000 }
+    );
+  });
+
   describe('subject chips in the URL fragment', () => {
     let navigate: ReturnType<typeof vi.fn>;
 

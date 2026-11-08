@@ -29,6 +29,7 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dialog.component';
 import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
+import { notifyPodcastIndexDialogResult } from '../podcast-index-from-dialog';
 import { EpisodeUpdateService, SavedPodcastRef } from '../episode-update.service';
 import { ManualTweetEpisodeDialogComponent } from '../manual-tweet-episode-dialog/manual-tweet-episode-dialog.component';
 import {
@@ -666,10 +667,9 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
             this.router.navigate(["/episodes", episodeId])
           });
         }
-      } else if (result.podcastNotAutoIndex) {
-        let snackBarRef = this.snackBar.open("Podcast not indexable", "Ok", { duration: 10000 });
-      } else if (result.podcastNotFound) {
-        let snackBarRef = this.snackBar.open("Podcast not found", "Ok", { duration: 10000 });
+      } else {
+        // 400/404 and 409/504 (alreadyRunning / timedOut) — same copy as Edit/Add Index backlog
+        notifyPodcastIndexDialogResult(this.snackBar, result);
       }
     });
   }
