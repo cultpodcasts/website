@@ -69,6 +69,22 @@ describe('CuratorPlayableCardComponent', () => {
     return Array.from(items).map(el => el.querySelector('span')?.textContent?.trim() ?? '');
   }
 
+  async function clickOverflowLabel(label: string): Promise<void> {
+    const trigger = host().querySelector('button.curator-card__overflow') as HTMLButtonElement;
+    expect(trigger).toBeTruthy();
+    trigger.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const items = Array.from(
+      overlay.getContainerElement().querySelectorAll('button[mat-menu-item], .mat-mdc-menu-item')
+    );
+    const match = items.find(el => (el.querySelector('span')?.textContent?.trim() ?? '') === label);
+    expect(match).toBeTruthy();
+    (match as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
   function render(episode: ApiEpisode, inputs: Record<string, unknown> = {}): void {
     fixture.componentRef.setInput('episode', episode);
     for (const [key, value] of Object.entries(inputs)) {
@@ -150,4 +166,28 @@ describe('CuratorPlayableCardComponent', () => {
       expect(labels).not.toContain('Delete Episode');
     });
   }
+
+  for (const kind of ['Film', 'NewsReport', 'TvShowEpisode'] as const) {
+    it(`emits deleteEpisode with contentKind ${kind} on Admin Delete`, async () => {
+      const episode = row(kind);
+      render(episode, podcastAdminFlags);
+      const emissions: Array<{ podcastId?: string; episodeId: string; contentKind?: string | null }> = [];
+      fixture.componentInstance.deleteEpisode.subscribe(v => emissions.push(v));
+      await clickOverflowLabel(playableCuratorActionLabel(kind, 'Delete'));
+      expect(emissions).toEqual([{ episodeId: episode.id, contentKind: kind }]);
+    });
+  }
+
+  it('emits deleteEpisode with podcastId and contentKind Episode on Admin Delete', async () => {
+    const episode = row('Episode', { podcastName: 'Synthetic Show' });
+    render(episode, podcastAdminFlags);
+    const emissions: Array<{ podcastId?: string; episodeId: string; contentKind?: string | null }> = [];
+    fixture.componentInstance.deleteEpisode.subscribe(v => emissions.push(v));
+    await clickOverflowLabel('Delete Episode');
+    expect(emissions).toEqual([{
+      podcastId: episode.podcastId,
+      episodeId: episode.id,
+      contentKind: 'Episode',
+    }]);
+  });
 });

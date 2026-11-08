@@ -5,31 +5,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { CataloguePlayableKind } from '../catalogue-playable-kind.enum';
 import { playablePublishSubjectNoun } from '../content-kind-label';
+import { playableDeletePath } from '../playable-delete-path';
 import { environment } from './../../environments/environment';
 
 export interface DeletePlayableDialogData {
   episodeId: string;
   podcastId?: string;
   contentKind?: string | null;
-}
-
-function deleteEndpoint(data: DeletePlayableDialogData): string | null {
-  const id = data.episodeId;
-  switch (data.contentKind) {
-    case CataloguePlayableKind.Film:
-      return new URL(`/film/${id}`, environment.api).toString();
-    case CataloguePlayableKind.NewsReport:
-      return new URL(`/newsreport/${id}`, environment.api).toString();
-    case CataloguePlayableKind.TvShowEpisode:
-      return new URL(`/tvshowepisode/${id}`, environment.api).toString();
-    default:
-      if (!data.podcastId) {
-        return null;
-      }
-      return new URL(`/episode/${data.podcastId}/${id}`, environment.api).toString();
-  }
 }
 
 @Component({
@@ -61,12 +44,13 @@ export class DeleteEpisodeDialogComponent {
   }
 
   onSubmit() {
-    const endpoint = deleteEndpoint(this.data);
-    if (!endpoint) {
+    const path = playableDeletePath(this.data.episodeId, this.data.contentKind, this.data.podcastId);
+    if (!path) {
       this.isInError.set(true);
       this.error.set({ message: 'Missing ids for delete' });
       return;
     }
+    const endpoint = new URL(path, environment.api).toString();
     this.isSending.set(true);
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {

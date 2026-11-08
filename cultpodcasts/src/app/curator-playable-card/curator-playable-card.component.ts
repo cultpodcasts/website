@@ -39,7 +39,7 @@ export class CuratorPlayableCardComponent {
   readonly post = output<ApiEpisode>();
   readonly editPodcast = output<EditPodcastDialogData>();
   readonly indexPodcast = output<string>();
-  readonly deleteEpisode = output<{ podcastId?: string; episodeId: string; contentKind?: string }>();
+  readonly deleteEpisode = output<{ podcastId?: string; episodeId: string; contentKind?: string | null }>();
   readonly promoteToggle = output<ApiEpisode>();
   readonly removeSubject = output<{ episode: ApiEpisode; subject: string }>();
   readonly removeGuest = output<{ episode: ApiEpisode; guestName: string }>();
