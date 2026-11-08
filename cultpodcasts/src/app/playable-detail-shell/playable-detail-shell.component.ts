@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { combineLatest } from 'rxjs';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
@@ -19,6 +19,7 @@ import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 import { SubjectChipComponent } from '../subject-chip/subject-chip.component';
 import { ContentKindBadgeComponent } from '../content-kind-badge/content-kind-badge.component';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { episodeEditResultMessage } from '../social-retract-result';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { SearchDescriptionPipe } from '../search-description.pipe';
@@ -364,20 +365,15 @@ export class PlayableDetailShellComponent {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result) {
-        if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-        } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-        }
-        if (snackBarRef) {
-          snackBarRef.onAction().subscribe(() => {
-            const episode = JSON.stringify([`${result.podcastId}/${episodeId}`]);
-            this.router.navigate(["/episodes", episode])
-          });
-        }
+      const message = episodeEditResultMessage(result);
+      if (!message) {
+        return;
       }
+      const snackBarRef = this.snackBar.open(message, "Review", { duration: result?.updated ? 10000 : 3000 });
+      snackBarRef.onAction().subscribe(() => {
+        const episode = JSON.stringify([`${result!.podcastId}/${episodeId}`]);
+        this.router.navigate(["/episodes", episode])
+      });
     });
   }
 

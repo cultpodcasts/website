@@ -34,6 +34,7 @@ import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-r
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { episodeEditResultMessage } from '../social-retract-result';
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
 import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
@@ -279,20 +280,15 @@ export class PodcastApiComponent {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-      if (result) {
-        if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: 10000 });
-        } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Review", { duration: 3000 });
-        }
-        if (snackBarRef) {
-          snackBarRef.onAction().subscribe(() => {
-            const episode = JSON.stringify([`${result.podcastId}/${episodeId}`]);
-            this.router.navigate(["/episodes", episode])
-          });
-        }
+      const message = episodeEditResultMessage(result);
+      if (!message) {
+        return;
       }
+      const snackBarRef = this.snackBar.open(message, "Review", { duration: result?.updated ? 10000 : 3000 });
+      snackBarRef.onAction().subscribe(() => {
+        const episode = JSON.stringify([`${result!.podcastId}/${episodeId}`]);
+        this.router.navigate(["/episodes", episode])
+      });
     });
   }
 

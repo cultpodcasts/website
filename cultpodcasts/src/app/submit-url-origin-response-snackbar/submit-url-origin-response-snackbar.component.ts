@@ -1,5 +1,5 @@
 import { Component, Inject, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef, TextOnlySnackBar } from '@angular/material/snack-bar';
+import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
 import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-response.interface';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dialog.component';
@@ -9,6 +9,7 @@ import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dia
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-svg.component";
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { episodeEditResultMessage, socialRetractFailureMessage } from '../social-retract-result';
 import { CataloguePlayableKind, isNonPodcastPlayableKind } from '../catalogue-playable-kind.enum';
 import { canReviewSubmittedEpisode, postSubmitEpisodeDialogForActor, submittedCataloguePlayableReview } from '../submit-ingest-ux';
 import { applyTransferredPodcastKindClose, cataloguePlayableCommands } from '../catalogue-links';
@@ -132,13 +133,15 @@ export class SubmitUrlOriginResponseSnackbarComponent {
           let message: string;
           if (podcastResult?.noChange) {
             if (result.updated) {
-              message = "Episode updated. Podcast unchanged";
+              message = socialRetractFailureMessage(result.response)
+                ?? "Episode updated. Podcast unchanged";
             } else {
               message = "Episode unchanged. Podcast unchanged";
             }
           } else {
             if (result.updated) {
-              message = "Episode updated. Podcast updated";
+              message = socialRetractFailureMessage(result.response)
+                ?? "Episode updated. Podcast updated";
             } else {
               message = "Episode unchanged. Podcast updated";
             }
@@ -155,13 +158,9 @@ export class SubmitUrlOriginResponseSnackbarComponent {
           podcastSnackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(podcastId, episodeId));
         });
       } else {
-        let snackBarRef: MatSnackBarRef<TextOnlySnackBar> | undefined;
-        if (result.updated) {
-          snackBarRef = this.snackBar.open("Episode updated", "Review", { duration: long });
-        } else if (result.noChange) {
-          snackBarRef = this.snackBar.open("No change", "Review", { duration: medium });
-        }
-        if (snackBarRef) {
+        const message = episodeEditResultMessage(result);
+        if (message) {
+          const snackBarRef = this.snackBar.open(message, "Review", { duration: result?.updated ? long : medium });
           snackBarRef.onAction().subscribe(async () => await this.navigateToEpisodeReview(podcastId, episodeId));
         }
       }
