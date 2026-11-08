@@ -57,7 +57,6 @@ describe('EditEpisodeDialogComponent Bluesky posted', () => {
   it('submits blueskyPosted false when originally posted and Bluesky posted is unchecked', () => {
     const episode = baseEpisode({ bluesky: true });
     component.originalEpisode = episode;
-    component.blueskyOriginallyPosted.set(true);
     component.form.set(buildEpisodeForm(episode));
     component.form()!.controls.blueskyPosted.setValue(false);
 
@@ -69,7 +68,6 @@ describe('EditEpisodeDialogComponent Bluesky posted', () => {
   it('submits blueskyPosted true when never posted and Bluesky posted is checked', () => {
     const episode = baseEpisode({ bluesky: false });
     component.originalEpisode = episode;
-    component.blueskyOriginallyPosted.set(false);
     const form = buildEpisodeForm(episode);
     component.form.set(form);
     form.controls.blueskyPosted.setValue(true);
@@ -83,7 +81,6 @@ describe('EditEpisodeDialogComponent Bluesky posted', () => {
   it('does not send blueskyPosted when unchanged', () => {
     const episode = baseEpisode({ bluesky: false });
     component.originalEpisode = episode;
-    component.blueskyOriginallyPosted.set(false);
     component.form.set(buildEpisodeForm(episode));
 
     component.onSubmit();
