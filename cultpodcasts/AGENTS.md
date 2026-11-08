@@ -45,6 +45,8 @@ Client SEO uses episode art when `FeatureSwitch.episodeOgShareImage` is enabled
 (default **ON**). SSR prefers shortener page-details (branded `/og-image` when
 present); when page-details has no image, enrich from search via the same
 `episodeImageUrl` / `episodeArtAspect` path as the hero (entity-decoded CDN URLs).
+Zoneless SSR must wrap those async meta writes in `PendingTasks.run` so crawlers
+do not get the site-icon `sq-image` fallback (Api#244).
 
 - Docs: [`docs/episode-og-share-image.md`](docs/episode-og-share-image.md)
 - Preview: validate ON (default) and OFF (rollback) paths.
