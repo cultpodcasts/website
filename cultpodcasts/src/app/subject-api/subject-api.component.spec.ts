@@ -20,8 +20,12 @@ interface SearchCall {
   top?: number;
 }
 
-function unknownField(): HttpErrorResponse {
-  return new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} });
+function unknownField(property: string): HttpErrorResponse {
+  return new HttpErrorResponse({
+    status: 400,
+    statusText: 'Bad Request',
+    error: { error: { message: `Could not find a property named '${property}' on type 'search.document'.` } },
+  });
 }
 
 function serverError(): HttpErrorResponse {
@@ -81,18 +85,18 @@ describe('SubjectApiComponent', () => {
     respond = (request) => {
       if (textOf(request).includes('seriesName')) {
         missed++;
-        return throwError(() => unknownField());
+        return throwError(() => unknownField('seriesName'));
       }
       return of(searchPage());
     };
 
     fixture.detectChanges();
 
-    expect(missed).toBe(2);
+    expect(missed).toBe(1);
     expect(textOf(calls[0])).toContain('contentKind,count:10');
-    expect(textOf(calls[1])).toContain('seriesName,count:1000');
-    expect(textOf(calls[1])).not.toContain('contentKind');
-    expect(textOf(calls[2])).toContain('podcastName,count:1000');
+    expect(textOf(calls[0])).toContain('seriesName,count:1000');
+    expect(textOf(calls[1])).toContain('podcastName,count:1000');
+    expect(textOf(calls[1])).not.toContain('seriesName');
     expect(calls.some((call) => (call.facets ?? []).length === 0)).toBe(true);
   });
 
@@ -138,7 +142,7 @@ describe('SubjectApiComponent', () => {
   it('still loads the subject when the index has no contentKind field', () => {
     respond = (request) => {
       if ((request.facets ?? []).some((facet) => facet.startsWith('contentKind'))) {
-        return throwError(() => unknownField());
+        return throwError(() => unknownField('contentKind'));
       }
       return of(searchPage());
     };
@@ -155,7 +159,7 @@ describe('SubjectApiComponent', () => {
     fragment$.next('kind=NewsReport');
     respond = (request) => {
       if ((request.facets ?? []).some((facet) => facet.startsWith('contentKind'))) {
-        return throwError(() => unknownField());
+        return throwError(() => unknownField('contentKind'));
       }
       return of(searchPage());
     };
@@ -177,7 +181,7 @@ describe('SubjectApiComponent', () => {
     respond = (request) => {
       if ((request.top ?? 0) > 0 && (request.filter ?? '').includes('contentKind')) {
         contentKindResultFailures++;
-        return throwError(() => unknownField());
+        return throwError(() => unknownField('contentKind'));
       }
       return of({
         ...searchPage(),
@@ -213,7 +217,7 @@ describe('SubjectApiComponent', () => {
       const facets = request.facets ?? [];
       const onlyLang = facets.length === 1 && facets[0].startsWith('lang');
       if (onlyLang && (request.filter ?? '').includes('seriesName')) {
-        return throwError(() => unknownField());
+        return throwError(() => unknownField('seriesName'));
       }
       return of(searchPage());
     };

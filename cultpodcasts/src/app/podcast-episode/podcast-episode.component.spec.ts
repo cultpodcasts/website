@@ -366,7 +366,11 @@ describe('PodcastEpisodeComponent', () => {
     getEntities.mockImplementation((_url: string, request: { filter: string }) => {
       filters.push(request.filter);
       if (request.filter.includes('seriesName')) {
-        return throwError(() => new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} }));
+        return throwError(() => new HttpErrorResponse({
+          status: 400,
+          statusText: 'Bad Request',
+          error: { error: { message: "Could not find a property named 'seriesName' on type 'search.document'." } },
+        }));
       }
       if (request.filter.includes('podcastName')) {
         return of({ entities: [rawHit({ id: 'more', episodeTitle: 'Live title', podcastName: 'Show A' })] });
