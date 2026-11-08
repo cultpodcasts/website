@@ -645,6 +645,29 @@ export class HomepageHeroComponent {
     this.descLayout.set(null);
     // A scrolled box re-clamped at its old offset showed blank space past the text.
     this.resetDescScroll();
+    // Drop expand inline locks immediately (and again next frame). Leaving height / margin-top /
+    // align-items for a paint can shift cardTop vs the pre-expand baseline (mobile flake #566).
+    this.clearDescExpandDomLocks();
+    if (isPlatformBrowser(this.platformId)) {
+      requestAnimationFrame(() => {
+        this.clearDescExpandDomLocks();
+        this.resetDescScroll();
+      });
+    }
+  }
+
+  /** Remove expand-only inline styles so CSS docking applies without waiting on binding churn. */
+  private clearDescExpandDomLocks(): void {
+    const desc = this.heroDesc()?.nativeElement;
+    if (!desc) {
+      return;
+    }
+    const hero = desc.closest<HTMLElement>('.billboard');
+    const card = desc.closest<HTMLElement>('.billboard__content');
+    hero?.style.removeProperty('height');
+    hero?.style.removeProperty('align-items');
+    card?.style.removeProperty('margin-top');
+    desc.style.removeProperty('height');
   }
 
   /** Browser only, before the expanded state renders: measure the collapsed card. */

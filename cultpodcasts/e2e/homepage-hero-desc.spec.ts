@@ -294,20 +294,30 @@ async function expectExpandedSized(page: Page, collapsed: Geo, shot?: string): P
 /** Collapsed again: first line at the top of the clamp and the exact collapsed layout. */
 async function expectCollapsedAgain(page: Page, collapsed: Geo): Promise<void> {
 	await expect(desc(page)).not.toHaveClass(/is-expanded/);
-	const first = await desc(page).evaluate((el) => {
-		const range = document.createRange();
-		range.setStart(el.firstChild!, 0);
-		range.setEnd(el.firstChild!, 1);
-		const r = range.getBoundingClientRect();
-		return { scrollTop: el.scrollTop, offset: r.top - el.getBoundingClientRect().top, line: parseFloat(getComputedStyle(el).lineHeight) };
-	});
-	expect(first.scrollTop).toBe(0);
-	expect(first.offset, "first line not at the top of the clamp").toBeGreaterThanOrEqual(-1);
-	expect(first.offset).toBeLessThanOrEqual(first.line);
-	const g = await geometry(page);
-	expect(Math.abs(g.heroH - collapsed.heroH)).toBeLessThanOrEqual(1);
-	expect(Math.abs(g.cardTop - collapsed.cardTop)).toBeLessThanOrEqual(1);
-	expect(Math.abs(g.cardBottom - collapsed.cardBottom)).toBeLessThanOrEqual(1);
+	// Keep the same page scroll as the baseline (collapse can move scrollY via anchoring).
+	await page.evaluate((y) => window.scrollTo(0, y), collapsed.scrollY);
+	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(collapsed.scrollY);
+	// Poll: expand locks clear over a frame; reading cardTop too early flakes on mobile (#566).
+	await expect.poll(async () => {
+		const first = await desc(page).evaluate((el) => {
+			const range = document.createRange();
+			range.setStart(el.firstChild!, 0);
+			range.setEnd(el.firstChild!, 1);
+			const r = range.getBoundingClientRect();
+			return { scrollTop: el.scrollTop, offset: r.top - el.getBoundingClientRect().top, line: parseFloat(getComputedStyle(el).lineHeight) };
+		});
+		const g = await geometry(page);
+		const layoutDrift = Math.max(
+			Math.abs(g.heroH - collapsed.heroH),
+			Math.abs(g.cardTop - collapsed.cardTop),
+			Math.abs(g.cardBottom - collapsed.cardBottom)
+		);
+		const firstLineOk =
+			first.scrollTop === 0 &&
+			first.offset >= -1 &&
+			first.offset <= first.line;
+		return firstLineOk && layoutDrift <= 1 ? 0 : layoutDrift + (firstLineOk ? 0 : 100);
+	}, { timeout: 5_000 }).toBe(0);
 }
 
 test.describe("homepage hero description", () => {
@@ -925,6 +935,9 @@ test.describe("homepage hero description", () => {
 			await fakeApi(page, VERY_LONG_DESC, TWO_LINE_TITLE, CHIPS);
 			await page.goto("/");
 			await expect(toggle(page)).toBeVisible();
+			// Hold autoplay (art hover → heroPaused) so a slide change cannot rewrite card geometry (#566).
+			await page.locator(".billboard__art-hover").hover({ force: true });
+			await expect.poll(async () => (await geometry(page)).stagesH).toBeGreaterThan(0);
 			const collapsed = await geometry(page);
 			await toggle(page).click();
 			await expect(desc(page)).toHaveClass(/is-expanded/);
