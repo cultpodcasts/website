@@ -49,12 +49,12 @@ export function playablePublishSubjectNoun(kind: string | null | undefined): str
 }
 
 /**
- * Curator overflow labels for Edit / Post on playable pages and outgoing rows.
+ * Curator overflow labels for Edit / Post / Delete on playable pages and outgoing rows.
  * Matches edit-dialog titles: Episode, Film, News Report, TV Episode.
  */
 export function playableCuratorActionLabel(
   kind: string | null | undefined,
-  action: "Edit" | "Post",
+  action: "Edit" | "Post" | "Delete",
 ): string {
   return `${action} ${playablePublishSubjectNoun(kind)}`;
 }

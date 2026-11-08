@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Delete Episode</h2>
+<h2 mat-dialog-title>{{ title() }}</h2>
 
 <mat-dialog-content>
     @if (isSending()) {
@@ -11,7 +11,7 @@
         }
     }
     } @else {
-    Deleting an episode is permanent
+    Deleting a {{ noun() }} is permanent
     }
 </mat-dialog-content>
 

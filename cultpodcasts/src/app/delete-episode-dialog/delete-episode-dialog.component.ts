@@ -1,11 +1,36 @@
-import { Component, Inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { CataloguePlayableKind } from '../catalogue-playable-kind.enum';
+import { playablePublishSubjectNoun } from '../content-kind-label';
 import { environment } from './../../environments/environment';
+
+export interface DeletePlayableDialogData {
+  episodeId: string;
+  podcastId?: string;
+  contentKind?: string | null;
+}
+
+function deleteEndpoint(data: DeletePlayableDialogData): string | null {
+  const id = data.episodeId;
+  switch (data.contentKind) {
+    case CataloguePlayableKind.Film:
+      return new URL(`/film/${id}`, environment.api).toString();
+    case CataloguePlayableKind.NewsReport:
+      return new URL(`/newsreport/${id}`, environment.api).toString();
+    case CataloguePlayableKind.TvShowEpisode:
+      return new URL(`/tvshowepisode/${id}`, environment.api).toString();
+    default:
+      if (!data.podcastId) {
+        return null;
+      }
+      return new URL(`/episode/${data.podcastId}/${id}`, environment.api).toString();
+  }
+}
 
 @Component({
   selector: 'app-delete-episode-dialog',
@@ -22,15 +47,13 @@ export class DeleteEpisodeDialogComponent {
   readonly isInError = signal(false);
   readonly isSending = signal(false);
   readonly error = signal<any | undefined>(undefined);
-  podcastId: string;
-  episodeId: string;
+  readonly noun = computed(() => playablePublishSubjectNoun(this.data.contentKind).toLowerCase());
+  readonly title = computed(() => `Delete ${playablePublishSubjectNoun(this.data.contentKind)}`);
 
   constructor(private auth: AuthServiceWrapper,
     private http: HttpClient,
     private dialogRef: MatDialogRef<DeleteEpisodeDialogComponent, any>,
-    @Inject(MAT_DIALOG_DATA) public data: { podcastId: string, episodeId: string }) {
-    this.podcastId = data.podcastId;
-    this.episodeId = data.episodeId;
+    @Inject(MAT_DIALOG_DATA) public data: DeletePlayableDialogData) {
   }
 
   close() {
@@ -38,6 +61,12 @@ export class DeleteEpisodeDialogComponent {
   }
 
   onSubmit() {
+    const endpoint = deleteEndpoint(this.data);
+    if (!endpoint) {
+      this.isInError.set(true);
+      this.error.set({ message: 'Missing ids for delete' });
+      return;
+    }
     this.isSending.set(true);
     var token = firstValueFrom(this.auth.authService.getAccessTokenSilently({
       authorizationParams: {
@@ -48,8 +77,7 @@ export class DeleteEpisodeDialogComponent {
     token.then(_token => {
       let headers: HttpHeaders = new HttpHeaders();
       headers = headers.set("Authorization", "Bearer " + _token);
-      const episodeEndpoint = new URL(`/episode/${this.podcastId}/${this.episodeId}`, environment.api).toString();
-      this.http.delete<any>(episodeEndpoint, { headers: headers })
+      this.http.delete<any>(endpoint, { headers: headers })
         .subscribe(
           {
             next: resp => {

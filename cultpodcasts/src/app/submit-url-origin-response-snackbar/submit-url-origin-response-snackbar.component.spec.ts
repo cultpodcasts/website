@@ -4,11 +4,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
 import { provideRouter, Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { CataloguePlayableParentService } from '../catalogue-playable-parent.service';
-import { GuidService } from '../guid.service';
 import { AddEpisodeDialogComponent } from '../add-episode-dialog/add-episode-dialog.component';
 import { AddPodcastDialogComponent } from '../add-podcast-dialog/add-podcast-dialog.component';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
+import { cataloguePlayableReviewListCommands } from '../catalogue-playable-edit';
 import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
 import { EditNewsReportDialogComponent } from '../edit-news-report-dialog/edit-news-report-dialog.component';
 import { EditTvShowEpisodeDialogComponent } from '../edit-tv-show-episode-dialog/edit-tv-show-episode-dialog.component';
@@ -16,16 +15,11 @@ import { SubmitUrlOriginSuccessResponse } from '../submit-url-origin-success-res
 import { SubmitUrlOriginResponseSnackbarComponent, SubmitUrlOriginResponseSnackbarData } from './submit-url-origin-response-snackbar.component';
 
 const playableId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-const guids = new GuidService();
-const newsShort = guids.toCatalogueShortId(playableId, 'NewsReport');
-const tvShort = guids.toCatalogueShortId(playableId, 'TvShowEpisode');
-const filmShort = guids.toCatalogueShortId(playableId, 'Film');
 
 describe('SubmitUrlOriginResponseSnackbarComponent', () => {
   let action: Subject<void>;
   let dialogOpen: ReturnType<typeof vi.fn>;
   let snackOpen: ReturnType<typeof vi.fn>;
-  let parentName: ReturnType<typeof vi.fn>;
   let dialogResult: unknown;
   let snackAction: Subject<void>;
 
@@ -35,7 +29,6 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     dialogResult = { updated: true, parentName: 'Desk' };
     dialogOpen = vi.fn(() => ({ afterClosed: () => of(dialogResult) }));
     snackOpen = vi.fn(() => ({ onAction: () => snackAction }));
-    parentName = vi.fn(async () => 'Looked Up');
     await TestBed.configureTestingModule({
       imports: [SubmitUrlOriginResponseSnackbarComponent],
       providers: [
@@ -45,7 +38,6 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
         { provide: MatSnackBarRef, useValue: { onAction: () => action, dismiss: vi.fn(), dismissWithAction: () => action.next() } },
         { provide: MatDialog, useValue: { open: dialogOpen } },
         { provide: MatSnackBar, useValue: { open: snackOpen } },
-        { provide: CataloguePlayableParentService, useValue: { parentName } }
       ]
     }).compileComponents();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -62,37 +54,25 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     return Array.from(element.querySelectorAll('button')).map((b) => b.textContent?.trim() ?? '');
   }
 
-  it('shows Review + Edit for a Curator news submit from the hub, and Review goes to /news/{outlet}/{short id} without a lookup', async () => {
+  it('shows Review + Edit for a Curator news submit from the hub, and Review goes to /episodes for the playable id', async () => {
     const { component, navigate, element } = await create({
       existingPodcast: true, response: response('NewsReport'), roles: ['Curator'], parentName: 'Desk'
     });
     expect(element.textContent).toContain('News created.');
     expect(buttons(element)).toEqual(['Review', 'Edit']);
     await component.review();
-    expect(parentName).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith(['/news', 'Desk', newsShort]);
+    expect(navigate).toHaveBeenCalledWith(cataloguePlayableReviewListCommands(playableId));
   });
 
-  it('resolves the parent name for a toolbar TV submit before navigating', async () => {
+  it('Review for a toolbar TV submit goes to /episodes without a parent-name lookup', async () => {
     const { component, navigate } = await create({
       existingPodcast: false, response: response('TvShowEpisode', 'EpisodeAlreadyExists'), roles: ['Curator']
     });
     await component.review();
-    expect(parentName).toHaveBeenCalledWith('TvShowEpisode', playableId);
-    expect(navigate).toHaveBeenCalledWith(['/tv', 'Looked Up', tvShort]);
+    expect(navigate).toHaveBeenCalledWith(cataloguePlayableReviewListCommands(playableId));
   });
 
-  it('says so instead of navigating when the parent cannot be found', async () => {
-    const { component, navigate } = await create({
-      existingPodcast: false, response: response('NewsReport'), roles: ['Curator']
-    });
-    parentName.mockResolvedValue(null);
-    await component.review();
-    expect(navigate).not.toHaveBeenCalled();
-    expect(snackOpen).toHaveBeenCalledWith('Could not find the page for this item', 'Ok', expect.anything());
-  });
-
-  it('Edit opens the news report dialog, then offers Review on the report page', async () => {
+  it('Edit opens the news report dialog, then offers Review on /episodes', async () => {
     const { component, navigate } = await create({
       existingPodcast: false, response: response('NewsReport', 'Enriched'), roles: ['Curator']
     });
@@ -102,8 +82,7 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     snackAction.next();
     await Promise.resolve();
     await Promise.resolve();
-    expect(parentName).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith(['/news', 'Desk', newsShort]);
+    expect(navigate).toHaveBeenCalledWith(cataloguePlayableReviewListCommands(playableId));
   });
 
   it('Edit opens the TV episode dialog for a TV submit', async () => {
@@ -114,28 +93,16 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     expect(dialogOpen).toHaveBeenCalledWith(EditTvShowEpisodeDialogComponent, expect.objectContaining({ data: { episodeId: playableId } }));
   });
 
-  it('shows Review + Edit for a Curator film submit; Review goes to /film/{name}/{Film short id}, never the GUID', async () => {
+  it('shows Review + Edit for a Curator film submit; Review goes to /episodes for the film guid', async () => {
     const { component, navigate, element } = await create({
       existingPodcast: false, response: response('Film'), roles: ['Curator']
     });
-    parentName.mockResolvedValue('One Off');
     expect(buttons(element)).toEqual(['Review', 'Edit']);
     await component.review();
-    expect(parentName).toHaveBeenCalledWith('Film', playableId);
-    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
-    expect(navigate.mock.calls[0][0]).not.toContain(playableId);
+    expect(navigate).toHaveBeenCalledWith(cataloguePlayableReviewListCommands(playableId));
   });
 
-  it('a film Review ignores a hub parent name (the slug is the film name)', async () => {
-    const { component, navigate } = await create({
-      existingPodcast: true, response: response('Film'), roles: ['Curator'], parentName: 'Desk'
-    });
-    parentName.mockResolvedValue('One Off');
-    await component.review();
-    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
-  });
-
-  it('Edit opens the film dialog, then offers Review on the film page using the dialog film name', async () => {
+  it('Edit opens the film dialog, then offers Review on /episodes', async () => {
     const { component, navigate } = await create({
       existingPodcast: false, response: response('Film', 'EpisodeAlreadyExists'), roles: ['Curator']
     });
@@ -146,8 +113,7 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     snackAction.next();
     await Promise.resolve();
     await Promise.resolve();
-    expect(parentName).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith(['/film', 'One Off', filmShort]);
+    expect(navigate).toHaveBeenCalledWith(cataloguePlayableReviewListCommands(playableId));
   });
 
   it('keeps only Ok for Submitters and ignored outcomes', async () => {

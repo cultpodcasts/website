@@ -545,15 +545,15 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
     });
   }
 
-  delete(podcastId: string, episodeId: string) {
+  delete(target: { podcastId?: string; episodeId: string; contentKind?: string }) {
     const dialogRef = this.dialog.open(DeleteEpisodeDialogComponent, {
-      data: { podcastId: podcastId, episodeId: episodeId },
+      data: target,
       disableClose: true,
       autoFocus: true
     });
     dialogRef.afterClosed().subscribe(async result => {
       if (result.deleted) {
-        let snackBarRef = this.snackBar.open("Episode deleted.", "Ok", { duration: 10000 });
+        this.snackBar.open("Deleted.", "Ok", { duration: 10000 });
       }
     });
   }

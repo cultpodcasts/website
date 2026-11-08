@@ -3,6 +3,7 @@ import { MatButtonModule } from "@angular/material/button";
 import { MatDialog } from "@angular/material/dialog";
 import { RouterLink } from "@angular/router";
 import { MatSnackBar } from "@angular/material/snack-bar";
+import { Router } from "@angular/router";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
 import { EpisodeLoadingSkeletonComponent } from "../episode-loading-skeleton/episode-loading-skeleton.component";
 import { PlayableDetailFilmComponent } from "../playable-detail-film/playable-detail-film.component";
@@ -26,6 +27,7 @@ import { FilmTrailersComponent } from "../film-trailers/film-trailers.component"
 export class FilmPageComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   private readonly page = connectKindEpisode({
     parentHub: () => null,
     seoName: (episode) => episode.episodeTitle || "Film",
@@ -43,8 +45,8 @@ export class FilmPageComponent {
     this.page.start();
   }
 
-  /** Curator Edit: the film dialog (film/{id}), not the podcast Edit Episode dialog. */
+  /** Curator Edit: the film dialog (film/{id}), then Review on `/episodes`. */
   editFilm(filmId: string): void {
-    editCataloguePlayableFromPage(this.dialog, this.snackBar, CataloguePlayableKind.Film, filmId);
+    editCataloguePlayableFromPage(this.dialog, this.snackBar, this.router, CataloguePlayableKind.Film, filmId);
   }
 }

@@ -139,11 +139,12 @@ describe('CuratorPlayableCardComponent', () => {
   });
 
   for (const kind of ['Film', 'NewsReport', 'TvShowEpisode'] as const) {
-    it(`keeps ${kind} overflow free of podcast-only Index / Delete / Edit Podcast even with flags set`, async () => {
+    it(`keeps ${kind} overflow free of podcast-only Index / Edit Podcast, and offers Delete for Admin`, async () => {
       render(row(kind), podcastAdminFlags);
       const labels = await openOverflowMenu();
       expect(labels).toContain(playableCuratorActionLabel(kind, 'Edit'));
       expect(labels).toContain(playableCuratorActionLabel(kind, 'Post'));
+      expect(labels).toContain(playableCuratorActionLabel(kind, 'Delete'));
       expect(labels).not.toContain('Edit Podcast');
       expect(labels).not.toContain('Index Podcast');
       expect(labels).not.toContain('Delete Episode');

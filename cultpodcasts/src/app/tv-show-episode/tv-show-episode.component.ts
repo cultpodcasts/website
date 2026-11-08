@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { MatButtonModule } from "@angular/material/button";
 import { MatDialog } from "@angular/material/dialog";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 import { SiteLoadingComponent } from "../site-loading/site-loading.component";
@@ -25,6 +25,7 @@ import { connectKindEpisode } from "../kind-episode-page";
 export class TvShowEpisodeComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   private readonly page = connectKindEpisode({
     parentHub: (slug) => slug ? ["/tv", slug] : null,
     seoName: (_episode, slug) => slug,
@@ -42,8 +43,8 @@ export class TvShowEpisodeComponent {
     this.page.start();
   }
 
-  /** Curator Edit: the full TV episode dialog (playable fields + Identity), not the podcast editor. */
+  /** Curator Edit: the TV episode dialog, then Review on `/episodes`. */
   editEpisode(episodeId: string): void {
-    editCataloguePlayableFromPage(this.dialog, this.snackBar, CataloguePlayableKind.TvShowEpisode, episodeId);
+    editCataloguePlayableFromPage(this.dialog, this.snackBar, this.router, CataloguePlayableKind.TvShowEpisode, episodeId);
   }
 }
