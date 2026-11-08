@@ -4,9 +4,9 @@ import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
  * News report / TV episode / film curator edit against real routes with a faked API (synthetic data only):
- * hub submit → snackbar Review + Edit, the news report page Edit, the TV episode page Edit, and for films the
- * film page Edit, the toolbar submit snackbar and the review page row. Also the podcast Edit Episode dialog's
- * Catalogue tab (Move to film / Attach as trailer / Move to TV show).
+ * hub submit → snackbar Review + Edit (Review → `/episodes`), the news report page Edit, the TV episode page Edit,
+ * and for films the film page Edit, the toolbar submit snackbar and the review page row. Also the podcast Edit
+ * Episode dialog's Catalogue tab (Move to film / Attach as trailer / Move to TV show).
  * Set CATALOGUE_EDIT_SCREENSHOTS=dir to save PR screenshots.
  */
 const guids = new GuidService();
@@ -158,12 +158,19 @@ async function submitToDeskHub(page: Page) {
 }
 
 test.describe("news report / TV episode curator edit", () => {
-	test("hub submit shows Review + Edit; Review opens the report under its outlet", async ({ page }) => {
+	test("hub submit shows Review + Edit; Review opens the review list for the report id", async ({ page }) => {
+		const row = {
+			id: reportId, title: "Bulletin", displayTitle: "Bulletin", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			explicit: false, release: "2026-01-02T00:00:00Z", duration: "00:06:30", subjects: ["Politics"],
+			contentKind: "NewsReport", podcastName: "Desk", parentId: outletId, parentName: "Desk"
+		};
+		await page.route(`**/episode/${reportId}`, (route) => json(route, row));
 		const snack = await submitToDeskHub(page);
 		await shot(page, "snackbar-review-edit");
 		await snack.getByRole("button", { name: "Review" }).click();
-		await expect(page).toHaveURL(new RegExp(`/news/Desk/${guids.toCatalogueShortId(reportId, "NewsReport")}$`));
-		await expect(page.getByRole("heading", { name: "Bulletin" })).toBeVisible();
+		await expect(page).toHaveURL(new RegExp(`/episodes/${encodeURIComponent(JSON.stringify([reportId]))}$`));
+		// Curator news card (displayTitle from GET /episode/{id}); actions prove the review row rendered.
+		await expect(page.getByRole("button", { name: "News report actions" })).toBeVisible();
 	});
 
 	test("hub submit Edit opens the news report dialog and PATCHes only the changed fields", async ({ page }) => {
@@ -586,7 +593,7 @@ test.describe("film curator edit", () => {
 		await fakeLookups(page);
 		await fakePlayable(page, `film/${filmId}`, film, sink);
 		const row = {
-			id: filmId, title: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			id: filmId, title: "One Off", displayTitle: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
 			explicit: false, release: "1999-01-01T00:00:00Z", duration: "01:42:00", subjects: ["Arts"],
 			contentKind: "Film", slug: "One Off", path: filmPath
 		};
@@ -601,7 +608,7 @@ test.describe("film curator edit", () => {
 		await expect(page.locator("mat-card-title a")).toHaveAttribute("href", filmPath);
 		// Review film row uses app-curator-film-card (kind-specific overflow label).
 		await page.getByRole("button", { name: "Film actions" }).click();
-		// Edit Podcast / Delete stay podcast-only; Edit Film + Post Film are on the film row.
+		// Curator-only e2e role: Edit Film + Post Film (Delete Film needs Admin).
 		await expect(page.getByRole("menuitem")).toHaveText([/Edit Film/, /Post Film/]);
 		await page.getByRole("menuitem", { name: "Edit Film" }).click();
 		const dialog = page.locator("mat-dialog-container");
@@ -614,11 +621,17 @@ test.describe("film curator edit", () => {
 		expect(podcastPatch).toBe(false);
 	});
 
-	test("a toolbar film submit shows Review + Edit; Edit opens the film dialog and Review lands on the film page by its Film short id", async ({ page }) => {
+	test("a toolbar film submit shows Review + Edit; Edit opens the film dialog and Review opens the review list for the film id", async ({ page }) => {
 		test.slow(); // submit → snackbar → dialog → save → Review → page load: several serial round trips.
 		const sink: { body?: unknown } = {};
 		await fakeLookups(page);
 		await fakePlayable(page, `film/${filmId}`, film, sink);
+		const row = {
+			id: filmId, title: "One Off", displayTitle: "One Off", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			explicit: false, release: "1999-01-01T00:00:00Z", duration: "01:42:00", subjects: ["Arts"],
+			contentKind: "Film", slug: "One Off", path: filmPath
+		};
+		await page.route(`**/episode/${filmId}`, (route) => json(route, row));
 		await page.route("**/submit", (route) =>
 			json(
 				route,
@@ -643,8 +656,8 @@ test.describe("film curator edit", () => {
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({ explicit: true });
 		await page.getByRole("button", { name: "Review" }).click();
-		await expect(page).toHaveURL(new RegExp(`/film/${encodeURIComponent("One Off")}/${filmShort}$`));
-		expect(page.url()).not.toContain(filmId);
-		await expect(page.getByRole("heading", { name: "One Off" })).toBeVisible();
+		await expect(page).toHaveURL(new RegExp(`/episodes/${encodeURIComponent(JSON.stringify([filmId]))}$`));
+		// Curator film card (displayTitle from GET /episode/{id}); actions prove the review row rendered.
+		await expect(page.getByRole("button", { name: "Film actions" })).toBeVisible();
 	});
 });
