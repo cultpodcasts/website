@@ -89,6 +89,13 @@ describe("EpisodeService", () => {
     expect(filters[0]).toContain("seriesName");
   });
 
+  it("does not query podcastName when Azure names a non-series missing field", async () => {
+    const { filters, episode } = service(() => throwError(() => unknownField("contentKind")));
+
+    await expect(episode.GetEpisodeDetailsFromApi("ep-1", "Show")).rejects.toBeInstanceOf(HttpErrorResponse);
+    expect(filters).toEqual(["(seriesName eq 'Show') and (id eq 'ep-1')"]);
+  });
+
   it("adds contentKind to a TV episode lookup", async () => {
     const { filters, episode } = service(() => of({
       status: 200,
@@ -130,7 +137,7 @@ describe("EpisodeService", () => {
     ]);
   });
 
-  it("retries once without contentKind on an empty 400 and does not latch podcastName", async () => {
+  it("does not retry without contentKind on an opaque empty 400", async () => {
     const { filters, episode } = service((filter) => {
       if (filter.includes("contentKind")) {
         return throwError(() => empty400());
@@ -138,12 +145,9 @@ describe("EpisodeService", () => {
       return of({ status: 200, entities: [hit({ title: "One Off" })] });
     });
 
-    const found = await episode.GetEpisodeDetailsFromApi("ep-1", "One Off", "Film");
-
-    expect(found?.episodeTitle).toBe("One Off");
+    await expect(episode.GetEpisodeDetailsFromApi("ep-1", "One Off", "Film")).rejects.toBeInstanceOf(HttpErrorResponse);
     expect(filters).toEqual([
       "(contentKind eq 'Film') and (seriesName eq 'One Off') and (id eq 'ep-1')",
-      "(seriesName eq 'One Off') and (id eq 'ep-1')",
     ]);
   });
 });

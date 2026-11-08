@@ -9,7 +9,7 @@ import { movedKindRedirect, movedSeriesHubPath, podcastEpisodeShortIdRedirect } 
 import { ODataService } from "./odata.service";
 import { environment } from "./../environments/environment";
 import { SearchResult } from "./search-result.interface";
-import { isUnknownSearchFieldError, normalizePlayableHit, transferredSeriesHubFilter } from "./playable-search-hit";
+import { isUnknownSeriesNameField, normalizePlayableHit, transferredSeriesHubFilter } from "./playable-search-hit";
 
 /**
  * Old /podcast/ links for a moved Film, TV episode, news report, or transferred series leave before
@@ -82,7 +82,7 @@ async function seriesTarget(
   try {
     hit = await firstSeriesHit(oData, name, false);
   } catch (error) {
-    if (!isUnknownSearchFieldError(error)) {
+    if (!isUnknownSeriesNameField(error)) {
       throw error;
     }
     hit = await firstSeriesHit(oData, name, true);

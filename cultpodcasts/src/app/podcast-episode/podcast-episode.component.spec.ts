@@ -366,7 +366,11 @@ describe('PodcastEpisodeComponent', () => {
     getEntities.mockImplementation((_url: string, request: { filter: string }) => {
       filters.push(request.filter);
       if (request.filter.includes('seriesName')) {
-        return throwError(() => new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} }));
+        return throwError(() => new HttpErrorResponse({
+          status: 400,
+          statusText: 'Bad Request',
+          error: { error: { message: "Could not find a property named 'seriesName' on type 'search.document'." } },
+        }));
       }
       if (request.filter.includes('podcastName')) {
         return of({ entities: [rawHit({ id: 'more', episodeTitle: 'Live title', podcastName: 'Show A' })] });
@@ -394,6 +398,26 @@ describe('PodcastEpisodeComponent', () => {
 
     expect(filters).toHaveLength(1);
     expect(filters[0]).toContain('seriesName');
+    expect(rails().morePodcastEpisodes()).toEqual([]);
+  });
+
+  it('does not retry More from when Azure names a non-series missing field', () => {
+    const filters: string[] = [];
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      filters.push(request.filter);
+      return throwError(() => new HttpErrorResponse({
+        status: 400,
+        statusText: 'Bad Request',
+        error: { error: { message: "Could not find a property named 'contentKind' on type 'search.document'." } },
+      }));
+    });
+
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-e', subjects: [] }));
+    fixture.detectChanges();
+
+    expect(filters).toHaveLength(1);
+    expect(filters[0]).toContain('seriesName');
+    expect(filters[0]).not.toContain('podcastName');
     expect(rails().morePodcastEpisodes()).toEqual([]);
   });
 

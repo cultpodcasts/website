@@ -16,16 +16,16 @@ interface SearchCall {
   facets?: string[];
 }
 
-function unknownField(): HttpErrorResponse {
-  return new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} });
-}
-
 function namedField(property: string): HttpErrorResponse {
   return new HttpErrorResponse({
     status: 400,
     statusText: 'Bad Request',
     error: { error: { message: `Could not find a property named '${property}' on type 'search.document'.` } },
   });
+}
+
+function opaqueEmpty400(): HttpErrorResponse {
+  return new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} });
 }
 
 function serverError(): HttpErrorResponse {
@@ -40,7 +40,7 @@ function searchPage(contentKind: { value: string; count: number }[] = []) {
   };
 }
 
-type ScriptStep = 'unknown' | 'series' | 'kind' | 'server' | 'ok';
+type ScriptStep = 'opaque' | 'series' | 'kind' | 'server' | 'ok';
 
 describe('SearchApiComponent', () => {
   let fixture: ComponentFixture<SearchApiComponent>;
@@ -71,8 +71,8 @@ describe('SearchApiComponent', () => {
             getEntitiesWithFacets: (_url: string, request: SearchCall) => {
               calls.push(request);
               const next = script.shift() ?? 'ok';
-              if (next === 'unknown') {
-                return throwError(() => unknownField());
+              if (next === 'opaque') {
+                return throwError(() => opaqueEmpty400());
               }
               if (next === 'series') {
                 return throwError(() => namedField('seriesName'));
@@ -149,14 +149,15 @@ describe('SearchApiComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Something went wrong');
   });
 
-  it('treats an unnamed missing-field response as contentKind before flipping the series latch', () => {
-    script = ['unknown', 'ok'];
+  it('does not drop contentKind or latch podcastName on an opaque empty 400', () => {
+    script = ['opaque'];
     fixture.detectChanges();
 
+    expect(calls).toHaveLength(1);
     expect(facetsOf(calls[0])).toContain('contentKind');
-    expect(facetsOf(calls[1])).not.toContain('contentKind');
-    expect(facetsOf(calls[1])).toContain('seriesName');
-    expect(facetsOf(calls[1])).not.toContain('podcastName');
+    expect(facetsOf(calls[0])).toContain('seriesName');
+    expect(facetsOf(calls[0])).not.toContain('podcastName');
+    expect(fixture.nativeElement.textContent).toContain('Something went wrong');
   });
 
   it('keeps every kind pill after one kind is selected', () => {

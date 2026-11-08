@@ -5,7 +5,7 @@ import { SearchResult } from './search-result.interface';
 import { ODataService } from './odata.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { contentKindEquals, isUnknownContentKindField, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals, escapedOData } from './playable-search-hit';
+import { contentKindEquals, isUnknownContentKindField, isUnknownSeriesNameField, normalizePlayableHit, podcastNameEquals, seriesNameEquals, escapedOData } from './playable-search-hit';
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +39,7 @@ export class EpisodeService {
     try {
       return await this.lookupFiltered(episodeId, seriesNameEquals(podcastName), contentKind);
     } catch (error) {
-      if (!isUnknownSearchFieldError(error)) {
+      if (!isUnknownSeriesNameField(error)) {
         throw error;
       }
       return this.lookupFiltered(episodeId, podcastNameEquals(podcastName), contentKind);

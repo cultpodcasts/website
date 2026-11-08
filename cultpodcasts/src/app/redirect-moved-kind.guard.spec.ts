@@ -263,6 +263,32 @@ describe("redirectMovedKind", () => {
     expect(result).toBe(true);
   });
 
+  it("stays on /podcast/ when the series probe names a non-series missing field", async () => {
+    const namedContentKind = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Invalid expression: Could not find a property named 'contentKind' on type 'search.document'.",
+        },
+      },
+    });
+    const { result, seriesCalls } = await run(
+      undefined,
+      `/podcast/${encodeURIComponent("Show A")}`,
+      undefined,
+      {
+        query: null,
+        podcastName: "Show A",
+        seriesError: namedContentKind,
+        seriesHits: [hit({ contentKind: "NewsReport", podcastName: "Show A", episodeTitle: "Bulletin" })],
+      }
+    );
+    expect(seriesCalls).toHaveLength(1);
+    expect(seriesCalls[0].filter).toContain("seriesName eq 'Show A'");
+    expect(result).toBe(true);
+  });
+
   it("does not redirect a Film hit because Film is not a parent hub", async () => {
     const { result } = await run(
       undefined,

@@ -23,8 +23,12 @@ interface SearchCall {
   facets?: string[];
 }
 
-function unknownField(): HttpErrorResponse {
-  return new HttpErrorResponse({ status: 400, statusText: 'Bad Request', error: {} });
+function unknownField(property = 'seriesName'): HttpErrorResponse {
+  return new HttpErrorResponse({
+    status: 400,
+    statusText: 'Bad Request',
+    error: { error: { message: `Could not find a property named '${property}' on type 'search.document'.` } },
+  });
 }
 
 function serverError(): HttpErrorResponse {
