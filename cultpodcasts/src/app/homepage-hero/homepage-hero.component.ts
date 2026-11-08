@@ -198,6 +198,8 @@ export class HomepageHeroComponent {
   private lastSlideSignature: string | undefined;
   private resizeFrame = 0;
   private dotsScrollFrame = 0;
+  /** Deferred clear of expand inline locks after collapse (#566); cancelled on re-expand. */
+  private collapseClearFrame = 0;
   private dotsScrollTarget: HTMLElement | undefined;
   /** Pointer is over the art hit-target or pager/admin (hover pause). Not copy. */
   private pointerInside = false;
@@ -403,6 +405,7 @@ export class HomepageHeroComponent {
         if (this.dotsScrollFrame) {
           cancelAnimationFrame(this.dotsScrollFrame);
         }
+        this.cancelCollapseClearFrame();
         if (this.heroDotsOverflowTimer) {
           clearTimeout(this.heroDotsOverflowTimer);
         }
@@ -631,6 +634,8 @@ export class HomepageHeroComponent {
     if (this.descExpanded()) {
       this.collapseDesc();
     } else {
+      // Cancel any pending collapse clear so it cannot strip locks set this frame.
+      this.cancelCollapseClearFrame();
       this.captureDescExpandMetrics();
       this.descExpanded.set(true);
       this.layoutExpandedDesc();
@@ -648,12 +653,34 @@ export class HomepageHeroComponent {
     // Drop expand inline locks immediately (and again next frame). Leaving height / margin-top /
     // align-items for a paint can shift cardTop vs the pre-expand baseline (mobile flake #566).
     this.clearDescExpandDomLocks();
-    if (isPlatformBrowser(this.platformId)) {
-      requestAnimationFrame(() => {
-        this.clearDescExpandDomLocks();
-        this.resetDescScroll();
-      });
+    this.scheduleCollapseClearFrame();
+  }
+
+  /** Cancel a deferred post-collapse DOM-lock clear (re-expand / destroy). */
+  private cancelCollapseClearFrame(): void {
+    if (this.collapseClearFrame) {
+      cancelAnimationFrame(this.collapseClearFrame);
+      this.collapseClearFrame = 0;
     }
+  }
+
+  /**
+   * Second-pass clear after collapse. Gated + cancellable: a same-frame re-expand must keep
+   * HERO-DSC-005 locks (height / align-items / margin-top) until the next real collapse.
+   */
+  private scheduleCollapseClearFrame(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.cancelCollapseClearFrame();
+    this.collapseClearFrame = requestAnimationFrame(() => {
+      this.collapseClearFrame = 0;
+      if (this.descExpanded()) {
+        return;
+      }
+      this.clearDescExpandDomLocks();
+      this.resetDescScroll();
+    });
   }
 
   /** Remove expand-only inline styles so CSS docking applies without waiting on binding churn. */
@@ -672,6 +699,7 @@ export class HomepageHeroComponent {
 
   /** Browser only, before the expanded state renders: measure the collapsed card. */
   private captureDescExpandMetrics(): void {
+    this.cancelCollapseClearFrame();
     const desc = this.heroDesc()?.nativeElement;
     const card = desc?.closest<HTMLElement>('.billboard__content');
     const hero = desc?.closest<HTMLElement>('.billboard');
@@ -690,6 +718,7 @@ export class HomepageHeroComponent {
    * inside. Hero-relative, so page scroll carries it along. Maths: {@link expandedDescLayout}.
    */
   private layoutExpandedDesc(): void {
+    this.cancelCollapseClearFrame();
     const metrics = this.descExpandMetrics;
     if (!metrics) {
       return;

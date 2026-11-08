@@ -298,7 +298,8 @@ async function expectCollapsedAgain(page: Page, collapsed: Geo): Promise<void> {
 	await page.evaluate((y) => window.scrollTo(0, y), collapsed.scrollY);
 	await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(collapsed.scrollY);
 	// Poll: expand locks clear over a frame; reading cardTop too early flakes on mobile (#566).
-	await expect.poll(async () => {
+	// Named asserts (not an opaque score) so a timeout names which metric drifted.
+	await expect(async () => {
 		const first = await desc(page).evaluate((el) => {
 			const range = document.createRange();
 			range.setStart(el.firstChild!, 0);
@@ -307,17 +308,13 @@ async function expectCollapsedAgain(page: Page, collapsed: Geo): Promise<void> {
 			return { scrollTop: el.scrollTop, offset: r.top - el.getBoundingClientRect().top, line: parseFloat(getComputedStyle(el).lineHeight) };
 		});
 		const g = await geometry(page);
-		const layoutDrift = Math.max(
-			Math.abs(g.heroH - collapsed.heroH),
-			Math.abs(g.cardTop - collapsed.cardTop),
-			Math.abs(g.cardBottom - collapsed.cardBottom)
-		);
-		const firstLineOk =
-			first.scrollTop === 0 &&
-			first.offset >= -1 &&
-			first.offset <= first.line;
-		return firstLineOk && layoutDrift <= 1 ? 0 : layoutDrift + (firstLineOk ? 0 : 100);
-	}, { timeout: 5_000 }).toBe(0);
+		expect(first.scrollTop, "desc scrollTop after collapse").toBe(0);
+		expect(first.offset, "first line not at the top of the clamp").toBeGreaterThanOrEqual(-1);
+		expect(first.offset, `first line offset ${first.offset} vs line ${first.line}`).toBeLessThanOrEqual(first.line);
+		expect(Math.abs(g.heroH - collapsed.heroH), `heroH drifted: got ${g.heroH}, want ${collapsed.heroH}`).toBeLessThanOrEqual(1);
+		expect(Math.abs(g.cardTop - collapsed.cardTop), `cardTop drifted: got ${g.cardTop}, want ${collapsed.cardTop}`).toBeLessThanOrEqual(1);
+		expect(Math.abs(g.cardBottom - collapsed.cardBottom), `cardBottom drifted: got ${g.cardBottom}, want ${collapsed.cardBottom}`).toBeLessThanOrEqual(1);
+	}).toPass({ timeout: 5_000 });
 }
 
 test.describe("homepage hero description", () => {
@@ -935,7 +932,9 @@ test.describe("homepage hero description", () => {
 			await fakeApi(page, VERY_LONG_DESC, TWO_LINE_TITLE, CHIPS);
 			await page.goto("/");
 			await expect(toggle(page)).toBeVisible();
-			// Hold autoplay (art hover → heroPaused) so a slide change cannot rewrite card geometry (#566).
+			// While expanded, descExpanded holds autoplay. Art hover alone does not survive
+			// mouse.move onto the description (HERO-CTL-003). Re-hover art after collapse
+			// so heroPaused stays true for the expectCollapsedAgain poll (#566).
 			await page.locator(".billboard__art-hover").hover({ force: true });
 			await expect.poll(async () => (await geometry(page)).stagesH).toBeGreaterThan(0);
 			const collapsed = await geometry(page);
@@ -949,6 +948,7 @@ test.describe("homepage hero description", () => {
 			// overscroll-behavior: contain — the page itself did not scroll.
 			expect(await page.evaluate(() => window.scrollY)).toBe(collapsed.scrollY);
 			await toggle(page).click();
+			await page.locator(".billboard__art-hover").hover({ force: true });
 			await expectCollapsedAgain(page, collapsed);
 		});
 	}

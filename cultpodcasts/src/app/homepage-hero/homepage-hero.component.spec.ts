@@ -1453,6 +1453,55 @@ describe('HomepageHeroComponent', () => {
         expect(hero().classList.contains('is-desc-expanded')).toBe(false);
       });
 
+      it('re-expand before collapse rAF flush keeps expand DOM locks (#566)', () => {
+        fakeOverflow(true);
+        fakeCollapsed(900);
+        expand();
+        expect(hero().style.height).toBe('720px');
+        expect(hero().style.alignItems).toBe('flex-start');
+        expect(card().style.marginTop).toBe('162px');
+        expect(descEl().style.height).toBe('380px');
+
+        const byId = new Map<number, FrameRequestCallback>();
+        const cancelled = new Set<number>();
+        let nextId = 1;
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+          const id = nextId++;
+          byId.set(id, cb);
+          return id;
+        });
+        vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number) => {
+          cancelled.add(id);
+          byId.delete(id);
+        });
+
+        toggle()!.click();
+        fixture.detectChanges();
+        expect(component['descExpanded']()).toBe(false);
+        const staleId = component['collapseClearFrame'] as number;
+        expect(staleId).toBeGreaterThan(0);
+        const staleCollapseClear = byId.get(staleId);
+        expect(staleCollapseClear).toBeTypeOf('function');
+
+        // Same-frame re-expand must cancel (and gate) the deferred clear so locks stay.
+        expand();
+        expect(component['descExpanded']()).toBe(true);
+        expect(cancelled.has(staleId)).toBe(true);
+        expect(component['collapseClearFrame']).toBe(0);
+        expect(hero().style.height).toBe('720px');
+        expect(hero().style.alignItems).toBe('flex-start');
+        expect(card().style.marginTop).toBe('162px');
+        expect(descEl().style.height).toBe('380px');
+
+        // Even if a stale callback still runs, the still-collapsed gate must no-op.
+        staleCollapseClear!(performance.now());
+        fixture.detectChanges();
+        expect(hero().style.height).toBe('720px');
+        expect(hero().style.alignItems).toBe('flex-start');
+        expect(card().style.marginTop).toBe('162px');
+        expect(descEl().style.height).toBe('380px');
+      });
+
       it('Sass: the expanded description scrolls inside; the card spills over what follows on an opaque surface', () => {
         expect(heroSass).toMatch(/&\.is-expanded\n\s+display:\s*block[\s\S]*?overflow-y:\s*auto\n\s+overscroll-behavior:\s*contain/);
         expect(heroSass).toMatch(/\.billboard\.is-desc-expanded\n\s+overflow-x:\s*clip\n\s+overflow-y:\s*visible\n[\s\S]*?\.billboard__content::before\n\s+height:[^\n]+\n\s+background:\s*#0b0b0b\n/);
