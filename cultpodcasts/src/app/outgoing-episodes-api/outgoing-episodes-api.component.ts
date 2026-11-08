@@ -42,6 +42,7 @@ import {
 import { HeroCurationService } from '../hero-curation.service';
 import { isWithinHeroWeek } from '../hero-slides';
 import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
+import { episodeEditResultMessage } from '../social-retract-result';
 
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -212,13 +213,12 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
       width: '90%'
     });
     dialogRef.afterClosed().subscribe(async result => {
-      if (result) {
-        if (result.updated) {
-          this.snackBar.open("Episode updated", "Ok", { duration: 10000 });
-          await this.refreshEpisode(episodeId);
-        } else if (result.noChange) {
-          this.snackBar.open("No change", "Ok", { duration: 3000 });
-        }
+      const message = episodeEditResultMessage(result);
+      if (message) {
+        this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+      }
+      if (result?.updated) {
+        await this.refreshEpisode(episodeId);
       }
     });
   }
