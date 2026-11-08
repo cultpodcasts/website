@@ -401,6 +401,26 @@ describe('PodcastEpisodeComponent', () => {
     expect(rails().morePodcastEpisodes()).toEqual([]);
   });
 
+  it('does not retry More from when Azure names a non-series missing field', () => {
+    const filters: string[] = [];
+    getEntities.mockImplementation((_url: string, request: { filter: string }) => {
+      filters.push(request.filter);
+      return throwError(() => new HttpErrorResponse({
+        status: 400,
+        statusText: 'Bad Request',
+        error: { error: { message: "Could not find a property named 'contentKind' on type 'search.document'." } },
+      }));
+    });
+
+    fixture.componentRef.setInput('episode', ep({ id: 'ep-e', subjects: [] }));
+    fixture.detectChanges();
+
+    expect(filters).toHaveLength(1);
+    expect(filters[0]).toContain('seriesName');
+    expect(filters[0]).not.toContain('podcastName');
+    expect(rails().morePodcastEpisodes()).toEqual([]);
+  });
+
   it('shows the shared Add to Queue button in its square episode-page shape (not the hero pill)', () => {
     const button = query('app-queue-button.episode-hero__queue button');
     expect(button).toBeTruthy();

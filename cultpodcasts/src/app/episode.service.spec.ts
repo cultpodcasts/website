@@ -89,6 +89,13 @@ describe("EpisodeService", () => {
     expect(filters[0]).toContain("seriesName");
   });
 
+  it("does not query podcastName when Azure names a non-series missing field", async () => {
+    const { filters, episode } = service(() => throwError(() => unknownField("contentKind")));
+
+    await expect(episode.GetEpisodeDetailsFromApi("ep-1", "Show")).rejects.toBeInstanceOf(HttpErrorResponse);
+    expect(filters).toEqual(["(seriesName eq 'Show') and (id eq 'ep-1')"]);
+  });
+
   it("adds contentKind to a TV episode lookup", async () => {
     const { filters, episode } = service(() => of({
       status: 200,

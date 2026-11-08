@@ -76,11 +76,10 @@ const UNKNOWN_SEARCH_FIELD = /could not find a property named/i;
 const NAMED_SEARCH_FIELD = /could not find a property named ['"]([^'"]+)['"]/i;
 
 /**
- * Azure Search names a missing field with "Could not find a property named '…'".
+ * Property Azure named in "Could not find a property named '…'".
  * Api `/search` forwards that envelope (cultpodcasts/Api#215); do not treat opaque
  * empty 400 bodies as an unknown-field signal.
  */
-/** Property Azure named in "Could not find a property named '…'". */
 export function unknownSearchFieldName(error: unknown): string | null {
   const body = errorBody(error);
   const message = error && typeof error === "object" && "message" in error
@@ -97,6 +96,12 @@ export function isUnknownSearchFieldError(error: unknown): boolean {
   return containsUnknownFieldMessage(body) || containsUnknownFieldMessage(message);
 }
 
+/** Azure named seriesName or podcastName as missing — the only miss that latches the live series field. */
+export function isUnknownSeriesNameField(error: unknown): boolean {
+  const field = unknownSearchFieldName(error);
+  return field === "seriesName" || field === "podcastName";
+}
+
 /**
  * A missing contentKind field is not a series-name miss. Named contentKind (or any
  * other non-series field) should drop kind — not latch podcastName.
@@ -105,18 +110,13 @@ export function isUnknownContentKindField(error: unknown): boolean {
   if (!isUnknownSearchFieldError(error)) {
     return false;
   }
-  const field = unknownSearchFieldName(error);
-  return field !== "seriesName" && field !== "podcastName";
+  return !isUnknownSeriesNameField(error);
 }
 
 /** Retry podcastName once only when Azure names seriesName/podcastName as missing. */
 export function nextLegacyNameLatch(legacyNames: boolean, error: unknown): { legacyNames: boolean; retry: boolean } {
-  if (!legacyNames) {
-    const field = unknownSearchFieldName(error);
-    if (field === "seriesName" || field === "podcastName") {
-      return { legacyNames: true, retry: true };
-    }
-    return { legacyNames: false, retry: false };
+  if (!legacyNames && isUnknownSeriesNameField(error)) {
+    return { legacyNames: true, retry: true };
   }
   return { legacyNames: false, retry: false };
 }

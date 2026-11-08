@@ -33,7 +33,7 @@ import { Component, DestroyRef, inject, ChangeDetectionStrategy, signal, compute
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
-import { contentKindEquals, isUnknownSearchFieldError, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
+import { contentKindEquals, isUnknownSeriesNameField, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 
@@ -277,7 +277,7 @@ export class PlayableDetailShellComponent {
           .map((hit) => normalizePlayableHit(hit))
       ),
       error: (error) => {
-        if (field === "seriesName" && isUnknownSearchFieldError(error)) {
+        if (field === "seriesName" && isUnknownSeriesNameField(error)) {
           this.loadMoreFromShow(episode, podcastName, "podcastName");
           return;
         }

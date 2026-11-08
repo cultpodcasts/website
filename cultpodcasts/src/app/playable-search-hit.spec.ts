@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { escapedOData, isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter, subjectsAnySearchIn, transferredSeriesHubFilter } from "./playable-search-hit";
+import { escapedOData, isUnknownContentKindField, isUnknownSearchFieldError, isUnknownSeriesNameField, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, podcastNameEquals, rewritePlayableSeriesField, seriesNameEquals, unknownSearchFieldName, contentKindEquals, catalogueHubFilter, subjectsAnySearchIn, transferredSeriesHubFilter } from "./playable-search-hit";
 import { SearchResult } from "./search-result.interface";
 
 describe("playable search hits", () => {
@@ -66,6 +66,7 @@ describe("playable search hits", () => {
     });
     expect(isUnknownSearchFieldError(named)).toBe(true);
     expect(unknownSearchFieldName(named)).toBe("seriesName");
+    expect(isUnknownSeriesNameField(named)).toBe(true);
     expect(isUnknownContentKindField(named)).toBe(false);
 
     const kindNamed = new HttpErrorResponse({
@@ -78,6 +79,7 @@ describe("playable search hits", () => {
       },
     });
     expect(unknownSearchFieldName(kindNamed)).toBe("contentKind");
+    expect(isUnknownSeriesNameField(kindNamed)).toBe(false);
     expect(isUnknownContentKindField(kindNamed)).toBe(true);
   });
 
@@ -99,6 +101,15 @@ describe("playable search hits", () => {
         },
       },
     });
+    const podcastMissing = new HttpErrorResponse({
+      status: 400,
+      statusText: "Bad Request",
+      error: {
+        error: {
+          message: "Could not find a property named 'podcastName' on type 'search.document'.",
+        },
+      },
+    });
     const opaque = new HttpErrorResponse({ status: 400, statusText: "Bad Request", error: {} });
     const kindMissing = new HttpErrorResponse({
       status: 400,
@@ -114,6 +125,7 @@ describe("playable search hits", () => {
     expect(nextLegacyNameLatch(false, opaque)).toEqual({ legacyNames: false, retry: false });
     expect(nextLegacyNameLatch(false, kindMissing)).toEqual({ legacyNames: false, retry: false });
     expect(nextLegacyNameLatch(false, seriesMissing)).toEqual({ legacyNames: true, retry: true });
+    expect(nextLegacyNameLatch(false, podcastMissing)).toEqual({ legacyNames: true, retry: true });
     expect(nextLegacyNameLatch(true, server)).toEqual({ legacyNames: false, retry: false });
     expect(playableSeriesField(false)).toBe("seriesName");
     expect(playableSeriesField(true)).toBe("podcastName");
