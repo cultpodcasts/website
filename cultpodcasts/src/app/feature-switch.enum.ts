@@ -3,6 +3,6 @@ export enum FeatureSwitch {
     socials= 2,
     reddit= 3,
     redditPost= 4,
-    /** Episode OG/Twitter share image from page-details / shortener KV. Default OFF. */
+    /** Episode OG/Twitter share image from page-details / shortener KV. Default ON. */
     episodeOgShareImage = 5
 }

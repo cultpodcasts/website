@@ -100,4 +100,20 @@ describe('SeoService share images', () => {
       .toBe('https://beam-images.warnermediacdn.com/art.jpg?host=x.example&partner=beamcom&w=500');
     expect(meta.getTag('name="twitter:card"')?.content).toBe('summary_large_image');
   });
+
+  it('accepts JsonUrlInterceptor URL objects for episode og:image when switch is ON', () => {
+    episodeOgShareImageEnabled = true;
+    const branded =
+      'https://api.example/og-image?u=https%3A%2F%2Fi.scdn.co%2Fimage%2Fab6765&a=square';
+    seo.AddMetaTags({
+      title: 'Ep | Show',
+      description: 'Show',
+      image: new URL(branded),
+      imageAspect: 'square'
+    });
+
+    expect(meta.getTag('property="og:image"')?.content).toBe(branded);
+    expect(meta.getTag('name="twitter:image"')?.content).toBe(branded);
+    expect(meta.getTag('name="twitter:card"')?.content).toBe('summary_large_image');
+  });
 });

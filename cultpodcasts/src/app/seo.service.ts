@@ -102,11 +102,19 @@ export class SeoService {
     this.meta.updateTag({ name: "twitter:card", content: card });
   }
 
-  /** Match hero URL parsing: decode `&amp;` etc. before writing crawler meta. */
-  private normalizeShareImageUrl(image: string | undefined): string | undefined {
-    if (!image) {
+  /**
+   * Match hero URL parsing: decode `&amp;` etc. before writing crawler meta.
+   * `JsonUrlInterceptor` turns absolute http(s) strings in `/pagedetails` into `URL`
+   * objects — coerce before string ops or SSR throws and leaves sq-image meta (Api#244).
+   */
+  private normalizeShareImageUrl(image: string | URL | undefined): string | undefined {
+    if (image == null) {
       return undefined;
     }
-    return decodeHtmlEntitiesInUrl(image);
+    const text = typeof image === 'string' ? image : image.toString();
+    if (!text) {
+      return undefined;
+    }
+    return decodeHtmlEntitiesInUrl(text);
   }
 }
