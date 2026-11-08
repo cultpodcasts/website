@@ -111,7 +111,7 @@ export class SeoService {
     if (image == null) {
       return undefined;
     }
-    const text = typeof image === 'string' ? image : image.toString();
+    const text = image instanceof URL ? image.href : image;
     if (!text) {
       return undefined;
     }
