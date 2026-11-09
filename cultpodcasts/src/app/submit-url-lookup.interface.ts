@@ -19,11 +19,22 @@ type SubmitUrlLookupCatalogueFields = {
 };
 
 /**
+ * Optional refuse fields (website #650 / RPP #1358). Older Api omits them.
+ * Rejected BBC News lookup: known false, kind unrecognised, contentKind NewsReport.
+ */
+export type SubmitUrlLookupRejectionFields = {
+  rejected?: boolean;
+  message?: string;
+  /** Present on some rejected / catalogue bodies; optional for older Api. */
+  contentKind?: CataloguePlayableKind | null;
+};
+
+/**
  * Lookup 200 body. Streaming arms require `service` (Api membership wire).
  * Podcast-service / unrecognised arms omit `service`.
  * Known Film / TV / News may omit `podcastId` / `podcastName`.
  */
-export type SubmitUrlLookupResponse =
+type SubmitUrlLookupResponseBody =
   | ({
       known: true;
       podcastId?: string | null;
@@ -64,3 +75,5 @@ export type SubmitUrlLookupResponse =
       podcastIds: string[];
       kind?: NonStreamingLookupKind;
     };
+
+export type SubmitUrlLookupResponse = SubmitUrlLookupResponseBody & SubmitUrlLookupRejectionFields;

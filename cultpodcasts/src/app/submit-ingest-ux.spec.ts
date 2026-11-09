@@ -64,6 +64,15 @@ describe('shouldCallSubmitUrlPrepare', () => {
         podcastIds: [pageId, otherId]
       })
     ).toBe(false);
+    expect(
+      shouldCallSubmitUrlPrepare({
+        known: false,
+        kind: 'streaming',
+        service: 'itvx',
+        rejected: true,
+        message: "BBC News pages can't be submitted."
+      })
+    ).toBe(false);
   });
 });
 
@@ -286,6 +295,33 @@ describe('podcastPageAttachAfterDialog', () => {
       podcastId: pageId,
       podcastName: 'Page Show'
     });
+  });
+
+  it('aborts with the server message when lookup rejects (BBC News) and never confirms', async () => {
+    const bbcMessage =
+      "BBC News pages can't be submitted. Submit the BBC iPlayer episode, or the video from the BBC News YouTube channel.";
+    let confirmAsked = false;
+    const result = await podcastPageAttachAfterDialog({
+      rawUrl: vimeo,
+      pagePodcastName: 'Page Show',
+      lookupHref: async () => ({
+        known: false,
+        kind: 'unrecognised' as const,
+        contentKind: CataloguePlayableKind.NewsReport,
+        rejected: true as const,
+        message: bbcMessage
+      }),
+      resolvePage: async () => ({
+        kind: 'selection',
+        selection: { podcastId: pageId, podcastName: 'Page Show' }
+      }),
+      confirmOther: async () => {
+        confirmAsked = true;
+        return true;
+      }
+    });
+    expect(confirmAsked).toBe(false);
+    expect(result).toEqual({ kind: 'abort', reason: 'rejected', message: bbcMessage });
   });
 });
 

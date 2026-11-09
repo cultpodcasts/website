@@ -97,7 +97,19 @@ describe('podcast-url-matcher', () => {
       'https://www.gem.cbc.ca/example-slug/',
       'https://gem.cbc.ca/example-show/s01e01',
       'https://gem.cbc.ca/media/example-slug',
-      'https://gem.cbc.ca/media/example-show/s01e01?autoplay=1'
+      'https://gem.cbc.ca/media/example-show/s01e01?autoplay=1',
+      // BBC News shapes (RPP BbcNewsSubmitRejection) — client lets them through for server rejection UX
+      'https://bbc.co.uk/news/example-article',
+      'https://bbc.com/news/example-article',
+      'https://www.bbc.co.uk/news/example-article',
+      'https://www.bbc.com/news/example-article',
+      'https://m.bbc.co.uk/news/example-article',
+      'https://www.bbc.co.uk/news',
+      'https://www.bbc.com/news/',
+      'https://www.bbc.co.uk/news/av/example-av',
+      'https://www.bbc.co.uk/news/uk-example?at_medium=RSS',
+      'https://news.bbc.co.uk/2/hi/example.stm',
+      'https://news.bbc.co.uk/'
     ];
 
     for (const url of accepted) {
@@ -107,7 +119,6 @@ describe('podcast-url-matcher', () => {
   });
 
   it('rejects news and marketing hosts that are not catalogue title pages', () => {
-    expect(isSubmittablePodcastUrl('https://www.bbc.co.uk/news/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://example.test/watch/1')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.itv.com/watch/news/example')).toBe(false);
     expect(isSubmittablePodcastUrl('https://www.channel4.com/categories/example')).toBe(false);
@@ -172,7 +183,44 @@ describe('podcast-url-matcher', () => {
     expect(isSubmittablePodcastUrl('')).toBe(false);
   });
 
-  it('rejects every CBC Gem app-shell segment, bare and behind /media/, while slugs that merely start with one still match', () => {
+  it('accepts BBC News URL shapes for server rejection UX and keeps av-embeds / non-news out', () => {
+    const accepted = [
+      'https://bbc.co.uk/news/example-article',
+      'https://bbc.com/news/example-article',
+      'https://www.bbc.co.uk/news/example-article',
+      'https://www.bbc.com/news/articles/example',
+      'https://m.bbc.co.uk/news/example-article',
+      'https://feeds.bbc.co.uk/news/example-article',
+      'https://WWW.BBC.CO.UK/NEWS/EXAMPLE',
+      'https://www.bbc.co.uk/news',
+      'https://www.bbc.com/news/',
+      'https://www.bbc.co.uk/news/av/example',
+      'https://www.bbc.co.uk/news/uk-example?at_medium=RSS&at_campaign=rss',
+      'https://www.bbc.co.uk/news/uk-example#comments',
+      'https://news.bbc.co.uk/2/hi/example.stm',
+      'https://news.bbc.co.uk/'
+    ];
+    for (const url of accepted) {
+      expect(isSubmittablePodcastUrl(url), url).toBe(true);
+      expect(classifySubmittablePodcastUrl(url), url).toBe('streaming');
+    }
+    const rejected = [
+      'https://www.bbc.co.uk/news/av-embeds/example',
+      'https://www.bbc.com/NEWS/AV-EMBEDS/example/vpid/example',
+      'https://www.bbc.co.uk/newsround/example',
+      'https://www.bbc.co.uk/newsbeat/example',
+      'https://www.bbc.com/sport/example',
+      'https://www.notbbc.co.uk/news/example',
+      'https://bbc.co.uk.example.com/news/example',
+      'https://www.example.com/news/example',
+      'https://news.bbc.co.uk/news/av-embeds/example'
+    ];
+    for (const url of rejected) {
+      expect(isSubmittablePodcastUrl(url), url).toBe(false);
+    }
+  });
+
+    it('rejects every CBC Gem app-shell segment, bare and behind /media/, while slugs that merely start with one still match', () => {
     expect(cbcGemAppSegments.length).toBeGreaterThan(0);
     for (const segment of cbcGemAppSegments) {
       expect(segment, 'segments are joined into the regex unescaped').toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);

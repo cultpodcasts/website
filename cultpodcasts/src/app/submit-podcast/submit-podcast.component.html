@@ -16,6 +16,10 @@
         }
     </mat-form-field>
 
+    @if (urlRejected() && urlRejectionMessage()) {
+    <p class="url-rejection" id="submit-url-rejection" role="alert" aria-live="assertive">{{ urlRejectionMessage() }}</p>
+    }
+
     @if (fixedTarget; as target) {
     <p class="known-series" id="submit-target">{{ target.label }}: {{ target.name }}</p>
     }
