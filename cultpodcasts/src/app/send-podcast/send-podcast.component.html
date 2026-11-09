@@ -21,7 +21,7 @@
     }
     @if (submitError()) {
     <div>
-        <p>Error sending Url to CultPodcasts.com</p>
+        <p>{{submitErrorMessage()}}</p>
     </div>
     }
     @if (conflictDismissed()) {

@@ -2,6 +2,15 @@ const spotify = /^(?:https?:)?\/\/open\.spotify\.com\/episode\/[A-Za-z\d]+/;
 const youtube = /^(?:https?:\/\/)?(?:(?:www\.)?youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)[A-Za-z\d\-\_]+/;
 const apple = /^(?:https?:)?\/\/podcasts\.apple\.com\/(\w+\/)?podcast\/[a-z\-0-9]+\/id\d+\?i=\d+/;
 const bbc = /^(?:https?:)?\/\/www\.bbc\.co\.uk\/((iplayer\/episode\/[\w]+\/[A-Za-z\d\-_]+)|(sounds\/play\/[\w]+))/;
+/**
+ * BBC News pages the Api rejects with a message (RPP `BbcNewsSubmitRejection.Applies`).
+ * Let them through the client matcher so lookup/submit can return `{ rejected, message }`
+ * instead of a client-side “Unrecognised podcast URL”. Keep in sync with that type — wider
+ * than `IsBbcNews` alone (bare `/news`, legacy `news.bbc.co.uk`). Exclude `/news/av-embeds/`
+ * (iPlayer catalogue / the supported way in).
+ */
+const bbcNews = /^(?:https?:)?\/\/(?:[A-Za-z0-9-]+\.)*(?:bbc\.co\.uk|bbc\.com)\/news(?:\/(?!av-embeds(?:\/|$))[^?#\s]*)?(?:[?#]\S*)?$/i;
+const bbcNewsLegacy = /^(?:https?:)?\/\/news\.bbc\.co\.uk(?!\/news\/av-embeds(?:\/|$|\?))(?:\/[^?#\s]*)?(?:[?#]\S*)?$/i;
 const internetArchive = /^(?:https?:)?\/\/archive\.org\/details\/[A-Za-z\d\-_\.]+/;
 const vimeo = /^(?:https?:)?\/\/(?:(?:www|player)\.)?vimeo\.com\/(?:video\/)?(?:channels\/[^/]+\/)?(\d+)(?:\/[A-Za-z\d]+)?/;
 const netflix = /^(?:https?:)?\/\/(?:www\.)?netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:title|watch)\/\d+/;
@@ -56,6 +65,8 @@ const patterns: { regex: RegExp; useFullInput: boolean; kind: SubmittablePodcast
   { regex: youtube, useFullInput: false, kind: 'podcast-service' },
   { regex: apple, useFullInput: false, kind: 'podcast-service' },
   { regex: bbc, useFullInput: false, kind: 'streaming' },
+  { regex: bbcNews, useFullInput: true, kind: 'streaming' },
+  { regex: bbcNewsLegacy, useFullInput: true, kind: 'streaming' },
   { regex: internetArchive, useFullInput: true, kind: 'streaming' },
   { regex: vimeo, useFullInput: false, kind: 'streaming' },
   { regex: netflix, useFullInput: false, kind: 'streaming' },
