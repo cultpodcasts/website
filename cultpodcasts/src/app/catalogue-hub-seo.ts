@@ -1,5 +1,5 @@
 import { isPlatformServer } from "@angular/common";
-import { DestroyRef, inject, PLATFORM_ID, signal, Signal } from "@angular/core";
+import { DestroyRef, inject, PendingTasks, PLATFORM_ID, signal, Signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActivatedRoute } from "@angular/router";
 import { CatalogueHub } from "./catalogue-hub";
@@ -19,6 +19,7 @@ export function connectCatalogueHubSeo(hub: CatalogueHub): { slug: Signal<string
   const destroyRef = inject(DestroyRef);
   const seo = inject(SeoService);
   const episodes = inject(EpisodeService);
+  const pendingTasks = inject(PendingTasks);
   const isServer = isPlatformServer(inject(PLATFORM_ID));
   const slug = signal("");
 
@@ -31,7 +32,8 @@ export function connectCatalogueHubSeo(hub: CatalogueHub): { slug: Signal<string
         seo.AddMetaTags(fallback);
         return;
       }
-      void (async () => {
+      // Zoneless SSR: PendingTasks blocks stability until hub OG meta is written.
+      pendingTasks.run(async () => {
         let details: IPageDetails | undefined;
         try {
           details = await episodes.getHubPageDetailsViaApi(hub, name);
@@ -39,7 +41,7 @@ export function connectCatalogueHubSeo(hub: CatalogueHub): { slug: Signal<string
           console.error(JSON.stringify(error));
         }
         seo.AddMetaTags(details?.title ? details : fallback);
-      })();
+      });
     });
   }
 

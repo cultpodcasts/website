@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationRef, PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -48,14 +48,18 @@ describe('PodcastComponent', () => {
     root: string;
     episode?: SearchResult;
     platform?: string;
+    kvPageDetails?: IPageDetails | Promise<IPageDetails | undefined>;
+    settle?: boolean;
   }): Promise<{
     fixture: ComponentFixture<PodcastComponent>;
     lookedUp: string[];
     titles: string[];
+    pageDetails: IPageDetails[];
     nav: ReturnType<typeof vi.spyOn>;
   }> {
     const lookedUp: string[] = [];
     const titles: string[] = [];
+    const pageDetails: IPageDetails[] = [];
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [PodcastComponent],
@@ -78,7 +82,10 @@ describe('PodcastComponent', () => {
         {
           provide: EpisodeService,
           useValue: {
-            getEpisodeDetailsFromKvViaApi: async () => undefined,
+            getEpisodeDetailsFromKvViaApi: async () =>
+              options.kvPageDetails === undefined
+                ? undefined
+                : await options.kvPageDetails,
             GetEpisodeDetailsFromApi: async (episodeId: string) => {
               lookedUp.push(episodeId);
               return options.episode;
@@ -90,6 +97,7 @@ describe('PodcastComponent', () => {
           provide: SeoService,
           useValue: {
             AddMetaTags: (details: IPageDetails) => {
+              pageDetails.push(details);
               if (details.title) {
                 titles.push(details.title);
               }
@@ -109,14 +117,52 @@ describe('PodcastComponent', () => {
     const router = TestBed.inject(Router);
     const nav = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     const fixture = TestBed.createComponent(PodcastComponent);
-    // The route handler resolves the episode on a microtask. Flush a few turns so the
-    // view shows the episode or the not-found link without waiting on application stability.
-    for (let pass = 0; pass < 5; pass++) {
-      fixture.detectChanges();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    if (options.settle !== false) {
+      // The route handler resolves the episode on a microtask. Flush a few turns so the
+      // view shows the episode or the not-found link without waiting on application stability.
+      for (let pass = 0; pass < 5; pass++) {
+        fixture.detectChanges();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
     }
-    return { fixture, lookedUp, titles, nav };
+    return { fixture, lookedUp, titles, pageDetails, nav };
   }
+
+  it('SSR: PendingTasks keeps the app unstable until branded page-details og image meta is applied', { timeout: 20_000 }, async () => {
+    const shortId = guids.toBase64(id);
+    let resolveKv!: (value: IPageDetails) => void;
+    const kvPageDetails = new Promise<IPageDetails>((resolve) => {
+      resolveKv = resolve;
+    });
+    const branded: IPageDetails = {
+      title: 'Charity for whom?',
+      description: 'Show',
+      image: 'https://api.example/og-image?u=thumb&a=wide',
+    };
+    const { pageDetails } = await render({
+      path: `/podcast/${encodeURIComponent('Show')}/${shortId}`,
+      params: { podcastName: 'Show', query: shortId },
+      root: 'podcast',
+      platform: 'server',
+      kvPageDetails,
+      settle: false,
+    });
+
+    const whenStable = TestBed.inject(ApplicationRef).whenStable();
+    let stable = false;
+    void whenStable.then(() => {
+      stable = true;
+    });
+    await Promise.resolve();
+    expect(stable).toBe(false);
+    expect(pageDetails).toEqual([]);
+
+    resolveKv(branded);
+    await whenStable;
+    expect(stable).toBe(true);
+    expect(pageDetails).toEqual([branded]);
+  });
 
   // Full-suite runs can exceed the default 5s while navigateByUrl waits for stability.
   it('shows a podcast episode and keeps its not-found link on /podcast/', { timeout: 20_000 }, async () => {

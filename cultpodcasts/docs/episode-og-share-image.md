@@ -13,6 +13,18 @@ When ON, SSR prefers shortener page-details image (Api `/og-image` branded URL
 when present) and sets `twitter:card=summary_large_image` for both wide and
 square episode art (`summary` only for the site-icon fallback).
 
+Under **zoneless** change detection, episode/hub SSR fetches that write meta
+**must** run inside Angular `PendingTasks.run(...)`. A bare `void (async () =>
+…)` does not block `ApplicationRef` stability, so Cloudflare SSR can flush
+HTML with only `AddRequiredMetaTags` defaults (`/assets/sq-image.png` +
+`twitter:card=summary`).
+
+`JsonUrlInterceptor` rewrites absolute `http(s)` strings in API JSON (including
+`/pagedetails` `image`) into `URL` objects. `SeoService` must coerce those to
+strings before entity-decoding; otherwise SSR throws inside `applyShareImage`
+after title/description are written and crawlers still see `sq-image.png`
+(Api#244).
+
 When page-details has no `image` (common for streaming-only episodes), SSR
 enriches from search via the same `episodeImageUrl` / `episodeArtAspect` path as
 the episode hero, with HTML-entity decode (`&amp;` → `&`) so crawler meta matches

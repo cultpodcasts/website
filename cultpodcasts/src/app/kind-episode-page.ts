@@ -1,4 +1,4 @@
-import { afterNextRender, inject, Injector, PLATFORM_ID, signal, Signal } from "@angular/core";
+import { afterNextRender, inject, Injector, PendingTasks, PLATFORM_ID, signal, Signal } from "@angular/core";
 import { isPlatformServer } from "@angular/common";
 import { RESPONSE_INIT } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
@@ -39,6 +39,7 @@ export function connectKindEpisode(options: {
   const responseInit = inject(RESPONSE_INIT, { optional: true });
   const platformId = inject(PLATFORM_ID);
   const injector = inject(Injector);
+  const pendingTasks = inject(PendingTasks);
   const isServer = isPlatformServer(platformId);
 
   const slug = signal("");
@@ -91,7 +92,8 @@ export function connectKindEpisode(options: {
         return;
       }
       if (isServer) {
-        void (async () => {
+        // Zoneless SSR: PendingTasks blocks stability until OG meta is written (see podcast.component).
+        pendingTasks.run(async () => {
           let hadKv = false;
           try {
             const kv = await episodes.getEpisodeDetailsFromKvViaApi(episodeId, slug());
@@ -121,7 +123,7 @@ export function connectKindEpisode(options: {
           }
           seo.AddMetaTags(pageDetails);
           isLoading.set(true);
-        })();
+        });
         return;
       }
       let redirecting = false;

@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PLATFORM_ID, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, DestroyRef, Inject, inject, PendingTasks, PLATFORM_ID, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PodcastApiComponent } from '../podcast-api/podcast-api.component';
@@ -33,6 +33,8 @@ import { episodeIdFromRouteQuery } from '../playable-route';
 export class PodcastComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  /** Zoneless SSR: keep the render unstable until episode OG meta is written. */
+  private readonly pendingTasks = inject(PendingTasks);
 
   podcastName: string = "";
   isServer: boolean;
@@ -83,7 +85,9 @@ export class PodcastComponent {
           // SSR: SEO tags only — do not SSR episode body (avoids hydration mismatch with client).
           // Prefer shortener page-details (branded /og-image when present). When KV has no image
           // (streaming-only episodes often omit share art), fall back to search art like the hero.
-          void (async () => {
+          // PendingTasks is required under zoneless CD — a bare void async IIFE does not block
+          // ApplicationRef stability, so crawlers would get AddRequiredMetaTags' sq-image fallback.
+          this.pendingTasks.run(async () => {
             let hadKvPageDetails = false;
             try {
               const episodePageDetails = await this.episodeService.getEpisodeDetailsFromKvViaApi(
@@ -113,7 +117,7 @@ export class PodcastComponent {
             this.seoService.AddMetaTags(pageDetails);
             // Stay in loading on server so we don't emit a "not found" shell for hydration.
             this.isLoading.set(true);
-          })();
+          });
         } else {
           this.resolvePlayable(episodeUuid)
             .then(episode => {
