@@ -1,6 +1,11 @@
 import { CataloguePlayableKind, isNonPodcastPlayableKind } from './catalogue-playable-kind.enum';
 import { parseSubmittablePodcastUrl } from './podcast-url-matcher';
 import { SubmitUrlLookupResponse } from './submit-url-lookup.interface';
+import {
+  GENERIC_SUBMIT_URL_ERROR,
+  isSubmitUrlLookupRejected,
+  submitUrlLookupRejectionMessage
+} from './submit-url-rejection';
 import { SubmitSeriesSelection } from './submit-series.util';
 import { uuidPattern } from './uuid-pattern.regexp';
 
@@ -23,6 +28,7 @@ export function shouldCallSubmitUrlPrepare(
   return (
     !!lookup &&
     lookup !== 'error' &&
+    !isSubmitUrlLookupRejected(lookup) &&
     !lookup.known &&
     !lookup.ambiguous &&
     lookup.kind === 'streaming'
@@ -143,7 +149,12 @@ export function parseSubmitDialogUrl(raw: unknown): URL | undefined {
 
 export type PodcastPageAttachResult =
   | { kind: 'send'; url: URL; podcastId: string; podcastName: string | undefined }
-  | { kind: 'abort'; reason: 'no-url' | 'unparseable' | 'resolve' | 'cancelled' | 'declined' };
+  | {
+      kind: 'abort';
+      reason: 'no-url' | 'unparseable' | 'resolve' | 'cancelled' | 'declined' | 'rejected';
+      /** Server copy when reason is rejected. */
+      message?: string;
+    };
 
 export type PodcastPageResolveOutcome =
   | { kind: 'selection'; selection: { podcastId?: string; podcastName?: string } }
@@ -181,6 +192,13 @@ export async function podcastPageAttachAfterDialog(args: {
     lookup = await args.lookupHref(url.href);
   } catch {
     lookup = 'error';
+  }
+  if (isSubmitUrlLookupRejected(lookup)) {
+    return {
+      kind: 'abort',
+      reason: 'rejected',
+      message: submitUrlLookupRejectionMessage(lookup) ?? GENERIC_SUBMIT_URL_ERROR
+    };
   }
   const pagePodcastId = outcome.selection.podcastId;
   const pagePodcastName = outcome.selection.podcastName ?? args.pagePodcastName;

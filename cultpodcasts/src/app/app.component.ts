@@ -48,6 +48,11 @@ import type { SendPodcastPrepareOutcome } from './send-podcast-prepare';
 import { SubmitSeriesResolveService } from './submit-series-resolve.service';
 import { SubmitUrlLookupService } from './submit-url-lookup.service';
 import { SubmitUrlPrepareService } from './submit-url-prepare.service';
+import {
+  GENERIC_SUBMIT_URL_ERROR,
+  isSubmitUrlLookupRejected,
+  submitUrlLookupRejectionMessage
+} from './submit-url-rejection';
 import { filter, map, startWith } from 'rxjs';
 import { scheduleChromeSync } from './episode-form.util';
 
@@ -645,6 +650,14 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       const pagePodcastId = outcome.selection.podcastId;
       const pagePodcastName = outcome.selection.podcastName ?? name;
       const lookup = await this.lookupSubmitUrl(url.href);
+      if (isSubmitUrlLookupRejected(lookup)) {
+        this.snackBar.open(
+          submitUrlLookupRejectionMessage(lookup) ?? GENERIC_SUBMIT_URL_ERROR,
+          'Ok',
+          { duration: 10000 }
+        );
+        return;
+      }
       const proceed = await confirmPageDropIfOtherSeries(
         this.dialog,
         lookup,
@@ -688,6 +701,14 @@ export class AppComponent implements OnDestroy, AfterViewInit {
       return { podcastId: undefined as string | undefined, podcastName: undefined as string | undefined };
     }
     const lookup = await this.lookupSubmitUrl(href);
+    if (isSubmitUrlLookupRejected(lookup)) {
+      this.snackBar.open(
+        submitUrlLookupRejectionMessage(lookup) ?? GENERIC_SUBMIT_URL_ERROR,
+        'Ok',
+        { duration: 10000 }
+      );
+      return 'cancelled';
+    }
     if (shouldCallSubmitUrlPrepare(lookup) && lookup !== 'error' && lookup) {
       try {
         const prepared = await this.submitPrepare.prepare(href);

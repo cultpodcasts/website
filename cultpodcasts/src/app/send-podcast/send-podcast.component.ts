@@ -18,6 +18,7 @@ import { submitEpisodePostBody, submitParentPostBody } from '../submit-series.ut
 import { UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 import { AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { promptAmbiguousIdentity, promptUnsupportedLanguage } from '../submit-language-identity-prompts';
+import { GENERIC_SUBMIT_URL_ERROR, submitUrlErrorDisplay } from '../submit-url-rejection';
 
 @Component({
   selector: 'app-send-podcast',
@@ -34,6 +35,8 @@ export class SendPodcastComponent {
   readonly urlTextError = signal(false);
   readonly unknownError = signal(false);
   readonly submitError = signal(false);
+  /** Shown when submitError is set — server rejection message or generic fallback. */
+  readonly submitErrorMessage = signal(GENERIC_SUBMIT_URL_ERROR);
   readonly conflictDismissed = signal(false);
   readonly shareUrl = signal<URL | undefined>(undefined);
   originResponse: SubmitUrlOriginResponse | undefined;
@@ -60,11 +63,13 @@ export class SendPodcastComponent {
     this.urlTextError.set(false);
     this.unknownError.set(false);
     this.submitError.set(false);
+    this.submitErrorMessage.set(GENERIC_SUBMIT_URL_ERROR);
     this.conflictDismissed.set(false);
   }
 
-  public markSubmitError() {
+  public markSubmitError(message?: string) {
     this.isSending.set(false);
+    this.submitErrorMessage.set(message?.trim() || GENERIC_SUBMIT_URL_ERROR);
     this.submitError.set(true);
   }
 
@@ -160,6 +165,7 @@ export class SendPodcastComponent {
           }
         }
         this.isSending.set(false);
+        this.submitErrorMessage.set(submitUrlErrorDisplay(error));
         this.submitError.set(true);
       }
       return;

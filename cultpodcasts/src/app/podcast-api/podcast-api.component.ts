@@ -402,7 +402,11 @@ export class PodcastApiComponent {
             confirmPageDropIfOtherSeries(this.dialog, lookup, pagePodcastId, pagePodcastName)
         });
         if (attached.kind === 'abort') {
-          if (attached.reason === 'resolve' || attached.reason === 'unparseable') {
+          if (attached.reason === 'rejected') {
+            this.snackBar.open(attached.message ?? 'Error sending Url to CultPodcasts.com', 'Ok', {
+              duration: 10000
+            });
+          } else if (attached.reason === 'resolve' || attached.reason === 'unparseable') {
             this.snackBar.open(
               attached.reason === 'unparseable'
                 ? 'Unsupported episode link'

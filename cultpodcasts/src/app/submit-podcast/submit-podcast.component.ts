@@ -35,6 +35,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import {
+  GENERIC_SUBMIT_URL_ERROR,
+  isSubmitUrlLookupRejected,
+  submitUrlLookupRejectionMessage
+} from '../submit-url-rejection';
 
 const SERIES_SUGGEST_DEBOUNCE_MS = 150;
 const URL_LOOKUP_DEBOUNCE_MS = 300;
@@ -94,6 +99,8 @@ export class SubmitPodcastComponent {
   protected readonly urlText = signal('');
   /** Prepare failed for unknown streaming — do not Persist without StreamMeta. */
   protected readonly prepareFailed = signal(false);
+  /** Lookup refused the URL (e.g. BBC News) — show message, no Save / prepare. */
+  protected readonly urlRejected = signal(false);
 
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => showSubmitSeriesPicker(this.authRoles()));
@@ -117,7 +124,7 @@ export class SubmitPodcastComponent {
   });
   /** Blocks Save until lookup for this URL finished (Submitter/Curator) or while POST resolve runs. */
   protected readonly saveDisabled = computed(() => {
-    if (this.resolving() || this.lookupPending() || this.prepareFailed()) {
+    if (this.resolving() || this.lookupPending() || this.prepareFailed() || this.urlRejected()) {
       return true;
     }
     return !submitSaveReady(
@@ -191,19 +198,33 @@ export class SubmitPodcastComponent {
         this.lookedUpHref.set(null);
         this.lookup.set(null);
         this.prepareFailed.set(false);
+        this.urlRejected.set(false);
       } else if (result.kind === 'skipped') {
         this.lookedUpHref.set(result.href);
         this.lookup.set(null);
         this.prepareFailed.set(false);
+        this.urlRejected.set(false);
       } else if (result.kind === 'prepare-failed') {
         this.lookedUpHref.set(result.href);
         this.lookup.set('error');
         this.prepareFailed.set(true);
+        this.urlRejected.set(false);
         this.snackBar.open('Could not prepare this podcast URL. Try again.', 'Ok', { duration: 5000 });
+      } else if (result.kind === 'rejected') {
+        this.lookedUpHref.set(result.href);
+        this.lookup.set(result.lookup);
+        this.prepareFailed.set(false);
+        this.urlRejected.set(true);
+        this.snackBar.open(
+          submitUrlLookupRejectionMessage(result.lookup) ?? GENERIC_SUBMIT_URL_ERROR,
+          'Ok',
+          { duration: 10000 }
+        );
       } else {
         this.lookedUpHref.set(result.href);
         this.lookup.set(result.lookup);
         this.prepareFailed.set(false);
+        this.urlRejected.set(false);
         if (result.lookup !== 'error' && result.lookup.known) {
           this.podcast.setValue(null);
         } else if (
@@ -230,6 +251,7 @@ export class SubmitPodcastComponent {
       this.lookedUpHref.set(null);
       this.lookup.set(null);
       this.prepareFailed.set(false);
+      this.urlRejected.set(false);
     } else if (
       this.urlCaptureOnly ||
       !shouldCallSubmitUrlLookup(this.authRoles()) ||
@@ -239,6 +261,7 @@ export class SubmitPodcastComponent {
     } else {
       this.lookupPending.set(true);
       this.prepareFailed.set(false);
+      this.urlRejected.set(false);
     }
     this.changeDetector.markForCheck();
   }
@@ -254,6 +277,9 @@ export class SubmitPodcastComponent {
     return from(this.urlLookup.lookup(parsed.toString())).pipe(
       timeout(URL_LOOKUP_TIMEOUT_MS),
       switchMap(async (lookup) => {
+        if (isSubmitUrlLookupRejected(lookup)) {
+          return { kind: 'rejected' as const, href: parsed.href, lookup };
+        }
         if (shouldCallSubmitUrlPrepare(lookup)) {
           try {
             const prepared = await this.urlPrepare.prepare(parsed.toString());
@@ -288,7 +314,7 @@ export class SubmitPodcastComponent {
   readonly displayFn = displaySeriesFormValue;
 
   async save() {
-    if (!this.form.valid || this.resolving() || this.prepareFailed()) {
+    if (!this.form.valid || this.resolving() || this.prepareFailed() || this.urlRejected()) {
       return;
     }
 

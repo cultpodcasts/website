@@ -119,3 +119,63 @@ describe('SubmitPodcastComponent known catalogue label', () => {
     expect(hasSeriesPicker()).toBe(false);
   });
 });
+
+describe('SubmitPodcastComponent lookup rejection', () => {
+  const bbcMessage =
+    "BBC News pages can't be submitted. Submit the BBC iPlayer episode, or the video from the BBC News YouTube channel.";
+  // Client matcher still rejects bbc.co.uk/news; exercise lookup refuse on a parseable URL.
+  const syntheticUrl = 'https://www.youtube.com/watch?v=c0synthetic00';
+
+  it('shows the rejection snackbar, skips prepare, and disables Save', async () => {
+    const snack = { open: vi.fn() };
+    const prepare = vi.fn(async () => ({ podcastName: null }));
+    await TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [SubmitPodcastComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+        { provide: MAT_DIALOG_DATA, useValue: null },
+        { provide: MatSnackBar, useValue: snack },
+        {
+          provide: AuthServiceWrapper,
+          useValue: {
+            roles: of(['Curator']),
+            authService: { getAccessTokenSilently: () => of('test-token') }
+          }
+        },
+        { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest: async () => [] } },
+        { provide: SubmitSeriesResolveService, useValue: {} },
+        {
+          provide: SubmitUrlLookupService,
+          useValue: {
+            lookup: async () => ({
+              known: false as const,
+              kind: 'unrecognised' as const,
+              contentKind: CataloguePlayableKind.NewsReport,
+              rejected: true as const,
+              message: bbcMessage
+            })
+          }
+        },
+        { provide: SubmitUrlPrepareService, useValue: { prepare } }
+      ]
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(SubmitPodcastComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.url.setValue(syntheticUrl);
+    fixture.detectChanges();
+    await vi.waitFor(() => {
+      expect(
+        (component as unknown as { urlRejected: { (): boolean } }).urlRejected()
+      ).toBe(true);
+    });
+    expect(prepare).not.toHaveBeenCalled();
+    expect(snack.open).toHaveBeenCalledWith(bbcMessage, 'Ok', expect.objectContaining({ duration: 10000 }));
+    expect(
+      (component as unknown as { saveDisabled: { (): boolean } }).saveDisabled()
+    ).toBe(true);
+  });
+});
