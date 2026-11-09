@@ -123,10 +123,10 @@ describe('SubmitPodcastComponent known catalogue label', () => {
 describe('SubmitPodcastComponent lookup rejection', () => {
   const bbcMessage =
     "BBC News pages can't be submitted. Submit the BBC iPlayer episode, or the video from the BBC News YouTube channel.";
-  // Client matcher still rejects bbc.co.uk/news; exercise lookup refuse on a parseable URL.
-  const syntheticUrl = 'https://www.youtube.com/watch?v=c0synthetic00';
+  const bbcNewsUrl = 'https://www.bbc.co.uk/news/uk-example-article';
+  const bbcComNewsUrl = 'https://www.bbc.com/news/articles/example-article';
 
-  it('shows the rejection snackbar, skips prepare, and disables Save', async () => {
+  async function createRejectedFixture(url: string) {
     const snack = { open: vi.fn() };
     const prepare = vi.fn(async () => ({ podcastName: null }));
     await TestBed.resetTestingModule();
@@ -165,17 +165,34 @@ describe('SubmitPodcastComponent lookup rejection', () => {
     const fixture = TestBed.createComponent(SubmitPodcastComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
-    component.url.setValue(syntheticUrl);
+    component.url.setValue(url);
     fixture.detectChanges();
     await vi.waitFor(() => {
       expect(
         (component as unknown as { urlRejected: { (): boolean } }).urlRejected()
       ).toBe(true);
     });
+    fixture.detectChanges();
+    return { fixture, component, snack, prepare };
+  }
+
+  it('shows a persistent alert for a real bbc.co.uk/news URL, skips prepare, and disables Save', async () => {
+    const { fixture, snack, prepare } = await createRejectedFixture(bbcNewsUrl);
     expect(prepare).not.toHaveBeenCalled();
     expect(snack.open).toHaveBeenCalledWith(bbcMessage, 'Ok', expect.objectContaining({ duration: 10000 }));
     expect(
-      (component as unknown as { saveDisabled: { (): boolean } }).saveDisabled()
+      (fixture.componentInstance as unknown as { saveDisabled: { (): boolean } }).saveDisabled()
     ).toBe(true);
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('#submit-url-rejection');
+    expect(alert?.getAttribute('role')).toBe('alert');
+    expect(alert?.getAttribute('aria-live')).toBe('assertive');
+    expect(alert?.textContent?.trim()).toBe(bbcMessage);
+  });
+
+  it('shows the same rejection UX for a real bbc.com/news URL', async () => {
+    const { fixture, prepare } = await createRejectedFixture(bbcComNewsUrl);
+    expect(prepare).not.toHaveBeenCalled();
+    const alert = (fixture.nativeElement as HTMLElement).querySelector('#submit-url-rejection');
+    expect(alert?.textContent?.trim()).toBe(bbcMessage);
   });
 });

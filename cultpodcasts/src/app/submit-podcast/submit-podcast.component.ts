@@ -101,6 +101,13 @@ export class SubmitPodcastComponent {
   protected readonly prepareFailed = signal(false);
   /** Lookup refused the URL (e.g. BBC News) — show message, no Save / prepare. */
   protected readonly urlRejected = signal(false);
+  /** Persistent inline copy while Save stays disabled after a rejected lookup. */
+  protected readonly urlRejectionMessage = computed(() => {
+    if (!this.urlRejected()) {
+      return '';
+    }
+    return submitUrlLookupRejectionMessage(this.lookup()) ?? GENERIC_SUBMIT_URL_ERROR;
+  });
 
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected readonly isCurator = computed(() => showSubmitSeriesPicker(this.authRoles()));

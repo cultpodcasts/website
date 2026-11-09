@@ -41,13 +41,20 @@ describe('SendPodcastComponent BBC News rejection', () => {
   afterEach(() => http.verify());
 
   const share = {
-    url: new URL('https://www.youtube.com/watch?v=c0synthetic00'),
+    url: new URL('https://www.bbc.co.uk/news/uk-example-article'),
     podcastId: undefined,
     podcastName: undefined,
     shareMode: ShareMode.Text
   };
 
-  it('shows the server rejection message for a 400 rejected submit', async () => {
+  const bbcComShare = {
+    url: new URL('https://www.bbc.com/news/articles/example-article'),
+    podcastId: undefined,
+    podcastName: undefined,
+    shareMode: ShareMode.Text
+  };
+
+  it('shows the server rejection message for a 400 rejected submit of a real BBC News URL', async () => {
     const fixture = TestBed.createComponent(SendPodcastComponent);
     const component = fixture.componentInstance;
     const done = component.submit(share);
@@ -62,7 +69,21 @@ describe('SendPodcastComponent BBC News rejection', () => {
     expect(component.submitted).toBe(false);
   });
 
-  it('keeps the generic submit error when a 400 has no rejection message', async () => {
+  it('shows the server rejection message for a bbc.com/news URL', async () => {
+    const fixture = TestBed.createComponent(SendPodcastComponent);
+    const component = fixture.componentInstance;
+    const done = component.submit(bbcComShare);
+    const req = await vi.waitFor(() => http.expectOne(new URL('/submit', environment.api).toString()));
+    req.flush(
+      { contentKind: 'NewsReport', rejected: true, message: bbcMessage },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    expect(component.submitError()).toBe(true);
+    expect(component.submitErrorMessage()).toBe(bbcMessage);
+  });
+
+    it('keeps the generic submit error when a 400 has no rejection message', async () => {
     const fixture = TestBed.createComponent(SendPodcastComponent);
     const component = fixture.componentInstance;
     const done = component.submit(share);

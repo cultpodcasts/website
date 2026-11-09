@@ -50,6 +50,7 @@ import { podcastPageAttachAfterDialog } from '../submit-ingest-ux';
 import { confirmPageDropIfOtherSeries, resolveSeriesForAttach } from '../submit-series-conflict';
 import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { SubmitUrlLookupService } from '../submit-url-lookup.service';
+import { GENERIC_SUBMIT_URL_ERROR } from '../submit-url-rejection';
 
 const sortParam: string = "sort";
 const pageParam: string = "page";
@@ -403,7 +404,7 @@ export class PodcastApiComponent {
         });
         if (attached.kind === 'abort') {
           if (attached.reason === 'rejected') {
-            this.snackBar.open(attached.message ?? 'Error sending Url to CultPodcasts.com', 'Ok', {
+            this.snackBar.open(attached.message ?? GENERIC_SUBMIT_URL_ERROR, 'Ok', {
               duration: 10000
             });
           } else if (attached.reason === 'resolve' || attached.reason === 'unparseable') {
