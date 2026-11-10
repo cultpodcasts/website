@@ -7,6 +7,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink } from '@angular/router';
 import { ApiEpisode } from '../api-episode.interface';
 import { reviewParentLink, reviewPlayableLink } from '../catalogue-links';
+import { catalogueParentEditLabel, catalogueParentEditTarget } from '../catalogue-parent-edit-dialog';
+import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
 import { playableCuratorActionLabel } from '../content-kind-label';
 import { CuratorPlayableCardBodyComponent } from '../curator-playable-card-body/curator-playable-card-body.component';
 import { curatorCardDuration } from '../curator-playable-card-meta';
@@ -52,6 +54,8 @@ export class CuratorTvShowEpisodeCardComponent {
 
   readonly edit = output<ApiEpisode>();
   readonly post = output<ApiEpisode>();
+  /** Opens the parent (news outlet / TV show) editor, like Edit Podcast on a podcast episode card. */
+  readonly editParent = output<EditCatalogueParentDialogData>();
   readonly deleteEpisode = output<{ episodeId: string }>();
   readonly promoteToggle = output<ApiEpisode>();
   readonly removeSubject = output<{ episode: ApiEpisode; subject: string }>();
@@ -76,6 +80,12 @@ export class CuratorTvShowEpisodeCardComponent {
     playableCuratorActionLabel(this.episode().contentKind, 'Delete')
   );
   protected readonly isAdmin = computed(() => this.authRoles().includes('Admin'));
+  protected readonly isCurator = computed(() => this.authRoles().includes('Curator'));
+  protected readonly parentEditTarget = computed(() => catalogueParentEditTarget(this.episode()));
+  protected readonly parentEditLabel = computed(() => {
+    const target = this.parentEditTarget();
+    return target ? catalogueParentEditLabel(target.hub) : '';
+  });
   protected readonly titleLink = computed(() => {
     const link = reviewPlayableLink(this.episode());
     return typeof link === 'string' ? this.router.parseUrl(link) : link;

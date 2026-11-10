@@ -19,6 +19,8 @@ import { PostEpisodeDialogData } from '../post-episode-dialog-data.interface';
 import { SiteService } from '../site.service';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
+import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { isCardOfCatalogueParent, openCatalogueParentEditDialog } from '../catalogue-parent-edit-dialog';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
@@ -615,6 +617,24 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
           this.episodes.set(current.filter(e => e.id !== target.episodeId));
         }
         this.snackBar.open("Deleted.", "Ok", { duration: 10000 });
+      }
+    });
+  }
+
+  /**
+   * News report / TV episode card: edit its news outlet or TV show (same dialog as the hub page menu). After a save,
+   * re-read that parent's cards so a changed title regex or default language shows without Refresh, as Edit Podcast does.
+   */
+  editParent(data: EditCatalogueParentDialogData) {
+    openCatalogueParentEditDialog(this.dialog, this.snackBar, data).subscribe(async result => {
+      if (!result?.updated) {
+        return;
+      }
+      const ids = (this.episodes() ?? [])
+        .filter(e => isCardOfCatalogueParent(e, data) && !this.isUpdating(e.id) && !this.addingGuest()[e.id])
+        .map(e => e.id);
+      for (const id of ids) {
+        await this.refreshEpisode(id);
       }
     });
   }

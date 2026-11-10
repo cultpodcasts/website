@@ -17,6 +17,12 @@
       <mat-icon>send</mat-icon>
       <span>{{ postLabel() }}</span>
     </button>
+    @if (isCurator() && parentEditTarget(); as parent) {
+    <button mat-menu-item (click)="editParent.emit(parent)">
+      <mat-icon>edit</mat-icon>
+      <span>{{ parentEditLabel() }}</span>
+    </button>
+    }
     @if (isAdmin() && showDeleteEpisode()) {
     <button [disabled]="episode().tweeted" mat-menu-item
       (click)="deleteEpisode.emit({ episodeId: episode().id })">

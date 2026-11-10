@@ -178,6 +178,33 @@ describe('CuratorPlayableCardComponent', () => {
     });
   }
 
+  for (const [kind, hub, label] of [
+    ['NewsReport', 'news', 'Edit News Outlet'],
+    ['TvShowEpisode', 'tv', 'Edit TV Show'],
+  ] as const) {
+    it(`emits editParent for the ${hub} hub when a curator picks ${label} on a ${kind} row`, async () => {
+      const episode = row(kind, { parentName: 'Synthetic Parent Name' });
+      render(episode, podcastAdminFlags);
+      const emissions: unknown[] = [];
+      fixture.componentInstance.editParent.subscribe(v => emissions.push(v));
+      await clickOverflowLabel(label);
+      expect(emissions).toEqual([{ hub, name: 'Synthetic Parent Name' }]);
+    });
+
+    it(`hides ${label} on a ${kind} row when the viewer is not a curator`, async () => {
+      render(row(kind), { authRoles: [] });
+      const labels = await openOverflowMenu();
+      expect(labels).not.toContain(label);
+    });
+  }
+
+  it('offers no parent edit on a Film row (a film has no separate parent)', async () => {
+    render(row('Film'), podcastAdminFlags);
+    const labels = await openOverflowMenu();
+    expect(labels).not.toContain('Edit News Outlet');
+    expect(labels).not.toContain('Edit TV Show');
+  });
+
   it('emits deleteEpisode with podcastId and contentKind Episode on Admin Delete', async () => {
     const episode = row('Episode', { podcastName: 'Synthetic Show' });
     render(episode, podcastAdminFlags);
