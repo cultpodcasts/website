@@ -4,6 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   catalogueParentEditLabel,
   catalogueParentEditTarget,
+  isCardOfCatalogueParent,
   openCatalogueParentEditDialog,
 } from './catalogue-parent-edit-dialog';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
@@ -23,6 +24,21 @@ describe('catalogueParentEditTarget', () => {
     expect(catalogueParentEditTarget({ contentKind: 'Episode', podcastName: 'Synthetic Podcast' })).toBeNull();
     expect(catalogueParentEditTarget({ contentKind: 'Film', podcastName: 'Synthetic Film' })).toBeNull();
     expect(catalogueParentEditTarget({ contentKind: 'NewsReport', parentName: '  ', podcastName: undefined })).toBeNull();
+  });
+});
+
+describe('isCardOfCatalogueParent', () => {
+  const desk = { hub: 'news', name: 'Synthetic Desk' } as const;
+
+  it('matches cards of the same hub kind and parent name', () => {
+    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Synthetic Desk' }, desk)).toBe(true);
+    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: null, podcastName: 'Synthetic Desk' }, desk)).toBe(true);
+  });
+
+  it('does not match another parent, another kind with the same name, or a podcast episode', () => {
+    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Other Desk' }, desk)).toBe(false);
+    expect(isCardOfCatalogueParent({ contentKind: 'TvShowEpisode', parentName: 'Synthetic Desk' }, desk)).toBe(false);
+    expect(isCardOfCatalogueParent({ contentKind: 'Episode', podcastName: 'Synthetic Desk' }, desk)).toBe(false);
   });
 });
 

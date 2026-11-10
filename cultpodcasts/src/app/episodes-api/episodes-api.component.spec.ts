@@ -89,6 +89,42 @@ describe('EpisodesApiComponent (embedded)', () => {
 
   const episodeReqs = () => http.match(r => r.url.includes('/episode/'));
 
+  it('re-reads only the edited news outlet\'s cards after Edit News Outlet saves', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['n1', 'p1']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    const [newsReq, podcastReq] = episodeReqs();
+    newsReq.flush({ id: 'n1', title: 'Synthetic headline', contentKind: 'NewsReport', parentName: 'Synthetic Desk', duration: '0:05:00', subjects: [] });
+    podcastReq.flush({ id: 'p1', title: 'Synthetic episode', podcastName: 'Synthetic Desk', duration: '0:30:00', subjects: [] });
+    await flushTicks();
+    dialog.open.mockReturnValue({ afterClosed: () => of({ updated: true }) });
+
+    fixture.componentInstance.editParent({ hub: 'news', name: 'Synthetic Desk' });
+    await flushTicks();
+    await flushTicks();
+
+    expect(episodeReqs().map(r => new URL(r.request.url).pathname)).toEqual(['/episode/n1']);
+    expect(snackBar.open).toHaveBeenCalledWith('News Outlet updated', 'Ok', { duration: 3000 });
+  });
+
+  it('does not re-read cards when the parent editor closes without a save', async () => {
+    const fixture = TestBed.createComponent(EpisodesApiComponent);
+    fixture.componentRef.setInput('episodeIds', ['n1']);
+    fixture.componentRef.setInput('embedded', true);
+    fixture.detectChanges();
+    await flushTicks();
+    episodeReqs()[0].flush({ id: 'n1', title: 'Synthetic headline', contentKind: 'NewsReport', parentName: 'Synthetic Desk', duration: '0:05:00', subjects: [] });
+    await flushTicks();
+    dialog.open.mockReturnValue({ afterClosed: () => of({ noChange: true }) });
+
+    fixture.componentInstance.editParent({ hub: 'news', name: 'Synthetic Desk' });
+    await flushTicks();
+
+    expect(episodeReqs().length).toBe(0);
+  });
+
   it('does not refetch or wipe cards when the parent passes the same ids again (new array)', async () => {
     const fixture = TestBed.createComponent(EpisodesApiComponent);
     fixture.componentRef.setInput('episodeIds', ['e1', 'e2']);

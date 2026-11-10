@@ -22,6 +22,15 @@ export function catalogueParentEditTarget(
   return hub && name ? { hub, name } : null;
 }
 
+/** True when a card belongs to the news outlet / TV show just edited (same hub kind and parent name). */
+export function isCardOfCatalogueParent(
+  episode: Pick<ApiEpisode, "contentKind" | "parentName" | "podcastName">,
+  parent: EditCatalogueParentDialogData
+): boolean {
+  const target = catalogueParentEditTarget(episode);
+  return !!target && target.hub === parent.hub && target.name === parent.name.trim();
+}
+
 /** Menu text for the parent editor, using the hub's label: "Edit News Outlet" / "Edit TV Show". */
 export function catalogueParentEditLabel(hub: CatalogueHub): string {
   return `Edit ${hubParentLabel(hub)}`;
