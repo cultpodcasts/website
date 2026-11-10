@@ -5,6 +5,7 @@ import { CuratorFilmCardComponent } from '../curator-film-card/curator-film-card
 import { CuratorNewsReportCardComponent } from '../curator-news-report-card/curator-news-report-card.component';
 import { CuratorTvShowEpisodeCardComponent } from '../curator-tv-show-episode-card/curator-tv-show-episode-card.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
+import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
 
 /** List boundary for curator playables — same role as `catalogue-card` for browse. */
 @Component({
@@ -38,6 +39,8 @@ export class CuratorPlayableCardComponent {
   readonly edit = output<ApiEpisode>();
   readonly post = output<ApiEpisode>();
   readonly editPodcast = output<EditPodcastDialogData>();
+  /** News report / TV episode cards: open the news outlet / TV show editor. */
+  readonly editParent = output<EditCatalogueParentDialogData>();
   readonly indexPodcast = output<string>();
   readonly deleteEpisode = output<{ podcastId?: string; episodeId: string; contentKind?: string | null }>();
   readonly promoteToggle = output<ApiEpisode>();

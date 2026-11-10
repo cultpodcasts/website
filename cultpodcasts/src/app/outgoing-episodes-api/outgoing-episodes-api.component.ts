@@ -22,6 +22,8 @@ import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
+import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { openCatalogueParentEditDialog } from '../catalogue-parent-edit-dialog';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';
 import { applyTransferredPodcastKindClose } from '../catalogue-links';
@@ -609,6 +611,11 @@ export class OutgoingEpisodesApiComponent implements AfterViewInit {
           }
         }
       });
+  }
+
+  /** News report / TV episode card: edit its news outlet or TV show (same dialog as the hub page menu). */
+  editParent(data: EditCatalogueParentDialogData) {
+    openCatalogueParentEditDialog(this.dialog, this.snackBar, data).subscribe();
   }
 
   editPodcast(data: EditPodcastDialogData) {

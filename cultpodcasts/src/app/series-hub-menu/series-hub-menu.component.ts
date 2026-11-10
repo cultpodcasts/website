@@ -9,13 +9,9 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { environment } from "../../environments/environment";
 import { AuthServiceWrapper } from "../auth-service-wrapper.class";
 import { CatalogueHub, hubParentKind, hubParentLabel, hubPathCommands } from "../catalogue-hub";
+import { openCatalogueParentEditDialog } from "../catalogue-parent-edit-dialog";
 import { CatalogueIndexDialogResult } from "../catalogue-index-response.interface";
 import { indexStateMessage } from "../catalogue-index-state-message";
-import {
-  EditCatalogueParentDialogComponent,
-  EditCatalogueParentDialogData,
-  EditCatalogueParentDialogResponse
-} from "../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component";
 import {
   RenameCatalogueParentDialogComponent,
   RenameCatalogueParentDialogData,
@@ -125,20 +121,9 @@ export class SeriesHubMenuComponent {
   }
 
   protected edit(): void {
-    this.dialog
-      .open<EditCatalogueParentDialogComponent, EditCatalogueParentDialogData, EditCatalogueParentDialogResponse>(
-        EditCatalogueParentDialogComponent,
-        { data: { hub: this.hub(), name: this.seriesName() }, disableClose: true, autoFocus: true, width: "90%" }
-      )
-      .afterClosed()
+    openCatalogueParentEditDialog(this.dialog, this.snackBar, { hub: this.hub(), name: this.seriesName() })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result?.updated) {
-          this.snackBar.open(`${this.label()} updated`, "Ok", { duration: 3000 });
-        } else if (result?.noChange) {
-          this.snackBar.open("No change", "Ok", { duration: 3000 });
-        }
-      });
+      .subscribe();
   }
 
   protected rename(): void {
