@@ -58,7 +58,7 @@ import {
 } from "../podcast-form.util";
 import { resolveAmbiguousEditRows } from "../resolve-ambiguous-edit-rows";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
-import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
+import { YOU_TUBE_PLAYLIST_NOT_FOUND, youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
 export interface EditCatalogueParentDialogData {
   hub: CatalogueHub;
@@ -356,6 +356,19 @@ export class EditCatalogueParentDialogComponent {
     }
   }
 
+  /**
+   * A news organisation may list several additional-channel playlists (RPP #1370), so on not-found append the API
+   * message, which names the failing channel. The shared mapping (podcast dialogs, TV shows) keeps the fixed copy.
+   */
+  private playlistErrorMessage(code: string, message: string, error: unknown): string {
+    if (this.isTv || code !== YOU_TUBE_PLAYLIST_NOT_FOUND || !(error instanceof HttpErrorResponse)) {
+      return message;
+    }
+    const body = error.error as Record<string, unknown> | null;
+    const apiMessage = body && typeof body === "object" ? body["message"] : undefined;
+    return typeof apiMessage === "string" && apiMessage.trim() ? `${message}: ${apiMessage.trim()}` : message;
+  }
+
   protected async save(): Promise<void> {
     const model = this.model();
     if (!model || !this.original) {
@@ -413,7 +426,7 @@ export class EditCatalogueParentDialogComponent {
       const refused = playlist ? undefined : catalogueParentSaveError(error);
       if (playlist) {
         // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
-        this.saveErrorMessage.set(playlist.message);
+        this.saveErrorMessage.set(this.playlistErrorMessage(playlist.code, playlist.message, error));
       } else if (refused) {
         // Channel / service-id refusals (400 codes, 409 owner): show the API's reason so the curator can fix the id.
         this.saveErrorMessage.set(refused);

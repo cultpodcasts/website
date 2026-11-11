@@ -871,6 +871,26 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('appends the API message to a playlist not-found refusal so the curator sees which channel failed', async () => {
+    const { dialog } = await open({ additionalYouTubeChannels: [] });
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubeChannel(0, extraA);
+    dialog.setAdditionalYouTubePlaylist(0, playlistB);
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ additionalYouTubeChannels: [{ youTubeChannelId: extraA, youTubePlaylistId: playlistB }] });
+    req.flush(
+      { message: `Additional YouTube channel '${extraA}': the playlist was not found.`, code: YOU_TUBE_PLAYLIST_NOT_FOUND },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(
+      `${YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE}: Additional YouTube channel '${extraA}': the playlist was not found.`
+    );
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('blocks Save on a non-channel id or the main channel and shows the reason on Details', async () => {
     const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [] });
     dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
