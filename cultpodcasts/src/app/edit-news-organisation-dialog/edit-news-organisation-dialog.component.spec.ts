@@ -444,3 +444,284 @@ describe('EditNewsOrganisationDialogComponent (previous playlist ids, with the a
     expect(root.querySelector<HTMLInputElement>('input[name="youTubePlaylistId"]')!.value).toBe('PLsyntheticplaylistnew000000000000');
   });
 });
+
+describe('EditNewsOrganisationDialogComponent (shared load and save paths)', () => {
+  const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
+  const patchUrl = new URL(`/newsorganisation/${outletId}`, environment.api).toString();
+  const subjectsUrl = new URL('/subjects', environment.api).toString();
+  const languagesUrl = new URL('/languages', environment.api).toString();
+  let close: ReturnType<typeof vi.fn>;
+  let confirmOpen: ReturnType<typeof vi.fn>;
+  let snackOpen: ReturnType<typeof vi.fn>;
+  let confirmAnswer: { result: boolean } | undefined;
+
+  beforeEach(async () => {
+    close = vi.fn();
+    snackOpen = vi.fn();
+    confirmAnswer = { result: true };
+    confirmOpen = vi.fn(() => ({ afterClosed: () => of(confirmAnswer) }));
+    await TestBed.configureTestingModule({
+      imports: [EditNewsOrganisationDialogComponent],
+      providers: dialogProviders({ hub: 'news', name: 'Desk' }, close, snackOpen)
+    })
+      .overrideProvider(MatDialog, { useValue: { open: (...args: unknown[]) => (confirmOpen as unknown as (...a: unknown[]) => unknown)(...args) } })
+      .compileComponents();
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  async function loadWith(outlet: object, subjects = [{ name: 'Arts' }, { name: 'Sport' }], languages: Record<string, string> = { en: 'English', fr: 'French' }) {
+    (await expectSoon(getUrl)).flush(outlet);
+    (await expectSoon(subjectsUrl)).flush(subjects);
+    (await expectSoon(languagesUrl)).flush(languages);
+  }
+
+  function create(): Internals {
+    const fixture = TestBed.createComponent(EditNewsOrganisationDialogComponent);
+    fixture.detectChanges();
+    return fixture.componentInstance as unknown as Internals;
+  }
+
+  it('closes with noChange and sends nothing when unchanged', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk' });
+    await settle();
+    await dialog.save();
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(close).toHaveBeenCalledWith({ noChange: true });
+  });
+
+  it('shows not found on 404 and offers no form', async () => {
+    const fixture = TestBed.createComponent(EditNewsOrganisationDialogComponent);
+    fixture.detectChanges();
+    const dialog = fixture.componentInstance as unknown as Internals;
+    const req = await expectSoon(getUrl);
+    expect(req.request.url).toBe(getUrl);
+    req.flush(null, { status: 404, statusText: 'Not Found' });
+    await settle();
+    fixture.detectChanges();
+    expect(dialog.notFound()).toBe(true);
+    expect(dialog.model()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('#error')?.textContent?.trim()).toBe('News Outlet not found.');
+  });
+
+  it('on 409 loads each id, lets the curator pick, then opens the form for that outlet', async () => {
+    const firstId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const secondId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    confirmOpen.mockReturnValue({
+      afterClosed: () => of({ id: secondId, name: 'Desk', youTubeChannelId: 'UC-second' })
+    });
+    const dialog = create();
+    (await expectSoon(getUrl)).flush([firstId, secondId], { status: 409, statusText: 'Conflict' });
+    const firstGet = await expectSoon(new URL(`/newsorganisation/${firstId}`, environment.api).toString());
+    firstGet.flush({
+      id: firstId,
+      name: 'Desk',
+      youTubeChannelId: 'UC-first',
+      twitterHandle: '@one'
+    });
+    const secondGet = await expectSoon(new URL(`/newsorganisation/${secondId}`, environment.api).toString());
+    secondGet.flush({
+      id: secondId,
+      name: 'Desk',
+      youTubeChannelId: 'UC-second',
+      twitterHandle: '@two'
+    });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    expect(confirmOpen).toHaveBeenCalled();
+    const pickerData = confirmOpen.mock.calls[0][1].data;
+    expect(pickerData.title).toBe('Choose news outlet');
+    expect(pickerData.itemNounPlural).toBe('news outlets');
+    expect(pickerData.candidates).toEqual([
+      expect.objectContaining({
+        id: firstId,
+        name: 'Desk',
+        youTubeChannelId: 'UC-first',
+        twitterHandle: '@one'
+      }),
+      expect.objectContaining({
+        id: secondId,
+        name: 'Desk',
+        youTubeChannelId: 'UC-second',
+        twitterHandle: '@two'
+      })
+    ]);
+    expect(dialog.model()?.youTubeChannelId).toBe('UC-second');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('never PATCHes the read-only YouTube channel id, even if the model changes or blanks it', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk', appleId: 55, youTubeChannelId: 'UCcccccccccccccccccccccc' });
+    await settle();
+    const model = dialog.model()!;
+    model.youTubeChannelId = '';
+    model.appleId = '';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.url).toBe(patchUrl);
+    expect(req.request.body).toEqual({ nullAppleId: true });
+    expect('youTubeChannelId' in req.request.body).toBe(false);
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
+  });
+
+  it('Force full walk confirms, PATCHes clearYouTubeIndexingHints, re-GETs, and shows the empty hints copy', async () => {
+    const playlistId = 'PLsyntheticplaylist0000000000000000';
+    const fixture = TestBed.createComponent(EditNewsOrganisationDialogComponent);
+    fixture.detectChanges();
+    await loadWith({
+      id: outletId,
+      name: 'Desk',
+      youTubePlaylistId: playlistId,
+      youTubeIndexingHints: {
+        playlistId,
+        playlistItemCount: 12,
+        lastFullWalk: '2026-11-01T12:00:00Z'
+      }
+    });
+    await settle();
+    await showTab(fixture, 'Details');
+    await settle();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Playlist item count: 12');
+    const forceBtn = Array.from(root.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+      (b) => b.textContent?.trim() === 'Force full walk'
+    );
+    expect(forceBtn).toBeTruthy();
+    forceBtn!.click();
+    await settle();
+    expect(confirmOpen).toHaveBeenCalled();
+    expect(confirmOpen.mock.calls[confirmOpen.mock.calls.length - 1][1].data.title).toContain('Force full YouTube walk');
+    const patchReq = await expectSoon(patchUrl);
+    expect(patchReq.request.method).toBe('PATCH');
+    expect(patchReq.request.url).toBe(patchUrl);
+    expect(patchReq.request.body).toEqual({ clearYouTubeIndexingHints: true });
+    patchReq.flush(null, { status: 202, statusText: 'Accepted' });
+    await settle();
+    const refreshUrl = new URL(`/newsorganisation/${outletId}`, environment.api).toString();
+    const refreshReq = await expectSoon(refreshUrl);
+    expect(refreshReq.request.method).toBe('GET');
+    refreshReq.flush({
+      id: outletId,
+      name: 'Desk',
+      youTubePlaylistId: playlistId,
+      youTubeIndexingHints: null
+    });
+    await settle();
+    fixture.detectChanges();
+    expect(root.textContent).toContain('No hints (next pass does a full walk)');
+    expect(
+      Array.from(root.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(
+        (b) => b.textContent?.trim() === 'Force full walk'
+      )
+    ).toBeUndefined();
+    expect(snackOpen).toHaveBeenCalledWith(
+      'Indexing hints cleared. Next pass will do a full walk.',
+      'Ok',
+      { duration: 8000 }
+    );
+  });
+
+  it('asks before removing, and sends nothing when the curator says No', async () => {
+    confirmAnswer = { result: false };
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk', removed: false });
+    await settle();
+    dialog.model()!.removed = true;
+    await dialog.save();
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
+    expect(confirmOpen.mock.calls[0][1].data.title).toBe('Remove news outlet?');
+    expect(confirmOpen.mock.calls[0][1].data.question).toContain('all of its reports will be hidden');
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('PATCHes removed after Yes, and restores without asking', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk', removed: false });
+    await settle();
+    dialog.model()!.removed = true;
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.url).toBe(patchUrl);
+    expect(req.request.body).toEqual({ removed: true });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
+    expect(confirmOpen.mock.calls[0][1].data.question).toContain('all of its reports will be hidden');
+
+    const restore = create();
+    await loadWith({ id: outletId, name: 'Desk', removed: true });
+    await settle();
+    restore.model()!.removed = false;
+    const restored = restore.save();
+    const restoreReq = await expectSoon(patchUrl);
+    expect(restoreReq.request.url).toBe(patchUrl);
+    expect(restoreReq.request.body).toEqual({ removed: false });
+    restoreReq.flush(null, { status: 202, statusText: 'Accepted' });
+    await restored;
+    expect(confirmOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks Save on a non-numeric Apple id and switches to the Details tab', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk' });
+    await settle();
+    dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
+    dialog.model()!.appleId = 'abc';
+    await dialog.save();
+    expect(dialog.appleIdInvalid()).toBe(true);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('blocks Save on an invalid publication delay or minimum duration and switches to the right tab', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk' });
+    await settle();
+    dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
+    dialog.model()!.youTubePublicationDelay = 'an hour';
+    await dialog.save();
+    expect(dialog.publicationDelayInvalid()).toBe(true);
+    expect(dialog.minimumDurationInvalid()).toBe(false);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+
+    dialog.model()!.youTubePublicationDelay = '';
+    dialog.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
+    dialog.model()!.minimumDuration = 'ninety';
+    await dialog.save();
+    expect(dialog.minimumDurationInvalid()).toBe(true);
+    expect(dialog.publicationDelayInvalid()).toBe(false);
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_META_TAB_INDEX);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a main-playlist not-found Api error with the news-specific appended message', async () => {
+    const dialog = create();
+    await loadWith({ id: outletId, name: 'Desk', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
+    await settle();
+    dialog.model()!.youTubePlaylistId = 'PLsyntheticplaylistnew000000000000';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.url).toBe(patchUrl);
+    req.flush(
+      { message: 'the playlist was not found.', code: YOU_TUBE_PLAYLIST_NOT_FOUND },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(
+      `${YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE}: the playlist was not found.`
+    );
+    expect(dialog.model()!.youTubePlaylistId).toBe('PLsyntheticplaylistnew000000000000');
+    expect(close).not.toHaveBeenCalled();
+  });
+});
