@@ -7,7 +7,7 @@ import {
   EditCatalogueParentDialogData,
   EditCatalogueParentDialogResponse
 } from "./catalogue-parent-edit-dialog-data";
-import { EditCatalogueParentDialogComponent } from "./edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component";
+import { EditTvShowDialogComponent } from "./edit-tv-show-dialog/edit-tv-show-dialog.component";
 import { EditNewsOrganisationDialogComponent } from "./edit-news-organisation-dialog/edit-news-organisation-dialog.component";
 
 export type { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "./catalogue-parent-edit-dialog-data";
@@ -48,10 +48,10 @@ export function openCatalogueParentEditDialog(
   snackBar: MatSnackBar,
   data: EditCatalogueParentDialogData
 ): Observable<EditCatalogueParentDialogResponse | undefined> {
-  const component = data.hub === "news" ? EditNewsOrganisationDialogComponent : EditCatalogueParentDialogComponent;
+  const component = data.hub === "news" ? EditNewsOrganisationDialogComponent : EditTvShowDialogComponent;
   return dialog
     .open<
-      EditNewsOrganisationDialogComponent | EditCatalogueParentDialogComponent,
+      EditNewsOrganisationDialogComponent | EditTvShowDialogComponent,
       EditCatalogueParentDialogData,
       EditCatalogueParentDialogResponse
     >(component, { data, disableClose: true, autoFocus: true, width: "90%" })

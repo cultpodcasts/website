@@ -7,7 +7,7 @@ import {
   isCardOfCatalogueParent,
   openCatalogueParentEditDialog,
 } from './catalogue-parent-edit-dialog';
-import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditTvShowDialogComponent } from './edit-tv-show-dialog/edit-tv-show-dialog.component';
 import { EditNewsOrganisationDialogComponent } from './edit-news-organisation-dialog/edit-news-organisation-dialog.component';
 
 describe('catalogueParentEditTarget', () => {
@@ -71,7 +71,7 @@ describe('openCatalogueParentEditDialog', () => {
   it('reports no change, and stays quiet when the dialog is closed', () => {
     const noChange = setup({ noChange: true });
     openCatalogueParentEditDialog(noChange.dialog, noChange.snackBar, { hub: 'tv', name: 'Synthetic Show' }).subscribe();
-    expect(noChange.open).toHaveBeenCalledWith(EditCatalogueParentDialogComponent, expect.objectContaining({
+    expect(noChange.open).toHaveBeenCalledWith(EditTvShowDialogComponent, expect.objectContaining({
       data: { hub: 'tv', name: 'Synthetic Show' },
     }));
     expect(noChange.snack).toHaveBeenCalledWith('No change', 'Ok', { duration: 3000 });

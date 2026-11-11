@@ -26,7 +26,7 @@ import {
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
   YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
 } from '../youtube-playlist-edit-error';
-import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
+import { EditTvShowDialogComponent } from './edit-tv-show-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
@@ -67,7 +67,7 @@ async function settle() {
 }
 
 /** Clicks a tab header and waits for its lazy body to render. */
-async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogComponent>, label: string) {
+async function showTab(fixture: ComponentFixture<EditTvShowDialogComponent>, label: string) {
   fixture.detectChanges();
   const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
     .find((t) => t.textContent?.trim() === label);
@@ -82,14 +82,14 @@ async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogCompon
 }
 
 /** Renders the Flags tab (tab bodies are lazy) and returns its text. */
-async function flagsTabText(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): Promise<string> {
+async function flagsTabText(fixture: ComponentFixture<EditTvShowDialogComponent>): Promise<string> {
   await showTab(fixture, 'Flags');
   const body = fixture.debugElement.queryAll(By.css('.flags'));
   expect(body.length).toBe(1);
   return (body[0].nativeElement as HTMLElement).textContent ?? '';
 }
 
-function tabLabels(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): (string | undefined)[] {
+function tabLabels(fixture: ComponentFixture<EditTvShowDialogComponent>): (string | undefined)[] {
   return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
 }
 
@@ -108,7 +108,7 @@ function dialogProviders(data: { hub: 'tv' | 'news'; name: string }, close: unkn
   ];
 }
 
-describe('EditCatalogueParentDialogComponent', () => {
+describe('EditTvShowDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
   let confirmOpen: ReturnType<typeof vi.fn>;
   let snackOpen: ReturnType<typeof vi.fn>;
@@ -125,7 +125,7 @@ describe('EditCatalogueParentDialogComponent', () => {
     confirmAnswer = { result: true };
     confirmOpen = vi.fn(() => ({ afterClosed: () => of(confirmAnswer) }));
     await TestBed.configureTestingModule({
-      imports: [EditCatalogueParentDialogComponent],
+      imports: [EditTvShowDialogComponent],
       providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, snackOpen)
     })
       // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
@@ -143,7 +143,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   }
 
   function create(): Internals {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     return fixture.componentInstance as unknown as Internals;
   }
@@ -166,7 +166,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('Flags tab has the checkboxes without helper text and without Skip Enriching From YouTube', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', skipEnrichingFromYouTube: true });
     await settle();
@@ -180,7 +180,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('TV show tabs follow the podcast edit dialog order, with Identity last', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
@@ -213,7 +213,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('surfaces YouTube playlist ownership Api errors and keeps the curator edits in place', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
     await settle();
@@ -343,7 +343,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   async function channelInput(playlistId: string) {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', youTubeChannelId: 'UCcccccccccccccccccccccc', youTubePlaylistId: playlistId });
     await settle();
@@ -384,7 +384,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('Force full walk confirms, PATCHes clearYouTubeIndexingHints, re-GETs, and shows the empty hints copy', async () => {
     const playlistId = 'PLsyntheticplaylist0000000000000000';
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({
       id: showId,
@@ -653,7 +653,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 });
 
-describe('EditCatalogueParentDialogComponent (TV show has no additional YouTube channels)', () => {
+describe('EditTvShowDialogComponent (TV show has no additional YouTube channels)', () => {
   const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
   const patchUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
@@ -663,15 +663,15 @@ describe('EditCatalogueParentDialogComponent (TV show has no additional YouTube 
   beforeEach(async () => {
     close = vi.fn();
     await TestBed.configureTestingModule({
-      imports: [EditCatalogueParentDialogComponent],
+      imports: [EditTvShowDialogComponent],
       providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, vi.fn())
     }).compileComponents();
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  async function openTv(show: object): Promise<{ fixture: ComponentFixture<EditCatalogueParentDialogComponent>; dialog: Internals }> {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+  async function openTv(show: object): Promise<{ fixture: ComponentFixture<EditTvShowDialogComponent>; dialog: Internals }> {
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', ...show });
     (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);

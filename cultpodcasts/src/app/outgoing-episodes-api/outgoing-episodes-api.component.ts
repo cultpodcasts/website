@@ -22,7 +22,7 @@ import { FormsModule } from '@angular/forms';
 import { SetNumberOfDaysComponent } from '../set-number-of-days/set-number-of-days.component';
 import { DeleteEpisodeDialogComponent } from '../delete-episode-dialog/delete-episode-dialog.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
-import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditCatalogueParentDialogData } from '../catalogue-parent-edit-dialog-data';
 import { isCardOfCatalogueParent, openCatalogueParentEditDialog } from '../catalogue-parent-edit-dialog';
 import { EditPodcastDialogComponent } from '../edit-podcast-dialog/edit-podcast-dialog.component';
 import { EditPodcastDialogResponse, podcastPostUpdateFlags } from '../edit-podcast-dialog-response.interface';

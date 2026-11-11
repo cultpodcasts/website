@@ -69,7 +69,7 @@ export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
-  selector: "app-edit-catalogue-parent-dialog",
+  selector: "app-edit-tv-show-dialog",
   imports: [
     FormsModule,
     KeyValuePipe,
@@ -85,13 +85,13 @@ export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from
     MatTabsModule,
     TextFieldModule
   ],
-  templateUrl: "./edit-catalogue-parent-dialog.component.html",
-  styleUrl: "./edit-catalogue-parent-dialog.component.sass",
+  templateUrl: "./edit-tv-show-dialog.component.html",
+  styleUrl: "./edit-tv-show-dialog.component.sass",
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditCatalogueParentDialogComponent {
+export class EditTvShowDialogComponent {
   protected readonly data = inject<EditCatalogueParentDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject<MatDialogRef<EditCatalogueParentDialogComponent, EditCatalogueParentDialogResponse>>(MatDialogRef);
+  private readonly dialogRef = inject<MatDialogRef<EditTvShowDialogComponent, EditCatalogueParentDialogResponse>>(MatDialogRef);
   private readonly curation = inject(CurationSubmitService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);

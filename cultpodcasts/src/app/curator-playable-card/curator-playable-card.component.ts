@@ -5,7 +5,7 @@ import { CuratorFilmCardComponent } from '../curator-film-card/curator-film-card
 import { CuratorNewsReportCardComponent } from '../curator-news-report-card/curator-news-report-card.component';
 import { CuratorTvShowEpisodeCardComponent } from '../curator-tv-show-episode-card/curator-tv-show-episode-card.component';
 import { EditPodcastDialogData } from '../edit-podcast-dialog-data.interface';
-import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditCatalogueParentDialogData } from '../catalogue-parent-edit-dialog-data';
 
 /** List boundary for curator playables — same role as `catalogue-card` for browse. */
 @Component({
