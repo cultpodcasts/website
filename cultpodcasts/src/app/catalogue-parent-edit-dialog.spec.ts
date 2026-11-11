@@ -8,6 +8,7 @@ import {
   openCatalogueParentEditDialog,
 } from './catalogue-parent-edit-dialog';
 import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditNewsOrganisationDialogComponent } from './edit-news-organisation-dialog/edit-news-organisation-dialog.component';
 
 describe('catalogueParentEditTarget', () => {
   it('targets the news hub with the parent name for a news report', () => {
@@ -61,7 +62,7 @@ describe('openCatalogueParentEditDialog', () => {
   it('opens the parent editor with the target and reports an update with the hub label', () => {
     const { open, snack, dialog, snackBar } = setup({ updated: true });
     openCatalogueParentEditDialog(dialog, snackBar, { hub: 'news', name: 'Synthetic Desk' }).subscribe();
-    expect(open).toHaveBeenCalledWith(EditCatalogueParentDialogComponent, expect.objectContaining({
+    expect(open).toHaveBeenCalledWith(EditNewsOrganisationDialogComponent, expect.objectContaining({
       data: { hub: 'news', name: 'Synthetic Desk' },
     }));
     expect(snack).toHaveBeenCalledWith('News Outlet updated', 'Ok', { duration: 3000 });
@@ -70,6 +71,9 @@ describe('openCatalogueParentEditDialog', () => {
   it('reports no change, and stays quiet when the dialog is closed', () => {
     const noChange = setup({ noChange: true });
     openCatalogueParentEditDialog(noChange.dialog, noChange.snackBar, { hub: 'tv', name: 'Synthetic Show' }).subscribe();
+    expect(noChange.open).toHaveBeenCalledWith(EditCatalogueParentDialogComponent, expect.objectContaining({
+      data: { hub: 'tv', name: 'Synthetic Show' },
+    }));
     expect(noChange.snack).toHaveBeenCalledWith('No change', 'Ok', { duration: 3000 });
 
     const closed = setup({ closed: true });

@@ -51,40 +51,6 @@
                     }
                 </p>
                 }
-                @if (newsModel(); as news) {
-                <div class="additional-channels" id="additional-youtube-channels">
-                    <p class="hint"><strong>Additional YouTube channels</strong></p>
-                    @for (channel of news.additionalYouTubeChannels; track $index) {
-                    <div class="additional-channel-row">
-                        <mat-form-field class="full-width">
-                            <mat-label>Additional YouTube channel id</mat-label>
-                            <input type="text" [name]="'additionalYouTubeChannelId' + $index" placeholder="UC…"
-                                [ngModel]="channel.youTubeChannelId"
-                                (ngModelChange)="setAdditionalYouTubeChannel($index, $event)" matInput>
-                            <button type="button" matIconButton matSuffix
-                                [attr.aria-label]="'Remove additional YouTube channel ' + ($index + 1)"
-                                (click)="removeAdditionalYouTubeChannel($index)">
-                                <mat-icon>clear</mat-icon>
-                            </button>
-                        </mat-form-field>
-                        <mat-form-field class="full-width">
-                            <mat-label>YouTube Playlist Id (optional)</mat-label>
-                            <input type="text" [name]="'additionalYouTubePlaylistId' + $index" placeholder="PL…"
-                                [ngModel]="channel.youTubePlaylistId"
-                                (ngModelChange)="setAdditionalYouTubePlaylist($index, $event)" matInput>
-                        </mat-form-field>
-                    </div>
-                    }
-                    @if (additionalChannelsError(); as channelsError) {
-                    <p id="additional-youtube-channels-error" class="hint invalid" role="alert">{{ channelsError }}</p>
-                    }
-                    <button type="button" mat-stroked-button color="primary" class="add-additional-channel"
-                        (click)="addAdditionalYouTubeChannel()">Add YouTube channel</button>
-                    <p class="hint">Without a playlist id an additional channel is indexed and matched as a whole
-                        channel; with one, only that playlist's videos belong to this organisation. The playlist id
-                        above applies only to the main channel.</p>
-                </div>
-                }
                 <div class="indexing-hints" aria-live="polite">
                     <p class="hint"><strong>YouTube indexing hints</strong> (read-only)</p>
                     @if (displayIndexingHints(); as hints) {
@@ -290,7 +256,6 @@
                     }
                 </mat-menu>
             </mat-tab>
-            @if (isTv) {
             <mat-tab label="Identity">
                 <div class="identity-lookup">
                     <button type="button" matButton="tonal" id="look-up-identity"
@@ -347,7 +312,6 @@
                     }
                 </mat-form-field>
             </mat-tab>
-            }
         </mat-tab-group>
     </form>
     }

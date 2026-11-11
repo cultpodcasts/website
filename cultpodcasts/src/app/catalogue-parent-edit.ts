@@ -226,12 +226,6 @@ export type NewsOrganisationEditModel = CatalogueParentEditModel & {
   additionalYouTubeChannels: AdditionalYouTubeChannelRow[];
 };
 
-export function isNewsOrganisationEditModel(
-  model: CatalogueParentEditModel | NewsOrganisationEditModel
-): model is NewsOrganisationEditModel {
-  return "additionalYouTubeChannels" in model;
-}
-
 /** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
 export function catalogueParentLanguageFormValue(language: string | null | undefined): string {
   return episodeLanguageFormValue(language);

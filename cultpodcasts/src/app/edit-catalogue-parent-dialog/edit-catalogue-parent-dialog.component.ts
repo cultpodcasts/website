@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, inject, Injector, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
@@ -16,21 +16,16 @@ import { TextFieldModule } from "@angular/cdk/text-field";
 import { KeyValuePipe } from "@angular/common";
 import { firstValueFrom, forkJoin } from "rxjs";
 import { ambiguousCandidateFromCatalogueParent } from "../ambiguous-name-candidate";
-import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
+import { hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
-import { CatalogueParentDto, NewsOrganisationDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
+import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
+import { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "../catalogue-parent-edit-dialog-data";
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
 import {
-  AdditionalYouTubeChannelRow,
-  additionalYouTubeChannelsError,
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
-  isNewsOrganisationEditModel,
-  NewsOrganisationEditModel,
-  newsOrganisationChanges,
-  newsOrganisationEditModel,
   historyDateText,
   includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
@@ -62,27 +57,15 @@ import {
 } from "../podcast-form.util";
 import { resolveAmbiguousEditRows } from "../resolve-ambiguous-edit-rows";
 import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
-import { YOU_TUBE_PLAYLIST_NOT_FOUND, youtubePlaylistEditError } from "../youtube-playlist-edit-error";
+import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
-export interface EditCatalogueParentDialogData {
-  hub: CatalogueHub;
-  name: string;
-  highlightDefaultLanguage?: boolean;
-}
-
-export interface EditCatalogueParentDialogResponse {
-  updated?: boolean;
-  noChange?: boolean;
-  closed?: boolean;
-}
+export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "../catalogue-parent-edit-dialog-data";
 
 /**
- * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
+ * Curator edit of a TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
- * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl. release authority and
- * minimum duration), Regexs, and Identity for TV. News outlets also list additional YouTube channels on Details
- * (RPP #1370), each with an optional playlist id that scopes that channel (the top-level playlist id scopes only the
- * main channel).
+ * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl.
+ * release authority and minimum duration), Regexs, and Identity.
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
@@ -113,11 +96,8 @@ export class EditCatalogueParentDialogComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly regexPresetsService = inject(RegexPresetsService);
-  private readonly injector = inject(Injector);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  protected readonly label = hubParentLabel(this.data.hub);
-  protected readonly isTv = this.data.hub === "tv";
+  protected readonly label = hubParentLabel("tv");
   protected readonly releaseAuthorityOptions = releaseAuthorityOptions;
   protected readonly isLoading = signal(true);
   protected readonly isSending = signal(false);
@@ -127,11 +107,9 @@ export class EditCatalogueParentDialogComponent {
   protected readonly saveError = signal(false);
   /** Curator-facing save failure copy; playlist ownership codes replace the generic line. */
   protected readonly saveErrorMessage = signal("Saving failed. Nothing was changed.");
-  protected readonly model = signal<CatalogueParentEditModel | NewsOrganisationEditModel | null>(null);
+  protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
-  /** News only: why the additional YouTube channel rows cannot be saved (Details tab), or null. */
-  protected readonly additionalChannelsError = signal<string | null>(null);
   /** Minimum Duration (Meta tab) and YouTube Publication Delay (Details tab) are validated separately so each tab shows only its own error. */
   protected readonly minimumDurationInvalid = signal(false);
   protected readonly publicationDelayInvalid = signal(false);
@@ -150,61 +128,6 @@ export class EditCatalogueParentDialogComponent {
     this.model.set({ ...model, [field]: "" });
     this.identityInvalid.set(false);
   }
-  /** News-only form state, or null for a TV show (which has no additional-channel field). */
-  protected newsModel(): NewsOrganisationEditModel | null {
-    const model = this.model();
-    return !this.isTv && model && isNewsOrganisationEditModel(model) ? model : null;
-  }
-
-  protected addAdditionalYouTubeChannel(): void {
-    const model = this.newsModel();
-    if (!model) {
-      return;
-    }
-    this.model.set({
-      ...model,
-      additionalYouTubeChannels: [...model.additionalYouTubeChannels, { youTubeChannelId: "", youTubePlaylistId: "" }]
-    });
-    this.additionalChannelsError.set(null);
-    const index = model.additionalYouTubeChannels.length;
-    // Zoneless: the new row exists only after the next render, so focus it then (a microtask runs too early).
-    afterNextRender(
-      () => {
-        this.host.nativeElement.querySelector<HTMLInputElement>(`input[name="additionalYouTubeChannelId${index}"]`)?.focus();
-      },
-      { injector: this.injector }
-    );
-  }
-
-  protected setAdditionalYouTubeChannel(index: number, value: string): void {
-    this.updateAdditionalYouTubeChannelRow(index, { youTubeChannelId: value });
-  }
-
-  protected setAdditionalYouTubePlaylist(index: number, value: string): void {
-    this.updateAdditionalYouTubeChannelRow(index, { youTubePlaylistId: value });
-  }
-
-  private updateAdditionalYouTubeChannelRow(index: number, change: Partial<AdditionalYouTubeChannelRow>): void {
-    const model = this.newsModel();
-    if (!model) {
-      return;
-    }
-    const rows = model.additionalYouTubeChannels.map((row, i) => (i === index ? { ...row, ...change } : row));
-    this.model.set({ ...model, additionalYouTubeChannels: rows });
-    this.additionalChannelsError.set(null);
-  }
-
-  protected removeAdditionalYouTubeChannel(index: number): void {
-    const model = this.newsModel();
-    if (!model) {
-      return;
-    }
-    this.model.set({
-      ...model,
-      additionalYouTubeChannels: model.additionalYouTubeChannels.filter((_, i) => i !== index)
-    });
-    this.additionalChannelsError.set(null);
-  }
 
   protected readonly playlistHistory = signal<PlaylistIdHistoryEntry[]>([]);
   protected readonly indexingHints = signal<YouTubeIndexingHints | null>(null);
@@ -213,7 +136,7 @@ export class EditCatalogueParentDialogComponent {
   protected readonly historyDateText = historyDateText;
   protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
   protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
-  protected readonly itemNoun = this.data.hub === "news" ? "reports" : "episodes";
+  protected readonly itemNoun = "episodes";
   protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
   protected readonly noCompareFunction = noCompareFunction;
   protected readonly defaultSubjects = signal<string[]>([]);
@@ -228,8 +151,7 @@ export class EditCatalogueParentDialogComponent {
   protected readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
   protected readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
-  /** A TV show's shared fields, or a news organisation (which also has its additional YouTube channels). */
-  private original: CatalogueParentDto | NewsOrganisationDto | null = null;
+  private original: CatalogueParentDto | null = null;
 
   constructor() {
     const presets = this.regexPresetsService.loadRegexPresets();
@@ -253,7 +175,7 @@ export class EditCatalogueParentDialogComponent {
       );
       const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
-      this.model.set(this.isTv ? catalogueParentEditModel(dto) : newsOrganisationEditModel(dto));
+      this.model.set(catalogueParentEditModel(dto));
       this.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
       this.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
       this.languages.set(buildPodcastLanguageOptions(resp.languages));
@@ -273,9 +195,9 @@ export class EditCatalogueParentDialogComponent {
    * GET by hub name; on 409 load each id and let the curator pick (same picker as submit).
    * Cancel closes the edit dialog. Returns null when closed or unrecoverable.
    */
-  private async resolveParentDto(): Promise<CatalogueParentDto | NewsOrganisationDto | null> {
+  private async resolveParentDto(): Promise<CatalogueParentDto | null> {
     try {
-      return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, this.data.name));
+      return await firstValueFrom(this.curation.getCatalogueParent("tv", this.data.name));
     } catch (error) {
       if (!(error instanceof HttpErrorResponse) || error.status !== 409) {
         throw error;
@@ -290,7 +212,7 @@ export class EditCatalogueParentDialogComponent {
         ids,
         async (id) => {
           try {
-            return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
+            return await firstValueFrom(this.curation.getCatalogueParent("tv", id));
           } catch {
             return null;
           }
@@ -300,7 +222,7 @@ export class EditCatalogueParentDialogComponent {
         {
           toCandidate: ambiguousCandidateFromCatalogueParent,
           title: `Choose ${this.label.toLowerCase()}`,
-          itemNounPlural: this.data.hub === "news" ? "news outlets" : "TV shows"
+          itemNounPlural: "TV shows"
         }
       );
       if (outcome.kind === "unrecoverable") {
@@ -317,7 +239,7 @@ export class EditCatalogueParentDialogComponent {
   }
 
   protected async lookUpIdentity(): Promise<void> {
-    if (!this.isTv || this.lookingUpIdentity()) {
+    if (this.lookingUpIdentity()) {
       return;
     }
     const model = this.model();
@@ -367,19 +289,6 @@ export class EditCatalogueParentDialogComponent {
     }
   }
 
-  /**
-   * A news organisation may list several additional-channel playlists (RPP #1370), so on not-found append the API
-   * message, which names the failing channel. The shared mapping (podcast dialogs, TV shows) keeps the fixed copy.
-   */
-  private playlistErrorMessage(code: string, message: string, error: unknown): string {
-    if (this.isTv || code !== YOU_TUBE_PLAYLIST_NOT_FOUND || !(error instanceof HttpErrorResponse)) {
-      return message;
-    }
-    const body = error.error as Record<string, unknown> | null;
-    const apiMessage = body && typeof body === "object" ? body["message"] : undefined;
-    return typeof apiMessage === "string" && apiMessage.trim() ? `${message}: ${apiMessage.trim()}` : message;
-  }
-
   protected async save(): Promise<void> {
     const model = this.model();
     if (!model || !this.original) {
@@ -388,14 +297,6 @@ export class EditCatalogueParentDialogComponent {
     this.appleIdInvalid.set(!isValidAppleIdText(model.appleId));
     if (this.appleIdInvalid()) {
       // Apple Id is on Details; switch so the error is visible when Save is blocked from another tab.
-      this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
-      return;
-    }
-    const news = this.newsModel();
-    this.additionalChannelsError.set(
-      news ? additionalYouTubeChannelsError(news.additionalYouTubeChannels, news.youTubeChannelId) : null
-    );
-    if (this.additionalChannelsError()) {
       this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
       return;
     }
@@ -409,18 +310,13 @@ export class EditCatalogueParentDialogComponent {
       return;
     }
     this.identityInvalid.set(
-      this.isTv && !(isValidImdbIdText(model.imdbId) && isValidNumericIdText(model.tvdbId) && isValidNumericIdText(model.tmdbId))
+      !(isValidImdbIdText(model.imdbId) && isValidNumericIdText(model.tvdbId) && isValidNumericIdText(model.tmdbId))
     );
     if (this.identityInvalid()) {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    if (!this.isTv && !news) {
-      return;
-    }
-    const changes = news
-      ? newsOrganisationChanges(this.original, news)
-      : catalogueParentChanges(this.original, model, true);
+    const changes = catalogueParentChanges(this.original, model, true);
     if (Object.keys(changes).length === 0) {
       this.dialogRef.close({ noChange: true });
       return;
@@ -432,7 +328,7 @@ export class EditCatalogueParentDialogComponent {
     this.saveError.set(false);
     this.saveErrorMessage.set("Saving failed. Nothing was changed.");
     try {
-      const resp = await firstValueFrom(this.curation.patchCatalogueParent(this.data.hub, this.original.id, changes));
+      const resp = await firstValueFrom(this.curation.patchCatalogueParent("tv", this.original.id, changes));
       if (resp.status === 202 || resp.status === 200) {
         this.dialogRef.close({ updated: true });
         return;
@@ -443,7 +339,7 @@ export class EditCatalogueParentDialogComponent {
       const refused = playlist ? undefined : catalogueParentSaveError(error);
       if (playlist) {
         // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
-        this.saveErrorMessage.set(this.playlistErrorMessage(playlist.code, playlist.message, error));
+        this.saveErrorMessage.set(playlist.message);
       } else if (refused) {
         // Channel / service-id refusals (400 codes, 409 owner): show the API's reason so the curator can fix the id.
         this.saveErrorMessage.set(refused);
@@ -481,12 +377,12 @@ export class EditCatalogueParentDialogComponent {
     try {
       const id = this.original.id;
       await firstValueFrom(
-        this.curation.patchCatalogueParent(this.data.hub, id, {
+        this.curation.patchCatalogueParent("tv", id, {
           clearYouTubeIndexingHints: true
         })
       );
       // CQRS: acknowledgement is not the read model — re-GET and bind hints.
-      const refreshed = await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, id));
+      const refreshed = await firstValueFrom(this.curation.getCatalogueParent("tv", id));
       const hints = refreshed.youTubeIndexingHints ?? null;
       this.indexingHints.set(hints);
       this.original = { ...this.original, youTubeIndexingHints: hints };
