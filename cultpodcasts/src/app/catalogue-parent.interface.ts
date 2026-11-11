@@ -11,6 +11,16 @@ export interface PlaylistIdHistoryEntry {
 }
 
 /**
+ * One additional YouTube channel of a news organisation (RPP #1370). With `youTubePlaylistId` only that playlist's
+ * videos belong to the organisation (URL submit, indexing and discovery are scoped to it); without one the whole
+ * channel does.
+ */
+export interface AdditionalYouTubeChannelDto {
+  youTubeChannelId: string;
+  youTubePlaylistId?: string | null;
+}
+
+/**
  * GET /newsorganisation/{identifier} or /tvshow/{identifier}: the shared publisher fields (RPP #1053).
  * TV adds the identity ids.
  */
@@ -41,10 +51,16 @@ export interface CatalogueParentDto {
   youTubeChannelId?: string | null;
   youTubePlaylistId?: string | null;
   /**
-   * News organisations only (RPP #1370): extra YouTube channel ids the outlet owns and ingests from, besides
-   * `youTubeChannelId`. Each is channel-wide; `youTubePlaylistId` scopes only the main channel. GET gives `[]` when
-   * there are none. PATCH: a list replaces the stored list, `[]` clears it, omitted / null leaves it unchanged.
-   * TV shows never have or send it.
+   * News organisations only (RPP #1370): extra YouTube channels the outlet owns and ingests from, besides
+   * `youTubeChannelId`, each with an optional playlist that scopes that channel (the top-level `youTubePlaylistId`
+   * scopes only the main channel). GET gives `[]` when there are none. PATCH: a list replaces the stored list, `[]`
+   * clears it, omitted / null leaves it unchanged. TV shows never have or send it.
+   */
+  additionalYouTubeChannels?: AdditionalYouTubeChannelDto[] | null;
+  /**
+   * News organisations only, read-only here: the older ids-only form of `additionalYouTubeChannels` (GET returns
+   * both). The dialog reads it only when `additionalYouTubeChannels` is missing and never sends it: the API refuses a
+   * PATCH that sends both.
    */
   additionalYouTubeChannelIds?: string[] | null;
   /** Read-only: playlist ids replaced by an edit. */
@@ -80,7 +96,8 @@ export interface CatalogueParentDto {
  * No `name` (rename is separate), no `youTubePlaylistIdHistory` / `youTubeIndexingHints` (server-kept),
  * no `skipEnrichingFromYouTube` (not edited on news / TV, so it is never sent and a stored value is kept)
  * and no `youTubeChannelId` (read-only, like the podcast edit dialog: it is used for API calls, so it is
- * never sent and the stored value is kept).
+ * never sent and the stored value is kept). Additional channels are sent only as `additionalYouTubeChannels`, never as
+ * the older `additionalYouTubeChannelIds`.
  */
 export type CatalogueParentChangeRequest = Partial<
   Omit<
@@ -91,6 +108,7 @@ export type CatalogueParentChangeRequest = Partial<
     | "youTubeIndexingHints"
     | "skipEnrichingFromYouTube"
     | "youTubeChannelId"
+    | "additionalYouTubeChannelIds"
   >
 > & {
   nullAppleId?: boolean;

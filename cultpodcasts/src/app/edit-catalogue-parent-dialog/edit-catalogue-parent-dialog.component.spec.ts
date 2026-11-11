@@ -688,6 +688,7 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
   const main = 'UCsyntheticChannel000001';
   const extraA = 'UCsyntheticChannel000002';
   const extraB = 'UCsyntheticChannel000003';
+  const playlistB = 'PLsyntheticPlaylist00000001';
   const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
   const patchUrl = new URL(`/newsorganisation/${outletId}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
@@ -697,6 +698,7 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
   type ChannelInternals = Internals & {
     addAdditionalYouTubeChannel(): void;
     setAdditionalYouTubeChannel(index: number, value: string): void;
+    setAdditionalYouTubePlaylist(index: number, value: string): void;
     removeAdditionalYouTubeChannel(index: number): void;
     additionalChannelsError(): string | null;
   };
@@ -725,30 +727,48 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
     return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('input[name^="additionalYouTubeChannelId"]'));
   }
 
-  it('lists the stored channels on Details with a remove button each and an Add button', async () => {
-    const { fixture } = await open({ additionalYouTubeChannelIds: [extraA, extraB] });
+  function playlistInputs(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): HTMLInputElement[] {
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('input[name^="additionalYouTubePlaylistId"]'));
+  }
+
+  it('lists the stored channels on Details with their optional playlists, a remove button each and an Add button', async () => {
+    const { fixture } = await open({
+      additionalYouTubeChannels: [{ youTubeChannelId: extraA, youTubePlaylistId: null }, { youTubeChannelId: extraB, youTubePlaylistId: playlistB }],
+      additionalYouTubeChannelIds: [extraA, extraB]
+    });
     await showTab(fixture, 'Details');
     await settle();
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain('Additional YouTube channels');
     expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain('applies only to the main channel');
+    expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain("only that playlist's videos belong to this organisation");
     expect(channelInputs(fixture).map((input) => input.name)).toEqual(['additionalYouTubeChannelId0', 'additionalYouTubeChannelId1']);
+    expect(channelInputs(fixture).map((input) => input.value)).toEqual([extraA, extraB]);
+    expect(playlistInputs(fixture).map((input) => input.name)).toEqual(['additionalYouTubePlaylistId0', 'additionalYouTubePlaylistId1']);
+    expect(playlistInputs(fixture).map((input) => input.value)).toEqual(['', playlistB]);
+    expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain('YouTube Playlist Id (optional)');
     expect(root.querySelector('[aria-label="Remove additional YouTube channel 2"]')).not.toBeNull();
     expect(root.querySelector('button.add-additional-channel')?.textContent?.trim()).toBe('Add YouTube channel');
   });
 
-  it('Add then Save PATCHes the whole list (list replaces)', async () => {
+  it('Add then Save PATCHes the whole list as additionalYouTubeChannels, with the new row playlist (list replaces)', async () => {
     const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [extraA] });
     await showTab(fixture, 'Details');
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.add-additional-channel')!.click();
     fixture.detectChanges();
-    expect(dialog.model()!.additionalYouTubeChannelIds).toEqual([extraA, '']);
+    expect(dialog.model()!.additionalYouTubeChannels).toEqual([
+      { youTubeChannelId: extraA, youTubePlaylistId: '' },
+      { youTubeChannelId: '', youTubePlaylistId: '' }
+    ]);
     dialog.setAdditionalYouTubeChannel(1, ` ${extraB} `);
+    dialog.setAdditionalYouTubePlaylist(1, ` ${playlistB} `);
     const done = dialog.save();
     const req = await expectSoon(patchUrl);
     expect(req.request.method).toBe('PATCH');
-    expect(req.request.body).toEqual({ additionalYouTubeChannelIds: [extraA, extraB] });
+    expect(req.request.body).toEqual({
+      additionalYouTubeChannels: [{ youTubeChannelId: extraA }, { youTubeChannelId: extraB, youTubePlaylistId: playlistB }]
+    });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
     expect(close).toHaveBeenCalledWith({ updated: true });
@@ -769,10 +789,10 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
     await showTab(fixture, 'Details');
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Remove additional YouTube channel 1"]')!.click();
     fixture.detectChanges();
-    expect(dialog.model()!.additionalYouTubeChannelIds).toEqual([]);
+    expect(dialog.model()!.additionalYouTubeChannels).toEqual([]);
     const done = dialog.save();
     const req = await expectSoon(patchUrl);
-    expect(req.request.body).toEqual({ additionalYouTubeChannelIds: [] });
+    expect(req.request.body).toEqual({ additionalYouTubeChannels: [] });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
   });
@@ -786,6 +806,69 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
     expect(req.request.body).toEqual({ publisher: 'Desk Media' });
     req.flush(null, { status: 202, statusText: 'Accepted' });
     await done;
+  });
+
+  it('typing a playlist on a stored channel PATCHes that channel scoped to it; clearing it makes the channel whole again', async () => {
+    const { fixture, dialog } = await open({
+      additionalYouTubeChannels: [{ youTubeChannelId: extraA, youTubePlaylistId: playlistB }],
+      additionalYouTubeChannelIds: [extraA]
+    });
+    await showTab(fixture, 'Details');
+    const input = playlistInputs(fixture)[0];
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(dialog.model()!.additionalYouTubeChannels).toEqual([{ youTubeChannelId: extraA, youTubePlaylistId: '' }]);
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ additionalYouTubeChannels: [{ youTubeChannelId: extraA }] });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+  });
+
+  it('blocks Save on a playlist without a channel or one channel with two playlists', async () => {
+    const { dialog } = await open({ additionalYouTubeChannels: [] });
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubePlaylist(0, playlistB);
+    await dialog.save();
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(dialog.additionalChannelsError()).toBe(`Playlist '${playlistB}' needs the YouTube channel id it belongs to.`);
+
+    dialog.setAdditionalYouTubeChannel(0, extraA);
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubeChannel(1, extraA);
+    await dialog.save();
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(dialog.additionalChannelsError()).toContain('listed more than once with different playlists');
+  });
+
+  it('shows the API reason for an additional playlist refusal and keeps the 503 lookup failure retryable', async () => {
+    const { dialog } = await open({ additionalYouTubeChannels: [] });
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubeChannel(0, extraA);
+    dialog.setAdditionalYouTubePlaylist(0, playlistB);
+    let done = dialog.save();
+    let req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ additionalYouTubeChannels: [{ youTubeChannelId: extraA, youTubePlaylistId: playlistB }] });
+    req.flush(
+      { message: `Additional YouTube channel '${extraA}': playlist '${playlistB}' is on another channel.`, code: 'youTubePlaylistChannelMismatch' },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(`Additional YouTube channel '${extraA}': playlist '${playlistB}' is on another channel.`);
+    expect(close).not.toHaveBeenCalled();
+
+    done = dialog.save();
+    req = await expectSoon(patchUrl);
+    req.flush(
+      { message: `Additional YouTube channel '${extraA}': the playlist could not be checked.`, code: 'youTubePlaylistLookupFailed' },
+      { status: 503, statusText: 'Service Unavailable' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE);
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('blocks Save on a non-channel id or the main channel and shows the reason on Details', async () => {

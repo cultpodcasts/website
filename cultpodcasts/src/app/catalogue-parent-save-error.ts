@@ -1,6 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-/** RPP #1370 news organisation PATCH refusals (400) for `additionalYouTubeChannelIds`. */
+/**
+ * RPP #1370 news organisation PATCH refusals (400) for `additionalYouTubeChannels`. Playlist refusals on an additional
+ * channel's playlist use the main-channel playlist codes and are mapped by `youtubePlaylistEditError`.
+ */
 export const INVALID_ADDITIONAL_YOU_TUBE_CHANNEL_ID = 'invalidAdditionalYouTubeChannelId';
 export const ADDITIONAL_YOU_TUBE_CHANNEL_IS_MAIN_CHANNEL = 'additionalYouTubeChannelIsMainChannel';
 /** Another parent or podcast already claims the channel channel-wide (400, any YouTube channel edit). */

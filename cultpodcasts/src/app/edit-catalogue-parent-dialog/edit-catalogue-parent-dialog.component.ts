@@ -22,7 +22,8 @@ import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
 import {
-  additionalYouTubeChannelIdsError,
+  AdditionalYouTubeChannelRow,
+  additionalYouTubeChannelsError,
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
@@ -76,7 +77,8 @@ export interface EditCatalogueParentDialogResponse {
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
  * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl. release authority and
  * minimum duration), Regexs, and Identity for TV. News outlets also list additional YouTube channels on Details
- * (RPP #1370): each is channel-wide, and the playlist id scopes only the main channel.
+ * (RPP #1370), each with an optional playlist id that scopes that channel (the top-level playlist id scopes only the
+ * main channel).
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
@@ -149,9 +151,12 @@ export class EditCatalogueParentDialogComponent {
     if (!model) {
       return;
     }
-    this.model.set({ ...model, additionalYouTubeChannelIds: [...model.additionalYouTubeChannelIds, ""] });
+    this.model.set({
+      ...model,
+      additionalYouTubeChannels: [...model.additionalYouTubeChannels, { youTubeChannelId: "", youTubePlaylistId: "" }]
+    });
     this.additionalChannelsError.set(null);
-    const index = model.additionalYouTubeChannelIds.length;
+    const index = model.additionalYouTubeChannels.length;
     // Zoneless: the new row exists only after the next render, so focus it then (a microtask runs too early).
     afterNextRender(
       () => {
@@ -162,13 +167,20 @@ export class EditCatalogueParentDialogComponent {
   }
 
   protected setAdditionalYouTubeChannel(index: number, value: string): void {
+    this.updateAdditionalYouTubeChannelRow(index, { youTubeChannelId: value });
+  }
+
+  protected setAdditionalYouTubePlaylist(index: number, value: string): void {
+    this.updateAdditionalYouTubeChannelRow(index, { youTubePlaylistId: value });
+  }
+
+  private updateAdditionalYouTubeChannelRow(index: number, change: Partial<AdditionalYouTubeChannelRow>): void {
     const model = this.model();
     if (!model) {
       return;
     }
-    const ids = [...model.additionalYouTubeChannelIds];
-    ids[index] = value;
-    this.model.set({ ...model, additionalYouTubeChannelIds: ids });
+    const rows = model.additionalYouTubeChannels.map((row, i) => (i === index ? { ...row, ...change } : row));
+    this.model.set({ ...model, additionalYouTubeChannels: rows });
     this.additionalChannelsError.set(null);
   }
 
@@ -179,7 +191,7 @@ export class EditCatalogueParentDialogComponent {
     }
     this.model.set({
       ...model,
-      additionalYouTubeChannelIds: model.additionalYouTubeChannelIds.filter((_, i) => i !== index)
+      additionalYouTubeChannels: model.additionalYouTubeChannels.filter((_, i) => i !== index)
     });
     this.additionalChannelsError.set(null);
   }
@@ -356,7 +368,7 @@ export class EditCatalogueParentDialogComponent {
       return;
     }
     this.additionalChannelsError.set(
-      this.isTv ? null : additionalYouTubeChannelIdsError(model.additionalYouTubeChannelIds, model.youTubeChannelId)
+      this.isTv ? null : additionalYouTubeChannelsError(model.additionalYouTubeChannels, model.youTubeChannelId)
     );
     if (this.additionalChannelsError()) {
       this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);

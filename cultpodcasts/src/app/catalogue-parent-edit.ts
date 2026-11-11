@@ -1,4 +1,4 @@
-import { CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
+import { AdditionalYouTubeChannelDto, CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
 import { episodeLanguageFormValue } from "./language-options.util";
 import { includeTitleRegexBlocksIndexAllEpisodes } from "./podcast-form.util";
 
@@ -61,40 +61,89 @@ export const catalogueParentEditableServiceIdFields = ["youTubePlaylistId", "spo
 /** A YouTube channel id: `UC` followed by 22 characters (same rule as the RPP #1370 PATCH check). */
 const youTubeChannelIdPattern = /^UC[A-Za-z0-9_-]{22}$/;
 
+/** One editable additional YouTube channel row (news organisations, RPP #1370). Blank playlist = the whole channel. */
+export interface AdditionalYouTubeChannelRow {
+  youTubeChannelId: string;
+  youTubePlaylistId: string;
+}
+
 /**
- * The additional YouTube channel ids as the API stores them (RPP #1370): trimmed, blanks and repeats dropped,
- * first occurrence kept.
+ * Editable rows for the outlet's additional YouTube channels. Reads `additionalYouTubeChannels` (channel + optional
+ * playlist); falls back to the older ids-only `additionalYouTubeChannelIds` (each channel-wide) when the API did not
+ * return the newer field.
  */
-export function normaliseYouTubeChannelIds(values: readonly string[] | null | undefined): string[] {
+export function additionalYouTubeChannelRows(dto: CatalogueParentDto): AdditionalYouTubeChannelRow[] {
+  if (Array.isArray(dto.additionalYouTubeChannels)) {
+    return dto.additionalYouTubeChannels.map((channel) => ({
+      youTubeChannelId: channel.youTubeChannelId ?? "",
+      youTubePlaylistId: channel.youTubePlaylistId ?? ""
+    }));
+  }
+  return (dto.additionalYouTubeChannelIds ?? []).map((id) => ({ youTubeChannelId: id, youTubePlaylistId: "" }));
+}
+
+/**
+ * The additional YouTube channels as the PATCH sends them (RPP #1370): ids trimmed, rows without a channel id
+ * dropped, repeats of a channel dropped (first kept), and `youTubePlaylistId` only when the row has one.
+ */
+export function normaliseAdditionalYouTubeChannels(rows: readonly AdditionalYouTubeChannelRow[]): AdditionalYouTubeChannelDto[] {
   const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values ?? []) {
-    const trimmed = value.trim();
-    if (trimmed && !seen.has(trimmed)) {
-      seen.add(trimmed);
-      result.push(trimmed);
+  const result: AdditionalYouTubeChannelDto[] = [];
+  for (const row of rows) {
+    const channel = row.youTubeChannelId.trim();
+    if (!channel || seen.has(channel)) {
+      continue;
     }
+    seen.add(channel);
+    const playlist = row.youTubePlaylistId.trim();
+    result.push(playlist ? { youTubeChannelId: channel, youTubePlaylistId: playlist } : { youTubeChannelId: channel });
   }
   return result;
+}
+
+function sameAdditionalChannels(before: readonly AdditionalYouTubeChannelDto[], after: readonly AdditionalYouTubeChannelDto[]): boolean {
+  return (
+    before.length === after.length &&
+    before.every(
+      (channel, i) =>
+        channel.youTubeChannelId === after[i].youTubeChannelId &&
+        (channel.youTubePlaylistId ?? "") === (after[i].youTubePlaylistId ?? "")
+    )
+  );
 }
 
 /**
  * Curator copy when the news outlet's additional YouTube channels cannot be saved, or null when they can. Mirrors
  * the API's 400s (`invalidAdditionalYouTubeChannelId`, `additionalYouTubeChannelIsMainChannel`) so Save is blocked
- * before the request. Blank rows are ignored (they are dropped on save).
+ * before the request. Fully blank rows are ignored (they are dropped on save). Whether a playlist exists and is on
+ * that channel is checked by the API (the main-channel playlist codes).
  */
-export function additionalYouTubeChannelIdsError(
-  values: readonly string[],
+export function additionalYouTubeChannelsError(
+  rows: readonly AdditionalYouTubeChannelRow[],
   mainChannelId: string | null | undefined
 ): string | null {
-  const ids = normaliseYouTubeChannelIds(values);
-  const invalid = ids.find((id) => !youTubeChannelIdPattern.test(id));
+  const orphan = rows.find((row) => !row.youTubeChannelId.trim() && row.youTubePlaylistId.trim());
+  if (orphan !== undefined) {
+    return `Playlist '${orphan.youTubePlaylistId.trim()}' needs the YouTube channel id it belongs to.`;
+  }
+  const filled = rows
+    .map((row) => ({ channel: row.youTubeChannelId.trim(), playlist: row.youTubePlaylistId.trim() }))
+    .filter((row) => row.channel);
+  const invalid = filled.find((row) => !youTubeChannelIdPattern.test(row.channel));
   if (invalid !== undefined) {
-    return `'${invalid}' is not a YouTube channel id (UC followed by 22 letters, digits, - or _).`;
+    return `'${invalid.channel}' is not a YouTube channel id (UC followed by 22 letters, digits, - or _).`;
   }
   const main = (mainChannelId ?? "").trim();
-  if (main && ids.includes(main)) {
+  if (main && filled.some((row) => row.channel === main)) {
     return `'${main}' is the main YouTube channel; it cannot also be an additional channel.`;
+  }
+  const playlists = new Map<string, string>();
+  for (const row of filled) {
+    const previous = playlists.get(row.channel);
+    if (previous !== undefined && previous !== row.playlist) {
+      return `'${row.channel}' is listed more than once with different playlists; keep one row per channel.`;
+    }
+    playlists.set(row.channel, row.playlist);
   }
   return null;
 }
@@ -158,8 +207,11 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   tmdbId: string;
   language: string;
   ignoredSubjects: string[];
-  /** News organisations only: one row per additional YouTube channel id (blank rows are dropped on save). */
-  additionalYouTubeChannelIds: string[];
+  /**
+   * News organisations only: one row per additional YouTube channel, each with an optional playlist id (rows without
+   * a channel id are dropped on save).
+   */
+  additionalYouTubeChannels: AdditionalYouTubeChannelRow[];
 };
 
 /** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
@@ -215,7 +267,7 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
     ignoredSubjects: [...(dto.ignoredSubjects ?? [])],
-    additionalYouTubeChannelIds: [...(dto.additionalYouTubeChannelIds ?? [])],
+    additionalYouTubeChannels: additionalYouTubeChannelRows(dto),
     releaseAuthority: dto.releaseAuthority || "Unset"
   } as CatalogueParentEditModel;
   for (const field of catalogueParentFlagFields) {
@@ -250,8 +302,9 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
  * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
- * `youTubeChannelId` is read-only and never sent. News outlets (not TV) send `additionalYouTubeChannelIds` as the whole
- * normalised list when it changed (`[]` when every row was removed); TV shows never send it.
+ * `youTubeChannelId` is read-only and never sent. News outlets (not TV) send `additionalYouTubeChannels` (channel id plus
+ * optional playlist id) as the whole normalised list when it changed (`[]` when every row was removed); the older
+ * `additionalYouTubeChannelIds` is never sent (the API refuses both together). TV shows send neither.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -296,9 +349,10 @@ export function catalogueParentChanges(
     changes.ignoredSubjects = [...edited.ignoredSubjects];
   }
   if (!includeTvIdentity) {
-    const channelsAfter = normaliseYouTubeChannelIds(edited.additionalYouTubeChannelIds);
-    if (!sameList(normaliseYouTubeChannelIds(original.additionalYouTubeChannelIds), channelsAfter)) {
-      changes.additionalYouTubeChannelIds = channelsAfter;
+    const channelsAfter = normaliseAdditionalYouTubeChannels(edited.additionalYouTubeChannels);
+    const channelsBefore = normaliseAdditionalYouTubeChannels(additionalYouTubeChannelRows(original));
+    if (!sameAdditionalChannels(channelsBefore, channelsAfter)) {
+      changes.additionalYouTubeChannels = channelsAfter;
     }
   }
   if (catalogueParentLanguageFormValue(original.language) !== edited.language) {
