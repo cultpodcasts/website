@@ -51,10 +51,10 @@
                     }
                 </p>
                 }
-                @if (!isTv) {
+                @if (newsModel(); as news) {
                 <div class="additional-channels" id="additional-youtube-channels">
                     <p class="hint"><strong>Additional YouTube channels</strong></p>
-                    @for (channel of m.additionalYouTubeChannels; track $index) {
+                    @for (channel of news.additionalYouTubeChannels; track $index) {
                     <div class="additional-channel-row">
                         <mat-form-field class="full-width">
                             <mat-label>Additional YouTube channel id</mat-label>

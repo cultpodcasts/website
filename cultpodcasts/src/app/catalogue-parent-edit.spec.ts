@@ -381,8 +381,7 @@ describe('news organisation additional YouTube channels with optional playlists 
   it('a TV show has no additional channels: a stray field on the GET is neither loaded nor sent', () => {
     const strayTvShow = { ...withChannels } as CatalogueParentDto;
     const model = catalogueParentEditModel(strayTvShow);
-    expect(model.additionalYouTubeChannels).toEqual([]);
-    model.additionalYouTubeChannels = [row(extraB)];
+    expect('additionalYouTubeChannels' in model).toBe(false);
     const changes = catalogueParentChanges(strayTvShow, model, true);
     expect(changes).not.toHaveProperty('additionalYouTubeChannels');
     expect(changes).not.toHaveProperty('additionalYouTubeChannelIds');

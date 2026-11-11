@@ -214,14 +214,23 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   tmdbId: string;
   language: string;
   ignoredSubjects: string[];
-  /**
-   * Dialog state for news organisations only: one row per additional YouTube channel, each with an optional playlist
-   * id (rows without a channel id are dropped on save). Always `[]` for a TV show: {@link catalogueParentEditModel}
-   * never reads it from a DTO and {@link catalogueParentChanges} never sends it; only the news organisation
-   * functions ({@link newsOrganisationEditModel}, {@link newsOrganisationChanges}) do.
-   */
+};
+
+/**
+ * News-organisation edit model: the shared fields plus the outlet's additional YouTube channel rows
+ * (RPP #1370). The field lives only here, matching the DTO split (RPP #1392): a TV show's
+ * {@link CatalogueParentEditModel} does not declare it, so the compiler rejects reading or sending it
+ * on a TV path.
+ */
+export type NewsOrganisationEditModel = CatalogueParentEditModel & {
   additionalYouTubeChannels: AdditionalYouTubeChannelRow[];
 };
+
+export function isNewsOrganisationEditModel(
+  model: CatalogueParentEditModel | NewsOrganisationEditModel
+): model is NewsOrganisationEditModel {
+  return "additionalYouTubeChannels" in model;
+}
 
 /** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
 export function catalogueParentLanguageFormValue(language: string | null | undefined): string {
@@ -267,7 +276,7 @@ export function textToList(text: string): string[] {
     .filter((value) => value.length > 0);
 }
 
-/** Edit model of the shared fields. Additional YouTube channels are left empty: see {@link newsOrganisationEditModel}. */
+/** Edit model of the shared fields. Additional YouTube channels are not present: see {@link newsOrganisationEditModel}. */
 export function catalogueParentEditModel(dto: CatalogueParentDto): CatalogueParentEditModel {
   const model = {
     removed: dto.removed === true,
@@ -277,7 +286,6 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
     ignoredSubjects: [...(dto.ignoredSubjects ?? [])],
-    additionalYouTubeChannels: [] as AdditionalYouTubeChannelRow[],
     releaseAuthority: dto.releaseAuthority || "Unset"
   } as CatalogueParentEditModel;
   for (const field of catalogueParentFlagFields) {
@@ -302,7 +310,7 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
 }
 
 /** Edit model of a news organisation: the shared fields plus its additional YouTube channel rows (RPP #1370). */
-export function newsOrganisationEditModel(dto: NewsOrganisationDto): CatalogueParentEditModel {
+export function newsOrganisationEditModel(dto: NewsOrganisationDto): NewsOrganisationEditModel {
   return { ...catalogueParentEditModel(dto), additionalYouTubeChannels: additionalYouTubeChannelRows(dto) };
 }
 
@@ -417,7 +425,7 @@ export function catalogueParentChanges(
  */
 export function newsOrganisationChanges(
   original: NewsOrganisationDto,
-  edited: CatalogueParentEditModel
+  edited: NewsOrganisationEditModel
 ): NewsOrganisationChangeRequest {
   const changes: NewsOrganisationChangeRequest = catalogueParentChanges(original, edited, false);
   const channelsAfter = normaliseAdditionalYouTubeChannels(edited.additionalYouTubeChannels);

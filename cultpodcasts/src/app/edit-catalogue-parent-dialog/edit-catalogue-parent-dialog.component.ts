@@ -27,6 +27,8 @@ import {
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
+  isNewsOrganisationEditModel,
+  NewsOrganisationEditModel,
   newsOrganisationChanges,
   newsOrganisationEditModel,
   historyDateText,
@@ -125,7 +127,7 @@ export class EditCatalogueParentDialogComponent {
   protected readonly saveError = signal(false);
   /** Curator-facing save failure copy; playlist ownership codes replace the generic line. */
   protected readonly saveErrorMessage = signal("Saving failed. Nothing was changed.");
-  protected readonly model = signal<CatalogueParentEditModel | null>(null);
+  protected readonly model = signal<CatalogueParentEditModel | NewsOrganisationEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
   /** News only: why the additional YouTube channel rows cannot be saved (Details tab), or null. */
@@ -148,8 +150,14 @@ export class EditCatalogueParentDialogComponent {
     this.model.set({ ...model, [field]: "" });
     this.identityInvalid.set(false);
   }
-  protected addAdditionalYouTubeChannel(): void {
+  /** News-only form state, or null for a TV show (which has no additional-channel field). */
+  protected newsModel(): NewsOrganisationEditModel | null {
     const model = this.model();
+    return !this.isTv && model && isNewsOrganisationEditModel(model) ? model : null;
+  }
+
+  protected addAdditionalYouTubeChannel(): void {
+    const model = this.newsModel();
     if (!model) {
       return;
     }
@@ -177,7 +185,7 @@ export class EditCatalogueParentDialogComponent {
   }
 
   private updateAdditionalYouTubeChannelRow(index: number, change: Partial<AdditionalYouTubeChannelRow>): void {
-    const model = this.model();
+    const model = this.newsModel();
     if (!model) {
       return;
     }
@@ -187,7 +195,7 @@ export class EditCatalogueParentDialogComponent {
   }
 
   protected removeAdditionalYouTubeChannel(index: number): void {
-    const model = this.model();
+    const model = this.newsModel();
     if (!model) {
       return;
     }
@@ -383,8 +391,9 @@ export class EditCatalogueParentDialogComponent {
       this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
       return;
     }
+    const news = this.newsModel();
     this.additionalChannelsError.set(
-      this.isTv ? null : additionalYouTubeChannelsError(model.additionalYouTubeChannels, model.youTubeChannelId)
+      news ? additionalYouTubeChannelsError(news.additionalYouTubeChannels, news.youTubeChannelId) : null
     );
     if (this.additionalChannelsError()) {
       this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
@@ -406,9 +415,12 @@ export class EditCatalogueParentDialogComponent {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    const changes = this.isTv
-      ? catalogueParentChanges(this.original, model, true)
-      : newsOrganisationChanges(this.original, model);
+    if (!this.isTv && !news) {
+      return;
+    }
+    const changes = news
+      ? newsOrganisationChanges(this.original, news)
+      : catalogueParentChanges(this.original, model, true);
     if (Object.keys(changes).length === 0) {
       this.dialogRef.close({ noChange: true });
       return;

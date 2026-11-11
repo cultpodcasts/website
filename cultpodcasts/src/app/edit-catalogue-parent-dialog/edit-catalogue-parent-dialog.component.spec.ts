@@ -10,7 +10,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { CatalogueParentEditModel } from '../catalogue-parent-edit';
+import { CatalogueParentEditModel, NewsOrganisationEditModel } from '../catalogue-parent-edit';
 import { JsonDateInterceptor } from '../json-date.interceptor';
 import {
   CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
@@ -30,7 +30,7 @@ import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dial
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
-  model(): CatalogueParentEditModel | null;
+  model(): CatalogueParentEditModel | NewsOrganisationEditModel | null;
   defaultSubjects(): string[];
   filteredIgnoredSubjects(): string[];
   languages(): Record<string, string>;
@@ -695,7 +695,8 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
   const languagesUrl = new URL('/languages', environment.api).toString();
   let close: ReturnType<typeof vi.fn>;
 
-  type ChannelInternals = Internals & {
+  type ChannelInternals = Omit<Internals, 'model'> & {
+    model(): NewsOrganisationEditModel | null;
     addAdditionalYouTubeChannel(): void;
     setAdditionalYouTubeChannel(index: number, value: string): void;
     setAdditionalYouTubePlaylist(index: number, value: string): void;
@@ -942,27 +943,70 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
 
 describe('EditCatalogueParentDialogComponent (TV show has no additional YouTube channels)', () => {
   const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
+  const patchUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
   const languagesUrl = new URL('/languages', environment.api).toString();
+  let close: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    close = vi.fn();
     await TestBed.configureTestingModule({
       imports: [EditCatalogueParentDialogComponent],
-      providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, vi.fn(), vi.fn())
+      providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, vi.fn())
     }).compileComponents();
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('does not render the additional channels section', async () => {
+  async function openTv(show: object): Promise<{ fixture: ComponentFixture<EditCatalogueParentDialogComponent>; dialog: Internals }> {
     const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
     fixture.detectChanges();
-    (await expectSoon(getUrl)).flush({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', name: 'Nightly', youTubeChannelId: 'UCsyntheticChannel000001' });
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', ...show });
     (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
     (await expectSoon(languagesUrl)).flush({ en: 'English' });
     await settle();
+    return { fixture, dialog: fixture.componentInstance as unknown as Internals };
+  }
+
+  it('does not render the additional channels section', async () => {
+    const { fixture } = await openTv({ youTubeChannelId: 'UCsyntheticChannel000001' });
     await showTab(fixture, 'Details');
     expect((fixture.nativeElement as HTMLElement).querySelector('#additional-youtube-channels')).toBeNull();
+  });
+
+  it('shows the API Conflict message for a TV 409 rather than the generic error', async () => {
+    const { dialog } = await openTv({ publisher: 'Net', spotifyId: 'spot1' });
+    dialog.model()!.publisher = 'Network Two';
+    const done = dialog.save();
+    const apiMessage = "spotifyId 'spot1' is already used by eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee; URL submission could not tell them apart.";
+    (await expectSoon(patchUrl)).flush(
+      { message: apiMessage, ids: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'] },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(`Conflict: ${apiMessage} Nothing was changed.`);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('does not send additionalYouTubeChannels or additionalYouTubeChannelIds when the GET carries a stray field', async () => {
+    const extra = 'UCsyntheticChannel000002';
+    const { dialog } = await openTv({
+      publisher: 'Net',
+      youTubeChannelId: 'UCsyntheticChannel000001',
+      additionalYouTubeChannels: [{ youTubeChannelId: extra }],
+      additionalYouTubeChannelIds: [extra]
+    });
+    expect('additionalYouTubeChannels' in dialog.model()!).toBe(false);
+    dialog.model()!.publisher = 'Network Two';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ publisher: 'Network Two' });
+    expect(req.request.body).not.toHaveProperty('additionalYouTubeChannels');
+    expect(req.request.body).not.toHaveProperty('additionalYouTubeChannelIds');
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
   });
 });
 
