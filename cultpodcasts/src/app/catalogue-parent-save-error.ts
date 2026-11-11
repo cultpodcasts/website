@@ -38,7 +38,7 @@ export function catalogueParentSaveError(error: unknown): string | undefined {
     return withNothingChanged(message);
   }
   if (error.status === 409) {
-    return withNothingChanged(`Already used by another news outlet, TV show or podcast: ${message}`);
+    return withNothingChanged(`Conflict: ${message}`);
   }
   return undefined;
 }

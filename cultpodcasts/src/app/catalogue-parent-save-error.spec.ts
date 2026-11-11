@@ -21,9 +21,15 @@ describe('catalogueParentSaveError (RPP #1370)', () => {
   it('names the owner on a 409 service-id conflict', () => {
     expect(
       catalogueParentSaveError(
-        httpError(409, { message: 'additionalYouTubeChannelIds UCsyntheticChannel000002 is already used', ids: ['dddddddd-dddd-4ddd-8ddd-dddddddddddd'] })
+        httpError(409, {
+          message:
+            "additionalYouTubeChannelIds 'UCsyntheticChannel000002' is already used by dddddddd-dddd-4ddd-8ddd-dddddddddddd; URL submission could not tell them apart.",
+          ids: ['dddddddd-dddd-4ddd-8ddd-dddddddddddd']
+        })
       )
-    ).toBe('Already used by another news outlet, TV show or podcast: additionalYouTubeChannelIds UCsyntheticChannel000002 is already used. Nothing was changed.');
+    ).toBe(
+      "Conflict: additionalYouTubeChannelIds 'UCsyntheticChannel000002' is already used by dddddddd-dddd-4ddd-8ddd-dddddddddddd; URL submission could not tell them apart. Nothing was changed."
+    );
   });
 
   it('leaves other failures to the generic copy', () => {

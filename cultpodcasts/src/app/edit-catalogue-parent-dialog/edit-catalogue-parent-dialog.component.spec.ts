@@ -754,6 +754,16 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
+  it('Add YouTube channel focuses the new row once it renders', async () => {
+    const { fixture } = await open({ additionalYouTubeChannelIds: [extraA] });
+    await showTab(fixture, 'Details');
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.add-additional-channel')!.click();
+    await fixture.whenStable();
+    await settle();
+    expect(channelInputs(fixture).map((input) => input.name)).toEqual(['additionalYouTubeChannelId0', 'additionalYouTubeChannelId1']);
+    expect((document.activeElement as HTMLInputElement | null)?.name).toBe('additionalYouTubeChannelId1');
+  });
+
   it('removing every channel sends [] (clears)', async () => {
     const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [extraA] });
     await showTab(fixture, 'Details');
@@ -814,12 +824,15 @@ describe('EditCatalogueParentDialogComponent (news outlet additional YouTube cha
 
     done = dialog.save();
     (await expectSoon(patchUrl)).flush(
-      { message: `additionalYouTubeChannelIds ${extraA} is already used`, ids: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'] },
+      {
+        message: `additionalYouTubeChannelIds '${extraA}' is already used by eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee; URL submission could not tell them apart.`,
+        ids: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee']
+      },
       { status: 409, statusText: 'Conflict' }
     );
     await done;
     expect(dialog.saveErrorMessage()).toBe(
-      `Already used by another news outlet, TV show or podcast: additionalYouTubeChannelIds ${extraA} is already used. Nothing was changed.`
+      `Conflict: additionalYouTubeChannelIds '${extraA}' is already used by eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee; URL submission could not tell them apart. Nothing was changed.`
     );
   });
 });

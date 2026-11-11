@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
+import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, inject, Injector, signal } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
@@ -107,6 +107,8 @@ export class EditCatalogueParentDialogComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly regexPresetsService = inject(RegexPresetsService);
+  private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly label = hubParentLabel(this.data.hub);
   protected readonly isTv = this.data.hub === "tv";
@@ -150,9 +152,13 @@ export class EditCatalogueParentDialogComponent {
     this.model.set({ ...model, additionalYouTubeChannelIds: [...model.additionalYouTubeChannelIds, ""] });
     this.additionalChannelsError.set(null);
     const index = model.additionalYouTubeChannelIds.length;
-    queueMicrotask(() => {
-      document.querySelector<HTMLInputElement>(`input[name="additionalYouTubeChannelId${index}"]`)?.focus();
-    });
+    // Zoneless: the new row exists only after the next render, so focus it then (a microtask runs too early).
+    afterNextRender(
+      () => {
+        this.host.nativeElement.querySelector<HTMLInputElement>(`input[name="additionalYouTubeChannelId${index}"]`)?.focus();
+      },
+      { injector: this.injector }
+    );
   }
 
   protected setAdditionalYouTubeChannel(index: number, value: string): void {
