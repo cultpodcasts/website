@@ -33,7 +33,10 @@ export function releasedWithinDays(release: Date | string | null | undefined, da
   return now.getTime() - released < days * 24 * 60 * 60 * 1000;
 }
 
-/** Confirms and sends the curator "Move to film" command for one podcast episode. */
+/**
+ * Confirms and sends the curator "Move to film" command for one podcast episode, or for one news report when
+ * `newsReportId` is set (RPP #1368: same body, identity prompt and outcome, POST /newsreport/{id}/film).
+ */
 @Component({
   selector: 'app-move-episode-to-film-dialog',
   imports: [
@@ -53,12 +56,23 @@ export class MoveEpisodeToFilmDialogComponent {
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
   private readonly identityDialog = inject(MatDialog);
+  /** What moves, and what it leaves: a podcast episode, or a news report (RPP #1368). */
+  readonly item: string;
+  readonly source: string;
 
   constructor(
     private dialogRef: MatDialogRef<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogClose>,
     @Inject(MAT_DIALOG_DATA) public data: MoveEpisodeToFilmDialogData,
     private curationSubmit: CurationSubmitService) {
     this.title = new FormControl<string>(data.episodeTitle ?? '', { nonNullable: true });
+    this.item = data.newsReportId ? 'news report' : 'episode';
+    this.source = data.newsReportId ? 'news organisation' : 'podcast';
+  }
+
+  private send(body: EpisodeFilmMoveRequest) {
+    return this.data.newsReportId
+      ? this.curationSubmit.postNewsReportToFilm(this.data.newsReportId, body)
+      : this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, body);
   }
 
   /** The title to send: null keeps the episode title on the server. */
@@ -89,9 +103,7 @@ export class MoveEpisodeToFilmDialogComponent {
     }
     try {
       for (let round = 0; round < MAX_IDENTITY_ROUNDS; round++) {
-        const resp = await firstValueFrom(
-          this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, body)
-        );
+        const resp = await firstValueFrom(this.send(body));
         const outcome = resp.body as EpisodeFilmMoveResponse | null;
         if (resp.status === 200 && outcome?.cancelled) {
           this.isSending.set(false);
@@ -115,8 +127,9 @@ export class MoveEpisodeToFilmDialogComponent {
         if (resp.status === 202) {
           this.dialogRef.close({
             moved: true,
-            filmId: outcome?.filmId ?? this.data.episodeId,
-            name: outcome?.name ?? (this.requestTitle() ?? this.data.episodeTitle)
+            filmId: outcome?.filmId ?? this.data.newsReportId ?? this.data.episodeId,
+            name: outcome?.name ?? (this.requestTitle() ?? this.data.episodeTitle),
+            ...(outcome?.emptiedNewsOrganisationId ? { emptiedNewsOrganisationId: outcome.emptiedNewsOrganisationId } : {})
           });
           return;
         }
@@ -128,7 +141,7 @@ export class MoveEpisodeToFilmDialogComponent {
       this.error.set('Identity lookup stopped after too many prompts.');
     } catch (e) {
       this.isSending.set(false);
-      this.error.set(moveErrorMessage(e as HttpErrorResponse));
+      this.error.set(moveErrorMessage(e as HttpErrorResponse, this.item));
       console.error(e);
     }
   }
@@ -139,12 +152,7 @@ export class MoveEpisodeToFilmDialogComponent {
   ): Promise<EpisodeFilmMoveRequest | null> {
     const identity = await promptAmbiguousIdentity(this.identityDialog, prompt);
     if (!identity || identity.decision === 'cancel') {
-      await firstValueFrom(
-        this.curationSubmit.postEpisodeToFilm(this.data.podcastId, this.data.episodeId, {
-          ...previous,
-          identityDecision: 'cancel'
-        })
-      ).catch(() => undefined);
+      await firstValueFrom(this.send({ ...previous, identityDecision: 'cancel' })).catch(() => undefined);
       return null;
     }
     return {
@@ -159,16 +167,16 @@ export class MoveEpisodeToFilmDialogComponent {
   }
 }
 
-export function moveErrorMessage(e: HttpErrorResponse): string {
+export function moveErrorMessage(e: HttpErrorResponse, item = 'episode'): string {
   const body = e.error as { error?: string } | null | undefined;
   switch (e.status) {
     case 409:
       return 'A film with this name already exists. Choose a different title.';
     case 400:
-      return body?.error ?? 'The episode cannot be moved to a film.';
+      return body?.error ?? `The ${item} cannot be moved to a film.`;
     case 404:
-      return 'The episode was not found. It may already have been moved.';
+      return `The ${item} was not found. It may already have been moved.`;
     default:
-      return 'An error occurred moving the episode. Sending again resumes an interrupted move.';
+      return `An error occurred moving the ${item}. Sending again resumes an interrupted move.`;
   }
 }

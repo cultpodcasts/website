@@ -21,11 +21,13 @@ describe('MoveEpisodeToTvShowDialogComponent', () => {
   let component: MoveEpisodeToTvShowDialogComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let postEpisodeToTvShow: ReturnType<typeof vi.fn>;
+  let postNewsReportToTvShow: ReturnType<typeof vi.fn>;
   let suggest: ReturnType<typeof vi.fn>;
 
   async function create(data: Partial<MoveEpisodeToTvShowDialogData> = {}) {
     dialogRef = { close: vi.fn() };
     postEpisodeToTvShow = vi.fn();
+    postNewsReportToTvShow = vi.fn();
     suggest = vi.fn(async () => [show, { ...show, label: 'Synthetic Show (alias)' }]);
     await TestBed.configureTestingModule({
       imports: [MoveEpisodeToTvShowDialogComponent],
@@ -41,7 +43,7 @@ describe('MoveEpisodeToTvShowDialogComponent', () => {
             ...data
           }
         },
-        { provide: CurationSubmitService, useValue: { postEpisodeToTvShow } },
+        { provide: CurationSubmitService, useValue: { postEpisodeToTvShow, postNewsReportToTvShow } },
         { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest } }
       ]
     }).compileComponents();
@@ -148,6 +150,37 @@ describe('MoveEpisodeToTvShowDialogComponent', () => {
     expect(component.error()).toBe('Several TV shows have this name');
     expect(component.isSending()).toBe(false);
     expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('moves a news report with POST newsreport/{id}/tvshow and passes on the emptied news organisation', async () => {
+    await create({ newsReportId: 'report-1', podcastName: 'Synthetic Outlet' });
+    postNewsReportToTvShow.mockReturnValue(of({
+      status: 202,
+      body: { tvShowId: showId, tvShowName: 'Synthetic Show', episodeId: 'report-1', createdShow: false, emptiedNewsOrganisationId: 'outlet-1' }
+    }));
+    component.showQuery.setValue('Synthetic Show');
+
+    component.move();
+
+    expect(postEpisodeToTvShow).not.toHaveBeenCalled();
+    expect(postNewsReportToTvShow).toHaveBeenCalledWith('report-1', { tvShowName: 'Synthetic Show' });
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      moved: true, tvShowId: showId, tvShowName: 'Synthetic Show', episodeId: 'report-1', createdShow: false,
+      emptiedNewsOrganisationId: 'outlet-1'
+    });
+  });
+
+  it('words the warning and errors for a news report', async () => {
+    await create({ newsReportId: 'report-1', podcastName: 'Synthetic Outlet' });
+    postNewsReportToTvShow.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    component.showQuery.setValue('Synthetic Show');
+
+    component.move();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('This removes the news report from its news organisation');
+    expect(component.error()).toBe('An error occurred moving the news report. Sending again resumes an interrupted move.');
   });
 
   it('Cancel closes moved:false without sending', async () => {

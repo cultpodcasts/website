@@ -239,3 +239,90 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     expect(releasedWithinDays('not a date', 3, now)).toBe(false);
   });
 });
+
+describe('MoveEpisodeToFilmDialogComponent for a news report', () => {
+  let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
+  let component: MoveEpisodeToFilmDialogComponent;
+  let dialogRef: { close: ReturnType<typeof vi.fn> };
+  let postEpisodeToFilm: ReturnType<typeof vi.fn>;
+  let postNewsReportToFilm: ReturnType<typeof vi.fn>;
+  let openIdentityDialog: ReturnType<typeof vi.fn>;
+  const data: MoveEpisodeToFilmDialogData = {
+    podcastId: 'outlet-1',
+    episodeId: 'report-1',
+    episodeTitle: 'Synthetic Report Title',
+    newsReportId: 'report-1'
+  };
+
+  beforeEach(async () => {
+    dialogRef = { close: vi.fn() };
+    postEpisodeToFilm = vi.fn();
+    postNewsReportToFilm = vi.fn();
+    openIdentityDialog = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [MoveEpisodeToFilmDialogComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: MatDialogRef, useValue: dialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: CurationSubmitService, useValue: { postEpisodeToFilm, postNewsReportToFilm } }
+      ]
+    })
+      .overrideProvider(MatDialog, {
+        useValue: {
+          open: (...args: unknown[]) =>
+            (openIdentityDialog as unknown as (...a: unknown[]) => unknown)(...args)
+        }
+      })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('sends POST newsreport/{id}/film and closes with the film and the emptied news organisation', async () => {
+    postNewsReportToFilm.mockReturnValue(of({
+      status: 202, body: { filmId: 'report-1', name: 'Synthetic Report Title', emptiedNewsOrganisationId: 'outlet-1' }
+    }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+    expect(postNewsReportToFilm).toHaveBeenCalledWith('report-1', {});
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      moved: true, filmId: 'report-1', name: 'Synthetic Report Title', emptiedNewsOrganisationId: 'outlet-1'
+    });
+  });
+
+  it('re-POSTs the identity answer to the news report endpoint', async () => {
+    const identityDecision = {
+      target: 'Film',
+      query: 'Synthetic Report Title',
+      candidates: [{ key: 'tmdb:42', title: 'Synthetic Film', year: 2020, kind: 'Film', source: 'tmdb' }]
+    };
+    postNewsReportToFilm
+      .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
+      .mockReturnValueOnce(of({ status: 202, body: { filmId: 'report-1', name: 'Synthetic Film' } }));
+    openIdentityDialog.mockReturnValue({ afterClosed: () => of({ decision: 'select', key: 'tmdb:42' }) });
+
+    await component.move();
+
+    expect(postNewsReportToFilm).toHaveBeenCalledTimes(2);
+    expect(postNewsReportToFilm.mock.calls[1][0]).toBe('report-1');
+    expect(postNewsReportToFilm.mock.calls[1][1]).toMatchObject({ identityDecision: 'select', selectedIdentityKey: 'tmdb:42' });
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+    expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, filmId: 'report-1', name: 'Synthetic Film' });
+  });
+
+  it('words the warning and errors for a news report', async () => {
+    postNewsReportToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+
+    await component.move();
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('This removes the news report from its news organisation');
+    expect(component.error()).toBe('The news report was not found. It may already have been moved.');
+  });
+});

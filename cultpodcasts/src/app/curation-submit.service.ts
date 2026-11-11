@@ -126,6 +126,24 @@ export class CurationSubmitService {
     });
   }
 
+  /** Curator: move one news report into an existing or new TV show (same id; RPP #1368). Same body and outcome as the episode move. */
+  postNewsReportToTvShow(reportId: string, request: EpisodeTvShowMoveRequest) {
+    const url = new URL(`/newsreport/${encodeURIComponent(reportId)}/tvshow`, environment.api).toString();
+    return this.http.post<EpisodeTvShowMoveResponse>(url, request, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /** Curator: move one news report into a new film (same id; RPP #1368). Same body, identity prompt and outcome as the episode move. */
+  postNewsReportToFilm(reportId: string, request: EpisodeFilmMoveRequest = {}) {
+    const url = new URL(`/newsreport/${encodeURIComponent(reportId)}/film`, environment.api).toString();
+    return this.http.post<EpisodeFilmMoveResponse>(url, request, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
   /** Curator GET of a news report by guid: playable fields plus the outlet id and name. */
   getNewsReport(reportId: string) {
     const url = new URL(`/newsreport/${encodeURIComponent(reportId)}`, environment.api).toString();
