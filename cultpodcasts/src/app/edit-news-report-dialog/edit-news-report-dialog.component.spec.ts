@@ -3,12 +3,16 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { of } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { of, Subject, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { newPlayableLinkGroup } from '../playable-edit-form.util';
-import { EditNewsReportDialogComponent } from './edit-news-report-dialog.component';
+import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
+import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
+import { announceNewsReportMove, EditNewsReportDialogComponent } from './edit-news-report-dialog.component';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
@@ -41,10 +45,18 @@ const synthetic = {
 
 describe('EditNewsReportDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
+  let openDialog: ReturnType<typeof vi.fn>;
+  let openSnackBar: ReturnType<typeof vi.fn>;
+  let snackAction: Subject<void>;
+  let navigate: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<EditNewsReportDialogComponent>;
 
   beforeEach(async () => {
     close = vi.fn();
+    openDialog = vi.fn();
+    snackAction = new Subject<void>();
+    openSnackBar = vi.fn(() => ({ onAction: () => snackAction }));
+    navigate = vi.fn(async () => true);
     await TestBed.configureTestingModule({
       imports: [EditNewsReportDialogComponent],
       providers: [
@@ -53,10 +65,14 @@ describe('EditNewsReportDialogComponent', () => {
         provideHttpClientTesting(),
         { provide: MAT_DIALOG_DATA, useValue: { reportId } },
         { provide: MatDialogRef, useValue: { close } },
+        { provide: MatSnackBar, useValue: { open: openSnackBar } },
+        { provide: Router, useValue: { navigate } },
         { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
       ]
     })
-      .overrideProvider(MatDialog, { useValue: { open: vi.fn() } })
+      .overrideProvider(MatDialog, {
+        useValue: { open: (...args: unknown[]) => (openDialog as unknown as (...a: unknown[]) => unknown)(...args) }
+      })
       .compileComponents();
   });
 
@@ -190,5 +206,107 @@ describe('EditNewsReportDialogComponent', () => {
     TestBed.inject(HttpTestingController).match(() => true);
     await settle();
     expect(fixture.componentInstance.isInError()).toBe(true);
+  });
+
+  function button(selector: string): HTMLButtonElement {
+    const el = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(selector);
+    expect(el).not.toBeNull();
+    return el!;
+  }
+
+  it('Move to TV show opens the move dialog for this news report and sends nothing itself', async () => {
+    await load();
+    openDialog.mockReturnValue({ afterClosed: () => of({ moved: false }) });
+
+    button('button.move-to-tv-show').click();
+
+    expect(openDialog).toHaveBeenCalledTimes(1);
+    const [component, config] = openDialog.mock.calls[0];
+    expect(component).toBe(MoveEpisodeToTvShowDialogComponent);
+    expect(config.data).toMatchObject({
+      newsReportId: reportId,
+      episodeId: reportId,
+      podcastId: outletId,
+      podcastName: 'Desk',
+      episodeTitle: 'Bulletin',
+      release: '2026-01-02',
+      hasUnsavedChanges: false
+    });
+    expect(close).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('after a TV show move closes as moved, announces it and opens the TV episode page', async () => {
+    await load();
+    openDialog.mockReturnValue({
+      afterClosed: () => of({ moved: true, tvShowId: 'show-1', tvShowName: 'Synthetic Show', episodeId: reportId, createdShow: true })
+    });
+
+    button('button.move-to-tv-show').click();
+
+    expect(close).toHaveBeenCalledWith({ moved: true, parentName: 'Desk' });
+    expect(openSnackBar).toHaveBeenCalledWith('Moved to new TV show', 'Ok', { duration: 10000 });
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('after a film move that empties the outlet offers Retire, which PATCHes the outlet removed', async () => {
+    await load();
+    openDialog.mockReturnValue({
+      afterClosed: () => of({ moved: true, filmId: reportId, name: 'Bulletin', emptiedNewsOrganisationId: outletId })
+    });
+
+    button('button.move-to-film').click();
+
+    expect(openDialog.mock.calls[0][0]).toBe(MoveEpisodeToFilmDialogComponent);
+    expect(openDialog.mock.calls[0][1].data).toMatchObject({ newsReportId: reportId, episodeTitle: 'Bulletin' });
+    expect(close).toHaveBeenCalledWith({ moved: true, parentName: 'Desk' });
+    expect(openSnackBar).toHaveBeenCalledWith('Moved to film. Desk has no reports left.', 'Retire', { duration: 20000 });
+    expect(navigate).toHaveBeenCalledTimes(1);
+    TestBed.inject(HttpTestingController).expectNone(api(`/newsorganisation/${outletId}`));
+
+    snackAction.next();
+    const patch = await expectSoon(api(`/newsorganisation/${outletId}`), 'PATCH');
+    expect(patch.request.body).toEqual({ removed: true });
+    patch.flush(null, { status: 202, statusText: 'Accepted' });
+    await settle();
+    expect(openSnackBar).toHaveBeenLastCalledWith('Desk retired', 'Ok', { duration: 5000 });
+  });
+
+  it('does nothing when the move dialog is cancelled', async () => {
+    await load();
+    openDialog.mockReturnValue({ afterClosed: () => of({ moved: false }) });
+
+    button('button.move-to-film').click();
+
+    expect(close).not.toHaveBeenCalled();
+    expect(openSnackBar).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe('announceNewsReportMove', () => {
+  it('just announces the move when the outlet still has reports', () => {
+    const open = vi.fn();
+    const patchCatalogueParent = vi.fn();
+
+    announceNewsReportMove({ open } as never, { patchCatalogueParent } as never, 'Moved to TV show', null, 'Desk');
+
+    expect(open).toHaveBeenCalledWith('Moved to TV show', 'Ok', { duration: 10000 });
+    expect(patchCatalogueParent).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed retire and leaves the outlet alone otherwise', () => {
+    const action = new Subject<void>();
+    const open = vi.fn(() => ({ onAction: () => action }));
+    const patchCatalogueParent = vi.fn(() => throwError(() => new Error('synthetic')));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    announceNewsReportMove({ open } as never, { patchCatalogueParent } as never, 'Moved to film', 'outlet-1', '');
+
+    expect(open).toHaveBeenCalledWith('Moved to film. The news organisation has no reports left.', 'Retire', { duration: 20000 });
+    expect(patchCatalogueParent).not.toHaveBeenCalled();
+    action.next();
+    expect(patchCatalogueParent).toHaveBeenCalledWith('news', 'outlet-1', { removed: true });
+    expect(open).toHaveBeenLastCalledWith('Could not retire the news organisation', 'Ok', { duration: 10000 });
   });
 });

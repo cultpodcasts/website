@@ -17,6 +17,8 @@ export interface EpisodeTvShowMoveResponse {
   createdShow?: boolean;
   error?: string;
   failureIndexing?: boolean;
+  /** Move of a news report only: the news organisation the move left with no reports (RPP #1368). */
+  emptiedNewsOrganisationId?: string | null;
 }
 
 export interface MoveEpisodeToTvShowDialogData {
@@ -28,6 +30,11 @@ export interface MoveEpisodeToTvShowDialogData {
   hasUnsavedChanges?: boolean;
   /** Episode release; a recent one can be re-added to the podcast by the Indexer (RPP #1068). */
   release?: Date | string | null;
+  /**
+   * Set to move this news report instead of a podcast episode (POST /newsreport/{id}/tvshow, RPP #1368).
+   * podcastId and episodeId are then ignored; podcastName is the news organisation name.
+   */
+  newsReportId?: string;
 }
 
 export interface MoveEpisodeToTvShowDialogClose {
@@ -36,4 +43,6 @@ export interface MoveEpisodeToTvShowDialogClose {
   tvShowName?: string;
   episodeId?: string;
   createdShow?: boolean;
+  /** Move of a news report only: the news organisation the move left with no reports. */
+  emptiedNewsOrganisationId?: string;
 }
