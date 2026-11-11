@@ -1,4 +1,4 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -272,6 +272,22 @@ describe('EditNewsReportDialogComponent', () => {
     expect(openSnackBar).toHaveBeenLastCalledWith('Desk retired', 'Ok', { duration: 5000 });
   });
 
+  it('when Retire hits a 404 (stale id or already removed) says there is nothing left to do', async () => {
+    await load();
+    openDialog.mockReturnValue({
+      afterClosed: () => of({ moved: true, filmId: reportId, name: 'Bulletin', emptiedNewsOrganisationId: outletId })
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    button('button.move-to-film').click();
+    snackAction.next();
+    const patch = await expectSoon(api(`/newsorganisation/${outletId}`), 'PATCH');
+    expect(patch.request.body).toEqual({ removed: true });
+    patch.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    await settle();
+    expect(openSnackBar).toHaveBeenLastCalledWith('Desk was already removed or no longer exists', 'Ok', { duration: 10000 });
+  });
+
   it('does nothing when the move dialog is cancelled', async () => {
     await load();
     openDialog.mockReturnValue({ afterClosed: () => of({ moved: false }) });
@@ -295,7 +311,7 @@ describe('announceNewsReportMove', () => {
     expect(patchCatalogueParent).not.toHaveBeenCalled();
   });
 
-  it('reports a failed retire and leaves the outlet alone otherwise', () => {
+  it('reports a failed retire (non-404) and leaves the outlet alone otherwise', () => {
     const action = new Subject<void>();
     const open = vi.fn(() => ({ onAction: () => action }));
     const patchCatalogueParent = vi.fn(() => throwError(() => new Error('synthetic')));
@@ -308,5 +324,19 @@ describe('announceNewsReportMove', () => {
     action.next();
     expect(patchCatalogueParent).toHaveBeenCalledWith('news', 'outlet-1', { removed: true });
     expect(open).toHaveBeenLastCalledWith('Could not retire the news organisation', 'Ok', { duration: 10000 });
+  });
+
+  it('tells the curator a stale or already-removed outlet (404) needs nothing more', () => {
+    const action = new Subject<void>();
+    const open = vi.fn(() => ({ onAction: () => action }));
+    const patchCatalogueParent = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found' })));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    announceNewsReportMove({ open } as never, { patchCatalogueParent } as never, 'Moved to film', 'outlet-1', 'Desk');
+
+    action.next();
+    expect(patchCatalogueParent).toHaveBeenCalledWith('news', 'outlet-1', { removed: true });
+    expect(open).toHaveBeenLastCalledWith('Desk was already removed or no longer exists', 'Ok', { duration: 10000 });
+    expect(open).not.toHaveBeenCalledWith('Could not retire Desk', 'Ok', { duration: 10000 });
   });
 });

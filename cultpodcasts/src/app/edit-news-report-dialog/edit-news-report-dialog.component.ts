@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -48,7 +49,10 @@ export function announceNewsReportMove(
       next: () => snackBar.open(`${outlet} retired`, 'Ok', { duration: 5000 }),
       error: (e: unknown) => {
         console.error(e);
-        snackBar.open(`Could not retire ${named || 'the news organisation'}`, 'Ok', { duration: 10000 });
+        const gone = e instanceof HttpErrorResponse && e.status === 404;
+        snackBar.open(gone
+          ? `${outlet} was already removed or no longer exists`
+          : `Could not retire ${named || 'the news organisation'}`, 'Ok', { duration: 10000 });
       }
     });
   });
