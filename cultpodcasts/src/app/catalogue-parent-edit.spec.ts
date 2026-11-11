@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CatalogueParentDto } from './catalogue-parent.interface';
-import { catalogueParentChanges, catalogueParentEditModel, historyDateText, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { additionalYouTubeChannelIdsError, catalogueParentChanges, catalogueParentEditModel, historyDateText, normaliseYouTubeChannelIds, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubForParentKind, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -308,5 +308,60 @@ describe('historyDateText (playlist id history)', () => {
     expect(historyDateText('')).toBe('');
     expect(historyDateText(null)).toBe('');
     expect(historyDateText(undefined)).toBe('');
+  });
+});
+
+describe('news organisation additional YouTube channels (RPP #1370)', () => {
+  const main = 'UCsyntheticChannel000001';
+  const extraA = 'UCsyntheticChannel000002';
+  const extraB = 'UCsyntheticChannel000003';
+  const withChannels: CatalogueParentDto = { ...outlet, youTubeChannelId: main, additionalYouTubeChannelIds: [extraA] };
+
+  it('loads the stored ids as editable rows ([] when none or null)', () => {
+    expect(catalogueParentEditModel(withChannels).additionalYouTubeChannelIds).toEqual([extraA]);
+    expect(catalogueParentEditModel(outlet).additionalYouTubeChannelIds).toEqual([]);
+    expect(catalogueParentEditModel({ ...outlet, additionalYouTubeChannelIds: null }).additionalYouTubeChannelIds).toEqual([]);
+  });
+
+  it('sends nothing when the rows only differ by blanks, spaces or repeats', () => {
+    const model = catalogueParentEditModel(withChannels);
+    model.additionalYouTubeChannelIds = [` ${extraA} `, '', extraA];
+    expect(catalogueParentChanges(withChannels, model, false)).toEqual({});
+  });
+
+  it('sends the whole normalised list when a channel is added (list replaces)', () => {
+    const model = catalogueParentEditModel(withChannels);
+    model.additionalYouTubeChannelIds = [extraA, ` ${extraB}`, ''];
+    expect(catalogueParentChanges(withChannels, model, false)).toEqual({ additionalYouTubeChannelIds: [extraA, extraB] });
+  });
+
+  it('sends [] when every channel is removed, and nothing when none were stored and none added', () => {
+    const model = catalogueParentEditModel(withChannels);
+    model.additionalYouTubeChannelIds = [];
+    expect(catalogueParentChanges(withChannels, model, false)).toEqual({ additionalYouTubeChannelIds: [] });
+    const empty = catalogueParentEditModel(outlet);
+    empty.additionalYouTubeChannelIds = [''];
+    expect(catalogueParentChanges(outlet, empty, false)).toEqual({});
+  });
+
+  it('never sends additionalYouTubeChannelIds for TV shows', () => {
+    const model = catalogueParentEditModel(withChannels);
+    model.additionalYouTubeChannelIds = [extraB];
+    expect(catalogueParentChanges(withChannels, model, true)).not.toHaveProperty('additionalYouTubeChannelIds');
+  });
+
+  it('normalises like the API: trimmed, blanks and repeats dropped, first kept', () => {
+    expect(normaliseYouTubeChannelIds([' b ', 'a', '', 'b', '  '])).toEqual(['b', 'a']);
+    expect(normaliseYouTubeChannelIds(null)).toEqual([]);
+  });
+
+  it('refuses a non-channel id or the main channel, and allows blank rows', () => {
+    expect(additionalYouTubeChannelIdsError([extraA, ''], main)).toBeNull();
+    expect(additionalYouTubeChannelIdsError([], main)).toBeNull();
+    expect(additionalYouTubeChannelIdsError(['@handle'], main)).toContain("'@handle' is not a YouTube channel id");
+    expect(additionalYouTubeChannelIdsError(['PLsyntheticplaylist0000000'], main)).toContain('is not a YouTube channel id');
+    expect(additionalYouTubeChannelIdsError(['UCtooShort'], main)).toContain('is not a YouTube channel id');
+    expect(additionalYouTubeChannelIdsError([` ${main} `], main)).toContain('is the main YouTube channel');
+    expect(additionalYouTubeChannelIdsError([main], null)).toBeNull();
   });
 });

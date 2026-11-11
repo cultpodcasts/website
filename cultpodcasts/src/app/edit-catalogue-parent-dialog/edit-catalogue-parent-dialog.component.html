@@ -51,6 +51,30 @@
                     }
                 </p>
                 }
+                @if (!isTv) {
+                <div class="additional-channels" id="additional-youtube-channels">
+                    <p class="hint"><strong>Additional YouTube channels</strong></p>
+                    @for (channel of m.additionalYouTubeChannelIds; track $index) {
+                    <mat-form-field class="full-width">
+                        <mat-label>Additional YouTube channel id</mat-label>
+                        <input type="text" [name]="'additionalYouTubeChannelId' + $index" placeholder="UC…"
+                            [ngModel]="channel" (ngModelChange)="setAdditionalYouTubeChannel($index, $event)" matInput>
+                        <button type="button" matIconButton matSuffix
+                            [attr.aria-label]="'Remove additional YouTube channel ' + ($index + 1)"
+                            (click)="removeAdditionalYouTubeChannel($index)">
+                            <mat-icon>clear</mat-icon>
+                        </button>
+                    </mat-form-field>
+                    }
+                    @if (additionalChannelsError(); as channelsError) {
+                    <p id="additional-youtube-channels-error" class="hint invalid" role="alert">{{ channelsError }}</p>
+                    }
+                    <button type="button" mat-stroked-button color="primary" class="add-additional-channel"
+                        (click)="addAdditionalYouTubeChannel()">Add YouTube channel</button>
+                    <p class="hint">Each additional channel is indexed and matched as a whole channel. The playlist id
+                        above applies only to the main channel.</p>
+                </div>
+                }
                 <div class="indexing-hints" aria-live="polite">
                     <p class="hint"><strong>YouTube indexing hints</strong> (read-only)</p>
                     @if (displayIndexingHints(); as hints) {

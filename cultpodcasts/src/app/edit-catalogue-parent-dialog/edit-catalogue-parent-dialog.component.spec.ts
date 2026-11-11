@@ -683,6 +683,173 @@ describe('EditCatalogueParentDialogComponent (news outlet Flags tab)', () => {
   });
 });
 
+describe('EditCatalogueParentDialogComponent (news outlet additional YouTube channels, RPP #1370)', () => {
+  const outletId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  const main = 'UCsyntheticChannel000001';
+  const extraA = 'UCsyntheticChannel000002';
+  const extraB = 'UCsyntheticChannel000003';
+  const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
+  const patchUrl = new URL(`/newsorganisation/${outletId}`, environment.api).toString();
+  const subjectsUrl = new URL('/subjects', environment.api).toString();
+  const languagesUrl = new URL('/languages', environment.api).toString();
+  let close: ReturnType<typeof vi.fn>;
+
+  type ChannelInternals = Internals & {
+    addAdditionalYouTubeChannel(): void;
+    setAdditionalYouTubeChannel(index: number, value: string): void;
+    removeAdditionalYouTubeChannel(index: number): void;
+    additionalChannelsError(): string | null;
+  };
+
+  beforeEach(async () => {
+    close = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [EditCatalogueParentDialogComponent],
+      providers: dialogProviders({ hub: 'news', name: 'Desk' }, close, vi.fn())
+    }).compileComponents();
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  async function open(outlet: object): Promise<{ fixture: ComponentFixture<EditCatalogueParentDialogComponent>; dialog: ChannelInternals }> {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    (await expectSoon(getUrl)).flush({ id: outletId, name: 'Desk', youTubeChannelId: main, ...outlet });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    return { fixture, dialog: fixture.componentInstance as unknown as ChannelInternals };
+  }
+
+  function channelInputs(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): HTMLInputElement[] {
+    return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('input[name^="additionalYouTubeChannelId"]'));
+  }
+
+  it('lists the stored channels on Details with a remove button each and an Add button', async () => {
+    const { fixture } = await open({ additionalYouTubeChannelIds: [extraA, extraB] });
+    await showTab(fixture, 'Details');
+    await settle();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain('Additional YouTube channels');
+    expect(root.querySelector('#additional-youtube-channels')?.textContent).toContain('applies only to the main channel');
+    expect(channelInputs(fixture).map((input) => input.name)).toEqual(['additionalYouTubeChannelId0', 'additionalYouTubeChannelId1']);
+    expect(root.querySelector('[aria-label="Remove additional YouTube channel 2"]')).not.toBeNull();
+    expect(root.querySelector('button.add-additional-channel')?.textContent?.trim()).toBe('Add YouTube channel');
+  });
+
+  it('Add then Save PATCHes the whole list (list replaces)', async () => {
+    const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [extraA] });
+    await showTab(fixture, 'Details');
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.add-additional-channel')!.click();
+    fixture.detectChanges();
+    expect(dialog.model()!.additionalYouTubeChannelIds).toEqual([extraA, '']);
+    dialog.setAdditionalYouTubeChannel(1, ` ${extraB} `);
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ additionalYouTubeChannelIds: [extraA, extraB] });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
+  });
+
+  it('removing every channel sends [] (clears)', async () => {
+    const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [extraA] });
+    await showTab(fixture, 'Details');
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Remove additional YouTube channel 1"]')!.click();
+    fixture.detectChanges();
+    expect(dialog.model()!.additionalYouTubeChannelIds).toEqual([]);
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ additionalYouTubeChannelIds: [] });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+  });
+
+  it('leaves the list out of the PATCH when other fields change, and an added blank row is a no-op', async () => {
+    const { dialog } = await open({ additionalYouTubeChannelIds: [extraA] });
+    dialog.addAdditionalYouTubeChannel();
+    dialog.model()!.publisher = 'Desk Media';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ publisher: 'Desk Media' });
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+  });
+
+  it('blocks Save on a non-channel id or the main channel and shows the reason on Details', async () => {
+    const { fixture, dialog } = await open({ additionalYouTubeChannelIds: [] });
+    dialog.selectedTabIndex.set(PODCAST_META_TAB_INDEX);
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubeChannel(0, '@deskarchive');
+    await dialog.save();
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(dialog.additionalChannelsError()).toContain("'@deskarchive' is not a YouTube channel id");
+    expect(dialog.selectedTabIndex()).toBe(PODCAST_DETAILS_TAB_INDEX);
+    await showTab(fixture, 'Details');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#additional-youtube-channels-error')?.textContent)
+      .toContain("'@deskarchive' is not a YouTube channel id");
+
+    dialog.setAdditionalYouTubeChannel(0, main);
+    expect(dialog.additionalChannelsError()).toBeNull();
+    await dialog.save();
+    TestBed.inject(HttpTestingController).expectNone(patchUrl);
+    expect(dialog.additionalChannelsError()).toContain('is the main YouTube channel');
+  });
+
+  it('shows the API reason for a 400 channel refusal and a 409 owner conflict', async () => {
+    const { dialog } = await open({ additionalYouTubeChannelIds: [] });
+    dialog.addAdditionalYouTubeChannel();
+    dialog.setAdditionalYouTubeChannel(0, extraA);
+    let done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: `YouTube channel '${extraA}' is already claimed channel-wide (no playlist) by x.`, code: 'channelWideYouTubeConflict' },
+      { status: 400, statusText: 'Bad Request' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(`YouTube channel '${extraA}' is already claimed channel-wide (no playlist) by x. Nothing was changed.`);
+    expect(close).not.toHaveBeenCalled();
+
+    done = dialog.save();
+    (await expectSoon(patchUrl)).flush(
+      { message: `additionalYouTubeChannelIds ${extraA} is already used`, ids: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'] },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await done;
+    expect(dialog.saveErrorMessage()).toBe(
+      `Already used by another news outlet, TV show or podcast: additionalYouTubeChannelIds ${extraA} is already used. Nothing was changed.`
+    );
+  });
+});
+
+describe('EditCatalogueParentDialogComponent (TV show has no additional YouTube channels)', () => {
+  const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
+  const subjectsUrl = new URL('/subjects', environment.api).toString();
+  const languagesUrl = new URL('/languages', environment.api).toString();
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EditCatalogueParentDialogComponent],
+      providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, vi.fn(), vi.fn())
+    }).compileComponents();
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('does not render the additional channels section', async () => {
+    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    fixture.detectChanges();
+    (await expectSoon(getUrl)).flush({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', name: 'Nightly', youTubeChannelId: 'UCsyntheticChannel000001' });
+    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+    (await expectSoon(languagesUrl)).flush({ en: 'English' });
+    await settle();
+    await showTab(fixture, 'Details');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#additional-youtube-channels')).toBeNull();
+  });
+});
+
 describe('EditCatalogueParentDialogComponent (previous playlist ids, with the app JSON date interceptor)', () => {
   const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();

@@ -58,6 +58,47 @@ export const catalogueParentServiceIdFields = ["youTubeChannelId", "youTubePlayl
  */
 export const catalogueParentEditableServiceIdFields = ["youTubePlaylistId", "spotifyId"] as const;
 
+/** A YouTube channel id: `UC` followed by 22 characters (same rule as the RPP #1370 PATCH check). */
+const youTubeChannelIdPattern = /^UC[A-Za-z0-9_-]{22}$/;
+
+/**
+ * The additional YouTube channel ids as the API stores them (RPP #1370): trimmed, blanks and repeats dropped,
+ * first occurrence kept.
+ */
+export function normaliseYouTubeChannelIds(values: readonly string[] | null | undefined): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values ?? []) {
+    const trimmed = value.trim();
+    if (trimmed && !seen.has(trimmed)) {
+      seen.add(trimmed);
+      result.push(trimmed);
+    }
+  }
+  return result;
+}
+
+/**
+ * Curator copy when the news outlet's additional YouTube channels cannot be saved, or null when they can. Mirrors
+ * the API's 400s (`invalidAdditionalYouTubeChannelId`, `additionalYouTubeChannelIsMainChannel`) so Save is blocked
+ * before the request. Blank rows are ignored (they are dropped on save).
+ */
+export function additionalYouTubeChannelIdsError(
+  values: readonly string[],
+  mainChannelId: string | null | undefined
+): string | null {
+  const ids = normaliseYouTubeChannelIds(values);
+  const invalid = ids.find((id) => !youTubeChannelIdPattern.test(id));
+  if (invalid !== undefined) {
+    return `'${invalid}' is not a YouTube channel id (UC followed by 22 letters, digits, - or _).`;
+  }
+  const main = (mainChannelId ?? "").trim();
+  if (main && ids.includes(main)) {
+    return `'${main}' is the main YouTube channel; it cannot also be an additional channel.`;
+  }
+  return null;
+}
+
 /** Indexing regexes on the parent's `indexing` block (podcast Regexs tab parity). */
 export const catalogueParentRegexFields = [
   "titleRegex",
@@ -117,6 +158,8 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   tmdbId: string;
   language: string;
   ignoredSubjects: string[];
+  /** News organisations only: one row per additional YouTube channel id (blank rows are dropped on save). */
+  additionalYouTubeChannelIds: string[];
 };
 
 /** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
@@ -172,6 +215,7 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
     ignoredSubjects: [...(dto.ignoredSubjects ?? [])],
+    additionalYouTubeChannelIds: [...(dto.additionalYouTubeChannelIds ?? [])],
     releaseAuthority: dto.releaseAuthority || "Unset"
   } as CatalogueParentEditModel;
   for (const field of catalogueParentFlagFields) {
@@ -206,7 +250,8 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
  * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
- * `youTubeChannelId` is read-only and never sent.
+ * `youTubeChannelId` is read-only and never sent. News outlets (not TV) send `additionalYouTubeChannelIds` as the whole
+ * normalised list when it changed (`[]` when every row was removed); TV shows never send it.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -249,6 +294,12 @@ export function catalogueParentChanges(
   }
   if (!sameList(original.ignoredSubjects ?? [], edited.ignoredSubjects)) {
     changes.ignoredSubjects = [...edited.ignoredSubjects];
+  }
+  if (!includeTvIdentity) {
+    const channelsAfter = normaliseYouTubeChannelIds(edited.additionalYouTubeChannelIds);
+    if (!sameList(normaliseYouTubeChannelIds(original.additionalYouTubeChannelIds), channelsAfter)) {
+      changes.additionalYouTubeChannelIds = channelsAfter;
+    }
   }
   if (catalogueParentLanguageFormValue(original.language) !== edited.language) {
     changes.language = edited.language === "unset" ? "" : edited.language;

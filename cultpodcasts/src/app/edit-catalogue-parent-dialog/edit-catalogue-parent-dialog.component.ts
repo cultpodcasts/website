@@ -22,6 +22,7 @@ import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
 import {
+  additionalYouTubeChannelIdsError,
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
@@ -35,6 +36,7 @@ import {
   removesCatalogueParent,
   subjectOptions
 } from "../catalogue-parent-edit";
+import { catalogueParentSaveError } from "../catalogue-parent-save-error";
 import { ConfirmComponent } from "../confirm/confirm.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { openExternalUrl } from "../episode-form.util";
@@ -73,7 +75,8 @@ export interface EditCatalogueParentDialogResponse {
  * Curator edit of a news outlet / TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
  * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl. release authority and
- * minimum duration), Regexs, and Identity for TV.
+ * minimum duration), Regexs, and Identity for TV. News outlets also list additional YouTube channels on Details
+ * (RPP #1370): each is channel-wide, and the playlist id scopes only the main channel.
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
@@ -119,6 +122,8 @@ export class EditCatalogueParentDialogComponent {
   protected readonly model = signal<CatalogueParentEditModel | null>(null);
   protected readonly appleIdInvalid = signal(false);
   protected readonly identityInvalid = signal(false);
+  /** News only: why the additional YouTube channel rows cannot be saved (Details tab), or null. */
+  protected readonly additionalChannelsError = signal<string | null>(null);
   /** Minimum Duration (Meta tab) and YouTube Publication Delay (Details tab) are validated separately so each tab shows only its own error. */
   protected readonly minimumDurationInvalid = signal(false);
   protected readonly publicationDelayInvalid = signal(false);
@@ -137,6 +142,42 @@ export class EditCatalogueParentDialogComponent {
     this.model.set({ ...model, [field]: "" });
     this.identityInvalid.set(false);
   }
+  protected addAdditionalYouTubeChannel(): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    this.model.set({ ...model, additionalYouTubeChannelIds: [...model.additionalYouTubeChannelIds, ""] });
+    this.additionalChannelsError.set(null);
+    const index = model.additionalYouTubeChannelIds.length;
+    queueMicrotask(() => {
+      document.querySelector<HTMLInputElement>(`input[name="additionalYouTubeChannelId${index}"]`)?.focus();
+    });
+  }
+
+  protected setAdditionalYouTubeChannel(index: number, value: string): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    const ids = [...model.additionalYouTubeChannelIds];
+    ids[index] = value;
+    this.model.set({ ...model, additionalYouTubeChannelIds: ids });
+    this.additionalChannelsError.set(null);
+  }
+
+  protected removeAdditionalYouTubeChannel(index: number): void {
+    const model = this.model();
+    if (!model) {
+      return;
+    }
+    this.model.set({
+      ...model,
+      additionalYouTubeChannelIds: model.additionalYouTubeChannelIds.filter((_, i) => i !== index)
+    });
+    this.additionalChannelsError.set(null);
+  }
+
   protected readonly playlistHistory = signal<PlaylistIdHistoryEntry[]>([]);
   protected readonly indexingHints = signal<YouTubeIndexingHints | null>(null);
   protected readonly clearingIndexingHints = signal(false);
@@ -308,6 +349,13 @@ export class EditCatalogueParentDialogComponent {
       this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
       return;
     }
+    this.additionalChannelsError.set(
+      this.isTv ? null : additionalYouTubeChannelIdsError(model.additionalYouTubeChannelIds, model.youTubeChannelId)
+    );
+    if (this.additionalChannelsError()) {
+      this.selectedTabIndex.set(PODCAST_DETAILS_TAB_INDEX);
+      return;
+    }
     this.minimumDurationInvalid.set(!isValidDurationText(model.minimumDuration));
     this.publicationDelayInvalid.set(!isValidDurationText(model.youTubePublicationDelay));
     if (this.minimumDurationInvalid() || this.publicationDelayInvalid()) {
@@ -344,9 +392,13 @@ export class EditCatalogueParentDialogComponent {
       this.saveError.set(true);
     } catch (error) {
       const playlist = youtubePlaylistEditError(error);
+      const refused = playlist ? undefined : catalogueParentSaveError(error);
       if (playlist) {
         // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
         this.saveErrorMessage.set(playlist.message);
+      } else if (refused) {
+        // Channel / service-id refusals (400 codes, 409 owner): show the API's reason so the curator can fix the id.
+        this.saveErrorMessage.set(refused);
       }
       this.saveError.set(true);
     } finally {

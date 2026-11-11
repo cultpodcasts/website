@@ -40,6 +40,13 @@ export interface CatalogueParentDto {
    */
   youTubeChannelId?: string | null;
   youTubePlaylistId?: string | null;
+  /**
+   * News organisations only (RPP #1370): extra YouTube channel ids the outlet owns and ingests from, besides
+   * `youTubeChannelId`. Each is channel-wide; `youTubePlaylistId` scopes only the main channel. GET gives `[]` when
+   * there are none. PATCH: a list replaces the stored list, `[]` clears it, omitted / null leaves it unchanged.
+   * TV shows never have or send it.
+   */
+  additionalYouTubeChannelIds?: string[] | null;
   /** Read-only: playlist ids replaced by an edit. */
   youTubePlaylistIdHistory?: PlaylistIdHistoryEntry[] | null;
   /** Indexer-owned YouTube playlist walk hints (read-only). Clear via `clearYouTubeIndexingHints`. */
