@@ -32,6 +32,8 @@ import { CatalogueHub, hubApiRoot } from './catalogue-hub';
 import {
   CatalogueParentChangeRequest,
   CatalogueParentDto,
+  NewsOrganisationChangeRequest,
+  NewsOrganisationDto,
   CatalogueParentRenameRequest,
   CatalogueParentRenameResponse
 } from './catalogue-parent.interface';
@@ -190,10 +192,13 @@ export class CurationSubmitService {
     return this.http.get<Record<string, string>>(url, { context: this.curateContext() });
   }
 
-  /** GET a news outlet / TV show by guid or route-form name (curate). */
+  /**
+   * GET a news outlet / TV show by guid or route-form name (curate). A news outlet is a {@link NewsOrganisationDto}
+   * (shared fields plus its additional YouTube channels); a TV show has only the shared fields.
+   */
   getCatalogueParent(hub: CatalogueHub, identifier: string) {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(identifier)}`, environment.api).toString();
-    return this.http.get<CatalogueParentDto>(url, { context: this.curateContext() });
+    return this.http.get<CatalogueParentDto | NewsOrganisationDto>(url, { context: this.curateContext() });
   }
 
   /** Edit-time Identity tab probe (does not write Cosmos). */
@@ -205,7 +210,7 @@ export class CurationSubmitService {
   }
 
   /** PATCH a news outlet / TV show by guid (curate): 202, empty body. */
-  patchCatalogueParent(hub: CatalogueHub, id: string, body: CatalogueParentChangeRequest) {
+  patchCatalogueParent(hub: CatalogueHub, id: string, body: CatalogueParentChangeRequest | NewsOrganisationChangeRequest) {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(id)}`, environment.api).toString();
     return this.http.patch(url, body, {
       context: this.curateContext(),

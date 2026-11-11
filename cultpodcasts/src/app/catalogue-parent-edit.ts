@@ -1,4 +1,11 @@
-import { AdditionalYouTubeChannelDto, CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
+import {
+  AdditionalYouTubeChannelDto,
+  CatalogueParentChangeRequest,
+  CatalogueParentDto,
+  NewsOrganisationChangeRequest,
+  NewsOrganisationDto,
+  NewsOrganisationYouTubeChannelsDto
+} from "./catalogue-parent.interface";
 import { episodeLanguageFormValue } from "./language-options.util";
 import { includeTitleRegexBlocksIndexAllEpisodes } from "./podcast-form.util";
 
@@ -72,7 +79,7 @@ export interface AdditionalYouTubeChannelRow {
  * playlist); falls back to the older ids-only `additionalYouTubeChannelIds` (each channel-wide) when the API did not
  * return the newer field.
  */
-export function additionalYouTubeChannelRows(dto: CatalogueParentDto): AdditionalYouTubeChannelRow[] {
+export function additionalYouTubeChannelRows(dto: NewsOrganisationYouTubeChannelsDto): AdditionalYouTubeChannelRow[] {
   if (Array.isArray(dto.additionalYouTubeChannels)) {
     return dto.additionalYouTubeChannels.map((channel) => ({
       youTubeChannelId: channel.youTubeChannelId ?? "",
@@ -208,8 +215,10 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   language: string;
   ignoredSubjects: string[];
   /**
-   * News organisations only: one row per additional YouTube channel, each with an optional playlist id (rows without
-   * a channel id are dropped on save).
+   * Dialog state for news organisations only: one row per additional YouTube channel, each with an optional playlist
+   * id (rows without a channel id are dropped on save). Always `[]` for a TV show: {@link catalogueParentEditModel}
+   * never reads it from a DTO and {@link catalogueParentChanges} never sends it; only the news organisation
+   * functions ({@link newsOrganisationEditModel}, {@link newsOrganisationChanges}) do.
    */
   additionalYouTubeChannels: AdditionalYouTubeChannelRow[];
 };
@@ -258,6 +267,7 @@ export function textToList(text: string): string[] {
     .filter((value) => value.length > 0);
 }
 
+/** Edit model of the shared fields. Additional YouTube channels are left empty: see {@link newsOrganisationEditModel}. */
 export function catalogueParentEditModel(dto: CatalogueParentDto): CatalogueParentEditModel {
   const model = {
     removed: dto.removed === true,
@@ -267,7 +277,7 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
     tmdbId: dto.tmdbId ? String(dto.tmdbId) : "",
     language: catalogueParentLanguageFormValue(dto.language),
     ignoredSubjects: [...(dto.ignoredSubjects ?? [])],
-    additionalYouTubeChannels: additionalYouTubeChannelRows(dto),
+    additionalYouTubeChannels: [] as AdditionalYouTubeChannelRow[],
     releaseAuthority: dto.releaseAuthority || "Unset"
   } as CatalogueParentEditModel;
   for (const field of catalogueParentFlagFields) {
@@ -291,6 +301,11 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
   return model;
 }
 
+/** Edit model of a news organisation: the shared fields plus its additional YouTube channel rows (RPP #1370). */
+export function newsOrganisationEditModel(dto: NewsOrganisationDto): CatalogueParentEditModel {
+  return { ...catalogueParentEditModel(dto), additionalYouTubeChannels: additionalYouTubeChannelRows(dto) };
+}
+
 /** True when this save would remove (hide) the outlet / show and so cascade to its reports / episodes. */
 export function removesCatalogueParent(changes: CatalogueParentChangeRequest): boolean {
   return changes.removed === true;
@@ -302,9 +317,8 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
  * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
- * `youTubeChannelId` is read-only and never sent. News outlets (not TV) send `additionalYouTubeChannels` (channel id plus
- * optional playlist id) as the whole normalised list when it changed (`[]` when every row was removed); the older
- * `additionalYouTubeChannelIds` is never sent (the API refuses both together). TV shows send neither.
+ * `youTubeChannelId` is read-only and never sent. Only shared fields: a news organisation's additional YouTube
+ * channels are added by {@link newsOrganisationChanges}, so a TV show never sends them.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -347,13 +361,6 @@ export function catalogueParentChanges(
   }
   if (!sameList(original.ignoredSubjects ?? [], edited.ignoredSubjects)) {
     changes.ignoredSubjects = [...edited.ignoredSubjects];
-  }
-  if (!includeTvIdentity) {
-    const channelsAfter = normaliseAdditionalYouTubeChannels(edited.additionalYouTubeChannels);
-    const channelsBefore = normaliseAdditionalYouTubeChannels(additionalYouTubeChannelRows(original));
-    if (!sameAdditionalChannels(channelsBefore, channelsAfter)) {
-      changes.additionalYouTubeChannels = channelsAfter;
-    }
   }
   if (catalogueParentLanguageFormValue(original.language) !== edited.language) {
     changes.language = edited.language === "unset" ? "" : edited.language;
@@ -399,6 +406,24 @@ export function catalogueParentChanges(
   const indexAllAfter = indexAllBlocked ? false : edited.indexAllEpisodes;
   if ((original.indexAllEpisodes === true) !== indexAllAfter) {
     changes.indexAllEpisodes = indexAllAfter;
+  }
+  return changes;
+}
+
+/**
+ * A news organisation's changed fields: {@link catalogueParentChanges} plus `additionalYouTubeChannels` (channel id
+ * plus optional playlist id) as the whole normalised list when it changed (`[]` when every row was removed). The older
+ * `additionalYouTubeChannelIds` is never sent (the API refuses both together).
+ */
+export function newsOrganisationChanges(
+  original: NewsOrganisationDto,
+  edited: CatalogueParentEditModel
+): NewsOrganisationChangeRequest {
+  const changes: NewsOrganisationChangeRequest = catalogueParentChanges(original, edited, false);
+  const channelsAfter = normaliseAdditionalYouTubeChannels(edited.additionalYouTubeChannels);
+  const channelsBefore = normaliseAdditionalYouTubeChannels(additionalYouTubeChannelRows(original));
+  if (!sameAdditionalChannels(channelsBefore, channelsAfter)) {
+    changes.additionalYouTubeChannels = channelsAfter;
   }
   return changes;
 }

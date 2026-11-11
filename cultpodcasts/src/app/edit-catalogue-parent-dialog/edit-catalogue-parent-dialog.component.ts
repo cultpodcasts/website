@@ -18,7 +18,7 @@ import { firstValueFrom, forkJoin } from "rxjs";
 import { ambiguousCandidateFromCatalogueParent } from "../ambiguous-name-candidate";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
-import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
+import { CatalogueParentDto, NewsOrganisationDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
 import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
 import {
@@ -27,6 +27,8 @@ import {
   CatalogueParentEditModel,
   catalogueParentChanges,
   catalogueParentEditModel,
+  newsOrganisationChanges,
+  newsOrganisationEditModel,
   historyDateText,
   includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
@@ -218,7 +220,8 @@ export class EditCatalogueParentDialogComponent {
   protected readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
   protected readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
-  private original: CatalogueParentDto | null = null;
+  /** A TV show's shared fields, or a news organisation (which also has its additional YouTube channels). */
+  private original: CatalogueParentDto | NewsOrganisationDto | null = null;
 
   constructor() {
     const presets = this.regexPresetsService.loadRegexPresets();
@@ -242,7 +245,7 @@ export class EditCatalogueParentDialogComponent {
       );
       const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
-      this.model.set(catalogueParentEditModel(dto));
+      this.model.set(this.isTv ? catalogueParentEditModel(dto) : newsOrganisationEditModel(dto));
       this.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
       this.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
       this.languages.set(buildPodcastLanguageOptions(resp.languages));
@@ -262,7 +265,7 @@ export class EditCatalogueParentDialogComponent {
    * GET by hub name; on 409 load each id and let the curator pick (same picker as submit).
    * Cancel closes the edit dialog. Returns null when closed or unrecoverable.
    */
-  private async resolveParentDto(): Promise<CatalogueParentDto | null> {
+  private async resolveParentDto(): Promise<CatalogueParentDto | NewsOrganisationDto | null> {
     try {
       return await firstValueFrom(this.curation.getCatalogueParent(this.data.hub, this.data.name));
     } catch (error) {
@@ -403,7 +406,9 @@ export class EditCatalogueParentDialogComponent {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    const changes = catalogueParentChanges(this.original, model, this.isTv);
+    const changes = this.isTv
+      ? catalogueParentChanges(this.original, model, true)
+      : newsOrganisationChanges(this.original, model);
     if (Object.keys(changes).length === 0) {
       this.dialogRef.close({ noChange: true });
       return;

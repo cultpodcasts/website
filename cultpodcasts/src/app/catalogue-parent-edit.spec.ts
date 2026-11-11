@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CatalogueParentDto } from './catalogue-parent.interface';
-import { additionalYouTubeChannelRows, additionalYouTubeChannelsError, catalogueParentChanges, catalogueParentEditModel, historyDateText, normaliseAdditionalYouTubeChannels, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
+import { CatalogueParentDto, NewsOrganisationDto } from './catalogue-parent.interface';
+import { additionalYouTubeChannelRows, additionalYouTubeChannelsError, catalogueParentChanges, catalogueParentEditModel, historyDateText, newsOrganisationChanges, newsOrganisationEditModel, normaliseAdditionalYouTubeChannels, isValidAppleIdText, isValidDurationText, isValidImdbIdText, isValidNumericIdText, removesCatalogueParent, subjectOptions, textToList } from './catalogue-parent-edit';
 import { CatalogueHub, hubApiRoot, hubForParentKind, hubParentKind, hubParentLabel, hubPathCommands } from './catalogue-hub';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 
@@ -317,7 +317,7 @@ describe('news organisation additional YouTube channels with optional playlists 
   const extraB = 'UCsyntheticChannel000003';
   const playlistB = 'PLsyntheticPlaylist00000001';
   const row = (youTubeChannelId: string, youTubePlaylistId = '') => ({ youTubeChannelId, youTubePlaylistId });
-  const withChannels: CatalogueParentDto = {
+  const withChannels: NewsOrganisationDto = {
     ...outlet,
     youTubeChannelId: main,
     additionalYouTubeChannels: [
@@ -328,9 +328,9 @@ describe('news organisation additional YouTube channels with optional playlists 
   };
 
   it('loads additionalYouTubeChannels as rows with their playlists ([] when none or null)', () => {
-    expect(catalogueParentEditModel(withChannels).additionalYouTubeChannels).toEqual([row(extraA), row(extraB, playlistB)]);
-    expect(catalogueParentEditModel(outlet).additionalYouTubeChannels).toEqual([]);
-    expect(catalogueParentEditModel({ ...outlet, additionalYouTubeChannels: null }).additionalYouTubeChannels).toEqual([]);
+    expect(newsOrganisationEditModel(withChannels).additionalYouTubeChannels).toEqual([row(extraA), row(extraB, playlistB)]);
+    expect(newsOrganisationEditModel(outlet).additionalYouTubeChannels).toEqual([]);
+    expect(newsOrganisationEditModel({ ...outlet, additionalYouTubeChannels: null }).additionalYouTubeChannels).toEqual([]);
   });
 
   it('falls back to the older ids-only list (channel-wide rows) when additionalYouTubeChannels is missing', () => {
@@ -339,51 +339,54 @@ describe('news organisation additional YouTube channels with optional playlists 
   });
 
   it('sends nothing when the rows only differ by blanks, spaces or repeats', () => {
-    const model = catalogueParentEditModel(withChannels);
+    const model = newsOrganisationEditModel(withChannels);
     model.additionalYouTubeChannels = [row(` ${extraA} `, ' '), row(''), row(extraB, ` ${playlistB} `), row(extraA)];
-    expect(catalogueParentChanges(withChannels, model, false)).toEqual({});
+    expect(newsOrganisationChanges(withChannels, model)).toEqual({});
   });
 
   it('sends the whole normalised list as additionalYouTubeChannels when a channel or playlist changes (list replaces)', () => {
-    const model = catalogueParentEditModel(withChannels);
+    const model = newsOrganisationEditModel(withChannels);
     model.additionalYouTubeChannels = [row(extraA, ' PLsyntheticPlaylist00000002 '), row(extraB, playlistB)];
-    expect(catalogueParentChanges(withChannels, model, false)).toEqual({
+    expect(newsOrganisationChanges(withChannels, model)).toEqual({
       additionalYouTubeChannels: [
         { youTubeChannelId: extraA, youTubePlaylistId: 'PLsyntheticPlaylist00000002' },
         { youTubeChannelId: extraB, youTubePlaylistId: playlistB }
       ]
     });
     model.additionalYouTubeChannels = [row(extraA), row(extraB)];
-    expect(catalogueParentChanges(withChannels, model, false)).toEqual({
+    expect(newsOrganisationChanges(withChannels, model)).toEqual({
       additionalYouTubeChannels: [{ youTubeChannelId: extraA }, { youTubeChannelId: extraB }]
     });
   });
 
   it('never sends the older additionalYouTubeChannelIds, even when the outlet was loaded from it', () => {
-    const legacy: CatalogueParentDto = { ...outlet, youTubeChannelId: main, additionalYouTubeChannelIds: [extraA] };
-    const model = catalogueParentEditModel(legacy);
-    expect(catalogueParentChanges(legacy, model, false)).toEqual({});
+    const legacy: NewsOrganisationDto = { ...outlet, youTubeChannelId: main, additionalYouTubeChannelIds: [extraA] };
+    const model = newsOrganisationEditModel(legacy);
+    expect(newsOrganisationChanges(legacy, model)).toEqual({});
     model.additionalYouTubeChannels = [row(extraA, playlistB)];
-    const changes = catalogueParentChanges(legacy, model, false);
+    const changes = newsOrganisationChanges(legacy, model);
     expect(changes).toEqual({ additionalYouTubeChannels: [{ youTubeChannelId: extraA, youTubePlaylistId: playlistB }] });
     expect(changes).not.toHaveProperty('additionalYouTubeChannelIds');
   });
 
   it('sends [] when every channel is removed, and nothing when none were stored and none added', () => {
-    const model = catalogueParentEditModel(withChannels);
+    const model = newsOrganisationEditModel(withChannels);
     model.additionalYouTubeChannels = [];
-    expect(catalogueParentChanges(withChannels, model, false)).toEqual({ additionalYouTubeChannels: [] });
-    const empty = catalogueParentEditModel(outlet);
+    expect(newsOrganisationChanges(withChannels, model)).toEqual({ additionalYouTubeChannels: [] });
+    const empty = newsOrganisationEditModel(outlet);
     empty.additionalYouTubeChannels = [row('')];
-    expect(catalogueParentChanges(outlet, empty, false)).toEqual({});
+    expect(newsOrganisationChanges(outlet, empty)).toEqual({});
   });
 
-  it('never sends additional channels for TV shows', () => {
-    const model = catalogueParentEditModel(withChannels);
+  it('a TV show has no additional channels: a stray field on the GET is neither loaded nor sent', () => {
+    const strayTvShow = { ...withChannels } as CatalogueParentDto;
+    const model = catalogueParentEditModel(strayTvShow);
+    expect(model.additionalYouTubeChannels).toEqual([]);
     model.additionalYouTubeChannels = [row(extraB)];
-    const changes = catalogueParentChanges(withChannels, model, true);
+    const changes = catalogueParentChanges(strayTvShow, model, true);
     expect(changes).not.toHaveProperty('additionalYouTubeChannels');
     expect(changes).not.toHaveProperty('additionalYouTubeChannelIds');
+    expect(catalogueParentChanges(strayTvShow, model, false)).not.toHaveProperty('additionalYouTubeChannels');
   });
 
   it('normalises like the API: trimmed, rows without a channel and repeats dropped, first kept, blank playlist omitted', () => {
