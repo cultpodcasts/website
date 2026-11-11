@@ -17,6 +17,8 @@ export interface EpisodeFilmMoveResponse {
   identityDecision?: AmbiguousIdentityPrompt | null;
   /** True on 200 when the curator cancelled the identity prompt. */
   cancelled?: boolean;
+  /** Move of a news report only: the news organisation the move left with no reports (RPP #1368). */
+  emptiedNewsOrganisationId?: string | null;
 }
 
 export interface MoveEpisodeToFilmDialogData {
@@ -27,10 +29,17 @@ export interface MoveEpisodeToFilmDialogData {
   hasUnsavedChanges?: boolean;
   /** Episode release; a recent one can be re-added to the podcast by the Indexer (RPP #1068). */
   release?: Date | string | null;
+  /**
+   * Set to move this news report instead of a podcast episode (POST /newsreport/{id}/film, RPP #1368).
+   * podcastId and episodeId are then ignored.
+   */
+  newsReportId?: string;
 }
 
 export interface MoveEpisodeToFilmDialogClose {
   moved: boolean;
   filmId?: string;
   name?: string;
+  /** Move of a news report only: the news organisation the move left with no reports. */
+  emptiedNewsOrganisationId?: string;
 }

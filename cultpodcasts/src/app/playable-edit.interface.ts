@@ -140,6 +140,8 @@ export interface EditPlayableDialogResponse {
   closed?: boolean;
   noChange?: boolean;
   updated?: boolean;
+  /** A news report moved to a TV show or film (RPP #1368); the editor already announced it and navigated. */
+  moved?: boolean;
   response?: PlayableChangeResponse | null;
   /** Parent (outlet / show) name from the GET, for Review links. */
   parentName?: string | null;

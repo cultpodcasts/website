@@ -30,7 +30,8 @@ export function defaultPublisher(podcastName: string | null | undefined): string
 }
 
 /**
- * Confirms and sends the curator "Move to TV show" command for one podcast episode. The show is picked from the
+ * Confirms and sends the curator "Move to TV show" command for one podcast episode, or for one news report when
+ * `newsReportId` is set (RPP #1368: same body and outcome, POST /newsreport/{id}/tvshow). The show is picked from the
  * search-suggestions TV show names (sent by name; the server matches case-insensitively), a pasted show id, or a
  * new show (name and publisher) when "Create a new TV show" is ticked.
  */
@@ -74,6 +75,9 @@ export class MoveEpisodeToTvShowDialogComponent {
   readonly request = computed<EpisodeTvShowMoveRequest | null>(() => this.buildRequest());
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
+  /** What moves, and what it leaves: a podcast episode, or a news report (RPP #1368). */
+  readonly item = this.data.newsReportId ? 'news report' : 'episode';
+  readonly source = this.data.newsReportId ? 'news organisation' : 'podcast';
   private queryVersion = 0;
 
   constructor() {
@@ -131,20 +135,25 @@ export class MoveEpisodeToTvShowDialogComponent {
     }
     this.isSending.set(true);
     this.error.set(null);
-    this.curationSubmit.postEpisodeToTvShow(this.data.podcastId, this.data.episodeId, body).subscribe({
+    const reportId = this.data.newsReportId;
+    const send = reportId
+      ? this.curationSubmit.postNewsReportToTvShow(reportId, body)
+      : this.curationSubmit.postEpisodeToTvShow(this.data.podcastId, this.data.episodeId, body);
+    send.subscribe({
       next: resp => {
         const outcome = resp.body as EpisodeTvShowMoveResponse | null;
         this.dialogRef.close({
           moved: true,
           tvShowId: outcome?.tvShowId ?? body.tvShowId,
           tvShowName: outcome?.tvShowName ?? body.tvShowName,
-          episodeId: outcome?.episodeId ?? this.data.episodeId,
-          createdShow: outcome?.createdShow ?? false
+          episodeId: outcome?.episodeId ?? reportId ?? this.data.episodeId,
+          createdShow: outcome?.createdShow ?? false,
+          ...(outcome?.emptiedNewsOrganisationId ? { emptiedNewsOrganisationId: outcome.emptiedNewsOrganisationId } : {})
         });
       },
       error: (e: HttpErrorResponse) => {
         this.isSending.set(false);
-        this.error.set(moveToTvShowErrorMessage(e));
+        this.error.set(moveToTvShowErrorMessage(e, this.item));
         console.error(e);
       }
     });
@@ -155,16 +164,16 @@ export class MoveEpisodeToTvShowDialogComponent {
   }
 }
 
-export function moveToTvShowErrorMessage(e: HttpErrorResponse): string {
+export function moveToTvShowErrorMessage(e: HttpErrorResponse, item = 'episode'): string {
   const body = e.error as { error?: string } | null | undefined;
   switch (e.status) {
     case 400:
-      return body?.error ?? 'The episode cannot be moved to this TV show.';
+      return body?.error ?? `The ${item} cannot be moved to this TV show.`;
     case 404:
-      return body?.error ?? 'The episode or TV show was not found. Tick "Create a new TV show" to create it.';
+      return body?.error ?? `The ${item} or TV show was not found. Tick "Create a new TV show" to create it.`;
     case 409:
-      return body?.error ?? 'The episode cannot be moved to this TV show.';
+      return body?.error ?? `The ${item} cannot be moved to this TV show.`;
     default:
-      return 'An error occurred moving the episode. Sending again resumes an interrupted move.';
+      return `An error occurred moving the ${item}. Sending again resumes an interrupted move.`;
   }
 }
