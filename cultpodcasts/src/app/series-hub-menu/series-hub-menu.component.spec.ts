@@ -13,7 +13,8 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { SearchIndexerState } from '../search-indexer-state.interface';
-import { EditCatalogueParentDialogComponent } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditTvShowDialogComponent } from '../edit-tv-show-dialog/edit-tv-show-dialog.component';
+import { EditNewsOrganisationDialogComponent } from '../edit-news-organisation-dialog/edit-news-organisation-dialog.component';
 import { RenameCatalogueParentDialogComponent } from '../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component';
 import { SendPodcastComponent } from '../send-podcast/send-podcast.component';
 import { SubmitPodcastComponent } from '../submit-podcast/submit-podcast.component';
@@ -235,12 +236,18 @@ describe('SeriesHubMenuComponent', () => {
   });
 
   it('opens the edit and rename dialogs with the hub and name', () => {
-    const { menu } = create('tv', 'Nightly');
-    menu.edit();
-    menu.rename();
-    expect(dialogOpen.mock.calls[0][0]).toBe(EditCatalogueParentDialogComponent);
+    const tv = create('tv', 'Nightly');
+    tv.menu.edit();
+    tv.menu.rename();
+    expect(dialogOpen.mock.calls[0][0]).toBe(EditTvShowDialogComponent);
     expect(dialogOpen.mock.calls[0][1].data).toEqual({ hub: 'tv', name: 'Nightly' });
     expect(dialogOpen.mock.calls[1][0]).toBe(RenameCatalogueParentDialogComponent);
     expect(dialogOpen.mock.calls[1][1].data).toEqual({ hub: 'tv', name: 'Nightly' });
+
+    dialogOpen.mockClear();
+    const news = create('news', 'Desk One');
+    news.menu.edit();
+    expect(dialogOpen.mock.calls[0][0]).toBe(EditNewsOrganisationDialogComponent);
+    expect(dialogOpen.mock.calls[0][1].data).toEqual({ hub: 'news', name: 'Desk One' });
   });
 });

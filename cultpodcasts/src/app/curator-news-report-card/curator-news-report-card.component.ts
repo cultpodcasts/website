@@ -8,7 +8,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiEpisode } from '../api-episode.interface';
 import { reviewParentLink, reviewPlayableLink } from '../catalogue-links';
 import { catalogueParentEditLabel, catalogueParentEditTarget } from '../catalogue-parent-edit-dialog';
-import { EditCatalogueParentDialogData } from '../edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component';
+import { EditCatalogueParentDialogData } from '../catalogue-parent-edit-dialog-data';
 import { playableCuratorActionLabel } from '../content-kind-label';
 import { CuratorPlayableCardBodyComponent } from '../curator-playable-card-body/curator-playable-card-body.component';
 import { curatorCardDuration } from '../curator-playable-card-meta';

@@ -4,10 +4,13 @@ import { Observable, tap } from "rxjs";
 import { ApiEpisode } from "./api-episode.interface";
 import { CatalogueHub, hubParentLabel } from "./catalogue-hub";
 import {
-  EditCatalogueParentDialogComponent,
   EditCatalogueParentDialogData,
   EditCatalogueParentDialogResponse
-} from "./edit-catalogue-parent-dialog/edit-catalogue-parent-dialog.component";
+} from "./catalogue-parent-edit-dialog-data";
+import { EditTvShowDialogComponent } from "./edit-tv-show-dialog/edit-tv-show-dialog.component";
+import { EditNewsOrganisationDialogComponent } from "./edit-news-organisation-dialog/edit-news-organisation-dialog.component";
+
+export type { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "./catalogue-parent-edit-dialog-data";
 
 /**
  * The parent editor target for a playable card: a news report's news outlet or a TV episode's show.
@@ -37,19 +40,21 @@ export function catalogueParentEditLabel(hub: CatalogueHub): string {
 }
 
 /**
- * Opens the news outlet / TV show editor (same dialog and snackbars as the hub page menu). The caller subscribes,
- * so it can tie the subscription to its own lifetime.
+ * Opens the news-organisation or TV-show editor (same snackbars as the hub page menu). The caller subscribes,
+ * so it can tie the subscription to its own lifetime. Each hub has its own dialog and model shape.
  */
 export function openCatalogueParentEditDialog(
   dialog: MatDialog,
   snackBar: MatSnackBar,
   data: EditCatalogueParentDialogData
 ): Observable<EditCatalogueParentDialogResponse | undefined> {
+  const component = data.hub === "news" ? EditNewsOrganisationDialogComponent : EditTvShowDialogComponent;
   return dialog
-    .open<EditCatalogueParentDialogComponent, EditCatalogueParentDialogData, EditCatalogueParentDialogResponse>(
-      EditCatalogueParentDialogComponent,
-      { data, disableClose: true, autoFocus: true, width: "90%" }
-    )
+    .open<
+      EditNewsOrganisationDialogComponent | EditTvShowDialogComponent,
+      EditCatalogueParentDialogData,
+      EditCatalogueParentDialogResponse
+    >(component, { data, disableClose: true, autoFocus: true, width: "90%" })
     .afterClosed()
     .pipe(
       tap((result) => {

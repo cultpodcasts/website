@@ -4,12 +4,14 @@ import { HttpErrorResponse } from '@angular/common/http';
  * Api refuse codes when a parent YouTube playlist id cannot be saved (RPP playlist guard / website #575).
  *
  * Live Api codes today: youTubePlaylistIdInvalid (400), youTubePlaylistNotFound (400),
- * youTubePlaylistLookupFailed (503). Ownership mismatch was dropped — any owner channel is accepted.
+ * youTubePlaylistLookupFailed (503). Podcast and main-channel playlists accept any owner channel; a news
+ * organisation's additional-channel playlist (RPP #1370) must be on that channel, refused with
+ * youTubePlaylistChannelMismatch (400, API message shown).
  *
- * Legacy / defensive arms (not emitted by current Api): ChannelMismatch, OwnerLookupFailed.
+ * Legacy / defensive arm (not emitted by current Api): OwnerLookupFailed.
  */
 export const YOU_TUBE_PLAYLIST_ID_INVALID = 'youTubePlaylistIdInvalid';
-/** @deprecated Live Api no longer emits channel-mismatch; kept for defensive mapping. */
+/** News organisation additional-channel playlist not on that channel (RPP #1370); the API message names it. */
 export const YOU_TUBE_PLAYLIST_CHANNEL_MISMATCH = 'youTubePlaylistChannelMismatch';
 export const YOU_TUBE_PLAYLIST_NOT_FOUND = 'youTubePlaylistNotFound';
 /** @deprecated Prefer LOOKUP_FAILED; issue #575 name kept for defensive mapping. */

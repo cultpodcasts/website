@@ -51,6 +51,38 @@
                     }
                 </p>
                 }
+                <div class="additional-channels" id="additional-youtube-channels">
+                    <p class="hint"><strong>Additional YouTube channels</strong></p>
+                    @for (channel of m.additionalYouTubeChannels; track $index) {
+                    <div class="additional-channel-row">
+                        <mat-form-field class="full-width">
+                            <mat-label>Additional YouTube channel id</mat-label>
+                            <input type="text" [name]="'additionalYouTubeChannelId' + $index" placeholder="UC…"
+                                [ngModel]="channel.youTubeChannelId"
+                                (ngModelChange)="setAdditionalYouTubeChannel($index, $event)" matInput>
+                            <button type="button" matIconButton matSuffix
+                                [attr.aria-label]="'Remove additional YouTube channel ' + ($index + 1)"
+                                (click)="removeAdditionalYouTubeChannel($index)">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                        </mat-form-field>
+                        <mat-form-field class="full-width">
+                            <mat-label>YouTube Playlist Id (optional)</mat-label>
+                            <input type="text" [name]="'additionalYouTubePlaylistId' + $index" placeholder="PL…"
+                                [ngModel]="channel.youTubePlaylistId"
+                                (ngModelChange)="setAdditionalYouTubePlaylist($index, $event)" matInput>
+                        </mat-form-field>
+                    </div>
+                    }
+                    @if (additionalChannelsError(); as channelsError) {
+                    <p id="additional-youtube-channels-error" class="hint invalid" role="alert">{{ channelsError }}</p>
+                    }
+                    <button type="button" mat-stroked-button color="primary" class="add-additional-channel"
+                        (click)="addAdditionalYouTubeChannel()">Add YouTube channel</button>
+                    <p class="hint">Without a playlist id an additional channel is indexed and matched as a whole
+                        channel; with one, only that playlist's videos belong to this organisation. The playlist id
+                        above applies only to the main channel.</p>
+                </div>
                 <div class="indexing-hints" aria-live="polite">
                     <p class="hint"><strong>YouTube indexing hints</strong> (read-only)</p>
                     @if (displayIndexingHints(); as hints) {
@@ -256,64 +288,6 @@
                     }
                 </mat-menu>
             </mat-tab>
-            @if (isTv) {
-            <mat-tab label="Identity">
-                <div class="identity-lookup">
-                    <button type="button" matButton="tonal" id="look-up-identity"
-                        [disabled]="lookingUpIdentity() || isSending()" (click)="lookUpIdentity()">
-                        Look up identity
-                    </button>
-                    @if (identityLookupMessage()) {
-                    <p class="identity-lookup-message" id="identity-lookup-message">{{ identityLookupMessage() }}</p>
-                    }
-                </div>
-                <mat-form-field class="full-width">
-                    <mat-label>IMDb id</mat-label>
-                    <input type="text" name="imdbId" placeholder="tt1234567" [(ngModel)]="m.imdbId"
-                        (ngModelChange)="identityInvalid.set(false)" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Open IMDb page"
-                        [disabled]="!imdbUrl(m.imdbId)"
-                        (click)="openExternalUrl(imdbUrl(m.imdbId))">
-                        <mat-icon>open_in_new</mat-icon>
-                    </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove IMDb id"
-                        [disabled]="!m.imdbId.trim()" (click)="clearIdentityField('imdbId')">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                </mat-form-field>
-                <mat-form-field class="full-width">
-                    <mat-label>TheTVDB id</mat-label>
-                    <input type="text" inputmode="numeric" name="tvdbId" [(ngModel)]="m.tvdbId"
-                        (ngModelChange)="identityInvalid.set(false)" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Open TheTVDB page"
-                        [disabled]="!tvdbUrl(m.tvdbId)"
-                        (click)="openExternalUrl(tvdbUrl(m.tvdbId))">
-                        <mat-icon>open_in_new</mat-icon>
-                    </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove TheTVDB id"
-                        [disabled]="!m.tvdbId.trim()" (click)="clearIdentityField('tvdbId')">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                </mat-form-field>
-                <mat-form-field class="full-width">
-                    <mat-label>TMDB id</mat-label>
-                    <input type="text" inputmode="numeric" name="tmdbId" [(ngModel)]="m.tmdbId"
-                        (ngModelChange)="identityInvalid.set(false)" matInput>
-                    <button type="button" matIconButton matSuffix aria-label="Open TMDB page"
-                        [disabled]="!tmdbUrl(m.tmdbId)"
-                        (click)="openExternalUrl(tmdbUrl(m.tmdbId))">
-                        <mat-icon>open_in_new</mat-icon>
-                    </button>
-                    <button type="button" matIconButton matSuffix aria-label="Remove TMDB id"
-                        [disabled]="!m.tmdbId.trim()" (click)="clearIdentityField('tmdbId')">
-                        <mat-icon>clear</mat-icon>
-                    </button>
-                    @if (identityInvalid()) {
-                    <mat-hint id="identity-error" class="invalid">IMDb id is tt followed by 7 to 10 digits; TheTVDB and TMDB ids are digits only (blank clears).</mat-hint>
-                    }
-                </mat-form-field>
-            </mat-tab>
-            }
         </mat-tab-group>
     </form>
     }

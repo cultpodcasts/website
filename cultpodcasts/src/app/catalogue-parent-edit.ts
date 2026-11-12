@@ -1,4 +1,11 @@
-import { CatalogueParentChangeRequest, CatalogueParentDto } from "./catalogue-parent.interface";
+import {
+  AdditionalYouTubeChannelDto,
+  CatalogueParentChangeRequest,
+  CatalogueParentDto,
+  NewsOrganisationChangeRequest,
+  NewsOrganisationDto,
+  NewsOrganisationYouTubeChannelsDto
+} from "./catalogue-parent.interface";
 import { episodeLanguageFormValue } from "./language-options.util";
 import { includeTitleRegexBlocksIndexAllEpisodes } from "./podcast-form.util";
 
@@ -57,6 +64,96 @@ export const catalogueParentServiceIdFields = ["youTubeChannelId", "youTubePlayl
  * API calls, so the dialog never sends it and saving can never change or blank the stored channel id.
  */
 export const catalogueParentEditableServiceIdFields = ["youTubePlaylistId", "spotifyId"] as const;
+
+/** A YouTube channel id: `UC` followed by 22 characters (same rule as the RPP #1370 PATCH check). */
+const youTubeChannelIdPattern = /^UC[A-Za-z0-9_-]{22}$/;
+
+/** One editable additional YouTube channel row (news organisations, RPP #1370). Blank playlist = the whole channel. */
+export interface AdditionalYouTubeChannelRow {
+  youTubeChannelId: string;
+  youTubePlaylistId: string;
+}
+
+/**
+ * Editable rows for the outlet's additional YouTube channels. Reads `additionalYouTubeChannels` (channel + optional
+ * playlist); falls back to the older ids-only `additionalYouTubeChannelIds` (each channel-wide) when the API did not
+ * return the newer field.
+ */
+export function additionalYouTubeChannelRows(dto: NewsOrganisationYouTubeChannelsDto): AdditionalYouTubeChannelRow[] {
+  if (Array.isArray(dto.additionalYouTubeChannels)) {
+    return dto.additionalYouTubeChannels.map((channel) => ({
+      youTubeChannelId: channel.youTubeChannelId ?? "",
+      youTubePlaylistId: channel.youTubePlaylistId ?? ""
+    }));
+  }
+  return (dto.additionalYouTubeChannelIds ?? []).map((id) => ({ youTubeChannelId: id, youTubePlaylistId: "" }));
+}
+
+/**
+ * The additional YouTube channels as the PATCH sends them (RPP #1370): ids trimmed, rows without a channel id
+ * dropped, repeats of a channel dropped (first kept), and `youTubePlaylistId` only when the row has one.
+ */
+export function normaliseAdditionalYouTubeChannels(rows: readonly AdditionalYouTubeChannelRow[]): AdditionalYouTubeChannelDto[] {
+  const seen = new Set<string>();
+  const result: AdditionalYouTubeChannelDto[] = [];
+  for (const row of rows) {
+    const channel = row.youTubeChannelId.trim();
+    if (!channel || seen.has(channel)) {
+      continue;
+    }
+    seen.add(channel);
+    const playlist = row.youTubePlaylistId.trim();
+    result.push(playlist ? { youTubeChannelId: channel, youTubePlaylistId: playlist } : { youTubeChannelId: channel });
+  }
+  return result;
+}
+
+function sameAdditionalChannels(before: readonly AdditionalYouTubeChannelDto[], after: readonly AdditionalYouTubeChannelDto[]): boolean {
+  return (
+    before.length === after.length &&
+    before.every(
+      (channel, i) =>
+        channel.youTubeChannelId === after[i].youTubeChannelId &&
+        (channel.youTubePlaylistId ?? "") === (after[i].youTubePlaylistId ?? "")
+    )
+  );
+}
+
+/**
+ * Curator copy when the news outlet's additional YouTube channels cannot be saved, or null when they can. Mirrors
+ * the API's 400s (`invalidAdditionalYouTubeChannelId`, `additionalYouTubeChannelIsMainChannel`) so Save is blocked
+ * before the request. Fully blank rows are ignored (they are dropped on save). Whether a playlist exists and is on
+ * that channel is checked by the API (the main-channel playlist codes).
+ */
+export function additionalYouTubeChannelsError(
+  rows: readonly AdditionalYouTubeChannelRow[],
+  mainChannelId: string | null | undefined
+): string | null {
+  const orphan = rows.find((row) => !row.youTubeChannelId.trim() && row.youTubePlaylistId.trim());
+  if (orphan !== undefined) {
+    return `Playlist '${orphan.youTubePlaylistId.trim()}' needs the YouTube channel id it belongs to.`;
+  }
+  const filled = rows
+    .map((row) => ({ channel: row.youTubeChannelId.trim(), playlist: row.youTubePlaylistId.trim() }))
+    .filter((row) => row.channel);
+  const invalid = filled.find((row) => !youTubeChannelIdPattern.test(row.channel));
+  if (invalid !== undefined) {
+    return `'${invalid.channel}' is not a YouTube channel id (UC followed by 22 letters, digits, - or _).`;
+  }
+  const main = (mainChannelId ?? "").trim();
+  if (main && filled.some((row) => row.channel === main)) {
+    return `'${main}' is the main YouTube channel; it cannot also be an additional channel.`;
+  }
+  const playlists = new Map<string, string>();
+  for (const row of filled) {
+    const previous = playlists.get(row.channel);
+    if (previous !== undefined && previous !== row.playlist) {
+      return `'${row.channel}' is listed more than once with different playlists; keep one row per channel.`;
+    }
+    playlists.set(row.channel, row.playlist);
+  }
+  return null;
+}
 
 /** Indexing regexes on the parent's `indexing` block (podcast Regexs tab parity). */
 export const catalogueParentRegexFields = [
@@ -119,6 +216,16 @@ export type CatalogueParentEditModel = Record<TextField, string> & Record<ListFi
   ignoredSubjects: string[];
 };
 
+/**
+ * News-organisation edit model: the shared fields plus the outlet's additional YouTube channel rows
+ * (RPP #1370). The field lives only here, matching the DTO split (RPP #1392): a TV show's
+ * {@link CatalogueParentEditModel} does not declare it, so the compiler rejects reading or sending it
+ * on a TV path.
+ */
+export type NewsOrganisationEditModel = CatalogueParentEditModel & {
+  additionalYouTubeChannels: AdditionalYouTubeChannelRow[];
+};
+
 /** Language-select key for the API value: blank or English → "unset" (the "No Language" option), like the episode language picker. */
 export function catalogueParentLanguageFormValue(language: string | null | undefined): string {
   return episodeLanguageFormValue(language);
@@ -163,6 +270,7 @@ export function textToList(text: string): string[] {
     .filter((value) => value.length > 0);
 }
 
+/** Edit model of the shared fields. Additional YouTube channels are not present: see {@link newsOrganisationEditModel}. */
 export function catalogueParentEditModel(dto: CatalogueParentDto): CatalogueParentEditModel {
   const model = {
     removed: dto.removed === true,
@@ -195,6 +303,11 @@ export function catalogueParentEditModel(dto: CatalogueParentDto): CataloguePare
   return model;
 }
 
+/** Edit model of a news organisation: the shared fields plus its additional YouTube channel rows (RPP #1370). */
+export function newsOrganisationEditModel(dto: NewsOrganisationDto): NewsOrganisationEditModel {
+  return { ...catalogueParentEditModel(dto), additionalYouTubeChannels: additionalYouTubeChannelRows(dto) };
+}
+
 /** True when this save would remove (hide) the outlet / show and so cascade to its reports / episodes. */
 export function removesCatalogueParent(changes: CatalogueParentChangeRequest): boolean {
   return changes.removed === true;
@@ -206,7 +319,8 @@ export function removesCatalogueParent(changes: CatalogueParentChangeRequest): b
  * which the API treats as "clear"; a cleared `appleId` is `nullAppleId: true`; untouched fields are omitted
  * ("unchanged"). An invalid `appleId` or duration text is ignored here; the dialog blocks Save on it.
  * Flags send `true` / `false` when toggled; a cleared release authority is `unsetReleaseAuthority: true`.
- * `youTubeChannelId` is read-only and never sent.
+ * `youTubeChannelId` is read-only and never sent. Only shared fields: a news organisation's additional YouTube
+ * channels are added by {@link newsOrganisationChanges}, so a TV show never sends them.
  */
 export function catalogueParentChanges(
   original: CatalogueParentDto,
@@ -294,6 +408,24 @@ export function catalogueParentChanges(
   const indexAllAfter = indexAllBlocked ? false : edited.indexAllEpisodes;
   if ((original.indexAllEpisodes === true) !== indexAllAfter) {
     changes.indexAllEpisodes = indexAllAfter;
+  }
+  return changes;
+}
+
+/**
+ * A news organisation's changed fields: {@link catalogueParentChanges} plus `additionalYouTubeChannels` (channel id
+ * plus optional playlist id) as the whole normalised list when it changed (`[]` when every row was removed). The older
+ * `additionalYouTubeChannelIds` is never sent (the API refuses both together).
+ */
+export function newsOrganisationChanges(
+  original: NewsOrganisationDto,
+  edited: NewsOrganisationEditModel
+): NewsOrganisationChangeRequest {
+  const changes: NewsOrganisationChangeRequest = catalogueParentChanges(original, edited, false);
+  const channelsAfter = normaliseAdditionalYouTubeChannels(edited.additionalYouTubeChannels);
+  const channelsBefore = normaliseAdditionalYouTubeChannels(additionalYouTubeChannelRows(original));
+  if (!sameAdditionalChannels(channelsBefore, channelsAfter)) {
+    changes.additionalYouTubeChannels = channelsAfter;
   }
   return changes;
 }

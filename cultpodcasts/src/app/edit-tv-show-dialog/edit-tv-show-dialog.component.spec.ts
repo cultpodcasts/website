@@ -26,7 +26,7 @@ import {
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
   YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
 } from '../youtube-playlist-edit-error';
-import { EditCatalogueParentDialogComponent } from './edit-catalogue-parent-dialog.component';
+import { EditTvShowDialogComponent } from './edit-tv-show-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
@@ -67,7 +67,7 @@ async function settle() {
 }
 
 /** Clicks a tab header and waits for its lazy body to render. */
-async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogComponent>, label: string) {
+async function showTab(fixture: ComponentFixture<EditTvShowDialogComponent>, label: string) {
   fixture.detectChanges();
   const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
     .find((t) => t.textContent?.trim() === label);
@@ -82,14 +82,14 @@ async function showTab(fixture: ComponentFixture<EditCatalogueParentDialogCompon
 }
 
 /** Renders the Flags tab (tab bodies are lazy) and returns its text. */
-async function flagsTabText(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): Promise<string> {
+async function flagsTabText(fixture: ComponentFixture<EditTvShowDialogComponent>): Promise<string> {
   await showTab(fixture, 'Flags');
   const body = fixture.debugElement.queryAll(By.css('.flags'));
   expect(body.length).toBe(1);
   return (body[0].nativeElement as HTMLElement).textContent ?? '';
 }
 
-function tabLabels(fixture: ComponentFixture<EditCatalogueParentDialogComponent>): (string | undefined)[] {
+function tabLabels(fixture: ComponentFixture<EditTvShowDialogComponent>): (string | undefined)[] {
   return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
 }
 
@@ -108,7 +108,7 @@ function dialogProviders(data: { hub: 'tv' | 'news'; name: string }, close: unkn
   ];
 }
 
-describe('EditCatalogueParentDialogComponent', () => {
+describe('EditTvShowDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
   let confirmOpen: ReturnType<typeof vi.fn>;
   let snackOpen: ReturnType<typeof vi.fn>;
@@ -125,7 +125,7 @@ describe('EditCatalogueParentDialogComponent', () => {
     confirmAnswer = { result: true };
     confirmOpen = vi.fn(() => ({ afterClosed: () => of(confirmAnswer) }));
     await TestBed.configureTestingModule({
-      imports: [EditCatalogueParentDialogComponent],
+      imports: [EditTvShowDialogComponent],
       providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, snackOpen)
     })
       // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
@@ -143,7 +143,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   }
 
   function create(): Internals {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     return fixture.componentInstance as unknown as Internals;
   }
@@ -166,7 +166,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('Flags tab has the checkboxes without helper text and without Skip Enriching From YouTube', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', skipEnrichingFromYouTube: true });
     await settle();
@@ -180,7 +180,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('TV show tabs follow the podcast edit dialog order, with Identity last', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
@@ -213,7 +213,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   it('surfaces YouTube playlist ownership Api errors and keeps the curator edits in place', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', youTubePlaylistId: 'PLsyntheticplaylistold000000000000' });
     await settle();
@@ -343,7 +343,7 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 
   async function channelInput(playlistId: string) {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly', youTubeChannelId: 'UCcccccccccccccccccccccc', youTubePlaylistId: playlistId });
     await settle();
@@ -384,7 +384,7 @@ describe('EditCatalogueParentDialogComponent', () => {
 
   it('Force full walk confirms, PATCHes clearYouTubeIndexingHints, re-GETs, and shows the empty hints copy', async () => {
     const playlistId = 'PLsyntheticplaylist0000000000000000';
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({
       id: showId,
@@ -653,90 +653,71 @@ describe('EditCatalogueParentDialogComponent', () => {
   });
 });
 
-describe('EditCatalogueParentDialogComponent (news outlet Flags tab)', () => {
-  const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
+describe('EditTvShowDialogComponent (TV show has no additional YouTube channels)', () => {
+  const getUrl = new URL('/tvshow/Nightly', environment.api).toString();
+  const patchUrl = new URL(`/tvshow/${showId}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
   const languagesUrl = new URL('/languages', environment.api).toString();
+  let close: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    close = vi.fn();
     await TestBed.configureTestingModule({
-      imports: [EditCatalogueParentDialogComponent],
-      providers: dialogProviders({ hub: 'news', name: 'Desk' }, vi.fn(), vi.fn())
+      imports: [EditTvShowDialogComponent],
+      providers: dialogProviders({ hub: 'tv', name: 'Nightly' }, close, vi.fn())
     }).compileComponents();
   });
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('keeps the podcast tab order and shows no new-outlet defaults note or Skip Enriching From YouTube', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
+  async function openTv(show: object): Promise<{ fixture: ComponentFixture<EditTvShowDialogComponent>; dialog: Internals }> {
+    const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
-    (await expectSoon(getUrl)).flush({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', name: 'Desk', bypassShortEpisodeChecking: true, alwaysPromoteAsHero: true });
+    (await expectSoon(getUrl)).flush({ id: showId, name: 'Nightly', ...show });
     (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
     (await expectSoon(languagesUrl)).flush({ en: 'English' });
     await settle();
-    const text = await flagsTabText(fixture);
-    expect(tabLabels(fixture)).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs']);
-    expect(text).toContain('Always promote as hero');
-    expect(text).not.toContain('New news organisations start with');
-    expect(text).not.toContain('Skip Enriching From YouTube');
-    expect(text).not.toContain("You'll be asked to confirm");
-  });
-});
+    return { fixture, dialog: fixture.componentInstance as unknown as Internals };
+  }
 
-describe('EditCatalogueParentDialogComponent (previous playlist ids, with the app JSON date interceptor)', () => {
-  const getUrl = new URL('/newsorganisation/Desk', environment.api).toString();
-  const subjectsUrl = new URL('/subjects', environment.api).toString();
-  const languagesUrl = new URL('/languages', environment.api).toString();
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [EditCatalogueParentDialogComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
-        // Same as app.config: JsonDateInterceptor turns ISO strings into Date objects before the dialog sees them.
-        provideHttpClient(withInterceptors([authInterceptor]), withInterceptorsFromDi()),
-        { provide: HTTP_INTERCEPTORS, useClass: JsonDateInterceptor, multi: true },
-        provideHttpClientTesting(),
-        { provide: MAT_DIALOG_DATA, useValue: { hub: 'news', name: 'Desk' } },
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
-        { provide: MatSnackBar, useValue: { open: vi.fn() } },
-        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
-      ]
-    }).compileComponents();
-  });
-
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
-
-  it('renders the Details tab (history dates and the fields after them) when replacedAt arrives as a Date', async () => {
-    const fixture = TestBed.createComponent(EditCatalogueParentDialogComponent);
-    fixture.detectChanges();
-    (await expectSoon(getUrl)).flush({
-      id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-      name: 'Desk',
-      youTubePlaylistId: 'PLsyntheticplaylistnew000000000000',
-      youTubePlaylistIdHistory: [
-        { id: 'PLsyntheticplaylistold000000000000', replacedAt: '2026-10-30T23:45:12.345Z' },
-        { id: 'PLsyntheticplaylistolder00000000000', replacedAt: '2026-01-02T03:04:05Z' }
-      ],
-      youTubePublicationDelay: '-1:00:00'
-    });
-    (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
-    (await expectSoon(languagesUrl)).flush({ en: 'English' });
-    await settle();
-    const history = (fixture.componentInstance as unknown as { playlistHistory(): { replacedAt: unknown }[] }).playlistHistory();
-    expect(history[0].replacedAt).toBeInstanceOf(Date);
+  it('does not render the additional channels section', async () => {
+    const { fixture } = await openTv({ youTubeChannelId: 'UCsyntheticChannel000001' });
     await showTab(fixture, 'Details');
-    await settle();
-    fixture.detectChanges();
-    const root = fixture.nativeElement as HTMLElement;
-    const items = Array.from(root.querySelectorAll('.history-item')).map((e) => e.textContent?.trim());
-    expect(items).toEqual([
-      'PLsyntheticplaylistold000000000000 (2026-10-30)',
-      'PLsyntheticplaylistolder00000000000 (2026-01-02)'
-    ]);
-    // The fields after the history line still render (the bug left the rest of the dialog blank).
-    expect(root.querySelector<HTMLInputElement>('input[name="youTubePublicationDelay"]')).not.toBeNull();
-    expect(root.querySelector<HTMLInputElement>('input[name="youTubePlaylistId"]')!.value).toBe('PLsyntheticplaylistnew000000000000');
+    expect((fixture.nativeElement as HTMLElement).querySelector('#additional-youtube-channels')).toBeNull();
+  });
+
+  it('shows the API Conflict message for a TV 409 rather than the generic error', async () => {
+    const { dialog } = await openTv({ publisher: 'Net', spotifyId: 'spot1' });
+    dialog.model()!.publisher = 'Network Two';
+    const done = dialog.save();
+    const apiMessage = "spotifyId 'spot1' is already used by eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee; URL submission could not tell them apart.";
+    (await expectSoon(patchUrl)).flush(
+      { message: apiMessage, ids: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'] },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await done;
+    expect(dialog.saveError()).toBe(true);
+    expect(dialog.saveErrorMessage()).toBe(`Conflict: ${apiMessage} Nothing was changed.`);
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('does not send additionalYouTubeChannels or additionalYouTubeChannelIds when the GET carries a stray field', async () => {
+    const extra = 'UCsyntheticChannel000002';
+    const { dialog } = await openTv({
+      publisher: 'Net',
+      youTubeChannelId: 'UCsyntheticChannel000001',
+      additionalYouTubeChannels: [{ youTubeChannelId: extra }],
+      additionalYouTubeChannelIds: [extra]
+    });
+    expect('additionalYouTubeChannels' in dialog.model()!).toBe(false);
+    dialog.model()!.publisher = 'Network Two';
+    const done = dialog.save();
+    const req = await expectSoon(patchUrl);
+    expect(req.request.body).toEqual({ publisher: 'Network Two' });
+    expect(req.request.body).not.toHaveProperty('additionalYouTubeChannels');
+    expect(req.request.body).not.toHaveProperty('additionalYouTubeChannelIds');
+    req.flush(null, { status: 202, statusText: 'Accepted' });
+    await done;
+    expect(close).toHaveBeenCalledWith({ updated: true });
   });
 });

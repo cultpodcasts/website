@@ -11,8 +11,18 @@ export interface PlaylistIdHistoryEntry {
 }
 
 /**
+ * One additional YouTube channel of a news organisation (RPP #1370). With `youTubePlaylistId` only that playlist's
+ * videos belong to the organisation (URL submit, indexing and discovery are scoped to it); without one the whole
+ * channel does.
+ */
+export interface AdditionalYouTubeChannelDto {
+  youTubeChannelId: string;
+  youTubePlaylistId?: string | null;
+}
+
+/**
  * GET /newsorganisation/{identifier} or /tvshow/{identifier}: the shared publisher fields (RPP #1053).
- * TV adds the identity ids.
+ * TV adds the identity ids. News-organisation-only fields are on {@link NewsOrganisationDto}, not here.
  */
 export interface CatalogueParentDto {
   id: string;
@@ -69,11 +79,32 @@ export interface CatalogueParentDto {
 }
 
 /**
+ * The news organisation's additional YouTube channels (RPP #1370). A news organisation owns these itself; they are
+ * not shared catalogue-parent fields, and TV shows have none.
+ */
+export interface NewsOrganisationYouTubeChannelsDto {
+  /**
+   * Extra YouTube channels the outlet owns and ingests from, besides `youTubeChannelId`, each with an optional
+   * playlist that scopes that channel (the top-level `youTubePlaylistId` scopes only the main channel). GET gives `[]`
+   * when there are none. PATCH: a list replaces the stored list, `[]` clears it, omitted / null leaves it unchanged.
+   */
+  additionalYouTubeChannels?: AdditionalYouTubeChannelDto[] | null;
+  /**
+   * Read-only here: the older ids-only form of `additionalYouTubeChannels` (GET returns both). The dialog reads it
+   * only when `additionalYouTubeChannels` is missing and never sends it: the API refuses a PATCH that sends both.
+   */
+  additionalYouTubeChannelIds?: string[] | null;
+}
+
+/** GET /newsorganisation/{identifier}: the shared fields plus the organisation's additional YouTube channels. */
+export type NewsOrganisationDto = CatalogueParentDto & NewsOrganisationYouTubeChannelsDto;
+
+/**
  * PATCH body. Omitted = unchanged; "" clears a string; [] clears a list; `nullAppleId: true` clears `appleId`.
  * No `name` (rename is separate), no `youTubePlaylistIdHistory` / `youTubeIndexingHints` (server-kept),
  * no `skipEnrichingFromYouTube` (not edited on news / TV, so it is never sent and a stored value is kept)
  * and no `youTubeChannelId` (read-only, like the podcast edit dialog: it is used for API calls, so it is
- * never sent and the stored value is kept).
+ * never sent and the stored value is kept). No news-organisation-only fields: see {@link NewsOrganisationChangeRequest}.
  */
 export type CatalogueParentChangeRequest = Partial<
   Omit<
@@ -92,6 +123,13 @@ export type CatalogueParentChangeRequest = Partial<
   /** `true` clears indexer-owned `youTubeIndexingHints` (force full playlist walk). */
   clearYouTubeIndexingHints?: boolean;
 };
+
+/**
+ * PATCH /newsorganisation/{id} body: the shared fields plus `additionalYouTubeChannels`. Additional channels are sent
+ * only as `additionalYouTubeChannels`, never as the older `additionalYouTubeChannelIds`.
+ */
+export type NewsOrganisationChangeRequest = CatalogueParentChangeRequest &
+  Pick<NewsOrganisationYouTubeChannelsDto, "additionalYouTubeChannels">;
 
 /** POST /newsorganisation/name/{identifier} or /tvshow/name/{identifier} (admin). */
 export interface CatalogueParentRenameRequest {
