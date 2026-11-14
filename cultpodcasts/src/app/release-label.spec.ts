@@ -19,4 +19,8 @@ describe('releaseDateLabel', () => {
     expect(releaseDateLabel(undefined)).toBeUndefined();
     expect(releaseDateLabel('not-a-date')).toBeUndefined();
   });
+
+  it('returns undefined for the search default release of a playable with none (0001-01-01)', () => {
+    expect(releaseDateLabel('0001-01-01T00:00:00Z')).toBeUndefined();
+  });
 });

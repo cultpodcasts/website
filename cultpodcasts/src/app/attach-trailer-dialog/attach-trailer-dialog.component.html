@@ -19,8 +19,17 @@
         </mat-autocomplete>
         <mat-hint>Type a film name, or paste a film id</mat-hint>
     </mat-form-field>
+    @if (createName(); as name) {
+    @if (!selected()?.create) {
+    <button type="button" class="create-film" matButton="outlined" [disabled]="isSending()" (click)="chooseCreate()">Create film "{{ name }}"</button>
+    }
+    }
     @if (selected(); as film) {
+    @if (film.create) {
+    <p class="selected">New film: {{ film.name }}. It is created with no release date or video; if a film already has this name, the trailer joins it.</p>
+    } @else {
     <p class="selected">Film: {{ film.name ?? film.id }}</p>
+    }
     }
     <mat-form-field class="full-width">
         <mat-label>Trailer title</mat-label>
