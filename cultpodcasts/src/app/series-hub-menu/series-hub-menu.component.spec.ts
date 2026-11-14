@@ -164,7 +164,7 @@ describe('SeriesHubMenuComponent', () => {
     );
   });
 
-  it('Index reports why it was not indexed, not found, an ambiguous name and a timeout', () => {
+  it('Index reports why it was not indexed, not found, an ambiguous name, a timeout, a failed Spotify / Apple lookup and an unavailable service', () => {
     const { menu } = create('tv', 'Nightly');
     for (const result of [
       { notIndexable: true, reason: 'NotAutoIndexed' },
@@ -176,6 +176,8 @@ describe('SeriesHubMenuComponent', () => {
       { notFound: true },
       { ambiguous: true },
       { timedOut: true },
+      { enrichFailed: true, message: 'x' },
+      { unavailable: true },
       { updated: false }
     ]) {
       indexDialogResult = result;
@@ -190,7 +192,9 @@ describe('SeriesHubMenuComponent', () => {
       'TV Show not indexable',
       'TV Show not found',
       'More than one tv show is called "Nightly". Nothing was indexed.',
-      'TV Show indexing ran out of time. Anything it saved will appear shortly; try again later.'
+      'TV Show indexing ran out of time. Anything it saved will appear shortly; try again later.',
+      'TV Show is not auto-indexed, so only Spotify / Apple links were looked up, but the lookup failed or was rate-limited. Try again later.',
+      'TV Show indexing is unavailable right now. Try again later.'
     ]);
   });
 

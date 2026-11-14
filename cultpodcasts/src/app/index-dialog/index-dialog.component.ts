@@ -83,8 +83,9 @@ export class IndexDialogComponent {
           }
           : e.status === 404 ? { notFound: true }
             : e.status === 409 ? { ambiguous: true }
-              : e.status === 504 ? { timedOut: true }
-                : undefined);
+              : e.status === 503 ? catalogueUnavailable(e)
+                : e.status === 504 ? { timedOut: true }
+                  : undefined);
   }
 
   private async post<TBody, TResult extends IndexDialogResult>(
@@ -121,4 +122,17 @@ export class IndexDialogComponent {
   close() {
     this.dialogRef.close({ updated: false });
   }
+}
+
+/**
+ * A 503 from the outlet / show index: `EnrichFailed` (with the Api's message) when the body says so; anything else
+ * (no reason, or a non-JSON body such as Azure's own 503 page) is a generic "unavailable, try again later".
+ */
+export function catalogueUnavailable(e: HttpErrorResponse): CatalogueIndexDialogResult {
+  const body: unknown = e.error;
+  if (body && typeof body === 'object' && (body as { reason?: unknown }).reason === 'EnrichFailed') {
+    const message = (body as { message?: unknown }).message;
+    return { enrichFailed: true, ...(typeof message === 'string' ? { message } : {}) };
+  }
+  return { unavailable: true };
 }

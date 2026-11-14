@@ -116,6 +116,14 @@ export class SeriesHubMenuComponent {
           this.snackBar.open(`${label} not found`, "Ok", { duration: 10000 });
         } else if (result?.ambiguous) {
           this.snackBar.open(`More than one ${label.toLowerCase()} is called "${name}". Nothing was indexed.`, "Ok", { duration: 10000 });
+        } else if (result?.enrichFailed) {
+          this.snackBar.open(
+            `${label} is not auto-indexed, so only Spotify / Apple links were looked up, but the lookup failed or was rate-limited. Try again later.`,
+            "Ok",
+            { duration: 10000 }
+          );
+        } else if (result?.unavailable) {
+          this.snackBar.open(`${label} indexing is unavailable right now. Try again later.`, "Ok", { duration: 10000 });
         } else if (result?.timedOut) {
           this.snackBar.open(`${label} indexing ran out of time. Anything it saved will appear shortly; try again later.`, "Ok", { duration: 10000 });
         }

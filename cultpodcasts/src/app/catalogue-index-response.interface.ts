@@ -35,4 +35,11 @@ export interface CatalogueIndexDialogResult {
    * reaches search on the next pull-indexer run, so the curator is told to try again later.
    */
   timedOut?: boolean;
+  /**
+   * 503 `{reason: "EnrichFailed", message}` (RPP #1400): not auto-indexed, and the Spotify / Apple lookups failed or
+   * were rate-limited before finishing, so nothing was saved. Retryable.
+   */
+  enrichFailed?: boolean;
+  /** Any other 503 (no reason, or not JSON, e.g. Azure's own): the service is unavailable; try again later. */
+  unavailable?: boolean;
 }
