@@ -130,12 +130,26 @@ describe('IndexDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, itemIds: ['a'], searchIndexerState: 'Executed' });
   });
 
-  it('maps a TV show 400 (with reason), 404, 409 and 504 (timed out), and stays open with an error otherwise', async () => {
+  it('closes with enrichOnly when the outlet is not auto-indexed and only Spotify / Apple links were filled (#1400)', async () => {
+    await configure({ kind: 'catalogueParent', hub: 'news', name: 'Law and Crime' });
+    TestBed.createComponent(IndexDialogComponent);
+    await settle();
+    expectPost('/newsorganisation/index/Law%20and%20Crime').flush({ indexedItemIds: ['a'], searchIndexerState: 'Executed', enrichOnly: true });
+    await settle();
+    expect(close).toHaveBeenCalledWith({ updated: true, itemIds: ['a'], searchIndexerState: 'Executed', enrichOnly: true });
+  });
+
+  it('maps a TV show 400 (with reason), 404, 409, 503 (EnrichFailed, or a generic unavailable when the body has no reason or is not JSON) and 504 (timed out), and stays open with an error otherwise', async () => {
     for (const [status, body, expected] of [
       [400, { reason: 'SourcePodcastStillExists' }, { notIndexable: true, reason: 'SourcePodcastStillExists' }],
+      [400, { reason: 'NothingToEnrich', message: 'No link.' }, { notIndexable: true, reason: 'NothingToEnrich', message: 'No link.' }],
       [404, null, { notFound: true }],
       [409, ['x', 'y'], { ambiguous: true }],
-      [504, { reason: 'TimedOut', message: 'Indexing ran out of time.' }, { timedOut: true }]
+      [504, { reason: 'TimedOut', message: 'Indexing ran out of time.' }, { timedOut: true }],
+      [503, { reason: 'EnrichFailed', message: 'Lookup failed.' }, { enrichFailed: true, message: 'Lookup failed.' }],
+      [503, { reason: 'EnrichFailed' }, { enrichFailed: true }],
+      [503, {}, { unavailable: true }],
+      [503, 'Service Unavailable', { unavailable: true }]
     ] as const) {
       await configure({ kind: 'catalogueParent', hub: 'tv', name: 'Nightly' });
       TestBed.createComponent(IndexDialogComponent);
