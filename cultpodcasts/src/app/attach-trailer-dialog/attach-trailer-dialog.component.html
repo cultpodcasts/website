@@ -2,8 +2,8 @@
 
 <mat-dialog-content>
     <p class="warning">
-        This adds the episode to a film's Trailers and removes it from its podcast. The podcast stays.
-        Old episode links open the film.
+        This adds the episode to a film's Trailers and removes it from its podcast. If the film doesn't exist yet,
+        pick Create film to make it with this trailer. The podcast stays. Old episode links open the film.
     </p>
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
@@ -11,25 +11,36 @@
     <mat-form-field class="full-width">
         <mat-label>Film</mat-label>
         <input type="text" matInput [formControl]="filmQuery" [matAutocomplete]="filmAuto"
-            (input)="onFilmQuery(filmQuery.value)" [readonly]="isSending()" autocomplete="off" aria-label="Film">
+            [readonly]="isSending()" autocomplete="off" aria-label="Film">
         <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
             @for (film of films(); track film.itemId) {
             <mat-option [value]="film">{{ film.label }}</mat-option>
             }
+            @if (createName(); as name) {
+            <mat-option class="create-film-option" [value]="createOption">
+                <mat-icon aria-hidden="true">add</mat-icon>
+                <span>Create film "{{ name }}"</span>
+            </mat-option>
+            }
         </mat-autocomplete>
-        <mat-hint>Type a film name, or paste a film id</mat-hint>
+        @if (createName() && !selected()) {
+        <mat-hint>No film picked yet. Choose a film, or Create film "{{ createName() }}", from the list</mat-hint>
+        } @else {
+        <mat-hint>Type a film name to pick it or create it, or paste a film id</mat-hint>
+        }
     </mat-form-field>
-    @if (createName(); as name) {
-    @if (!selected()?.create) {
-    <button type="button" class="create-film" matButton="outlined" [disabled]="isSending()" (click)="chooseCreate()">Create film "{{ name }}"</button>
-    }
-    }
     @if (selected(); as film) {
-    @if (film.create) {
-    <p class="selected">New film: {{ film.name }}. It is created with no release date or video; if a film already has this name, the trailer joins it.</p>
-    } @else {
-    <p class="selected">Film: {{ film.name ?? film.id }}</p>
-    }
+    <div class="selected" [class.create]="film.create" role="status">
+        <mat-icon aria-hidden="true">{{ film.create ? 'add_circle' : 'check_circle' }}</mat-icon>
+        <div class="selected-text">
+            @if (film.create) {
+            <span class="selected-label">New film: {{ film.name }}</span>
+            <span class="selected-detail">Created with no release date or video. If a film already has this name, the trailer joins it.</span>
+            } @else {
+            <span class="selected-label">Film: {{ film.name ?? film.id }}</span>
+            }
+        </div>
+    </div>
     }
     <mat-form-field class="full-width">
         <mat-label>Trailer title</mat-label>
