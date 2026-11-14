@@ -153,11 +153,26 @@ describe('SeriesHubMenuComponent', () => {
     expect(snackOpen.mock.calls[1][0]).toBe('TV Show indexed. 1 item updated. Index update failed.');
   });
 
-  it('Index reports not indexable, not found, an ambiguous name and a timeout', () => {
+  it('Index of an outlet that is not auto-indexed says only Spotify / Apple links were looked up, with the count and Review (#1400)', () => {
+    const { menu } = create('news', 'Law and Crime');
+    indexDialogResult = { updated: true, enrichOnly: true, itemIds: ['a'], searchIndexerState: SearchIndexerState.Executed };
+    menu.index();
+    expect(snackOpen).toHaveBeenCalledWith(
+      'News Outlet is not auto-indexed, so only Spotify / Apple links were looked up. 1 item updated.',
+      'Review',
+      { duration: 10000 }
+    );
+  });
+
+  it('Index reports why it was not indexed, not found, an ambiguous name and a timeout', () => {
     const { menu } = create('tv', 'Nightly');
     for (const result of [
       { notIndexable: true, reason: 'NotAutoIndexed' },
       { notIndexable: true, reason: 'SourcePodcastStillExists' },
+      { notIndexable: true, reason: 'Removed' },
+      { notIndexable: true, reason: 'NothingToEnrich' },
+      { notIndexable: true, reason: 'SomethingNew', message: 'It is resting.' },
+      { notIndexable: true },
       { notFound: true },
       { ambiguous: true },
       { timedOut: true },
@@ -167,8 +182,12 @@ describe('SeriesHubMenuComponent', () => {
       menu.index();
     }
     expect(snackOpen.mock.calls.map((call) => call[0])).toEqual([
-      'TV Show not indexable',
+      'TV Show not indexed: it is not auto-indexed and has no Spotify or Apple id to look links up from',
       'TV Show not indexable (its podcast still exists)',
+      'TV Show not indexed: it is removed',
+      'TV Show is not auto-indexed, so only Spotify / Apple links were looked up. No recent item gained one',
+      'TV Show not indexed: It is resting.',
+      'TV Show not indexable',
       'TV Show not found',
       'More than one tv show is called "Nightly". Nothing was indexed.',
       'TV Show indexing ran out of time. Anything it saved will appear shortly; try again later.'

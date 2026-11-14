@@ -98,8 +98,11 @@ export class SeriesHubMenuComponent {
             return;
           }
           const searchNote = result.searchIndexerState === SearchIndexerState.Failure ? ` ${indexStateMessage(result.searchIndexerState)}` : "";
+          const items = `${count} item${count > 1 ? "s" : ""}`;
           const ref = this.snackBar.open(
-            `${label} indexed. ${count} item${count > 1 ? "s" : ""} updated.${searchNote}`,
+            result.enrichOnly
+              ? `${label} is not auto-indexed, so only Spotify / Apple links were looked up. ${items} updated.${searchNote}`
+              : `${label} indexed. ${items} updated.${searchNote}`,
             "Review",
             { duration: 10000 }
           );
@@ -108,8 +111,7 @@ export class SeriesHubMenuComponent {
             this.indexed.emit();
           });
         } else if (result?.notIndexable) {
-          const why = result.reason === "SourcePodcastStillExists" ? " (its podcast still exists)" : "";
-          this.snackBar.open(`${label} not indexable${why}`, "Ok", { duration: 10000 });
+          this.snackBar.open(notIndexableMessage(label, result), "Ok", { duration: 10000 });
         } else if (result?.notFound) {
           this.snackBar.open(`${label} not found`, "Ok", { duration: 10000 });
         } else if (result?.ambiguous) {
@@ -222,3 +224,18 @@ export class SeriesHubMenuComponent {
   }
 }
 
+/** The toast for a 400 from the outlet / show index: says why it was not indexed (RPP #1400). */
+export function notIndexableMessage(label: string, result: CatalogueIndexDialogResult): string {
+  switch (result.reason) {
+    case "Removed":
+      return `${label} not indexed: it is removed`;
+    case "NotAutoIndexed":
+      return `${label} not indexed: it is not auto-indexed and has no Spotify or Apple id to look links up from`;
+    case "NothingToEnrich":
+      return `${label} is not auto-indexed, so only Spotify / Apple links were looked up. No recent item gained one`;
+    case "SourcePodcastStillExists":
+      return `${label} not indexable (its podcast still exists)`;
+    default:
+      return result.message ? `${label} not indexed: ${result.message}` : `${label} not indexable`;
+  }
+}

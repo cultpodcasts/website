@@ -71,10 +71,16 @@ export class IndexDialogComponent {
       (body): CatalogueIndexDialogResult => ({
         updated: true,
         itemIds: body?.indexedItemIds ?? [],
-        searchIndexerState: body?.searchIndexerState
+        searchIndexerState: body?.searchIndexerState,
+        ...(body?.enrichOnly === true ? { enrichOnly: true } : {})
       }),
       (e): CatalogueIndexDialogResult | undefined =>
-        e.status === 400 ? { notIndexable: true, reason: e.error?.reason }
+        e.status === 400
+          ? {
+            notIndexable: true,
+            reason: e.error?.reason,
+            ...(typeof e.error?.message === 'string' ? { message: e.error.message } : {})
+          }
           : e.status === 404 ? { notFound: true }
             : e.status === 409 ? { ambiguous: true }
               : e.status === 504 ? { timedOut: true }
