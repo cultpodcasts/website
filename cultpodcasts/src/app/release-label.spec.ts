@@ -1,4 +1,13 @@
-import { releaseDateLabel } from './release-label';
+import { knownRelease, releaseDateLabel } from './release-label';
+
+describe('knownRelease', () => {
+  it('keeps a real release and drops a missing, unparseable or 0001-01-01 one', () => {
+    expect(knownRelease('2026-07-17T09:30:00Z')).toBe('2026-07-17T09:30:00Z');
+    expect(knownRelease(undefined)).toBeNull();
+    expect(knownRelease('not-a-date')).toBeNull();
+    expect(knownRelease('0001-01-01T00:00:00Z')).toBeNull();
+  });
+});
 
 describe('releaseDateLabel', () => {
   it('formats a Date as day, short month, year', () => {
@@ -18,5 +27,9 @@ describe('releaseDateLabel', () => {
   it('returns undefined for a missing or unparseable release', () => {
     expect(releaseDateLabel(undefined)).toBeUndefined();
     expect(releaseDateLabel('not-a-date')).toBeUndefined();
+  });
+
+  it('returns undefined for the search default release of a playable with none (0001-01-01)', () => {
+    expect(releaseDateLabel('0001-01-01T00:00:00Z')).toBeUndefined();
   });
 });

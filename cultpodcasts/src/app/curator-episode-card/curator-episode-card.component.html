@@ -60,7 +60,7 @@
         </mat-card-subtitle>
         }
         <mat-card-subtitle class="curator-card__meta">
-          <span>{{ episode().release | date:'d MMM yyyy H:mm' }} [{{ duration() }}]</span>
+          <span>{{ knownRelease(episode().release) | date:'d MMM yyyy H:mm' }} [{{ duration() }}]</span>
           @if (languageBadge(); as lang) {
           <span class="curator-card__lang" [class.curator-card__lang--code]="lang.isCode"
             [attr.title]="lang.label" [attr.aria-label]="lang.label">{{ lang.flag }}</span>

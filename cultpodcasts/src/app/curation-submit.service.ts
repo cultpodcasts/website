@@ -115,6 +115,20 @@ export class CurationSubmitService {
     });
   }
 
+  /**
+   * Curator: attach one podcast episode as a trailer of the film named in the request, creating that film when no
+   * film has the name (RPP #1418). 200 = identity prompt or cancelled (nothing written); 202 = attached.
+   */
+  postEpisodeAsTrailerCreatingFilm(podcastId: string, episodeId: string, request: EpisodeTrailerAttachRequest) {
+    const url = new URL(
+      `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/trailer`,
+      environment.api).toString();
+    return this.http.post<EpisodeTrailerAttachResponse>(url, { ...request, createFilm: true }, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
   /** Curator: move one podcast episode into an existing or new TV show with the same id (the episode row is then deleted). */
   postEpisodeToTvShow(podcastId: string, episodeId: string, request: EpisodeTvShowMoveRequest) {
     const url = new URL(
