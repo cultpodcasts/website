@@ -26,6 +26,7 @@ import { NowPlayingComponent } from './now-playing/now-playing.component';
 import { ResumeSessionPromptComponent } from './resume-session-prompt/resume-session-prompt.component';
 import { SeoService } from './seo.service';
 import { WebPushService } from './web-push.service';
+import { SwUpdatePromptService } from './sw-update-prompt.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EnablePushNotificationsDialogComponent } from './enable-push-notifications-dialog/enable-push-notifications-dialog.component';
 import { ProfileService } from './profile.service';
@@ -135,6 +136,7 @@ export class AppComponent implements OnDestroy, AfterViewInit {
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly webPushService = inject(WebPushService);
+  private readonly swUpdatePrompt = inject(SwUpdatePromptService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly seriesResolve = inject(SubmitSeriesResolveService);
@@ -194,7 +196,10 @@ export class AppComponent implements OnDestroy, AfterViewInit {
         // scrollPositionRestoration may settle after NavigationEnd; re-measure next frame.
         requestAnimationFrame(() => this.syncChromeFromScroll());
       });
-    navigator.serviceWorker.addEventListener('message', this.onSwMessage.bind(this));
+    // Web views without service workers (e.g. the iOS app's WKWebView) have no navigator.serviceWorker.
+    navigator.serviceWorker?.addEventListener('message', this.onSwMessage.bind(this));
+    // #666: prompt open tabs to reload into a newly deployed build (no-op when the service worker is off).
+    this.swUpdatePrompt.start();
     this.profileService.roles
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async roles => {
