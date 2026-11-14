@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -8,7 +9,12 @@ import { CurationSubmitService } from '../curation-submit.service';
 import { AttachTrailerDialogData } from '../episode-trailer-attach.interface';
 import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
-import { AttachTrailerDialogComponent, attachErrorMessage } from './attach-trailer-dialog.component';
+import {
+  AttachTrailerDialogComponent,
+  attachErrorMessage,
+  createFilmAnnouncement,
+  pickedFilmAnnouncement
+} from './attach-trailer-dialog.component';
 
 const filmId = '9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d';
 const film: Suggestion = { type: 'film', value: 'Synthetic Film', label: 'Synthetic Film', itemId: filmId };
@@ -25,6 +31,7 @@ describe('AttachTrailerDialogComponent', () => {
   let postEpisodeAsTrailerCreatingFilm: ReturnType<typeof vi.fn>;
   let openDialog: ReturnType<typeof vi.fn>;
   let suggest: ReturnType<typeof vi.fn>;
+  let announce: ReturnType<typeof vi.fn>;
   const data: AttachTrailerDialogData = {
     podcastId: 'podcast-1',
     episodeId: 'episode-1',
@@ -36,6 +43,7 @@ describe('AttachTrailerDialogComponent', () => {
     postEpisodeAsTrailer = vi.fn();
     postEpisodeAsTrailerCreatingFilm = vi.fn();
     openDialog = vi.fn();
+    announce = vi.fn(async () => undefined);
     suggest = vi.fn(async () => [film, { type: 'film', value: 'No Id Film', label: 'No Id Film' }]);
     await TestBed.configureTestingModule({
       imports: [AttachTrailerDialogComponent],
@@ -44,7 +52,8 @@ describe('AttachTrailerDialogComponent', () => {
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: CurationSubmitService, useValue: { postEpisodeAsTrailer, postEpisodeAsTrailerCreatingFilm } },
-        { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest } }
+        { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest } },
+        { provide: LiveAnnouncer, useValue: { announce } }
       ]
     })
       // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
@@ -275,6 +284,64 @@ describe('AttachTrailerDialogComponent', () => {
 
     expect(component.selected()).toEqual({ id: filmId, name: 'Synthetic Film' });
     expect(attachButton().disabled).toBe(false);
+  });
+
+  it('#665 review: Create film is the first option, above a full page of near-match films', async () => {
+    const nearMatches: Suggestion[] = Array.from({ length: 10 }, (_, i) => ({
+      type: 'film', value: `Faderhuset Chronicle ${i + 1}`, label: `Faderhuset Chronicle ${i + 1}`,
+      itemId: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`
+    }));
+    suggest.mockResolvedValue(nearMatches);
+
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    const options = [...document.querySelectorAll('mat-option')] as HTMLElement[];
+    expect(options.length).toBe(11);
+    expect(options[0].classList.contains('create-film-option')).toBe(true);
+    expect(options[0].textContent?.trim()).toContain('Create film "Faderhuset"');
+    expect(options.slice(1).map(o => o.textContent?.trim())).toEqual(nearMatches.map(f => f.label));
+  });
+
+  it('#665 review: Create film is first even before the suggestions arrive, and stays first once they do', async () => {
+    let resolve!: (films: Suggestion[]) => void;
+    suggest.mockImplementation(() => new Promise<Suggestion[]>(r => (resolve = r)));
+
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+    expect((document.querySelector('mat-option') as HTMLElement).classList.contains('create-film-option')).toBe(true);
+
+    resolve([{ type: 'film', value: 'Faderhuset Chronicle', label: 'Faderhuset Chronicle', itemId: filmId }]);
+    await new Promise(r => setTimeout(r));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const options = [...document.querySelectorAll('mat-option')] as HTMLElement[];
+    expect(options.map(o => o.classList.contains('create-film-option'))).toEqual([true, false]);
+  });
+
+  it('#665 review: picking Create film announces the new film through the live announcer', async () => {
+    suggest.mockResolvedValue([]);
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    (document.querySelector('mat-option.create-film-option') as HTMLElement).click();
+    await fixture.whenStable();
+
+    expect(announce).toHaveBeenCalledWith(createFilmAnnouncement('Faderhuset'), 'polite');
+    expect(createFilmAnnouncement('Faderhuset')).toBe('New film picked: Faderhuset. Attach as trailer creates it.');
+    expect(fixture.nativeElement.querySelector('.selected.create[role="status"]')).not.toBeNull();
+  });
+
+  it('#665 review: picking a suggested film announces it through the live announcer', async () => {
+    typeFilm('Synthetic Film');
+    await fixture.whenStable();
+
+    ([...document.querySelectorAll('mat-option')]
+      .find(o => o.textContent?.trim() === 'Synthetic Film') as HTMLElement).click();
+    await fixture.whenStable();
+
+    expect(announce).toHaveBeenCalledWith(pickedFilmAnnouncement('Synthetic Film'), 'polite');
+    expect(pickedFilmAnnouncement('Synthetic Film')).toBe('Film picked: Synthetic Film.');
   });
 
   it('Cancel closes attached:false without sending', () => {

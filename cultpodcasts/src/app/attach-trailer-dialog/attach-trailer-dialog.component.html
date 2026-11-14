@@ -13,14 +13,14 @@
         <input type="text" matInput [formControl]="filmQuery" [matAutocomplete]="filmAuto"
             [readonly]="isSending()" autocomplete="off" aria-label="Film">
         <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
-            @for (film of films(); track film.itemId) {
-            <mat-option [value]="film">{{ film.label }}</mat-option>
-            }
             @if (createName(); as name) {
             <mat-option class="create-film-option" [value]="createOption">
                 <mat-icon aria-hidden="true">add</mat-icon>
                 <span>Create film "{{ name }}"</span>
             </mat-option>
+            }
+            @for (film of films(); track film.itemId) {
+            <mat-option [value]="film">{{ film.label }}</mat-option>
             }
         </mat-autocomplete>
         @if (createName() && !selected()) {

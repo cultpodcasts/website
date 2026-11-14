@@ -359,6 +359,43 @@ test.describe("attach as trailer (#664)", () => {
 		await expect.poll(() => attachBody).toEqual({ createFilm: true, filmName: "Faderhuset" });
 		await expect(dialog).toHaveCount(0);
 	});
+
+	test("with a full page of near-match films, Create film is the first option and in view without scrolling; picking it is announced", async ({ page }) => {
+		await fakeLookups(page);
+		const nearMatches = Array.from({ length: 12 }, (_, i) => `Faderhuset Chronicle ${i + 1}`);
+		await page.route("**/search-suggestions", (route) => json(route, {
+			generatedAtUtc: "2026-11-14T00:00:00Z",
+			entries: nearMatches.map((name, i) => ({
+				type: "film",
+				canonical: name,
+				searchText: name.toLowerCase(),
+				id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`
+			}))
+		}));
+		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) =>
+			json(route, { ...playable, id: podcastEpisodeId, title: "Pilot", release: "2026-01-02T00:00:00Z", bluesky: false, urls: {}, images: {} }));
+		await page.route(`**/podcast/Show/${podcastEpisodeId}`, (route) => json(route, { id: podcastId, name: "Show", defaultSubject: "Politics" }));
+		await page.goto(`/podcast/${encodeURIComponent("Show")}/${guids.toBase64(podcastEpisodeId)}`);
+		await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const editor = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Edit Episode" }) });
+		await editor.getByRole("tab", { name: "Catalogue" }).click();
+		await editor.getByRole("button", { name: "Attach as trailer" }).click();
+		const dialog = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Attach as trailer" }) });
+		await dialog.getByRole("combobox", { name: "Film" }).pressSequentially("Faderhuset", { delay: 20 });
+		const options = page.getByRole("listbox").getByRole("option");
+		// The suggestions have arrived (10 shown), and Create film sits above them.
+		await expect(options).toHaveCount(11);
+		await expect(options.first()).toHaveText(/Create film "Faderhuset"/);
+		await expect(options.nth(1)).toHaveText("Faderhuset Chronicle 1");
+		await expect(options.first()).toBeInViewport();
+		await shot(page, "attach-trailer-create-first");
+		await options.first().click();
+		await expect(dialog.getByRole("status")).toContainText("New film: Faderhuset");
+		// The CDK live announcer's always-present region reads the pick out.
+		await expect(page.locator(".cdk-live-announcer-element")).toHaveText("New film picked: Faderhuset. Attach as trailer creates it.");
+	});
 });
 test.describe("reorder selected subjects and guests", () => {
 	test("drag a selected subject by its right-hand handle and Alt+Arrow a guest; the PATCH sends only the new orders", async ({ page }) => {

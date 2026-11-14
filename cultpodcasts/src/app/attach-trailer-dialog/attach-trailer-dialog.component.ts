@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -60,11 +61,15 @@ export function creatableFilmName(text: string): string | null {
  * suggestions corpus. 'Create film "<name>"' attaches to a new film of the typed name (e.g. an unreleased film whose
  * trailer is out first; RPP #1418), after the same identity prompt as Move to film.
  *
- * Hardening (#665, after #664): 'Create film' is offered as soon as a creatable name is typed, as the last autocomplete
- * option, and is only withdrawn when the suggestions come back with a film of exactly that name. It does not wait on
- * the suggestions corpus, and a failed suggest keeps it, so it never depends on that download. (The #664 report itself
+ * Hardening (#665, after #664): 'Create film' is offered as soon as a creatable name is typed, as the FIRST
+ * autocomplete option (above the film suggestions, so a long list of near matches never pushes it out of view), and
+ * is only withdrawn when the suggestions come back with a film of exactly that name. It does not wait on the
+ * suggestions corpus, and a failed suggest keeps it, so it never depends on that download. (The #664 report itself
  * was most likely a tab still running a stale service-worker build; see #666.) Typing is read from
  * `filmQuery.valueChanges`, not the template `(input)` event.
+ *
+ * A pick is announced through the CDK LiveAnnouncer (an always-present live region), as well as shown in the
+ * visual selected box: a `role="status"` element inserted at the moment of the pick is not read by every screen reader.
  */
 @Component({
   selector: 'app-attach-trailer-dialog',
@@ -98,6 +103,7 @@ export class AttachTrailerDialogComponent {
   readonly createName = signal<string | null>(null);
   readonly createOption = CREATE_FILM_OPTION;
   private readonly identityDialog = inject(MatDialog);
+  private readonly announcer = inject(LiveAnnouncer);
   private queryVersion = 0;
 
   constructor() {
@@ -148,6 +154,7 @@ export class AttachTrailerDialogComponent {
     }
     this.error.set(null);
     this.selected.set({ id: null, name, create: true });
+    void this.announcer.announce(createFilmAnnouncement(name), 'polite');
   }
 
   onFilmSelected(event: MatAutocompleteSelectedEvent): void {
@@ -164,6 +171,7 @@ export class AttachTrailerDialogComponent {
     this.selected.set({ id: film.itemId, name: film.value });
     this.createName.set(null);
     this.filmQuery.setValue(film.label, { emitEvent: false });
+    void this.announcer.announce(pickedFilmAnnouncement(film.label), 'polite');
   }
 
   /** Shows the label in the input after a pick (the option value is the suggestion). */
@@ -285,6 +293,16 @@ export class AttachTrailerDialogComponent {
   cancel(): void {
     this.dialogRef.close({ attached: false });
   }
+}
+
+/** Screen-reader text when 'Create film "<name>"' is picked. */
+export function createFilmAnnouncement(name: string): string {
+  return `New film picked: ${name}. Attach as trailer creates it.`;
+}
+
+/** Screen-reader text when an existing film is picked. */
+export function pickedFilmAnnouncement(label: string): string {
+  return `Film picked: ${label}.`;
 }
 
 export function attachErrorMessage(e: HttpErrorResponse): string {
