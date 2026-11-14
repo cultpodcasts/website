@@ -2,6 +2,18 @@
 
 <!-- 1–3 bullets: what and why -->
 
+## Related
+
+<!-- Every PR for a ticket MUST link it with a closing keyword so it shows under the
+     issue's Development panel. Same repo: `Closes #N`. Other repo (e.g. an Api or
+     website companion of an RPP ticket): `Closes cultpodcasts/RedditPodcastPoster#N`.
+     Do not use `Refs` for the ticket itself. The ticket stays open until ALL of its
+     PRs merge (issue-close sibling guard, cultpodcasts/RedditPodcastPoster#1423).
+     List companion PRs and the merge order below. -->
+
+- Closes cultpodcasts/RedditPodcastPoster#
+- Companions:
+
 ## Config / secrets
 
 <!-- Required when this PR adds or depends on new Pages env vars, Auth0/build secrets,
