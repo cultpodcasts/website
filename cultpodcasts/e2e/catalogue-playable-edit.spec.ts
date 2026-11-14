@@ -322,7 +322,7 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 });
 
 test.describe("attach as trailer (#664)", () => {
-	test("a typed film name nobody has offers Create film in the panel even while suggestions hang; picking it attaches with createFilm", async ({ page }) => {
+	test("a typed film name nobody has offers Create film as a panel option (no separate button) even while suggestions hang; picking it attaches with createFilm", async ({ page }) => {
 		await fakeLookups(page);
 		// The suggestions corpus never answers: Create film must not depend on it.
 		await page.route("**/search-suggestions", () => undefined);
@@ -346,13 +346,13 @@ test.describe("attach as trailer (#664)", () => {
 		await expect(dialog).toBeVisible();
 		const attach = dialog.locator("mat-dialog-actions").getByRole("button", { name: "Attach as trailer" });
 		await dialog.getByRole("combobox", { name: "Film" }).pressSequentially("Faderhuset", { delay: 20 });
-		await expect(dialog.getByRole("button", { name: 'Create film "Faderhuset"' })).toBeVisible();
-		const option = page.getByRole("option", { name: 'Create film "Faderhuset"' });
+		await expect(dialog.getByRole("button", { name: /Create film/ })).toHaveCount(0);
+		const option = page.getByRole("option", { name: /Create film "Faderhuset"/ });
 		await expect(option).toBeVisible();
 		await shot(page, "attach-trailer-create-option");
 		await expect(attach).toBeDisabled();
 		await option.click();
-		await expect(dialog.getByText("New film: Faderhuset.")).toBeVisible();
+		await expect(dialog.getByRole("status")).toContainText("New film: Faderhuset");
 		await expect(dialog.getByRole("combobox", { name: "Film" })).toHaveValue("Faderhuset");
 		await shot(page, "attach-trailer-create-picked");
 		await attach.click();

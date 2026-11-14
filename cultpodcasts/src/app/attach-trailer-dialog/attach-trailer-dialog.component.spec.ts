@@ -201,8 +201,8 @@ describe('AttachTrailerDialogComponent', () => {
     return input;
   }
 
-  function createButton(): HTMLButtonElement | null {
-    return fixture.nativeElement.querySelector('button.create-film');
+  function createOptionText(): string | undefined {
+    return document.querySelector('mat-option.create-film-option span')?.textContent?.trim();
   }
 
   function attachButton(): HTMLButtonElement {
@@ -210,19 +210,33 @@ describe('AttachTrailerDialogComponent', () => {
       .find(b => (b as HTMLElement).textContent?.trim() === 'Attach as trailer') as HTMLButtonElement;
   }
 
-  it('#664: typing in the Film input offers Create film at once, even while the suggestions never load', async () => {
+  function hintText(): string | undefined {
+    return (fixture.nativeElement.querySelector('mat-hint') as HTMLElement | null)?.textContent?.trim();
+  }
+
+  it('#665: typing in the Film input offers Create film in the panel at once, even while the suggestions never load', async () => {
     suggest.mockImplementation(() => new Promise<Suggestion[]>(() => undefined));
 
     typeFilm('Faderhuset');
     await fixture.whenStable();
 
     expect(suggest).toHaveBeenCalledWith('Faderhuset', 10, 'film');
-    expect(createButton()?.textContent?.trim()).toBe('Create film "Faderhuset"');
-    expect(document.querySelector('mat-option.create-film-option')?.textContent?.trim()).toBe('Create film "Faderhuset"');
+    expect(createOptionText()).toBe('Create film "Faderhuset"');
+    expect(hintText()).toBe('No film picked yet. Choose a film, or Create film "Faderhuset", from the list');
     expect(attachButton().disabled).toBe(true);
   });
 
-  it('#664: a failed suggestions load still leaves Create film available', async () => {
+  it('#665: there is no separate Create film button; the panel option is the one way in', async () => {
+    suggest.mockResolvedValue([]);
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('button.create-film')).toBeNull();
+    expect([...fixture.nativeElement.querySelectorAll('button')].map(b => (b as HTMLElement).textContent?.trim()))
+      .toEqual(['Cancel', 'Attach as trailer']);
+  });
+
+  it('#665: a failed suggestions load still leaves Create film available', async () => {
     suggest.mockRejectedValue(new Error('corpus failed'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
@@ -230,10 +244,10 @@ describe('AttachTrailerDialogComponent', () => {
     await fixture.whenStable();
 
     expect(component.createName()).toBe('Faderhuset');
-    expect(createButton()).not.toBeNull();
+    expect(createOptionText()).toBe('Create film "Faderhuset"');
   });
 
-  it('#664: picking the Create film option selects a new film and enables Attach as trailer', async () => {
+  it('#665: picking the Create film option shows the New film selected state and enables Attach as trailer', async () => {
     suggest.mockResolvedValue([]);
     const input = typeFilm('Faderhuset');
     await fixture.whenStable();
@@ -243,23 +257,12 @@ describe('AttachTrailerDialogComponent', () => {
 
     expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
     expect(input.value).toBe('Faderhuset');
-    expect(fixture.nativeElement.querySelector('p.selected')?.textContent).toContain('New film: Faderhuset');
-    expect(createButton()).toBeNull();
+    const selected = fixture.nativeElement.querySelector('.selected.create') as HTMLElement;
+    expect(selected.getAttribute('role')).toBe('status');
+    expect(selected.querySelector('.selected-label')?.textContent?.trim()).toBe('New film: Faderhuset');
+    expect(hintText()).toBe('Type a film name to pick it or create it, or paste a film id');
     expect(attachButton().disabled).toBe(false);
   });
-
-  it('#664: the Create film button selects a new film and enables Attach as trailer', async () => {
-    suggest.mockResolvedValue([]);
-    typeFilm('Faderhuset');
-    await fixture.whenStable();
-
-    createButton()!.click();
-    await fixture.whenStable();
-
-    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
-    expect(attachButton().disabled).toBe(false);
-  });
-
   it('#664: picking a suggested film from the panel keeps the pick and withdraws Create film for its exact name', async () => {
     typeFilm('Synthetic Film');
     await fixture.whenStable();

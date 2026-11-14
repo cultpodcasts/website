@@ -6,6 +6,7 @@ import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/ma
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
@@ -59,10 +60,11 @@ export function creatableFilmName(text: string): string | null {
  * suggestions corpus. 'Create film "<name>"' attaches to a new film of the typed name (e.g. an unreleased film whose
  * trailer is out first; RPP #1418), after the same identity prompt as Move to film.
  *
- * #664: 'Create film' is offered as soon as a creatable name is typed, both as the last autocomplete option and as a
- * button, and is only withdrawn when the suggestions come back with a film of exactly that name. It used to appear only
- * after the suggestions corpus (a large download) had loaded, so a slow, stalled or failed load left the curator with
- * no way to pick anything. Typing is read from `filmQuery.valueChanges`, not the template `(input)` event.
+ * Hardening (#665, after #664): 'Create film' is offered as soon as a creatable name is typed, as the last autocomplete
+ * option, and is only withdrawn when the suggestions come back with a film of exactly that name. It does not wait on
+ * the suggestions corpus, and a failed suggest keeps it, so it never depends on that download. (The #664 report itself
+ * was most likely a tab still running a stale service-worker build; see #666.) Typing is read from
+ * `filmQuery.valueChanges`, not the template `(input)` event.
  */
 @Component({
   selector: 'app-attach-trailer-dialog',
@@ -71,6 +73,7 @@ export function creatableFilmName(text: string): string | null {
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     ReactiveFormsModule
