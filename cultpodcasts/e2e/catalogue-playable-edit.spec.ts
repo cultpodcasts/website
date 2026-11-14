@@ -321,6 +321,45 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 	});
 });
 
+test.describe("attach as trailer (#664)", () => {
+	test("a typed film name nobody has offers Create film in the panel even while suggestions hang; picking it attaches with createFilm", async ({ page }) => {
+		await fakeLookups(page);
+		// The suggestions corpus never answers: Create film must not depend on it.
+		await page.route("**/search-suggestions", () => undefined);
+		let attachBody: unknown;
+		await page.route(`**/episode/${podcastId}/${podcastEpisodeId}/trailer`, async (route) => {
+			attachBody = route.request().postDataJSON();
+			await json(route, { filmId, name: "Faderhuset", filmCreated: true }, 202);
+		});
+		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) =>
+			json(route, { ...playable, id: podcastEpisodeId, title: "Pilot", release: "2026-01-02T00:00:00Z", bluesky: false, urls: {}, images: {} }));
+		await page.route(`**/podcast/Show/${podcastEpisodeId}`, (route) => json(route, { id: podcastId, name: "Show", defaultSubject: "Politics" }));
+		await page.goto(`/podcast/${encodeURIComponent("Show")}/${guids.toBase64(podcastEpisodeId)}`);
+		await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const editor = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Edit Episode" }) });
+		await editor.getByRole("tab", { name: "Catalogue" }).click();
+		await expect(editor.getByText("creating the film if it doesn't exist yet")).toBeVisible();
+		await editor.getByRole("button", { name: "Attach as trailer" }).click();
+		const dialog = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Attach as trailer" }) });
+		await expect(dialog).toBeVisible();
+		const attach = dialog.locator("mat-dialog-actions").getByRole("button", { name: "Attach as trailer" });
+		await dialog.getByRole("combobox", { name: "Film" }).pressSequentially("Faderhuset", { delay: 20 });
+		await expect(dialog.getByRole("button", { name: 'Create film "Faderhuset"' })).toBeVisible();
+		const option = page.getByRole("option", { name: 'Create film "Faderhuset"' });
+		await expect(option).toBeVisible();
+		await shot(page, "attach-trailer-create-option");
+		await expect(attach).toBeDisabled();
+		await option.click();
+		await expect(dialog.getByText("New film: Faderhuset.")).toBeVisible();
+		await expect(dialog.getByRole("combobox", { name: "Film" })).toHaveValue("Faderhuset");
+		await shot(page, "attach-trailer-create-picked");
+		await attach.click();
+		await expect.poll(() => attachBody).toEqual({ createFilm: true, filmName: "Faderhuset" });
+		await expect(dialog).toHaveCount(0);
+	});
+});
 test.describe("reorder selected subjects and guests", () => {
 	test("drag a selected subject by its right-hand handle and Alt+Arrow a guest; the PATCH sends only the new orders", async ({ page }) => {
 		const sink: { body?: unknown } = {};

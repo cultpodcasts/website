@@ -120,6 +120,9 @@ describe('AttachTrailerDialogComponent', () => {
 
     await component.onFilmQuery('Bad/Name');
     expect(component.createName()).toBeNull();
+
+    await component.onFilmQuery(filmId);
+    expect(component.createName()).toBeNull();
   });
 
   it('#1418: Create film sends createFilm with the name and closes with the new film', async () => {
@@ -187,6 +190,88 @@ describe('AttachTrailerDialogComponent', () => {
 
     expect(component.error()).toBe('More than one film has this name; attach to one of them by id');
     expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  function typeFilm(text: string): HTMLInputElement {
+    const input = fixture.nativeElement.querySelector('input[aria-label="Film"]') as HTMLInputElement;
+    input.focus();
+    input.dispatchEvent(new Event('focusin'));
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return input;
+  }
+
+  function createButton(): HTMLButtonElement | null {
+    return fixture.nativeElement.querySelector('button.create-film');
+  }
+
+  function attachButton(): HTMLButtonElement {
+    return [...fixture.nativeElement.querySelectorAll('mat-dialog-actions button')]
+      .find(b => (b as HTMLElement).textContent?.trim() === 'Attach as trailer') as HTMLButtonElement;
+  }
+
+  it('#664: typing in the Film input offers Create film at once, even while the suggestions never load', async () => {
+    suggest.mockImplementation(() => new Promise<Suggestion[]>(() => undefined));
+
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    expect(suggest).toHaveBeenCalledWith('Faderhuset', 10, 'film');
+    expect(createButton()?.textContent?.trim()).toBe('Create film "Faderhuset"');
+    expect(document.querySelector('mat-option.create-film-option')?.textContent?.trim()).toBe('Create film "Faderhuset"');
+    expect(attachButton().disabled).toBe(true);
+  });
+
+  it('#664: a failed suggestions load still leaves Create film available', async () => {
+    suggest.mockRejectedValue(new Error('corpus failed'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    expect(component.createName()).toBe('Faderhuset');
+    expect(createButton()).not.toBeNull();
+  });
+
+  it('#664: picking the Create film option selects a new film and enables Attach as trailer', async () => {
+    suggest.mockResolvedValue([]);
+    const input = typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    (document.querySelector('mat-option.create-film-option') as HTMLElement).click();
+    await fixture.whenStable();
+
+    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(input.value).toBe('Faderhuset');
+    expect(fixture.nativeElement.querySelector('p.selected')?.textContent).toContain('New film: Faderhuset');
+    expect(createButton()).toBeNull();
+    expect(attachButton().disabled).toBe(false);
+  });
+
+  it('#664: the Create film button selects a new film and enables Attach as trailer', async () => {
+    suggest.mockResolvedValue([]);
+    typeFilm('Faderhuset');
+    await fixture.whenStable();
+
+    createButton()!.click();
+    await fixture.whenStable();
+
+    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(attachButton().disabled).toBe(false);
+  });
+
+  it('#664: picking a suggested film from the panel keeps the pick and withdraws Create film for its exact name', async () => {
+    typeFilm('Synthetic Film');
+    await fixture.whenStable();
+
+    expect(document.querySelector('mat-option.create-film-option')).toBeNull();
+    const option = [...document.querySelectorAll('mat-option')]
+      .find(o => o.textContent?.trim() === 'Synthetic Film') as HTMLElement;
+    option.click();
+    await fixture.whenStable();
+
+    expect(component.selected()).toEqual({ id: filmId, name: 'Synthetic Film' });
+    expect(attachButton().disabled).toBe(false);
   });
 
   it('Cancel closes attached:false without sending', () => {

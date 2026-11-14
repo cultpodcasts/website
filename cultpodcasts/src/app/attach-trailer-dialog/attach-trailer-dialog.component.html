@@ -2,8 +2,8 @@
 
 <mat-dialog-content>
     <p class="warning">
-        This adds the episode to a film's Trailers and removes it from its podcast. The podcast stays.
-        Old episode links open the film.
+        This adds the episode to a film's Trailers and removes it from its podcast. If the film doesn't exist yet,
+        pick Create film to make it with this trailer. The podcast stays. Old episode links open the film.
     </p>
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the episode editor will be discarded. Submit them first to keep them.</p>
@@ -11,13 +11,16 @@
     <mat-form-field class="full-width">
         <mat-label>Film</mat-label>
         <input type="text" matInput [formControl]="filmQuery" [matAutocomplete]="filmAuto"
-            (input)="onFilmQuery(filmQuery.value)" [readonly]="isSending()" autocomplete="off" aria-label="Film">
+            [readonly]="isSending()" autocomplete="off" aria-label="Film">
         <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
             @for (film of films(); track film.itemId) {
             <mat-option [value]="film">{{ film.label }}</mat-option>
             }
+            @if (createName(); as name) {
+            <mat-option class="create-film-option" [value]="createOption">Create film "{{ name }}"</mat-option>
+            }
         </mat-autocomplete>
-        <mat-hint>Type a film name, or paste a film id</mat-hint>
+        <mat-hint>Type a film name to pick it or create it, or paste a film id</mat-hint>
     </mat-form-field>
     @if (createName(); as name) {
     @if (!selected()?.create) {

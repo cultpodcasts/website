@@ -226,7 +226,7 @@ export class EditEpisodeDialogComponent {
       });
   }
 
-  /** Curator: attach this one episode to an existing film as a trailer, then open the film page. */
+  /** Curator: attach this one episode to a film as a trailer (creating the film if none has the name), then open the film page. */
   attachAsTrailer() {
     if (!this.podcastId || !this.originalEpisode) {
       return;

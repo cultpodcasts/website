@@ -103,7 +103,7 @@ export class CurationSubmitService {
     });
   }
 
-  /** Curator: attach one podcast episode to an existing film as a trailer (the episode row is then deleted). */
+  /** Curator: attach one podcast episode to a film, by id, as a trailer (the episode row is then deleted). */
   postEpisodeAsTrailer(podcastId: string, episodeId: string, filmId: string, title: string | null) {
     const url = new URL(
       `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/trailer`,
