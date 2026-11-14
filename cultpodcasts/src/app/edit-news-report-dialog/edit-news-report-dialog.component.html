@@ -14,23 +14,24 @@
             [subjectNames]="subjectNames()" [defaultSubject]="defaultSubject()" [people]="people()"
             [guestPeople]="guestPeople()" [guestSuggestions]="guestSuggestions()"
             [languages]="languages()"
-            [variant]="variant" [highlightDefaultLanguage]="data.highlightDefaultLanguage === true"></app-playable-edit-fields>
+            [variant]="variant" [highlightDefaultLanguage]="data.highlightDefaultLanguage === true"
+            [catalogueTab]="canMove ? catalogueActions : null"></app-playable-edit-fields>
     </form>
-    @if (canMove) {
-    <div class="catalogue-actions">
-        <div class="catalogue-action">
-            <button type="button" matButton="tonal" class="move-to-tv-show" aria-describedby="catalogue-hint-tv-show"
-                [disabled]="isSaving()" (click)="moveToTvShow()">Move to TV show</button>
-            <p id="catalogue-hint-tv-show" class="catalogue-hint">Takes this report out of the news organisation and makes it an episode of a new or existing TV show.</p>
+    <ng-template #catalogueActions>
+        <div class="catalogue-actions">
+            <div class="catalogue-action">
+                <button type="button" matButton="filled" class="move-to-tv-show" aria-describedby="catalogue-hint-tv-show"
+                    [disabled]="isSaving()" (click)="moveToTvShow()">Move to TV show</button>
+                <p id="catalogue-hint-tv-show" class="catalogue-hint">Takes this report out of the news organisation and makes it an episode of a new or existing TV show.</p>
+            </div>
+            <div class="catalogue-action">
+                <button type="button" matButton="filled" class="move-to-film" aria-describedby="catalogue-hint-film"
+                    [disabled]="isSaving()" (click)="moveToFilm()">Move to film</button>
+                <p id="catalogue-hint-film" class="catalogue-hint">Takes this report out of the news organisation and makes it a new film.</p>
+            </div>
+            <p class="catalogue-confirm-note">Each one asks you to confirm first.</p>
         </div>
-        <div class="catalogue-action">
-            <button type="button" matButton="tonal" class="move-to-film" aria-describedby="catalogue-hint-film"
-                [disabled]="isSaving()" (click)="moveToFilm()">Move to film</button>
-            <p id="catalogue-hint-film" class="catalogue-hint">Takes this report out of the news organisation and makes it a new film.</p>
-        </div>
-        <p class="catalogue-confirm-note">Each one asks you to confirm first.</p>
-    </div>
-    }
+    </ng-template>
     }
 </mat-dialog-content>
 

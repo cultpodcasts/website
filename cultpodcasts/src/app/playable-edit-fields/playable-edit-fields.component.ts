@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
-import { KeyValuePipe } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, output, signal, TemplateRef } from '@angular/core';
+import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
 import { CdkTextareaAutosize, TextFieldModule } from '@angular/cdk/text-field';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -58,7 +58,8 @@ export interface ParentIdentityFilled {
  * Images, Guests. Urls and Images edit `services` (page URL and image URL per key; same PATCH shape as film / podcast
  * episode). The `film` variant adds Trailers straight after Images. The `tv` and `film` variants add Identity last
  * (id inputs: IMDb / TMDB, plus TheTVDB when the form has it). The `film` variant also swaps the parent row and Title
- * for a read-only Name plus Publisher and takes a year-or-date release.
+ * for a read-only Name plus Publisher and takes a year-or-date release. A dialog can pass `catalogueTab` to add a
+ * final Catalogue tab (the news report dialog's Move to TV show / Move to film, like the podcast Edit Episode dialog).
  */
 @Component({
   selector: 'app-playable-edit-fields',
@@ -66,6 +67,7 @@ export interface ParentIdentityFilled {
     SELECT_REORDER,
     ReactiveFormsModule,
     KeyValuePipe,
+    NgTemplateOutlet,
     CdkTextareaAutosize,
     TextFieldModule,
     MatButtonModule,
@@ -110,6 +112,8 @@ export class PlayableEditFieldsComponent implements OnInit {
   readonly highlightDefaultLanguage = input(false);
   /** Which playable: drives the Identity tab (TV / film) and the film Details / Release fields. */
   readonly variant = input<PlayableEditVariant>('news');
+  /** Optional content for a last "Catalogue" tab (curator moves). No tab when null. */
+  readonly catalogueTab = input<TemplateRef<unknown> | null>(null);
   /** TV / film: the Identity tab (IMDb id; TheTVDB id shows when the form has `tvdbId`). */
   protected readonly identity = computed(() => playableEditHasIdentity(this.variant()));
   /** Film: read-only Name (renames are admin-only), Publisher, no parent row, year-or-date release. */

@@ -2,6 +2,7 @@ import { HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -61,6 +62,8 @@ describe('EditNewsReportDialogComponent', () => {
       imports: [EditNewsReportDialogComponent],
       providers: [
         provideZonelessChangeDetection(),
+        // Tab bodies switch on animation end, which jsdom never fires.
+        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
         { provide: MAT_DIALOG_DATA, useValue: { reportId } },
@@ -117,7 +120,7 @@ describe('EditNewsReportDialogComponent', () => {
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     expect(dialog.subjectNames()).toEqual(['Politics', 'Sport']);
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Catalogue']);
     expect((fixture.nativeElement as HTMLElement).querySelector('#parent-name')?.textContent).toBe('Desk');
   });
 
@@ -214,11 +217,66 @@ describe('EditNewsReportDialogComponent', () => {
     return el!;
   }
 
+  const texts = (selector: string) =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(selector)).map((e) => (e.textContent ?? '').trim());
+
+  /** Clicks the Catalogue tab header and waits for its lazy body to render. */
+  async function openCatalogueTab() {
+    fixture.detectChanges();
+    const tab = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]'))
+      .find((t) => (t.textContent ?? '').trim() === 'Catalogue');
+    expect(tab).toBeTruthy();
+    tab!.click();
+    for (let i = 0; i < 5; i++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    fixture.detectChanges();
+  }
+
+  /** A move button, which lives on the Catalogue tab. */
+  async function catalogueButton(selector: string): Promise<HTMLButtonElement> {
+    await openCatalogueTab();
+    return button(`.catalogue-actions ${selector}`);
+  }
+
+  it('puts Move to TV show and Move to film on a last Catalogue tab, not under the tabs', async () => {
+    await load();
+    const root = fixture.nativeElement as HTMLElement;
+    // Nothing catalogue-related renders outside the tab group until the tab is opened.
+    expect(root.querySelector('.catalogue-actions')).toBeNull();
+    await openCatalogueTab();
+    expect(texts('.catalogue-actions button')).toEqual(['Move to TV show', 'Move to film']);
+    expect(texts('.catalogue-confirm-note')).toEqual(['Each one asks you to confirm first.']);
+    const actions = root.querySelector('.catalogue-actions')!;
+    expect(actions.closest('mat-tab-group')).not.toBeNull();
+    expect(actions.closest('form#edit')).not.toBeNull();
+    for (const b of Array.from(root.querySelectorAll<HTMLButtonElement>('.catalogue-actions button'))) {
+      expect(b.type).toBe('button');
+      const hint = root.querySelector(`#${b.getAttribute('aria-describedby')}`);
+      expect(hint?.classList.contains('catalogue-hint')).toBe(true);
+    }
+  });
+
+  it('shows no Catalogue tab when parent-entity curation is off', async () => {
+    const flags = environment.catalogueParentCuration;
+    environment.catalogueParentCuration = { ...flags, edit: false };
+    try {
+      await load();
+      const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
+      expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests']);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.catalogue-actions')).toBeNull();
+    } finally {
+      environment.catalogueParentCuration = flags;
+    }
+  });
+
   it('Move to TV show opens the move dialog for this news report and sends nothing itself', async () => {
     await load();
     openDialog.mockReturnValue({ afterClosed: () => of({ moved: false }) });
 
-    button('button.move-to-tv-show').click();
+    (await catalogueButton('.move-to-tv-show')).click();
 
     expect(openDialog).toHaveBeenCalledTimes(1);
     const [component, config] = openDialog.mock.calls[0];
@@ -242,7 +300,7 @@ describe('EditNewsReportDialogComponent', () => {
       afterClosed: () => of({ moved: true, tvShowId: 'show-1', tvShowName: 'Synthetic Show', episodeId: reportId, createdShow: true })
     });
 
-    button('button.move-to-tv-show').click();
+    (await catalogueButton('.move-to-tv-show')).click();
 
     expect(close).toHaveBeenCalledWith({ moved: true, parentName: 'Desk' });
     expect(openSnackBar).toHaveBeenCalledWith('Moved to new TV show', 'Ok', { duration: 10000 });
@@ -255,7 +313,7 @@ describe('EditNewsReportDialogComponent', () => {
       afterClosed: () => of({ moved: true, filmId: reportId, name: 'Bulletin', emptiedNewsOrganisationId: outletId })
     });
 
-    button('button.move-to-film').click();
+    (await catalogueButton('.move-to-film')).click();
 
     expect(openDialog.mock.calls[0][0]).toBe(MoveEpisodeToFilmDialogComponent);
     expect(openDialog.mock.calls[0][1].data).toMatchObject({ newsReportId: reportId, episodeTitle: 'Bulletin' });
@@ -279,7 +337,7 @@ describe('EditNewsReportDialogComponent', () => {
     });
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    button('button.move-to-film').click();
+    (await catalogueButton('.move-to-film')).click();
     snackAction.next();
     const patch = await expectSoon(api(`/newsorganisation/${outletId}`), 'PATCH');
     expect(patch.request.body).toEqual({ removed: true });
@@ -292,7 +350,7 @@ describe('EditNewsReportDialogComponent', () => {
     await load();
     openDialog.mockReturnValue({ afterClosed: () => of({ moved: false }) });
 
-    button('button.move-to-film').click();
+    (await catalogueButton('.move-to-film')).click();
 
     expect(close).not.toHaveBeenCalled();
     expect(openSnackBar).not.toHaveBeenCalled();
