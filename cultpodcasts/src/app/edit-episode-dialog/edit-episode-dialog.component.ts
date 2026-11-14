@@ -241,12 +241,13 @@ export class EditEpisodeDialogComponent {
       AttachTrailerDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
       .afterClosed()
       .subscribe(result => {
-        if (!result?.attached || !result.filmId) {
+        // The episode has left the podcast once attached, even when the response names no film id (a created film).
+        if (!result?.attached) {
           return;
         }
         this.dialogRef.close({ attachedAsTrailer: true, podcastId: this.podcastId });
         this.snackBar.open("Attached as trailer", "Ok", { duration: 10000 });
-        if (result.name) {
+        if (result.name && result.filmId) {
           this.router.navigate(filmPageCommands(result.name, result.filmId));
         }
       });
