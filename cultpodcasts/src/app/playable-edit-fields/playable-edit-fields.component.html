@@ -257,4 +257,9 @@
         }
     </mat-tab>
     }
+    @if (catalogueTab(); as catalogue) {
+    <mat-tab label="Catalogue">
+        <ng-container [ngTemplateOutlet]="catalogue"></ng-container>
+    </mat-tab>
+    }
 </mat-tab-group>

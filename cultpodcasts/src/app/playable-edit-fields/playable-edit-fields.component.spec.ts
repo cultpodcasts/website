@@ -1,5 +1,6 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpResponse } from '@angular/common/http';
@@ -7,7 +8,7 @@ import { of, throwError } from 'rxjs';
 import { CatalogueIdentityLookupResponse } from '../catalogue-identity-lookup.interface';
 import { CurationSubmitService } from '../curation-submit.service';
 import { buildPlayableEditForm } from '../playable-edit-form.util';
-import { FilmDto, TvShowEpisodeDto } from '../playable-edit.interface';
+import { FilmDto, NewsReportDto, TvShowEpisodeDto } from '../playable-edit.interface';
 import { ParentIdentityFilled, PlayableEditFieldsComponent } from './playable-edit-fields.component';
 
 type Internals = {
@@ -337,5 +338,96 @@ describe('PlayableEditFieldsComponent guest suggestion chips', () => {
     expect(form.controls.guests.value).toEqual(['Ann Example', 'Chris Suggested']);
     expect(form.controls.guests.dirty).toBe(true);
     expect(component.remainingGuestSuggestions()).toEqual([]);
+  });
+});
+
+@Component({
+  selector: 'app-catalogue-tab-host',
+  imports: [PlayableEditFieldsComponent],
+  template: `
+    <ng-template #catalogue><p class="synthetic-catalogue-content">Synthetic moves</p></ng-template>
+    <app-playable-edit-fields [form]="form" parentLabel="News Outlet" parentName="Desk"
+      [catalogueTab]="withCatalogue() ? catalogue : null"></app-playable-edit-fields>
+  `
+})
+class CatalogueTabHostComponent {
+  readonly withCatalogue = signal(true);
+  readonly form = buildPlayableEditForm({
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    title: 'Bulletin',
+    description: '',
+    release: '2026-01-02',
+    duration: '0:06:30',
+    newsOrganisationId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    newsOrganisationName: 'Desk'
+  } as NewsReportDto, 'news');
+}
+
+describe('PlayableEditFieldsComponent catalogueTab', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CatalogueTabHostComponent, PlayableEditFieldsComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        // Tab bodies switch on animation end, which jsdom never fires.
+        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
+        {
+          provide: CurationSubmitService,
+          useValue: { lookupCatalogueIdentity: vi.fn(), patchCatalogueParent: vi.fn(), getPeople: () => of([]) }
+        },
+        { provide: MatSnackBar, useValue: { open: vi.fn() } },
+        { provide: MatDialog, useValue: { open: vi.fn() } }
+      ]
+    }).compileComponents();
+  });
+
+  const tabLabels = (root: HTMLElement) =>
+    Array.from(root.querySelectorAll('[role="tab"]')).map((t) => (t.textContent ?? '').trim());
+
+  it('adds a last Catalogue tab that renders the passed template', async () => {
+    const fixture = TestBed.createComponent(CatalogueTabHostComponent);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(tabLabels(root)).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Catalogue']);
+    expect(root.querySelector('.synthetic-catalogue-content')).toBeNull();
+    Array.from(root.querySelectorAll<HTMLElement>('[role="tab"]')).find((t) => (t.textContent ?? '').trim() === 'Catalogue')!.click();
+    for (let i = 0; i < 5; i++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(root.querySelector('.synthetic-catalogue-content')?.textContent).toBe('Synthetic moves');
+  });
+
+  it('shows no Catalogue tab when catalogueTab is null', () => {
+    const fixture = TestBed.createComponent(CatalogueTabHostComponent);
+    fixture.componentInstance.withCatalogue.set(false);
+    fixture.detectChanges();
+    expect(tabLabels(fixture.nativeElement as HTMLElement)).not.toContain('Catalogue');
+  });
+
+  it('leaves the film and TV episode tabs unchanged when no catalogueTab is passed', () => {
+    const film = TestBed.createComponent(PlayableEditFieldsComponent);
+    film.componentRef.setInput('form', buildPlayableEditForm({
+      id: 'ffffffff-ffff-4fff-8fff-ffffffffffff', name: 'Synthetic Film', title: 'Synthetic Film', description: '',
+      release: '2021', duration: '1:30:00', publisher: 'Studio', imdbId: null, tmdbId: null
+    } as FilmDto, 'film'));
+    film.componentRef.setInput('parentLabel', 'Film');
+    film.componentRef.setInput('variant', 'film');
+    film.detectChanges();
+    expect(tabLabels(film.nativeElement as HTMLElement)).toEqual(
+      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Guests', 'Identity']);
+
+    const tv = TestBed.createComponent(PlayableEditFieldsComponent);
+    tv.componentRef.setInput('form', buildPlayableEditForm({
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', title: 'Synthetic Episode', description: '', release: '2026-01-02',
+      duration: '0:44:00', tvShowId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', tvShowName: 'Synthetic Show',
+      imdbId: null, tmdbId: null, tvdbId: null
+    } as TvShowEpisodeDto, 'tv'));
+    tv.componentRef.setInput('parentLabel', 'TV Show');
+    tv.componentRef.setInput('variant', 'tv');
+    tv.detectChanges();
+    expect(tabLabels(tv.nativeElement as HTMLElement)).toEqual(
+      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Identity']);
   });
 });
