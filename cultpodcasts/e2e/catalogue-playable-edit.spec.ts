@@ -181,7 +181,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await snack.getByRole("button", { name: "Edit" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Catalogue"]);
 		await expect(dialog.locator("#parent-name")).toHaveText("Desk");
 		await dialog.getByLabel("Title").fill("Bulletin (edited)");
 		await shot(page, "news-edit-details");
@@ -202,6 +202,10 @@ test.describe("news report / TV episode curator edit", () => {
 		await page.keyboard.press("Escape");
 		await expect(page.getByRole("listbox")).toHaveCount(0);
 		await shot(page, "news-edit-guests");
+		// Website #658: the moves live on the last Catalogue tab, like the podcast Edit Episode dialog.
+		await dialog.getByRole("tab", { name: "Catalogue" }).click();
+		await expect(dialog.getByRole("tabpanel").getByRole("button")).toHaveText(["Move to TV show", "Move to film"]);
+		await shot(page, "news-edit-catalogue");
 		await dialog.getByRole("button", { name: "Submit" }).click();
 		await expect.poll(() => sink.body).toEqual({
 			title: "Bulletin (edited)",
