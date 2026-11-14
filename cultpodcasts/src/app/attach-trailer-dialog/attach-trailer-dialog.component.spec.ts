@@ -44,7 +44,6 @@ describe('AttachTrailerDialogComponent', () => {
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: CurationSubmitService, useValue: { postEpisodeAsTrailer, postEpisodeAsTrailerCreatingFilm } },
-
         { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest } }
       ]
     })

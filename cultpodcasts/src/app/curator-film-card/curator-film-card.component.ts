@@ -14,6 +14,7 @@ import { EpisodeImageComponent } from '../episode-image/episode-image.component'
 import { HeroPromoteButtonComponent } from '../hero-promote-button/hero-promote-button.component';
 import { languageFlagBadgeForEpisode } from '../language-flag';
 import { ViewerLocaleService } from '../viewer-locale';
+import { knownRelease } from '../release-label';
 
 @Component({
   selector: 'app-curator-film-card',
@@ -32,6 +33,8 @@ import { ViewerLocaleService } from '../viewer-locale';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CuratorFilmCardComponent {
+  /** Hides the 0001-01-01 search default of a playable with no release (RPP #1418). */
+  protected readonly knownRelease = knownRelease;
   private readonly router = inject(Router);
   private readonly locale = inject(ViewerLocaleService).locale;
 
