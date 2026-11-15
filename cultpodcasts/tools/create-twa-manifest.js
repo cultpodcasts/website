@@ -10,16 +10,13 @@ process.chdir(cultpodcastsDir);
 
 // Read base config from bubblewrap.json
 const bubblewrapConfig = require(path.join(cultpodcastsDir, 'bubblewrap.json'));
-const packageJson = require(path.join(cultpodcastsDir, 'package.json'));
-const appVersion = packageJson.version;
+const { currentBuildVersion } = require('./build-version.cjs');
 
-// Convert semantic version (e.g., 1.8.0) to integer version code
-// Multiply major*10000 + minor*100 + patch
-const versionParts = appVersion.split('.');
-const major = parseInt(versionParts[0], 10) || 0;
-const minor = parseInt(versionParts[1], 10) || 0;
-const patch = parseInt(versionParts[2], 10) || 0;
-const appVersionCode = (major * 10000) + (minor * 100) + patch;
+// Website #669: the version is worked out at build time (see tools/build-version.cjs). versionName is
+// `<base>+<sha7>`; versionCode is 100000 + the workflow run number, so it rises with every release.
+const buildVersion = currentBuildVersion();
+const appVersion = buildVersion.version;
+const appVersionCode = buildVersion.versionCode;
 
 // Create manifest by merging bubblewrap config with dynamic values
 const manifest = {

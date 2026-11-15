@@ -42,8 +42,7 @@ git push origin v1.0.0
 }
 ```
 - `packageId`: Unique app identifier (used on Google Play)
-- `appVersionName`: Match your `package.json` version
-- `appVersionCode`: Increment for each Play Store release
+- `appVersionName` / `appVersionCode`: ignored in CI. `tools/create-twa-manifest.js` sets them at build time from `tools/build-version.cjs` (`<base>+<sha7>`, and 100000 + the workflow run number). See "Version Management".
 
 ### iOS (`ExportOptions.plist`)
 ```xml
@@ -164,14 +163,14 @@ Edit `.github/workflows/ios-build.yml` and uncomment the signing section (search
 
 ## Version Management
 
-Update `package.json` version for your next build:
-```json
-{
-  "version": "1.0.1"
-}
-```
+Versions are worked out at build time and never committed (website #669). `package.json` holds a fixed base version
+(x.y.z), changed by hand only for a deliberate minor/major. `tools/build-version.cjs` gives:
 
-Built APK/IPA automatically gets this version.
+- version `<base>+<sha7>` (Android versionName, the site's privacy page); tags and assets use `v<base>-<sha7>`
+- Android versionCode 100000 + the `Build Mobile Apps` run number, so each release is higher than the last
+- iOS CFBundleShortVersionString = base, CFBundleVersion = run number
+
+Run `node tools/build-version.cjs` to see the values for your checkout.
 
 ## Next Steps
 
