@@ -44,6 +44,19 @@ export class AmbiguousIdentityDialogComponent {
   selectedKey = this.data.candidates[0]?.key ?? '';
   readonly isEdit = this.data.context === 'edit';
 
+  /**
+   * website#674: a single different-title hit is held for the curator, so the
+   * heading must not say "Several" when there is only one candidate. The same
+   * picker is used for Film, TV and news.
+   */
+  matchesFoundLead(): string {
+    const target = this.data.target;
+    if (this.data.candidates.length === 1) {
+      return `A possible ${target} match was found for`;
+    }
+    return `Several ${target} matches were found for`;
+  }
+
   chooseSelect() {
     if (!this.selectedKey) {
       return;
