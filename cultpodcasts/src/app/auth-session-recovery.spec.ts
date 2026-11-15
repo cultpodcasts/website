@@ -43,6 +43,7 @@ describe('isSessionRecoveryError', () => {
 describe('isSafeAppReturnPath', () => {
   it('allows same-origin relative paths with query and hash', () => {
     expect(isSafeAppReturnPath('/content/privacy-policy')).toBe(true);
+    expect(isSafeAppReturnPath('/content/legal-notices')).toBe(true);
     expect(isSafeAppReturnPath('/podcast/foo?x=1#bar')).toBe(true);
   });
 

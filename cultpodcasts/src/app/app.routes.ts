@@ -4,6 +4,7 @@ import { ContentComponent } from './content/content.component';
 import { ContentNotFoundComponent } from './content/content-not-found.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
+import { LegalNoticesComponent } from './legal-notices/legal-notices.component';
 import { DiscoveryComponent } from './discovery/discovery.component';
 import { hasRoleGuard } from './has-role.guard';
 import { isUserGuard } from './is-user.guard';
@@ -39,6 +40,7 @@ export const routes: Routes = [
     children: [
       { path: 'privacy-policy', component: PrivacyPolicyComponent },
       { path: 'terms-and-conditions', component: TermsAndConditionsComponent },
+      { path: 'legal-notices', component: LegalNoticesComponent },
       { path: '**', component: ContentNotFoundComponent },
     ],
   },

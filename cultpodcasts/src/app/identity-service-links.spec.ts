@@ -47,4 +47,17 @@ describe('identityServiceLinks', () => {
       { key: 'tvdb', href: 'https://www.thetvdb.com/dereferrer/episode/2002', icon: 'tvdb', displayName: 'TVDB' }
     ]);
   });
+
+  it("uses series ids only for a TV show and never falls back to an episode's own ids", () => {
+    expect(hrefs(hit({ imdbId: 'tt7654321', tmdbId: 11, tvdbId: 22 }), 'tv-show')).toEqual([]);
+    expect(hrefs(hit({ seriesImdbId: 'tt1234567', tmdbId: 11, tvdbId: 22 }), 'tv-show')).toEqual([
+      { key: 'imdb', href: 'https://www.imdb.com/title/tt1234567/', icon: 'imdb', displayName: 'IMDb' }
+    ]);
+  });
+
+  it('labels a TVDB series fallback as TVDB (series)', () => {
+    expect(hrefs(hit({ seriesTvdbId: 1001 }), 'tv-episode')).toEqual([
+      { key: 'tvdb', href: 'https://www.thetvdb.com/dereferrer/series/1001', icon: 'tvdb', displayName: 'TVDB (series)' }
+    ]);
+  });
 });

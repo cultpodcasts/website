@@ -15,6 +15,8 @@ describe('isAuthClientOnlyPath', () => {
     expect(isAuthClientOnlyPath('/subject/example')).toBe(false);
     expect(isAuthClientOnlyPath('/search/foo')).toBe(false);
     expect(isAuthClientOnlyPath('/content/privacy-policy')).toBe(false);
+    expect(isAuthClientOnlyPath('/content/terms-and-conditions')).toBe(false);
+    expect(isAuthClientOnlyPath('/content/legal-notices')).toBe(false);
     expect(isAuthClientOnlyPath('/episode/abc')).toBe(false);
   });
 });

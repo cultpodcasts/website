@@ -101,6 +101,21 @@ function boxedOfficialSvgMeet(file, clipId, { bg, pad = 2 } = {}) {
   );
 }
 
+
+/** Official PNG logo letterboxed on a brand-colour tile (meet, not slice). */
+function boxedOfficialPngMeet(file, clipId, { bg, pad = 2 } = {}) {
+  const png = fs.readFileSync(path.join(root, 'icon-sources', file));
+  const b64 = png.toString('base64');
+  const size = 24 - pad * 2;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
+    `<g clip-path="url(#${clipId})">` +
+    `<rect width="24" height="24" fill="${bg}"/>` +
+    `<image href="data:image/png;base64,${b64}" x="${pad}" y="${pad}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>` +
+    `</g></svg>`
+  );
+}
 function roundPathData(d) {
   return d.replace(/-?\d*\.?\d+(?:e-?\d+)?/gi, (n) => String(Number(Number(n).toFixed(2))));
 }
@@ -298,9 +313,9 @@ const streamingIconSvgs = {
   // TMDB — official Primary full (blue) wordmark on official primary dark blue #0d253f.
   // Source: https://www.themoviedb.org/about/logos-attribution (blue_square_2 SVG).
   tmdb: boxedOfficialSvgMeet('tmdb-blue-square-full.svg', 'cp-tmdb-clip', { bg: '#0d253f', pad: 1.5 }),
-  // TheTVDB — official apple-touch app icon, resized to 96x96.
-  // Source: https://www.thetvdb.com/apple-touch-icon-180x180.png
-  tvdb: boxedOfficialPng('tvdb-app-icon.png', 'cp-tvdb-clip'),
+  // TheTVDB — listed brand logo (logo1.png) letterboxed on the official dark swatch #1b2626.
+  // Source: https://www.thetvdb.com/images/attribution/logo1.png (Brand Logos on https://www.thetvdb.com/api-information).
+  tvdb: boxedOfficialPngMeet('tvdb-attribution-logo1.png', 'cp-tvdb-clip', { bg: '#1b2626', pad: 2 }),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

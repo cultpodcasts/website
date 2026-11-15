@@ -66,7 +66,7 @@ buttons can sit at the end of the provider row.
 | --- | --- |
 | `imdb-logo-2016.svg` | Official IMDb 2016 wordmark (yellow `#f6c700` badge with black letters). Geometry inlined (no `xlink:href`) so the tile can embed it. Letterboxed on the same yellow. |
 | `tmdb-blue-square-full.svg` | Official TMDB "Primary full (blue)" SVG from [Logos & Attribution](https://www.themoviedb.org/about/logos-attribution) (`blue_square_2`). Letterboxed on official primary dark blue `#0d253f`. |
-| `tvdb-app-icon.png` | Official TheTVDB apple-touch icon (`https://www.thetvdb.com/apple-touch-icon-180x180.png`), resized to 96x96. No colourful square SVG is published; the header `logo.svg` is a wide wordmark. |
+| `tvdb-attribution-logo1.png` | Listed TheTVDB brand logo (`https://www.thetvdb.com/images/attribution/logo1.png`, shown on `#1b2626` on [API Information / Brand Logos](https://www.thetvdb.com/api-information)). Letterboxed, otherwise unmodified, on that official dark swatch. The apple-touch icon is not a listed brand logo and is not used. |
 ## Simple Icons paths
 
 `paths.json` holds SVG path `d` attributes from [Simple Icons](https://simple-icons.org)

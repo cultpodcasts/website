@@ -28,7 +28,8 @@ export function identityLinkKind(contentKind: string | null | undefined): Identi
 /**
  * Identity-service buttons for the provider row. Only services with an id are returned, in IMDb, TMDB,
  * TVDB order, to append after streaming services. TV episode TMDB links use the series URL (episodes do
- * not store season/episode numbers).
+ * not store season/episode numbers). A TV-show hub uses series ids only, never an
+ * episode's own ids. A TVDB series fallback is labelled "TVDB (series)".
  */
 export function identityServiceLinks(hit: IdentityLinkSource, kind: IdentityLinkKind): EpisodeServiceItem[] {
   const links: EpisodeServiceItem[] = [];
@@ -38,14 +39,15 @@ export function identityServiceLinks(hit: IdentityLinkSource, kind: IdentityLink
     return links;
   }
   if (kind === 'tv-show') {
-    add(links, 'imdb', 'IMDb', imdbTitleUrl(hit.seriesImdbId ?? hit.imdbId));
-    add(links, 'tmdb', 'TMDB', tmdbTvShowUrl(hit.seriesTmdbId ?? hit.tmdbId));
-    add(links, 'tvdb', 'TVDB', tvdbSeriesUrl(hit.seriesTvdbId ?? hit.tvdbId));
+    add(links, 'imdb', 'IMDb', imdbTitleUrl(hit.seriesImdbId));
+    add(links, 'tmdb', 'TMDB', tmdbTvShowUrl(hit.seriesTmdbId));
+    add(links, 'tvdb', 'TVDB', tvdbSeriesUrl(hit.seriesTvdbId));
     return links;
   }
   add(links, 'imdb', 'IMDb', imdbTitleUrl(hit.imdbId));
   add(links, 'tmdb', 'TMDB', tmdbTvShowUrl(hit.seriesTmdbId));
-  add(links, 'tvdb', 'TVDB', tvdbEpisodeUrl(hit.tvdbId) || tvdbSeriesUrl(hit.seriesTvdbId));
+  const episodeTvdb = tvdbEpisodeUrl(hit.tvdbId);
+  add(links, 'tvdb', episodeTvdb ? 'TVDB' : 'TVDB (series)', episodeTvdb || tvdbSeriesUrl(hit.seriesTvdbId));
   return links;
 }
 

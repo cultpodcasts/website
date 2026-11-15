@@ -7,6 +7,8 @@ import { homeStickTopPx } from './home-chrome-dock';
 import { isAuthClientOnlyPath } from './auth-client-only-path';
 import { ContentComponent } from './content/content.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
+import { TermsAndConditionsComponent } from './terms-and-conditions/terms-and-conditions.component';
+import { LegalNoticesComponent } from './legal-notices/legal-notices.component';
 import { SearchBarComponent } from './search-bar/search-bar.component';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 
@@ -65,7 +67,11 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(contentHtml).not.toMatch(/@switch/);
     expect(compiledHost(ContentComponent)).not.toMatch(/ngSkipHydration/);
     const privacy = contentChildren().find((c) => c.path === 'privacy-policy');
+    const terms = contentChildren().find((c) => c.path === 'terms-and-conditions');
+    const legal = contentChildren().find((c) => c.path === 'legal-notices');
     expect(privacy?.component).toBe(PrivacyPolicyComponent);
+    expect(terms?.component).toBe(TermsAndConditionsComponent);
+    expect(legal?.component).toBe(LegalNoticesComponent);
   });
 
   it('CHROME-DOCK-006: drop overlay host stays mounted; idle body is structural @if inside', () => {
@@ -88,17 +94,29 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(appHtml).not.toMatch(/drop-target-warn/);
   });
 
-  it('CHROME-DOCK-008: privacy/terms are prerendered SSG and excluded from the Pages Worker', () => {
+  it('CHROME-DOCK-008: privacy/terms/legal-notices are prerendered SSG and excluded from the Pages Worker', () => {
     const prerenderRoutes = readFileSync(join(__dirname, '../../prerender-routes'), 'utf8');
     const routesJson = readFileSync(join(__dirname, '../_routes.json'), 'utf8');
     expect(prerenderRoutes).toMatch(/\/content\/privacy-policy/);
     expect(prerenderRoutes).toMatch(/\/content\/terms-and-conditions/);
+    expect(prerenderRoutes).toMatch(/\/content\/legal-notices/);
     expect(routesJson).toMatch(/\/content\/privacy-policy/);
     expect(routesJson).toMatch(/\/content\/terms-and-conditions/);
+    expect(routesJson).toMatch(/\/content\/legal-notices/);
     expect(routesJson).toMatch(/"exclude"/);
     expect(isAuthClientOnlyPath('/content/privacy-policy')).toBe(false);
     expect(isAuthClientOnlyPath('/content/terms-and-conditions')).toBe(false);
+    expect(isAuthClientOnlyPath('/content/legal-notices')).toBe(false);
     expect(isAuthClientOnlyPath('/discovery')).toBe(true);
+  });
+
+  it('CHROME-DOCK-FOOTER: Privacy Policy and Terms and Conditions are linked in the site footer', () => {
+    expect(appHtml).toMatch(/id="privacy"/);
+    expect(appHtml).toMatch(/\[routerLink\]="\['\/content\/privacy-policy'\]"/);
+    expect(appHtml).toMatch(/id="terms"/);
+    expect(appHtml).toMatch(/\[routerLink\]="\['\/content\/terms-and-conditions'\]"/);
+    expect(appHtml).toMatch(/>Privacy Policy</);
+    expect(appHtml).toMatch(/>Terms and Conditions</);
   });
 
   it('CHROME-DOCK-007: chrome-stuck is driven from the template binding', () => {

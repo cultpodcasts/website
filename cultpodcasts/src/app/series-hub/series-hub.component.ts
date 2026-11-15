@@ -52,13 +52,12 @@ export class SeriesHubComponent {
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly playerService = inject(PlayerService);
   protected readonly itemNoun = computed(() => this.hub() === "news" ? "report" : "episode");
-  /** First TV-show result with at least one identity id, so the hub can show IMDb/TMDB/TVDB in the provider row. */
+  /** First TV result that has series identity ids, never falling back to an episode's own ids. */
   protected readonly identityEpisode = computed(() => {
     if (this.hub() !== "tv") {
       return undefined;
     }
-    const first = this.results()[0];
-    return first && identityServiceLinks(first, "tv-show").length > 0 ? first : undefined;
+    return this.results().find((hit) => identityServiceLinks(hit, "tv-show").length > 0);
   });
   readonly loadingLabel = computed(() => {
     const noun = `${this.itemNoun()}s`;
