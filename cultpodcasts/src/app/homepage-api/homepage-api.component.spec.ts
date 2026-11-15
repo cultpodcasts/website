@@ -14,6 +14,7 @@ import { PlayerService } from '../player.service';
 import { Homepage } from '../homepage.interface';
 import { HomepageEpisode } from '../homepage-episode.interface';
 import { RAIL_DISPLAY_SIZE, SUBJECT_RAIL_MIN_EPISODES } from '../rail-subjects';
+import { dateKey } from '../homepage-date.util';
 
 /** Hero CAS tokens: `updatedAt` is a `Date` once JsonDateInterceptor has read the GET (#579). */
 const STALE_TOKEN = new Date('2026-10-31T10:00:00Z');
@@ -259,6 +260,24 @@ describe('HomepageApiComponent', () => {
     const dayRails = component['rails']().filter((r) => r.id.startsWith('day:'));
     expect(dayRails).toHaveLength(3);
     expect(dayRails.map((r) => r.episodes.length)).toEqual([35, 35, 35]);
+  });
+
+  it('hides a future-dated film from day rails so last Thursday keeps its episodes', () => {
+    const lastThursday = [ep('thu-1', { daysAgo: 3 }), ep('thu-2', { daysAgo: 3 })];
+    const today = ep('today', { daysAgo: 0 });
+    const futureFilm = ep('future-film', { daysAgo: -4 });
+    futureFilm.podcastName = 'Faderhuset';
+    futureFilm.episodeTitle = 'Faderhuset';
+    apply([futureFilm, today, ...lastThursday]);
+
+    const dayRails = component['rails']().filter((r) => r.id.startsWith('day:'));
+    const futureKey = dateKey(futureFilm.release as Date);
+    const lastThursdayKey = dateKey(lastThursday[0].release as Date);
+    expect(dayRails.map((r) => r.id)).not.toContain(`day:${futureKey}`);
+    const pastRail = dayRails.find((r) => r.id === `day:${lastThursdayKey}`);
+    expect(pastRail).toBeDefined();
+    expect(pastRail!.episodes.map((e) => e.id).sort()).toEqual(['thu-1', 'thu-2']);
+    expect(component['weekEpisodeCount']()).toBe(3);
   });
 
   it('background refresh replaces the week without progressive scroll state', async () => {

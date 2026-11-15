@@ -24,7 +24,7 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { pickObscureCults } from '../obscure-cults';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { startEpisodePlayback } from '../episode-embed';
-import { dateFromKey, dateKey } from '../homepage-date.util';
+import { dateFromKey, dateKey, hasBeenReleased } from '../homepage-date.util';
 import { displayCatalogName } from '../display-catalog-name';
 import { HeroCurationConflictError, HeroCurationService } from '../hero-curation.service';
 import { buildHeroSlides, pruneCuratedIdsToWeek } from '../hero-slides';
@@ -649,13 +649,16 @@ export class HomepageApiComponent {
     this.homepage.set(homepageContent);
     this.episodeCount.set(homepageContent.episodeCount);
     this.totalDurationDays.set(homepageContent.totalDuration.split('.')[0]);
-    this.weekEpisodeCount.set(homepageContent.recentEpisodes.length);
-    this.allEpisodes.set(
-      homepageContent.recentEpisodes.map((item) => ({
+    // Future-dated items (release after now) must not create or join a day
+    // group. They appear normally once now is on or after the release instant.
+    const releasedEpisodes = homepageContent.recentEpisodes
+      .map((item) => ({
         ...item,
         release: new Date(item.release),
       }))
-    );
+      .filter((item) => hasBeenReleased(item.release));
+    this.weekEpisodeCount.set(releasedEpisodes.length);
+    this.allEpisodes.set(releasedEpisodes);
     // Week-window drop: curated picks that left recentEpisodes fall out locally
     // (and persist when a Curator is signed in).
     this.pruneCurationToCurrentWeek();
