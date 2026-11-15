@@ -14,6 +14,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 interface SearchCall {
   filter?: string;
   facets?: string[];
+  top?: number;
 }
 
 function namedField(property: string): HttpErrorResponse {
@@ -45,6 +46,10 @@ type ScriptStep = 'opaque' | 'series' | 'kind' | 'server' | 'ok';
 describe('SearchApiComponent', () => {
   let fixture: ComponentFixture<SearchApiComponent>;
   let calls: SearchCall[];
+  /** #662: facet-only searches (top 0) for the Shows chips without films. */
+  let facetCalls: SearchCall[];
+  let facetPage: unknown;
+  let facetFails: boolean;
   let script: ScriptStep[];
   let page = searchPage();
   let queryParams$: BehaviorSubject<Params>;
@@ -53,6 +58,9 @@ describe('SearchApiComponent', () => {
 
   beforeEach(async () => {
     calls = [];
+    facetCalls = [];
+    facetPage = undefined;
+    facetFails = false;
     queryParams$ = new BehaviorSubject<Params>({});
     fragment$ = new BehaviorSubject<string | null>(null);
     script = ['ok'];
@@ -69,6 +77,10 @@ describe('SearchApiComponent', () => {
           provide: ODataService,
           useValue: {
             getEntitiesWithFacets: (_url: string, request: SearchCall) => {
+              if (request.top === 0) {
+                facetCalls.push(request);
+                return facetFails ? throwError(() => serverError()) : of(facetPage ?? page);
+              }
               calls.push(request);
               const next = script.shift() ?? 'ok';
               if (next === 'opaque') {
@@ -178,6 +190,103 @@ describe('SearchApiComponent', () => {
     expect(text).toContain('Film');
     expect(text).toContain('TV');
     expect(calls.at(-1)?.filter).toContain("search.in(contentKind, 'Film'");
+  });
+
+  describe('#662 films are not filterable by show', () => {
+    function filmsPage(seriesName: { value: string; count: number }[]) {
+      return {
+        metadata: new Map<string, number>([['count', 10]]),
+        entities: [],
+        facets: {
+          seriesName,
+          subjects: [],
+          contentKind: [{ value: 'Episode', count: 7 }, { value: 'Film', count: 3 }],
+        },
+      } as unknown as ReturnType<typeof searchPage>;
+    }
+
+    function showsRow(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('[aria-label="Filter by podcast"]');
+    }
+
+    beforeEach(() => {
+      // The main search counts the films' uploader ("Film Uploader") as a show.
+      page = filmsPage([{ value: 'Film Uploader', count: 3 }, { value: 'Show A', count: 7 }]);
+      facetPage = filmsPage([{ value: 'Show A', count: 7 }]);
+    });
+
+    it('under All, takes the Shows chips from a facet-only search without films', () => {
+      fixture.detectChanges();
+
+      expect(facetCalls).toHaveLength(1);
+      expect(facetCalls[0].filter).toBe("contentKind ne 'Film'");
+      expect(facetCalls[0].facets).toEqual(['seriesName,count:1000,sort:count']);
+      const chips = showsRow()?.textContent ?? '';
+      expect(chips).toContain('Show A');
+      expect(chips).not.toContain('Film Uploader');
+    });
+
+    it('keeps the query filter on the facet-only search', () => {
+      queryParams$.next({ filter: "subjects/any(s: s eq 'Topic')" });
+      fixture.detectChanges();
+
+      expect(facetCalls.at(-1)?.filter).toBe("subjects/any(s: s eq 'Topic') and contentKind ne 'Film'");
+    });
+
+    it('a Shows chip excludes films from the results', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.togglePodcast('Show A');
+
+      expect(calls.at(-1)?.filter).toBe("(search.in(seriesName, 'Show A', '£') and contentKind ne 'Film')");
+    });
+
+    it('with Kind = Film, there is no Shows row and no facet-only search', () => {
+      fixture.detectChanges();
+      const before = facetCalls.length;
+      page = filmsPage([{ value: 'Film Uploader', count: 3 }]);
+
+      fixture.componentInstance.toggleKind('Film');
+      fixture.detectChanges();
+
+      expect(facetCalls).toHaveLength(before);
+      expect(showsRow()).toBeNull();
+    });
+
+    it('with films among several kinds, still drops the films from the Shows chips', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.toggleKind('Episode');
+      fixture.componentInstance.toggleKind('Film');
+      fixture.detectChanges();
+
+      expect(facetCalls.at(-1)?.filter).toBe("search.in(contentKind, 'Episode£Film', '£') and contentKind ne 'Film'");
+      expect(showsRow()?.textContent ?? '').not.toContain('Film Uploader');
+    });
+
+    it('makes no facet-only search when the results have no films', () => {
+      page = searchPage([{ value: 'Episode', count: 4 }]);
+      fixture.detectChanges();
+
+      expect(facetCalls).toHaveLength(0);
+    });
+
+    it('falls back to the main facets if the facet-only search fails', () => {
+      facetFails = true;
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fixture.detectChanges();
+
+      expect(facetCalls).toHaveLength(1);
+      expect(showsRow()?.textContent ?? '').toContain('Show A');
+      expect(fixture.nativeElement.textContent).not.toContain('Something went wrong');
+    });
+
+    it('leaves contentKind out of the Shows filter when the index has no contentKind', () => {
+      script = ['kind', 'ok'];
+      fixture.detectChanges();
+      fixture.componentInstance.togglePodcast('Show A');
+
+      expect(calls.at(-1)?.filter).toBe("search.in(seriesName, 'Show A', '£')");
+      expect(facetCalls).toHaveLength(0);
+    });
   });
 
   describe('filters in the URL', () => {

@@ -64,7 +64,7 @@
     </div>
     }
 
-    @if (facets().podcastName && facets().podcastName!.length > 0) {
+    @if (facets().podcastName && facets().podcastName!.length > 0 && (!filmOnly() || podcasts().length > 0)) {
     <div class="browse-facet" aria-label="Filter by podcast">
       <span class="browse-facet__label">Shows</span>
       <div class="browse-facet__scroller" tabindex="0">
