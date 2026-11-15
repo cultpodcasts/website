@@ -133,7 +133,7 @@ Shipping PRs **MUST NOT** change `cultpodcasts/package.json` / `package-lock.jso
 `package.json` holds a fixed **base** version (x.y.z). The real version is worked out at build time by `tools/build-version.cjs`:
 
 - **Version** `<base>+<sha7>` (e.g. `1.24.44+b457ca5`): the privacy page (`update-version.js` → `src/environments/version.prod.ts`, via `build.sh` on Cloudflare Pages and in Actions) and the Android versionName. The commit is `CF_PAGES_COMMIT_SHA`, else `GITHUB_SHA`, else `git`.
-- **Android versionCode** max(`VERSION_CODE_FLOOR`, 100000 + the workflow run number (`GITHUB_RUN_NUMBER`, or `BUILD_NUMBER`)), so every release is higher than the last, and higher than the old `major*10000+minor*100+patch` codes. The run number belongs to the workflow file: **never rename or move `.github/workflows/mobile-build.yml` without first raising `VERSION_CODE_FLOOR`** to the highest code released (see `MOBILE_BUILDS.md`). Release tags and asset names use `v<base>-<sha7>`.
+- **Android versionCode** `VERSION_CODE_OFFSET` (100000) + the workflow run number (`GITHUB_RUN_NUMBER`, or `BUILD_NUMBER`), so every release is higher than the last, and higher than the old `major*10000+minor*100+patch` codes. The run number belongs to the workflow file: **never rename or move `.github/workflows/mobile-build.yml` without raising `VERSION_CODE_OFFSET`** in the same PR to at least the highest code released (see `MOBILE_BUILDS.md`). Release tags and asset names use `v<base>-<sha7>`.
 - **iOS** CFBundleShortVersionString is the base; CFBundleVersion is the run number (else epoch seconds).
 
 Change the base version only for a deliberate minor/major, in its own PR. `npm run test:tools` covers the module.

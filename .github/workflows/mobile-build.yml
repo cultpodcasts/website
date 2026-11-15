@@ -1,7 +1,8 @@
-# WARNING (website #669): the Android versionCode is max(VERSION_CODE_FLOOR, 100000 + this workflow's run number)
+# WARNING (website #669): the Android versionCode is VERSION_CODE_OFFSET + this workflow's run number
 # (cultpodcasts/tools/build-version.cjs). GitHub's run number belongs to this FILE: renaming or moving
-# .github/workflows/mobile-build.yml starts it again at 1. Before renaming or moving it, raise VERSION_CODE_FLOOR in
-# build-version.cjs to at least the highest versionCode released so far. Changing `name:` below is safe.
+# .github/workflows/mobile-build.yml starts it again at 1, and Play rejects codes that aren't higher than ones
+# already uploaded. In the same PR as any rename or move, raise VERSION_CODE_OFFSET in build-version.cjs to at least
+# the highest versionCode released so far. Changing `name:` below is safe.
 name: Build Mobile Apps
 
 on:

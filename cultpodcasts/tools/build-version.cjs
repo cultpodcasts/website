@@ -7,9 +7,9 @@
  *   versionName, so the site and the app built from one commit report the same version.
  * - `tagVersion`: `<base>-<sha7>`, the same with `-` for git tags and release asset names.
  * - `versionCode`: the Android versionCode, which must rise with every release:
- *   max(VERSION_CODE_FLOOR, 100000 + the workflow run number) (`BUILD_NUMBER`, else `GITHUB_RUN_NUMBER`). That is
- *   above every code the old `major*10000 + minor*100 + patch` scheme produced (the last release, v1.24.44, was
- *   12444). Without a run number (a local build) it falls back to that scheme.
+ *   VERSION_CODE_OFFSET + the workflow run number (`BUILD_NUMBER`, else `GITHUB_RUN_NUMBER`). With the offset at
+ *   100000 that is above every code the old `major*10000 + minor*100 + patch` scheme produced (the last release,
+ *   v1.24.44, was 12444). Without a run number (a local build) it falls back to that scheme.
  * - `iosBuildNumber`: CFBundleVersion, the run number when there is one, else epoch seconds.
  *
  * The commit comes from `CF_PAGES_COMMIT_SHA` (Cloudflare Pages), else `GITHUB_SHA` (Actions), else `git`.
@@ -21,19 +21,17 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const VERSION_CODE_BASE = 100000;
-
 /**
- * WARNING: GitHub's run number belongs to the workflow FILE. If `.github/workflows/mobile-build.yml` is renamed or
- * moved, its run number starts again at 1, and 100000 + run would drop below versionCodes already released (the
- * Play Store rejects a lower code). Before renaming or moving that file, raise this floor to at least the highest
- * versionCode released so far (100000 + the last `Build Mobile Apps` run number, + 1 for Bubblewrap's update).
- * Changing the workflow's `name:` is safe; only the file path matters.
+ * The Android versionCode is VERSION_CODE_OFFSET + the `Build Mobile Apps` run number.
  *
- * Set to 100000 + run 453, the latest `Build Mobile Apps` run when this was added (15 Nov 2026), above every code
- * released before it (the old scheme's last release, v1.24.44, was 12444 + 1).
+ * WARNING: GitHub's run number belongs to the workflow FILE. If `.github/workflows/mobile-build.yml` is renamed or
+ * moved, its run number starts again at 1. The Play Store rejects any versionCode that is not higher than every
+ * code already uploaded. So in the same PR as the rename or move, raise this offset to at least the highest
+ * versionCode released so far (the current offset + the last `Build Mobile Apps` run number, + 1 for Bubblewrap's
+ * update). Run 1 of the new file is then above every released code, and each later run rises by one.
+ * Changing the workflow's `name:` is safe; only the file path matters.
  */
-const VERSION_CODE_FLOOR = 100453;
+const VERSION_CODE_OFFSET = 100000;
 
 function shortSha(value) {
   const sha = String(value ?? '').trim();
@@ -51,7 +49,13 @@ function semverVersionCode(base) {
   return major * 10000 + minor * 100 + patch;
 }
 
-function resolveBuildVersion({ packageVersion, env = {}, gitSha = null, now = Date.now() }) {
+function resolveBuildVersion({
+  packageVersion,
+  env = {},
+  gitSha = null,
+  now = Date.now(),
+  versionCodeOffset = VERSION_CODE_OFFSET
+}) {
   const base = String(packageVersion ?? '').trim();
   if (!/^\d+\.\d+\.\d+$/.test(base)) {
     throw new Error(`cultpodcasts/package.json version must be x.y.z, got "${base}"`);
@@ -65,7 +69,7 @@ function resolveBuildVersion({ packageVersion, env = {}, gitSha = null, now = Da
     buildNumber: run,
     version,
     tagVersion: version.replace('+', '-'),
-    versionCode: run === null ? semverVersionCode(base) : Math.max(VERSION_CODE_FLOOR, VERSION_CODE_BASE + run),
+    versionCode: run === null ? semverVersionCode(base) : versionCodeOffset + run,
     iosBuildNumber: String(run ?? Math.floor(now / 1000))
   };
 }
@@ -89,7 +93,7 @@ function currentBuildVersion(env = process.env) {
   return resolveBuildVersion({ packageVersion: packageJson.version, env, gitSha: gitShortSha(appDir) });
 }
 
-module.exports = { VERSION_CODE_BASE, VERSION_CODE_FLOOR, resolveBuildVersion, currentBuildVersion };
+module.exports = { VERSION_CODE_OFFSET, resolveBuildVersion, currentBuildVersion };
 
 if (require.main === module) {
   const info = currentBuildVersion();

@@ -1,7 +1,7 @@
 // Website #669: build-time version. Run with `npm run test:tools` (part of `npm run test:all`).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { VERSION_CODE_BASE, VERSION_CODE_FLOOR, resolveBuildVersion, currentBuildVersion } = require('./build-version.cjs');
+const { VERSION_CODE_OFFSET, resolveBuildVersion, currentBuildVersion } = require('./build-version.cjs');
 
 const sha = 'b457ca5d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b';
 
@@ -23,25 +23,30 @@ test('GitHub Actions: the run number gives a rising Android versionCode above th
   assert.equal(info.iosBuildNumber, '812');
 });
 
-test('the versionCode floor is above every code already released', () => {
+test('the versionCode is the offset + run, and the offset is above every code the old scheme released', () => {
+  assert.equal(VERSION_CODE_OFFSET, 100000);
   // The old scheme's last release, v1.24.44, was 1*10000 + 24*100 + 44 = 12444 (+1 from Bubblewrap's update).
-  assert.ok(VERSION_CODE_FLOOR > 12445);
-  // Run 453 was the latest Build Mobile Apps run when the floor was set.
-  assert.ok(VERSION_CODE_FLOOR >= VERSION_CODE_BASE + 453);
+  const run1 = resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_RUN_NUMBER: '1' } });
+  assert.equal(run1.versionCode, VERSION_CODE_OFFSET + 1);
+  assert.ok(run1.versionCode > 12445);
 });
 
-test('a renamed workflow (run number back to 1) never drops the versionCode below the floor', () => {
-  for (const run of ['1', '2', '452']) {
-    const info = resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_SHA: sha, GITHUB_RUN_NUMBER: run } });
-    assert.equal(info.versionCode, VERSION_CODE_FLOOR, `run ${run}`);
+test('a renamed workflow: after the offset bump, codes stay strictly increasing across the rename', () => {
+  const code = (run, versionCodeOffset) =>
+    resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_RUN_NUMBER: String(run) }, versionCodeOffset })
+      .versionCode;
+  // The old file's last runs, then the rename: the run number restarts at 1 and the offset is raised to the highest
+  // released code (+ 1 for Bubblewrap's update), as build-version.cjs says.
+  const oldFile = [452, 453, 454].map(run => code(run, VERSION_CODE_OFFSET));
+  const raisedOffset = Math.max(...oldFile) + 1;
+  const newFile = [1, 2, 3].map(run => code(run, raisedOffset));
+  const codes = [...oldFile, ...newFile];
+  for (let i = 1; i < codes.length; i++) {
+    assert.ok(codes[i] > codes[i - 1], `code ${codes[i]} after ${codes[i - 1]} must be higher`);
   }
-});
-
-test('above the floor, the versionCode is 100000 + run and keeps rising', () => {
-  const at = run => resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_RUN_NUMBER: String(run) } }).versionCode;
-  const firstAbove = VERSION_CODE_FLOOR - VERSION_CODE_BASE + 1;
-  assert.equal(at(firstAbove), VERSION_CODE_FLOOR + 1);
-  assert.ok(at(firstAbove + 1) > at(firstAbove));
+  assert.equal(new Set(codes).size, codes.length, 'no code is repeated');
+  // Without the bump, run 1 of the renamed file would fall below codes already released.
+  assert.ok(code(1, VERSION_CODE_OFFSET) < Math.max(...oldFile));
 });
 
 test('BUILD_NUMBER wins over GITHUB_RUN_NUMBER, and CF_PAGES_COMMIT_SHA over GITHUB_SHA', () => {

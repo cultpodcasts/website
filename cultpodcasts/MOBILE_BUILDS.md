@@ -167,18 +167,18 @@ Versions are worked out at build time and never committed (website #669). `packa
 (x.y.z), changed by hand only for a deliberate minor/major. `tools/build-version.cjs` gives:
 
 - version `<base>+<sha7>` (Android versionName, the site's privacy page); tags and assets use `v<base>-<sha7>`
-- Android versionCode max(`VERSION_CODE_FLOOR`, 100000 + the `Build Mobile Apps` run number), so each release is
+- Android versionCode `VERSION_CODE_OFFSET` (100000) + the `Build Mobile Apps` run number, so each release is
   higher than the last
 - iOS CFBundleShortVersionString = base, CFBundleVersion = run number
 
 Run `node tools/build-version.cjs` to see the values for your checkout.
 
-**Do not rename or move `.github/workflows/mobile-build.yml` without raising the floor.** GitHub's run number
-belongs to the workflow file, so a renamed or moved file starts again at run 1, and 100000 + run would drop below
-versionCodes already on the Play Store (which rejects a lower code). Before the rename, set `VERSION_CODE_FLOOR` in
-`tools/build-version.cjs` to at least the highest versionCode released (100000 + the last run number, + 1 for
-Bubblewrap's update). Changing the workflow's `name:` is safe. The floor started at 100453 (run 453, 15 Nov 2026),
-above the old scheme's last release, v1.24.44 (12444).
+**Do not rename or move `.github/workflows/mobile-build.yml` without raising the offset.** GitHub's run number
+belongs to the workflow file, so a renamed or moved file starts again at run 1, and the Play Store rejects any
+versionCode that is not higher than every code already uploaded. In the same PR as the rename, set
+`VERSION_CODE_OFFSET` in `tools/build-version.cjs` to at least the highest versionCode released (the current offset +
+the last run number, + 1 for Bubblewrap's update). Each run of the new file then gives a new, higher code. Changing
+the workflow's `name:` is safe. The offset of 100000 is above the old scheme's last release, v1.24.44 (12444).
 
 ## Next Steps
 
