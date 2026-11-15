@@ -26,4 +26,16 @@ export interface SearchResult {
    * Searchable, so a search for any of them finds the film.
    */
   alternativeTitles?: string[] | null;
+  /** Film or TV-episode IMDb title id (`tt…`); public identity links (RedditPodcastPoster#1437). */
+  imdbId?: string | null;
+  /** Film TMDB movie id, or a TV episode's TMDB episode id. */
+  tmdbId?: number | string | null;
+  /** TV episode TheTVDB episode id. */
+  tvdbId?: number | string | null;
+  /** Parent TV show IMDb title id, denormalised onto episode documents. */
+  seriesImdbId?: string | null;
+  /** Parent TV show TMDB series id. */
+  seriesTmdbId?: number | string | null;
+  /** Parent TV show TheTVDB series id. */
+  seriesTvdbId?: number | string | null;
 }

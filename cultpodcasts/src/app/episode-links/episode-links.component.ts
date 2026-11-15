@@ -9,6 +9,7 @@ import { ApplePodcastsSvgComponent } from "../apple-podcasts-svg/apple-podcasts-
 import { SearchResult } from "../search-result.interface";
 import { appleUrl, bbcIplayerUrl, bbcSoundsUrl, internetArchiveUrl, spotifyUrl, youtubeUrl } from "../search-result-links";
 import { collectEpisodeServices } from "../service-catalog";
+import { identityLinkKind, identityServiceLinks, type IdentityLinkKind } from "../identity-service-links";
 
 @Component({
   selector: 'app-episode-links',
@@ -29,19 +30,45 @@ export class EpisodeLinksComponent {
   @Input()
   showShare = true;
 
+  /**
+   * `auto` derives film / TV-episode from contentKind. Pass `tv-show` on a TV-show hub (series ids).
+   * `none` leaves the row as streaming services only.
+   */
+  @Input()
+  identityKind: IdentityLinkKind | 'auto' | 'none' = 'auto';
+
+  /** When false, only identity-service buttons are shown (TV-show hub: no episode streaming URLs). */
+  @Input()
+  includeStreaming = true;
+
   get serviceLinks() {
     if (!this.episode) {
       return [];
     }
-    return collectEpisodeServices({
-      youtube: youtubeUrl(this.episode),
-      spotify: spotifyUrl(this.episode),
-      apple: appleUrl(this.episode),
-      bbc: bbcIplayerUrl(this.episode) ?? bbcSoundsUrl(this.episode),
-      internetArchive: internetArchiveUrl(this.episode),
-      svc: this.episode.svc,
-      services: this.episode.services
-    });
+    const streaming = this.includeStreaming
+      ? collectEpisodeServices({
+          youtube: youtubeUrl(this.episode),
+          spotify: spotifyUrl(this.episode),
+          apple: appleUrl(this.episode),
+          bbc: bbcIplayerUrl(this.episode) ?? bbcSoundsUrl(this.episode),
+          internetArchive: internetArchiveUrl(this.episode),
+          svc: this.episode.svc,
+          services: this.episode.services
+        })
+      : [];
+    const kind = this.resolvedIdentityKind();
+    const identity = kind ? identityServiceLinks(this.episode, kind) : [];
+    return [...streaming, ...identity];
+  }
+
+  private resolvedIdentityKind(): IdentityLinkKind | null {
+    if (this.identityKind === 'none') {
+      return null;
+    }
+    if (this.identityKind === 'auto') {
+      return identityLinkKind('contentKind' in this.episode! ? this.episode.contentKind : undefined);
+    }
+    return this.identityKind;
   }
 
   share(item: HomepageEpisode | SearchResult) {

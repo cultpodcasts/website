@@ -1,3 +1,19 @@
+@if (identityImage(); as image) {
+<mat-form-field class="full-width">
+    <mat-label>Identity image</mat-label>
+    <input type="url" matInput [formControl]="image" placeholder="https://">
+    <button type="button" matIconButton matSuffix aria-label="Preview identity image"
+        [disabled]="!hasNonEmptyUrlValue(image.value)"
+        (click)="previewImage('other')">
+        <mat-icon>visibility</mat-icon>
+    </button>
+    <button type="button" matIconButton matSuffix aria-label="Clear identity image"
+        [disabled]="!hasNonEmptyUrlValue(image.value)"
+        (click)="clearImage(image)">
+        <mat-icon>clear</mat-icon>
+    </button>
+</mat-form-field>
+}
 @for (group of links().controls; track group) {
 <mat-form-field class="full-width">
     <mat-label>{{ label(group.controls.url.value) }}</mat-label>
@@ -14,6 +30,6 @@
     </button>
 </mat-form-field>
 }
-@if (links().length === 0) {
+@if (links().length === 0 && !identityImage()) {
 <p class="empty">No service URLs — add one on the Urls tab to edit its image.</p>
 }

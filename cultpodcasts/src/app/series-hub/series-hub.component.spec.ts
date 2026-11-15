@@ -218,6 +218,43 @@ describe("SeriesHubComponent", () => {
     expect(oData.getEntitiesWithFacets.mock.calls[1][1].skip).toBe(20);
     expect(oData.getEntitiesWithFacets.mock.calls[1][1].top).toBe(100);
   });
+
+  it("picks the first TV result that has series identity ids and ignores episode-only ids", async () => {
+    const episodeOnly = {
+      ...entity("1"),
+      imdbId: "tt7654321",
+      tmdbId: 11,
+      tvdbId: 22
+    };
+    const withSeries = {
+      ...entity("2"),
+      seriesImdbId: "tt1234567",
+      seriesTmdbId: 99,
+      seriesTvdbId: 1001,
+      imdbId: "tt0000001"
+    };
+    oData = {
+      getEntitiesWithFacets: vi.fn().mockReturnValue(of(page({
+        entities: [episodeOnly, withSeries]
+      })))
+    };
+    const fixture = await createHub("tv");
+    const ident = fixture.componentInstance as unknown as {
+      identityEpisode: () => SearchResult | undefined;
+    };
+    expect(ident.identityEpisode()?.id).toBe("2");
+
+    oData = {
+      getEntitiesWithFacets: vi.fn().mockReturnValue(of(page({
+        entities: [episodeOnly]
+      })))
+    };
+    const empty = await createHub("tv");
+    const emptyIdent = empty.componentInstance as unknown as {
+      identityEpisode: () => SearchResult | undefined;
+    };
+    expect(emptyIdent.identityEpisode()).toBeUndefined();
+  });
   describe("subject chips in the URL fragment", () => {
     const subjects = [{ value: "Topic X", count: 2 }, { value: "Topic Y", count: 1 }];
 

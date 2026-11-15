@@ -60,6 +60,8 @@ export interface PlayableEditForm {
   tvdbId?: FormControl<string>;
   /** Film: other titles the film is known by, one per line (RedditPodcastPoster#1431). */
   alternativeTitles?: FormControl<string>;
+  /** Film: identity image (TMDB backdrop or poster); blank clears (RedditPodcastPoster#1435). */
+  image?: FormControl<string>;
   /**
    * News / TV / film: one row per service link (YouTube, BBC iPlayer, Internet Archive, …). The service key comes
    * from the URL; `image` is the matching `services.*.image`. Shared by the Urls and Images tabs (podcast-episode
@@ -307,6 +309,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
     );
     controls.alternativeTitles = new FormControl((film.alternativeTitles ?? []).join('\n'), { nonNullable: true });
+    controls.image = new FormControl(uriText(film.image), { nonNullable: true });
   } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
     controls.imdbId = new FormControl(tv.imdbId ?? '', {
@@ -414,6 +417,10 @@ export function filmChanges(
     if (!sameStrings(titles, alternativeTitleLines((previous.alternativeTitles ?? []).join('\n')))) {
       film.alternativeTitles = titles;
     }
+  }
+  if (next.image !== undefined) {
+    const image = next.image.trim();
+    if (image !== uriText(previous.image).trim()) film.image = image;
   }
   // `services` already folded into playableFieldsChanges when links change.
   if (next.trailers !== undefined) {

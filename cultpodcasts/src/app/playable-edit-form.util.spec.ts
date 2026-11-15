@@ -316,6 +316,17 @@ describe('playable edit form', () => {
       expect(filmChanges(previous, form.getRawValue())).toEqual({ alternativeTitles: [] });
     });
 
+    it('sends the identity image when it changes, including a clear (RedditPodcastPoster#1435)', () => {
+      const previous = film({ image: 'https://image.tmdb.org/t/p/w1280/old.jpg' });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.controls.image!.value).toBe('https://image.tmdb.org/t/p/w1280/old.jpg');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.image!.setValue('https://image.tmdb.org/t/p/w1280/new.jpg');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ image: 'https://image.tmdb.org/t/p/w1280/new.jpg' });
+      form.controls.image!.setValue('  ');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ image: '' });
+    });
+
     it('does not send alternative titles for a film that never had any while the box stays empty', () => {
       const previous = film();
       const form = buildPlayableEditForm(previous, 'film');

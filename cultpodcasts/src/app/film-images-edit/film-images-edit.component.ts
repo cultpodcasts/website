@@ -16,7 +16,8 @@ import { PlayableServiceLinkGroup } from '../playable-edit-form.util';
 import { serviceLabelForUrl } from '../service-catalog';
 
 /**
- * Playable Images tab (film / news / TV): one image URL per Urls row, labelled by that row's service.
+ * Playable Images tab (film / news / TV): one image URL per Urls row, labelled by that row's service,
+ * plus the film's identity image (TMDB) when that control is provided (RedditPodcastPoster#1435).
  * Preview opens `ImagePreviewDialogComponent` (same as podcast episode edit).
  */
 @Component({
@@ -29,6 +30,8 @@ import { serviceLabelForUrl } from '../service-catalog';
 export class FilmImagesEditComponent {
   /** Same FormArray as the Urls tab (`url` + `image` per service). */
   readonly links = input.required<FormArray<PlayableServiceLinkGroup>>();
+  /** Film identity image (`film.image`); omitted for news / TV. */
+  readonly identityImage = input<FormControl<string> | undefined>(undefined);
   protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
   private readonly dialog = inject(MatDialog);
 
@@ -59,6 +62,10 @@ export class FilmImagesEditComponent {
 
   private collectPreviews(): EpisodeImagePreviewItem[] {
     const items: EpisodeImagePreviewItem[] = [];
+    const identity = this.identityImage()?.value?.trim();
+    if (identity) {
+      items.push({ service: 'other', label: 'Identity image', url: identity });
+    }
     for (const group of this.links().controls) {
       const urlValue = group.controls.url.value;
       const image = group.controls.image.value?.trim();

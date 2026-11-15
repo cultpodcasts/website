@@ -8,6 +8,9 @@
     <div class="browse-toolbar">
       <h2>{{ displayCatalogName(seriesName()) }} has {{ count() }} {{ itemNoun() }}@if (count() > 1 || count() == 0) {s}
         found by CultPodcasts.com</h2>
+      @if (hub() === "tv" && identityEpisode(); as identityEpisode) {
+      <app-episode-links class="browse-identity" [episode]="identityEpisode" [showShare]="false" identityKind="tv-show" [includeStreaming]="false" />
+      }
       <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" (indexed)="reload()" />
     </div>
 
