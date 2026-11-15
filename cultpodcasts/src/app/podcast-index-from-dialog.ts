@@ -4,7 +4,7 @@ import { IndexDialogComponent, IndexDialogData } from './index-dialog/index-dial
 import { PodcastIndexDialogResult } from './index-podcast-response.interface';
 
 export type OpenPodcastIndexOptions = {
-  /** Full-catalogue walk (`?backlog=true`). Default false = hub short lookback. */
+  /** Full-catalogue walk (`POST /podcast/index/{name}/backlog`). Default false = hub short lookback. */
   backlog?: boolean;
 };
 

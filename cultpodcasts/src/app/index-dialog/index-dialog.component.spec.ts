@@ -76,11 +76,11 @@ describe('IndexDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ podcastNotFound: true });
   });
 
-  it('posts ?backlog=true when IndexDialogData.backlog is set and maps 409 / 504', async () => {
+  it('posts to /podcast/index/{name}/backlog (not ?backlog=true, which the Api drops) when IndexDialogData.backlog is set and maps 409 / 504', async () => {
     await configure({ kind: 'podcast', name: 'Show', backlog: true });
     TestBed.createComponent(IndexDialogComponent);
     await settle();
-    expectPost('/podcast/index/Show?backlog=true').flush({
+    expectPost('/podcast/index/Show/backlog').flush({
       indexedEpisodes: [],
       indexStatus: 'Performed'
     });
@@ -94,7 +94,7 @@ describe('IndexDialogComponent', () => {
       await configure({ kind: 'podcast', name: 'Show', backlog: true });
       TestBed.createComponent(IndexDialogComponent);
       await settle();
-      expectPost('/podcast/index/Show?backlog=true').flush(
+      expectPost('/podcast/index/Show/backlog').flush(
         { reason: status === 409 ? 'indexingInProgress' : 'TimedOut', message: 'x' },
         { status, statusText: 'Error' }
       );
