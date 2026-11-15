@@ -22,3 +22,13 @@ export function dateFromKey(key: string): Date {
   const [year, month, day] = key.split('-');
   return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
 }
+
+/**
+ * Whether an item belongs on the homepage day rails: hidden while its
+ * release instant is still in the future, and shown once `now >= release`.
+ * Instant comparison (not calendar-day), so a date-only midnight UTC
+ * release appears from the start of that UTC day.
+ */
+export function hasBeenReleased(release: Date, now: Date = new Date()): boolean {
+  return release.getTime() <= now.getTime();
+}

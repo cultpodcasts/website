@@ -1,4 +1,4 @@
-import { dateFromKey, dateKey } from './homepage-date.util';
+import { dateFromKey, dateKey, hasBeenReleased } from './homepage-date.util';
 
 describe('homepage-date.util', () => {
   it('keeps day and month distinct for a date where day <= 12 (regression: 11 July was rendered as 7 November)', () => {
@@ -27,5 +27,19 @@ describe('homepage-date.util', () => {
 
   it('pads single-digit month and day', () => {
     expect(dateKey(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
+
+describe('hasBeenReleased', () => {
+  const release = new Date('2026-11-19T00:00:00Z');
+
+  it('hides an item while now is before its release', () => {
+    expect(hasBeenReleased(release, new Date('2026-11-18T23:59:59.999Z'))).toBe(false);
+    expect(hasBeenReleased(release, new Date('2026-11-15T19:58:00Z'))).toBe(false);
+  });
+
+  it('shows an item once now is on or after its release date', () => {
+    expect(hasBeenReleased(release, new Date('2026-11-19T00:00:00.000Z'))).toBe(true);
+    expect(hasBeenReleased(release, new Date('2026-11-19T12:00:00Z'))).toBe(true);
   });
 });
