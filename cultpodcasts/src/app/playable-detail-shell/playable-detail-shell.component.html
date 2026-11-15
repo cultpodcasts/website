@@ -63,6 +63,17 @@
         }
       </p>
       <h1 class="episode-hero__title" [innerHTML]="playable().episodeTitle"></h1>
+      @if (alsoKnownAs(); as aka) {
+      <p class="episode-hero__aka" id="film-aka">
+        <span class="episode-hero__aka-label">Also known as</span>
+        {{ aka.visible }}@if (alsoKnownAsExpanded() && aka.hidden) { · {{ aka.hidden }} }
+        @if (aka.hiddenCount > 0) {
+        <button type="button" class="episode-hero__aka-more" [attr.aria-expanded]="alsoKnownAsExpanded()" aria-controls="film-aka" (click)="toggleAlsoKnownAs()">
+          @if (alsoKnownAsExpanded()) { Show less } @else { +{{ aka.hiddenCount }} more }
+        </button>
+        }
+      </p>
+      }
       <p class="hero-meta">
         @if (releaseLabel(); as release) {
         <span>{{ release }}</span>

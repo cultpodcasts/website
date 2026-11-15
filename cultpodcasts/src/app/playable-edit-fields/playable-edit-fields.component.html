@@ -255,6 +255,14 @@
             }
         </mat-form-field>
         }
+        @if (f.controls.alternativeTitles) {
+        <mat-form-field class="full-width">
+            <mat-label>Also known as</mat-label>
+            <textarea id="alternative-titles" [formControl]="f.controls.alternativeTitles" matInput
+                cdkTextareaAutosize cdkAutosizeMinRows="2" cdkAutosizeMaxRows="10"></textarea>
+            <mat-hint>One title per line. Searchable. Filled once from TMDB when never set.</mat-hint>
+        </mat-form-field>
+        }
     </mat-tab>
     }
     @if (catalogueTab(); as catalogue) {

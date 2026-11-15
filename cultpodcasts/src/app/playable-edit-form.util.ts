@@ -58,6 +58,8 @@ export interface PlayableEditForm {
   tmdbId?: FormControl<string>;
   /** TV: TheTVDB episode id as digits; blank clears. */
   tvdbId?: FormControl<string>;
+  /** Film: other titles the film is known by, one per line (RedditPodcastPoster#1431). */
+  alternativeTitles?: FormControl<string>;
   /**
    * News / TV / film: one row per service link (YouTube, BBC iPlayer, Internet Archive, …). The service key comes
    * from the URL; `image` is the matching `services.*.image`. Shared by the Urls and Images tabs (podcast-episode
@@ -304,6 +306,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.trailers = new FormArray(
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
     );
+    controls.alternativeTitles = new FormControl((film.alternativeTitles ?? []).join('\n'), { nonNullable: true });
   } else if (variant === 'tv') {
     const tv = dto as TvShowEpisodeDto;
     controls.imdbId = new FormControl(tv.imdbId ?? '', {
@@ -406,6 +409,12 @@ export function filmChanges(
     const tmdbId = numericIdValue(next.tmdbId);
     if (tmdbId !== (previous.tmdbId ?? 0)) film.tmdbId = tmdbId;
   }
+  if (next.alternativeTitles !== undefined) {
+    const titles = alternativeTitleLines(next.alternativeTitles);
+    if (!sameStrings(titles, alternativeTitleLines((previous.alternativeTitles ?? []).join('\n')))) {
+      film.alternativeTitles = titles;
+    }
+  }
   // `services` already folded into playableFieldsChanges when links change.
   if (next.trailers !== undefined) {
     const trailers = filmTrailerChanges(previous, next.trailers);
@@ -417,6 +426,24 @@ export function filmChanges(
     }
   }
   return film;
+}
+
+/**
+ * The film's other titles from the Identity tab text: one per line, trimmed, blanks and repeats (case-insensitive)
+ * dropped, first spelling kept. The server also drops the film's own name.
+ */
+export function alternativeTitleLines(text: string | null | undefined): string[] {
+  const seen = new Set<string>();
+  const titles: string[] = [];
+  for (const line of (text ?? '').split(/\r?\n/)) {
+    const title = line.trim();
+    const key = title.toLocaleLowerCase();
+    if (title && !seen.has(key)) {
+      seen.add(key);
+      titles.push(title);
+    }
+  }
+  return titles;
 }
 
 /**

@@ -21,4 +21,9 @@ export interface SearchResult {
   contentKind?: string | null;
   /** Film only: `{duration}|{url}|{title}` per trailer (see film-trailer.ts). */
   trailers?: string[] | null;
+  /**
+   * Film only: other titles the film is known by (original, alternative and translated; RedditPodcastPoster#1431).
+   * Searchable, so a search for any of them finds the film.
+   */
+  alternativeTitles?: string[] | null;
 }
