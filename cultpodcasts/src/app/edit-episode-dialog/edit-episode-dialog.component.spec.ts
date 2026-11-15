@@ -175,6 +175,15 @@ describe('EditEpisodeDialogComponent curator moves', () => {
       expect(navigate).not.toHaveBeenCalled();
     });
 
+    it('#664: closes without navigating when a created film comes back with no film id', () => {
+      component.attachAsTrailer();
+      finish({ attached: true, name: 'Faderhuset' });
+
+      expect(dialogRef.close).toHaveBeenCalledWith({ attachedAsTrailer: true, podcastId });
+      expect(snackBarOpen).toHaveBeenCalledWith('Attached as trailer', 'Ok', { duration: 10000 });
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
     it('does nothing when the dialog is cancelled', () => {
       component.attachAsTrailer();
       finish({ attached: false });

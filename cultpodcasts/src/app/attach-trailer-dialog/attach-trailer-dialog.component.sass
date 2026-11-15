@@ -5,11 +5,28 @@
     display: block
     margin-top: 8px
 .selected
-    margin: 4px 0 0
+    display: flex
+    align-items: flex-start
+    gap: 8px
+    margin: 8px 0 0
+    padding: 8px 12px
+    border-radius: 8px
+    background: var(--mat-sys-secondary-container)
+    color: var(--mat-sys-on-secondary-container)
     font-size: 0.9em
+    mat-icon
+        flex: none
+.selected-text
+    display: flex
+    flex-direction: column
+    gap: 2px
+.selected-label
+    font-weight: 500
+.selected-detail
+    opacity: 0.85
+.create-film-option
+    font-weight: 500
 .error
     color: var(--mat-sys-error)
 .spinner
     margin: 8px auto 0
-.create-film
-    margin-top: 4px

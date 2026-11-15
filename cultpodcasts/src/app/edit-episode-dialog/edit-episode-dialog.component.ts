@@ -226,7 +226,7 @@ export class EditEpisodeDialogComponent {
       });
   }
 
-  /** Curator: attach this one episode to an existing film as a trailer, then open the film page. */
+  /** Curator: attach this one episode to a film as a trailer (creating the film if none has the name), then open the film page. */
   attachAsTrailer() {
     if (!this.podcastId || !this.originalEpisode) {
       return;
@@ -241,12 +241,13 @@ export class EditEpisodeDialogComponent {
       AttachTrailerDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
       .afterClosed()
       .subscribe(result => {
-        if (!result?.attached || !result.filmId) {
+        // The episode has left the podcast once attached, even when the response names no film id (a created film).
+        if (!result?.attached) {
           return;
         }
         this.dialogRef.close({ attachedAsTrailer: true, podcastId: this.podcastId });
         this.snackBar.open("Attached as trailer", "Ok", { duration: 10000 });
-        if (result.name) {
+        if (result.name && result.filmId) {
           this.router.navigate(filmPageCommands(result.name, result.filmId));
         }
       });

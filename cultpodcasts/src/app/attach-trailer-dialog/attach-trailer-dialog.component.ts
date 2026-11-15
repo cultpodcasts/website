@@ -1,10 +1,13 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { firstValueFrom } from 'rxjs';
@@ -34,11 +37,39 @@ export interface AttachTrailerFilm {
   create?: boolean;
 }
 
+/** The autocomplete option value for 'Create film "<name>"' (a film suggestion is a {@link Suggestion}). */
+export interface CreateFilmOption {
+  createFilm: true;
+}
+
+/** The single 'Create film' option value; the name comes from {@link AttachTrailerDialogComponent.createName}. */
+export const CREATE_FILM_OPTION: CreateFilmOption = { createFilm: true };
+
+function isCreateOption(value: unknown): value is CreateFilmOption {
+  return !!value && typeof value === 'object' && (value as CreateFilmOption).createFilm === true;
+}
+
+/** A typed name that can become a new film: at least 2 characters, not a film id, no '/'. */
+export function creatableFilmName(text: string): string | null {
+  const name = text.trim();
+  return name.length >= 2 && !GUID.test(name) && !name.includes('/') ? name : null;
+}
+
 /**
  * Confirms and sends the curator "Attach as trailer" command for one podcast episode. The film is picked from the
  * search-suggestions film names (they carry the film id); a film id can be pasted for a film too new for the
- * suggestions corpus. When no suggested film has the typed name, 'Create film "<name>"' attaches to a new film of that
- * name (e.g. an unreleased film whose trailer is out first; RPP #1418), after the same identity prompt as Move to film.
+ * suggestions corpus. 'Create film "<name>"' attaches to a new film of the typed name (e.g. an unreleased film whose
+ * trailer is out first; RPP #1418), after the same identity prompt as Move to film.
+ *
+ * Hardening (#665, after #664): 'Create film' is offered as soon as a creatable name is typed, as the FIRST
+ * autocomplete option (above the film suggestions, so a long list of near matches never pushes it out of view), and
+ * is only withdrawn when the suggestions come back with a film of exactly that name. It does not wait on the
+ * suggestions corpus, and a failed suggest keeps it, so it never depends on that download. (The #664 report itself
+ * was most likely a tab still running a stale service-worker build; see #666.) Typing is read from
+ * `filmQuery.valueChanges`, not the template `(input)` event.
+ *
+ * A pick is announced through the CDK LiveAnnouncer (an always-present live region), as well as shown in the
+ * visual selected box: a `role="status"` element inserted at the moment of the pick is not read by every screen reader.
  */
 @Component({
   selector: 'app-attach-trailer-dialog',
@@ -47,6 +78,7 @@ export interface AttachTrailerFilm {
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     ReactiveFormsModule
@@ -69,27 +101,48 @@ export class AttachTrailerDialogComponent {
   readonly error = signal<string | null>(null);
   /** The typed name to offer as 'Create film "…"': no film suggestion has it, it is not an id, and has no '/'. */
   readonly createName = signal<string | null>(null);
+  readonly createOption = CREATE_FILM_OPTION;
   private readonly identityDialog = inject(MatDialog);
+  private readonly announcer = inject(LiveAnnouncer);
   private queryVersion = 0;
 
   constructor() {
     this.title = new FormControl<string>(this.data.episodeTitle ?? '', { nonNullable: true });
     this.suggestions.preload();
+    // Picking an option writes the option value (an object) into the control; only typed text is a query.
+    this.filmQuery.valueChanges.pipe(takeUntilDestroyed()).subscribe(value => {
+      if (typeof value === 'string') {
+        void this.onFilmQuery(value);
+      }
+    });
   }
 
-  /** Typing replaces any earlier pick; a pasted film id is a pick on its own. */
+  /**
+   * Typing replaces any earlier pick; a pasted film id is a pick on its own. 'Create film' is offered at once for a
+   * creatable name and withdrawn only if the suggestions have a film of exactly that name.
+   */
   async onFilmQuery(value: string): Promise<void> {
     const text = value.trim();
     this.error.set(null);
     this.selected.set(GUID.test(text) ? { id: text.toLowerCase(), name: null } : null);
-    this.createName.set(null);
+    const name = creatableFilmName(text);
+    this.createName.set(name);
     const version = ++this.queryVersion;
-    const found = text.length < 2 || GUID.test(text) ? [] : await this.suggestions.suggest(text, 10, 'film');
+    if (!name) {
+      this.films.set([]);
+      return;
+    }
+    let found: Suggestion[] = [];
+    try {
+      found = await this.suggestions.suggest(text, 10, 'film');
+    } catch (e) {
+      console.error('Film suggestions failed; Create film stays available.', e);
+    }
     if (version === this.queryVersion) {
       const films = found.filter(film => !!film.itemId);
       this.films.set(films);
-      const exact = films.some(film => film.value.trim().toLowerCase() === text.toLowerCase());
-      this.createName.set(text.length >= 2 && !GUID.test(text) && !text.includes('/') && !exact ? text : null);
+      const exact = films.some(film => film.value.trim().toLowerCase() === name.toLowerCase());
+      this.createName.set(exact ? null : name);
     }
   }
 
@@ -101,9 +154,16 @@ export class AttachTrailerDialogComponent {
     }
     this.error.set(null);
     this.selected.set({ id: null, name, create: true });
+    void this.announcer.announce(createFilmAnnouncement(name), 'polite');
   }
 
   onFilmSelected(event: MatAutocompleteSelectedEvent): void {
+    if (isCreateOption(event.option.value)) {
+      const name = this.createName();
+      this.chooseCreate();
+      this.filmQuery.setValue(name ?? '', { emitEvent: false });
+      return;
+    }
     const film = event.option.value as Suggestion;
     if (!film?.itemId) {
       return;
@@ -111,12 +171,19 @@ export class AttachTrailerDialogComponent {
     this.selected.set({ id: film.itemId, name: film.value });
     this.createName.set(null);
     this.filmQuery.setValue(film.label, { emitEvent: false });
+    void this.announcer.announce(pickedFilmAnnouncement(film.label), 'polite');
   }
 
   /** Shows the label in the input after a pick (the option value is the suggestion). */
-  displayFilm(value: Suggestion | string | null): string {
-    return typeof value === 'string' ? value : value?.label ?? '';
-  }
+  displayFilm = (value: Suggestion | CreateFilmOption | string | null): string => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (isCreateOption(value)) {
+      return this.createName() ?? '';
+    }
+    return value?.label ?? '';
+  };
 
   /** The title to send: null keeps the episode title on the server. */
   requestTitle(): string | null {
@@ -226,6 +293,16 @@ export class AttachTrailerDialogComponent {
   cancel(): void {
     this.dialogRef.close({ attached: false });
   }
+}
+
+/** Screen-reader text when 'Create film "<name>"' is picked. */
+export function createFilmAnnouncement(name: string): string {
+  return `New film picked: ${name}. Attach as trailer creates it.`;
+}
+
+/** Screen-reader text when an existing film is picked. */
+export function pickedFilmAnnouncement(label: string): string {
+  return `Film picked: ${label}.`;
 }
 
 export function attachErrorMessage(e: HttpErrorResponse): string {
