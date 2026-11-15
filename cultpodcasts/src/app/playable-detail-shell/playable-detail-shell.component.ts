@@ -130,6 +130,11 @@ export class PlayableDetailShellComponent {
 
   /** RedditPodcastPoster#1431: a film's other titles under the hero title, or null when it has none. */
   protected readonly alsoKnownAs = computed(() => alsoKnownAsLabel(this.playable().alternativeTitles));
+  protected readonly alsoKnownAsExpanded = signal(false);
+
+  protected toggleAlsoKnownAs(): void {
+    this.alsoKnownAsExpanded.update(open => !open);
+  }
 
   protected readonly backdropUrl = computed(() =>
     episodeImageUrl(this.playable())?.toString()
@@ -151,6 +156,7 @@ export class PlayableDetailShellComponent {
   protected readonly relatedLoading = signal<boolean>(false);
 
   private lastRelatedKey: string | undefined;
+  private lastAkaPlayableId: string | undefined;
   private readonly platformId = inject(PLATFORM_ID);
   private backdropAspectToken = 0;
   private motionQuery: MediaQueryList | undefined;
@@ -175,6 +181,15 @@ export class PlayableDetailShellComponent {
 
     effect(() => {
       this.loadBackdropAspect(this.backdropUrl());
+    });
+
+    effect(() => {
+      const id = this.playable().id;
+      if (id === this.lastAkaPlayableId) {
+        return;
+      }
+      this.lastAkaPlayableId = id;
+      this.alsoKnownAsExpanded.set(false);
     });
 
     effect(() => {
