@@ -11,6 +11,7 @@ import { connectKindEpisode } from "../kind-episode-page";
 import { editCataloguePlayableFromPage } from "../catalogue-playable-edit";
 import { CataloguePlayableKind } from "../catalogue-playable-kind.enum";
 import { FilmTrailersComponent } from "../film-trailers/film-trailers.component";
+import { SearchResult } from "../search-result.interface";
 
 /**
  * /film/{title}/{short id}: film detail leaf + shared shell. Curator Edit opens
@@ -40,6 +41,12 @@ export class FilmPageComponent {
   protected readonly showEpisodeSkeleton = this.page.showEpisodeSkeleton;
   protected readonly parentHub = this.page.parentHub;
   protected readonly displayCatalogName = this.page.displayCatalogName;
+
+  /** RedditPodcastPoster#1431: the film's other titles from its search document, or null when it has none. */
+  protected alsoKnownAs(film: SearchResult): string | null {
+    const titles = (film.alternativeTitles ?? []).map(title => title.trim()).filter(title => title.length > 0);
+    return titles.length > 0 ? titles.join(" · ") : null;
+  }
 
   ngOnInit(): void {
     this.page.start();

@@ -60,6 +60,14 @@ describe('FilmPageComponent', () => {
       fixture.detectChanges();
     });
 
+    it('lists the film alternative titles as "Also known as", and nothing when it has none (RedditPodcastPoster#1431)', () => {
+      const component = fixture.componentInstance as unknown as { alsoKnownAs(film: SearchResult): string | null };
+      expect(component.alsoKnownAs(filmHit({ alternativeTitles: ["Father's House", ' ', 'La casa del padre'] })))
+        .toBe("Father's House · La casa del padre");
+      expect(component.alsoKnownAs(filmHit())).toBeNull();
+      expect(component.alsoKnownAs(filmHit({ alternativeTitles: [] }))).toBeNull();
+    });
+
     it('opens the film dialog for the film id', () => {
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;
       open.mockReturnValue({ afterClosed: () => of(undefined) });

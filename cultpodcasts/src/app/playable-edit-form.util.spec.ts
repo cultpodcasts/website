@@ -1,4 +1,4 @@
-import { buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newPlayableLinkGroup, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { alternativeTitleLines, buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newPlayableLinkGroup, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -303,6 +303,34 @@ describe('playable edit form', () => {
       const form = buildPlayableEditForm(previous, 'film');
       form.controls.description.setValue('After');
       expect(filmChanges(previous, form.getRawValue())).toEqual({ description: 'After' });
+    });
+
+    it('shows the film alternative titles one per line and sends them only when they change (RedditPodcastPoster#1431)', () => {
+      const previous = film({ alternativeTitles: ["Father's House", 'La casa del padre'] });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.controls.alternativeTitles!.value).toBe("Father's House\nLa casa del padre");
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+      form.controls.alternativeTitles!.setValue(" Father's House \n\nfather's house\nFaderhuset ");
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ alternativeTitles: ["Father's House", 'Faderhuset'] });
+      form.controls.alternativeTitles!.setValue('');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({ alternativeTitles: [] });
+    });
+
+    it('does not send alternative titles for a film that never had any while the box stays empty', () => {
+      const previous = film();
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(form.controls.alternativeTitles!.value).toBe('');
+      form.controls.alternativeTitles!.setValue('  \n ');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+    });
+
+    it('alternativeTitleLines trims, drops blanks and case-insensitive repeats, and keeps the first spelling', () => {
+      expect(alternativeTitleLines(" A \r\n\na\nB\n b ")).toEqual(['A', 'B']);
+      expect(alternativeTitleLines(undefined)).toEqual([]);
+    });
+
+    it('builds no alternative titles box for news or TV', () => {
+      expect(buildPlayableEditForm(film(), 'news').controls.alternativeTitles).toBeUndefined();
     });
 
     it('never sends title; sends publisher (trimmed, empty clears) and the IMDb id patch', () => {

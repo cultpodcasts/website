@@ -1,6 +1,9 @@
 @if (isEpisode()) {
   @if (episode(); as ep) {
   <app-playable-detail-film [film]="ep" [emitCuratorEdit]="true" (curatorEdit)="editFilm($event)">
+    @if (alsoKnownAs(ep); as aka) {
+    <p class="film-aka" id="film-aka"><span class="film-aka__label">Also known as</span> {{ aka }}</p>
+    }
     <app-film-trailers [trailers]="ep.trailers" [filmId]="ep.id" [filmTitle]="ep.episodeTitle"></app-film-trailers>
   </app-playable-detail-film>
   } @else if (isLoading()) {

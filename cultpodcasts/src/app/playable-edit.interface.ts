@@ -64,6 +64,13 @@ export interface FilmDto extends PlayableFieldsDto {
   tmdbId?: number | null;
   /** In display order; omitted when the film has none. */
   trailers?: FilmTrailer[] | null;
+  /** Image from the film's identity (TMDB), used when no service has one (RedditPodcastPoster#1430). */
+  image?: string | null;
+  /**
+   * Other titles the film is known by (RedditPodcastPoster#1431). Omitted when never set (TMDB fills it on save while
+   * the film has an identity id); `[]` when a curator cleared them.
+   */
+  alternativeTitles?: string[] | null;
 }
 
 /** The `film/{id}` GET wire body (no `title`). */
@@ -122,6 +129,8 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   imdbId?: string;
   /** TMDB movie id; `0` clears. */
   tmdbId?: number;
+  /** Replaces the film's other titles; `[]` clears them (and they stay cleared). */
+  alternativeTitles?: string[];
   /** The trailers to keep, in order, with optional rename; the rest are removed. */
   trailers?: { id: string; title?: string }[];
   /**
