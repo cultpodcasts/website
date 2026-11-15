@@ -1,7 +1,7 @@
 // Website #669: build-time version. Run with `npm run test:tools` (part of `npm run test:all`).
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { VERSION_CODE_BASE, resolveBuildVersion, currentBuildVersion } = require('./build-version.cjs');
+const { VERSION_CODE_BASE, VERSION_CODE_FLOOR, resolveBuildVersion, currentBuildVersion } = require('./build-version.cjs');
 
 const sha = 'b457ca5d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b';
 
@@ -16,11 +16,32 @@ test('Cloudflare Pages: base version plus the commit, no run number', () => {
 test('GitHub Actions: the run number gives a rising Android versionCode above the old semver codes', () => {
   const info = resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_SHA: sha, GITHUB_RUN_NUMBER: '812' } });
   assert.equal(info.version, '1.24.44+b457ca5');
-  assert.equal(info.versionCode, VERSION_CODE_BASE + 812);
+  assert.equal(info.versionCode, 100812);
   assert.ok(info.versionCode > 1 * 10000 + 99 * 100 + 99, 'above any code the old major*10000+minor*100+patch gave');
   const next = resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_SHA: sha, GITHUB_RUN_NUMBER: '813' } });
   assert.ok(next.versionCode > info.versionCode);
   assert.equal(info.iosBuildNumber, '812');
+});
+
+test('the versionCode floor is above every code already released', () => {
+  // The old scheme's last release, v1.24.44, was 1*10000 + 24*100 + 44 = 12444 (+1 from Bubblewrap's update).
+  assert.ok(VERSION_CODE_FLOOR > 12445);
+  // Run 453 was the latest Build Mobile Apps run when the floor was set.
+  assert.ok(VERSION_CODE_FLOOR >= VERSION_CODE_BASE + 453);
+});
+
+test('a renamed workflow (run number back to 1) never drops the versionCode below the floor', () => {
+  for (const run of ['1', '2', '452']) {
+    const info = resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_SHA: sha, GITHUB_RUN_NUMBER: run } });
+    assert.equal(info.versionCode, VERSION_CODE_FLOOR, `run ${run}`);
+  }
+});
+
+test('above the floor, the versionCode is 100000 + run and keeps rising', () => {
+  const at = run => resolveBuildVersion({ packageVersion: '1.24.44', env: { GITHUB_RUN_NUMBER: String(run) } }).versionCode;
+  const firstAbove = VERSION_CODE_FLOOR - VERSION_CODE_BASE + 1;
+  assert.equal(at(firstAbove), VERSION_CODE_FLOOR + 1);
+  assert.ok(at(firstAbove + 1) > at(firstAbove));
 });
 
 test('BUILD_NUMBER wins over GITHUB_RUN_NUMBER, and CF_PAGES_COMMIT_SHA over GITHUB_SHA', () => {
