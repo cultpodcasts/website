@@ -1,0 +1,6 @@
+@for (link of links(); track link.label) {
+<a class="identity-chip" [href]="link.href" target="_blank" rel="noopener noreferrer">
+  <span>{{ link.label }}</span>
+  <mat-icon aria-hidden="true">open_in_new</mat-icon>
+</a>
+}

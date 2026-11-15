@@ -38,6 +38,8 @@ import { contentKindEquals, isUnknownSeriesNameField, normalizePlayableHit, podc
 import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 import { alsoKnownAs as alsoKnownAsLabel } from '../also-known-as';
+import { identityLinkKind, identityServiceLinks } from '../identity-service-links';
+import { IdentityServiceLinksComponent } from '../identity-service-links/identity-service-links.component';
 
 interface SubjectRail {
   subject: string;
@@ -64,7 +66,8 @@ const MAX_SUBJECT_RAILS = 4;
     SubjectChipComponent,
     ContentKindBadgeComponent,
     QueueButtonComponent,
-    SearchDescriptionPipe
+    SearchDescriptionPipe,
+    IdentityServiceLinksComponent
   ],
   templateUrl: './playable-detail-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,6 +134,10 @@ export class PlayableDetailShellComponent {
   /** RedditPodcastPoster#1431: a film's other titles under the hero title, or null when it has none. */
   protected readonly alsoKnownAs = computed(() => alsoKnownAsLabel(this.playable().alternativeTitles));
   protected readonly alsoKnownAsExpanded = signal(false);
+  protected readonly identityLinks = computed(() => {
+    const kind = identityLinkKind(this.playable().contentKind);
+    return kind ? identityServiceLinks(this.playable(), kind) : [];
+  });
 
   protected toggleAlsoKnownAs(): void {
     this.alsoKnownAsExpanded.update(open => !open);

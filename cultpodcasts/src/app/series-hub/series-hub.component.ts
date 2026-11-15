@@ -19,6 +19,8 @@ import { SearchResultsFacets } from "../search-results-facets.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
 import { ActivatedRoute, Router } from "@angular/router";
 import { SeriesHubMenuComponent, SeriesHubSort, seriesHubSortNewest } from "../series-hub-menu/series-hub-menu.component";
+import { identityServiceLinks } from "../identity-service-links";
+import { IdentityServiceLinksComponent } from "../identity-service-links/identity-service-links.component";
 import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, subjectsFragment, writeUrlFragment } from "../browse-filter-params";
 
 @Component({
@@ -29,6 +31,7 @@ import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, s
     BrowseLoadingSkeletonComponent,
     BrowseFacetScrollerDirective,
     SeriesHubMenuComponent,
+    IdentityServiceLinksComponent,
   ],
   templateUrl: "./series-hub.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +52,13 @@ export class SeriesHubComponent {
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly playerService = inject(PlayerService);
   protected readonly itemNoun = computed(() => this.hub() === "news" ? "report" : "episode");
+  protected readonly identityLinks = computed(() => {
+    if (this.hub() !== "tv") {
+      return [];
+    }
+    const first = this.results()[0];
+    return first ? identityServiceLinks(first, "tv-show") : [];
+  });
   readonly loadingLabel = computed(() => {
     const noun = `${this.itemNoun()}s`;
     return this.isSubsequentLoading() ? `Loading more ${noun}` : `Loading ${noun}`;

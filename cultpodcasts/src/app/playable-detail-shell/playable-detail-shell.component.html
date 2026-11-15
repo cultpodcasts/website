@@ -74,6 +74,11 @@
         }
       </p>
       }
+      @if (identityLinks().length > 0) {
+      <p class="episode-hero__identity" aria-label="Identity services">
+        <app-identity-service-links [links]="identityLinks()" />
+      </p>
+      }
       <p class="hero-meta">
         @if (releaseLabel(); as release) {
         <span>{{ release }}</span>

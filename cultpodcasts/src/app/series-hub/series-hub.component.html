@@ -8,6 +8,11 @@
     <div class="browse-toolbar">
       <h2>{{ displayCatalogName(seriesName()) }} has {{ count() }} {{ itemNoun() }}@if (count() > 1 || count() == 0) {s}
         found by CultPodcasts.com</h2>
+      @if (identityLinks().length > 0) {
+      <p class="browse-identity" aria-label="Identity services">
+        <app-identity-service-links [links]="identityLinks()" tone="page" />
+      </p>
+      }
       <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" (indexed)="reload()" />
     </div>
 

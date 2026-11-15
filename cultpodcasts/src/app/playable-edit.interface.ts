@@ -131,6 +131,8 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   tmdbId?: number;
   /** Replaces the film's other titles; `[]` clears them (and they stay cleared). */
   alternativeTitles?: string[];
+  /** Identity image URL; `''` clears (RedditPodcastPoster#1435). */
+  image?: string;
   /** The trailers to keep, in order, with optional rename; the rest are removed. */
   trailers?: { id: string; title?: string }[];
   /**
