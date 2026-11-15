@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Choose catalogue identity</h2>
 <mat-dialog-content>
   <p>
-    Several {{ data.target }} matches were found for
+    {{ matchesFoundLead() }}
     <strong>{{ data.query }}</strong>.
     @if (isEdit) {
       Nothing has been applied yet.
