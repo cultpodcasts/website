@@ -5,6 +5,7 @@ import { SearchResult } from '../search-result.interface';
 import { isUnknownContentKindField, isUnknownSearchFieldError, nextLegacyNameLatch, normalizePlayableHit, playableSeriesField, rewritePlayableSeriesField } from '../playable-search-hit';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { NOT_FILM_FILTER, hasFilms, isFilmOnly, showFacetWithoutFilms, withShowFacet } from '../film-shows-facet';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
@@ -128,6 +129,8 @@ export class SubjectApiComponent {
   private route = inject(ActivatedRoute);
   private location = inject(Location);
   protected facets = signal<SearchResultsFacets>({});
+  /** #662: with only films selected there is no Shows row (films are not filterable by show). */
+  protected readonly filmOnly = computed(() => isFilmOnly(this.kinds()));
   protected errorMessage = signal<string>("");
   protected isLoading = signal<boolean>(true);
   protected isSubsequentLoading = signal<boolean>(false);
@@ -216,7 +219,7 @@ export class SubjectApiComponent {
       sort = "release desc";
     }
 
-    const baseFilter = this.filter + this.podcastFilter;
+    const baseFilter = this.filter + this.showsClause();
     // Facets must omit the language filter so Azure returns non-null lang buckets.
     // Kind narrows results only, so Shows and Language chips stay subject-wide.
     // Result filter is read at request time so an All-language fallback can widen it first.
@@ -302,20 +305,20 @@ export class SubjectApiComponent {
           facets: this.subjectFacets(),
           orderby: sort
         }).subscribe({
-          next: facetData => {
+          next: facetData => this.withFilmlessShows(facetData.facets, baseFilter, facets => {
             // Omit before pending shows are applied. Tidying `#kind=` here would
             // replace the fragment while `#show=` is still pending and drop it.
             this.finishContentKindProbe(false);
-            if (this.applyPendingFilters(facetData.facets)) {
+            if (this.applyPendingFilters(facets)) {
               return;
             }
-            const langFacets = facetData.facets.lang ?? [];
+            const langFacets = facets.lang ?? [];
             const scopedTotal = facetData.metadata.get("count") ?? 0;
             // Default English (or any specific language) with 0 hits while other
             // language facets have episodes → widen to All before the results query.
             this.reconcileLanguageSelection(availableLanguageChipValues(scopedTotal, langFacets));
-            runResults(facetData.facets, scopedTotal);
-          },
+            runResults(facets, scopedTotal);
+          }),
           error: (e) => {
             if (this.recoverSearch(e)) {
               this.execSearch(initial, subsequent);
@@ -481,7 +484,7 @@ export class SubjectApiComponent {
       new URL("/search", environment.api).toString(),
       {
         search: this.query(),
-        filter: this.filter + this.podcastFilter,
+        filter: this.filter + this.showsClause(),
         searchMode: 'any',
         queryType: 'simple',
         count: true,
@@ -612,6 +615,35 @@ export class SubjectApiComponent {
 
   isQueuedId(id: string): boolean {
     return this.playerService.isQueuedId(id);
+  }
+
+  /**
+   * The selected Shows as a filter clause. #662: it also leaves films out, because a film's seriesName can be the
+   * YouTube channel that uploaded it. Left off while the index lacks contentKind.
+   */
+  private showsClause(): string {
+    return this.podcastFilter && this.contentKindMode === "include"
+      ? `${this.podcastFilter} and ${NOT_FILM_FILTER}`
+      : this.podcastFilter;
+  }
+
+  /**
+   * #662: the subject-wide Shows chips never offer a film's YouTube uploader. When the subject has films, the show
+   * facet comes from a facet-only search without films; if that fails, the facets are used as they are.
+   */
+  private withFilmlessShows(
+    facets: SearchResultsFacets,
+    filter: string,
+    then: (facets: SearchResultsFacets) => void
+  ): void {
+    if (this.contentKindMode !== "include" || !hasFilms(facets)) {
+      then(facets);
+      return;
+    }
+    const field = playableSeriesField(this.legacyNames);
+    showFacetWithoutFilms(this.oDataService, this.query(), filter, field)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(shows => then(shows ? withShowFacet(facets, field, shows) : facets));
   }
 
   private setPodcasts(next: string[]): void {

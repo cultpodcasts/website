@@ -100,6 +100,88 @@ describe('SubjectApiComponent', () => {
     expect(calls.some((call) => (call.facets ?? []).length === 0)).toBe(true);
   });
 
+  describe('#662 films are not filterable by show', () => {
+    const notFilm = "contentKind ne 'Film'";
+
+    function isFilmFreeShowFacet(request: SearchCall): boolean {
+      return (request.filter ?? '').endsWith(notFilm) && (request.facets ?? []).join() === 'seriesName,count:1000,sort:count';
+    }
+
+    function withFilms(seriesName: { value: string; count: number }[]) {
+      return {
+        ...searchPage(),
+        metadata: new Map<string, number>([['count', 10]]),
+        facets: {
+          ...searchPage().facets,
+          seriesName,
+          contentKind: [{ value: 'Episode', count: 7 }, { value: 'Film', count: 3 }],
+        },
+      };
+    }
+
+    function showsRow(): HTMLElement | null {
+      return (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Filter by podcast"]');
+    }
+
+    let filmFreeFails: boolean;
+
+    beforeEach(() => {
+      filmFreeFails = false;
+      // The subject's facets count the films' uploader ("Film Uploader") as a show.
+      respond = (request) => {
+        if (isFilmFreeShowFacet(request)) {
+          return filmFreeFails ? throwError(() => serverError()) : of(withFilms([{ value: 'Show A', count: 7 }]));
+        }
+        return of(withFilms([{ value: 'Film Uploader', count: 3 }, { value: 'Show A', count: 7 }]));
+      };
+    });
+
+    it('takes the subject-wide Shows chips from a facet-only search without films', () => {
+      fixture.detectChanges();
+
+      const filmFree = calls.filter(isFilmFreeShowFacet);
+      expect(filmFree).toHaveLength(1);
+      expect(filmFree[0].filter).toBe(`subjects/any(s: s eq 'Topic') and ${notFilm}`);
+      expect(filmFree[0].top).toBe(0);
+      expect(showsRow()?.textContent).toContain('Show A');
+      expect(showsRow()?.textContent).not.toContain('Film Uploader');
+    });
+
+    it('with Kind = Film, there is no Shows row', () => {
+      fixture.detectChanges();
+      expect(showsRow()).not.toBeNull();
+
+      fixture.componentInstance.toggleKind('Film');
+      fixture.detectChanges();
+
+      expect(showsRow()).toBeNull();
+    });
+
+    it('a Shows chip leaves films out of the results', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.togglePodcast('Show A');
+
+      const results = calls.filter((call) => (call.top ?? 0) > 0);
+      expect(results.at(-1)?.filter).toContain(`search.in(seriesName, 'Show A', '£') and ${notFilm}`);
+    });
+
+    it('makes no facet-only search when the subject has no films', () => {
+      respond = () => of(searchPage());
+      fixture.detectChanges();
+
+      expect(calls.filter(isFilmFreeShowFacet)).toHaveLength(0);
+    });
+
+    it('keeps the subject facets if the facet-only search fails', () => {
+      filmFreeFails = true;
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      fixture.detectChanges();
+
+      expect(showsRow()?.textContent).toContain('Show A');
+      expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Something went wrong');
+    });
+  });
+
   it('offers Podcast, TV, News and Film and filters results by the chosen kind', () => {
     respond = () => of({
       ...searchPage(),

@@ -4,6 +4,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SearchResult } from '../search-result.interface';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { combineLatest } from 'rxjs/internal/observable/combineLatest';
+import { Observable, map, of, switchMap } from 'rxjs';
+import { NOT_FILM_FILTER, hasFilms, isFilmOnly, showFacetWithoutFilms, withShowFacet } from '../film-shows-facet';
 import { SiteService } from '../site.service';
 import { ODataService } from '../odata.service'
 import { environment } from './../../environments/environment';
@@ -37,6 +39,7 @@ const sortParam: string = "sort";
 const pageParam: string = "page";
 const queryParam: string = "query";
 const filterParam: string = "filter";
+
 const sortParamRank: string = "rank";
 const sortParamDateAsc: string = "date-asc";
 const sortParamDateDesc: string = "date-desc";
@@ -191,15 +194,17 @@ export class SearchApiComponent {
     } else if (this.sortOrder() == "date-desc") {
       sort = "release desc";
     }
+    const filter = this.buildFilter(
+      this.filter,
+      this.showsFilter(),
+      this.subjectsFilter,
+      this.requestedKindsFilter());
+    const updatesShows = !!(reset?.podcasts || subsequent?.podcasts);
     this.oDataService.getEntitiesWithFacets<SearchResult>(
       new URL("/search", environment.api).toString(),
       {
         search: this.query(),
-        filter: this.buildFilter(
-          this.filter,
-          this.podcastsFilter,
-          this.subjectsFilter,
-          this.requestedKindsFilter()),
+        filter,
         searchMode: 'any',
         queryType: 'simple',
         count: true,
@@ -207,10 +212,13 @@ export class SearchApiComponent {
         top: this.infiniteScrollStrategy.getTake(this.page),
         facets: this.searchFacets(),
         orderby: sort
-      }).subscribe({
-        next: data => {
+      }).pipe(
+        switchMap(data => (updatesShows ? this.withoutFilmShows(data.facets, filter) : of(data.facets))
+          .pipe(map(facets => ({ data, facets }))))
+      ).subscribe({
+        next: ({ data, facets }) => {
           const count: number = data.metadata.get("count");
-          this.updateFacets(data.facets, reset, subsequent);
+          this.updateFacets(facets, reset, subsequent);
           if (this.applyPendingRestore()) {
             return;
           }
@@ -494,6 +502,36 @@ export class SearchApiComponent {
       facets.push("contentKind,count:10");
     }
     return facets;
+  }
+
+  /**
+   * The Shows chips filter on seriesName, and (#662) leave films out: a film's seriesName can be the YouTube channel
+   * that uploaded it. Left off while the index lacks contentKind.
+   */
+  private showsFilter(): string {
+    return this.podcastsFilter && this.contentKindMode === "include"
+      ? `(${this.podcastsFilter} and ${NOT_FILM_FILTER})`
+      : this.podcastsFilter;
+  }
+
+  /**
+   * #662: the Shows chips never offer a film's YouTube uploader. With only films selected there are no shows; when
+   * the results include films, the show facet comes from a facet-only search of the same query without films. If that
+   * fails, the chips keep the main search's facets.
+   */
+  private withoutFilmShows(facets: SearchResultsFacets, filter: string): Observable<SearchResultsFacets> {
+    const field = playableSeriesField(this.legacyNames);
+    if (this.contentKindMode !== "include") {
+      return of(facets);
+    }
+    if (isFilmOnly(this.kinds())) {
+      return of(withShowFacet(facets, field, []));
+    }
+    if (!hasFilms(facets)) {
+      return of(facets);
+    }
+    return showFacetWithoutFilms(this.oDataService, this.query(), filter, field)
+      .pipe(map(shows => shows ? withShowFacet(facets, field, shows) : facets));
   }
 
   /** Kind filter uses contentKind. Leave it off while that field is being dropped. */
