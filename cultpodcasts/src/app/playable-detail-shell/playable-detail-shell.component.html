@@ -63,6 +63,9 @@
         }
       </p>
       <h1 class="episode-hero__title" [innerHTML]="playable().episodeTitle"></h1>
+      @if (alsoKnownAs(); as aka) {
+      <p class="episode-hero__aka" id="film-aka"><span class="episode-hero__aka-label">Also known as</span> {{ aka }}</p>
+      }
       <p class="hero-meta">
         @if (releaseLabel(); as release) {
         <span>{{ release }}</span>

@@ -37,6 +37,7 @@ import { catalogueParentLink } from '../catalogue-links';
 import { contentKindEquals, isUnknownSeriesNameField, normalizePlayableHit, podcastNameEquals, seriesNameEquals } from '../playable-search-hit';
 import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
+import { alsoKnownAs as alsoKnownAsLabel } from '../also-known-as';
 
 interface SubjectRail {
   subject: string;
@@ -126,6 +127,9 @@ export class PlayableDetailShellComponent {
   protected readonly releaseLabel = computed(() =>
     releaseDateLabel(this.playable().release)
   );
+
+  /** RedditPodcastPoster#1431: a film's other titles under the hero title, or null when it has none. */
+  protected readonly alsoKnownAs = computed(() => alsoKnownAsLabel(this.playable().alternativeTitles));
 
   protected readonly backdropUrl = computed(() =>
     episodeImageUrl(this.playable())?.toString()
