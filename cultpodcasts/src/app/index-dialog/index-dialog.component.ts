@@ -12,7 +12,7 @@ import { CatalogueIndexDialogResult, CatalogueIndexResponse } from '../catalogue
 
 /** What the index dialog should index: a podcast, or a news outlet / TV show. */
 export type IndexDialogData =
-  | { kind: 'podcast'; name: string; /** When true, POST `?backlog=true` for a full-catalogue walk (Edit/Add). */ backlog?: boolean }
+  | { kind: 'podcast'; name: string; /** When true, POST `/podcast/index/{name}/backlog` for a full-catalogue walk (Edit/Add). */ backlog?: boolean }
   | { kind: 'catalogueParent'; hub: CatalogueHub; name: string };
 
 export type IndexDialogResult = PodcastIndexDialogResult | CatalogueIndexDialogResult;
@@ -52,8 +52,10 @@ export class IndexDialogComponent {
 
   private indexPodcast(podcastName: string) {
     const backlog = this.data.kind === 'podcast' && this.data.backlog === true;
+    // The Api serves the full-catalogue walk on its own route and drops query strings on the plain one,
+    // so `?backlog=true` would silently run the 2-day hub Index (cultpodcasts/RedditPodcastPoster#1429).
     const path =
-      `/podcast/index/${encodeURIComponent(podcastName)}` + (backlog ? '?backlog=true' : '');
+      `/podcast/index/${encodeURIComponent(podcastName)}` + (backlog ? '/backlog' : '');
     return this.post<IndexPodcastResponse, PodcastIndexDialogResult>(
       path,
       body => ({ updated: true, episodeIds: body?.indexedEpisodes?.map(x => `${x.podcastId}/${x.episodeId}`) }),
