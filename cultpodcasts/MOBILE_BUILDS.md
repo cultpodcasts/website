@@ -177,7 +177,7 @@ Run `node tools/build-version.cjs` to see the values for your checkout.
 belongs to the workflow file, so a renamed or moved file starts again at run 1, and 100000 + run would drop below
 versionCodes already on the Play Store (which rejects a lower code). Before the rename, set `VERSION_CODE_FLOOR` in
 `tools/build-version.cjs` to at least the highest versionCode released (100000 + the last run number, + 1 for
-Bubblewrap's update). Changing the workflow's `name:` is safe. The floor started at 100453 (run 453, 14 Nov 2026),
+Bubblewrap's update). Changing the workflow's `name:` is safe. The floor started at 100453 (run 453, 15 Nov 2026),
 above the old scheme's last release, v1.24.44 (12444).
 
 ## Next Steps

@@ -30,7 +30,7 @@ const VERSION_CODE_BASE = 100000;
  * versionCode released so far (100000 + the last `Build Mobile Apps` run number, + 1 for Bubblewrap's update).
  * Changing the workflow's `name:` is safe; only the file path matters.
  *
- * Set to 100000 + run 453, the latest `Build Mobile Apps` run when this was added (14 Nov 2026), above every code
+ * Set to 100000 + run 453, the latest `Build Mobile Apps` run when this was added (15 Nov 2026), above every code
  * released before it (the old scheme's last release, v1.24.44, was 12444 + 1).
  */
 const VERSION_CODE_FLOOR = 100453;
