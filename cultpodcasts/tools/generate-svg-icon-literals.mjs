@@ -86,6 +86,21 @@ function boxedOfficialPng(file, clipId) {
 }
 
 /** Rounds every number in an SVG path `d` to 2dp (keeps the literal compact; geometry unchanged at 24 px). */
+
+/** Official logo letterboxed on a brand-colour tile (meet, not slice) so wide wordmarks stay intact. */
+function boxedOfficialSvgMeet(file, clipId, { bg, pad = 2 } = {}) {
+  const { viewBox, inner } = readSvgInner(file);
+  const size = 24 - pad * 2;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
+    `<defs><clipPath id="${clipId}"><rect width="24" height="24" rx="5.4"/></clipPath></defs>` +
+    `<g clip-path="url(#${clipId})">` +
+    `<rect width="24" height="24" fill="${bg}"/>` +
+    `<svg x="${pad}" y="${pad}" width="${size}" height="${size}" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet">${inner}</svg>` +
+    `</g></svg>`
+  );
+}
+
 function roundPathData(d) {
   return d.replace(/-?\d*\.?\d+(?:e-?\d+)?/gi, (n) => String(Number(Number(n).toFixed(2))));
 }
@@ -277,6 +292,15 @@ const streamingIconSvgs = {
   // Gem red tile, built from the checked-in header logo (icon-sources/cbc-gem-logo.svg). See
   // cbcGemIcon() for the layout numbers.
   'cbc-gem': cbcGemIcon(),
+  // IMDb — official 2016 wordmark (yellow #f6c700 badge) letterboxed on the same yellow.
+  // Source: official IMDb logo geometry, inlined from the 2016 wordmark (viewBox 0 0 575 289.83).
+  imdb: boxedOfficialSvgMeet('imdb-logo-2016.svg', 'cp-imdb-clip', { bg: '#f6c700', pad: 2 }),
+  // TMDB — official Primary full (blue) wordmark on official primary dark blue #0d253f.
+  // Source: https://www.themoviedb.org/about/logos-attribution (blue_square_2 SVG).
+  tmdb: boxedOfficialSvgMeet('tmdb-blue-square-full.svg', 'cp-tmdb-clip', { bg: '#0d253f', pad: 1.5 }),
+  // TheTVDB — official apple-touch app icon, resized to 96x96.
+  // Source: https://www.thetvdb.com/apple-touch-icon-180x180.png
+  tvdb: boxedOfficialPng('tvdb-app-icon.png', 'cp-tvdb-clip'),
   'external-service':
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">` +
     `<rect width="24" height="24" rx="5.4" fill="#546E7A"/>` +

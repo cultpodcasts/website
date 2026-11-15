@@ -56,6 +56,17 @@ episode-link tile. Max publishes no favicon.svg; the episode tile uses the
 brand-portal 1-color SVG instead (primary iridescent logos are pixel-based per
 their guidelines).
 
+
+## Official identity-service tiles (IMDb, TMDB, TheTVDB)
+
+These are not streaming services. They use the same 24x24 rounded episode-link tile so the
+buttons can sit at the end of the provider row.
+
+| File | Source |
+| --- | --- |
+| `imdb-logo-2016.svg` | Official IMDb 2016 wordmark (yellow `#f6c700` badge with black letters). Geometry inlined (no `xlink:href`) so the tile can embed it. Letterboxed on the same yellow. |
+| `tmdb-blue-square-full.svg` | Official TMDB "Primary full (blue)" SVG from [Logos & Attribution](https://www.themoviedb.org/about/logos-attribution) (`blue_square_2`). Letterboxed on official primary dark blue `#0d253f`. |
+| `tvdb-app-icon.png` | Official TheTVDB apple-touch icon (`https://www.thetvdb.com/apple-touch-icon-180x180.png`), resized to 96x96. No colourful square SVG is published; the header `logo.svg` is a wide wordmark. |
 ## Simple Icons paths
 
 `paths.json` holds SVG path `d` attributes from [Simple Icons](https://simple-icons.org)
