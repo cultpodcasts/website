@@ -1,3 +1,8 @@
+# WARNING (website #669): the Android versionCode is VERSION_CODE_OFFSET + this workflow's run number
+# (cultpodcasts/tools/build-version.cjs). GitHub's run number belongs to this FILE: renaming or moving
+# .github/workflows/mobile-build.yml starts it again at 1, and Play rejects codes that aren't higher than ones
+# already uploaded. In the same PR as any rename or move, raise VERSION_CODE_OFFSET in build-version.cjs to at least
+# the highest versionCode released so far. Changing `name:` below is safe.
 name: Build Mobile Apps
 
 on:
@@ -198,14 +203,11 @@ jobs:
             ghcr.io/googlechromelabs/bubblewrap:latest \
             /tmp/build-apk.sh
 
-      - name: Read app version from package.json
+      # Website #669: the version is worked out at build time (base version in package.json + commit, and the run
+      # number for the versionCode); nothing is committed. tools/create-twa-manifest.js uses the same module.
+      - name: Read build version
         id: app_version
-        run: |
-          VERSION=$(node -p "require('./cultpodcasts/package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-          echo "apk_name=cultpodcasts-android-v$VERSION.apk" >> "$GITHUB_OUTPUT"
-          echo "aab_name=cultpodcasts-android-v$VERSION.aab" >> "$GITHUB_OUTPUT"
+        run: node cultpodcasts/tools/build-version.cjs --github-output
 
       - name: Prepare versioned Android artifacts
         run: |
@@ -251,7 +253,7 @@ jobs:
           body: |
             Android build for `${{ steps.app_version.outputs.tag }}`
 
-            Package version source: `cultpodcasts/package.json` (`${{ steps.app_version.outputs.version }}`).
+            Version `${{ steps.app_version.outputs.version }}` (base version from `cultpodcasts/package.json` + commit), versionCode `${{ steps.app_version.outputs.version_code }}` (100000 + run number).
 
             Includes:
             - `${{ steps.app_version.outputs.apk_name }}`
@@ -272,7 +274,7 @@ jobs:
           body: |
             Automated Android build from `main`.
 
-            Package version: `${{ steps.app_version.outputs.version }}`
+            Version: `${{ steps.app_version.outputs.version }}` (versionCode `${{ steps.app_version.outputs.version_code }}`)
 
             Includes:
             - `${{ steps.app_version.outputs.apk_name }}`
