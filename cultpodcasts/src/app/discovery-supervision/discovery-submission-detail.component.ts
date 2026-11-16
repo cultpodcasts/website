@@ -26,6 +26,7 @@ import { EpisodesApiComponent } from '../episodes-api/episodes-api.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
 import {
   promptAmbiguousIdentities,
+  promptDiscoveryKinds,
   promptUnsupportedLanguages
 } from '../submit-language-identity-prompts';
 import {
@@ -274,6 +275,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
       const etag = this.dirty() ? await this.saveReviewInternal(d) : d.etag;
       let acceptedIds = this.finalIds();
       let languageDecisions: Record<string, string> | undefined;
+      let kindDecisions: Record<string, string> | undefined;
+      let selectedKindKeys: Record<string, string> | undefined;
       let identityDecisions: Record<string, string> | undefined;
       let selectedIdentityKeys: Record<string, string> | undefined;
       let resp = await firstValueFrom(this.service.apply(d.id, etag, acceptedIds));
@@ -291,6 +294,24 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
           d.id, resp.etag ?? etag, acceptedIds, { languageDecisions }));
       }
 
+      const kindRequired = resp.outcome?.kindDecisionsRequired ?? [];
+      if (kindRequired.length > 0) {
+        const kind = await promptDiscoveryKinds(this.dialog, kindRequired, acceptedIds);
+        acceptedIds = kind.idsToCreate;
+        if (acceptedIds.length === 0) {
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        kindDecisions = kind.kindDecisions;
+        selectedKindKeys = kind.selectedKindKeys;
+        resp = await firstValueFrom(this.service.apply(
+          d.id, resp.etag ?? etag, acceptedIds, {
+            ...(languageDecisions ? { languageDecisions } : {}),
+            kindDecisions,
+            ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {})
+          }));
+      }
+
       const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
       if (identityRequired.length > 0) {
         const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, acceptedIds);
@@ -303,6 +324,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         selectedIdentityKeys = identity.selectedIdentityKeys;
         const decisions: DiscoverySubmissionCreateDecisions = {
           ...(languageDecisions ? { languageDecisions } : {}),
+          ...(kindDecisions ? { kindDecisions } : {}),
+          ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {}),
           identityDecisions,
           ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
         };
@@ -322,6 +345,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     await this.run(async () => {
       let abandonIds = this.abandonIds();
       let languageDecisions: Record<string, string> | undefined;
+      let kindDecisions: Record<string, string> | undefined;
+      let selectedKindKeys: Record<string, string> | undefined;
       let identityDecisions: Record<string, string> | undefined;
       let selectedIdentityKeys: Record<string, string> | undefined;
       let resp = await firstValueFrom(this.service.retry(d.id, d.etag, abandonIds));
@@ -342,14 +367,37 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
           d.id, resp.etag ?? d.etag, abandonIds, { languageDecisions }));
       }
 
+      const kindRequired = resp.outcome?.kindDecisionsRequired ?? [];
+      if (kindRequired.length > 0) {
+        const kind = await promptDiscoveryKinds(this.dialog, kindRequired, []);
+        abandonIds = [...new Set([...abandonIds, ...kind.cancelledIds])];
+        if (kind.idsToCreate.length === 0) {
+          await firstValueFrom(this.service.retry(
+            d.id, resp.etag ?? d.etag, abandonIds,
+            languageDecisions ? { languageDecisions } : undefined));
+          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          return;
+        }
+        kindDecisions = kind.kindDecisions;
+        selectedKindKeys = kind.selectedKindKeys;
+        resp = await firstValueFrom(this.service.retry(
+          d.id, resp.etag ?? d.etag, abandonIds, {
+            ...(languageDecisions ? { languageDecisions } : {}),
+            kindDecisions,
+            ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {})
+          }));
+      }
+
       const identityRequired = resp.outcome?.identityDecisionsRequired ?? [];
       if (identityRequired.length > 0) {
         const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, []);
         abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
         if (identity.idsToCreate.length === 0) {
           await firstValueFrom(this.service.retry(
-            d.id, resp.etag ?? d.etag, abandonIds,
-            languageDecisions ? { languageDecisions } : undefined));
+            d.id, resp.etag ?? d.etag, abandonIds, {
+              ...(languageDecisions ? { languageDecisions } : {}),
+              ...(kindDecisions ? { kindDecisions } : {})
+            }));
           this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
           return;
         }
@@ -357,6 +405,8 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         selectedIdentityKeys = identity.selectedIdentityKeys;
         const decisions: DiscoverySubmissionCreateDecisions = {
           ...(languageDecisions ? { languageDecisions } : {}),
+          ...(kindDecisions ? { kindDecisions } : {}),
+          ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {}),
           identityDecisions,
           ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
         };

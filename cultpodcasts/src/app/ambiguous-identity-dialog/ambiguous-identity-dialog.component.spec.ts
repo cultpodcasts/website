@@ -89,4 +89,19 @@ describe('AmbiguousIdentityDialogComponent wording', () => {
     );
     expect(news.nativeElement.textContent).toContain('Several News matches were found for');
   });
+
+  it('uses kind wording when context is kind', async () => {
+    const fixture = await render({
+      target: 'film',
+      query: "Father's House",
+      candidates: [candidate()],
+      context: 'kind'
+    });
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Choose catalogue kind');
+    expect(text).toContain('Keep as podcast');
+    expect(text).toContain('Pick one match, keep this item as a podcast, or cancel?');
+    expect(text).not.toContain('Choose catalogue identity');
+    expect(text).not.toContain('Continue without identity');
+  });
 });

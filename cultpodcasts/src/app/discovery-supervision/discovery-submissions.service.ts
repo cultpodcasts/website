@@ -16,6 +16,8 @@ import { DISCOVERY_SUBMISSIONS_SCOPE, DISCOVERY_SUPERVISE_SCOPE } from './discov
 /** Optional language / identity answers on a creating apply or retry POST. */
 export interface DiscoverySubmissionCreateDecisions {
   languageDecisions?: Record<string, string>;
+  kindDecisions?: Record<string, string>;
+  selectedKindKeys?: Record<string, string>;
   identityDecisions?: Record<string, string>;
   selectedIdentityKeys?: Record<string, string>;
 }
@@ -68,6 +70,8 @@ export class DiscoverySubmissionsService {
       etag: string;
       acceptedResultIds?: string[];
       languageDecisions?: Record<string, string>;
+      kindDecisions?: Record<string, string>;
+      selectedKindKeys?: Record<string, string>;
       identityDecisions?: Record<string, string>;
       selectedIdentityKeys?: Record<string, string>;
     } = { etag };
@@ -91,6 +95,8 @@ export class DiscoverySubmissionsService {
       etag: string;
       abandonResultIds: string[];
       languageDecisions?: Record<string, string>;
+      kindDecisions?: Record<string, string>;
+      selectedKindKeys?: Record<string, string>;
       identityDecisions?: Record<string, string>;
       selectedIdentityKeys?: Record<string, string>;
     } = {
@@ -133,6 +139,12 @@ export class DiscoverySubmissionsService {
   ): void {
     if (decisions?.languageDecisions) {
       body.languageDecisions = decisions.languageDecisions;
+    }
+    if (decisions?.kindDecisions) {
+      body.kindDecisions = decisions.kindDecisions;
+    }
+    if (decisions?.selectedKindKeys && Object.keys(decisions.selectedKindKeys).length > 0) {
+      body.selectedKindKeys = decisions.selectedKindKeys;
     }
     if (decisions?.identityDecisions) {
       body.identityDecisions = decisions.identityDecisions;

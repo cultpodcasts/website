@@ -22,7 +22,7 @@ export interface AmbiguousIdentityPrompt {
   query: string;
   candidates: AmbiguousIdentityCandidate[];
   /** create = submit/discovery gate; edit = Identity tab Look up. */
-  context?: 'create' | 'edit';
+  context?: 'create' | 'edit' | 'kind';
 }
 
 /** select = apply the chosen key; continue = create with blank identity; cancel = abort create. */
@@ -43,6 +43,7 @@ export class AmbiguousIdentityDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<AmbiguousIdentityDialogComponent, AmbiguousIdentityAnswer>);
   selectedKey = this.data.candidates[0]?.key ?? '';
   readonly isEdit = this.data.context === 'edit';
+  readonly isKind = this.data.context === 'kind';
 
   /**
    * website#674: a single different-title hit is held for the curator, so the

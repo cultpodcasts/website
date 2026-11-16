@@ -4,6 +4,7 @@ import { AmbiguousIdentityDialogComponent } from './ambiguous-identity-dialog/am
 import {
   promptAmbiguousIdentities,
   promptAmbiguousIdentity,
+  promptDiscoveryKinds,
   promptUnsupportedLanguage,
   promptUnsupportedLanguages
 } from './submit-language-identity-prompts';
@@ -157,6 +158,81 @@ describe('submit-language-identity-prompts', () => {
       expect(result.idsToCreate).toEqual([]);
       expect(result.identityDecisions).toEqual({});
       expect(result.selectedIdentityKeys).toEqual({});
+      expect(result.cancelledIds).toEqual(['a']);
+      expect(result.answers.get('a')).toEqual({ decision: 'cancel' });
+    });
+  });
+
+  describe('promptDiscoveryKinds', () => {
+    it('opens the dialog with kind context, maps select keys, and lists cancelled ids', async () => {
+      const dialog = dialogReturning(
+        { decision: 'select', key: 'catalogue:film:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+        { decision: 'cancel' }
+      );
+      const required = [
+        {
+          discoveryItemId: 'a',
+          target: 'film',
+          query: 'A',
+          candidates: [{ key: 'catalogue:film:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', title: 'A', kind: 'Film', source: 'catalogue' }]
+        },
+        {
+          discoveryItemId: 'b',
+          target: 'film',
+          query: 'B',
+          candidates: [{ key: 'tmdb:2', title: 'B', kind: 'Film', source: 'tmdb' }]
+        }
+      ];
+
+      const result = await promptDiscoveryKinds(dialog, required, ['untouched', 'a', 'b']);
+
+      expect(dialog.open).toHaveBeenCalledWith(AmbiguousIdentityDialogComponent, {
+        data: { target: required[0].target, query: required[0].query, candidates: required[0].candidates, context: 'kind' },
+        disableClose: true,
+        autoFocus: true,
+        width: '36rem'
+      });
+      expect(result.idsToCreate).toEqual(['untouched', 'a']);
+      expect(result.kindDecisions).toEqual({ a: 'select' });
+      expect(result.selectedKindKeys).toEqual({ a: 'catalogue:film:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' });
+      expect(result.cancelledIds).toEqual(['b']);
+    });
+
+    it('includes keep-as-podcast continue without a selectedKindKeys entry', async () => {
+      const dialog = dialogReturning({ decision: 'continue' });
+      const required = [
+        {
+          discoveryItemId: 'a',
+          target: 'film',
+          query: 'A',
+          candidates: [{ key: 'tmdb:1', title: 'A', kind: 'Film', source: 'tmdb' }]
+        }
+      ];
+
+      const result = await promptDiscoveryKinds(dialog, required, ['a']);
+
+      expect(result.idsToCreate).toEqual(['a']);
+      expect(result.kindDecisions).toEqual({ a: 'continue' });
+      expect(result.selectedKindKeys).toEqual({});
+      expect(result.cancelledIds).toEqual([]);
+    });
+
+    it('treats a dismissed dialog as cancel', async () => {
+      const dialog = dialogReturning(undefined);
+      const required = [
+        {
+          discoveryItemId: 'a',
+          target: 'film',
+          query: 'A',
+          candidates: [{ key: 'tmdb:1', title: 'A', kind: 'Film', source: 'tmdb' }]
+        }
+      ];
+
+      const result = await promptDiscoveryKinds(dialog, required, ['a']);
+
+      expect(result.idsToCreate).toEqual([]);
+      expect(result.kindDecisions).toEqual({});
+      expect(result.selectedKindKeys).toEqual({});
       expect(result.cancelledIds).toEqual(['a']);
       expect(result.answers.get('a')).toEqual({ decision: 'cancel' });
     });
