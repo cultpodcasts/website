@@ -54,8 +54,6 @@
 
   <footer class="site-footer">
     <a [routerLink]="['/content/privacy-policy']" id="privacy" class="site-footer__link">Privacy Policy</a>
-    <span class="site-footer__dot" aria-hidden="true">&middot;</span>
-    <a [routerLink]="['/content/terms-and-conditions']" id="terms" class="site-footer__link">Terms and Conditions</a>
 
     @if (featureSwitchService.IsEnabled(FeatureSwitch.reddit) || featureSwitchService.IsEnabled(FeatureSwitch.socials)) {
     <span class="site-footer__dot" aria-hidden="true">&middot;</span>

@@ -110,13 +110,14 @@ describe('site chrome docked search (privacy-policy cold load)', () => {
     expect(isAuthClientOnlyPath('/discovery')).toBe(true);
   });
 
-  it('CHROME-DOCK-FOOTER: Privacy Policy and Terms and Conditions are linked in the site footer', () => {
+  it('CHROME-DOCK-FOOTER: Privacy Policy is linked in the site footer; Terms and Conditions is not', () => {
     expect(appHtml).toMatch(/id="privacy"/);
     expect(appHtml).toMatch(/\[routerLink\]="\['\/content\/privacy-policy'\]"/);
-    expect(appHtml).toMatch(/id="terms"/);
-    expect(appHtml).toMatch(/\[routerLink\]="\['\/content\/terms-and-conditions'\]"/);
     expect(appHtml).toMatch(/>Privacy Policy</);
-    expect(appHtml).toMatch(/>Terms and Conditions</);
+    expect(appHtml).toMatch(/site-footer__brand">Cult Podcasts</);
+    expect(appHtml).not.toMatch(/id="terms"/);
+    expect(appHtml).not.toMatch(/\[routerLink\]="\['\/content\/terms-and-conditions'\]"/);
+    expect(appHtml).not.toMatch(/>Terms and Conditions</);
   });
 
   it('CHROME-DOCK-007: chrome-stuck is driven from the template binding', () => {
