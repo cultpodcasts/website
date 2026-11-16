@@ -393,12 +393,13 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         const identity = await promptAmbiguousIdentities(this.dialog, identityRequired, []);
         abandonIds = [...new Set([...abandonIds, ...identity.cancelledIds])];
         if (identity.idsToCreate.length === 0) {
-          await firstValueFrom(this.service.retry(
+          resp = await firstValueFrom(this.service.retry(
             d.id, resp.etag ?? d.etag, abandonIds, {
               ...(languageDecisions ? { languageDecisions } : {}),
-              ...(kindDecisions ? { kindDecisions } : {})
+              ...(kindDecisions ? { kindDecisions } : {}),
+              ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {})
             }));
-          this.snackBar.open('Nothing was created', 'Ok', { duration: 4000 });
+          this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
           return;
         }
         identityDecisions = identity.identityDecisions;
