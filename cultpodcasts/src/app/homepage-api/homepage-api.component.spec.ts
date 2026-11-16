@@ -20,10 +20,25 @@ import { dateKey } from '../homepage-date.util';
 const STALE_TOKEN = new Date('2026-10-31T10:00:00Z');
 const FRESH_TOKEN = new Date('2026-10-31T11:00:00Z');
 
+/** Frozen instants used so this file does not depend on the real clock or the hour of day. */
+const FROZEN_NOWS = [
+  ['01:00 UTC', new Date('2026-11-16T01:00:00.000Z')],
+  ['13:00 UTC', new Date('2026-11-16T13:00:00.000Z')]
+] as const;
+
+/** Current frozen now for `dayOffset`; set in `beforeEach` before any fixtures are built. */
+let clockNow = FROZEN_NOWS[0][1];
+
 function dayOffset(daysAgo: number): Date {
-  const d = new Date();
-  d.setUTCHours(12, 0, 0, 0);
+  const d = new Date(clockNow.getTime());
   d.setUTCDate(d.getUTCDate() - daysAgo);
+  // Past and "today" releases must already be out at both 01:00 and 13:00 UTC.
+  // Future releases (negative daysAgo) stay after the frozen now.
+  if (daysAgo >= 0) {
+    d.setUTCHours(0, 0, 0, 0);
+  } else {
+    d.setUTCHours(23, 0, 0, 0);
+  }
   return d;
 }
 
@@ -53,7 +68,7 @@ function homepageWith(episodes: HomepageEpisode[]): Homepage {
   };
 }
 
-describe('HomepageApiComponent', () => {
+describe.each(FROZEN_NOWS)('HomepageApiComponent at %s', (_label, frozenNow) => {
   let fixture: ComponentFixture<HomepageApiComponent>;
   let component: HomepageApiComponent;
   let heroCuration: {
@@ -67,6 +82,9 @@ describe('HomepageApiComponent', () => {
   let roles$: ReplaySubject<string[]>;
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    clockNow = frozenNow;
+    vi.setSystemTime(frozenNow);
     roles$ = new ReplaySubject<string[]>(1);
     roles$.next([]);
     heroCuration = {
@@ -164,6 +182,10 @@ describe('HomepageApiComponent', () => {
     fixture = TestBed.createComponent(HomepageApiComponent);
     component = fixture.componentInstance;
     // Drive orchestration APIs without mounting the full homepage chrome.
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   function apply(episodes: HomepageEpisode[], curation?: {
