@@ -614,6 +614,59 @@ describe('DiscoverySubmissionDetailComponent', () => {
       });
     });
 
+    it('re-posts retry with the selected kind key when a kind is selected and every identity prompt is cancelled', async () => {
+      const kindKey = `catalogue:film:${B}`;
+      const kindHold = {
+        discoveryItemId: B,
+        target: 'Film',
+        query: 'Synthetic Title',
+        candidates: [
+          { key: kindKey, title: 'Synthetic Title', year: 2020, kind: 'Film', source: 'catalogue' }
+        ]
+      };
+      service.retry
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'PartiallyApplied', etag: 'e-kind',
+          outcome: {
+            message: 'KindDecisionRequired', errorsOccurred: false, results: [],
+            kindDecisionsRequired: [kindHold]
+          }
+        }))
+        .mockReturnValueOnce(of({
+          submissionId: 's1', status: 'PartiallyApplied', etag: 'e-id',
+          outcome: {
+            message: 'IdentityDecisionRequired', errorsOccurred: false, results: [],
+            identityDecisionsRequired: [{ ...identityHold, discoveryItemId: C }]
+          }
+        }))
+        .mockReturnValueOnce(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] }));
+      let promptCalls = 0;
+      dialogOpen.mockImplementation(() => {
+        promptCalls += 1;
+        return {
+          afterClosed: () => of(
+            promptCalls === 1
+              ? { decision: 'select', key: kindKey }
+              : { decision: 'cancel' })
+        };
+      });
+      await create(detail({
+        status: 'PartiallyApplied', supervisorAcceptedResultIds: [B, C],
+        itemOutcomes: [
+          { resultId: B, state: 'Failed', attempts: 1, error: 'x' },
+          { resultId: C, state: 'Failed', attempts: 1, error: 'y' }
+        ]
+      }));
+      button('retry').click();
+      await fixture.whenStable();
+      expect(service.retry).toHaveBeenCalledTimes(3);
+      expect(service.retry).toHaveBeenNthCalledWith(3, 's1', 'e-id', [C], {
+        kindDecisions: { [B]: 'select' },
+        selectedKindKeys: { [B]: kindKey }
+      });
+      expect(snackOpen).toHaveBeenCalledWith('Retry: Applied', 'Ok', expect.anything());
+    });
+
     it('abandons cancelled ids on retry cancel-all without creating', async () => {
       service.retry
         .mockReturnValueOnce(of({

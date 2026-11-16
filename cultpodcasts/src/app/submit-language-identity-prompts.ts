@@ -7,6 +7,7 @@ import {
 } from './ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import {
   DiscoveryIdentityDecision,
+  DiscoveryKindDecision,
   DiscoveryLanguageDecision
 } from './submit-discovery-response.interface';
 import {
@@ -145,4 +146,62 @@ export async function promptAmbiguousIdentities(
   );
 
   return { answers, idsToCreate, identityDecisions, selectedIdentityKeys, cancelledIds };
+}
+
+export interface DiscoveryKindsPromptResult {
+  answers: Map<string, AmbiguousIdentityAnswer>;
+  idsToCreate: string[];
+  kindDecisions: Record<string, 'select' | 'continue'>;
+  selectedKindKeys: Record<string, string>;
+  cancelledIds: string[];
+}
+
+/**
+ * Opens kind-suggestion dialogs for each required discovery item and rebuilds the create id list.
+ * Cancelled prompted ids are omitted from `idsToCreate` and from decision maps.
+ * Continue means keep the item as a podcast.
+ */
+export async function promptDiscoveryKinds(
+  dialog: MatDialog,
+  required: DiscoveryKindDecision[],
+  currentResultIds: string[]
+): Promise<DiscoveryKindsPromptResult> {
+  const answers = new Map<string, AmbiguousIdentityAnswer>();
+  for (const item of required) {
+    const answer = await promptAmbiguousIdentity(dialog, {
+      target: item.target,
+      query: item.query,
+      candidates: item.candidates,
+      context: 'kind'
+    });
+    answers.set(
+      item.discoveryItemId,
+      answer?.decision === 'select' || answer?.decision === 'continue'
+        ? answer
+        : { decision: 'cancel' }
+    );
+  }
+
+  const promptedIds = new Set(required.map(item => item.discoveryItemId));
+  const creating = required
+    .map(item => ({ id: item.discoveryItemId, answer: answers.get(item.discoveryItemId)! }))
+    .filter(item => item.answer.decision === 'select' || item.answer.decision === 'continue');
+  const cancelledIds = required
+    .map(item => item.discoveryItemId)
+    .filter(id => !creating.some(item => item.id === id));
+  const untouched = currentResultIds.filter(id => !promptedIds.has(id));
+  const idsToCreate = [...untouched, ...creating.map(item => item.id)];
+  const kindDecisions = Object.fromEntries(
+    creating.map(item => [item.id, item.answer.decision as 'select' | 'continue'])
+  );
+  const selectedKindKeys = Object.fromEntries(
+    creating
+      .filter(item => item.answer.decision === 'select')
+      .map(item => {
+        const selected = item.answer as { decision: 'select'; key: string };
+        return [item.id, selected.key];
+      })
+  );
+
+  return { answers, idsToCreate, kindDecisions, selectedKindKeys, cancelledIds };
 }

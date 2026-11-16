@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Choose catalogue identity</h2>
+<h2 mat-dialog-title>{{ isKind ? 'Choose catalogue kind' : 'Choose catalogue identity' }}</h2>
 <mat-dialog-content>
   <p>
     {{ matchesFoundLead() }}
@@ -31,7 +31,9 @@
     }
   </mat-radio-group>
   <p>
-    @if (isEdit) {
+    @if (isKind) {
+      Pick one match, keep this item as a podcast, or cancel?
+    } @else if (isEdit) {
       Pick one match, leave identity unchanged, or cancel?
     } @else {
       Pick one match, continue without IMDb / TheTVDB / TMDB ids, or cancel?
@@ -41,7 +43,7 @@
 <div mat-dialog-actions>
   <button type="button" mat-flat-button [disabled]="!selectedKey" (click)="chooseSelect()">Use selected</button>
   <button type="button" mat-button (click)="chooseContinue()">
-    {{ isEdit ? 'Leave unchanged' : 'Continue without identity' }}
+    {{ isKind ? 'Keep as podcast' : isEdit ? 'Leave unchanged' : 'Continue without identity' }}
   </button>
   <button type="button" mat-button (click)="chooseCancel()">Cancel</button>
 </div>

@@ -16,10 +16,13 @@ export interface DiscoveryIdentityDecision {
     candidates: AmbiguousIdentityCandidate[];
 }
 
+export type DiscoveryKindDecision = DiscoveryIdentityDecision;
+
 export interface SubmitDiscoveryResponse {
     message: string;
     errorsOccurred: boolean;
     results: SubmitDiscoveryItemResult[];
     languageDecisionsRequired?: DiscoveryLanguageDecision[];
     identityDecisionsRequired?: DiscoveryIdentityDecision[];
+    kindDecisionsRequired?: DiscoveryKindDecision[];
 }

@@ -15,6 +15,7 @@ import { DiscoveryInfoService } from '../discovery-info.service';
 import { UnsupportedLanguageAnswer } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 import {
   promptAmbiguousIdentities,
+  promptDiscoveryKinds,
   promptUnsupportedLanguages
 } from '../submit-language-identity-prompts';
 import {
@@ -80,6 +81,8 @@ export class DiscoverySubmitComponent {
       const endpoint = new URL("/discovery-curation", environment.api).toString();
       this.isSending.set(true);
       let languageDecisions: Record<string, UnsupportedLanguageAnswer> | undefined;
+      let kindDecisions: Record<string, 'select' | 'continue'> | undefined;
+      let selectedKindKeys: Record<string, string> | undefined;
       let identityDecisions: Record<string, 'select' | 'continue'> | undefined;
       let selectedIdentityKeys: Record<string, string> | undefined;
       var resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
@@ -109,6 +112,32 @@ export class DiscoverySubmitComponent {
       }
       if (resp.status === 200) {
         const prompted = resp.body as SubmitDiscoveryResponse | null;
+        const required = prompted?.kindDecisionsRequired ?? [];
+        if (required.length > 0) {
+          const kind = await promptDiscoveryKinds(this.dialog, required, resultIds);
+          resultIds = kind.idsToCreate;
+          if (resultIds.length === 0) {
+            this.isSending.set(false);
+            return;
+          }
+          kindDecisions = kind.kindDecisions;
+          selectedKindKeys = kind.selectedKindKeys;
+          resp = await firstValueFrom<HttpResponse<SubmitDiscoveryResponse | DiscoverySubmissionHeld>>(
+            this.http.post<SubmitDiscoveryResponse | DiscoverySubmissionHeld>(
+              endpoint,
+              {
+                ids: data.documentIds,
+                resultIds,
+                ...(languageDecisions ? { languageDecisions } : {}),
+                kindDecisions,
+                ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {})
+              },
+              { headers: headers, observe: "response" }
+            ));
+        }
+      }
+      if (resp.status === 200) {
+        const prompted = resp.body as SubmitDiscoveryResponse | null;
         const required = prompted?.identityDecisionsRequired ?? [];
         if (required.length > 0) {
           const identity = await promptAmbiguousIdentities(this.dialog, required, resultIds);
@@ -126,6 +155,8 @@ export class DiscoverySubmitComponent {
                 ids: data.documentIds,
                 resultIds,
                 ...(languageDecisions ? { languageDecisions } : {}),
+                ...(kindDecisions ? { kindDecisions } : {}),
+                ...(selectedKindKeys && Object.keys(selectedKindKeys).length > 0 ? { selectedKindKeys } : {}),
                 identityDecisions,
                 ...(Object.keys(selectedIdentityKeys).length > 0 ? { selectedIdentityKeys } : {})
               },
