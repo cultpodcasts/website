@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Episode already has different links</h2>
+<mat-dialog-content>
+    <p><strong>{{ data.episodeTitle }}</strong> ({{ data.episodeRelease | date:'d MMM yyyy':'UTC' }}) looks like this episode, but it is stored with different links. Nothing has been changed yet.</p>
+    <ul>
+        @for (link of data.links; track link.service) {
+        <li>
+            <span class="label">{{ serviceName(link.service) }}</span>
+            <span class="row">Stored: @if (link.storedUrl) {<a [href]="link.storedUrl" target="_blank" rel="noopener">{{ link.storedUrl }}</a>} @else {none}</span>
+            <span class="row">Submitted: @if (link.submittedUrl) {<a [href]="link.submittedUrl" target="_blank" rel="noopener">{{ link.submittedUrl }}</a>} @else {none}</span>
+        </li>
+        }
+    </ul>
+    <p>Overwrite moves the stored links to a new episode of their own and gives this episode the submitted links. Create new adds the submission as a separate episode.</p>
+</mat-dialog-content>
+<div mat-dialog-actions>
+    <button type="button" mat-flat-button (click)="choose('overwrite')">Overwrite</button>
+    <button type="button" mat-button (click)="choose('create-new')">Create new episode</button>
+    <button type="button" mat-button (click)="choose('cancel')">Cancel</button>
+</div>
