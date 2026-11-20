@@ -75,6 +75,6 @@ describe('ServiceLinkConflictDialogComponent', () => {
     const fixture = await render(prompt);
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('a strong')).toBeNull();
-    expect(element.textContent).toContain('hidden until you review and approve it');
+    expect(element.textContent).toContain("hidden until you review it and untick Removed to approve it (it won't be posted)");
   });
 });
