@@ -30,6 +30,11 @@
         Episode not created.
         }
     </span>
+    @if (data.response.splitOffEpisodeId) {
+    <span class="split-off">
+        Old links moved to a new hidden episode: review and approve it.
+    </span>
+    }
     }
     @if (data.response.episodeDetails) {
     <span>

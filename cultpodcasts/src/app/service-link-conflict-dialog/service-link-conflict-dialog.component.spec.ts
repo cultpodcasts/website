@@ -62,4 +62,19 @@ describe('ServiceLinkConflictDialogComponent', () => {
     buttons.find(b => b.textContent?.trim() === label)!.click();
     expect(close).toHaveBeenCalledWith(answer);
   });
+  it('links the stored episode to its review page in a new tab when the podcast is known (RPP #1484)', async () => {
+    const podcastId = '1a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c8d';
+    const fixture = await render({ ...prompt, podcastId });
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a[target="_blank"] strong')?.parentElement as HTMLAnchorElement;
+    expect(link.textContent).toContain('Synthetic Episode');
+    expect(decodeURIComponent(link.getAttribute('href')!))
+      .toBe(`/episodes/["${podcastId}/${prompt.episodeId}"]`);
+  });
+
+  it('shows the stored title without a link when the podcast is unknown, and says the split-off is hidden until approved', async () => {
+    const fixture = await render(prompt);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('a strong')).toBeNull();
+    expect(element.textContent).toContain('hidden until you review and approve it');
+  });
 });

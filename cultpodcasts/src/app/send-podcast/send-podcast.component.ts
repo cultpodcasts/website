@@ -151,8 +151,11 @@ export class SendPodcastComponent {
               this.isSending.set(false);
               return;
             }
+            // RPP #1484: drop an episode id left from an earlier overwrite answer, so create-new never carries it.
+            const withoutEpisodeId: Record<string, unknown> = { ...submitBody };
+            delete withoutEpisodeId['serviceLinkConflictEpisodeId'];
             submitBody = {
-              ...submitBody,
+              ...withoutEpisodeId,
               serviceLinkConflictDecision: decision,
               // Overwrite is only applied to the episode the curator was shown; otherwise the API asks again.
               ...(decision === 'overwrite' ? { serviceLinkConflictEpisodeId: conflict.episodeId } : {})

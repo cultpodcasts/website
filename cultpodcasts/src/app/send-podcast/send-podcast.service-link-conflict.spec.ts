@@ -110,6 +110,27 @@ describe('SendPodcastComponent service-link conflict (RPP #1416)', () => {
     expect(component.isSending()).toBe(false);
   });
 
+  it('drops a stale episode id when the curator answers create-new after an earlier overwrite was re-held (RPP #1484)', async () => {
+    const fixture = TestBed.createComponent(SendPodcastComponent);
+    const dialog = fixture.debugElement.injector.get(MatDialog);
+    vi.spyOn(dialog, 'open')
+      .mockReturnValueOnce({ afterClosed: () => of('overwrite') } as never)
+      .mockReturnValueOnce({ afterClosed: () => of('create-new') } as never);
+    const component = fixture.componentInstance;
+    const done = component.submit(share);
+    const probe = await vi.waitFor(() => http.expectOne(submitUrl));
+    probe.flush({ serviceLinkConflict });
+    const overwrite = await vi.waitFor(() => http.expectOne(submitUrl));
+    expect(overwrite.request.body.serviceLinkConflictEpisodeId).toBe(serviceLinkConflict.episodeId);
+    overwrite.flush({ serviceLinkConflict: { ...serviceLinkConflict, episodeId: '0d5f6a1e-2b3c-4d5e-8f90-1a2b3c4d5e6f' } });
+    const createNew = await vi.waitFor(() => http.expectOne(submitUrl));
+    expect(createNew.request.body.serviceLinkConflictDecision).toBe('create-new');
+    expect('serviceLinkConflictEpisodeId' in createNew.request.body).toBe(false);
+    createNew.flush({ success: { episode: 'Created', podcast: 'None' } });
+    await done;
+    expect(component.submitted).toBe(true);
+  });
+
   it('is not a success when a conflict is still held after the decision loop', async () => {
     const { component } = create('overwrite');
     const done = component.submit(share);
