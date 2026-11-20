@@ -13,6 +13,8 @@ export interface ServiceLinkConflictLink {
 /** RPP #1416: `POST /submit` 200 body `serviceLinkConflict`. Nothing has been written yet. */
 export interface ServiceLinkConflictPrompt {
   episodeId: string;
+  /** RPP #1484: the stored episode's podcast, so the dialog can link the stored episode. */
+  podcastId?: string | null;
   episodeTitle: string;
   episodeRelease: string;
   links: ServiceLinkConflictLink[];
@@ -40,6 +42,14 @@ const SERVICE_NAMES: Record<string, string> = {
 export class ServiceLinkConflictDialogComponent {
   readonly data = inject<ServiceLinkConflictPrompt>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<ServiceLinkConflictDialogComponent, ServiceLinkConflictAnswer>);
+
+  /** RPP #1484: curator review page for the stored episode (opens in a new tab), when its podcast is known. */
+  get storedEpisodeLink(): string | null {
+    if (!this.data.podcastId) {
+      return null;
+    }
+    return `/episodes/${encodeURIComponent(JSON.stringify([`${this.data.podcastId}/${this.data.episodeId}`]))}`;
+  }
 
   serviceName(service: string): string {
     return SERVICE_NAMES[service.toLowerCase()] ?? service;

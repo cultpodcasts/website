@@ -169,4 +169,20 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
     expect(snackOpen).toHaveBeenCalledWith('Podcast transferred', 'Ok', { duration: 10000 });
     expect(navigate).toHaveBeenCalledWith(['/news', 'AP Archive Desk']);
   });
+  it('after an overwrite says the old links moved to a hidden episode, and Review opens both episodes (RPP #1484)', async () => {
+    const podcastId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    const episodeId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    const splitOffEpisodeId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    const { component, navigate, element } = await create({
+      existingPodcast: true,
+      response: { episode: 'Enriched', podcast: 'None', podcastId, episodeId, splitOffEpisodeId },
+      roles: ['Curator']
+    });
+    expect(element.textContent).toContain('Old links moved to a new hidden episode');
+    expect(element.textContent).toContain('untick Removed to approve it');
+    expect(element.textContent).toContain("it won't be posted");
+    await component.review();
+    expect(navigate).toHaveBeenCalledWith(
+      ['/episodes', JSON.stringify([`${podcastId}/${episodeId}`, `${podcastId}/${splitOffEpisodeId}`])]);
+  });
 });

@@ -186,8 +186,13 @@ export class SubmitUrlOriginResponseSnackbarComponent {
   }
 
   private async navigateToEpisodeReview(podcastId: string, episodeId: string) {
-    const id = JSON.stringify([`${podcastId}/${episodeId}`]);
-    await this.router.navigate(["/episodes", id])
+    // RPP #1484: after an overwrite, review the hidden split-off alongside the overwritten episode.
+    const splitOffId = this.data.response.splitOffEpisodeId;
+    const ids = [`${podcastId}/${episodeId}`];
+    if (splitOffId && splitOffId !== episodeId) {
+      ids.push(`${podcastId}/${splitOffId}`);
+    }
+    await this.router.navigate(["/episodes", JSON.stringify(ids)])
   }
 
   /** News report / TV episode / film: open its edit dialog, then Review on `/episodes` for remove-then-delete. */

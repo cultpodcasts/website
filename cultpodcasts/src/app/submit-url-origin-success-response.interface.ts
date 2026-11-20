@@ -10,4 +10,9 @@ export interface SubmitUrlOriginSuccessResponse {
     playableId?: string | undefined;
     episodeDetails?: SubmitEpisodeDetails;
     defaultLanguageFromDetection?: boolean;
+    /**
+     * RPP #1484: an overwrite moved the stored episode's old links to this new episode of the same podcast. It is
+     * hidden (removed) until a curator reviews and approves it.
+     */
+    splitOffEpisodeId?: string | undefined;
 }
