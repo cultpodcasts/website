@@ -12,6 +12,10 @@ export class EpisodePublishResponseAdaptor {
         let failures: string[] = [];
         let message: string;
         const subject = playablePublishSubjectNoun(contentKind);
+        if (response.message) {
+            // The API refused the publish outright (e.g. awaiting approval, RPP #1484): say why.
+            return `${subject} not published: ${response.message}`;
+        }
         if (expectation.post) {
             if (response.posted) {
                 successes.push("posted");

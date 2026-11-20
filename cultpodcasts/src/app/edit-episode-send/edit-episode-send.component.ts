@@ -15,6 +15,8 @@ import { CurationSubmitService } from '../curation-submit.service';
 export class EditEpisodeSendComponent {
   readonly isSending = signal(true);
   readonly sendError = signal(false);
+  /** The API's reason for a 400 (e.g. a split-off review rule, RPP #1484), shown instead of the generic error. */
+  readonly errorMessage = signal<string | null>(null);
 
   constructor(
     private dialogRef: MatDialogRef<EditEpisodeSendComponent>,
@@ -29,6 +31,8 @@ export class EditEpisodeSendComponent {
       error: e => {
         this.isSending.set(false);
         this.sendError.set(true);
+        const message = e?.status === 400 ? e?.error?.message : null;
+        this.errorMessage.set(typeof message === 'string' && message.trim() ? message : null);
         console.error(e);
       }
     });
