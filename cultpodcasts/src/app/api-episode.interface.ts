@@ -5,6 +5,15 @@ import { EpisodeServiceMap } from "./service-catalog";
 import { Person } from "./person.interface";
 import { PersonMatch } from "./person-match.interface";
 
+/**
+ * RPP #1484: an episode held for curator approval (today a split-off). Absent means approved, as on every ordinary
+ * episode. Both values are hidden and never posted.
+ */
+export type ApprovalStatus = 'AwaitingApproval' | 'Rejected';
+
+/** RPP #1484: a curator's decision on an episode held for approval. */
+export type ApprovalDecision = 'Approve' | 'Reject';
+
 export interface ApiEpisode {
     id: string;
     title: string;
@@ -28,6 +37,8 @@ export interface ApiEpisode {
     bluesky?: boolean | null;
     ignored: boolean;
     removed: boolean;
+    /** RPP #1484: review state of an episode split off by a submit overwrite; absent on every other episode. */
+    approvalStatus?: ApprovalStatus | null;
     explicit: boolean;
     release: Date;
     duration: string;

@@ -179,8 +179,9 @@ describe('SubmitUrlOriginResponseSnackbarComponent', () => {
       roles: ['Curator']
     });
     expect(element.textContent).toContain('Old links moved to a new hidden episode');
-    expect(element.textContent).toContain('untick Removed to approve it');
-    expect(element.textContent).toContain("it won't be posted");
+    expect(element.textContent).toContain('pending review');
+    expect(element.textContent).toContain('Approve or Reject it in Edit');
+    expect(element.textContent).not.toContain('untick Removed');
     await component.review();
     expect(navigate).toHaveBeenCalledWith(
       ['/episodes', JSON.stringify([`${podcastId}/${episodeId}`, `${podcastId}/${splitOffEpisodeId}`])]);

@@ -24,6 +24,31 @@
                 </mat-form-field>
             </mat-tab>
             <mat-tab label="Flags">
+                @if (isHeldSplitOff()) {
+                <div class="split-off-review" role="group" aria-label="Split-off approval">
+                    <p>
+                        @if (approvalStatus() === 'AwaitingApproval') {
+                        Split-off awaiting approval: it holds the old links moved off another episode and is hidden.
+                        } @else {
+                        Rejected split-off: it stays hidden.
+                        }
+                        Approve to publish it (it is then posted under the usual rules, so an old release is not
+                        posted). Reject to keep it hidden.
+                    </p>
+                    <button mat-stroked-button type="button" class="approve-split-off"
+                        [attr.aria-pressed]="approvalDecision() === 'Approve'"
+                        (click)="setApprovalDecision('Approve')">
+                        @if (approvalDecision() === 'Approve') {<mat-icon>check</mat-icon>}Approve
+                    </button>
+                    @if (approvalStatus() === 'AwaitingApproval') {
+                    <button mat-stroked-button type="button" class="reject-split-off"
+                        [attr.aria-pressed]="approvalDecision() === 'Reject'"
+                        (click)="setApprovalDecision('Reject')">
+                        @if (approvalDecision() === 'Reject') {<mat-icon>check</mat-icon>}Reject
+                    </button>
+                    }
+                </div>
+                }
                 <div class="flags">
                     @if (featureSwitchService.IsEnabled(FeatureSwitch.redditPost)) {
                     <mat-checkbox [formControl]="form()!.controls.posted">Posted</mat-checkbox>

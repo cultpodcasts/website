@@ -29,6 +29,13 @@ describe('EpisodePublishResponseAdaptor', () => {
     });
   }
 
+  it('shows the API refusal message instead of per-channel failures (RPP #1484)', () => {
+    expect(adaptor.createMessage(
+      resp({ message: 'This episode is awaiting approval or rejected: approve it first, then post it.' }),
+      { tweet: true, blueskyPost: true },
+    )).toBe('Episode not published: This episode is awaiting approval or rejected: approve it first, then post it.');
+  });
+
   it('prefixes failure messages with the kind noun', () => {
     expect(adaptor.createMessage(
       resp({ tweeted: false }),

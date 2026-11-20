@@ -12,6 +12,8 @@ export interface EpisodePost {
     unBluesky?: boolean;
     ignored?: boolean;
     removed?: boolean;
+    /** RPP #1484: approve (public, then posted under the usual rules) or reject (stays hidden) a held split-off. */
+    approvalDecision?: 'Approve' | 'Reject';
     explicit?: boolean;
     release?: string;
     duration?: string;

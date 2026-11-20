@@ -8,6 +8,9 @@
     @if (sendError()) {
     <div>
         <p>An error occured updating episode</p>
+        @if (errorMessage()) {
+        <p class="error-message">{{ errorMessage() }}</p>
+        }
     </div>
     }
 
