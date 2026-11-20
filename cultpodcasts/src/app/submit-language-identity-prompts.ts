@@ -11,6 +11,11 @@ import {
   DiscoveryLanguageDecision
 } from './submit-discovery-response.interface';
 import {
+  ServiceLinkConflictAnswer,
+  ServiceLinkConflictDialogComponent,
+  ServiceLinkConflictPrompt
+} from './service-link-conflict-dialog/service-link-conflict-dialog.component';
+import {
   UnsupportedLanguageAnswer,
   UnsupportedLanguageDialogComponent,
   UnsupportedLanguagePrompt
@@ -43,6 +48,19 @@ export function promptAmbiguousIdentity(
   return firstValueFrom(
     dialog.open<AmbiguousIdentityDialogComponent, AmbiguousIdentityPrompt, AmbiguousIdentityAnswer>(
       AmbiguousIdentityDialogComponent,
+      { data: prompt, ...GATE_DIALOG_OPTIONS }
+    ).afterClosed()
+  );
+}
+
+/** Single-item service-link conflict prompt (send-podcast /submit gate, RPP #1416). */
+export function promptServiceLinkConflict(
+  dialog: MatDialog,
+  prompt: ServiceLinkConflictPrompt
+): Promise<ServiceLinkConflictAnswer | undefined> {
+  return firstValueFrom(
+    dialog.open<ServiceLinkConflictDialogComponent, ServiceLinkConflictPrompt, ServiceLinkConflictAnswer>(
+      ServiceLinkConflictDialogComponent,
       { data: prompt, ...GATE_DIALOG_OPTIONS }
     ).afterClosed()
   );

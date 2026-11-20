@@ -17,7 +17,12 @@ import { SubmitSeriesResolveService } from '../submit-series-resolve.service';
 import { submitEpisodePostBody, submitParentPostBody } from '../submit-series.util';
 import { UnsupportedLanguagePrompt } from '../unsupported-language-dialog/unsupported-language-dialog.component';
 import { AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
-import { promptAmbiguousIdentity, promptUnsupportedLanguage } from '../submit-language-identity-prompts';
+import { ServiceLinkConflictPrompt } from '../service-link-conflict-dialog/service-link-conflict-dialog.component';
+import {
+  promptAmbiguousIdentity,
+  promptServiceLinkConflict,
+  promptUnsupportedLanguage
+} from '../submit-language-identity-prompts';
 import { GENERIC_SUBMIT_URL_ERROR, submitUrlErrorDisplay } from '../submit-url-rejection';
 
 @Component({
@@ -106,8 +111,8 @@ export class SendPodcastComponent {
       try {
         let submitBody: Record<string, unknown> = { ...body as object };
         let resp = await this.postSubmit(submitBody, headers);
-        // RPP #1122 / SubmitUrlService: one gate per 200 (language, then identity). Loop so a
-        // body that still carries a decision after the other answer, or both on one body, is handled.
+        // RPP #1122 / #1416 SubmitUrlService: one gate per 200 (language, identity, service-link conflict).
+        // Loop so a body that still carries a decision after another answer, or several on one body, is handled.
         const maxGatePosts = 4;
         for (let gate = 0; gate < maxGatePosts; gate++) {
           if (resp.status != 200) {
@@ -135,6 +140,22 @@ export class SendPodcastComponent {
               ...submitBody,
               identityDecision: identity.decision,
               ...(identity.decision === 'select' ? { selectedIdentityKey: identity.key } : {})
+            };
+            resp = await this.postSubmit(submitBody, headers);
+            continue;
+          }
+          if (resp.body?.serviceLinkConflict) {
+            const conflict = resp.body.serviceLinkConflict as ServiceLinkConflictPrompt;
+            const decision = await promptServiceLinkConflict(this.dialog, conflict);
+            if (decision !== 'overwrite' && decision !== 'create-new') {
+              this.isSending.set(false);
+              return;
+            }
+            submitBody = {
+              ...submitBody,
+              serviceLinkConflictDecision: decision,
+              // Overwrite is only applied to the episode the curator was shown; otherwise the API asks again.
+              ...(decision === 'overwrite' ? { serviceLinkConflictEpisodeId: conflict.episodeId } : {})
             };
             resp = await this.postSubmit(submitBody, headers);
             continue;
@@ -193,13 +214,14 @@ export class SendPodcastComponent {
     if (resp.status == 200 &&
       !resp.body?.languageDecision &&
       !resp.body?.identityDecision &&
+      !resp.body?.serviceLinkConflict &&
       !resp.body?.cancelled) {
       this.submitted = true;
       if (resp.headers.get('X-Origin')) {
         this.originResponse = resp.body;
       }
     } else {
-      // Leftover language/identity gate after the capped loop, cancelled, or non-200 — not success.
+      // Leftover language/identity/service-link gate after the capped loop, cancelled, or non-200 — not success.
       this.submitError.set(true);
       this.isSending.set(false);
     }
