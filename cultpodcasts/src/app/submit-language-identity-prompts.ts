@@ -1,3 +1,7 @@
+/**
+ * Prompts for every `/submit` gate: unsupported language, ambiguous identity and (RPP #1416) service-link conflict,
+ * single-item for send-podcast and batched for discovery.
+ */
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import {
