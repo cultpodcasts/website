@@ -6,7 +6,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin, catchError, of, throwError } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { ApiEpisode } from '../api-episode.interface';
+import { ApiEpisode, ApprovalDecision, ApprovalStatus } from '../api-episode.interface';
 import { Subject } from '../subject.interface';
 import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
@@ -108,6 +108,10 @@ export class EditEpisodeDialogComponent {
   readonly podcastName = signal<string>("");
   readonly isLoading = signal<boolean>(true);
   readonly isInError = signal<boolean>(false);
+  /** RPP #1484: the loaded episode's approval status (null means approved, as on every ordinary episode). */
+  readonly approvalStatus = signal<ApprovalStatus | null>(null);
+  /** RPP #1484: the curator's approve / reject choice, sent with Save. */
+  readonly approvalDecision = signal<ApprovalDecision | null>(null);
   subjects: string[] = [];
   allSubjects: string[] = [];
   readonly selectedSubjects = signal<string[]>([]);
@@ -180,7 +184,7 @@ export class EditEpisodeDialogComponent {
       this.podcastName.set(podcast.name!);
       this.podcastId = podcast.id!;
 
-      this.form.set(buildEpisodeForm(resp.episode));
+      this.form.set(this.withSplitOffReview(resp.episode, buildEpisodeForm(resp.episode)));
       this.allPeople = episodeCataloguePeople(
         resp.people,
         resp.episode.guestPeople,
@@ -327,6 +331,29 @@ export class EditEpisodeDialogComponent {
     });
   }
 
+  /**
+   * RPP #1484: records the episode's approval status. A held split-off is made public only by approving it (the API
+   * rejects clearing removed), so its Removed box is disabled.
+   */
+  withSplitOffReview<T extends ReturnType<typeof buildEpisodeForm>>(episode: ApiEpisode, form: T): T {
+    this.approvalStatus.set(episode.approvalStatus ?? null);
+    this.approvalDecision.set(null);
+    if (this.isHeldSplitOff()) {
+      form.controls.removed.disable();
+    }
+    return form;
+  }
+
+  /** RPP #1484: awaiting approval or rejected: hidden until a curator approves it. Null means approved. */
+  isHeldSplitOff(): boolean {
+    return this.approvalStatus() != null;
+  }
+
+  /** RPP #1484: picks Approve or Reject for Save; picking the chosen one again clears it. */
+  setApprovalDecision(decision: ApprovalDecision) {
+    this.approvalDecision.set(this.approvalDecision() === decision ? null : decision);
+  }
+
   onSubmit() {
     const form = this.form();
     if (form?.valid) {
@@ -358,6 +385,12 @@ export class EditEpisodeDialogComponent {
       };
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
+      const approvalDecision = this.approvalDecision();
+      if (approvalDecision === 'Approve' || (approvalDecision === 'Reject' && this.approvalStatus() === 'AwaitingApproval')) {
+        // RPP #1484: the API sets removed; approving clears the status so it posts under the usual rules.
+        delete changes.removed;
+        changes.approvalDecision = approvalDecision;
+      }
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
       } else {
