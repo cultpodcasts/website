@@ -1,9 +1,15 @@
-import { EpisodeChangeResponse } from './episode-change-response.interface';
+import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 import { EditEpisodeDialogResponse } from './edit-episode-dialog-response.interface';
+
+/**
+ * The delete flags of a 202 body. Azure writes every key (`EpisodeUpdateResponse`), but these helpers still accept a
+ * body without them (an empty or older 202) and treat a missing flag like null: no delete was attempted.
+ */
+type SocialRetractFlags = Partial<Pick<EpisodeUpdateResponse, 'tweetDeleted' | 'blueskyPostDeleted'>>;
 
 /** True when the API reported a social delete was requested but did not succeed. */
 export function socialRetractFailed(
-  response?: Pick<EpisodeChangeResponse, 'tweetDeleted' | 'blueskyPostDeleted'> | null
+  response?: SocialRetractFlags | null
 ): boolean {
   return response?.tweetDeleted === false || response?.blueskyPostDeleted === false;
 }
@@ -13,7 +19,7 @@ export function socialRetractFailed(
  * Null when there was no retract failure.
  */
 export function socialRetractFailureMessage(
-  response?: Pick<EpisodeChangeResponse, 'tweetDeleted' | 'blueskyPostDeleted'> | null
+  response?: SocialRetractFlags | null
 ): string | null {
   if (!response) {
     return null;

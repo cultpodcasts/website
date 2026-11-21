@@ -1,8 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
+# Never print secret values: the Cloudflare Pages build has NODE_AUTH_TOKEN (GitHub Packages read token for
+# @cultpodcasts/contracts) and other build secrets in its environment.
 echo ENV:
-echo "$(env)"
+print_build_env() {
+  local name value
+  shopt -s nocasematch
+  while IFS= read -r name; do
+    if [[ "$name" =~ (TOKEN|SECRET|PASSWORD|KEY|AUTH|CERT|PEM) ]]; then
+      echo "${name}=***"
+    else
+      value="${!name}"
+      echo "${name}=${value//$'\n'/\\n}"
+    fi
+  done < <(compgen -e)
+  shopt -u nocasematch
+}
+print_build_env
 
 # Committed ngsw-config.json + index.html preconnect default to api-preview
 # (local/staging). Production builds rewrite to the live API host.

@@ -103,14 +103,15 @@ export function additionalServiceFormGroup(url = '', image = ''): FormGroup<Addi
 }
 
 function additionalUrlControls(episode: ApiEpisode): FormArray<FormGroup<AdditionalServiceForm>> {
+  // Wire URLs are strings (the date interceptor does not touch them): parse them into the URL slots.
   const links = additionalServiceLinks({
-    youtube: episode.urls?.youtube,
-    spotify: episode.urls?.spotify,
-    apple: episode.urls?.apple,
-    bbc: episode.urls?.bbc,
-    internetArchive: episode.urls?.internetArchive,
-    ids: episode.ids,
-    services: episode.services
+    youtube: parseFormUrl(episode.urls?.youtube),
+    spotify: parseFormUrl(episode.urls?.spotify),
+    apple: parseFormUrl(episode.urls?.apple),
+    bbc: parseFormUrl(episode.urls?.bbc),
+    internetArchive: parseFormUrl(episode.urls?.internetArchive),
+    ids: episode.ids ?? undefined,
+    services: episode.services ?? undefined
   });
   return new FormArray(links.map((link) => additionalServiceFormGroup(
     link.url.toString(),
@@ -128,8 +129,38 @@ export function removeAdditionalUrlControl(form: FormGroup<EpisodeForm>, index: 
   form.controls.additionalUrls.markAsDirty();
 }
 
+/** A URL slot as the UI holds it: a wire string from the API, or a URL parsed from a form input. */
+type EpisodeUrlValue = string | URL | null | undefined;
+
+/**
+ * UI view-model: the episode as rebuilt from the edit / add form (URL objects from the inputs), compared with the
+ * loaded {@link ApiEpisode} by {@link getEpisodeChanges}. Not a wire type, so it stays hand-written. Its slots are
+ * wide enough that a loaded `ApiEpisode` is also an `EpisodeFormUpdate`.
+ */
+export interface EpisodeFormUpdate {
+  id: string;
+  title: string;
+  description: string;
+  posted: boolean;
+  tweeted: boolean;
+  bluesky?: boolean | null;
+  ignored: boolean;
+  removed: boolean;
+  explicit: boolean;
+  release: Date;
+  duration: string;
+  urls?: { spotify?: EpisodeUrlValue; apple?: EpisodeUrlValue; youtube?: EpisodeUrlValue; bbc?: EpisodeUrlValue; internetArchive?: EpisodeUrlValue } | null;
+  images?: { spotify?: EpisodeUrlValue; apple?: EpisodeUrlValue; youtube?: EpisodeUrlValue; other?: EpisodeUrlValue } | null;
+  services?: EpisodeServiceMap | null;
+  subjects: string[];
+  searchTerms?: string | null;
+  hashTag?: string | null;
+  lang?: string | null;
+  guests?: string[] | null;
+}
+
 /** Maps default Spotify/Apple/YouTube fields plus a free URL list onto urls + services. */
-export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, update: ApiEpisode): void {
+export function applyEpisodeFormServiceFields(form: FormGroup<EpisodeForm>, update: EpisodeFormUpdate): void {
   const urls: EpisodeUrls = {
     spotify: parseFormUrl(form.controls.spotify.value),
     apple: parseFormUrl(form.controls.apple.value),
@@ -499,7 +530,7 @@ function isSameStringArray(a: string[] | null | undefined, b: string[] | null | 
   return JSON.stringify(a) == JSON.stringify(b);
 }
 
-export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePost {
+export function getEpisodeChanges(prev: ApiEpisode, now: EpisodeFormUpdate): EpisodePost {
   const nowReleaseDate = new Date(now.release).toISOString();
   const changes: EpisodePost = {};
   if (prev.description != now.description) changes.description = now.description;
@@ -559,7 +590,7 @@ export function getEpisodeChanges(prev: ApiEpisode, now: ApiEpisode): EpisodePos
     const next = episodeLanguageFormValue(now.lang);
     changes.lang = next === 'unset' ? '' : next;
   }
-  if (!isSameStringArray(prev.guests, now.guests)) changes.guests = now.guests;
+  if (!isSameStringArray(prev.guests, now.guests)) changes.guests = now.guests ?? undefined;
   return changes;
 }
 

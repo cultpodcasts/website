@@ -1,4 +1,4 @@
-import { SearchIndexerState } from "./search-indexer-state.interface";
+import { SearchIndexerState } from "@cultpodcasts/contracts";
 
 /** Api `POST /{newsorganisation|tvshow}/index/:identifier` 200 body: the command outcome, not the read model. */
 export interface CatalogueIndexResponse {

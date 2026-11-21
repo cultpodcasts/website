@@ -41,8 +41,8 @@ export class EpisodePodcastLinksComponent {
       apple: this.asUrl(this._episode?.urls?.apple),
       bbc: this.asUrl(this._episode?.urls?.bbc),
       internetArchive: this.asUrl(this._episode?.urls?.internetArchive),
-      ids: this._episode?.ids,
-      services: this._episode?.services
+      ids: this._episode?.ids ?? undefined,
+      services: this._episode?.services ?? undefined
     });
     const byKey = new Map(collected.map((item) => [item.key, item]));
     const rows: PodcastLinkRow[] = [];

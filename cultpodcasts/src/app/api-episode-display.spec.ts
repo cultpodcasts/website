@@ -1,63 +1,57 @@
-import { ApiEpisode } from './api-episode.interface';
-import { apiEpisodeToHomepageEpisode } from './api-episode-display';
+import { wirePublicEpisode } from './public-episode.fixture';
+import { publicEpisodeToHomepageEpisode } from './api-episode-display';
 
-describe('apiEpisodeToHomepageEpisode', () => {
-  it('maps API episode fields into the shared poster display shape', () => {
-    const episode = {
+describe('publicEpisodeToHomepageEpisode', () => {
+  it('maps public API episode fields into the shared poster display shape', () => {
+    const episode = wirePublicEpisode({
       id: 'ep-1',
       title: 'Raw Title',
-      displayTitle: 'Display Title',
       podcastName: 'Show Name',
       description: 'Raw description',
-      displayDescription: 'Display description',
-      posted: true,
-      tweeted: false,
-      ignored: false,
-      removed: false,
-      explicit: false,
       release: new Date('2024-01-02T12:00:00Z'),
       duration: '01:02:03',
-      urls: {
-        spotify: new URL('https://open.spotify.com/episode/abc'),
-        youtube: new URL('https://www.youtube.com/watch?v=xyz'),
+      ids: { spotify: 'abc', apple: null, youtube: 'xyz' },
+      services: {
+        spotify: { url: 'https://open.spotify.com/episode/abc' },
+        youtube: { url: 'https://www.youtube.com/watch?v=xyz' },
       },
       subjects: ['Subject A'],
-      image: new URL('https://i.ytimg.com/vi/xyz/hqdefault.jpg'),
-      lang: 'es',
-    } as ApiEpisode;
+      // Wire string, already coalesced server-side: the display mapping parses it into a URL.
+      image: 'https://i.ytimg.com/vi/xyz/hqdefault.jpg',
+    });
 
-    const display = apiEpisodeToHomepageEpisode(episode);
+    const display = publicEpisodeToHomepageEpisode(episode);
 
     expect(display.id).toBe('ep-1');
-    expect(display.episodeTitle).toBe('Display Title');
-    expect(display.episodeDescription).toBe('Display description');
+    expect(display.episodeTitle).toBe('Raw Title');
+    expect(display.episodeDescription).toBe('Raw description');
     expect(display.podcastName).toBe('Show Name');
+    expect(display.release).toEqual(new Date('2024-01-02T12:00:00Z'));
+    expect(display.ids).toEqual({ spotify: 'abc', apple: null, youtube: 'xyz' });
     expect(display.services?.['spotify']?.url?.toString()).toBe('https://open.spotify.com/episode/abc');
     expect(display.services?.['youtube']?.url?.toString()).toBe('https://www.youtube.com/watch?v=xyz');
-    expect(display.language).toBe('es');
+    expect(display.subjects).toEqual(['Subject A']);
     expect(display.image?.toString()).toBe('https://i.ytimg.com/vi/xyz/hqdefault.jpg');
+    expect(display.imageRemoved).toBeUndefined();
+  });
+
+  it('leaves ids and services unset when the public body has none', () => {
+    const display = publicEpisodeToHomepageEpisode(wirePublicEpisode({ services: {} }));
+
+    expect(display.ids).toBeUndefined();
+    expect(display.services).toBeUndefined();
+    expect(display.image).toBeUndefined();
   });
 
   it('drops the image and carries imageRemoved when a curator removed it (RPP #1500)', () => {
-    const episode = {
-      id: 'ep-2',
-      title: 'Title',
-      podcastName: 'Show Name',
-      description: 'Description',
-      posted: true,
-      tweeted: false,
-      ignored: false,
-      removed: false,
-      explicit: false,
-      release: new Date('2024-01-02T12:00:00Z'),
-      duration: '01:02:03',
-      ids: { youtube: 'xyz' },
-      urls: { youtube: new URL('https://www.youtube.com/watch?v=xyz') },
-      subjects: [],
+    const episode = wirePublicEpisode({
+      ids: { spotify: null, apple: null, youtube: 'xyz' },
+      services: { youtube: { url: 'https://www.youtube.com/watch?v=xyz' } },
+      image: null,
       imageRemoved: true,
-    } as ApiEpisode;
+    });
 
-    const display = apiEpisodeToHomepageEpisode(episode);
+    const display = publicEpisodeToHomepageEpisode(episode);
 
     expect(display.image).toBeUndefined();
     expect(display.imageRemoved).toBe(true);

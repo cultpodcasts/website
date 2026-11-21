@@ -24,7 +24,7 @@ describe('catalogueParentEditTarget', () => {
   it('has no target for a podcast episode, a film, or a playable with no parent name', () => {
     expect(catalogueParentEditTarget({ contentKind: 'Episode', podcastName: 'Synthetic Podcast' })).toBeNull();
     expect(catalogueParentEditTarget({ contentKind: 'Film', podcastName: 'Synthetic Film' })).toBeNull();
-    expect(catalogueParentEditTarget({ contentKind: 'NewsReport', parentName: '  ', podcastName: undefined })).toBeNull();
+    expect(catalogueParentEditTarget({ contentKind: 'NewsReport', parentName: '  ', podcastName: '' })).toBeNull();
   });
 });
 
@@ -32,13 +32,13 @@ describe('isCardOfCatalogueParent', () => {
   const desk = { hub: 'news', name: 'Synthetic Desk' } as const;
 
   it('matches cards of the same hub kind and parent name', () => {
-    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Synthetic Desk' }, desk)).toBe(true);
+    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Synthetic Desk', podcastName: 'Synthetic Desk' }, desk)).toBe(true);
     expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: null, podcastName: 'Synthetic Desk' }, desk)).toBe(true);
   });
 
   it('does not match another parent, another kind with the same name, or a podcast episode', () => {
-    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Other Desk' }, desk)).toBe(false);
-    expect(isCardOfCatalogueParent({ contentKind: 'TvShowEpisode', parentName: 'Synthetic Desk' }, desk)).toBe(false);
+    expect(isCardOfCatalogueParent({ contentKind: 'NewsReport', parentName: 'Other Desk', podcastName: 'Other Desk' }, desk)).toBe(false);
+    expect(isCardOfCatalogueParent({ contentKind: 'TvShowEpisode', parentName: 'Synthetic Desk', podcastName: 'Synthetic Desk' }, desk)).toBe(false);
     expect(isCardOfCatalogueParent({ contentKind: 'Episode', podcastName: 'Synthetic Desk' }, desk)).toBe(false);
   });
 });
