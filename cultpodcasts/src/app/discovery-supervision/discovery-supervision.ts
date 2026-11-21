@@ -185,8 +185,7 @@ export const ADMIN_SETTABLE_STATUSES: readonly DiscoverySubmissionStatus[] = ['P
 
 const historyActionLabels: Record<string, string> = {
   ApplyInterrupted: 'Apply interrupted (unfinished items can be retried)',
-  ApplyQueueFailed: 'Apply could not be queued',
-  OutputsReviewed: 'Episodes marked reviewed'
+  ApplyQueueFailed: 'Apply could not be queued'
 };
 
 /** History line text; StateChanged shows `from → to` and the reason. */
@@ -247,11 +246,6 @@ export function appliedOutputs(outcomes: readonly DiscoverySubmissionItemOutcome
     }
   }
   return out;
-}
-
-/** The supervisor may mark the outputs reviewed once the apply has finished. */
-export function canMarkOutputsReviewed(detail: DiscoverySubmissionDetail): boolean {
-  return detail.canReview && !!detail.outputsReviewPending && detail.status !== 'Applying';
 }
 
 export function inProgressLabel(op: string | null | undefined): string {

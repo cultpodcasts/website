@@ -108,10 +108,10 @@
   </section>
   }
 
-  @if (d.outputsReviewPending && outputs().length) {
+  @if (outputs().length) {
   <section class="outputs-review" aria-labelledby="outputs-review-heading">
-    <h3 id="outputs-review-heading">Review {{outputs().length}} episode{{outputs().length === 1 ? '' : 's'}} from this submission</h3>
-    <p>They are already published. Check guests and subjects, then mark them reviewed.</p>
+    <h3 id="outputs-review-heading">Episodes from this submission</h3>
+    <p>Check guests and subjects if needed.</p>
     <ul class="outputs-review__list">
       @for (o of outputs(); track o.episodeId) {
       <li class="outputs-review__item" [attr.data-episode-id]="o.episodeId">
@@ -124,12 +124,7 @@
       </li>
       }
     </ul>
-    @if (markReviewable()) {
-    <button matButton="filled" type="button" class="mark-reviewed" (click)="markReviewed()" [disabled]="busy()">Mark reviewed</button>
-    }
   </section>
-  } @else if (d.outputsReviewedAt) {
-  <p class="outputs-reviewed">Episodes reviewed {{d.outputsReviewedAt | date:'d MMM yyyy H:mm'}}@if (d.outputsReviewedBy) { by <span class="who" [attr.title]="d.outputsReviewedBy">{{who(d.outputsReviewedBy)}}</span>}</p>
   }
 
   @if (isCurator() && ingestedEpisodeIds().length) {

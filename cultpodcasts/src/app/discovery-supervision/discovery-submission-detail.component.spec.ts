@@ -51,7 +51,6 @@ describe('DiscoverySubmissionDetailComponent', () => {
   let service: {
     get: ReturnType<typeof vi.fn>; saveReview: ReturnType<typeof vi.fn>; apply: ReturnType<typeof vi.fn>;
     retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; changeState: ReturnType<typeof vi.fn>;
-    markOutputsReviewed: ReturnType<typeof vi.fn>;
   };
   /** Poll wait: parked until a test releases it, so background polls stay inert. */
   let waiters: (() => void)[];
@@ -81,7 +80,6 @@ describe('DiscoverySubmissionDetailComponent', () => {
       retry: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied' })),
       release: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Released' })),
       changeState: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Pending' })),
-      markOutputsReviewed: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied', etag: 'e2' }))
     };
     waiters = [];
     pollWait = vi.fn<(ms: number) => Promise<void>>(() => new Promise<void>(resolve => waiters.push(resolve)));
@@ -278,7 +276,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
     const E1 = 'eeeeeeee-0000-4000-8000-000000000001';
     const applying = () => detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date(), etag: 'e2' });
     const applied = () => detail({
-      status: 'Applied', etag: 'e3', outputsReviewPending: true,
+      status: 'Applied', etag: 'e3',
       itemOutcomes: [{ resultId: A, state: 'Succeeded', attempts: 1, episodeId: E1, message: 'Created' }]
     });
     /** Lets the background poll take `reads` steps. */
@@ -317,7 +315,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
       expect(el().querySelector('.in-progress-panel')).toBeNull();
       expect(snackOpen).toHaveBeenCalledWith('Applied', 'Review', expect.anything());
-      expect(el().querySelector('.outputs-review')?.textContent).toContain('Review 1 episode from this submission');
+      expect(el().querySelector('.outputs-review')?.textContent).toContain('Episodes from this submission');
     });
 
     it('never shows a raw network error when the apply request drops; it re-reads and polls', async () => {
@@ -371,21 +369,17 @@ describe('DiscoverySubmissionDetailComponent', () => {
       expect(el().querySelector('.in-progress-panel')).not.toBeNull();
     });
 
-    it('lists each created / updated episode with its own edit link and marks them reviewed', async () => {
+    it('lists each created / updated episode with its own edit link as a visual check, with no Mark reviewed', async () => {
       await create(applied());
       const links = [...el().querySelectorAll('a.outputs-review__edit')] as HTMLAnchorElement[];
       expect(links.map(a => a.textContent?.trim())).toEqual(['One']);
       expect(decodeURIComponent(links[0].getAttribute('href') ?? '')).toContain(JSON.stringify([E1]));
-      expect(el().querySelector('.outputs-review')?.textContent).toContain('Created');
-
-      service.get.mockReturnValue(of(detail({ ...applied(), outputsReviewPending: false, outputsReviewedAt: new Date('2026-11-21T12:00:00Z'), outputsReviewedBy: 'sup' })));
-      button('mark-reviewed').click();
-      await fixture.whenStable();
-      fixture.detectChanges();
-
-      expect(service.markOutputsReviewed).toHaveBeenCalledWith('s1', 'e3');
-      expect(el().querySelector('.outputs-review')).toBeNull();
-      expect(el().querySelector('.outputs-reviewed')?.textContent).toContain('Episodes reviewed');
+      const panel = el().querySelector('.outputs-review')?.textContent ?? '';
+      expect(panel).toContain('Created');
+      expect(panel).toContain('Episodes from this submission');
+      expect(panel).toContain('Check guests and subjects if needed.');
+      expect(panel).not.toMatch(/mark .*reviewed/i);
+      expect(button('mark-reviewed')).toBeNull();
     });
 
     it('shows the review list read-only to the submitter', async () => {

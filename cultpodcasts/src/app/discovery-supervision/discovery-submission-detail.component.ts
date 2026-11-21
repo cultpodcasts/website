@@ -36,7 +36,6 @@ import {
   appliedOutputs,
   applyIsSlow,
   applyPollDelayMs,
-  canMarkOutputsReviewed,
   isApplyTransportError,
   CURATOR_ROLE,
   canEditReview,
@@ -177,14 +176,10 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     const d = this.detail();
     return !!d && applyIsSlow(d, this.now());
   });
-  /** Episodes this submission created or matched; listed with edit links while the review to-do is open. */
+  /** Episodes this submission created or matched, listed with edit links as an optional visual check. */
   protected readonly outputs = computed(() => {
     const d = this.detail();
     return d && d.status !== 'Applying' ? appliedOutputs(d.itemOutcomes) : [];
-  });
-  protected readonly markReviewable = computed(() => {
-    const d = this.detail();
-    return !!d && canMarkOutputsReviewed(d);
   });
   /** Change state is for a run that is really stuck, so it is hidden while a healthy apply is running. */
   protected readonly stateChangeOffered = computed(() => this.isAdmin() && (!this.applying() || this.slow()));
@@ -527,16 +522,6 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         return;
       }
       this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
-    });
-  }
-
-  /** Clears the review to-do once the supervisor has checked the created / updated episodes. */
-  async markReviewed(): Promise<void> {
-    const d = this.detail();
-    if (!d || !this.markReviewable()) return;
-    await this.run(async () => {
-      await firstValueFrom(this.service.markOutputsReviewed(d.id, d.etag));
-      this.snackBar.open('Marked reviewed', 'Ok', { duration: 4000 });
     });
   }
 
