@@ -27,6 +27,9 @@
         <span class="submission-row__body">
           <span class="submission-row__top">
             <span class="status-chip" [attr.data-status]="s.status">{{statusLabel(s.status)}}</span>
+            @if (s.outputsReviewPending) {
+            <span class="review-todo-chip">Episodes to review</span>
+            }
             <span class="submission-row__main">{{s.submitterAcceptedCount}} picked from {{s.discoveryResultsDocumentIds.length}} report{{s.discoveryResultsDocumentIds.length === 1 ? '' : 's'}}</span>
           </span>
           <span class="submission-row__meta">

@@ -28,13 +28,24 @@
       @if (d.status === 'Released') {<span>Released {{d.releasedAt | date:'d MMM yyyy H:mm'}}@if (d.releaseReason) {: {{d.releaseReason}}}</span>}
     </p>
     @if (d.status === 'Applying') {
-    <p class="in-progress" role="status">
-      {{inProgressLabel(d.inProgressOperation)}}@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
-      Review, apply, retry and release are unavailable until it finishes.
-    </p>
-    @if (isAdmin()) {
-    <p class="in-progress-admin-note">If it looks stuck, an admin can use the <strong>Change state</strong> panel at the bottom to set the status by hand.</p>
-    }
+    <div class="in-progress-panel" role="status">
+      <p class="in-progress">
+        {{inProgressLabel(d.inProgressOperation)}} in the background@if (d.inProgressSince) { since {{d.inProgressSince | date:'d MMM yyyy H:mm'}}}.
+      </p>
+      <p class="in-progress-note">
+        It is saved, so you can leave this page and come back.@if (polling()) { This page updates when it finishes.}
+        Review, apply, retry and release are unavailable until then.
+      </p>
+      @if (polling()) {
+      <mat-progress-bar class="in-progress-bar" mode="indeterminate" aria-label="Still applying"></mat-progress-bar>
+      }
+      @if (slow()) {
+      <p class="in-progress-slow">This is taking longer than usual. It is most likely still working. If the background job stops, its unfinished items are marked failed so you can retry them.</p>
+      }
+      @if (pollGaveUp()) {
+      <p class="in-progress-paused">Stopped checking automatically. Reload the page to check again.</p>
+      }
+    </div>
     }
     @if (d.applyError) {
     <p class="supervision-error">{{d.applyError}}</p>
@@ -97,6 +108,30 @@
   </section>
   }
 
+  @if (d.outputsReviewPending && outputs().length) {
+  <section class="outputs-review" aria-labelledby="outputs-review-heading">
+    <h3 id="outputs-review-heading">Review {{outputs().length}} episode{{outputs().length === 1 ? '' : 's'}} from this submission</h3>
+    <p>They are already published. Check guests and subjects, then mark them reviewed.</p>
+    <ul class="outputs-review__list">
+      @for (o of outputs(); track o.episodeId) {
+      <li class="outputs-review__item" [attr.data-episode-id]="o.episodeId">
+        @if (isCurator()) {
+        <a class="outputs-review__edit" [routerLink]="episodeRoute(o.episodeId)">{{resultName(o.resultId)}}</a>
+        } @else {
+        <span>{{resultName(o.resultId)}}</span>
+        }
+        @if (o.message) {<span class="outputs-review__state"> · {{o.message}}</span>}
+      </li>
+      }
+    </ul>
+    @if (markReviewable()) {
+    <button matButton="filled" type="button" class="mark-reviewed" (click)="markReviewed()" [disabled]="busy()">Mark reviewed</button>
+    }
+  </section>
+  } @else if (d.outputsReviewedAt) {
+  <p class="outputs-reviewed">Episodes reviewed {{d.outputsReviewedAt | date:'d MMM yyyy H:mm'}}@if (d.outputsReviewedBy) { by <span class="who" [attr.title]="d.outputsReviewedBy">{{who(d.outputsReviewedBy)}}</span>}</p>
+  }
+
   @if (isCurator() && ingestedEpisodeIds().length) {
   <section class="ingested-episodes" aria-label="Ingested episodes">
     <app-episodes-api [episodeIds]="ingestedEpisodeIds()" [embedded]="true" heading="Ingested episodes"></app-episodes-api>
@@ -143,7 +178,7 @@
     }
   </div>
 
-  @if (releasable() || isAdmin() || d.history.length) {
+  @if (releasable() || stateChangeOffered() || d.history.length) {
   <mat-accordion class="more-panels" multi>
     @if (releasable()) {
     <mat-expansion-panel class="release-panel">
@@ -159,7 +194,7 @@
     </mat-expansion-panel>
     }
 
-    @if (isAdmin()) {
+    @if (stateChangeOffered()) {
     <mat-expansion-panel class="state-panel">
       <mat-expansion-panel-header>
         <mat-panel-title id="state-heading">Change state (admin)</mat-panel-title>

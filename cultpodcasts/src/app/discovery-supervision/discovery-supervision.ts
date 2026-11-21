@@ -183,13 +183,75 @@ export function canRelease(detail: DiscoverySubmissionDetail): boolean {
 /** Statuses an admin may set via Change state (Jon: never Applying). */
 export const ADMIN_SETTABLE_STATUSES: readonly DiscoverySubmissionStatus[] = ['Pending', 'Applied', 'ApplyFailed', 'PartiallyApplied', 'Released'];
 
+const historyActionLabels: Record<string, string> = {
+  ApplyInterrupted: 'Apply interrupted (unfinished items can be retried)',
+  ApplyQueueFailed: 'Apply could not be queued',
+  OutputsReviewed: 'Episodes marked reviewed'
+};
+
 /** History line text; StateChanged shows `from → to` and the reason. */
 export function historyText(h: { action: string; fromStatus?: string | null; toStatus?: string | null; reason?: string | null }): string {
   if (h.action === 'StateChanged') {
     const change = `State changed ${h.fromStatus ?? '?'} → ${h.toStatus ?? '?'}`;
     return h.reason ? `${change}: ${h.reason}` : change;
   }
-  return h.action;
+  return historyActionLabels[h.action] ?? h.action;
+}
+
+/**
+ * Apply / retry run in a background worker (RPP #1415): POST answers 202 `Applying` and the page polls GET.
+ * Delays start at 2 s and back off to 15 s.
+ */
+export const APPLY_POLL_FIRST_MS = 2_000;
+export const APPLY_POLL_CAP_MS = 15_000;
+/** Stop polling after this long; the page says to check back later (the work carries on). */
+export const APPLY_POLL_BUDGET_MS = 60 * 60_000;
+/** After this long in Applying the page says it is taking longer than usual. */
+export const APPLY_SLOW_AFTER_MS = 15 * 60_000;
+
+export function applyPollDelayMs(attempt: number): number {
+  return Math.min(APPLY_POLL_CAP_MS, Math.round(APPLY_POLL_FIRST_MS * Math.pow(1.5, Math.max(0, attempt))));
+}
+
+/**
+ * The request may still have reached the server: no response (network / CORS / navigation), a timeout,
+ * a client abort or an edge gateway error. The page re-reads the submission instead of showing the error.
+ */
+export function isApplyTransportError(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && [0, 408, 499, 502, 503, 504, 524].includes(error.status);
+}
+
+/** True when the submission has been Applying for longer than {@link APPLY_SLOW_AFTER_MS}. */
+export function applyIsSlow(detail: Pick<DiscoverySubmissionDetail, 'status' | 'inProgressSince'>, now: number): boolean {
+  if (detail.status !== 'Applying' || !detail.inProgressSince) {
+    return false;
+  }
+  return now - new Date(detail.inProgressSince).getTime() > APPLY_SLOW_AFTER_MS;
+}
+
+/** One episode an apply created or matched, for the review to-do (RPP #1415). */
+export interface AppliedOutput {
+  resultId: string;
+  episodeId: string;
+  podcastId?: string | null;
+  /** Ingest outcome, e.g. Created / Enriched. */
+  message?: string | null;
+}
+
+/** Succeeded outcomes with an episode, one per episode, in outcome order. */
+export function appliedOutputs(outcomes: readonly DiscoverySubmissionItemOutcome[] | null | undefined): AppliedOutput[] {
+  const out: AppliedOutput[] = [];
+  for (const o of outcomes ?? []) {
+    if (o.state === 'Succeeded' && o.episodeId && !out.some(x => x.episodeId === o.episodeId)) {
+      out.push({ resultId: o.resultId, episodeId: o.episodeId, podcastId: o.podcastId, message: o.message });
+    }
+  }
+  return out;
+}
+
+/** The supervisor may mark the outputs reviewed once the apply has finished. */
+export function canMarkOutputsReviewed(detail: DiscoverySubmissionDetail): boolean {
+  return detail.canReview && !!detail.outputsReviewPending && detail.status !== 'Applying';
 }
 
 export function inProgressLabel(op: string | null | undefined): string {
