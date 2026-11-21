@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, InjectionToken, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -32,6 +32,12 @@ import {
 import {
   PickState,
   ADMIN_ROLE,
+  APPLY_POLL_BUDGET_MS,
+  appliedOutputs,
+  applyIsSlow,
+  applyPollDelayMs,
+  canMarkOutputsReviewed,
+  isApplyTransportError,
   CURATOR_ROLE,
   canEditReview,
   ADMIN_SETTABLE_STATUSES,
@@ -54,6 +60,12 @@ import {
   pickStateLabels,
   submissionStatusLabel
 } from './discovery-supervision';
+
+/** Waits between status reads while a queued apply runs; tests replace it. */
+export const DISCOVERY_APPLY_POLL_WAIT = new InjectionToken<(ms: number) => Promise<void>>('DISCOVERY_APPLY_POLL_WAIT', {
+  providedIn: 'root',
+  factory: () => (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+});
 
 export interface ReviewRow {
   reportId: string;
@@ -88,8 +100,19 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly wait = inject(DISCOVERY_APPLY_POLL_WAIT);
+  private destroyed = false;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => { this.destroyed = true; });
+  }
 
   protected readonly isLoading = signal(true);
+  /** Reading the submission every few seconds while a queued apply / retry runs (RPP #1415). */
+  protected readonly polling = signal(false);
+  /** Polling stopped after {@link APPLY_POLL_BUDGET_MS}; the work carries on server-side. */
+  protected readonly pollGaveUp = signal(false);
+  private readonly now = signal(Date.now());
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly detail = signal<DiscoverySubmissionDetail | null>(null);
@@ -150,6 +173,22 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   });
   protected readonly ingestedEpisodesRoute = computed(() => episodesReviewRoute(this.ingestedEpisodeIds()));
   protected readonly failed = computed(() => failedOutcomes(this.detail()?.itemOutcomes));
+  protected readonly slow = computed(() => {
+    const d = this.detail();
+    return !!d && applyIsSlow(d, this.now());
+  });
+  /** Episodes this submission created or matched; listed with edit links while the review to-do is open. */
+  protected readonly outputs = computed(() => {
+    const d = this.detail();
+    return d && d.status !== 'Applying' ? appliedOutputs(d.itemOutcomes) : [];
+  });
+  protected readonly markReviewable = computed(() => {
+    const d = this.detail();
+    return !!d && canMarkOutputsReviewed(d);
+  });
+  /** Change state is for a run that is really stuck, so it is hidden while a healthy apply is running. */
+  protected readonly stateChangeOffered = computed(() => this.isAdmin() && (!this.applying() || this.slow()));
+  protected readonly episodeRoute = (episodeId: string) => episodesReviewRoute([episodeId]);
 
   private readonly allRows = computed<(ReviewRow & { inPicked: boolean })[]>(() => {
     const d = this.detail();
@@ -197,22 +236,87 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
     this.error.set(null);
     try {
       const d = await firstValueFrom(this.service.get(this.id()));
-      this.detail.set(d);
-      this.finalIds.set(initialFinalIds(d));
-      this.reportComment.set(d.reportComment ?? '');
-      const comments = commentsToMap(d.itemComments);
-      this.itemComments.set(comments);
-      // Sticky for the session: seed open flags from loaded text so clearing never unmounts the field.
-      this.reportCommentOpen.set(!!(d.reportComment?.trim()));
-      this.openCommentIds.set(
-        Object.entries(comments).filter(([, text]) => !!text.trim()).map(([id]) => id));
-      this.abandonIds.set([]);
-      this.dirty.set(false);
+      this.show(d);
+      this.watchApplying();
     } catch (e) {
       this.error.set(describeSubmissionError(e));
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  /** Binds a freshly read submission (resets the working set and comments from it). */
+  private show(d: DiscoverySubmissionDetail): void {
+    this.now.set(Date.now());
+    this.detail.set(d);
+    this.finalIds.set(initialFinalIds(d));
+    this.reportComment.set(d.reportComment ?? '');
+    const comments = commentsToMap(d.itemComments);
+    this.itemComments.set(comments);
+    // Sticky for the session: seed open flags from loaded text so clearing never unmounts the field.
+    this.reportCommentOpen.set(!!(d.reportComment?.trim()));
+    this.openCommentIds.set(
+      Object.entries(comments).filter(([, text]) => !!text.trim()).map(([id]) => id));
+    this.abandonIds.set([]);
+    this.dirty.set(false);
+  }
+
+  /** While the submission is Applying, poll it until the queued worker finishes (one poll at a time). */
+  private watchApplying(): void {
+    if (this.detail()?.status !== 'Applying' || this.polling() || this.destroyed || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    void this.pollUntilFinished();
+  }
+
+  private async pollUntilFinished(): Promise<void> {
+    this.polling.set(true);
+    this.pollGaveUp.set(false);
+    const started = Date.now();
+    try {
+      for (let attempt = 0; !this.destroyed; attempt++) {
+        if (Date.now() - started > APPLY_POLL_BUDGET_MS) {
+          this.pollGaveUp.set(true);
+          return;
+        }
+        await this.wait(applyPollDelayMs(attempt));
+        if (this.destroyed) {
+          return;
+        }
+        let d: DiscoverySubmissionDetail;
+        try {
+          d = await firstValueFrom(this.service.get(this.id()));
+        } catch {
+          // A dropped read is not a failed apply: keep checking.
+          continue;
+        }
+        this.now.set(Date.now());
+        if (d.status === 'Applying') {
+          this.detail.set(d);
+          continue;
+        }
+        this.show(d);
+        this.error.set(null);
+        this.notifyFinished(d);
+        return;
+      }
+    } finally {
+      this.polling.set(false);
+    }
+  }
+
+  /** Outcome snackbar once a queued apply / retry has finished. */
+  private notifyFinished(d: DiscoverySubmissionDetail): void {
+    const failedCount = failedOutcomes(d.itemOutcomes).length;
+    const label = d.status === 'Applied'
+      ? 'Applied'
+      : `${submissionStatusLabel(d.status)}${failedCount ? `: ${failedCount} item(s) failed` : ''}`;
+    this.notifyWithReview(label, d.itemOutcomes);
+  }
+
+  /** 202: the ingest is queued; the page polls (started by the reload in run()). */
+  private notifyQueued(): void {
+    this.snackBar.open('Applying in the background. It is saved, so you can leave this page and come back.', 'Ok', { duration: 8000 });
   }
 
   toggle(event: { id: string; selected: boolean }): void {
@@ -332,6 +436,10 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         resp = await firstValueFrom(this.service.apply(d.id, resp.etag ?? etag, acceptedIds, decisions));
       }
 
+      if (resp.status === 'Applying') {
+        this.notifyQueued();
+        return;
+      }
       const failedCount = (resp.itemOutcomes ?? []).filter(o => o.state === 'Failed').length;
       this.notifyWithReview(
         resp.status === 'Applied' ? 'Applied' : `${submissionStatusLabel(resp.status)}${failedCount ? `: ${failedCount} item(s) failed` : ''}`,
@@ -414,7 +522,21 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
         resp = await firstValueFrom(this.service.retry(d.id, resp.etag ?? d.etag, abandonIds, decisions));
       }
 
+      if (resp.status === 'Applying') {
+        this.notifyQueued();
+        return;
+      }
       this.notifyWithReview(`Retry: ${submissionStatusLabel(resp.status)}`, resp.itemOutcomes);
+    });
+  }
+
+  /** Clears the review to-do once the supervisor has checked the created / updated episodes. */
+  async markReviewed(): Promise<void> {
+    const d = this.detail();
+    if (!d || !this.markReviewable()) return;
+    await this.run(async () => {
+      await firstValueFrom(this.service.markOutputsReviewed(d.id, d.etag));
+      this.snackBar.open('Marked reviewed', 'Ok', { duration: 4000 });
     });
   }
 
@@ -460,17 +582,36 @@ export class DiscoverySubmissionDetailComponent implements OnInit {
   }
 
   /** Run a command, then reload for fresh state/etag; failures are shown and also reload. */
+  private statusBefore: DiscoverySubmissionStatus | null = null;
+
   private async run(command: () => Promise<void>): Promise<void> {
+    this.statusBefore = this.detail()?.status ?? null;
     this.busy.set(true);
     this.error.set(null);
     let message: string | null = null;
+    let transport = false;
     try {
       await command();
     } catch (e) {
-      message = describeSubmissionError(e);
+      // A dropped / timed-out request may still have been queued: re-read instead of showing a raw network error.
+      transport = isApplyTransportError(e);
+      message = transport ? null : describeSubmissionError(e);
     }
-    const keepEdits = message !== null ? this.snapshotEdits() : null;
+    const keepEdits = message !== null || transport ? this.snapshotEdits() : null;
     await this.load();
+    const after = this.detail();
+    if (after?.status === 'Applying') {
+      // Running in the background (this or another tab): the banner explains, and load() is polling.
+      message = null;
+    } else if (transport) {
+      if (!after || this.error()) {
+        message = 'Could not reach the server. If you applied, it may still be running: reload in a moment to check.';
+      } else if (after.status === 'Pending' || after.status === this.statusBefore) {
+        message = 'The connection dropped before the server answered and the submission has not changed. Try again.';
+      } else {
+        this.notifyFinished(after);
+      }
+    }
     if (keepEdits) {
       // Keep the supervisor's unsaved work if a command failed.
       this.finalIds.set(keepEdits.finalIds);

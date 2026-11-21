@@ -8,7 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { DiscoverySubmissionDetailComponent } from './discovery-submission-detail.component';
+import { DISCOVERY_APPLY_POLL_WAIT, DiscoverySubmissionDetailComponent } from './discovery-submission-detail.component';
 import { DiscoverySubmissionsService } from './discovery-submissions.service';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
 
@@ -51,7 +51,11 @@ describe('DiscoverySubmissionDetailComponent', () => {
   let service: {
     get: ReturnType<typeof vi.fn>; saveReview: ReturnType<typeof vi.fn>; apply: ReturnType<typeof vi.fn>;
     retry: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn>; changeState: ReturnType<typeof vi.fn>;
+    markOutputsReviewed: ReturnType<typeof vi.fn>;
   };
+  /** Poll wait: parked until a test releases it, so background polls stay inert. */
+  let waiters: (() => void)[];
+  let pollWait: ReturnType<typeof vi.fn<(ms: number) => Promise<void>>>;
   let dialogOpen: ReturnType<typeof vi.fn>;
   let roles: BehaviorSubject<string[]>;
   let snackOpen: ReturnType<typeof vi.fn>;
@@ -76,8 +80,11 @@ describe('DiscoverySubmissionDetailComponent', () => {
       apply: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied', itemOutcomes: [] })),
       retry: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied' })),
       release: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Released' })),
-      changeState: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Pending' }))
+      changeState: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Pending' })),
+      markOutputsReviewed: vi.fn().mockReturnValue(of({ submissionId: 's1', status: 'Applied', etag: 'e2' }))
     };
+    waiters = [];
+    pollWait = vi.fn<(ms: number) => Promise<void>>(() => new Promise<void>(resolve => waiters.push(resolve)));
     roles = new BehaviorSubject<string[]>(['Supervisor']);
     snackAction = new Subject<void>();
     snackOpen = vi.fn().mockReturnValue({ onAction: () => snackAction });
@@ -93,7 +100,8 @@ describe('DiscoverySubmissionDetailComponent', () => {
         { provide: DiscoverySubmissionsService, useValue: service },
         { provide: AuthServiceWrapper, useValue: { roles } },
         { provide: MatDialog, useValue: { open: dialogOpen } },
-        { provide: MatSnackBar, useValue: { open: snackOpen } }
+        { provide: MatSnackBar, useValue: { open: snackOpen } },
+        { provide: DISCOVERY_APPLY_POLL_WAIT, useFactory: () => (ms: number) => pollWait(ms) }
       ]
     })
       .overrideComponent(DiscoverySubmissionDetailComponent, {
@@ -250,11 +258,143 @@ describe('DiscoverySubmissionDetailComponent', () => {
     expect(el().querySelector('.in-progress-admin-note')).toBeNull();
   });
 
-  it('points admins at Change state while Applying', async () => {
+  it('does not point admins at Change state while a recent apply runs in the background', async () => {
     roles.next(['Admin']);
-    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date('2026-10-11T10:00:00Z') }));
-    expect(el().querySelector('.in-progress-admin-note')?.textContent).toContain('Change state');
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date() }));
+    expect(el().querySelector('.in-progress-panel')?.textContent).toContain('you can leave this page and come back');
+    expect(el().textContent).not.toContain('Change state');
+    expect(button('change-state')).toBeNull();
+    expect(el().querySelector('.in-progress-slow')).toBeNull();
+  });
+
+  it('says a long-running apply is slow and only then offers admins Change state', async () => {
+    roles.next(['Admin']);
+    await create(detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date(Date.now() - 20 * 60_000) }));
+    expect(el().querySelector('.in-progress-slow')?.textContent).toContain('taking longer than usual');
     expect(button('change-state')).not.toBeNull();
+  });
+
+  describe('queued apply (RPP #1415)', () => {
+    const E1 = 'eeeeeeee-0000-4000-8000-000000000001';
+    const applying = () => detail({ status: 'Applying', inProgressOperation: 'Apply', inProgressSince: new Date(), etag: 'e2' });
+    const applied = () => detail({
+      status: 'Applied', etag: 'e3', outputsReviewPending: true,
+      itemOutcomes: [{ resultId: A, state: 'Succeeded', attempts: 1, episodeId: E1, message: 'Created' }]
+    });
+    /** Lets the background poll take `reads` steps. */
+    async function flush() {
+      for (let i = 0; i < 5; i++) {
+        await fixture.whenStable();
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+    async function pollSteps(reads: number) {
+      for (let i = 0; i < reads; i++) {
+        await flush();
+        waiters.shift()?.();
+      }
+      await flush();
+      fixture.detectChanges();
+    }
+
+    beforeEach(() => roles.next(['Supervisor', 'Curator']));
+
+    it('treats 202 Applying as queued, shows the still-applying state and polls to the outcome', async () => {
+      service.apply.mockReturnValue(of({ submissionId: 's1', status: 'Applying', etag: 'e2' }));
+      await create(detail());
+      service.get.mockReturnValue(of(applying()));
+      button('apply').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(snackOpen).toHaveBeenCalledWith(expect.stringContaining('Applying in the background'), 'Ok', expect.anything());
+      expect(el().querySelector('.in-progress-panel')?.textContent).toContain('This page updates when it finishes');
+      expect(el().querySelector('.in-progress-bar')).not.toBeNull();
+      expect(el().querySelector('.supervision-error')).toBeNull();
+
+      service.get.mockReturnValueOnce(of(applying())).mockReturnValue(of(applied()));
+      await pollSteps(2);
+
+      expect(el().querySelector('.in-progress-panel')).toBeNull();
+      expect(snackOpen).toHaveBeenCalledWith('Applied', 'Review', expect.anything());
+      expect(el().querySelector('.outputs-review')?.textContent).toContain('Review 1 episode from this submission');
+    });
+
+    it('never shows a raw network error when the apply request drops; it re-reads and polls', async () => {
+      service.apply.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' })));
+      await create(detail());
+      service.get.mockReturnValue(of(applying()));
+      button('apply').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.supervision-error')).toBeNull();
+      expect(el().textContent).not.toMatch(/network error/i);
+      expect(el().querySelector('.in-progress-panel')).not.toBeNull();
+      expect(pollWait).toHaveBeenCalled();
+    });
+
+    it('explains a dropped request that never reached the server, keeping unsaved edits', async () => {
+      service.apply.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 504 })));
+      service.saveReview.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      await create(detail());
+      (card(A).querySelector('mat-card') as HTMLElement).click();
+      fixture.detectChanges();
+      button('apply').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.supervision-error')?.textContent).toContain('connection dropped');
+      expect(card(A).dataset['pick']).toBe('removed');
+    });
+
+    it('keeps polling through dropped reads when the page opens while applying', async () => {
+      await create(applying());
+      expect(pollWait).toHaveBeenCalledTimes(1);
+      service.get.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 0 }))).mockReturnValue(of(applied()));
+      await pollSteps(2);
+
+      expect(el().querySelector('.in-progress-panel')).toBeNull();
+      expect(el().querySelector('.supervision-error')).toBeNull();
+      expect(fixture.componentInstance['detail']()?.status).toBe('Applied');
+    });
+
+    it('clears a 409 while another tab is already applying, showing the in-progress state instead', async () => {
+      service.apply.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'Already applying.' } })));
+      await create(detail());
+      service.get.mockReturnValue(of(applying()));
+      button('apply').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(el().querySelector('.supervision-error')).toBeNull();
+      expect(el().querySelector('.in-progress-panel')).not.toBeNull();
+    });
+
+    it('lists each created / updated episode with its own edit link and marks them reviewed', async () => {
+      await create(applied());
+      const links = [...el().querySelectorAll('a.outputs-review__edit')] as HTMLAnchorElement[];
+      expect(links.map(a => a.textContent?.trim())).toEqual(['One']);
+      expect(decodeURIComponent(links[0].getAttribute('href') ?? '')).toContain(JSON.stringify([E1]));
+      expect(el().querySelector('.outputs-review')?.textContent).toContain('Created');
+
+      service.get.mockReturnValue(of(detail({ ...applied(), outputsReviewPending: false, outputsReviewedAt: new Date('2026-11-21T12:00:00Z'), outputsReviewedBy: 'sup' })));
+      button('mark-reviewed').click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(service.markOutputsReviewed).toHaveBeenCalledWith('s1', 'e3');
+      expect(el().querySelector('.outputs-review')).toBeNull();
+      expect(el().querySelector('.outputs-reviewed')?.textContent).toContain('Episodes reviewed');
+    });
+
+    it('shows the review list read-only to the submitter', async () => {
+      roles.next(['SupervisedCurator']);
+      await create({ ...applied(), canReview: false });
+      expect(el().querySelector('.outputs-review')).not.toBeNull();
+      expect(el().querySelector('a.outputs-review__edit')).toBeNull();
+      expect(button('mark-reviewed')).toBeNull();
+    });
   });
 
   it('lets an admin change state after confirming, then reloads', async () => {

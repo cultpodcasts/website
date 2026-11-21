@@ -38,6 +38,8 @@ export interface DiscoverySubmissionSummary {
   /** Command currently running (status Applying). */
   inProgressOperation?: DiscoveryInProgressOperation | null;
   inProgressSince?: Date | null;
+  /** The apply created or matched episodes the supervisor has not marked reviewed yet (RPP #1415). */
+  outputsReviewPending?: boolean;
 }
 
 export type DiscoveryInProgressOperation = 'Apply' | 'Retry' | 'Release';
@@ -105,6 +107,10 @@ export interface DiscoverySubmissionDetail {
   releaseReason?: string | null;
   inProgressOperation?: DiscoveryInProgressOperation | null;
   inProgressSince?: Date | null;
+  /** The apply created or matched episodes the supervisor has not marked reviewed yet (RPP #1415). They are public as normal. */
+  outputsReviewPending?: boolean;
+  outputsReviewedAt?: Date | null;
+  outputsReviewedBy?: string | null;
   reports: DiscoverySubmissionReport[];
   history: DiscoverySubmissionHistory[];
 }

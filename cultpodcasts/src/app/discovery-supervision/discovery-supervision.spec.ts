@@ -1,7 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   canEditReview, ADMIN_SETTABLE_STATUSES, historyText, inProgressLabel, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
-  isSupervisorRole, mapToComments, commentsToMap, pickDiff, pickState, submissionStatusLabel
+  isSupervisorRole, mapToComments, commentsToMap, pickDiff, pickState, submissionStatusLabel,
+  applyPollDelayMs, isApplyTransportError, applyIsSlow, appliedOutputs, canMarkOutputsReviewed, APPLY_POLL_CAP_MS
 } from './discovery-supervision';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
 
@@ -11,6 +12,50 @@ function detail(overrides: Partial<DiscoverySubmissionDetail> = {}): DiscoverySu
     submitterAcceptedResultIds: ['a', 'b'], itemComments: [], reports: [], history: [], ...overrides
   };
 }
+
+describe('queued apply helpers (RPP #1415)', () => {
+  it('backs off from 2 s to a 15 s cap', () => {
+    expect(applyPollDelayMs(0)).toBe(2000);
+    expect(applyPollDelayMs(1)).toBe(3000);
+    expect(applyPollDelayMs(50)).toBe(APPLY_POLL_CAP_MS);
+  });
+
+  it('treats dropped / timed-out / gateway responses as transport, not as a failed apply', () => {
+    for (const status of [0, 408, 499, 502, 503, 504, 524]) {
+      expect(isApplyTransportError(new HttpErrorResponse({ status }))).toBe(true);
+    }
+    for (const status of [400, 403, 404, 409, 500]) {
+      expect(isApplyTransportError(new HttpErrorResponse({ status }))).toBe(false);
+    }
+    expect(isApplyTransportError(new Error('x'))).toBe(false);
+  });
+
+  it('calls an apply slow only after 15 minutes in Applying', () => {
+    const now = Date.parse('2026-11-21T12:00:00Z');
+    expect(applyIsSlow({ status: 'Applying', inProgressSince: new Date('2026-11-21T11:50:00Z') }, now)).toBe(false);
+    expect(applyIsSlow({ status: 'Applying', inProgressSince: new Date('2026-11-21T11:40:00Z') }, now)).toBe(true);
+    expect(applyIsSlow({ status: 'Applied', inProgressSince: new Date('2026-11-21T11:00:00Z') }, now)).toBe(false);
+  });
+
+  it('lists one output per succeeded episode and offers Mark reviewed only to a reviewer once finished', () => {
+    const outcomes = [
+      { resultId: 'a', state: 'Succeeded' as const, attempts: 1, episodeId: 'e1', message: 'Created' },
+      { resultId: 'b', state: 'Succeeded' as const, attempts: 1, episodeId: 'e1' },
+      { resultId: 'c', state: 'Failed' as const, attempts: 1 },
+      { resultId: 'd', state: 'Succeeded' as const, attempts: 1, episodeId: 'e2', message: 'Enriched' }
+    ];
+    expect(appliedOutputs(outcomes).map(o => [o.resultId, o.episodeId])).toEqual([['a', 'e1'], ['d', 'e2']]);
+    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: true }))).toBe(true);
+    expect(canMarkOutputsReviewed(detail({ status: 'Applying', outputsReviewPending: true }))).toBe(false);
+    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: false }))).toBe(false);
+    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: true, canReview: false }))).toBe(false);
+  });
+
+  it('labels the queued-apply history actions', () => {
+    expect(historyText({ action: 'OutputsReviewed' })).toBe('Episodes marked reviewed');
+    expect(historyText({ action: 'ApplyInterrupted' })).toContain('retried');
+  });
+});
 
 describe('discovery supervision helpers', () => {
   it('classifies each result against the submitter picks and the final set', () => {

@@ -96,4 +96,13 @@ describe('DiscoverySubmissionsService', () => {
     expect(admin.request.body).toEqual({ reason: null });
     admin.flush({});
   });
+
+  it('marks outputs reviewed with the etag and a supervise scope (RPP #1415)', () => {
+    service.markOutputsReviewed('s 1', 'e').subscribe();
+    const req = http.expectOne(api('/discovery-submissions/s%201/outputs-reviewed'));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ etag: 'e' });
+    expect(req.request.context.get(AUTH_SCOPE)).toContain('supervise');
+    req.flush({ submissionId: 's 1', status: 'Applied' });
+  });
 });
