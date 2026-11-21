@@ -390,6 +390,25 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
     expect(component.canSend()).toBe(false);
   });
 
+  it('hides the New-film warning and recent-release indexer warning in Existing film mode, and shows only the merge note', () => {
+    const recent = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    recent.componentInstance.data = { ...data, release: new Date(Date.now() - 60 * 60 * 1000).toISOString() };
+    recent.detectChanges();
+
+    const newEl = recent.nativeElement as HTMLElement;
+    expect(newEl.querySelector('.warning')?.textContent).toContain('keeps the episode id');
+    expect(newEl.querySelector('.recent')?.textContent).toContain('indexer');
+    expect(newEl.querySelector('.merge-note')).toBeNull();
+
+    recent.componentInstance.setMode('existing');
+    recent.detectChanges();
+
+    const existingEl = recent.nativeElement as HTMLElement;
+    expect(existingEl.querySelector('.warning')).toBeNull();
+    expect(existingEl.querySelector('.recent')).toBeNull();
+    expect(existingEl.querySelector('.merge-note')?.textContent).toContain('another copy of a film already in the catalogue');
+  });
+
   it('suggests films by name (only ones with an id) and a pick enables the merge', async () => {
     component.setMode('existing');
 

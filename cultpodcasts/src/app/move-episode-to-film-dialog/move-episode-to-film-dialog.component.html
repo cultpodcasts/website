@@ -1,12 +1,14 @@
 <h2 mat-dialog-title>Move to film</h2>
 
 <mat-dialog-content>
+    @if (mode() === 'new') {
     <p class="warning">
         This removes the {{ item }} from its {{ source }} and makes it a film. The film keeps the {{ item }} id,
         links, subjects and posted state. The {{ source }} stays. Old {{ item }} links redirect to the film.
     </p>
     @if (isRecentlyReleased()) {
     <p class="error recent">This {{ item }} was released in the last few days, so the indexer may add it back to the {{ source }}. Check the {{ source }} after the next index and remove any copy.</p>
+    }
     }
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the {{ item }} editor will be discarded. Submit them first to keep them.</p>
