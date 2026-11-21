@@ -315,7 +315,7 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
       expect(el().querySelector('.in-progress-panel')).toBeNull();
       expect(snackOpen).toHaveBeenCalledWith('Applied', 'Review', expect.anything());
-      expect(el().querySelector('.outputs-review')?.textContent).toContain('Episodes from this submission');
+      expect(el().querySelector('.submission-episodes')?.textContent).toContain('Episodes from this submission');
     });
 
     it('never shows a raw network error when the apply request drops; it re-reads and polls', async () => {
@@ -371,10 +371,10 @@ describe('DiscoverySubmissionDetailComponent', () => {
 
     it('lists each created / updated episode with its own edit link as a visual check, with no Mark reviewed', async () => {
       await create(applied());
-      const links = [...el().querySelectorAll('a.outputs-review__edit')] as HTMLAnchorElement[];
+      const links = [...el().querySelectorAll('a.submission-episodes__edit')] as HTMLAnchorElement[];
       expect(links.map(a => a.textContent?.trim())).toEqual(['One']);
       expect(decodeURIComponent(links[0].getAttribute('href') ?? '')).toContain(JSON.stringify([E1]));
-      const panel = el().querySelector('.outputs-review')?.textContent ?? '';
+      const panel = el().querySelector('.submission-episodes')?.textContent ?? '';
       expect(panel).toContain('Created');
       expect(panel).toContain('Episodes from this submission');
       expect(panel).toContain('Check guests and subjects if needed.');
@@ -382,11 +382,11 @@ describe('DiscoverySubmissionDetailComponent', () => {
       expect(button('mark-reviewed')).toBeNull();
     });
 
-    it('shows the review list read-only to the submitter', async () => {
+    it('shows the episode list read-only to the submitter', async () => {
       roles.next(['SupervisedCurator']);
       await create({ ...applied(), canReview: false });
-      expect(el().querySelector('.outputs-review')).not.toBeNull();
-      expect(el().querySelector('a.outputs-review__edit')).toBeNull();
+      expect(el().querySelector('.submission-episodes')).not.toBeNull();
+      expect(el().querySelector('a.submission-episodes__edit')).toBeNull();
       expect(button('mark-reviewed')).toBeNull();
     });
   });

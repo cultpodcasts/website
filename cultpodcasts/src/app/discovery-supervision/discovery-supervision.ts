@@ -185,7 +185,9 @@ export const ADMIN_SETTABLE_STATUSES: readonly DiscoverySubmissionStatus[] = ['P
 
 const historyActionLabels: Record<string, string> = {
   ApplyInterrupted: 'Apply interrupted (unfinished items can be retried)',
-  ApplyQueueFailed: 'Apply could not be queued'
+  ApplyQueueFailed: 'Apply could not be queued',
+  // Legacy: written while the outputs reviewed flag existed (21 Nov, RPP #1415); the flag is gone but old entries stay readable.
+  OutputsReviewed: 'Episodes marked reviewed'
 };
 
 /** History line text; StateChanged shows `from → to` and the reason. */
@@ -228,7 +230,7 @@ export function applyIsSlow(detail: Pick<DiscoverySubmissionDetail, 'status' | '
   return now - new Date(detail.inProgressSince).getTime() > APPLY_SLOW_AFTER_MS;
 }
 
-/** One episode an apply created or matched, for the review to-do (RPP #1415). */
+/** One episode an apply created or matched, listed with an edit link as an optional visual check (RPP #1415). */
 export interface AppliedOutput {
   resultId: string;
   episodeId: string;

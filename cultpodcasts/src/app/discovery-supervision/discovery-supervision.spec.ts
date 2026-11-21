@@ -47,7 +47,8 @@ describe('queued apply helpers (RPP #1415)', () => {
     expect(appliedOutputs(outcomes).map(o => [o.resultId, o.episodeId])).toEqual([['a', 'e1'], ['d', 'e2']]);
   });
 
-  it('labels the queued-apply history actions', () => {
+  it('labels the queued-apply history actions, including legacy OutputsReviewed entries', () => {
+    expect(historyText({ action: 'OutputsReviewed' })).toBe('Episodes marked reviewed');
     expect(historyText({ action: 'ApplyInterrupted' })).toContain('retried');
   });
 });

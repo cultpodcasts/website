@@ -109,18 +109,18 @@
   }
 
   @if (outputs().length) {
-  <section class="outputs-review" aria-labelledby="outputs-review-heading">
-    <h3 id="outputs-review-heading">Episodes from this submission</h3>
+  <section class="submission-episodes" aria-labelledby="submission-episodes-heading">
+    <h3 id="submission-episodes-heading">Episodes from this submission</h3>
     <p>Check guests and subjects if needed.</p>
-    <ul class="outputs-review__list">
+    <ul class="submission-episodes__list">
       @for (o of outputs(); track o.episodeId) {
-      <li class="outputs-review__item" [attr.data-episode-id]="o.episodeId">
+      <li class="submission-episodes__item" [attr.data-episode-id]="o.episodeId">
         @if (isCurator()) {
-        <a class="outputs-review__edit" [routerLink]="episodeRoute(o.episodeId)">{{resultName(o.resultId)}}</a>
+        <a class="submission-episodes__edit" [routerLink]="episodeRoute(o.episodeId)">{{resultName(o.resultId)}}</a>
         } @else {
         <span>{{resultName(o.resultId)}}</span>
         }
-        @if (o.message) {<span class="outputs-review__state"> · {{o.message}}</span>}
+        @if (o.message) {<span class="submission-episodes__state"> · {{o.message}}</span>}
       </li>
       }
     </ul>
