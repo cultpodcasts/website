@@ -11,6 +11,34 @@
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the {{ item }} editor will be discarded. Submit them first to keep them.</p>
     }
+    @if (canMergeIntoExisting) {
+    <mat-button-toggle-group class="mode" [value]="mode()" (change)="setMode($event.value)" [disabled]="isSending()"
+        aria-label="New or existing film">
+        <mat-button-toggle value="new">New film</mat-button-toggle>
+        <mat-button-toggle value="existing">Existing film</mat-button-toggle>
+    </mat-button-toggle-group>
+    }
+    @if (mode() === 'existing') {
+    <p class="merge-note">
+        Use this when the {{ item }} is another copy of a film already in the catalogue. Its links the film doesn't have
+        are added to the film, its subjects are added, and the {{ item }} is removed. Old {{ item }} links redirect to the film.
+        The film's title and details stay as they are.
+    </p>
+    <mat-form-field class="full-width">
+        <mat-label>Existing film</mat-label>
+        <input type="text" matInput class="existing-film" [formControl]="filmQuery" [matAutocomplete]="filmAuto"
+            [readonly]="isSending()" autocomplete="off" aria-label="Existing film">
+        <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
+            @for (film of films(); track film.itemId) {
+            <mat-option [value]="film">{{ film.label }}</mat-option>
+            }
+        </mat-autocomplete>
+        <mat-hint>Type a film name to pick it, or paste a film id</mat-hint>
+    </mat-form-field>
+    @if (existingFilm(); as film) {
+    <p class="selected" role="status">Film: {{ film.name ?? film.id }}</p>
+    }
+    } @else {
     <mat-form-field class="full-width">
         <mat-label>Film title</mat-label>
         <input type="text" matInput [formControl]="title" [readonly]="isSending()">
@@ -18,6 +46,7 @@
     </mat-form-field>
     @if (hasInvalidTitle()) {
     <p class="error">A film title cannot contain '/'</p>
+    }
     }
     @if (error()) {
     <p class="error">{{error()}}</p>
@@ -29,5 +58,5 @@
 
 <mat-dialog-actions>
     <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
-    <button type="button" matButton="filled" [disabled]="isSending() || hasInvalidTitle()" (click)="move()">Move to film</button>
+    <button type="button" matButton="filled" [disabled]="!canSend()" (click)="move()">{{ mode() === 'existing' ? 'Merge into film' : 'Move to film' }}</button>
 </mat-dialog-actions>

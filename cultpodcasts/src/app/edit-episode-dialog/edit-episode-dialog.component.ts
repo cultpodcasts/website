@@ -225,7 +225,7 @@ export class EditEpisodeDialogComponent {
           return;
         }
         this.dialogRef.close({ movedToFilm: true, podcastId: this.podcastId });
-        this.snackBar.open("Moved to film", "Ok", { duration: 10000 });
+        this.snackBar.open(result.merged ? "Merged into film" : "Moved to film", "Ok", { duration: 10000 });
         this.router.navigate(filmPageCommands(result.name, result.filmId));
       });
   }
