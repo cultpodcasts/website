@@ -4,6 +4,7 @@ import {
   socialRetractFailed,
   socialRetractFailureMessage
 } from './social-retract-result';
+import { SearchIndexerState } from './search-indexer-state.interface';
 
 describe('socialRetractFailed', () => {
   it('is false when response omits delete flags', () => {
@@ -47,12 +48,12 @@ describe('socialRetractFailureMessage', () => {
 
 describe('episodeEditResultMessage', () => {
   it('returns Episode updated on success without retract failure', () => {
-    expect(episodeEditResultMessage({ updated: true, response: { tweetDeleted: null, blueskyPostDeleted: null, searchIndexerState: 'Executed' } })).toBe('Episode updated');
+    expect(episodeEditResultMessage({ updated: true, response: { tweetDeleted: null, blueskyPostDeleted: null, searchIndexerState: SearchIndexerState.Executed } })).toBe('Episode updated');
   });
 
   it('prefers retract failure over Episode updated', () => {
     expect(
-      episodeEditResultMessage({ updated: true, response: { tweetDeleted: null, blueskyPostDeleted: false, searchIndexerState: 'Executed' } })
+      episodeEditResultMessage({ updated: true, response: { tweetDeleted: null, blueskyPostDeleted: false, searchIndexerState: SearchIndexerState.Executed } })
     ).toBe('Could not delete Bluesky post — Bluesky posted flag left unchanged');
   });
 

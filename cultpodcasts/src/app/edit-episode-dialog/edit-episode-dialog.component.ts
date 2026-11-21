@@ -112,6 +112,7 @@ export class EditEpisodeDialogComponent {
   readonly isInError = signal<boolean>(false);
   /** RPP #1484: the loaded episode's approval status (null means approved, as on every ordinary episode). */
   readonly approvalStatus = signal<ApprovalStatus | null>(null);
+  protected readonly ApprovalStatus = ApprovalStatus;
   /** RPP #1484: the curator's approve / reject choice, sent with Save. */
   readonly approvalDecision = signal<ApprovalDecision | null>(null);
   subjects: string[] = [];
@@ -388,7 +389,7 @@ export class EditEpisodeDialogComponent {
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
       const approvalDecision = this.approvalDecision();
-      if (approvalDecision === 'Approve' || (approvalDecision === 'Reject' && this.approvalStatus() === 'AwaitingApproval')) {
+      if (approvalDecision === 'Approve' || (approvalDecision === 'Reject' && this.approvalStatus() === ApprovalStatus.AwaitingApproval)) {
         // RPP #1484: the API sets removed; approving clears the status so it posts under the usual rules.
         delete changes.removed;
         changes.approvalDecision = approvalDecision;

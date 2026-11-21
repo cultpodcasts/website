@@ -27,7 +27,7 @@
                 @if (isHeldSplitOff()) {
                 <div class="split-off-review" role="group" aria-label="Split-off approval">
                     <p>
-                        @if (approvalStatus() === 'AwaitingApproval') {
+                        @if (approvalStatus() === ApprovalStatus.AwaitingApproval) {
                         Split-off awaiting approval: it holds the old links moved off another episode and is hidden.
                         } @else {
                         Rejected split-off: it stays hidden.
@@ -40,7 +40,7 @@
                         (click)="setApprovalDecision('Approve')">
                         @if (approvalDecision() === 'Approve') {<mat-icon>check</mat-icon>}Approve
                     </button>
-                    @if (approvalStatus() === 'AwaitingApproval') {
+                    @if (approvalStatus() === ApprovalStatus.AwaitingApproval) {
                     <button mat-stroked-button type="button" class="reject-split-off"
                         [attr.aria-pressed]="approvalDecision() === 'Reject'"
                         (click)="setApprovalDecision('Reject')">

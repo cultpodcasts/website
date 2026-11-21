@@ -19,6 +19,7 @@ import {
 } from "../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component";
 import { SendPodcastComponent } from "../send-podcast/send-podcast.component";
 import { IndexDialogComponent, IndexDialogData } from "../index-dialog/index-dialog.component";
+import { SearchIndexerState } from "../search-indexer-state.interface";
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from "../submit-dialog-response.interface";
 import { parseSubmitDialogUrl } from "../submit-ingest-ux";
@@ -96,7 +97,7 @@ export class SeriesHubMenuComponent {
             this.snackBar.open(`${label} indexed. Nothing new`, "Ok", { duration: 10000 });
             return;
           }
-          const searchNote = result.searchIndexerState === 'Failure' ? ` ${indexStateMessage(result.searchIndexerState)}` : "";
+          const searchNote = result.searchIndexerState === SearchIndexerState.Failure ? ` ${indexStateMessage(result.searchIndexerState)}` : "";
           const items = `${count} item${count > 1 ? "s" : ""}`;
           const ref = this.snackBar.open(
             result.enrichOnly

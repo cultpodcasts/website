@@ -1,2 +1,2 @@
-/** Generated `Api.Dtos.SearchIndexerState`: the JSON string enum names as a string union. */
-export type { SearchIndexerState } from '@cultpodcasts/contracts';
+/** Generated `Api.Dtos.SearchIndexerState`: a const object of the JSON string enum names plus the matching string union type. */
+export { SearchIndexerState } from '@cultpodcasts/contracts';

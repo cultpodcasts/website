@@ -12,6 +12,7 @@ import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
+import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EditTvShowDialogComponent } from '../edit-tv-show-dialog/edit-tv-show-dialog.component';
 import { EditNewsOrganisationDialogComponent } from '../edit-news-organisation-dialog/edit-news-organisation-dialog.component';
 import { RenameCatalogueParentDialogComponent } from '../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component';
@@ -132,7 +133,7 @@ describe('SeriesHubMenuComponent', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     let reloads = 0;
     fixture.componentInstance.indexed.subscribe(() => reloads++);
-    indexDialogResult = { updated: true, itemIds: ['a', 'b'], searchIndexerState: 'Executed' };
+    indexDialogResult = { updated: true, itemIds: ['a', 'b'], searchIndexerState: SearchIndexerState.Executed };
     menu.index();
     expect(dialogOpen.mock.calls[0][0]).toBe(IndexDialogComponent);
     expect(dialogOpen.mock.calls[0][1].data).toEqual({ kind: 'catalogueParent', hub: 'news', name: 'Desk One' });
@@ -144,17 +145,17 @@ describe('SeriesHubMenuComponent', () => {
 
   it('Index says when nothing new was found, and when the search push failed', () => {
     const { menu } = create('tv', 'Nightly');
-    indexDialogResult = { updated: true, itemIds: [], searchIndexerState: 'NoDocuments' };
+    indexDialogResult = { updated: true, itemIds: [], searchIndexerState: SearchIndexerState.NoDocuments };
     menu.index();
     expect(snackOpen.mock.calls[0].slice(0, 2)).toEqual(['TV Show indexed. Nothing new', 'Ok']);
-    indexDialogResult = { updated: true, itemIds: ['a'], searchIndexerState: 'Failure' };
+    indexDialogResult = { updated: true, itemIds: ['a'], searchIndexerState: SearchIndexerState.Failure };
     menu.index();
     expect(snackOpen.mock.calls[1][0]).toBe('TV Show indexed. 1 item updated. Index update failed.');
   });
 
   it('Index of an outlet that is not auto-indexed says only Spotify / Apple links were looked up, with the count and Review (#1400)', () => {
     const { menu } = create('news', 'Law and Crime');
-    indexDialogResult = { updated: true, enrichOnly: true, itemIds: ['a'], searchIndexerState: 'Executed' };
+    indexDialogResult = { updated: true, enrichOnly: true, itemIds: ['a'], searchIndexerState: SearchIndexerState.Executed };
     menu.index();
     expect(snackOpen).toHaveBeenCalledWith(
       'News Outlet is not auto-indexed, so only Spotify / Apple links were looked up. 1 item updated.',

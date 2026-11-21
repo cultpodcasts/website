@@ -36,6 +36,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { episodeEditResultMessage } from '../social-retract-result';
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
+import { SearchIndexerState } from '../search-indexer-state.interface';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
@@ -454,21 +455,21 @@ export class PodcastApiComponent {
       let indexStatusMessage: string = "Index state unknown.";
       const state = result?.searchIndexerState;
       if (state !== undefined) {
-        if (state === 'Executed') {
+        if (state === SearchIndexerState.Executed) {
           indexStatusMessage = "Index updated.";
-        } else if (state === 'Failure') {
+        } else if (state === SearchIndexerState.Failure) {
           indexStatusMessage = "Index update failed.";
-        } else if (state === 'TooManyRequests') {
+        } else if (state === SearchIndexerState.TooManyRequests) {
           indexStatusMessage = "Index not updated (too many requests).";
-        } else if (state === 'AlreadyRunning') {
+        } else if (state === SearchIndexerState.AlreadyRunning) {
           indexStatusMessage = "Index not updated (indexer already running).";
-        } else if (state === 'EpisodeNotFound') {
+        } else if (state === SearchIndexerState.EpisodeNotFound) {
           indexStatusMessage = "Index not updated (episode not found).";
-        } else if (state === 'EpisodeIdConflict') {
+        } else if (state === SearchIndexerState.EpisodeIdConflict) {
           indexStatusMessage = "Index not updated (episode ID conflict).";
-        } else if (state === 'NoDocuments') {
+        } else if (state === SearchIndexerState.NoDocuments) {
           indexStatusMessage = "Index not updated (no documents to index).";
-        } else if (state === 'Unknown') {
+        } else if (state === SearchIndexerState.Unknown) {
           indexStatusMessage = "Index not updated (unknown indexer state).";
         }
       }
