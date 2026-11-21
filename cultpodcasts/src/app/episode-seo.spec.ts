@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   pageDetailsFromSearchEpisode,
   shareImageFieldsFromEpisode,
-  withEpisodeShareImage
+  withEpisodeShareImage,
+  withoutRemovedShareImage
 } from './episode-seo';
 import { SearchResult } from './search-result.interface';
 
@@ -33,6 +34,25 @@ function streamingSearchHit(overrides: Partial<SearchResult> = {}): SearchResult
 }
 
 describe('episode SEO share image', () => {
+  it('drops stale page-details share art when the live search image is the removed token (RPP #1500)', () => {
+    const kvDetails = {
+      title: 'The Cult of the Soulful Journey | Watch People Magazine Investigates',
+      image: 'https://api.cultpodcasts.com/og-image?img=https%3A%2F%2Fi.ytimg.com%2Fvi%2Fabc%2Fsddefault.jpg',
+      imageAspect: 'wide' as const
+    };
+
+    const removed = withoutRemovedShareImage(kvDetails, streamingSearchHit({ image: '-' }));
+    const live = withoutRemovedShareImage(kvDetails, streamingSearchHit());
+    const noEpisode = withoutRemovedShareImage(kvDetails, undefined);
+
+    expect(removed.image).toBeUndefined();
+    expect(removed.imageAspect).toBeUndefined();
+    expect(removed.title).toBe(kvDetails.title);
+    expect(withEpisodeShareImage(removed, streamingSearchHit({ image: '-' })).image).toBeUndefined();
+    expect(live).toBe(kvDetails);
+    expect(noEpisode).toBe(kvDetails);
+  });
+
   it('gives no og:image when a curator removed the image, even with a YouTube id (RPP #1500)', () => {
     const removed = streamingSearchHit({ image: '-', youtubeId: 'YSO1Lh02_Tk', services: {} });
 
