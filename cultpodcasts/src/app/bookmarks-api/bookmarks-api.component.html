@@ -52,13 +52,13 @@
     <div class="bookmarks-cell">
       <div class="bookmarks-cell__actions">
         <app-bookmark [episodeId]="result.id" [hasMenu]="authRoles().includes('Curator')" [overlay]="true" />
-        @if (authRoles().includes('Curator') && episodes()[i]?.podcastName) {
+        @if (authRoles().includes('Curator') && canEdit(episodes()[i])) {
         <button type="button" mat-icon-button class="bookmarks-cell__menu" [matMenuTriggerFor]="menu"
           aria-label="Episode actions">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item (click)="edit(episodes()[i].podcastName, result.id)">
+          <button mat-menu-item (click)="edit(episodes()[i]!)">
             <mat-icon>edit</mat-icon>
             <span>Edit Episode</span>
           </button>

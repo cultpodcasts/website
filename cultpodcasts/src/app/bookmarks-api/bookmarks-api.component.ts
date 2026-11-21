@@ -29,6 +29,7 @@ import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { episodeEditResultMessage } from '../social-retract-result';
+import { isEditableCataloguePlayableKind, openCataloguePlayableEditDialog, playableEditResultMessage } from '../catalogue-playable-edit';
 
 export enum sortMode {
   addDatedAsc = 1,
@@ -254,10 +255,32 @@ export class BookmarksApiComponent {
     };
   }
 
-  /** The public episode has no `podcastId`; the edit dialog accepts the podcast name as its identifier. */
-  edit(podcastName: string, episodeId: string) {
+  /**
+   * Curator menu needs something to edit: a news report / TV episode / film opens its own dialog by guid; a podcast
+   * episode needs `podcastName` (the public body has no `podcastId`).
+   */
+  canEdit(episode: PublicEpisode | undefined): boolean {
+    return !!episode && (isEditableCataloguePlayableKind(episode.contentKind) || !!episode.podcastName);
+  }
+
+  /**
+   * Podcast episodes open {@link EditEpisodeDialogComponent} with the podcast name as its identifier. News reports,
+   * TV episodes and films carry the organisation / show / film name in `podcastName`, which is not a podcast, so they
+   * open the matching playable edit dialog instead.
+   */
+  edit(episode: PublicEpisode) {
+    const kind = episode.contentKind;
+    if (isEditableCataloguePlayableKind(kind)) {
+      openCataloguePlayableEditDialog(this.dialog, kind, episode.id).afterClosed().subscribe(result => {
+        const message = playableEditResultMessage(kind, result);
+        if (message) {
+          this.snackBar.open(message, "Ok", { duration: result?.updated ? 10000 : 3000 });
+        }
+      });
+      return;
+    }
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { podcastIdentifier: podcastName, episodeId: episodeId },
+      data: { podcastIdentifier: episode.podcastName, episodeId: episode.id },
       disableClose: true,
       autoFocus: true,
       width: '90%'
