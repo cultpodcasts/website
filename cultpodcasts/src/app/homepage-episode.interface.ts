@@ -19,6 +19,11 @@ export interface HomepageEpisode {
   internetArchive?: URL | string;
   subjects: string[] | undefined;
   image: URL | undefined;
+  /**
+   * RPP #1500: a curator deliberately removed this episode's image. Show no art (no YouTube thumbnail
+   * fallback). Absent on every other episode.
+   */
+  imageRemoved?: boolean;
   /** Non-English IETF tag when present; omitted/undefined means English. */
   language?: string;
   /**

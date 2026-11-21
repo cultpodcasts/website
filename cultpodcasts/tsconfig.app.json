@@ -10,7 +10,8 @@
   "files": [
     "src/main.ts",
     "src/main.server.ts",
-    "server.ts"
+    "server.ts",
+    "node_modules/@cultpodcasts/contracts/src/index.ts"
   ],
   "include": [
     "src/**/*.d.ts"

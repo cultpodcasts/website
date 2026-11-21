@@ -5,7 +5,7 @@ import { catchError, firstValueFrom, forkJoin, map, Observable, of, take } from 
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from './../../environments/environment';
-import { ApiEpisode } from '../api-episode.interface';
+import { PublicEpisode } from '../public-episode.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -24,7 +24,7 @@ import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.inter
 import { CatalogueCardComponent } from '../catalogue-card/catalogue-card.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';
-import { apiEpisodeToHomepageEpisode } from '../api-episode-display';
+import { publicEpisodeToHomepageEpisode } from '../api-episode-display';
 import { SearchDisplayEpisode } from '../search-result-links';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
@@ -39,7 +39,7 @@ const removedEpisodesMessage =
   'Cultpodcasts.com has removed episodes it finds unsuitable.';
 
 interface BookmarkEpisodeLoadResult {
-  episode: ApiEpisode | null;
+  episode: PublicEpisode | null;
   notFound: boolean;
   failed: boolean;
 }
@@ -71,9 +71,9 @@ export class BookmarksApiComponent {
   protected auth = inject(AuthServiceWrapper);
   protected authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
   protected noBookmarks = signal<boolean>(false);
-  protected episodes = signal<ApiEpisode[]>([]);
+  protected episodes = signal<PublicEpisode[]>([]);
   protected displayEpisodes = computed(() =>
-    this.episodes().map(apiEpisodeToHomepageEpisode)
+    this.episodes().map(publicEpisodeToHomepageEpisode)
   );
   protected sortDirection = signal<sortMode>(sortMode.addDatedDesc);
   protected readonly playerService = inject(PlayerService);
@@ -170,13 +170,13 @@ export class BookmarksApiComponent {
         const items = orderedBookmarks.slice(start, end);
         items.forEach(episodeId => {
           const episodeEndpoint = new URL(`/public/episode/${episodeId}`, environment.api).toString();
-          const get = this.http.get<ApiEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest())
+          const get = this.http.get<PublicEpisode>(episodeEndpoint, { headers: headers }).pipe(this.handleRequest())
           episodeResponses.push(get);
         })
         forkJoin(episodeResponses).subscribe({
           next: episodes => {
             const loaded = episodes
-              .filter((x): x is BookmarkEpisodeLoadResult & { episode: ApiEpisode } => x.episode != null)
+              .filter((x): x is BookmarkEpisodeLoadResult & { episode: PublicEpisode } => x.episode != null)
               .map(x => x.episode);
             const hasRemoved = episodes.some(x => x.notFound);
             const hasFailure = episodes.some(x => x.failed);
@@ -236,7 +236,7 @@ export class BookmarksApiComponent {
   }
 
   handleRequest() {
-    return (observable: Observable<ApiEpisode>) => {
+    return (observable: Observable<PublicEpisode>) => {
       return observable.pipe(
         map((result): BookmarkEpisodeLoadResult => ({
           episode: result,
@@ -254,9 +254,10 @@ export class BookmarksApiComponent {
     };
   }
 
-  edit(podcastId: string, episodeId: string) {
+  /** The public episode has no `podcastId`; the edit dialog accepts the podcast name as its identifier. */
+  edit(podcastName: string, episodeId: string) {
     const dialogRef = this.dialog.open<EditEpisodeDialogComponent, any, EditEpisodeDialogResponse>(EditEpisodeDialogComponent, {
-      data: { podcastIdentifier: podcastId, episodeId: episodeId },
+      data: { podcastIdentifier: podcastName, episodeId: episodeId },
       disableClose: true,
       autoFocus: true,
       width: '90%'
@@ -269,7 +270,7 @@ export class BookmarksApiComponent {
     });
   }
 
-  post(episode: ApiEpisode) {
+  post(episode: PublicEpisode) {
     const episodeId = episode.id;
     const dialogRef = this.dialog
       .open<PostEpisodeDialogComponent, PostEpisodeDialogData, PostEpisodeDialogResponse>(PostEpisodeDialogComponent, {

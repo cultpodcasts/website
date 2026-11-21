@@ -12,7 +12,7 @@ import { SearchResult } from '../search-result.interface';
 import { PodcastEpisodeComponent } from '../podcast-episode/podcast-episode.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { EpisodeLoadingSkeletonComponent } from '../episode-loading-skeleton/episode-loading-skeleton.component';
-import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from '../episode-seo';
+import { pageDetailsFromSearchEpisode, withEpisodeShareImage, withoutRemovedShareImage } from '../episode-seo';
 import { episodeIdFromRouteQuery } from '../playable-route';
 
 @Component({
@@ -107,6 +107,7 @@ export class PodcastComponent {
             } catch (e) {
               console.error(JSON.stringify(e));
             }
+            pageDetails = withoutRemovedShareImage(pageDetails, episode);
             if (!pageDetails.image) {
               pageDetails = hadKvPageDetails
                 ? withEpisodeShareImage(pageDetails, episode)
