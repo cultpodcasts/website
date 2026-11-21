@@ -14,6 +14,7 @@ import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.co
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { EpisodesApiComponent } from './episodes-api.component';
 import { GuidService } from '../guid.service';
+import { ContentKindDto } from '@cultpodcasts/contracts';
 
 describe('EpisodesApiComponent (embedded)', () => {
   let http: HttpTestingController;
@@ -207,7 +208,7 @@ describe('EpisodesApiComponent (embedded)', () => {
     release: '1999-01-01T00:00:00Z',
     duration: '01:42:00',
     subjects: [],
-    contentKind: 'Film',
+    contentKind: ContentKindDto.Film,
     slug: 'One Off',
     path: '/film/One%20Off/fexample'
   };

@@ -14,6 +14,7 @@ import { PublicEpisode } from '../public-episode.interface';
 import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
 import { EditNewsReportDialogComponent } from '../edit-news-report-dialog/edit-news-report-dialog.component';
 import { EditFilmDialogComponent } from '../edit-film-dialog/edit-film-dialog.component';
+import { ContentKindDto } from '@cultpodcasts/contracts';
 import { BookmarksApiComponent } from './bookmarks-api.component';
 
 /** Synthetic public episode (`GET /public/episode/:id`); no real titles or ids. */
@@ -61,7 +62,7 @@ describe('BookmarksApiComponent curator Edit', () => {
   });
 
   it('opens the episode dialog with podcastName as the podcast identifier (not undefined podcastId)', () => {
-    const episode = publicEpisode({ contentKind: 'Episode' });
+    const episode = publicEpisode({ contentKind: ContentKindDto.Episode });
     component.edit(episode);
     expect(dialog.open).toHaveBeenCalledTimes(1);
     const [type, config] = dialog.open.mock.calls[0];
@@ -75,7 +76,7 @@ describe('BookmarksApiComponent curator Edit', () => {
   });
 
   it('routes a news report to the news report dialog by guid, not the podcast episode dialog', () => {
-    const episode = publicEpisode({ contentKind: 'NewsReport', podcastName: 'Synthetic Org' });
+    const episode = publicEpisode({ contentKind: ContentKindDto.NewsReport, podcastName: 'Synthetic Org' });
     component.edit(episode);
     const [type, config] = dialog.open.mock.calls[0];
     expect(type).toBe(EditNewsReportDialogComponent);
@@ -83,14 +84,14 @@ describe('BookmarksApiComponent curator Edit', () => {
   });
 
   it('routes a film to the film dialog', () => {
-    const episode = publicEpisode({ contentKind: 'Film', podcastName: '' });
+    const episode = publicEpisode({ contentKind: ContentKindDto.Film, podcastName: '' });
     component.edit(episode);
     expect(dialog.open.mock.calls[0][0]).toBe(EditFilmDialogComponent);
   });
 
   it('offers Edit for a film with no parent name, but not for a podcast episode without a name', () => {
-    expect(component.canEdit(publicEpisode({ contentKind: 'Film', podcastName: '' }))).toBe(true);
-    expect(component.canEdit(publicEpisode({ contentKind: 'Episode', podcastName: '' }))).toBe(false);
+    expect(component.canEdit(publicEpisode({ contentKind: ContentKindDto.Film, podcastName: '' }))).toBe(true);
+    expect(component.canEdit(publicEpisode({ contentKind: ContentKindDto.Episode, podcastName: '' }))).toBe(false);
     expect(component.canEdit(undefined)).toBe(false);
   });
 });
