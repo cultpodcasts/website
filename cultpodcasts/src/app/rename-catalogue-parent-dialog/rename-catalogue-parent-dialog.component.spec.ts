@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AUTH_SCOPE, authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { SearchIndexerState } from '../search-indexer-state.interface';
+import { SearchIndexerState } from '@cultpodcasts/contracts';
 import { RenameCatalogueParentDialogComponent } from './rename-catalogue-parent-dialog.component';
 
 type Internals = { newName: string; onSubmit(): Promise<void>; conflict(): boolean; ambiguous(): boolean; isInError(): boolean };

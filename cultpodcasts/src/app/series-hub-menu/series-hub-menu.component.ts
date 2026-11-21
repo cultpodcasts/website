@@ -19,7 +19,7 @@ import {
 } from "../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component";
 import { SendPodcastComponent } from "../send-podcast/send-podcast.component";
 import { IndexDialogComponent, IndexDialogData } from "../index-dialog/index-dialog.component";
-import { SearchIndexerState } from "../search-indexer-state.interface";
+import { SearchIndexerState } from "@cultpodcasts/contracts";
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from "../submit-dialog-response.interface";
 import { parseSubmitDialogUrl } from "../submit-ingest-ux";

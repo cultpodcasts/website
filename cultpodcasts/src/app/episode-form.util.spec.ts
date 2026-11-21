@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiEpisode } from './api-episode.interface';
+import { wireApiEpisode, wireEpisodeImages } from './api-episode.fixture';
 import {
   applyGuestSelection,
   applyEpisodeFormServiceFields,
@@ -23,35 +24,26 @@ import {
   regroupSubjects,
   scheduleChromeSync,
   uniqueStrings,
-  withoutGuestSuggestion
+  withoutGuestSuggestion,
+  type EpisodeFormUpdate
 } from './episode-form.util';
 import { Person } from './person.interface';
 import { PersonMatch } from './person-match.interface';
 
 function baseEpisode(overrides: Partial<ApiEpisode> = {}): ApiEpisode {
-  return {
-    id: '11111111-1111-1111-1111-111111111111',
-    title: 'Title',
-    description: 'Desc',
-    posted: false,
-    tweeted: false,
+  return wireApiEpisode({
     bluesky: false,
-    ignored: false,
-    removed: false,
-    explicit: false,
-    release: new Date('2026-07-01T12:00:00.000Z'),
-    duration: '01:00:00',
     urls: {
-      spotify: new URL('https://open.spotify.com/episode/x'),
-      apple: undefined,
-      youtube: undefined,
-      bbc: undefined,
-      internetArchive: undefined
+      spotify: 'https://open.spotify.com/episode/x',
+      apple: null,
+      youtube: null,
+      bbc: null,
+      internetArchive: null
     },
     subjects: ['cult'],
     guests: ['Alice'],
     ...overrides
-  };
+  });
 }
 
 describe('episode-form.util', () => {
@@ -240,7 +232,7 @@ describe('episode-form.util', () => {
       lang: 'en',
       searchTerms: 'foo',
       hashTag: 'ScenarioTag',
-      images: { spotify: new URL('https://img.example/spotify.jpg') }
+      images: wireEpisodeImages({ spotify: 'https://img.example/spotify.jpg' })
     });
     const form = buildEpisodeForm(episode);
     expect(form.controls.title.value).toBe('Title');
@@ -381,7 +373,7 @@ describe('episode-form.util', () => {
     it('clears a URL with empty string when removed', () => {
       const prev = baseEpisode();
       const now = baseEpisode({
-        urls: { ...prev.urls, spotify: undefined }
+        urls: { ...prev.urls, spotify: null }
       });
       const changes = getEpisodeChanges(prev, now);
       expect(changes.urls).toEqual({ spotify: '' });
@@ -389,11 +381,11 @@ describe('episode-form.util', () => {
 
     it('diffs images and guests', () => {
       const prev = baseEpisode({
-        images: { youtube: new URL('https://img.example/old.jpg') },
+        images: wireEpisodeImages({ youtube: 'https://img.example/old.jpg' }),
         guests: ['Alice']
       });
       const now = baseEpisode({
-        images: { youtube: new URL('https://img.example/new.jpg') },
+        images: wireEpisodeImages({ youtube: 'https://img.example/new.jpg' }),
         guests: ['Alice', 'Bob']
       });
       const changes = getEpisodeChanges(prev, now);
@@ -429,7 +421,7 @@ describe('episode-form.util', () => {
         services: {
           vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
         },
-        images: { other: new URL('https://cdn.example.test/leftover.jpg') }
+        images: wireEpisodeImages({ other: 'https://cdn.example.test/leftover.jpg' })
       });
       const changes = getEpisodeChanges(prev, now);
       expect(changes.services).toEqual({
@@ -455,16 +447,16 @@ describe('episode-form.util', () => {
   it('buildEpisodeForm seeds additional URL and image rows from BBC and services, not images.other', () => {
     const form = buildEpisodeForm(baseEpisode({
       urls: {
-        spotify: new URL('https://open.spotify.com/episode/x'),
-        apple: undefined,
-        youtube: undefined,
-        bbc: new URL('https://www.bbc.co.uk/iplayer/episode/p0abcd12'),
-        internetArchive: undefined
+        spotify: 'https://open.spotify.com/episode/x',
+        apple: null,
+        youtube: null,
+        bbc: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12',
+        internetArchive: null
       },
       services: {
         vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
       },
-      images: { other: new URL('https://cdn.example.test/leftover.jpg') }
+      images: wireEpisodeImages({ other: 'https://cdn.example.test/leftover.jpg' })
     }));
     expect(form.controls.additionalUrls.value).toEqual([
       { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12', image: '' },
@@ -485,9 +477,9 @@ describe('episode-form.util', () => {
       url: 'https://vimeo.com/123456789',
       image: 'https://i.vimeocdn.com/video/abc.jpg'
     });
-    const update = baseEpisode();
+    const update: EpisodeFormUpdate = baseEpisode();
     applyEpisodeFormServiceFields(form, update);
-    expect(update.urls?.bbc?.href).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
+    expect(update.urls?.bbc?.toString()).toBe('https://www.bbc.co.uk/iplayer/episode/p0abcd12');
     expect(update.services).toEqual({
       bbcIplayer: { url: 'https://www.bbc.co.uk/iplayer/episode/p0abcd12' },
       vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
@@ -502,9 +494,9 @@ describe('episode-form.util', () => {
       url: 'https://www.youtube.com/watch?v=yt123456789',
       image: 'https://i.ytimg.com/vi/yt123456789/hqdefault.jpg'
     });
-    const update = baseEpisode({ images: {} });
+    const update: EpisodeFormUpdate = { ...baseEpisode(), images: {} };
     applyEpisodeFormServiceFields(form, update);
-    expect(update.urls?.youtube?.href).toBe('https://www.youtube.com/watch?v=yt123456789');
+    expect(update.urls?.youtube?.toString()).toBe('https://www.youtube.com/watch?v=yt123456789');
     expect(update.images?.youtube?.toString()).toBe('https://i.ytimg.com/vi/yt123456789/hqdefault.jpg');
     expect(update.images?.other).toBeUndefined();
     expect(update.services?.['youtube']).toBeUndefined();
@@ -522,7 +514,7 @@ describe('episode-form.util', () => {
 
   it('collectEpisodeImagePreviews lists extra-service art by catalog key, not Other', () => {
     const form = buildEpisodeForm(baseEpisode({
-      images: { youtube: new URL('https://i.ytimg.com/vi/abc/hqdefault.jpg') },
+      images: wireEpisodeImages({ youtube: 'https://i.ytimg.com/vi/abc/hqdefault.jpg' }),
       services: {
         vimeo: { url: 'https://vimeo.com/123456789', image: 'https://i.vimeocdn.com/video/abc.jpg' }
       }

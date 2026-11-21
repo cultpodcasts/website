@@ -1,3 +1,4 @@
+import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 import { Directive, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
@@ -13,7 +14,6 @@ import { Subject } from './subject.interface';
 import { buildPlayableEditForm, PlayableEditForm, PlayableEditFormValue, PlayableEditVariant } from './playable-edit-form.util';
 import {
   EditPlayableDialogResponse,
-  PlayableChangeResponse,
   PlayableFieldsChangeRequest,
   PlayableFieldsDto
 } from './playable-edit.interface';
@@ -68,7 +68,7 @@ export abstract class PlayableEditDialogBase<TDto extends PlayableFieldsDto, TCh
   protected abstract readonly variant: PlayableEditVariant;
   protected abstract playableId(): string;
   protected abstract load(id: string): Observable<TDto>;
-  protected abstract patch(id: string, changes: TChange): Observable<HttpResponse<PlayableChangeResponse | null>>;
+  protected abstract patch(id: string, changes: TChange): Observable<HttpResponse<EpisodeUpdateResponse | null>>;
   protected abstract changes(original: TDto, value: PlayableEditFormValue): TChange;
   protected abstract parentOf(dto: TDto): { id: string; name: string };
 

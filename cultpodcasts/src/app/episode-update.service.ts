@@ -194,7 +194,7 @@ export class EpisodeUpdateService {
     if (episode.guests?.length) {
       return [...episode.guests];
     }
-    return episode.guestPeople?.map(x => x.name) ?? [];
+    return episode.guestPeople?.map(x => x.name).filter((name): name is string => !!name) ?? [];
   }
 
   /**

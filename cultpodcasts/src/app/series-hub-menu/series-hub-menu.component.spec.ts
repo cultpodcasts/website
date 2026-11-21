@@ -12,7 +12,7 @@ import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
-import { SearchIndexerState } from '../search-indexer-state.interface';
+import { SearchIndexerState } from '@cultpodcasts/contracts';
 import { EditTvShowDialogComponent } from '../edit-tv-show-dialog/edit-tv-show-dialog.component';
 import { EditNewsOrganisationDialogComponent } from '../edit-news-organisation-dialog/edit-news-organisation-dialog.component';
 import { RenameCatalogueParentDialogComponent } from '../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component';

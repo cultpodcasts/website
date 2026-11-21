@@ -1,4 +1,4 @@
-import { SearchIndexerState } from "./search-indexer-state.interface";
+import { SearchIndexerState } from "@cultpodcasts/contracts";
 
 /** Snackbar wording for the indexState returned by a rename. */
 export function indexStateMessage(state: SearchIndexerState | undefined): string {

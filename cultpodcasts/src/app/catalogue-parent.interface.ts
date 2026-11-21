@@ -1,4 +1,4 @@
-import { SearchIndexerState } from "./search-indexer-state.interface";
+import { SearchIndexerState } from "@cultpodcasts/contracts";
 import { YouTubeIndexingHints } from "./youtube-indexing-hints.interface";
 
 /**
