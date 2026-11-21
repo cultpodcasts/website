@@ -3,6 +3,7 @@ import { SearchResult } from './search-result.interface';
 import {
   episodeArtAspect,
   episodeImageUrl,
+  isImageRemoved,
   SearchDisplayEpisode
 } from './search-result-links';
 
@@ -29,6 +30,20 @@ export function withEpisodeShareImage(
     return pageDetails;
   }
   return { ...pageDetails, ...shareImageFieldsFromEpisode(episode) };
+}
+
+/**
+ * RPP #1500: when the live search episode says a curator removed the image, drop any share art
+ * page-details still carries (e.g. a stale shortener KV record) so og:image falls back to the site default.
+ */
+export function withoutRemovedShareImage(
+  pageDetails: IPageDetails,
+  episode: SearchDisplayEpisode | undefined
+): IPageDetails {
+  if (!episode || !isImageRemoved(episode) || (!pageDetails.image && !pageDetails.imageAspect)) {
+    return pageDetails;
+  }
+  return { ...pageDetails, image: undefined, imageAspect: undefined };
 }
 
 /** Client (and SSR fallback) page-details shape from a search hit. */

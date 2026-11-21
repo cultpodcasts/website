@@ -19,11 +19,14 @@ export function apiEpisodeToHomepageEpisode(episode: ApiEpisode): HomepageEpisod
     },
     services: mergeApiServices(episode),
     subjects: episode.subjects,
-    image: episode.image
-      ?? toUrl(episode.images?.youtube ?? undefined)
-      ?? toUrl(episode.images?.spotify ?? undefined)
-      ?? toUrl(episode.images?.apple ?? undefined)
-      ?? toUrl(episode.images?.other ?? undefined),
+    image: episode.imageRemoved === true
+      ? undefined
+      : episode.image
+        ?? toUrl(episode.images?.youtube ?? undefined)
+        ?? toUrl(episode.images?.spotify ?? undefined)
+        ?? toUrl(episode.images?.apple ?? undefined)
+        ?? toUrl(episode.images?.other ?? undefined),
+    ...(episode.imageRemoved === true ? { imageRemoved: true } : {}),
     language: episode.lang ?? undefined,
   };
 }

@@ -134,7 +134,30 @@ export function externalPlaybackUrl(episode: SearchDisplayEpisode): URL | undefi
   return externalWatchUrl(episode) ?? externalListenUrl(episode);
 }
 
+/**
+ * RPP #1500: search-index / D1 `image` token for an episode whose image a curator deliberately removed.
+ * Kept to one non-URL, non-sigil character so older clients (and `expandImage`) treat it as "no image".
+ */
+export const IMAGE_REMOVED_TOKEN = "-";
+
+/**
+ * True when a curator deliberately removed this episode's image (RPP #1500): the search-index / D1
+ * `image` is {@link IMAGE_REMOVED_TOKEN}, or the homepage / public API episode carries `imageRemoved`.
+ * Such an episode shows no art at all — never the synthesized YouTube thumbnail.
+ * An episode with no stored image and no flag still falls back to its YouTube thumbnail.
+ */
+export function isImageRemoved(episode: SearchDisplayEpisode): boolean {
+  if ((episode as HomepageEpisode).imageRemoved === true) {
+    return true;
+  }
+  const image = episode.image;
+  return typeof image === "string" && image.trim() === IMAGE_REMOVED_TOKEN;
+}
+
 export function episodeImageUrl(episode: SearchDisplayEpisode): URL | undefined {
+  if (isImageRemoved(episode)) {
+    return undefined;
+  }
   const ytId = String(platformIds(episode).youtube ?? "") || youtubeIdFromWatchUrl(youtubeUrl(episode));
   if (isHomepageEpisode(episode)) {
     const image = toUrl(episode.image);
@@ -224,7 +247,8 @@ export function episodeArtAspect(episode: SearchDisplayEpisode): EpisodeArtAspec
 //   s{id}      -> https://i.scdn.co/image/{id}
 //   a{n}{path} -> https://is{n}-ssl.mzstatic.com/image/thumb/{path}
 // The exact URL that was selected/probed at index time is reconstructed byte-for-byte; there is no
-// maxres->hqdefault guessing.
+// maxres->hqdefault guessing. `-` (IMAGE_REMOVED_TOKEN, RPP #1500) means a curator removed the image and
+// expands to nothing.
 export function expandImage(image: URL | string | undefined, youtubeId: string | undefined): URL | undefined {
   if (!image) {
     return undefined;

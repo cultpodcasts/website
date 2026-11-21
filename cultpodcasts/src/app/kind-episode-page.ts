@@ -9,7 +9,7 @@ import { SeoService } from "./seo.service";
 import { EpisodeService } from "./episode.service";
 import { SearchResult } from "./search-result.interface";
 import { IPageDetails } from "./page-details.interface";
-import { pageDetailsFromSearchEpisode, withEpisodeShareImage } from "./episode-seo";
+import { pageDetailsFromSearchEpisode, withEpisodeShareImage, withoutRemovedShareImage } from "./episode-seo";
 import { displayCatalogName } from "./display-catalog-name";
 import { episodeIdFromRouteQuery } from "./playable-route";
 import { movedKindRedirect } from "./catalogue-links";
@@ -114,12 +114,15 @@ export function connectKindEpisode(options: {
           if (target && found) {
             pageDetails = pageDetailsFromSearchEpisode(options.seoName(found, slug()), found);
             sendMovedKind(target);
-          } else if (!pageDetails.image) {
-            pageDetails = hadKv
-              ? withEpisodeShareImage(pageDetails, found)
-              : found
-                ? pageDetailsFromSearchEpisode(options.seoName(found, slug()), found)
-                : pageDetails;
+          } else {
+            pageDetails = withoutRemovedShareImage(pageDetails, found);
+            if (!pageDetails.image) {
+              pageDetails = hadKv
+                ? withEpisodeShareImage(pageDetails, found)
+                : found
+                  ? pageDetailsFromSearchEpisode(options.seoName(found, slug()), found)
+                  : pageDetails;
+            }
           }
           seo.AddMetaTags(pageDetails);
           isLoading.set(true);

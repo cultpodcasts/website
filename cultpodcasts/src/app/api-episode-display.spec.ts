@@ -37,4 +37,29 @@ describe('apiEpisodeToHomepageEpisode', () => {
     expect(display.language).toBe('es');
     expect(display.image?.toString()).toBe('https://i.ytimg.com/vi/xyz/hqdefault.jpg');
   });
+
+  it('drops the image and carries imageRemoved when a curator removed it (RPP #1500)', () => {
+    const episode = {
+      id: 'ep-2',
+      title: 'Title',
+      podcastName: 'Show Name',
+      description: 'Description',
+      posted: true,
+      tweeted: false,
+      ignored: false,
+      removed: false,
+      explicit: false,
+      release: new Date('2024-01-02T12:00:00Z'),
+      duration: '01:02:03',
+      ids: { youtube: 'xyz' },
+      urls: { youtube: new URL('https://www.youtube.com/watch?v=xyz') },
+      subjects: [],
+      imageRemoved: true,
+    } as ApiEpisode;
+
+    const display = apiEpisodeToHomepageEpisode(episode);
+
+    expect(display.image).toBeUndefined();
+    expect(display.imageRemoved).toBe(true);
+  });
 });

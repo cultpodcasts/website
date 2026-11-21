@@ -44,7 +44,7 @@ export class EpisodeImageComponent {
     if (this.searchResult) {
       imageUrl = episodeImageUrl(this.searchResult);
     } else if (this.apiEpisode) {
-      imageUrl = this.apiEpisode.image;
+      imageUrl = this.apiEpisode.imageRemoved === true ? undefined : this.apiEpisode.image;
     } else if (this.discoveryResult) {
       imageUrl = this.discoveryResult.imageUrl;
     }
