@@ -1,10 +1,2 @@
-export enum SearchIndexerState {
-    EpisodeNotFound = "EpisodeNotFound",
-    EpisodeIdConflict= "EpisodeIdConflict",
-    NoDocuments= "NoDocuments",
-    Executed = "Executed",
-    Failure = "Failure",
-    TooManyRequests = "TooManyRequests",
-    AlreadyRunning = "AlreadyRunning",
-    Unknown = "Unknown"
-}
+/** Generated `Api.Dtos.SearchIndexerState`: the JSON string enum names as a string union. */
+export type { SearchIndexerState } from '@cultpodcasts/contracts';

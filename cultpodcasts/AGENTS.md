@@ -39,6 +39,12 @@ Any new Pages / Auth0 / build secret for preview/staging **must** also be planne
 - Rule: [`../.cursor/rules/preview-production-secrets-parity.mdc`](../.cursor/rules/preview-production-secrets-parity.mdc)
 - Docs: [`docs/preview-production-secrets.md`](docs/preview-production-secrets.md)
 
+## API contracts (`@cultpodcasts/contracts`)
+
+Azure Functions DTOs that RedditPodcastPoster exports are generated into the private npm package `@cultpodcasts/contracts` (GitHub Packages; RedditPodcastPoster#1502). Use `import type` from it instead of hand-writing a wire interface: today `EpisodeDto` (`ApiEpisode`), `EpisodeUpdateResponse` (`EpisodeChangeResponse`), `SearchIndexerState` and what they reference. Never copy generated code here; if a DTO is not exported yet, propose `[ExportContract]` on it in RPP. Dates in generated types are ISO strings; model the `JsonDateInterceptor` conversion with `WithDates<T, K>` (`src/app/contract-dates.ts`). UI / form / view-model shapes (e.g. `EpisodeFormUpdate`, `Person`) stay hand-written, mapped at the boundary (`person-dto.util.ts`).
+
+`npm ci` needs `NODE_AUTH_TOKEN` (GitHub PAT with `read:packages`; `cultpodcasts/.npmrc`): in your shell locally, as the `NODE_AUTH_TOKEN` repository secret for GitHub Actions, and as a **build** environment variable on Cloudflare Pages **Preview and Production**. Without it `npm ci` fails with 401/403.
+
 ## Episode OG share image
 
 Client SEO uses episode art when `FeatureSwitch.episodeOgShareImage` is enabled

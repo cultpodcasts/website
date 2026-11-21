@@ -142,10 +142,8 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   expectedTrailerIds?: string[];
 }
 
-/** 202 body, same as the episode PATCH (`EpisodeUpdateResponse`). */
-export interface PlayableChangeResponse extends EpisodeChangeResponse {
-  searchIndexerState?: string | null;
-}
+/** 202 body, same as the episode PATCH: generated `Api.Dtos.EpisodeUpdateResponse`. */
+export type PlayableChangeResponse = EpisodeChangeResponse;
 
 export interface EditPlayableDialogResponse {
   closed?: boolean;

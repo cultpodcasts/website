@@ -44,7 +44,7 @@ export class EpisodeImageComponent {
     if (this.searchResult) {
       imageUrl = episodeImageUrl(this.searchResult);
     } else if (this.apiEpisode) {
-      imageUrl = this.apiEpisode.image;
+      imageUrl = this.asUrl(this.apiEpisode.image);
     } else if (this.discoveryResult) {
       imageUrl = this.discoveryResult.imageUrl;
     }
@@ -93,8 +93,8 @@ export class EpisodeImageComponent {
         apple: this.asUrl(this.apiEpisode.urls?.apple),
         bbc: this.asUrl(this.apiEpisode.urls?.bbc),
         internetArchive: this.asUrl(this.apiEpisode.urls?.internetArchive),
-        ids: this.apiEpisode.ids,
-        services: this.apiEpisode.services
+        ids: this.apiEpisode.ids ?? undefined,
+        services: this.apiEpisode.services ?? undefined
       });
     }
     if (this.discoveryResult) {

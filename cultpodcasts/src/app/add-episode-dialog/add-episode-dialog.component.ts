@@ -8,6 +8,7 @@ import { ApiEpisode } from '../api-episode.interface';
 import { Subject } from '../subject.interface';
 import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
+import { peopleFromDto, personMatchesFromDto } from '../person-dto.util';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -51,6 +52,7 @@ import {
   regroupGuests as regroupGuestsPure,
   regroupSubjects as regroupSubjectsPure,
   withoutGuestSuggestion,
+  type EpisodeFormUpdate,
   type EpisodeImageService
 } from '../episode-form.util';
 import { normalizeHashTagControl } from '../podcast-form.util';
@@ -172,10 +174,10 @@ export class AddEpisodeDialogComponent {
       this.form()!.controls.blueskyPosted.disable({ emitEvent: false });
       this.allPeople = episodeCataloguePeople(
         resp.people,
-        resp.episode.guestPeople,
-        resp.episode.guestSuggestions
+        peopleFromDto(resp.episode.guestPeople),
+        personMatchesFromDto(resp.episode.guestSuggestions)
       );
-      this.guestSuggestions.set(resp.episode.guestSuggestions ?? []);
+      this.guestSuggestions.set(personMatchesFromDto(resp.episode.guestSuggestions) ?? []);
       this.regroupGuests(resp.episode.guests ?? []);
       const { subjects, allSubjects } = mergeEpisodeSubjects(resp.episode.subjects, resp.subjects, this.podcastDefaultSubject);
       this.subjects = subjects;
@@ -247,7 +249,7 @@ export class AddEpisodeDialogComponent {
     const form = this.form();
     if (form?.valid) {
 
-      const update: ApiEpisode = {
+      const update: EpisodeFormUpdate = {
         id: this.episodeId,
         title: form.controls.title.value,
         description: form.controls.description.value,
@@ -365,7 +367,7 @@ export class AddEpisodeDialogComponent {
 
   regroupGuests(selected: string[] | null | undefined) {
     const { selectedGuests, otherPeople } = regroupGuestsPure(
-      this.allPeople, this.originalEpisode?.guestPeople, selected, this.guestsFilterTerm()
+      this.allPeople, peopleFromDto(this.originalEpisode?.guestPeople), selected, this.guestsFilterTerm()
     );
     this.selectedGuests.set(selectedGuests);
     this.otherPeople.set(otherPeople);
@@ -442,7 +444,7 @@ export class AddEpisodeDialogComponent {
       currentGuests: this.form()?.controls.guests.value,
       personName,
       person,
-      episodeGuestPeople: this.originalEpisode?.guestPeople,
+      episodeGuestPeople: peopleFromDto(this.originalEpisode?.guestPeople),
       filterTerm: ''
     });
     this.allPeople = result.allPeople;

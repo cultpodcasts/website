@@ -19,7 +19,7 @@ export function apiEpisodeToHomepageEpisode(episode: ApiEpisode): HomepageEpisod
     },
     services: mergeApiServices(episode),
     subjects: episode.subjects,
-    image: episode.image
+    image: toUrl(episode.image)
       ?? toUrl(episode.images?.youtube ?? undefined)
       ?? toUrl(episode.images?.spotify ?? undefined)
       ?? toUrl(episode.images?.apple ?? undefined)

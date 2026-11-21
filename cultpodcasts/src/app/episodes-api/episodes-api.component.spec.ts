@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { wireApiEpisode } from '../api-episode.fixture';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -256,7 +257,7 @@ describe('EpisodesApiComponent (embedded)', () => {
     expect(el.querySelector('.curator-card__overflow')).not.toBeNull();
     // The API path is already encoded; the row link must not encode it again (%2520).
     expect(el.querySelector('mat-card-title a')?.getAttribute('href')).toBe('/film/One%20Off/fexample');
-    fixture.componentInstance.editRow({ ...filmRow, release: new Date(filmRow.release) });
+    fixture.componentInstance.editRow(wireApiEpisode({ ...filmRow, release: new Date(filmRow.release) }));
     expect(dialog.open).toHaveBeenCalledWith(EditFilmDialogComponent, expect.objectContaining({ data: { filmId } }));
     expect(snackBar.open).toHaveBeenCalledWith('Film updated', 'Ok', expect.anything());
     await flushTicks();

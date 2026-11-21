@@ -1,9 +1,9 @@
-import { ApiEpisode } from './api-episode.interface';
+import { wireApiEpisode } from './api-episode.fixture';
 import { apiEpisodeToHomepageEpisode } from './api-episode-display';
 
 describe('apiEpisodeToHomepageEpisode', () => {
   it('maps API episode fields into the shared poster display shape', () => {
-    const episode = {
+    const episode = wireApiEpisode({
       id: 'ep-1',
       title: 'Raw Title',
       displayTitle: 'Display Title',
@@ -18,13 +18,17 @@ describe('apiEpisodeToHomepageEpisode', () => {
       release: new Date('2024-01-02T12:00:00Z'),
       duration: '01:02:03',
       urls: {
-        spotify: new URL('https://open.spotify.com/episode/abc'),
-        youtube: new URL('https://www.youtube.com/watch?v=xyz'),
+        spotify: 'https://open.spotify.com/episode/abc',
+        apple: null,
+        youtube: 'https://www.youtube.com/watch?v=xyz',
+        internetArchive: null,
+        bbc: null,
       },
       subjects: ['Subject A'],
-      image: new URL('https://i.ytimg.com/vi/xyz/hqdefault.jpg'),
+      // Wire string: the display mapping parses it into a URL.
+      image: 'https://i.ytimg.com/vi/xyz/hqdefault.jpg',
       lang: 'es',
-    } as ApiEpisode;
+    });
 
     const display = apiEpisodeToHomepageEpisode(episode);
 

@@ -5,6 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { ApiEpisode } from '../api-episode.interface';
+import { wireApiEpisode } from '../api-episode.fixture';
 import { buildEpisodeForm } from '../episode-form.util';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { EditEpisodeDialogComponent } from './edit-episode-dialog.component';
@@ -13,7 +14,7 @@ const podcastId = '3c1d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f';
 const episodeId = '7e6d5c4b-3a29-4180-9f8e-7d6c5b4a3921';
 
 function baseEpisode(overrides: Partial<ApiEpisode> = {}): ApiEpisode {
-  return {
+  return wireApiEpisode({
     id: episodeId,
     podcastId,
     title: 'Synthetic Episode Title',
@@ -26,11 +27,10 @@ function baseEpisode(overrides: Partial<ApiEpisode> = {}): ApiEpisode {
     explicit: false,
     release: new Date('2026-01-02T03:04:05Z'),
     duration: '01:00:00',
-    urls: {},
     subjects: [],
     guests: [],
     ...overrides
-  };
+  });
 }
 
 /** RPP #1484: approving or rejecting a split-off from the episode editor. */

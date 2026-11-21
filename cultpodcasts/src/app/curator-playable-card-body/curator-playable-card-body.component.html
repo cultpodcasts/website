@@ -9,9 +9,9 @@
       (removeSubject)="removeSubject.emit($event)"></app-subjects>
   </div>
   }
-  @if ((episode().guestPeople?.length ?? 0) > 0 || (episode().guestSuggestions?.length ?? 0) > 0) {
+  @if ((guestPeople()?.length ?? 0) > 0 || (guestSuggestions()?.length ?? 0) > 0) {
   <div class="curator-card__guests">
-    <app-episode-guests [guestPeople]="episode().guestPeople" [guestSuggestions]="episode().guestSuggestions"
+    <app-episode-guests [guestPeople]="guestPeople()" [guestSuggestions]="guestSuggestions()"
       [editable]="true" [disabled]="updating()" [loadingGuestName]="loadingGuestName()"
       (removeGuest)="removeGuest.emit($event)"
       (addSuggestedGuest)="addSuggestedGuest.emit($event)"></app-episode-guests>
