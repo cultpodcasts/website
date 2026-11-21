@@ -58,6 +58,8 @@ export interface ApiEpisode {
     releaseAuthority?: string;
     primaryPostService?: string;
     image?: URL;
+    /** RPP #1500: a curator deliberately removed this episode's image; absent otherwise. */
+    imageRemoved?: boolean;
     lang?: string | null;
     knownTerms?: string[] | undefined;
     guests?: string[] | undefined;

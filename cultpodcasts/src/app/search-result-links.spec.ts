@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, externalWatchUrl, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
+import { appleUrl, episodeArtAspect, episodeImageUrl, expandImage, externalWatchUrl, IMAGE_REMOVED_TOKEN, isImageRemoved, isYoutubeThumbnailUrl, spotifyUrl, youtubeUrl } from "./search-result-links";
 import { SearchResult } from "./search-result.interface";
 import { HomepageEpisode } from "./homepage-episode.interface";
 
@@ -262,6 +262,43 @@ describe("search-result-links", () => {
 
     expect(spotifyUrl(homepage)?.toString()).toBe("https://open.spotify.com/episode/homepage");
     expect(episodeImageUrl(homepage)?.toString()).toBe("https://i.scdn.co/image/opaque");
+  });
+
+  describe("curator-removed image (RPP #1500)", () => {
+    it("shows no art for the search-index removed token, even with a YouTube id", () => {
+      const removed: SearchResult = { ...searchResult, image: IMAGE_REMOVED_TOKEN, youtubeId: "removedVid" };
+      expect(isImageRemoved(removed)).toBe(true);
+      expect(episodeImageUrl(removed)).toBeUndefined();
+      expect(isYoutubeThumbnailUrl(episodeImageUrl(removed))).toBe(false);
+    });
+
+    it("shows no art for a homepage episode flagged imageRemoved, even with a YouTube id", () => {
+      const removed: HomepageEpisode = {
+        id: "id",
+        podcastName: "Podcast",
+        episodeTitle: "Title",
+        episodeDescription: "Description",
+        release: new Date("2026-07-17T00:00:00Z"),
+        duration: "00:01:02",
+        services: { youtube: { url: "https://www.youtube.com/watch?v=homeRemoved" } },
+        ids: { youtube: "homeRemoved" },
+        subjects: [],
+        image: undefined,
+        imageRemoved: true
+      };
+      expect(isImageRemoved(removed)).toBe(true);
+      expect(episodeImageUrl(removed)).toBeUndefined();
+    });
+
+    it("keeps the YouTube thumbnail fallback when there is no stored image and no removal", () => {
+      const noImage: SearchResult = { ...searchResult, image: "", youtubeId: "fallbackVid" };
+      expect(isImageRemoved(noImage)).toBe(false);
+      expect(episodeImageUrl(noImage)?.toString()).toBe("https://i.ytimg.com/vi/fallbackVid/hqdefault.jpg");
+    });
+
+    it("expandImage treats the removed token as no image", () => {
+      expect(expandImage(IMAGE_REMOVED_TOKEN, "anyVid")).toBeUndefined();
+    });
   });
 
   it("returns undefined when required ids are missing", () => {

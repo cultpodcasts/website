@@ -33,6 +33,13 @@ function streamingSearchHit(overrides: Partial<SearchResult> = {}): SearchResult
 }
 
 describe('episode SEO share image', () => {
+  it('gives no og:image when a curator removed the image, even with a YouTube id (RPP #1500)', () => {
+    const removed = streamingSearchHit({ image: '-', youtubeId: 'YSO1Lh02_Tk', services: {} });
+
+    expect(shareImageFieldsFromEpisode(removed)).toEqual({});
+    expect(pageDetailsFromSearchEpisode('Tara Sypien', removed).image).toBeUndefined();
+  });
+
   it('uses search image for streaming-only episodes (same art as hero)', () => {
     const fields = shareImageFieldsFromEpisode(streamingSearchHit());
 
