@@ -36,7 +36,7 @@ import { InfiniteScrollStrategy } from '../infinite-scroll-strategy';
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { episodeEditResultMessage } from '../social-retract-result';
 import { RenamePodcastDialogResponse } from "../rename-podcast-dialog-response.interface";
-import { SearchIndexerState } from '../search-indexer-state.interface';
+import { SearchIndexerState } from '@cultpodcasts/contracts';
 import { EpisodePosterComponent } from '../episode-poster/episode-poster.component';
 import { SiteLoadingComponent } from '../site-loading/site-loading.component';
 import { BrowseLoadingSkeletonComponent } from '../browse-loading-skeleton/browse-loading-skeleton.component';

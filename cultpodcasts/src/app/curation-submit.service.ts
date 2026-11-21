@@ -1,10 +1,10 @@
+import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 import { HttpClient, HttpContext, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, of, throwError } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { environment } from '../environments/environment';
 import { AUTH_SCOPE } from './auth.interceptor';
 import { EpisodePost } from './episode-post.interface';
-import { EpisodeChangeResponse } from './episode-change-response.interface';
 import { AddPodcastPost } from './add-podcast-post.interface';
 import { PodcastPostResponse } from './podcast-post-response.interface';
 import { PodcastKindTransferRequest } from './podcast-kind-transfer-request.interface';
@@ -21,7 +21,6 @@ import {
   FilmChangeRequest,
   NewsReportChangeRequest,
   NewsReportDto,
-  PlayableChangeResponse,
   TvShowEpisodeChangeRequest,
   TvShowEpisodeDto
 } from './playable-edit.interface';
@@ -57,7 +56,7 @@ export class CurationSubmitService {
 
   patchEpisode(podcastId: string, episodeId: string, changes: EpisodePost) {
     const url = new URL(`/episode/${podcastId}/${episodeId}`, environment.api).toString();
-    return this.http.patch<EpisodeChangeResponse>(url, changes, {
+    return this.http.patch<EpisodeUpdateResponse>(url, changes, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -167,7 +166,7 @@ export class CurationSubmitService {
   /** PATCH only the changed playable fields: 202 with the episode-style update body. */
   patchNewsReport(reportId: string, body: NewsReportChangeRequest) {
     const url = new URL(`/newsreport/${encodeURIComponent(reportId)}`, environment.api).toString();
-    return this.http.patch<PlayableChangeResponse | null>(url, body, {
+    return this.http.patch<EpisodeUpdateResponse | null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -183,7 +182,7 @@ export class CurationSubmitService {
 
   patchTvShowEpisode(episodeId: string, body: TvShowEpisodeChangeRequest) {
     const url = new URL(`/tvshowepisode/${encodeURIComponent(episodeId)}`, environment.api).toString();
-    return this.http.patch<PlayableChangeResponse | null>(url, body, {
+    return this.http.patch<EpisodeUpdateResponse | null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });
@@ -198,7 +197,7 @@ export class CurationSubmitService {
   /** PATCH only the changed film fields (never `title`; renames are admin-only): 202 with the episode-style body. */
   patchFilm(filmId: string, body: FilmChangeRequest) {
     const url = new URL(`/film/${encodeURIComponent(filmId)}`, environment.api).toString();
-    return this.http.patch<PlayableChangeResponse | null>(url, body, {
+    return this.http.patch<EpisodeUpdateResponse | null>(url, body, {
       context: this.curateContext(),
       observe: 'response'
     });

@@ -1,4 +1,4 @@
-import { EpisodeChangeResponse } from './episode-change-response.interface';
+import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 import { FilmTrailer } from './film-trailer';
 import { Person } from './person.interface';
 import { PersonMatch } from './person-match.interface';
@@ -142,16 +142,14 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
   expectedTrailerIds?: string[];
 }
 
-/** 202 body, same as the episode PATCH: generated `Api.Dtos.EpisodeUpdateResponse`. */
-export type PlayableChangeResponse = EpisodeChangeResponse;
-
 export interface EditPlayableDialogResponse {
   closed?: boolean;
   noChange?: boolean;
   updated?: boolean;
   /** A news report moved to a TV show or film (RPP #1368); the editor already announced it and navigated. */
   moved?: boolean;
-  response?: PlayableChangeResponse | null;
+  /** 202 body, same as the episode PATCH. */
+  response?: EpisodeUpdateResponse | null;
   /** Parent (outlet / show) name from the GET, for Review links. */
   parentName?: string | null;
 }

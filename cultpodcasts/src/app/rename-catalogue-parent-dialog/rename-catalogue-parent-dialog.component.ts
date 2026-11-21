@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { firstValueFrom } from "rxjs";
 import { CatalogueHub, hubParentLabel } from "../catalogue-hub";
 import { CurationSubmitService } from "../curation-submit.service";
-import { SearchIndexerState } from "../search-indexer-state.interface";
+import { SearchIndexerState } from "@cultpodcasts/contracts";
 
 export interface RenameCatalogueParentDialogData {
   hub: CatalogueHub;

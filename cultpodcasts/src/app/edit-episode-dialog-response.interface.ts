@@ -1,4 +1,4 @@
-import { EpisodeChangeResponse } from "./episode-change-response.interface";
+import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 
 export interface EditEpisodeDialogResponse {
     closed?: boolean;
@@ -10,6 +10,6 @@ export interface EditEpisodeDialogResponse {
     attachedAsTrailer?: boolean;
     /** The episode became a TV show episode (episode row deleted); the dialog has navigated to the TV episode page. */
     movedToTvShow?: boolean;
-    response?: EpisodeChangeResponse;
+    response?: EpisodeUpdateResponse;
     podcastId?: string;
 }

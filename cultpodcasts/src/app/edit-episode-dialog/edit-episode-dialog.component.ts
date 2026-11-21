@@ -6,7 +6,8 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom, forkJoin, catchError, of, throwError } from 'rxjs';
 import { environment } from './../../environments/environment';
-import { ApiEpisode, ApprovalDecision, ApprovalStatus } from '../api-episode.interface';
+import { ApiEpisode, ApprovalDecision } from '../api-episode.interface';
+import { ApprovalStatusDto, type EpisodeUpdateResponse } from '@cultpodcasts/contracts';
 import { Subject } from '../subject.interface';
 import { Person } from '../person.interface';
 import { PersonMatch } from '../person-match.interface';
@@ -21,7 +22,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { EpisodePost } from '../episode-post.interface';
 import { EditEpisodeSendComponent } from '../edit-episode-send/edit-episode-send.component';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { EpisodeChangeResponse } from '../episode-change-response.interface';
 import { socialRetractFailed } from '../social-retract-result';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { KeyValuePipe } from '@angular/common';
@@ -111,8 +111,8 @@ export class EditEpisodeDialogComponent {
   readonly isLoading = signal<boolean>(true);
   readonly isInError = signal<boolean>(false);
   /** RPP #1484: the loaded episode's approval status (null means approved, as on every ordinary episode). */
-  readonly approvalStatus = signal<ApprovalStatus | null>(null);
-  protected readonly ApprovalStatus = ApprovalStatus;
+  readonly approvalStatus = signal<ApprovalStatusDto | null>(null);
+  protected readonly ApprovalStatusDto = ApprovalStatusDto;
   /** RPP #1484: the curator's approve / reject choice, sent with Save. */
   readonly approvalDecision = signal<ApprovalDecision | null>(null);
   subjects: string[] = [];
@@ -389,7 +389,7 @@ export class EditEpisodeDialogComponent {
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
       const approvalDecision = this.approvalDecision();
-      if (approvalDecision === 'Approve' || (approvalDecision === 'Reject' && this.approvalStatus() === ApprovalStatus.AwaitingApproval)) {
+      if (approvalDecision === 'Approve' || (approvalDecision === 'Reject' && this.approvalStatus() === ApprovalStatusDto.AwaitingApproval)) {
         // RPP #1484: the API sets removed; approving clears the status so it posts under the usual rules.
         delete changes.removed;
         changes.approvalDecision = approvalDecision;
@@ -403,7 +403,7 @@ export class EditEpisodeDialogComponent {
   }
 
   send(podcastId: string, episodeId: string, changes: EpisodePost) {
-    const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeChangeResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
+    const dialogRef = this.dialog.open<EditEpisodeSendComponent, any, { updated: boolean, response: EpisodeUpdateResponse }>(EditEpisodeSendComponent, { disableClose: true, autoFocus: true });
     dialogRef.componentInstance.submit(podcastId, episodeId, changes);
     dialogRef.afterClosed().subscribe(async result => {
       if (result && result.updated) {

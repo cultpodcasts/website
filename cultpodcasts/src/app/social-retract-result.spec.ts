@@ -4,7 +4,7 @@ import {
   socialRetractFailed,
   socialRetractFailureMessage
 } from './social-retract-result';
-import { SearchIndexerState } from './search-indexer-state.interface';
+import { SearchIndexerState } from '@cultpodcasts/contracts';
 
 describe('socialRetractFailed', () => {
   it('is false when response omits delete flags', () => {

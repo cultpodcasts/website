@@ -4,7 +4,8 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { ApiEpisode, ApprovalStatus } from '../api-episode.interface';
+import { ApiEpisode } from '../api-episode.interface';
+import { ApprovalStatusDto } from '@cultpodcasts/contracts';
 import { wireApiEpisode } from '../api-episode.fixture';
 import { buildEpisodeForm } from '../episode-form.util';
 import { FeatureSwitchService } from '../feature-switch-service';
@@ -61,14 +62,14 @@ describe('EditEpisodeDialogComponent split-off review', () => {
   }
 
   it('holds a split-off awaiting approval and disables its Removed box', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.AwaitingApproval }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.AwaitingApproval }));
 
     expect(component.isHeldSplitOff()).toBe(true);
     expect(component.form()!.controls.removed.disabled).toBe(true);
   });
 
   it('sends Approve, and not removed, when the curator approves a split-off awaiting approval', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.AwaitingApproval }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.AwaitingApproval }));
 
     component.setApprovalDecision('Approve');
     component.onSubmit();
@@ -77,7 +78,7 @@ describe('EditEpisodeDialogComponent split-off review', () => {
   });
 
   it('sends Reject when the curator rejects a split-off awaiting approval', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.AwaitingApproval }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.AwaitingApproval }));
 
     component.setApprovalDecision('Reject');
     component.onSubmit();
@@ -86,7 +87,7 @@ describe('EditEpisodeDialogComponent split-off review', () => {
   });
 
   it('can approve a rejected split-off', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.Rejected }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.Rejected }));
 
     component.setApprovalDecision('Approve');
     component.onSubmit();
@@ -95,7 +96,7 @@ describe('EditEpisodeDialogComponent split-off review', () => {
   });
 
   it('does not send Reject again for a split-off that is already rejected', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.Rejected }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.Rejected }));
 
     component.setApprovalDecision('Reject');
     component.onSubmit();
@@ -104,7 +105,7 @@ describe('EditEpisodeDialogComponent split-off review', () => {
   });
 
   it('clicking the chosen decision again clears it, so Save sends nothing', () => {
-    load(baseEpisode({ approvalStatus: ApprovalStatus.AwaitingApproval }));
+    load(baseEpisode({ approvalStatus: ApprovalStatusDto.AwaitingApproval }));
 
     component.setApprovalDecision('Approve');
     component.setApprovalDecision('Approve');
