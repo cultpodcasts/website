@@ -117,14 +117,6 @@ export class DiscoverySubmissionsService {
       { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
   }
 
-  /** The supervisor has checked the episodes an apply created or matched (guests, subjects): clears the review to-do. */
-  markOutputsReviewed(id: string, etag: string): Observable<DiscoverySubmissionCommandResponse> {
-    return this.http.post<DiscoverySubmissionCommandResponse>(
-      this.url(`/discovery-submissions/${encodeURIComponent(id)}/outputs-reviewed`),
-      { etag },
-      { context: this.context(DISCOVERY_SUPERVISE_SCOPE) });
-  }
-
   /** Admin override: set the submission status by hand (reports/outcomes unchanged). */
   changeState(id: string, status: DiscoverySubmissionStatus, etag: string, reason?: string): Observable<DiscoverySubmissionCommandResponse> {
     return this.http.post<DiscoverySubmissionCommandResponse>(

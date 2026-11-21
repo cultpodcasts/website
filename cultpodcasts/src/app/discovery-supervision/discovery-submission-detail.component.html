@@ -108,28 +108,23 @@
   </section>
   }
 
-  @if (d.outputsReviewPending && outputs().length) {
-  <section class="outputs-review" aria-labelledby="outputs-review-heading">
-    <h3 id="outputs-review-heading">Review {{outputs().length}} episode{{outputs().length === 1 ? '' : 's'}} from this submission</h3>
-    <p>They are already published. Check guests and subjects, then mark them reviewed.</p>
-    <ul class="outputs-review__list">
+  @if (outputs().length) {
+  <section class="submission-episodes" aria-labelledby="submission-episodes-heading">
+    <h3 id="submission-episodes-heading">Episodes from this submission</h3>
+    <p>Check guests and subjects if needed.</p>
+    <ul class="submission-episodes__list">
       @for (o of outputs(); track o.episodeId) {
-      <li class="outputs-review__item" [attr.data-episode-id]="o.episodeId">
+      <li class="submission-episodes__item" [attr.data-episode-id]="o.episodeId">
         @if (isCurator()) {
-        <a class="outputs-review__edit" [routerLink]="episodeRoute(o.episodeId)">{{resultName(o.resultId)}}</a>
+        <a class="submission-episodes__edit" [routerLink]="episodeRoute(o.episodeId)">{{resultName(o.resultId)}}</a>
         } @else {
         <span>{{resultName(o.resultId)}}</span>
         }
-        @if (o.message) {<span class="outputs-review__state"> · {{o.message}}</span>}
+        @if (o.message) {<span class="submission-episodes__state"> · {{o.message}}</span>}
       </li>
       }
     </ul>
-    @if (markReviewable()) {
-    <button matButton="filled" type="button" class="mark-reviewed" (click)="markReviewed()" [disabled]="busy()">Mark reviewed</button>
-    }
   </section>
-  } @else if (d.outputsReviewedAt) {
-  <p class="outputs-reviewed">Episodes reviewed {{d.outputsReviewedAt | date:'d MMM yyyy H:mm'}}@if (d.outputsReviewedBy) { by <span class="who" [attr.title]="d.outputsReviewedBy">{{who(d.outputsReviewedBy)}}</span>}</p>
   }
 
   @if (isCurator() && ingestedEpisodeIds().length) {

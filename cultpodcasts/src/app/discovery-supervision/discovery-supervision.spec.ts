@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   canEditReview, ADMIN_SETTABLE_STATUSES, historyText, inProgressLabel, canRelease, canRetry, canSeeSubmissions, describeSubmissionError, initialFinalIds,
   isSupervisorRole, mapToComments, commentsToMap, pickDiff, pickState, submissionStatusLabel,
-  applyPollDelayMs, isApplyTransportError, applyIsSlow, appliedOutputs, canMarkOutputsReviewed, APPLY_POLL_CAP_MS
+  applyPollDelayMs, isApplyTransportError, applyIsSlow, appliedOutputs, APPLY_POLL_CAP_MS
 } from './discovery-supervision';
 import { DiscoverySubmissionDetail } from './discovery-supervision.models';
 
@@ -37,7 +37,7 @@ describe('queued apply helpers (RPP #1415)', () => {
     expect(applyIsSlow({ status: 'Applied', inProgressSince: new Date('2026-11-21T11:00:00Z') }, now)).toBe(false);
   });
 
-  it('lists one output per succeeded episode and offers Mark reviewed only to a reviewer once finished', () => {
+  it('lists one output per succeeded episode', () => {
     const outcomes = [
       { resultId: 'a', state: 'Succeeded' as const, attempts: 1, episodeId: 'e1', message: 'Created' },
       { resultId: 'b', state: 'Succeeded' as const, attempts: 1, episodeId: 'e1' },
@@ -45,13 +45,9 @@ describe('queued apply helpers (RPP #1415)', () => {
       { resultId: 'd', state: 'Succeeded' as const, attempts: 1, episodeId: 'e2', message: 'Enriched' }
     ];
     expect(appliedOutputs(outcomes).map(o => [o.resultId, o.episodeId])).toEqual([['a', 'e1'], ['d', 'e2']]);
-    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: true }))).toBe(true);
-    expect(canMarkOutputsReviewed(detail({ status: 'Applying', outputsReviewPending: true }))).toBe(false);
-    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: false }))).toBe(false);
-    expect(canMarkOutputsReviewed(detail({ status: 'Applied', outputsReviewPending: true, canReview: false }))).toBe(false);
   });
 
-  it('labels the queued-apply history actions', () => {
+  it('labels the queued-apply history actions, including legacy OutputsReviewed entries', () => {
     expect(historyText({ action: 'OutputsReviewed' })).toBe('Episodes marked reviewed');
     expect(historyText({ action: 'ApplyInterrupted' })).toContain('retried');
   });
