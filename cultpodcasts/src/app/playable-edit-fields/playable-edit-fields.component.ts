@@ -26,6 +26,7 @@ import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dia
 import { FilmImagesEditComponent } from '../film-images-edit/film-images-edit.component';
 import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
 import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
+import { FilmYouTubeAlternatesEditComponent } from '../film-youtube-alternates-edit/film-youtube-alternates-edit.component';
 import {
   applyGuestSelection,
   episodeCataloguePeople,
@@ -56,7 +57,7 @@ export interface ParentIdentityFilled {
  * The tabbed body shared by the news report, TV episode and film edit dialogs, in the podcast Edit Episode
  * dialog's tab order: Details, Flags, Urls, Meta (release, duration, subjects, search terms, hash tag, language),
  * Images, Guests. Urls and Images edit `services` (page URL and image URL per key; same PATCH shape as film / podcast
- * episode). The `film` variant adds Trailers straight after Images. The `tv` and `film` variants add Identity last
+ * episode). The `film` variant adds Trailers and Also on YouTube straight after Images. The `tv` and `film` variants add Identity last
  * (id inputs: IMDb / TMDB, plus TheTVDB when the form has it). The `film` variant also swaps the parent row and Title
  * for a read-only Name plus Publisher and takes a year-or-date release. A dialog can pass `catalogueTab` to add a
  * final Catalogue tab (the news report dialog's Move to TV show / Move to film, like the podcast Edit Episode dialog).
@@ -80,7 +81,8 @@ export interface ParentIdentityFilled {
     MatTabsModule,
     FilmLinksEditComponent,
     FilmImagesEditComponent,
-    FilmTrailersEditComponent
+    FilmTrailersEditComponent,
+    FilmYouTubeAlternatesEditComponent
   ],
   templateUrl: './playable-edit-fields.component.html',
   styleUrl: './playable-edit-fields.component.sass',

@@ -38,6 +38,7 @@ import { contentKindEquals, isUnknownSeriesNameField, normalizePlayableHit, podc
 import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 import { alsoKnownAs as alsoKnownAsLabel } from '../also-known-as';
+import { FilmYouTubeAlternatesComponent } from '../film-youtube-alternates/film-youtube-alternates.component';
 
 interface SubjectRail {
   subject: string;
@@ -64,7 +65,8 @@ const MAX_SUBJECT_RAILS = 4;
     SubjectChipComponent,
     ContentKindBadgeComponent,
     QueueButtonComponent,
-    SearchDescriptionPipe
+    SearchDescriptionPipe,
+    FilmYouTubeAlternatesComponent
   ],
   templateUrl: './playable-detail-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,55 @@
+@for (group of alternates().controls; track group.controls.youTubeId.value || $index; let i = $index, first = $first, last = $last) {
+<div class="alternate-row">
+    @if (group.controls.youTubeId.value) {
+    <mat-form-field class="channel">
+        <mat-label>Channel</mat-label>
+        <input type="text" matInput [formControl]="group.controls.channelName">
+    </mat-form-field>
+    <mat-form-field class="title">
+        <mat-label>Title</mat-label>
+        <input type="text" matInput [formControl]="group.controls.title">
+    </mat-form-field>
+    @if (hasNonEmptyUrlValue(group.controls.url.value)) {
+    <button type="button" matIconButton aria-label="Open YouTube upload" (click)="openExternalUrl(group.controls.url.value)">
+        <mat-icon>open_in_new</mat-icon>
+    </button>
+    }
+    <button type="button" matIconButton
+        [attr.aria-label]="isPromoted(i) ? 'Undo make primary' : 'Make primary YouTube link'"
+        [class.is-promoted]="isPromoted(i)"
+        (click)="promote(i)">
+        <mat-icon>{{ isPromoted(i) ? 'star' : 'star_outline' }}</mat-icon>
+    </button>
+    } @else {
+    <mat-form-field class="url">
+        <mat-label>YouTube URL</mat-label>
+        <input type="url" matInput [formControl]="group.controls.url" placeholder="https://www.youtube.com/watch?v=">
+        @if (group.controls.url.hasError('required')) {
+        <mat-error>A YouTube URL is required</mat-error>
+        } @else if (group.controls.url.hasError('youTubeUrl')) {
+        <mat-error>Enter a YouTube watch, share, embed or shorts URL</mat-error>
+        }
+    </mat-form-field>
+    <mat-form-field class="channel">
+        <mat-label>Channel</mat-label>
+        <input type="text" matInput [formControl]="group.controls.channelName">
+    </mat-form-field>
+    }
+    <button type="button" matIconButton aria-label="Move YouTube upload up" [disabled]="first" (click)="move(i, -1)">
+        <mat-icon>arrow_upward</mat-icon>
+    </button>
+    <button type="button" matIconButton aria-label="Move YouTube upload down" [disabled]="last" (click)="move(i, 1)">
+        <mat-icon>arrow_downward</mat-icon>
+    </button>
+    <button type="button" matIconButton aria-label="Remove YouTube upload" (click)="remove(i)">
+        <mat-icon>delete</mat-icon>
+    </button>
+</div>
+}
+<button type="button" mat-stroked-button (click)="add()">
+    <mat-icon>add</mat-icon>
+    Add YouTube URL
+</button>
+@if (alternates().length === 0) {
+<p class="empty">No additional YouTube uploads. Add a URL, or use Move to film on an episode that has a different YouTube copy of this film.</p>
+}
