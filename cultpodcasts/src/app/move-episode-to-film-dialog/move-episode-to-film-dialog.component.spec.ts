@@ -6,7 +6,8 @@ import { of, throwError } from 'rxjs';
 import { AmbiguousIdentityAnswer } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
-import { MoveEpisodeToFilmDialogComponent, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
+import { SearchSuggestionsService } from '../search-suggestions.service';
+import { MoveEpisodeToFilmDialogComponent, mergeErrorMessage, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
 
 describe('MoveEpisodeToFilmDialogComponent', () => {
   let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
@@ -315,6 +316,15 @@ describe('MoveEpisodeToFilmDialogComponent for a news report', () => {
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, filmId: 'report-1', name: 'Synthetic Film' });
   });
 
+  it('does not offer Existing film for a news report (RPP #1522 is podcast episodes only)', () => {
+    component.setMode('existing');
+    fixture.detectChanges();
+
+    expect(component.canMergeIntoExisting).toBe(false);
+    expect(component.mode()).toBe('new');
+    expect((fixture.nativeElement as HTMLElement).querySelector('mat-button-toggle-group')).toBeNull();
+  });
+
   it('words the warning and errors for a news report', async () => {
     postNewsReportToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
 
@@ -324,5 +334,145 @@ describe('MoveEpisodeToFilmDialogComponent for a news report', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('This removes the news report from its news organisation');
     expect(component.error()).toBe('The news report was not found. It may already have been moved.');
+  });
+});
+
+describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
+  let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
+  let component: MoveEpisodeToFilmDialogComponent;
+  let dialogRef: { close: ReturnType<typeof vi.fn> };
+  let postEpisodeToFilm: ReturnType<typeof vi.fn>;
+  let suggest: ReturnType<typeof vi.fn>;
+  const manicId = '925e2a11-668f-4dfa-a78d-57dd4de0051f';
+  const data: MoveEpisodeToFilmDialogData = {
+    podcastId: 'podcast-1',
+    episodeId: 'episode-1',
+    episodeTitle: 'My Father Led A Cult And Had Secret Families Across The World | Manic'
+  };
+  const manicSuggestion = { value: 'Manic', label: 'Manic', itemId: manicId };
+
+  beforeEach(async () => {
+    dialogRef = { close: vi.fn() };
+    postEpisodeToFilm = vi.fn();
+    suggest = vi.fn(async () => [manicSuggestion, { value: 'No id', label: 'No id' }]);
+    await TestBed.configureTestingModule({
+      imports: [MoveEpisodeToFilmDialogComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: MatDialogRef, useValue: dialogRef },
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: CurationSubmitService, useValue: { postEpisodeToFilm } },
+        { provide: SearchSuggestionsService, useValue: { suggest, preload: vi.fn() } }
+      ]
+    })
+      .overrideProvider(MatDialog, { useValue: { open: vi.fn() } })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  function pick(film = manicSuggestion) {
+    component.onFilmSelected({ option: { value: film } } as never);
+  }
+
+  it('starts on New film; Existing film shows the film picker and a disabled Merge into film until a film is picked', () => {
+    expect(component.mode()).toBe('new');
+    component.setMode('existing');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('input.existing-film')).not.toBeNull();
+    const button = Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Merge into film'));
+    expect(button).toBeDefined();
+    expect(button!.disabled).toBe(true);
+    expect(component.canSend()).toBe(false);
+  });
+
+  it('hides the New-film warning and recent-release indexer warning in Existing film mode, and shows only the merge note', () => {
+    const recent = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    recent.componentInstance.data = { ...data, release: new Date(Date.now() - 60 * 60 * 1000).toISOString() };
+    recent.detectChanges();
+
+    const newEl = recent.nativeElement as HTMLElement;
+    expect(newEl.querySelector('.warning')?.textContent).toContain('keeps the episode id');
+    expect(newEl.querySelector('.recent')?.textContent).toContain('indexer');
+    expect(newEl.querySelector('.merge-note')).toBeNull();
+
+    recent.componentInstance.setMode('existing');
+    recent.detectChanges();
+
+    const existingEl = recent.nativeElement as HTMLElement;
+    expect(existingEl.querySelector('.warning')).toBeNull();
+    expect(existingEl.querySelector('.recent')).toBeNull();
+    expect(existingEl.querySelector('.merge-note')?.textContent).toContain('another copy of a film already in the catalogue');
+  });
+
+  it('suggests films by name (only ones with an id) and a pick enables the merge', async () => {
+    component.setMode('existing');
+
+    await component.onFilmQuery('Man');
+    pick();
+
+    expect(suggest).toHaveBeenCalledWith('Man', 10, 'film');
+    expect(component.films()).toEqual([manicSuggestion]);
+    expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
+    expect(component.canSend()).toBe(true);
+  });
+
+  it('takes a pasted film id as the pick without querying suggestions', async () => {
+    component.setMode('existing');
+
+    await component.onFilmQuery(manicId.toUpperCase());
+
+    expect(component.existingFilm()).toEqual({ id: manicId, name: null });
+    expect(suggest).not.toHaveBeenCalled();
+  });
+
+  it('POSTs only { filmId } and closes merged with the film from the response', async () => {
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: 'Manic' } }));
+    component.title.setValue('Ignored title');
+    component.setMode('existing');
+    pick();
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+    expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, merged: true, filmId: manicId, name: 'Manic' });
+  });
+
+  it("shows the server's 409 text (film already has another YouTube link, #1411) and stays open", async () => {
+    const error = "Film 'Manic' already has a different youtube link (https://www.youtube.com/watch?v=VCRf_qazO9s). A film holds one link per service until multiple YouTube links are supported (#1411).";
+    postEpisodeToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { filmId: manicId, name: 'Manic', error } })));
+    component.setMode('existing');
+    pick();
+
+    await component.move();
+
+    expect(component.error()).toBe(error);
+    expect(component.isSending()).toBe(false);
+    expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('a New film name clash (409 naming the film) switches to Existing film with that film picked', async () => {
+    postEpisodeToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { filmId: manicId, name: 'Manic', error: 'A film with this name already exists' } })));
+    component.title.setValue('Manic');
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { title: 'Manic' });
+    expect(component.mode()).toBe('existing');
+    expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
+    expect(component.error()).toContain('Merge into film');
+    expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('maps merge errors: 409/400 use the server text, 404 and others a fixed hint', () => {
+    expect(mergeErrorMessage(new HttpErrorResponse({ status: 400, error: { error: 'A removed film cannot take an episode\'s links' } })))
+      .toBe("A removed film cannot take an episode's links");
+    expect(mergeErrorMessage(new HttpErrorResponse({ status: 409 }))).toContain('different link');
+    expect(mergeErrorMessage(new HttpErrorResponse({ status: 404 }))).toContain('not found');
+    expect(mergeErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
   });
 });

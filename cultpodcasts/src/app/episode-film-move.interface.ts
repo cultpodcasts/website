@@ -5,6 +5,12 @@ export interface EpisodeFilmMoveRequest {
   title?: string | null;
   identityDecision?: 'select' | 'continue' | 'cancel' | null;
   selectedIdentityKey?: string | null;
+  /**
+   * Move to an existing film (RPP #1522): merge the episode into this film instead of creating one. The episode's
+   * links the film lacks are added to it; a different link for a service the film already has is a 409 (#1411).
+   * Podcast episodes only.
+   */
+  filmId?: string | null;
 }
 
 /** Command outcome (not the film read model). On 409, the film that already has the name. */
@@ -38,6 +44,8 @@ export interface MoveEpisodeToFilmDialogData {
 
 export interface MoveEpisodeToFilmDialogClose {
   moved: boolean;
+  /** True when the episode was merged into an existing film (RPP #1522) rather than made a new film. */
+  merged?: boolean;
   filmId?: string;
   name?: string;
   /** Move of a news report only: the news organisation the move left with no reports. */
