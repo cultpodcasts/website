@@ -604,7 +604,7 @@ test.describe("film curator edit", () => {
 			return json(route, {}, 404);
 		});
 		const dialog = await openFromFilmPage(page);
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Trailers", "Guests", "Identity"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Trailers", "Also on YouTube", "Guests", "Identity"]);
 		await expect(dialog.locator("#parent-name")).toHaveCount(0);
 		const name = dialog.getByRole("textbox", { name: "Name" });
 		await expect(name).toHaveValue("One Off");
