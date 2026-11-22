@@ -121,6 +121,12 @@ export function staleKeepListMessage(error: HttpErrorResponse): string {
     return staleYouTubeAlternatesMessage(youTubeIds.length);
   }
   const trailerIds = error.error?.unexpectedTrailerIds;
-  const trailerCount = Array.isArray(trailerIds) && trailerIds.length > 0 ? trailerIds.length : 1;
-  return staleTrailersMessage(trailerCount);
+  if (Array.isArray(trailerIds) && trailerIds.length > 0) {
+    return staleTrailersMessage(trailerIds.length);
+  }
+  const message = typeof error.error?.message === 'string' ? error.error.message.trim() : '';
+  if (message) {
+    return message;
+  }
+  return staleTrailersMessage(1);
 }

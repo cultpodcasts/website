@@ -235,6 +235,25 @@ describe('EditFilmDialogComponent', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('shows the server uniqueness message when the film PATCH returns 409 with no unexpected trailer or YouTube ids', async () => {
+    const dialog = await load();
+    dialog.form()!.patchValue({ duration: '1:02:03' });
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
+    const message = "YouTube 'GSIPAfDO_ec' is already on Film 11111111-1111-4111-8111-111111111111.";
+    patch.flush(
+      {
+        message,
+        unexpectedTrailerIds: [],
+        unexpectedAdditionalYouTubeIds: []
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await saving;
+    expect(dialog.submitError()).toBe(message);
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('says the film no longer exists when the save returns 404, and keeps the dialog open', async () => {
     const dialog = await load();
     dialog.form()!.patchValue({ duration: '1:02:03' });
