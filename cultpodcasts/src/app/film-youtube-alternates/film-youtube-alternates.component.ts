@@ -22,10 +22,15 @@ export class FilmYouTubeAlternatesComponent {
   readonly tokens = input<readonly string[] | null | undefined>(undefined);
   readonly itemId = input.required<string>();
   readonly itemTitle = input('');
+  readonly ownerContentKind = input<string | null | undefined>(undefined);
+  readonly parentName = input('');
 
   protected readonly episodes = computed(() =>
     parseYouTubeAlternateTokens(this.tokens()).map((link, index) =>
-      youTubeAlternateEpisode(link, this.itemId(), index, this.itemTitle())
+      youTubeAlternateEpisode(link, this.itemId(), index, this.itemTitle(), {
+        contentKind: this.ownerContentKind(),
+        parentName: this.parentName(),
+      })
     )
   );
   protected readonly playingEpisodeId = computed(() => this.playerService.episode()?.id);

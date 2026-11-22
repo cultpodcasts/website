@@ -32,6 +32,8 @@ export interface HomepageEpisode {
    * is the playable GUID: links go through cataloguePlayableLink / catalogueParentLink (short ids).
    */
   contentKind?: string | null;
+  /** Owning playable kind for an Also-on-YouTube rail card (RPP #1411). */
+  ownerContentKind?: string | null;
   /** Additional YouTube uploads as `{youTubeId}|{release}|{channelName}` tokens (RPP #1411). */
   youTubeAlternates?: string[] | null;
 }

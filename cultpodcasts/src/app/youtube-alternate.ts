@@ -74,15 +74,43 @@ export function parseYouTubeAlternateTokens(tokens: readonly string[] | null | u
  * the watch URL; `podcastName` carries the item title so the player and queue can link back; the card title is
  * the channel name (or "YouTube" when it is missing).
  */
+/** The owning item's id, parsed out of `{itemId}:youtube-alternate:{n}`. Null when the id is not one. */
+export function itemIdFromYouTubeAlternateId(id: string | null | undefined): string | null {
+  if (!id) {
+    return null;
+  }
+  const marker = ':youtube-alternate:';
+  const at = id.lastIndexOf(marker);
+  if (at <= 0) {
+    return null;
+  }
+  const itemId = id.slice(0, at);
+  return itemId || null;
+}
+
+export type YouTubeAlternateOwnerKind = 'Film' | 'TvShowEpisode' | 'NewsReport' | 'Episode';
+
+/**
+ * An additional YouTube upload as a rail card. The token has the video id, optional publish date and channel
+ * name, so: the id is made up (unique per item and position, for the player and queue); `services.youtube` is
+ * the watch URL; `podcastName` is the owner's page slug (a film's title, or the show / outlet / podcast name)
+ * so links go to the owning item, never a podcast URL built from the synthetic id; the card title is the
+ * channel name (or "YouTube" when it is missing).
+ */
 export function youTubeAlternateEpisode(
   link: YouTubeAlternateLink,
   itemId: string,
   index: number,
-  itemTitle = ''
+  itemTitle = '',
+  owner?: { contentKind?: string | null; parentName?: string | null }
 ): SearchResult {
+  const kind = owner?.contentKind;
+  const parentName = owner?.parentName?.trim() ?? '';
+  const title = itemTitle.trim();
+  const pageName = kind === 'Film' || !kind ? title : parentName || title;
   return {
     id: `${itemId}:youtube-alternate:${index}`,
-    podcastName: itemTitle.trim(),
+    podcastName: pageName,
     episodeTitle: link.channelName || 'YouTube',
     episodeDescription: '',
     release: link.release ? new Date(`${link.release}T00:00:00Z`) : new Date(Number.NaN),
@@ -90,5 +118,6 @@ export function youTubeAlternateEpisode(
     services: { youtube: { url: link.url } },
     youtubeId: link.youTubeId,
     contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+    ownerContentKind: kind ?? undefined,
   };
 }

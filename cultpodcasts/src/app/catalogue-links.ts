@@ -1,5 +1,6 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
 import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
+import { YOUTUBE_ALTERNATE_CONTENT_KIND, itemIdFromYouTubeAlternateId } from "./youtube-alternate";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
@@ -73,6 +74,10 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] | null {
       // A trailer has no page. The film page is the only site link, and it uses the film id,
       // never the synthetic `{filmId}:trailer:{n}` id. Null when the title or film id is missing.
       return filmTrailerPage(item);
+    case YOUTUBE_ALTERNATE_CONTENT_KIND:
+      // An alternate has no page. The owning item's page is the only site link, and it uses that
+      // item's id, never the synthetic `{itemId}:youtube-alternate:{n}` id.
+      return youTubeAlternateOwnerPage(item);
     default:
       return podcastEpisodePageCommands(item.podcastName, item.id);
   }
@@ -90,7 +95,8 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
     item.contentKind === "Film" ||
     item.contentKind === "TvShowEpisode" ||
     item.contentKind === "NewsReport" ||
-    item.contentKind === FILM_TRAILER_CONTENT_KIND
+    item.contentKind === FILM_TRAILER_CONTENT_KIND ||
+    item.contentKind === YOUTUBE_ALTERNATE_CONTENT_KIND
   ) {
     return cataloguePageUrl(cataloguePlayableLink(item), siteOrigin);
   }
@@ -187,6 +193,8 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
       return null;
     case FILM_TRAILER_CONTENT_KIND:
       return filmTrailerPage(item);
+    case YOUTUBE_ALTERNATE_CONTENT_KIND:
+      return youTubeAlternateParentLink(item);
     case "TvShowEpisode":
       return item.podcastName ? ["/tv", item.podcastName] : null;
     case "NewsReport":
@@ -208,6 +216,52 @@ function filmTrailerPage(item: CatalogueItem): string[] | null {
     return null;
   }
   return filmPageCommands(title, filmId);
+}
+
+/**
+ * Owning item's page for an "Also on YouTube" card. `podcastName` is the page slug (a film's title, or
+ * the show / outlet / podcast name). The id segment is the owner's short id, parsed out of
+ * `{itemId}:youtube-alternate:{n}`. Null when the name, owner id or owner kind is missing, so callers
+ * do not invent a podcast URL that contains the synthetic id.
+ */
+function youTubeAlternateOwnerPage(item: CatalogueItem): string[] | null {
+  const ownerId = itemIdFromYouTubeAlternateId(item.id);
+  const name = item.podcastName?.trim() ?? "";
+  if (!ownerId || !name) {
+    return null;
+  }
+  switch (item.ownerContentKind) {
+    case "Film":
+      return filmPageCommands(name, ownerId);
+    case "TvShowEpisode":
+      return tvShowEpisodePageCommands(name, ownerId);
+    case "NewsReport":
+      return newsReportPageCommands(name, ownerId);
+    case "Episode":
+      return podcastEpisodePageCommands(name, ownerId);
+    default:
+      return null;
+  }
+}
+
+/** Parent hub of the owning item. Null for a film (no parent) or a missing name. */
+function youTubeAlternateParentLink(item: CatalogueItem): string[] | null {
+  const name = item.podcastName?.trim() ?? "";
+  if (!name) {
+    return null;
+  }
+  switch (item.ownerContentKind) {
+    case "Film":
+      return null;
+    case "TvShowEpisode":
+      return ["/tv", name];
+    case "NewsReport":
+      return ["/news", name];
+    case "Episode":
+      return ["/podcast", name];
+    default:
+      return null;
+  }
 }
 
 /** Public parent hubs after a podcast→TV/news transfer. Film is not a parent. */

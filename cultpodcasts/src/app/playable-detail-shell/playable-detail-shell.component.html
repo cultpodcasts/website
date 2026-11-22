@@ -118,7 +118,9 @@
   <app-film-youtube-alternates
     [tokens]="playable().youTubeAlternates"
     [itemId]="playable().id"
-    [itemTitle]="playable().episodeTitle || playable().podcastName || ''" />
+    [itemTitle]="playable().episodeTitle || playable().podcastName || ''"
+    [ownerContentKind]="playable().contentKind"
+    [parentName]="playable().podcastName || ''" />
 
   @if (morePodcastEpisodes().length > 0) {
   <app-episode-rail
