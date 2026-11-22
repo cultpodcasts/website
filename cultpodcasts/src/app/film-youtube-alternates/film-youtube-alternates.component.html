@@ -1,0 +1,8 @@
+@if (episodes().length > 0) {
+<app-episode-rail class="film-youtube-alternates"
+  title="Also on YouTube"
+  [episodes]="episodes()"
+  [displayTitle]="true"
+  [playingEpisodeId]="playingEpisodeId()"
+  (play)="play($event)" />
+}

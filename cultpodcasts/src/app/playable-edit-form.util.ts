@@ -10,6 +10,7 @@ import {
   TvShowEpisodeDto
 } from './playable-edit.interface';
 import { resolveServiceKey } from './service-catalog';
+import { youtubeVideoId } from './youtube-alternate';
 import { utcCalendarDateText } from './utc-calendar-date';
 
 /**
@@ -70,6 +71,10 @@ export interface PlayableEditForm {
   links?: FormArray<PlayableServiceLinkGroup>;
   /** Film: the trailers to keep, in display order, each with an editable title. */
   trailers?: FormArray<FilmTrailerEditGroup>;
+  /** Film: additional YouTube uploads to keep, in display order (RPP #1411). */
+  additionalYouTube?: FormArray<YouTubeAlternateEditGroup>;
+  /** Film: YouTube id of an additional upload to swap into the primary link. */
+  promoteYouTubeId?: FormControl<string>;
 }
 
 /** One playable service row: page URL + optional image URL (same shape as episode `additionalUrls`). */
@@ -79,6 +84,13 @@ export type PlayableServiceLinkGroup = FormGroup<{
 }>;
 
 export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
+
+export type YouTubeAlternateEditGroup = FormGroup<{
+  youTubeId: FormControl<string>;
+  url: FormControl<string>;
+  title: FormControl<string>;
+  channelName: FormControl<string>;
+}>;
 
 /** IMDb title id: `tt` + 7–10 digits (the film PATCH rejects anything else). */
 export const imdbIdPattern = /^tt\d{7,10}$/;
@@ -237,6 +249,33 @@ export function newFilmTrailerGroup(id: string, title: string): FilmTrailerEditG
   });
 }
 
+/** A new additional-YouTube row must be a YouTube watch / share / embed / shorts URL. Existing rows have a youTubeId. */
+export function youTubeUrlRequired(control: AbstractControl): ValidationErrors | null {
+  const urlText = String(control.value ?? '').trim();
+  if (!urlText) {
+    return { required: true };
+  }
+  try {
+    return youtubeVideoId(new URL(urlText)) ? null : { youTubeUrl: true };
+  } catch {
+    return { youTubeUrl: true };
+  }
+}
+
+export function newYouTubeAlternateGroup(
+  youTubeId = '',
+  url = '',
+  title = '',
+  channelName = ''
+): YouTubeAlternateEditGroup {
+  return new FormGroup({
+    youTubeId: new FormControl(youTubeId, { nonNullable: true }),
+    url: new FormControl(url, { nonNullable: true, validators: youTubeId ? [] : [youTubeUrlRequired] }),
+    title: new FormControl(title, { nonNullable: true }),
+    channelName: new FormControl(channelName, { nonNullable: true })
+  });
+}
+
 /** Film release: a year `yyyy` or a calendar date `yyyy-MM-dd` (anything else is a 400 from the film PATCH). */
 export const filmReleasePattern = /^\d{4}(-\d{2}-\d{2})?$/;
 
@@ -308,6 +347,12 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.trailers = new FormArray(
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
     );
+    controls.additionalYouTube = new FormArray(
+      (film.additionalYouTube ?? []).map(item =>
+        newYouTubeAlternateGroup(item.youTubeId, uriText(item.url), item.title ?? '', item.channelName ?? '')
+      )
+    );
+    controls.promoteYouTubeId = new FormControl('', { nonNullable: true });
     controls.alternativeTitles = new FormControl((film.alternativeTitles ?? []).join('\n'), { nonNullable: true });
     controls.image = new FormControl(uriText(film.image), { nonNullable: true });
   } else if (variant === 'tv') {
@@ -432,6 +477,19 @@ export function filmChanges(
       film.expectedTrailerIds = (previous.trailers ?? []).map(trailer => trailer.id);
     }
   }
+  if (next.additionalYouTube !== undefined || next.promoteYouTubeId !== undefined) {
+    const list = next.additionalYouTube === undefined
+      ? null
+      : filmYouTubeAlternateChanges(previous, next.additionalYouTube);
+    const promote = (next.promoteYouTubeId ?? '').trim();
+    if (list) {
+      film.additionalYouTube = list;
+      film.expectedAdditionalYouTubeIds = (previous.additionalYouTube ?? []).map(item => item.youTubeId);
+    }
+    if (promote) {
+      film.promoteYouTubeId = promote;
+    }
+  }
   return film;
 }
 
@@ -512,3 +570,44 @@ export function filmTrailerChanges(
     return title ? { id: trailer.id, title } : { id: trailer.id };
   });
 }
+
+/** The film `additionalYouTube` patch (keep / order / add-by-url / rename), or null when unchanged. */
+export function filmYouTubeAlternateChanges(
+  previous: FilmDto,
+  next: readonly { youTubeId: string; url: string; title: string; channelName: string }[]
+): { youTubeId?: string; url?: string; title?: string; channelName?: string }[] | null {
+  const before = previous.additionalYouTube ?? [];
+  const unchanged = before.length === next.length &&
+    next.every((row, index) => {
+      const item = before[index];
+      return !!item
+        && row.youTubeId.trim() === item.youTubeId
+        && row.title.trim() === (item.title ?? '')
+        && row.channelName.trim() === (item.channelName ?? '');
+    });
+  if (unchanged) {
+    return null;
+  }
+  return next.map(row => {
+    const youTubeId = row.youTubeId.trim();
+    const title = row.title.trim();
+    const channelName = row.channelName.trim();
+    if (youTubeId) {
+      const entry: { youTubeId?: string; url?: string; title?: string; channelName?: string } = { youTubeId };
+      const prev = before.find(item => item.youTubeId === youTubeId);
+      if (title && title !== (prev?.title ?? '')) {
+        entry.title = title;
+      }
+      if (channelName && channelName !== (prev?.channelName ?? '')) {
+        entry.channelName = channelName;
+      }
+      return entry;
+    }
+    return {
+      url: row.url.trim(),
+      ...(title ? { title } : {}),
+      ...(channelName ? { channelName } : {})
+    };
+  });
+}
+

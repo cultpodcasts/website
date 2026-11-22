@@ -18,7 +18,8 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ApplePodcastsSvgComponent } from '../apple-podcasts-svg/apple-podcasts-svg.component';
-import { EmbedService, EpisodeEmbedOption, episodeEmbedOptions } from '../episode-embed';
+import { EmbedService, EpisodeEmbedOption, episodeEmbedOptions, youtubeEmbedUrl } from '../episode-embed';
+import { parseYouTubeAlternateTokens } from '../youtube-alternate';
 import { SearchDisplayEpisode, episodeImageUrl } from '../search-result-links';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
@@ -36,7 +37,10 @@ interface YouTubeStateChangeEvent {
 interface YouTubeNamespace {
   Player: new (
     elementId: string,
-    options: { events?: { onStateChange?: (event: YouTubeStateChangeEvent) => void } }
+    options: { events?: {
+      onStateChange?: (event: YouTubeStateChangeEvent) => void;
+      onError?: () => void;
+    } }
   ) => YouTubePlayerLike;
 }
 
@@ -86,6 +90,11 @@ export class EpisodePlayerComponent {
 
   /** Manual override of which service (YouTube/Spotify/Apple) to embed; resets per episode. */
   protected readonly service = signal<EmbedService | undefined>(undefined);
+  /**
+   * When the primary YouTube embed errors, try the next `youTubeAlternates` upload (RPP #1411).
+   * 0 = primary; n = the n-th alternate.
+   */
+  private readonly youtubeFallback = signal(0);
 
   protected readonly options = computed((): EpisodeEmbedOption[] => {
     const ep = this.episode();
@@ -100,6 +109,16 @@ export class EpisodePlayerComponent {
 
   protected readonly isVideo = computed(() => this.active()?.service === 'youtube');
 
+  private readonly youtubeFallbackEmbedUrl = computed((): string | undefined => {
+    const ep = this.episode();
+    const index = this.youtubeFallback();
+    if (!ep || index <= 0) {
+      return undefined;
+    }
+    const link = parseYouTubeAlternateTokens(ep.youTubeAlternates)[index - 1];
+    return link ? youtubeEmbedUrl(link.url) : undefined;
+  });
+
   /** YouTube gets extra params so the IFrame Player API can detect when playback ends. */
   private readonly embedSrc = computed((): string | undefined => {
     const current = this.active();
@@ -110,7 +129,8 @@ export class EpisodePlayerComponent {
       return current.embedUrl;
     }
     const origin = encodeURIComponent(window.location.origin);
-    return `${current.embedUrl}&enablejsapi=1&origin=${origin}`;
+    const embedUrl = this.youtubeFallbackEmbedUrl() ?? current.embedUrl;
+    return `${embedUrl}&enablejsapi=1&origin=${origin}`;
   });
 
   protected readonly safeEmbedUrl = computed((): SafeResourceUrl | undefined => {
@@ -125,7 +145,7 @@ export class EpisodePlayerComponent {
     if (!ep || !current) {
       return undefined;
     }
-    return `${ep.id}:${current.service}:${current.embedUrl}`;
+    return `${ep.id}:${current.service}:${this.youtubeFallback()}:${current.embedUrl}`;
   });
 
   protected readonly artwork = computed(() => {
@@ -155,6 +175,7 @@ export class EpisodePlayerComponent {
     effect(() => {
       const ep = this.episode();
       this.service.set(ep ? episodeEmbedOptions(ep)[0]?.service : undefined);
+      this.youtubeFallback.set(0);
     });
 
     if (isPlatformBrowser(this.platformId)) {
@@ -248,6 +269,13 @@ export class EpisodePlayerComponent {
             onStateChange: (event) => {
               if (event.data === YOUTUBE_ENDED_STATE) {
                 this.playerService.playNext();
+              }
+            },
+            onError: () => {
+              const alternates = parseYouTubeAlternateTokens(this.episode()?.youTubeAlternates);
+              const next = this.youtubeFallback() + 1;
+              if (next <= alternates.length) {
+                this.youtubeFallback.set(next);
               }
             },
           },

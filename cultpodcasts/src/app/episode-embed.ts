@@ -7,6 +7,7 @@ import {
   spotifyUrl,
   youtubeUrl,
 } from './search-result-links';
+import { youtubeVideoId } from './youtube-alternate';
 
 export type EmbedService = 'youtube' | 'spotify' | 'apple';
 
@@ -156,23 +157,4 @@ export function appleEmbedUrl(podcastUrl: URL): string | undefined {
   const localeMatch = podcastUrl.pathname.match(/^\/([a-z]{2})(?:-[a-z]{2})?\//i);
   const locale = localeMatch?.[1]?.toLowerCase() ?? 'us';
   return `https://embed.podcasts.apple.com/${locale}/podcast/id${pathMatch[1]}?i=${encodeURIComponent(episodeId)}`;
-}
-
-function youtubeVideoId(url: URL): string | undefined {
-  const host = url.hostname.replace(/^www\./, '');
-  if (host === 'youtu.be') {
-    const id = url.pathname.split('/').filter(Boolean)[0];
-    return id || undefined;
-  }
-  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
-    const v = url.searchParams.get('v');
-    if (v) {
-      return v;
-    }
-    const parts = url.pathname.split('/').filter(Boolean);
-    if (parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') {
-      return parts[1] || undefined;
-    }
-  }
-  return undefined;
 }

@@ -44,9 +44,9 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
   }
 
   /**
-   * The `trailers` patch is a keep-list: a trailer it leaves out is removed. A trailer attached after this dialog
-   * loaded is not in the list, and its episode is already deleted, so sending a stale list would lose it. Before a
-   * trailers change, re-read the film and refuse (as a 400-style message) when it has a trailer this dialog never saw.
+   * Trailer and additional-YouTube patches are keep-lists: an entry left out is removed. An upload attached
+   * after this dialog loaded is not in the list, so sending a stale list would lose it. Before those changes,
+   * re-read the film and refuse when it has an entry this dialog never saw.
    */
   protected patch(id: string, changes: FilmChangeRequest) {
     const send = () => this.curation.patchFilm(id, changes).pipe(
@@ -54,24 +54,40 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
         ? throwError(() => new HttpErrorResponse({
           status: 400,
           statusText: 'Conflict',
-          error: { message: staleTrailersMessage(trailerConflictCount(error)) }
+          error: { message: staleKeepListMessage(error) }
         }))
         : throwError(() => error))
     );
-    if (changes.trailers === undefined) {
+    const checkingTrailers = changes.trailers !== undefined;
+    const checkingYouTube = changes.additionalYouTube !== undefined;
+    if (!checkingTrailers && !checkingYouTube) {
       return send();
     }
-    const known = new Set((this.original?.trailers ?? []).map(trailer => trailer.id));
+    const knownTrailers = new Set((this.original?.trailers ?? []).map(trailer => trailer.id));
+    const knownYouTube = new Set((this.original?.additionalYouTube ?? []).map(item => item.youTubeId));
     return this.curation.getFilm(id).pipe(
       switchMap(latest => {
-        const added = (latest.trailers ?? []).filter(trailer => !known.has(trailer.id));
-        return added.length === 0
-          ? send()
-          : throwError(() => new HttpErrorResponse({
-            status: 400,
-            statusText: 'Trailers changed',
-            error: { message: staleTrailersMessage(added.length) }
-          }));
+        if (checkingTrailers) {
+          const added = (latest.trailers ?? []).filter(trailer => !knownTrailers.has(trailer.id));
+          if (added.length > 0) {
+            return throwError(() => new HttpErrorResponse({
+              status: 400,
+              statusText: 'Trailers changed',
+              error: { message: staleTrailersMessage(added.length) }
+            }));
+          }
+        }
+        if (checkingYouTube) {
+          const added = (latest.additionalYouTube ?? []).filter(item => !knownYouTube.has(item.youTubeId));
+          if (added.length > 0) {
+            return throwError(() => new HttpErrorResponse({
+              status: 400,
+              statusText: 'YouTube uploads changed',
+              error: { message: staleYouTubeAlternatesMessage(added.length) }
+            }));
+          }
+        }
+        return send();
       })
     );
   }
@@ -94,7 +110,23 @@ export function staleTrailersMessage(added: number): string {
     'Close and reopen the film to edit its trailers.';
 }
 
-function trailerConflictCount(error: HttpErrorResponse): number {
-  const ids = error.error?.unexpectedTrailerIds;
-  return Array.isArray(ids) && ids.length > 0 ? ids.length : 1;
+export function staleYouTubeAlternatesMessage(added: number): string {
+  return `${added === 1 ? 'An additional YouTube upload was' : `${added} additional YouTube uploads were`} added to this film after the editor opened. ` +
+    'Close and reopen the film to edit them.';
+}
+
+export function staleKeepListMessage(error: HttpErrorResponse): string {
+  const youTubeIds = error.error?.unexpectedAdditionalYouTubeIds;
+  if (Array.isArray(youTubeIds) && youTubeIds.length > 0) {
+    return staleYouTubeAlternatesMessage(youTubeIds.length);
+  }
+  const trailerIds = error.error?.unexpectedTrailerIds;
+  if (Array.isArray(trailerIds) && trailerIds.length > 0) {
+    return staleTrailersMessage(trailerIds.length);
+  }
+  const message = typeof error.error?.message === 'string' ? error.error.message.trim() : '';
+  if (message) {
+    return message;
+  }
+  return staleTrailersMessage(1);
 }

@@ -21,6 +21,7 @@ import {
   samePath,
   tvShowEpisodePageCommands
 } from "./catalogue-links";
+import { YOUTUBE_ALTERNATE_CONTENT_KIND } from "./youtube-alternate";
 
 describe("catalogue links", () => {
   const guids = new GuidService();
@@ -81,6 +82,72 @@ describe("catalogue links", () => {
     expect(catalogueParentLink(blankTitle)).toBeNull();
     expect(cataloguePlayableLink(unparsed)).toBeNull();
     expect(catalogueParentLink(unparsed)).toBeNull();
+  });
+
+  it("links an Also-on-YouTube card to its owning item and keeps the synthetic id out of the route", () => {
+    const filmAlt = {
+      ...item,
+      id: `${id}:youtube-alternate:0`,
+      contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+      ownerContentKind: "Film",
+      episodeTitle: "True Crime Fix",
+      podcastName: "One Off",
+    };
+    const filmPage = ["/film", "One Off", guids.toCatalogueShortId(id, "Film")];
+    expect(cataloguePlayableLink(filmAlt)).toEqual(filmPage);
+    expect(catalogueParentLink(filmAlt)).toBeNull();
+
+    const newsAlt = {
+      ...item,
+      id: `${id}:youtube-alternate:0`,
+      contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+      ownerContentKind: "NewsReport",
+      episodeTitle: "Archive Channel",
+      podcastName: "Show",
+    };
+    expect(cataloguePlayableLink(newsAlt)).toEqual(["/news", "Show", guids.toCatalogueShortId(id, "NewsReport")]);
+    expect(catalogueParentLink(newsAlt)).toEqual(["/news", "Show"]);
+
+    const tvAlt = {
+      ...item,
+      id: `${id}:youtube-alternate:1`,
+      contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+      ownerContentKind: "TvShowEpisode",
+      episodeTitle: "Clips",
+      podcastName: "Show",
+    };
+    expect(cataloguePlayableLink(tvAlt)).toEqual(["/tv", "Show", guids.toCatalogueShortId(id, "TvShowEpisode")]);
+    expect(catalogueParentLink(tvAlt)).toEqual(["/tv", "Show"]);
+
+    const episodeAlt = {
+      ...item,
+      id: `${id}:youtube-alternate:0`,
+      contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+      ownerContentKind: "Episode",
+      episodeTitle: "Mirror upload",
+      podcastName: "Show",
+    };
+    expect(cataloguePlayableLink(episodeAlt)).toEqual(["/podcast", "Show", guids.toBase64(id)]);
+    expect(catalogueParentLink(episodeAlt)).toEqual(["/podcast", "Show"]);
+  });
+
+  it("gives an Also-on-YouTube card no page when the owner title, id or kind is missing", () => {
+    const untitled = {
+      ...item,
+      id: `${id}:youtube-alternate:0`,
+      contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+      ownerContentKind: "Film",
+      episodeTitle: "Channel",
+      podcastName: "",
+    };
+    const unparsed = { ...untitled, podcastName: "One Off", id: "not-an-alternate" };
+    const noKind = { ...untitled, podcastName: "One Off", ownerContentKind: undefined };
+    expect(cataloguePlayableLink(untitled)).toBeNull();
+    expect(catalogueParentLink(untitled)).toBeNull();
+    expect(cataloguePlayableLink(unparsed)).toBeNull();
+    expect(catalogueParentLink(unparsed)).toBeNull();
+    expect(cataloguePlayableLink(noKind)).toBeNull();
+    expect(catalogueParentLink(noKind)).toBeNull();
   });
 
   it("keeps a podcast episode on /podcast/ with its unprefixed short id", () => {
@@ -286,6 +353,31 @@ describe("catalogue links", () => {
       };
       expect(catalogueShareUrl(untitled, origin, shortner)).toBeNull();
       expect(catalogueShareUrl({ ...untitled, podcastName: "One Off", id: "not-a-trailer" }, origin, shortner)).toBeNull();
+    });
+
+    it("shares an Also-on-YouTube card as the owning item's page, not through the shortener", () => {
+      const filmAlt = {
+        ...item,
+        id: `${id}:youtube-alternate:0`,
+        contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+        ownerContentKind: "Film",
+        podcastName: "One Off",
+      };
+      const url = catalogueShareUrl(filmAlt, origin, shortner);
+      expect(url).toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
+      expect(url).not.toContain(":youtube-alternate:");
+      expect(url!.startsWith(shortner)).toBe(false);
+
+      const episodeAlt = {
+        ...item,
+        id: `${id}:youtube-alternate:0`,
+        contentKind: YOUTUBE_ALTERNATE_CONTENT_KIND,
+        ownerContentKind: "Episode",
+        podcastName: "Show",
+      };
+      const episodeUrl = catalogueShareUrl(episodeAlt, origin, shortner);
+      expect(episodeUrl).toBe(`${origin}/podcast/Show/${guids.toBase64(id)}`);
+      expect(episodeUrl!.startsWith(shortner)).toBe(false);
     });
 
     it("keeps podcast episodes on the 22-character shortener key", () => {

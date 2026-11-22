@@ -1,4 +1,4 @@
-import { alternativeTitleLines, buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newPlayableLinkGroup, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
+import { alternativeTitleLines, buildPlayableEditForm, filmChanges, imdbTitleUrl, int32Max, newPlayableLinkGroup, newYouTubeAlternateGroup, playableEditHasIdentity, playableFieldsChanges, tmdbMovieUrl, tmdbTvShowUrl, tvdbEpisodeUrl, tvdbSeriesUrl, tvShowEpisodeChanges } from './playable-edit-form.util';
 import { FilmDto, NewsReportDto, TvShowEpisodeDto } from './playable-edit.interface';
 
 const reportId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -486,6 +486,48 @@ describe('playable edit form', () => {
       form.controls.trailers!.at(0).controls.title.setValue('   ');
       expect(form.controls.trailers!.at(0).controls.title.hasError('required')).toBe(true);
       expect(form.valid).toBe(false);
+    });
+
+    it('sends additional YouTube keep/add/remove and a promote, and expected ids from the loaded list (RPP #1411)', () => {
+      const previous = film({
+        additionalYouTube: [
+          { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', channelName: 'True Crime Fix', title: 'Manic' }
+        ]
+      });
+      const form = buildPlayableEditForm(previous, 'film');
+      expect(filmChanges(previous, form.getRawValue())).toEqual({});
+
+      const array = form.controls.additionalYouTube!;
+      array.push(newYouTubeAlternateGroup('', 'https://www.youtube.com/watch?v=VCRf_qazO9s', '', 'Real Stories'));
+      const changes = filmChanges(previous, form.getRawValue());
+      expect(changes.additionalYouTube).toEqual([
+        { youTubeId: 'GSIPAfDO_ec' },
+        { url: 'https://www.youtube.com/watch?v=VCRf_qazO9s', channelName: 'Real Stories' }
+      ]);
+      expect(changes.expectedAdditionalYouTubeIds).toEqual(['GSIPAfDO_ec']);
+
+      array.removeAt(0);
+      expect(filmChanges(previous, form.getRawValue()).additionalYouTube).toEqual([
+        { url: 'https://www.youtube.com/watch?v=VCRf_qazO9s', channelName: 'Real Stories' }
+      ]);
+
+      const promoteOnly = buildPlayableEditForm(previous, 'film');
+      promoteOnly.controls.promoteYouTubeId!.setValue('GSIPAfDO_ec');
+      expect(filmChanges(previous, promoteOnly.getRawValue())).toEqual({ promoteYouTubeId: 'GSIPAfDO_ec' });
+    });
+
+    it('rejects a new additional YouTube row that is blank or not a YouTube URL', () => {
+      const form = buildPlayableEditForm(film(), 'film');
+      expect(form.valid).toBe(true);
+      form.controls.additionalYouTube!.push(newYouTubeAlternateGroup());
+      expect(form.controls.additionalYouTube!.at(0).controls.url.hasError('required')).toBe(true);
+      expect(form.valid).toBe(false);
+      form.controls.additionalYouTube!.at(0).controls.url.setValue('https://example.com/watch?v=nope');
+      expect(form.controls.additionalYouTube!.at(0).controls.url.hasError('youTubeUrl')).toBe(true);
+      expect(form.valid).toBe(false);
+      form.controls.additionalYouTube!.at(0).controls.url.setValue('https://www.youtube.com/watch?v=GSIPAfDO_ec');
+      expect(form.controls.additionalYouTube!.at(0).valid).toBe(true);
+      expect(form.valid).toBe(true);
     });
   });
 });

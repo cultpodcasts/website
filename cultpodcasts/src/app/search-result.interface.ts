@@ -19,8 +19,18 @@ export interface SearchResult {
   /** Non-English IETF tag from the search index when present; null/omitted ≈ English. */
   lang?: string | null;
   contentKind?: string | null;
+  /**
+   * Owning playable kind for an "Also on YouTube" rail card (`YouTubeAlternate`). Used so
+   * catalogue links go to the owner's page, not a podcast URL built from the synthetic id.
+   */
+  ownerContentKind?: string | null;
   /** Film only: `{duration}|{url}|{title}` per trailer (see film-trailer.ts). */
   trailers?: string[] | null;
+  /**
+   * Additional YouTube uploads, one `{youTubeId}|{release}|{channelName}` token per upload in display
+   * order (see youtube-alternate.ts; RPP #1411). Present on film, TV-episode, news and episode documents.
+   */
+  youTubeAlternates?: string[] | null;
   /**
    * Film only: other titles the film is known by (original, alternative and translated; RedditPodcastPoster#1431).
    * Searchable, so a search for any of them finds the film.

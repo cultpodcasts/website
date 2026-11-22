@@ -103,7 +103,7 @@ describe('EditFilmDialogComponent', () => {
     expect(dialog.defaultSubject()).toBe('Arts');
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     const tabs = Array.from(element().querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Guests', 'Identity']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Also on YouTube', 'Guests', 'Identity']);
     expect(element().querySelector('h2')?.textContent).toBe('Edit Film');
     expect(element().querySelector('#parent-name')).toBeNull();
     const name = element().querySelector<HTMLInputElement>('#film-name');
@@ -232,6 +232,25 @@ describe('EditFilmDialogComponent', () => {
     );
     await saving;
     expect(dialog.submitError()).toBe(staleTrailersMessage(1));
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('shows the server uniqueness message when the film PATCH returns 409 with no unexpected trailer or YouTube ids', async () => {
+    const dialog = await load();
+    dialog.form()!.patchValue({ duration: '1:02:03' });
+    const saving = dialog.onSubmit();
+    const patch = await expectSoon(api(`/film/${filmId}`), 'PATCH');
+    const message = "YouTube 'GSIPAfDO_ec' is already on Film 11111111-1111-4111-8111-111111111111.";
+    patch.flush(
+      {
+        message,
+        unexpectedTrailerIds: [],
+        unexpectedAdditionalYouTubeIds: []
+      },
+      { status: 409, statusText: 'Conflict' }
+    );
+    await saving;
+    expect(dialog.submitError()).toBe(message);
     expect(close).not.toHaveBeenCalled();
   });
 

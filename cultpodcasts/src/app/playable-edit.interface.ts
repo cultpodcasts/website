@@ -3,6 +3,19 @@ import { FilmTrailer } from './film-trailer';
 import { Person } from './person.interface';
 import { PersonMatch } from './person-match.interface';
 
+/** Curator GET: one additional YouTube upload (RPP #1411). */
+export interface YouTubeAlternateDto {
+  youTubeId: string;
+  url: string | URL;
+  image?: string | URL | null;
+  title?: string | null;
+  channelId?: string | null;
+  channelName?: string | null;
+  release?: string | Date | null;
+  duration?: string | null;
+  sourceEpisodeId?: string | null;
+}
+
 /**
  * Curator GET body shared by `newsreport/{id}` and `tvshowepisode/{id}` (RPP `PlayableFieldsDto`).
  * Release is a calendar date `yyyy-MM-dd` (or year / UTC DateTimeUtc for film). After
@@ -64,6 +77,8 @@ export interface FilmDto extends PlayableFieldsDto {
   tmdbId?: number | null;
   /** In display order; omitted when the film has none. */
   trailers?: FilmTrailer[] | null;
+  /** Extra YouTube uploads in display order (RPP #1411). Omitted when the film has none. */
+  additionalYouTube?: YouTubeAlternateDto[] | null;
   /** Image from the film's identity (TMDB), used when no service has one (RedditPodcastPoster#1430). */
   image?: string | null;
   /**
@@ -140,6 +155,15 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
    * id that is not in this list, so a stale keep-list cannot delete it.
    */
   expectedTrailerIds?: string[];
+  /**
+   * Additional YouTube uploads to keep, in display order (RPP #1411). Existing entries are identified by
+   * `youTubeId`; a new entry is added from a YouTube `url`. Omitted entries are removed; `[]` removes all.
+   */
+  additionalYouTube?: { youTubeId?: string; url?: string; title?: string; channelName?: string }[];
+  /** Additional YouTube ids this editor last saw. Sent with `additionalYouTube`. A 409 when a stored id is missing. */
+  expectedAdditionalYouTubeIds?: string[];
+  /** Swap this additional YouTube id into the primary `services.youtube` link. */
+  promoteYouTubeId?: string;
 }
 
 export interface EditPlayableDialogResponse {

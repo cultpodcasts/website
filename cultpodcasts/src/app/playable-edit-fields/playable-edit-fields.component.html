@@ -134,6 +134,13 @@
         <app-film-trailers-edit [trailers]="f.controls.trailers"></app-film-trailers-edit>
     </mat-tab>
     }
+    @if (f.controls.additionalYouTube && f.controls.promoteYouTubeId) {
+    <mat-tab label="Also on YouTube">
+        <app-film-youtube-alternates-edit
+            [alternates]="f.controls.additionalYouTube"
+            [promoteYouTubeId]="f.controls.promoteYouTubeId"></app-film-youtube-alternates-edit>
+    </mat-tab>
+    }
     <mat-tab label="Guests">
         <mat-form-field class="full-width">
             <mat-label>Guests</mat-label>

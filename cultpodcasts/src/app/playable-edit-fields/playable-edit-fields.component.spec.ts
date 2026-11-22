@@ -416,7 +416,7 @@ describe('PlayableEditFieldsComponent catalogueTab', () => {
     film.componentRef.setInput('variant', 'film');
     film.detectChanges();
     expect(tabLabels(film.nativeElement as HTMLElement)).toEqual(
-      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Guests', 'Identity']);
+      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Trailers', 'Also on YouTube', 'Guests', 'Identity']);
 
     const tv = TestBed.createComponent(PlayableEditFieldsComponent);
     tv.componentRef.setInput('form', buildPlayableEditForm({
