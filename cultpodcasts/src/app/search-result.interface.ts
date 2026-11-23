@@ -1,8 +1,15 @@
+import type { SearchEngine } from "./search-description";
+
 export interface SearchResult {
   id: string;
   podcastName: string;
   episodeTitle: string;
   episodeDescription: string;
+  /**
+   * Which index served this hit (`POST /search` `@search.engine`).
+   * Omitted or unknown values are treated as Azure (180-character clamp).
+   */
+  searchEngine?: SearchEngine;
   release: Date;
   duration: string;
   ids?: import("./episode-ids.interface").EpisodeIds;

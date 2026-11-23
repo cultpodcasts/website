@@ -1,6 +1,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 import { HttpResponse } from "@angular/common/http";
+import { parseSearchEngine, SearchEngine } from "../search-description";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 
 /**
@@ -96,6 +97,9 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
 
     public readonly entities: T[];
 
+    /** `@search.engine` from the envelope; missing or unknown values are Azure. */
+    public readonly searchEngine: SearchEngine;
+
     /**
      * Constructs a new ``ODataEntityResponse`` by parsing the response body.
      * 
@@ -103,7 +107,8 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
      */
     constructor(response: HttpResponse<any>) {
         super(response);
-        this.entities = this.getEntities(response.body);
+        this.searchEngine = parseSearchEngine(response.body?.["@search.engine"]);
+        this.entities = this.getEntities(response.body, this.searchEngine);
     }
 
     /**
@@ -112,9 +117,9 @@ export class ODataEntitiesResponse<T> extends ODataResponse {
      * @param data - The untyped response body
      * @returns Array of type ``T`` elements
      */
-    private getEntities(data: any): T[] {
+    private getEntities(data: any, engine: SearchEngine): T[] {
         if (data.value) {
-            return (data.value as T[]);
+            return (data.value as T[]).map((entity) => ({ ...entity, searchEngine: engine }));
         }
         return [];
     }
