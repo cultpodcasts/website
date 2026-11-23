@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { cssUrl } from '../../css-url';
 
 /**
  * One crossfade layer of the homepage hero's art band (`.billboard__stages` holds two).
@@ -42,6 +43,6 @@ export class HeroStageComponent {
    */
   protected readonly backgroundImage = computed(() => {
     const image = this.image();
-    return image && this.aspect() != null ? 'url(' + image + ')' : null;
+    return image && this.aspect() != null ? cssUrl(image) : null;
   });
 }
