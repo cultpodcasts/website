@@ -1,4 +1,5 @@
 import { SearchResult } from '../search-result.interface';
+import { cssUrl } from '../css-url';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -141,6 +142,9 @@ export class PlayableDetailShellComponent {
   protected readonly backdropUrl = computed(() =>
     episodeImageUrl(this.playable())?.toString()
   );
+
+  /** Quoted CSS `url("…")` so art URLs with brackets (France TV thumbnails) still paint. */
+  protected readonly backdropCss = computed(() => cssUrl(this.backdropUrl()));
 
   protected readonly backdropAspect = signal<number | undefined>(undefined);
   protected readonly backdropKenBurns = signal(false);
