@@ -53,6 +53,36 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
   });
 });
 
+async function renderShell(playable: SearchResult) {
+  TestBed.resetTestingModule();
+  await TestBed.configureTestingModule({
+    imports: [PlayableDetailShellComponent],
+    providers: [
+      provideZonelessChangeDetection(),
+      provideRouter([]),
+      { provide: PLATFORM_ID, useValue: 'server' },
+      { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } },
+      { provide: AuthServiceWrapper, useValue: { roles: of([] as string[]) } },
+      { provide: MatSnackBar, useValue: { open: () => undefined } },
+      { provide: MatDialog, useValue: { open: () => undefined } },
+      { provide: SiteService, useValue: { setQuery() {}, setPodcast() {}, setSubject() {} } },
+      { provide: ODataService, useValue: { getEntities: () => of({ entities: [] }) } },
+      { provide: PlayerService, useValue: { episode: () => undefined, mode: () => 'dock', play: () => undefined } }
+    ]
+  })
+    .overrideComponent(PlayableDetailShellComponent, {
+      set: { imports: [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
+    })
+    .compileComponents();
+
+  const fixture = TestBed.createComponent(PlayableDetailShellComponent);
+  fixture.componentRef.setInput('playable', playable);
+  fixture.componentRef.setInput('includeParentRail', false);
+  fixture.detectChanges();
+  await fixture.whenStable();
+  return fixture;
+}
+
 describe('PlayableDetailShellComponent D1 description clamp class', () => {
   function playable(searchEngine?: SearchResult['searchEngine']): SearchResult {
     const result: SearchResult = {
@@ -70,38 +100,8 @@ describe('PlayableDetailShellComponent D1 description clamp class', () => {
     return result;
   }
 
-  async function render(result: SearchResult) {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [PlayableDetailShellComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        provideRouter([]),
-        { provide: PLATFORM_ID, useValue: 'server' },
-        { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } },
-        { provide: AuthServiceWrapper, useValue: { roles: of([] as string[]) } },
-        { provide: MatSnackBar, useValue: { open: () => undefined } },
-        { provide: MatDialog, useValue: { open: () => undefined } },
-        { provide: SiteService, useValue: { setQuery() {}, setPodcast() {}, setSubject() {} } },
-        { provide: ODataService, useValue: { getEntities: () => of({ entities: [] }) } },
-        { provide: PlayerService, useValue: { episode: () => undefined, mode: () => 'dock', play: () => undefined } }
-      ]
-    })
-      .overrideComponent(PlayableDetailShellComponent, {
-        set: { imports: [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
-      })
-      .compileComponents();
-
-    const fixture = TestBed.createComponent(PlayableDetailShellComponent);
-    fixture.componentRef.setInput('playable', result);
-    fixture.componentRef.setInput('includeParentRail', false);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    return fixture;
-  }
-
   async function descClassList(result: SearchResult) {
-    const fixture = await render(result);
+    const fixture = await renderShell(result);
     const desc = (fixture.nativeElement as HTMLElement).querySelector('.episode-hero__desc');
     expect(desc).not.toBeNull();
     return desc!.classList;
@@ -137,38 +137,8 @@ describe('PlayableDetailShellComponent Also known as expander', () => {
     } as SearchResult;
   }
 
-  async function render(playable: SearchResult) {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [PlayableDetailShellComponent],
-      providers: [
-        provideZonelessChangeDetection(),
-        provideRouter([]),
-        { provide: PLATFORM_ID, useValue: 'server' },
-        { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } },
-        { provide: AuthServiceWrapper, useValue: { roles: of([] as string[]) } },
-        { provide: MatSnackBar, useValue: { open: () => undefined } },
-        { provide: MatDialog, useValue: { open: () => undefined } },
-        { provide: SiteService, useValue: { setQuery() {}, setPodcast() {}, setSubject() {} } },
-        { provide: ODataService, useValue: { getEntities: () => of({ entities: [] }) } },
-        { provide: PlayerService, useValue: { episode: () => undefined, mode: () => 'dock', play: () => undefined } }
-      ]
-    })
-      .overrideComponent(PlayableDetailShellComponent, {
-        set: { imports: [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
-      })
-      .compileComponents();
-
-    const fixture = TestBed.createComponent(PlayableDetailShellComponent);
-    fixture.componentRef.setInput('playable', playable);
-    fixture.componentRef.setInput('includeParentRail', false);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    return fixture;
-  }
-
   it('shows the first 5 titles, expands the rest with +N more, and starts collapsed again on another film', async () => {
-    const fixture = await render(film('film-a'));
+    const fixture = await renderShell(film('film-a'));
     const root = fixture.nativeElement as HTMLElement;
     const aka = () => root.querySelector('#film-aka') as HTMLElement;
     const button = () => aka().querySelector('.episode-hero__aka-more') as HTMLButtonElement;
