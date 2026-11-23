@@ -1,5 +1,4 @@
 import { SearchEngine } from './search-engine.enum';
-export { SearchEngine };
 
 /**
  * Card-display cap for search descriptions. The Azure index truncates
