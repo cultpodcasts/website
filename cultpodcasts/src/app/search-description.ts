@@ -5,11 +5,12 @@
  * longer documents. Used by search-style cards and the playable detail hero,
  * not the homepage hero.
  *
- * D1 search stores the full description (SP-0.3). The playable detail hero
- * shows that text with a six-line CSS clamp (`.episode-hero__desc`). When
- * `@search.engine` is `"d1"`, a generous character cap still runs first as a
- * safety net so a 50k-character tail is not put in the DOM; the visible cap is
- * the line clamp. Azure keeps the existing 180-character formatter (index cap 80).
+ * D1 search stores the full description (SP-0.3). When `@search.engine` is
+ * `"d1"`, the playable detail hero applies a six-line CSS clamp via the
+ * `.episode-hero__desc--d1` modifier. A generous character cap still runs
+ * first as a safety net so a 50k-character tail is not put in the DOM; the
+ * visible cap is the line clamp. Azure and a missing engine keep the existing
+ * 180-character formatter (index cap 80) and do not get the clamp CSS.
  */
 export type SearchEngine = "azure" | "d1";
 
@@ -18,7 +19,7 @@ export const SEARCH_DESCRIPTION_SIZE = 180;
 
 /**
  * D1 character safety net, in characters including the ellipsis. The visible
- * cap is the six-line CSS clamp on the playable detail hero.
+ * cap is the six-line CSS clamp on `.episode-hero__desc--d1`.
  * Production D1 on 23 Nov 2026 (84,416 non-empty descriptions): median 908,
  * p75 1,717, max 50,896. 1,000 is rounded up from the median — enough to fill
  * six lines at the hero's 42em / 1.05rem measure, while still clipping the

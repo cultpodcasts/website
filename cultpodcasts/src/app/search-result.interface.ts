@@ -7,7 +7,7 @@ export interface SearchResult {
   episodeDescription: string;
   /**
    * Which index served this hit (`POST /search` `@search.engine`).
-   * Omitted or unknown values are treated as Azure (180-character clamp).
+   * Omitted or unknown values are treated as Azure (180-character clamp, no CSS line clamp).
    */
   searchEngine?: SearchEngine;
   release: Date;

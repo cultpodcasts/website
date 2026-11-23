@@ -29,16 +29,94 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
     expect(shellSass).toMatch(/@supports \(-moz-appearance: none\)[\s\S]*?blur\(36px\)/);
   });
 
-  it('clamps the episode hero description to six lines', () => {
-    const start = shellSass.indexOf('.episode-hero__desc\n');
+  function sassBlock(selector: string): string {
+    const start = shellSass.indexOf(selector + '\n');
     expect(start).toBeGreaterThanOrEqual(0);
     const next = shellSass.indexOf('\n.episode-hero__', start + 1);
-    const slice = shellSass.slice(start, next === -1 ? undefined : next);
+    return shellSass.slice(start, next === -1 ? undefined : next);
+  }
+
+  it('does not clamp the base episode hero description (Azure / missing-engine)', () => {
+    const slice = sassBlock('.episode-hero__desc');
+    expect(slice).not.toMatch(/line-clamp/);
+    expect(slice).not.toMatch(/-webkit-box/);
+    expect(slice).not.toMatch(/overflow:\s*hidden/);
+  });
+
+  it('clamps D1 episode hero descriptions to six lines on the --d1 modifier', () => {
+    const slice = sassBlock('.episode-hero__desc--d1');
     expect(slice).toMatch(/display:\s*-webkit-box/);
     expect(slice).toMatch(/-webkit-box-orient:\s*vertical/);
     expect(slice).toMatch(/-webkit-line-clamp:\s*6/);
     expect(slice).toMatch(/line-clamp:\s*6/);
     expect(slice).toMatch(/overflow:\s*hidden/);
+  });
+});
+
+describe('PlayableDetailShellComponent D1 description clamp class', () => {
+  function playable(searchEngine?: SearchResult['searchEngine']): SearchResult {
+    const result: SearchResult = {
+      id: 'ep-1',
+      episodeTitle: 'Faderhuset',
+      episodeDescription: 'A short description.',
+      podcastName: 'Cults',
+      duration: '01:30:00',
+      release: new Date('2026-11-19T00:00:00Z'),
+      subjects: [],
+    };
+    if (searchEngine !== undefined) {
+      result.searchEngine = searchEngine;
+    }
+    return result;
+  }
+
+  async function render(result: SearchResult) {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [PlayableDetailShellComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } },
+        { provide: AuthServiceWrapper, useValue: { roles: of([] as string[]) } },
+        { provide: MatSnackBar, useValue: { open: () => undefined } },
+        { provide: MatDialog, useValue: { open: () => undefined } },
+        { provide: SiteService, useValue: { setQuery() {}, setPodcast() {}, setSubject() {} } },
+        { provide: ODataService, useValue: { getEntities: () => of({ entities: [] }) } },
+        { provide: PlayerService, useValue: { episode: () => undefined, mode: () => 'dock', play: () => undefined } }
+      ]
+    })
+      .overrideComponent(PlayableDetailShellComponent, {
+        set: { imports: [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(PlayableDetailShellComponent);
+    fixture.componentRef.setInput('playable', result);
+    fixture.componentRef.setInput('includeParentRail', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture;
+  }
+
+  async function descClassList(result: SearchResult) {
+    const fixture = await render(result);
+    const desc = (fixture.nativeElement as HTMLElement).querySelector('.episode-hero__desc');
+    expect(desc).not.toBeNull();
+    return desc!.classList;
+  }
+
+  it('does not add the D1 clamp class for an Azure hit', async () => {
+    expect((await descClassList(playable('azure'))).contains('episode-hero__desc--d1')).toBe(false);
+  });
+
+  it('does not add the D1 clamp class when searchEngine is missing', async () => {
+    expect((await descClassList(playable())).contains('episode-hero__desc--d1')).toBe(false);
+  });
+
+  it('adds the D1 clamp class for a D1 hit', async () => {
+    expect((await descClassList(playable('d1'))).contains('episode-hero__desc--d1')).toBe(true);
   });
 });
 
