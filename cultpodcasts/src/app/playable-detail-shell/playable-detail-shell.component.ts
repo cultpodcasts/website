@@ -1,4 +1,5 @@
 import { SearchResult } from '../search-result.interface';
+import { SearchEngine } from '../search-engine.enum';
 import { cssUrl } from '../css-url';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -116,6 +117,7 @@ export class PlayableDetailShellComponent {
   });
   /** News / TV / film only — empty podcast host must not sit in the series flex row. */
   protected readonly showsKindBadge = computed(() => contentKindIcon(this.playable()?.contentKind) != null);
+  protected readonly SearchEngine = SearchEngine;
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 

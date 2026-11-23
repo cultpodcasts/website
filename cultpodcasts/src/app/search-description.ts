@@ -1,3 +1,6 @@
+import { SearchEngine } from './search-engine.enum';
+export { SearchEngine };
+
 /**
  * Card-display cap for search descriptions. The Azure index truncates
  * descriptions server-side (RedditPodcastPoster.Search.Formatting.Constants.DescriptionSize,
@@ -12,8 +15,6 @@
  * visible cap is the line clamp. Azure and a missing engine keep the existing
  * 180-character formatter (index cap 80) and do not get the clamp CSS.
  */
-export type SearchEngine = "azure" | "d1";
-
 /** Azure (and missing-engine) client cap, in characters including the ellipsis. */
 export const SEARCH_DESCRIPTION_SIZE = 180;
 
@@ -32,11 +33,11 @@ const ELLIPSIS = '\u2026';
 
 /** Missing or unknown engine values keep the Azure cap, so older API deploys stay unchanged. */
 export function parseSearchEngine(value: unknown): SearchEngine {
-  return value === "d1" ? "d1" : "azure";
+  return value === SearchEngine.D1 ? SearchEngine.D1 : SearchEngine.Azure;
 }
 
 export function searchDescriptionSize(engine?: SearchEngine | null): number {
-  return engine === "d1" ? D1_SEARCH_DESCRIPTION_SIZE : SEARCH_DESCRIPTION_SIZE;
+  return engine === SearchEngine.D1 ? D1_SEARCH_DESCRIPTION_SIZE : SEARCH_DESCRIPTION_SIZE;
 }
 
 /**

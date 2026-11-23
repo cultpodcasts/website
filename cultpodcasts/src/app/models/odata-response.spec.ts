@@ -1,4 +1,5 @@
 import { HttpResponse } from '@angular/common/http';
+import { SearchEngine } from '../search-engine.enum';
 import { ODataEntitiesResponse, ODataEntitiesWithFacetsResponse } from './odata-response';
 
 describe('ODataEntitiesResponse', () => {
@@ -7,10 +8,10 @@ describe('ODataEntitiesResponse', () => {
       status: 200,
       body: { value: [{ id: '1', episodeDescription: 'Desc' }] }
     });
-    const parsed = new ODataEntitiesResponse<{ id: string; episodeDescription: string; searchEngine?: string }>(response);
-    expect(parsed.searchEngine).toBe('azure');
+    const parsed = new ODataEntitiesResponse<{ id: string; episodeDescription: string; searchEngine?: SearchEngine }>(response);
+    expect(parsed.searchEngine).toBe(SearchEngine.Azure);
     expect(parsed.entities).toEqual([
-      { id: '1', episodeDescription: 'Desc', searchEngine: 'azure' }
+      { id: '1', episodeDescription: 'Desc', searchEngine: SearchEngine.Azure }
     ]);
   });
 
@@ -19,9 +20,9 @@ describe('ODataEntitiesResponse', () => {
       status: 200,
       body: { '@search.engine': 'd1', value: [{ id: '1' }, { id: '2' }] }
     });
-    const parsed = new ODataEntitiesResponse<{ id: string; searchEngine?: string }>(response);
-    expect(parsed.searchEngine).toBe('d1');
-    expect(parsed.entities.map(e => e.searchEngine)).toEqual(['d1', 'd1']);
+    const parsed = new ODataEntitiesResponse<{ id: string; searchEngine?: SearchEngine }>(response);
+    expect(parsed.searchEngine).toBe(SearchEngine.D1);
+    expect(parsed.entities.map(e => e.searchEngine)).toEqual([SearchEngine.D1, SearchEngine.D1]);
   });
 
   it('still reads facets from @search.facets when the engine field is present', () => {
@@ -34,7 +35,7 @@ describe('ODataEntitiesResponse', () => {
       }
     });
     const parsed = new ODataEntitiesWithFacetsResponse(response);
-    expect(parsed.searchEngine).toBe('d1');
+    expect(parsed.searchEngine).toBe(SearchEngine.D1);
     expect(parsed.facets.subjects?.[0].value).toBe('Cults');
   });
 });

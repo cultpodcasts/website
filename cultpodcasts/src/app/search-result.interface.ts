@@ -1,4 +1,4 @@
-import type { SearchEngine } from "./search-description";
+import type { SearchEngine } from "./search-engine.enum";
 
 export interface SearchResult {
   id: string;

@@ -12,6 +12,7 @@ import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
 import { SearchDescriptionPipe } from '../search-description.pipe';
+import { SearchEngine } from '../search-engine.enum';
 import { SearchResult } from '../search-result.interface';
 import { SiteService } from '../site.service';
 import { PlayableDetailShellComponent } from './playable-detail-shell.component';
@@ -108,7 +109,7 @@ describe('PlayableDetailShellComponent D1 description clamp class', () => {
   }
 
   it('does not add the D1 clamp class for an Azure hit', async () => {
-    expect((await descClassList(playable('azure'))).contains('episode-hero__desc--d1')).toBe(false);
+    expect((await descClassList(playable(SearchEngine.Azure))).contains('episode-hero__desc--d1')).toBe(false);
   });
 
   it('does not add the D1 clamp class when searchEngine is missing', async () => {
@@ -116,7 +117,7 @@ describe('PlayableDetailShellComponent D1 description clamp class', () => {
   });
 
   it('adds the D1 clamp class for a D1 hit', async () => {
-    expect((await descClassList(playable('d1'))).contains('episode-hero__desc--d1')).toBe(true);
+    expect((await descClassList(playable(SearchEngine.D1))).contains('episode-hero__desc--d1')).toBe(true);
   });
 });
 
