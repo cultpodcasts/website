@@ -28,6 +28,18 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
     expect(shellSass).toMatch(/@supports \(-moz-appearance: none\)[\s\S]*?transform: none/);
     expect(shellSass).toMatch(/@supports \(-moz-appearance: none\)[\s\S]*?blur\(36px\)/);
   });
+
+  it('clamps the episode hero description to six lines', () => {
+    const start = shellSass.indexOf('.episode-hero__desc\n');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const next = shellSass.indexOf('\n.episode-hero__', start + 1);
+    const slice = shellSass.slice(start, next === -1 ? undefined : next);
+    expect(slice).toMatch(/display:\s*-webkit-box/);
+    expect(slice).toMatch(/-webkit-box-orient:\s*vertical/);
+    expect(slice).toMatch(/-webkit-line-clamp:\s*6/);
+    expect(slice).toMatch(/line-clamp:\s*6/);
+    expect(slice).toMatch(/overflow:\s*hidden/);
+  });
 });
 
 describe('PlayableDetailShellComponent Also known as expander', () => {

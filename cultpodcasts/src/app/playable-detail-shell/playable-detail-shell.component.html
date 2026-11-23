@@ -89,7 +89,7 @@
         }
       </p>
 
-      <p class="episode-hero__desc">{{ playable().episodeDescription | searchDescription }}</p>
+      <p class="episode-hero__desc">{{ playable().episodeDescription | searchDescription:playable().searchEngine }}</p>
 
       @if (visibleSubjects().length > 0) {
       <div class="episode-hero__subjects" aria-label="Subjects">
