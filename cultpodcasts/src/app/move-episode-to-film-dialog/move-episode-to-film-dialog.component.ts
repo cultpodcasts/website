@@ -4,7 +4,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -24,10 +23,7 @@ import { promptAmbiguousIdentity } from '../submit-language-identity-prompts';
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** New film (the default) or merge into an existing film (RPP #1522, podcast episodes only). */
-export type MoveToFilmMode = 'new' | 'existing';
-
-/** The existing film picked from the suggestions (id + name), or a pasted film id (no name yet). */
+/** The film picked from suggestions (id + name), or a pasted film id (no name yet). */
 export interface ExistingFilmPick {
   id: string;
   name: string | null;
@@ -49,20 +45,29 @@ export function releasedWithinDays(release: Date | string | null | undefined, da
   return now.getTime() - released < days * 24 * 60 * 60 * 1000;
 }
 
+/** Films whose label or canonical name equals the typed text (catalogue title match, RPP #1525). */
+export function filmsNamed<T extends { label: string; value: string }>(query: string, films: readonly T[]): T[] {
+  const name = query.trim().toLowerCase();
+  if (name.length === 0) {
+    return [];
+  }
+  return films.filter(film =>
+    film.label.trim().toLowerCase() === name || film.value.trim().toLowerCase() === name);
+}
+
 /**
  * Confirms and sends the curator "Move to film" command for one podcast episode, or for one news report when
  * `newsReportId` is set (RPP #1368: same body, identity prompt and outcome, POST /newsreport/{id}/film).
  *
- * For a podcast episode the curator can instead pick **Existing film** (RPP #1522): the episode is another copy of a
- * film already in the catalogue, so it is merged into that film (picked from the film suggestions, or a pasted film
- * id) and the body is `{ filmId }`. A new-film move whose name clashes with an existing film switches to Existing film
- * with that film picked, so the curator can merge into it in one more click.
+ * For a podcast episode there is one name field (RPP #1525). It searches catalogue films by title. One film with
+ * that exact name is selected, and Move to film merges into it (`{ filmId }`, RPP #1522). Several films with that
+ * name must be picked. No match creates a new film. A pasted film id is a merge. News reports only create a film:
+ * merging into an existing one is not supported for them.
  */
 @Component({
   selector: 'app-move-episode-to-film-dialog',
   imports: [
     MatAutocompleteModule,
-    MatButtonToggleModule,
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -75,19 +80,22 @@ export function releasedWithinDays(release: Date | string | null | undefined, da
   styleUrl: './move-episode-to-film-dialog.component.sass'
 })
 export class MoveEpisodeToFilmDialogComponent {
-  readonly title: FormControl<string>;
+  /** Typed film name. A suggestion pick writes the suggestion object in, then the label string. */
+  readonly title: FormControl<string | Suggestion>;
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
   private readonly identityDialog = inject(MatDialog);
   /** What moves, and what it leaves: a podcast episode, or a news report (RPP #1368). */
   readonly item: string;
   readonly source: string;
-  /** Existing film is offered for podcast episodes only. */
+  /** Catalogue film search and merge are podcast episodes only (RPP #1522). */
   readonly canMergeIntoExisting: boolean;
-  readonly mode = signal<MoveToFilmMode>('new');
-  readonly filmQuery = new FormControl<string>('', { nonNullable: true });
   readonly films = signal<Suggestion[]>([]);
   readonly existingFilm = signal<ExistingFilmPick | null>(null);
+  /** More than one catalogue film has the typed name, so the curator must pick which one. */
+  readonly severalExact = signal(false);
+  /** A title search has finished (so "no film has this name" is not shown before the answer). */
+  readonly searched = signal(false);
   private readonly injector = inject(Injector);
   private suggestionsService: SearchSuggestionsService | null = null;
   private queryVersion = 0;
@@ -96,43 +104,52 @@ export class MoveEpisodeToFilmDialogComponent {
     private dialogRef: MatDialogRef<MoveEpisodeToFilmDialogComponent, MoveEpisodeToFilmDialogClose>,
     @Inject(MAT_DIALOG_DATA) public data: MoveEpisodeToFilmDialogData,
     private curationSubmit: CurationSubmitService) {
-    this.title = new FormControl<string>(data.episodeTitle ?? '', { nonNullable: true });
+    this.title = new FormControl<string | Suggestion>(data.episodeTitle ?? '', { nonNullable: true });
     this.item = data.newsReportId ? 'news report' : 'episode';
     this.source = data.newsReportId ? 'news organisation' : 'podcast';
     this.canMergeIntoExisting = !data.newsReportId;
-    // Picking an option writes the suggestion (an object) into the control; only typed text is a query.
-    this.filmQuery.valueChanges.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(value => {
+    this.title.valueChanges.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe(value => {
       if (typeof value === 'string') {
-        void this.onFilmQuery(value);
+        void this.onName(value);
       }
     });
+    if (this.canMergeIntoExisting) {
+      this.suggestions.preload();
+      void this.onName(this.nameText());
+    }
   }
 
-  /** Resolved on first use, so the new-film path never needs the suggestions service. */
+  /** Resolved on first use. News-report moves never need the suggestions service. */
   private get suggestions(): SearchSuggestionsService {
     this.suggestionsService ??= this.injector.get(SearchSuggestionsService);
     return this.suggestionsService;
   }
 
-  setMode(mode: MoveToFilmMode): void {
-    if (this.isSending() || (mode === 'existing' && !this.canMergeIntoExisting)) {
-      return;
-    }
-    this.error.set(null);
-    this.mode.set(mode);
-    if (mode === 'existing') {
-      this.suggestions.preload();
-    }
+  nameText(): string {
+    const value = this.title.value;
+    return (typeof value === 'string' ? value : value?.label ?? '').trim();
   }
 
   /** Typing replaces any earlier pick; a pasted film id is a pick on its own. */
-  async onFilmQuery(value: string): Promise<void> {
+  async onName(value: string): Promise<void> {
+    if (!this.canMergeIntoExisting) {
+      return;
+    }
     const text = value.trim();
     this.error.set(null);
-    this.existingFilm.set(GUID.test(text) ? { id: text.toLowerCase(), name: null } : null);
-    const version = ++this.queryVersion;
-    if (text.length < 2 || GUID.test(text)) {
+    this.severalExact.set(false);
+    if (GUID.test(text)) {
+      this.queryVersion++;
+      this.existingFilm.set({ id: text.toLowerCase(), name: null });
       this.films.set([]);
+      this.searched.set(false);
+      return;
+    }
+    this.existingFilm.set(null);
+    const version = ++this.queryVersion;
+    if (text.length < 2) {
+      this.films.set([]);
+      this.searched.set(false);
       return;
     }
     let found: Suggestion[] = [];
@@ -141,8 +158,18 @@ export class MoveEpisodeToFilmDialogComponent {
     } catch (e) {
       console.error('Film suggestions failed; a film id can still be pasted.', e);
     }
-    if (version === this.queryVersion) {
-      this.films.set(found.filter(film => !!film.itemId));
+    if (version !== this.queryVersion) {
+      return;
+    }
+    const withId = found.filter(film => !!film.itemId);
+    this.films.set(withId);
+    this.searched.set(true);
+    const exact = filmsNamed(text, withId);
+    if (exact.length === 1) {
+      const film = exact[0];
+      this.existingFilm.set({ id: film.itemId!, name: film.value });
+    } else {
+      this.severalExact.set(exact.length > 1);
     }
   }
 
@@ -151,8 +178,10 @@ export class MoveEpisodeToFilmDialogComponent {
     if (!film?.itemId) {
       return;
     }
+    this.queryVersion++;
+    this.severalExact.set(false);
     this.existingFilm.set({ id: film.itemId, name: film.value });
-    this.filmQuery.setValue(film.label, { emitEvent: false });
+    this.title.setValue(film.label, { emitEvent: false });
   }
 
   /** Shows the label in the input after a pick (the option value is the suggestion). */
@@ -163,7 +192,13 @@ export class MoveEpisodeToFilmDialogComponent {
     if (this.isSending()) {
       return false;
     }
-    return this.mode() === 'existing' ? !!this.existingFilm() : !this.hasInvalidTitle();
+    if (this.existingFilm()) {
+      return true;
+    }
+    if (this.severalExact()) {
+      return false;
+    }
+    return !this.hasInvalidTitle();
   }
 
   private send(body: EpisodeFilmMoveRequest) {
@@ -174,7 +209,7 @@ export class MoveEpisodeToFilmDialogComponent {
 
   /** The title to send: null keeps the episode title on the server. */
   requestTitle(): string | null {
-    const value = this.title.value.trim();
+    const value = this.nameText();
     return value.length === 0 || value === (this.data.episodeTitle ?? '').trim() ? null : value;
   }
 
@@ -184,14 +219,14 @@ export class MoveEpisodeToFilmDialogComponent {
   }
 
   hasInvalidTitle(): boolean {
-    return this.title.value.includes('/');
+    return this.nameText().includes('/');
   }
 
   async move() {
     if (!this.canSend()) {
       return;
     }
-    if (this.mode() === 'existing') {
+    if (this.existingFilm()) {
       await this.mergeIntoExisting();
       return;
     }
@@ -245,11 +280,12 @@ export class MoveEpisodeToFilmDialogComponent {
       const err = e as HttpErrorResponse;
       const clash = err?.status === 409 ? (err.error as EpisodeFilmMoveResponse | null) : null;
       if (this.canMergeIntoExisting && clash?.filmId) {
-        // The name belongs to a film already in the catalogue: offer to merge into it (RPP #1522).
-        this.mode.set('existing');
+        // The name belongs to a film the suggestions had not shown. Select it so the next click merges.
+        this.queryVersion++;
+        this.severalExact.set(false);
         this.existingFilm.set({ id: clash.filmId, name: clash.name ?? null });
-        this.filmQuery.setValue(clash.name ?? clash.filmId, { emitEvent: false });
-        this.error.set('A film with this name already exists. It is picked under Existing film: Merge into film adds this episode to it.');
+        this.title.setValue(clash.name ?? clash.filmId, { emitEvent: false });
+        this.error.set('A film with this name already exists. It is selected: Move to film adds this episode to it.');
       } else {
         this.error.set(moveErrorMessage(err, this.item));
       }
