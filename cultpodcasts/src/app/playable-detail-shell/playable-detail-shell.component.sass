@@ -356,14 +356,17 @@
     line-height: 1.5
     color: var(--nflx-on-media-muted, #e8e8e8)
     text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55)
-    // Visual cap for D1's full descriptions (Azure hits are already short).
+    a
+        color: var(--nflx-on-media, #fff)
+
+// Visual cap for D1's full descriptions only. Azure / missing-engine hits
+// must not get these rules (same as before #698).
+.episode-hero__desc--d1
     display: -webkit-box
     -webkit-box-orient: vertical
     -webkit-line-clamp: 6
     line-clamp: 6
     overflow: hidden
-    a
-        color: var(--nflx-on-media, #fff)
 
 .episode-hero__subjects
     display: flex

@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { formatSearchDescription, SearchEngine } from './search-description';
+import { formatSearchDescription } from './search-description';
+import type { SearchEngine } from './search-engine.enum';
 
 @Pipe({
   name: 'searchDescription',

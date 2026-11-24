@@ -1,7 +1,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 import { HttpResponse } from "@angular/common/http";
-import { parseSearchEngine, SearchEngine } from "../search-description";
+import { parseSearchEngine } from "../search-description";
+import type { SearchEngine } from "../search-engine.enum";
 import { SearchResultsFacets } from "../search-results-facets.interface";
 
 /**
