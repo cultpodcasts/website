@@ -8,24 +8,24 @@ import { SearchEngine } from './search-engine.enum';
  * not the homepage hero.
  *
  * D1 search stores the full description (SP-0.3). When `@search.engine` is
- * `"d1"`, the playable detail hero applies a six-line CSS clamp via the
- * `.episode-hero__desc--d1` modifier. A generous character cap still runs
- * first as a safety net so a 50k-character tail is not put in the DOM; the
- * visible cap is the line clamp. Azure and a missing engine keep the existing
+ * `"d1"`, the playable detail hero shows it in `app-hero-description`: the
+ * homepage hero's line clamp (5 / 4 / 3 lines) with an expander to the full
+ * text (#703). A generous character cap still runs first as a safety net so a
+ * 50k-character tail is not put in the DOM. Azure and a missing engine keep the existing
  * 180-character formatter (index cap 80) and do not get the clamp CSS.
  */
 /** Azure (and missing-engine) client cap, in characters including the ellipsis. */
 export const SEARCH_DESCRIPTION_SIZE = 180;
 
 /**
- * D1 character safety net, in characters including the ellipsis. The visible
- * cap is the six-line CSS clamp on `.episode-hero__desc--d1`.
+ * D1 character safety net, in characters including the ellipsis. Collapsed, the
+ * visible cap is the line clamp in `app-hero-description`; expanded shows up to
+ * this many characters (#703), so it covers most descriptions in full.
  * Production D1 on 23 Nov 2026 (84,416 non-empty descriptions): median 908,
- * p75 1,717, max 50,896. 1,000 is rounded up from the median — enough to fill
- * six lines at the hero's 42em / 1.05rem measure, while still clipping the
- * long tail before it reaches the DOM.
+ * p75 1,717, max 50,896. 5,000 shows well past the p75 in full while still
+ * clipping the long tail before it reaches the DOM.
  */
-export const D1_SEARCH_DESCRIPTION_SIZE = 1000;
+export const D1_SEARCH_DESCRIPTION_SIZE = 5000;
 
 /** Unicode ellipsis (U+2026) — not three ASCII periods. */
 const ELLIPSIS = '\u2026';

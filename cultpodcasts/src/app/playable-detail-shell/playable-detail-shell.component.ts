@@ -41,6 +41,7 @@ import { contentKindIcon } from '../content-kind-label';
 import { ViewerLocaleService } from '../viewer-locale';
 import { alsoKnownAs as alsoKnownAsLabel } from '../also-known-as';
 import { FilmYouTubeAlternatesComponent } from '../film-youtube-alternates/film-youtube-alternates.component';
+import { HeroDescriptionComponent } from '../hero-description/hero-description.component';
 
 interface SubjectRail {
   subject: string;
@@ -68,7 +69,8 @@ const MAX_SUBJECT_RAILS = 4;
     ContentKindBadgeComponent,
     QueueButtonComponent,
     SearchDescriptionPipe,
-    FilmYouTubeAlternatesComponent
+    FilmYouTubeAlternatesComponent,
+    HeroDescriptionComponent
   ],
   templateUrl: './playable-detail-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -118,6 +120,8 @@ export class PlayableDetailShellComponent {
   /** News / TV / film only — empty podcast host must not sit in the series flex row. */
   protected readonly showsKindBadge = computed(() => contentKindIcon(this.playable()?.contentKind) != null);
   protected readonly SearchEngine = SearchEngine;
+  /** D1 hits carry the full description: homepage clamp + expander. Azure / missing engine: unchanged (#702). */
+  protected readonly descriptionClamped = computed(() => this.playable().searchEngine === SearchEngine.D1);
   protected readonly displayCatalogName = displayCatalogName;
   protected readonly authRoles = toSignal(this.auth.roles, { initialValue: [] as string[] });
 

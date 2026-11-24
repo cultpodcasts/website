@@ -15,6 +15,7 @@ import { SearchDescriptionPipe } from '../search-description.pipe';
 import { SearchEngine } from '../search-engine.enum';
 import { SearchResult } from '../search-result.interface';
 import { SiteService } from '../site.service';
+import { HeroDescriptionComponent } from '../hero-description/hero-description.component';
 import { PlayableDetailShellComponent } from './playable-detail-shell.component';
 
 const shellDir = dirname(fileURLToPath(import.meta.url));
@@ -44,17 +45,13 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
     expect(slice).not.toMatch(/overflow:\s*hidden/);
   });
 
-  it('clamps D1 episode hero descriptions to six lines on the --d1 modifier', () => {
-    const slice = sassBlock('.episode-hero__desc--d1');
-    expect(slice).toMatch(/display:\s*-webkit-box/);
-    expect(slice).toMatch(/-webkit-box-orient:\s*vertical/);
-    expect(slice).toMatch(/-webkit-line-clamp:\s*6/);
-    expect(slice).toMatch(/line-clamp:\s*6/);
-    expect(slice).toMatch(/overflow:\s*hidden/);
+  it('#703: leaves the D1 clamp to app-hero-description (no six-line --d1 rule in the shell)', () => {
+    expect(shellSass).not.toMatch(/\.episode-hero__desc--d1/);
+    expect(shellSass).not.toMatch(/line-clamp:\s*6/);
   });
 });
 
-async function renderShell(playable: SearchResult) {
+async function renderShell(playable: SearchResult, withDescription = false) {
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [PlayableDetailShellComponent],
@@ -72,7 +69,7 @@ async function renderShell(playable: SearchResult) {
     ]
   })
     .overrideComponent(PlayableDetailShellComponent, {
-      set: { imports: [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
+      set: { imports: withDescription ? [SearchDescriptionPipe, HeroDescriptionComponent] : [SearchDescriptionPipe], schemas: [NO_ERRORS_SCHEMA] }
     })
     .compileComponents();
 
@@ -84,7 +81,7 @@ async function renderShell(playable: SearchResult) {
   return fixture;
 }
 
-describe('PlayableDetailShellComponent D1 description clamp class', () => {
+describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
   function playable(searchEngine?: SearchResult['searchEngine']): SearchResult {
     const result: SearchResult = {
       id: 'ep-1',
@@ -101,23 +98,36 @@ describe('PlayableDetailShellComponent D1 description clamp class', () => {
     return result;
   }
 
-  async function descClassList(result: SearchResult) {
-    const fixture = await renderShell(result);
-    const desc = (fixture.nativeElement as HTMLElement).querySelector('.episode-hero__desc');
-    expect(desc).not.toBeNull();
-    return desc!.classList;
+  async function renderDesc(result: SearchResult) {
+    const fixture = await renderShell(result, true);
+    const host = (fixture.nativeElement as HTMLElement).querySelector('app-hero-description.episode-hero__desc');
+    expect(host).not.toBeNull();
+    return host as HTMLElement;
   }
 
-  it('does not add the D1 clamp class for an Azure hit', async () => {
-    expect((await descClassList(playable(SearchEngine.Azure))).contains('episode-hero__desc--d1')).toBe(false);
+  it('renders an Azure hit unclamped with no expander', async () => {
+    const host = await renderDesc(playable(SearchEngine.Azure));
+    expect(host.classList.contains('is-clamped')).toBe(false);
+    expect(host.querySelector('.hero-desc__text')?.textContent).toBe('A short description.');
+    expect(host.querySelector('button.hero-desc__toggle')).toBeNull();
   });
 
-  it('does not add the D1 clamp class when searchEngine is missing', async () => {
-    expect((await descClassList(playable())).contains('episode-hero__desc--d1')).toBe(false);
+  it('renders a missing-engine hit unclamped (older API deploys)', async () => {
+    const host = await renderDesc(playable());
+    expect(host.classList.contains('is-clamped')).toBe(false);
   });
 
-  it('adds the D1 clamp class for a D1 hit', async () => {
-    expect((await descClassList(playable(SearchEngine.D1))).contains('episode-hero__desc--d1')).toBe(true);
+  it('clamps a D1 hit with the homepage hero clamp', async () => {
+    const host = await renderDesc(playable(SearchEngine.D1));
+    expect(host.classList.contains('is-clamped')).toBe(true);
+    expect(host.querySelector('.hero-desc__text')?.classList.contains('is-clamped')).toBe(true);
+  });
+
+  it('passes the D1 description through the D1 character cap, not the Azure 180', async () => {
+    const long = 'word '.repeat(400).trim();
+    const result = { ...playable(SearchEngine.D1), episodeDescription: long };
+    const host = await renderDesc(result);
+    expect(host.querySelector('.hero-desc__text')?.textContent).toBe(long);
   });
 });
 

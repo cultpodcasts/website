@@ -89,7 +89,10 @@
         }
       </p>
 
-      <p class="episode-hero__desc" [class.episode-hero__desc--d1]="playable().searchEngine === SearchEngine.D1">{{ playable().episodeDescription | searchDescription:playable().searchEngine }}</p>
+      <!-- Homepage hero clamp + expander for D1's full descriptions; Azure text stays as before (#702). -->
+      <app-hero-description class="episode-hero__desc"
+        [text]="playable().episodeDescription | searchDescription:playable().searchEngine"
+        [clamped]="descriptionClamped()" />
 
       @if (visibleSubjects().length > 0) {
       <div class="episode-hero__subjects" aria-label="Subjects">

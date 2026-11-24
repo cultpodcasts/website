@@ -33,6 +33,7 @@ import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
 import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics, type HeroDescLayout } from './hero-desc-layout';
+import { clampOverflows, heroDescToggleIcon, heroDescToggleLabel } from '../hero-description/hero-description';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -107,6 +108,8 @@ export class HomepageHeroComponent {
   /** Collapsed description is cut by the per-layout clamp (browser-measured; false on the server). */
   protected readonly descOverflows = signal(false);
   protected readonly showDescToggle = computed(() => this.descOverflows() || this.descExpanded());
+  protected readonly descToggleLabel = computed(() => heroDescToggleLabel(this.descExpanded()));
+  protected readonly descToggleIcon = computed(() => heroDescToggleIcon(this.descExpanded()));
   private readonly heroDesc = viewChild<ElementRef<HTMLElement>>('heroDesc');
   /**
    * Wide only (HERO-WID-001): collapsed desc lines that keep the docked card inside the
@@ -753,7 +756,7 @@ export class HomepageHeroComponent {
       return;
     }
     this.fitWideDesc(element);
-    this.descOverflows.set(element.scrollHeight - element.clientHeight > 1);
+    this.descOverflows.set(clampOverflows(element));
   }
 
   /**

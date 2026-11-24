@@ -81,12 +81,12 @@
             @if (!descExpanded()) {
             <span class="billboard__desc-fade" aria-hidden="true"></span>
             }
-            <!-- Same icon expander as the discovery cards (app-clampable-text). -->
+            <!-- Same icon expander as the discovery cards (app-clampable-text) and the item page hero (app-hero-description). -->
             <button type="button" mat-icon-button class="billboard__desc-toggle"
-              [attr.aria-label]="descExpanded() ? 'Collapse description' : 'Expand description'"
+              [attr.aria-label]="descToggleLabel()"
               [attr.aria-expanded]="descExpanded()" [attr.aria-controls]="descId"
               (click)="toggleDesc($event)">
-              <mat-icon>{{ descExpanded() ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <mat-icon>{{ descToggleIcon() }}</mat-icon>
             </button>
             }
           </div>
