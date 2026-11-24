@@ -22,13 +22,13 @@
     display: flex
     align-items: flex-end
     box-sizing: border-box
-    // Clip Ken Burns / edge extend. When the description is expanded the shell
-    // raises min-height to contain the hero so overflow:hidden cannot clip the
-    // copy or let it paint over the artwork outside the ::before card.
+    // Clip Ken Burns / edge extend. Expanded (HERO-DSC-002), the billboard keeps its
+    // collapsed height and spills vertically over following rails so the backdrop never resizes.
     overflow: hidden
     background-color: #0b0b0b
     &.is-desc-expanded
-        height: auto
+        overflow-x: clip
+        overflow-y: visible
     // Room for absolute toolbar over the media.
     padding: 56px 0 0
     --hero-art-aspect: 1.777
@@ -187,10 +187,8 @@
     .episode-backdrop__vignette
         background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.12) 24%, transparent 48%), radial-gradient(ellipse at 88% 42%, transparent 28%, rgba(0, 0, 0, 0.28) 100%)
 
-// Below ~1280: match homepage — aspect media band at top; copy in flow below.
-// In-flow ::before reserves the art height so the absolute backdrop does not
-// collapse the shell (and we never use negative-margin pull-up + aspect sibling,
-// which left a tall black void between actions and the rails).
+// Below ~1280: match homepage — bounded media band (--hero-band-h) with contained art at
+// top and copy in flow below so the artwork stays framed and visible above the fold.
 @media screen and (max-width: 1279.98px)
     .episode-billboard
         flex-direction: column
@@ -199,49 +197,31 @@
         min-height: 0
         padding: 0 0 20px
         gap: 0
+        --hero-band-h: clamp(180px, calc(100vh - 320px), 56.25vw)
     .episode-billboard.has-art-aspect
+        padding-bottom: 0
         &::before
             content: ''
-            flex: 0 0 auto
+            flex: 0 0 var(--hero-band-h)
+            min-height: var(--hero-band-h)
             width: 100%
-            aspect-ratio: var(--hero-art-aspect)
             pointer-events: none
         .episode-backdrop
-            inset: auto
-            top: 0
-            left: 0
-            right: 0
-            bottom: auto
+            inset: 0 0 auto
             width: 100%
-            height: auto
-            aspect-ratio: var(--hero-art-aspect)
-            .episode-backdrop__edge--left,
-            .episode-backdrop__edge--right
-                width: 0
-            .episode-backdrop__focus-slot
-                inset: 0
-                top: 0
-                left: 0
-                width: 100%
-                height: 100%
-                transform: none
-            .episode-backdrop__focus
-                background-size: cover
-                background-position: center center
+            height: var(--hero-band-h)
+            background-color: #0b0b0b
+        .episode-backdrop__edge
+            display: none
+        .episode-backdrop__scrim
+            background: linear-gradient(rgba(0, 0, 0, 0.47), transparent 22%)
+        .episode-backdrop__vignette
+            background: none
     .episode-billboard:not(.has-art-aspect) .episode-backdrop
         inset: auto
         position: relative
         width: 100%
         min-height: min(46vh, 360px)
-    .episode-hero
-        position: relative
-        z-index: 2
-        width: 100%
-        max-width: none
-        // Sit on the black band under the art (scrim already fades the media bottom).
-        margin-top: -48px
-        padding-top: 12px
-        background: linear-gradient(180deg, transparent 0%, #0b0b0b 36px)
 
 .episode-toolbar
     position: absolute
@@ -424,6 +404,26 @@
     // bottom inset left the last lines / chevron painting over the artwork.
     .episode-hero.is-desc-expanded::before
         bottom: 8px
+        background: #0b0b0b
+
+// Stacked (<1280px) copy panel: declared after base .episode-hero so full-bleed width,
+// max-width: none, and #0b0b0b backing are not overridden by the wide 640px+8vw cap.
+@media screen and (max-width: 1279.98px)
+    .episode-hero
+        position: relative
+        z-index: 4
+        width: 100%
+        max-width: none
+        // Fallback while aspect is unknown: fade from full-bleed art into solid #0b0b0b.
+        margin-top: -48px
+        padding-top: 12px
+        background: linear-gradient(180deg, transparent 0%, #0b0b0b 36px)
+        &.is-desc-expanded
+            background: #0b0b0b
+    .episode-billboard.has-art-aspect .episode-hero
+        margin-top: 0
+        padding-top: 16px
+        background: #0b0b0b
 
 @media (prefers-reduced-motion: reduce)
     .episode-backdrop.is-kenburns .episode-backdrop__motion

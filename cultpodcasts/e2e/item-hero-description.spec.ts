@@ -266,19 +266,23 @@ test.describe("item page hero description (#703)", () => {
 			await expect(desc(page)).not.toHaveClass(/is-expanded/);
 		});
 
-		test(`${item.name} page: tall description expanded is contained in the card (no overflow over the art or following content)`, async ({ page }) => {
+		test(`${item.name} page: tall description expanded is contained in the card and leaves the billboard and artwork unresized (HERO-DSC-004)`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await openItem(page, item, VERY_LONG_DESC);
+			const artBoxes = () => page.evaluate(() => {
+				const b = document.querySelector(".episode-billboard")!.getBoundingClientRect();
+				const s = document.querySelector(".episode-backdrop")!.getBoundingClientRect();
+				return { bh: b.height, sh: s.height, sw: s.width };
+			});
+			const before = await artBoxes();
 			await toggle(page).click();
 			await expect(desc(page)).toHaveClass(/is-expanded/);
 			await expect(page.locator(".episode-billboard")).toHaveClass(/is-desc-expanded/);
 			await expectExpandedContained(page, itemHeroContainment);
-			const contained = await page.evaluate(() => {
-				const b = document.querySelector(".episode-billboard").getBoundingClientRect();
-				const h = document.querySelector(".episode-hero").getBoundingClientRect();
-				return h.bottom <= b.bottom + 1 && h.top >= b.top - 1;
-			});
-			expect(contained, "expanded hero overflows the billboard").toBe(true);
+			const after = await artBoxes();
+			expect(Math.abs(after.bh - before.bh), "expanding resized the episode billboard").toBeLessThanOrEqual(1);
+			expect(Math.abs(after.sh - before.sh), "expanding resized the episode backdrop height").toBeLessThanOrEqual(1);
+			expect(Math.abs(after.sw - before.sw), "expanding resized the episode backdrop width").toBeLessThanOrEqual(1);
 		});
 
 		test(`${item.name}: an Azure hit stays unclamped with no expander (#702)`, async ({ page }) => {

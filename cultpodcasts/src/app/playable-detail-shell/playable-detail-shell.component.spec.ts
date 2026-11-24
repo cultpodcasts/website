@@ -45,10 +45,11 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
     expect(slice).not.toMatch(/overflow:\s*hidden/);
   });
 
-  it('grows the billboard with an expanded description so overflow:hidden cannot clip the card', () => {
+  it('keeps the billboard height locked and spills vertically on expand so the backdrop never resizes', () => {
     expect(shellSass).toMatch(/\.episode-billboard\n[\s\S]*?overflow:\s*hidden/);
-    expect(shellSass).toMatch(/&\.is-desc-expanded\n\s+height:\s*auto/);
-    expect(shellSass).toMatch(/\.episode-hero\.is-desc-expanded::before\n\s+bottom:\s*8px/);
+    expect(shellSass).toMatch(/&\.is-desc-expanded\n\s+overflow-x:\s*clip\n\s+overflow-y:\s*visible/);
+    expect(shellSass).not.toMatch(/&\.is-desc-expanded\n\s+height:\s*auto/);
+    expect(shellSass).toMatch(/\.episode-hero\.is-desc-expanded::before\n\s+bottom:\s*8px\n\s+background:\s*#0b0b0b/);
   });
 
   it('#703: leaves the D1 clamp to app-hero-description (no six-line --d1 rule in the shell)', () => {
@@ -130,7 +131,7 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
   });
 
   describe('HERO-DSC-005 hero top pin', () => {
-    type Shell = { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null; billboardMinPx(): number | null };
+    type Shell = { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null; billboardLockPx(): number | null };
     afterEach(() => vi.restoreAllMocks());
 
     /** happy-dom applies no component Sass or layout: fake the billboard's CSS anchor and the boxes. */
@@ -144,12 +145,12 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
         el === billboard
           ? ({ alignItems, paddingTop: '56px', borderTopWidth: '0px', paddingBottom: '0px', borderBottomWidth: '0px' } as CSSStyleDeclaration)
           : real(el, pseudo));
-      vi.spyOn(billboard, 'getBoundingClientRect').mockReturnValue({ top: 100, bottom: 820 } as DOMRect);
-      vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({ top: 400, bottom: 980 } as DOMRect);
+      vi.spyOn(billboard, 'getBoundingClientRect').mockReturnValue({ top: 100, bottom: 820, height: 720 } as DOMRect);
+      vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({ top: 400, bottom: 980, height: 580 } as DOMRect);
       return { fixture, billboard, hero, shell: fixture.componentInstance as unknown as Shell };
     }
 
-    it('expanding on the bottom-anchored billboard pins the hero at its collapsed top (flex-start + margin-top)', async () => {
+    it('expanding on the bottom-anchored billboard locks the billboard height and pins the hero at its collapsed top (flex-start + margin-top)', async () => {
       const { fixture, billboard, hero, shell } = await renderPinnable('flex-end');
       shell.onDescExpandedChange(true);
       await fixture.whenStable();
@@ -157,12 +158,14 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
       expect(shell.heroTopLockPx()).toBe(244);
       expect(billboard.style.alignItems).toBe('flex-start');
       expect(hero.style.marginTop).toBe('244px');
-      expect(shell.billboardMinPx()).toBe(880);
+      expect(shell.billboardLockPx()).toBe(720);
+      expect(billboard.style.height).toBe('720px');
 
       shell.onDescExpandedChange(false);
       await fixture.whenStable();
       expect(shell.heroTopLockPx()).toBeNull();
-      expect(shell.billboardMinPx()).toBeNull();
+      expect(shell.billboardLockPx()).toBeNull();
+      expect(billboard.style.height).toBe('');
       expect(billboard.style.alignItems).toBe('');
       expect(hero.style.marginTop).toBe('');
     });

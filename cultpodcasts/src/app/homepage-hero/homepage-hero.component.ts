@@ -1070,15 +1070,14 @@ export class HomepageHeroComponent {
 
   private startHeroCycle(): void {
     this.stopHeroCycle();
-    if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
+    if (!isPlatformBrowser(this.platformId)) {
       this.heroImageReady.set(true);
       return;
     }
-    if (this.slides().length < 2) {
-      this.beginHeroImageGate();
+    this.beginHeroImageGate();
+    if (this.reduceMotion || this.slides().length < 2) {
       return;
     }
-    this.beginHeroImageGate();
     this.scheduleHeroAdvance();
   }
 

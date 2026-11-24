@@ -32,7 +32,7 @@ import { QueueButtonComponent } from '../queue-button/queue-button.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, ElementRef, inject, ChangeDetectionStrategy, signal, computed, effect, afterRenderEffect, PLATFORM_ID, input, output, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input, output, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
@@ -179,11 +179,10 @@ export class PlayableDetailShellComponent {
   /** True while the description is expanded (class + billboard growth). */
   protected readonly descExpanded = signal(false);
   /**
-   * Expanded, the billboard's min-height grows to contain the hero (title, 60vh scroller,
-   * chips, actions). Otherwise `.episode-billboard { overflow: hidden }` clips the copy or
-   * lets it paint over the artwork outside `.episode-hero::before`.
+   * Expanded, lock the billboard at its collapsed height (matching homepage HERO-DSC-002)
+   * so `.episode-backdrop` (inset: 0) never resizes, zooms or re-crops the artwork.
    */
-  protected readonly billboardMinPx = signal<number | null>(null);
+  protected readonly billboardLockPx = signal<number | null>(null);
   private resizeFrame = 0;
   private backdropAspectToken = 0;
   private motionQuery: MediaQueryList | undefined;
@@ -201,13 +200,6 @@ export class PlayableDetailShellComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResize, { passive: true });
-      afterRenderEffect(() => {
-        this.descExpanded();
-        this.heroTopLockPx();
-        this.billboardRef();
-        this.heroRef();
-        this.fitExpandedBillboard();
-      });
       this.destroyRef.onDestroy(() => {
         window.removeEventListener('resize', this.onResize);
         if (this.resizeFrame) {
@@ -459,10 +451,38 @@ export class PlayableDetailShellComponent {
    */
   protected onDescExpandedChange(expanded: boolean): void {
     this.descExpanded.set(expanded);
-    this.heroTopLockPx.set(expanded ? this.measureHeroTopLock() : null);
-    if (!expanded) {
-      this.billboardMinPx.set(null);
+    if (expanded) {
+      const billboard = this.billboardRef()?.nativeElement;
+      const hero = this.heroRef()?.nativeElement;
+      if (isPlatformBrowser(this.platformId) && billboard && hero) {
+        const lockedH = billboard.getBoundingClientRect().height;
+        this.billboardLockPx.set(lockedH > 0 ? lockedH : null);
+        this.heroTopLockPx.set(this.measureHeroTopLock());
+      } else {
+        this.billboardLockPx.set(null);
+        this.heroTopLockPx.set(null);
+      }
+    } else {
+      this.billboardLockPx.set(null);
+      this.heroTopLockPx.set(null);
+      this.clearExpandDomLocks();
     }
+  }
+
+  private clearExpandDomLocks(): void {
+    const billboard = this.billboardRef()?.nativeElement;
+    const hero = this.heroRef()?.nativeElement;
+    billboard?.style.removeProperty('height');
+    billboard?.style.removeProperty('align-items');
+    hero?.style.removeProperty('margin-top');
+  }
+
+  private isBottomAnchored(billboard: HTMLElement): boolean {
+    const pinned = billboard.style.alignItems;
+    billboard.style.alignItems = '';
+    const anchored = getComputedStyle(billboard).alignItems === 'flex-end';
+    billboard.style.alignItems = pinned;
+    return anchored;
   }
 
   /**
@@ -476,47 +496,18 @@ export class PlayableDetailShellComponent {
     if (!isPlatformBrowser(this.platformId) || !billboard || !hero) {
       return null;
     }
-    const pinned = billboard.style.alignItems;
-    billboard.style.alignItems = '';
-    const style = getComputedStyle(billboard);
-    const anchored = style.alignItems === 'flex-end';
-    billboard.style.alignItems = pinned;
-    if (!anchored) {
+    if (!this.isBottomAnchored(billboard)) {
       return null;
     }
+    const style = getComputedStyle(billboard);
     const px = (value: string) => Number.parseFloat(value) || 0;
     const top = hero.getBoundingClientRect().top - billboard.getBoundingClientRect().top;
     return Math.max(0, top - px(style.paddingTop) - px(style.borderTopWidth));
   }
 
   /**
-   * Grow the billboard so the expanded hero (and its ::before card) fully contains the
-   * description, instead of clipping or painting over the artwork.
-   */
-  private fitExpandedBillboard(): void {
-    if (!isPlatformBrowser(this.platformId) || !this.descExpanded()) {
-      if (this.billboardMinPx() != null) {
-        this.billboardMinPx.set(null);
-      }
-      return;
-    }
-    const billboard = this.billboardRef()?.nativeElement;
-    const hero = this.heroRef()?.nativeElement;
-    if (!billboard || !hero) {
-      return;
-    }
-    const style = getComputedStyle(billboard);
-    const pad = (Number.parseFloat(style.paddingBottom) || 0) + (Number.parseFloat(style.borderBottomWidth) || 0);
-    const need = Math.ceil(hero.getBoundingClientRect().bottom - billboard.getBoundingClientRect().top + pad);
-    if (need > 0 && this.billboardMinPx() !== need) {
-      this.billboardMinPx.set(need);
-    }
-  }
-
-  /**
-   * Resize while expanded (as the homepage, HERO-DSC-005 holds until the next real collapse):
-   * keep the pin, re-measured from the hero's current top next frame (padding may change with
-   * the width); a width that stacks the billboard drops it (top-anchored by CSS).
+   * Resize while expanded (HERO-DSC-005): keep the billboard height and top pin while still
+   * wide bottom-anchored; drop the pin and height lock if the viewport stacks the billboard.
    */
   private readonly onResize = (): void => {
     if (!this.descExpanded() || this.resizeFrame) {
@@ -524,9 +515,15 @@ export class PlayableDetailShellComponent {
     }
     this.resizeFrame = requestAnimationFrame(() => {
       this.resizeFrame = 0;
-      if (this.descExpanded()) {
+      const billboard = this.billboardRef()?.nativeElement;
+      if (!this.descExpanded() || !billboard) {
+        return;
+      }
+      if (!this.isBottomAnchored(billboard)) {
+        this.heroTopLockPx.set(null);
+        this.billboardLockPx.set(null);
+      } else if (this.heroTopLockPx() == null) {
         this.heroTopLockPx.set(this.measureHeroTopLock());
-        this.fitExpandedBillboard();
       }
     });
   };

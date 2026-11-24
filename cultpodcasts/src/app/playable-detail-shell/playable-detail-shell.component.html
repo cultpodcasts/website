@@ -4,7 +4,7 @@
   <div class="episode-billboard" #billboard
     [class.is-desc-expanded]="descExpanded()"
     [style.align-items]="heroTopLockPx() != null ? 'flex-start' : null"
-    [style.min-height.px]="billboardMinPx()"
+    [style.height.px]="billboardLockPx()"
     [class.has-art-aspect]="backdropAspect() != null"
     [style.--hero-art-aspect]="backdropAspect() ?? null">
 
