@@ -713,18 +713,23 @@ test.describe("homepage hero description", () => {
 	});
 
 	/**
-	 * HERO-WID-001 (collapsed): on wide the hero is one band (min(88vh, 720px)) with the
-	 * card bottom-anchored at its flex-end; a tall card fits by dropping desc lines (5 → 2)
-	 * instead of growing the hero. HERO-DSC-002 (expanded) then keeps that band too.
+	 * Wide clamp is the shared 5-line rule (same as item pages). A tall 5-line
+	 * card may grow the hero slightly past the 720 band rather than dropping
+	 * lines. The card stays bottom-anchored and out of the search clearance.
+	 * HERO-DSC-002 (expanded) keeps the card top and grows down.
 	 */
 	const LONG_TITLE = "An invented episode title that runs long enough to wrap onto three full lines here";
 	const TWO_LINE_TITLE = "An invented episode title that wraps onto two lines";
 	const CHIPS = ["Invented subject one", "Invented subject two", "Invented subject three", "Invented four"];
 
-	function expectInBand(g: Geo, what: string): void {
-		expect(g.heroH, `${what}: hero not in its band`).toBeLessThanOrEqual(g.band + 1);
+	function expectAnchored(g: Geo, what: string): void {
 		expect(Math.abs(g.cardBottom - g.anchor), `${what}: card not bottom-anchored`).toBeLessThanOrEqual(1);
 		expect(g.cardTop, `${what}: card pushed into the search clearance`).toBeGreaterThanOrEqual(g.clearance - 2);
+	}
+
+	function expectInBand(g: Geo, what: string): void {
+		expect(g.heroH, `${what}: hero not in its band`).toBeLessThanOrEqual(g.band + 1);
+		expectAnchored(g, what);
 	}
 
 	for (const c of [
@@ -738,8 +743,14 @@ test.describe("homepage hero description", () => {
 			await page.goto("/");
 			await expect(toggle(page)).toBeVisible();
 			const collapsed = await geometry(page);
-			expectInBand(collapsed, "collapsed");
-			expect(await lineCount(page)).toBeGreaterThanOrEqual(2);
+			const tall = c.name.startsWith("tall card");
+			if (tall) {
+				expectAnchored(collapsed, "collapsed");
+				expect(await lineCount(page), "wide homepage must keep the shared 5-line clamp").toBe(5);
+			} else {
+				expectInBand(collapsed, "collapsed");
+				expect(await lineCount(page)).toBeGreaterThanOrEqual(2);
+			}
 			if (shots && c.shot) {
 				await page.screenshot({ path: `${shots}/${c.shot}-collapsed.png` });
 			}
@@ -747,12 +758,16 @@ test.describe("homepage hero description", () => {
 			await expect(desc(page)).toHaveClass(/is-expanded/);
 			await expectExpandedSized(page, collapsed, c.shot || undefined);
 			const expanded = await geometry(page);
-			// The card keeps its top (it fits) and grows down past the band, over the stats strip.
+			// The card keeps its top and grows down past the band, over the stats strip.
 			expect(Math.abs(expanded.cardTop - collapsed.cardTop)).toBeLessThanOrEqual(1);
 			expect(expanded.cardBottom).toBeGreaterThan(collapsed.cardBottom);
 			await toggle(page).click();
 			await expectCollapsedAgain(page, collapsed);
-			expectInBand(await geometry(page), "collapsed again");
+			if (tall) {
+				expectAnchored(await geometry(page), "collapsed again");
+			} else {
+				expectInBand(await geometry(page), "collapsed again");
+			}
 		});
 	}
 

@@ -26,7 +26,8 @@
     "dev": "ng serve --configuration development",
     "generate:svg-icons": "node ./tools/generate-svg-icon-literals.mjs",
     "deps:check": "node ./tools/check-dependency-updates.mjs",
-    "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs"
+    "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs",
+    "test:e2e:hero-desc-real": "playwright test -c playwright.catalogue.config.ts e2e/hero-desc-real-payloads.spec.ts"
   },
   "private": true,
   "engines": {

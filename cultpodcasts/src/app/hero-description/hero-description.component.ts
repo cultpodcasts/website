@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { HERO_DESC_GROW } from '../homepage-hero/hero-desc-layout';
+import { expandedDescLayout, HERO_DESC_GROW, type HeroDescExpandMetrics, measureCollapsedDesc } from '../homepage-hero/hero-desc-layout';
 import { clampOverflows, heroDescToggleIcon, heroDescToggleLabel } from './hero-description';
 
 /**
@@ -70,6 +70,12 @@ export class HeroDescriptionComponent {
   readonly expandedChange = output<boolean>();
   private lastEmitted = false;
   protected readonly overflows = signal(false);
+  /**
+   * Expanded description height in px so the chevron stays in the viewport
+   * (same maths as the homepage, plus a hard cap to the viewport foot).
+   */
+  protected readonly expandDescPx = signal<number | null>(null);
+  private expandMetrics: HeroDescExpandMetrics | null = null;
   /** Shown while overflowing, and always while expanded (it must stay to collapse again). */
   protected readonly showToggle = computed(() => this.clamped() && (this.overflows() || this.expanded()));
   protected readonly toggleLabel = computed(() => heroDescToggleLabel(this.expanded()));
@@ -79,6 +85,10 @@ export class HeroDescriptionComponent {
     // Resets come from the linkedSignal (new text / clamp mode): report them too.
     effect(() => {
       const expanded = this.expanded();
+      if (!expanded) {
+        this.expandMetrics = null;
+        this.expandDescPx.set(null);
+      }
       if (expanded !== this.lastEmitted) {
         this.emitExpanded(expanded);
       }
@@ -109,9 +119,16 @@ export class HeroDescriptionComponent {
           this.measure();
         }
       });
+      const onResize = (): void => {
+        if (!destroyed && this.expanded() && this.expandMetrics) {
+          this.applyExpandLayout();
+        }
+      };
+      window.addEventListener('resize', onResize);
       destroyRef.onDestroy(() => {
         destroyed = true;
         observer?.disconnect();
+        window.removeEventListener('resize', onResize);
       });
     }
   }
@@ -125,9 +142,53 @@ export class HeroDescriptionComponent {
       if (element) {
         element.scrollTop = 0;
       }
+      this.expandMetrics = null;
+      this.expandDescPx.set(null);
+    } else {
+      // Measure while still collapsed (same moment the host pins the hero top).
+      this.captureExpandMetrics();
     }
     this.emitExpanded(expanding);
     this.expanded.set(expanding);
+    if (expanding) {
+      this.applyExpandLayout();
+    }
+  }
+
+  private captureExpandMetrics(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const desc = this.descRef()?.nativeElement;
+    const card = desc?.closest<HTMLElement>('.episode-hero, .billboard__content');
+    const hero = desc?.closest<HTMLElement>('.episode-billboard, section.billboard');
+    if (!desc || !card || !hero) {
+      this.expandMetrics = null;
+      return;
+    }
+    this.expandMetrics = measureCollapsedDesc(hero, card, desc);
+  }
+
+  /**
+   * Size the expanded description so the chevron stays on screen (homepage
+   * HERO-DSC-002). A CSS-only 60vh cap lets the last lines and toggle sit
+   * below the fold once the billboard has grown.
+   */
+  private applyExpandLayout(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const desc = this.descRef()?.nativeElement;
+    const metrics = this.expandMetrics;
+    if (!desc || !metrics) {
+      return;
+    }
+    const viewportH = window.visualViewport?.height ?? window.innerHeight;
+    const layout = expandedDescLayout(metrics, viewportH, HERO_DESC_GROW);
+    const descTop = desc.getBoundingClientRect().top;
+    const maxInView = viewportH - HERO_DESC_GROW.footMarginPx - HERO_DESC_GROW.toggleBandPx - descTop;
+    const descPx = Math.floor(Math.max(metrics.descH, Math.min(layout.descPx, metrics.fullH, maxInView)));
+    this.expandDescPx.set(descPx);
   }
 
   private emitExpanded(expanded: boolean): void {

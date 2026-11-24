@@ -5,11 +5,21 @@
         font-weight: bold
         margin-bottom: 2px
 .resultdescription
+    // Same 5 / 4 (≤1280) / 3 (≤700) clamp as the homepage and item-page heroes.
+    --hero-desc-lines: 5
     padding-top: 5px
     display: -webkit-box
     -webkit-box-orient: vertical
-    -webkit-line-clamp: 5
+    -webkit-line-clamp: var(--hero-desc-lines)
     overflow: hidden
+
+@media screen and (max-width: 1280px)
+    .resultdescription
+        --hero-desc-lines: 4
+
+@media screen and (max-width: 700px)
+    .resultdescription
+        --hero-desc-lines: 3
 #resultsheading
     display: flex
     margin-bottom: 10px

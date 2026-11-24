@@ -1260,34 +1260,31 @@ describe('HomepageHeroComponent', () => {
       const content = () => root().querySelector('.billboard__content') as HTMLElement;
       const desc = () => root().querySelector('.billboard__desc') as HTMLElement;
 
-      it('drops collapsed lines (5 → 2) until a tall card fits the band', () => {
-        // rest = 600 - 110 = 490 (inline expander: no row); need(n) = 490 + 22n - 16: 5→584 4→562 3→540 2→518 ≤ 532.
+      it('does not drop lines on a tall card: clamp stays at the shared Sass 5', () => {
         fakeWide(true, 600);
-        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
       });
 
       it('keeps the Sass 5 lines when the card fits', () => {
-        // need(5) = 400 - 110 + 110 - 16 = 384 ≤ 532.
         fakeWide(true, 400);
         expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
       });
 
-      it('keeps the collapsed fit while expanded, so collapsing returns to the band', () => {
+      it('still has no line override while expanded or after collapse', () => {
         fakeWide(true, 600);
         toggle()!.click();
         fixture.detectChanges();
         component['measureDescOverflow']();
         fixture.detectChanges();
-        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
         toggle()!.click();
         fixture.detectChanges();
-        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
       });
 
-      it('re-fits on a slide change even when the description text is the same', () => {
+      it('does not introduce a line override on a slide change', () => {
         fakeWide(true, 600);
-        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('2');
-        // Same description, shorter card (e.g. a 1-line title): the fit must be recomputed.
+        expect(content().style.getPropertyValue('--hero-desc-lines')).toBe('');
         Object.defineProperty(content(), 'offsetHeight', { configurable: true, value: 400 });
         fixture.componentRef.setInput('slides', [ep('z', { episodeDescription: longDesc, episodeTitle: 'Short' })]);
         fixture.detectChanges();
