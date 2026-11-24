@@ -22,8 +22,13 @@
     display: flex
     align-items: flex-end
     box-sizing: border-box
+    // Clip Ken Burns / edge extend. When the description is expanded the shell
+    // raises min-height to contain the hero so overflow:hidden cannot clip the
+    // copy or let it paint over the artwork outside the ::before card.
     overflow: hidden
     background-color: #0b0b0b
+    &.is-desc-expanded
+        height: auto
     // Room for absolute toolbar over the media.
     padding: 56px 0 0
     --hero-art-aspect: 1.777
@@ -415,6 +420,10 @@
         background: rgba(11, 11, 11, 0.93)
         z-index: -1
         pointer-events: none
+    // Expanded: the card must hug the grown copy (toggle band included). A short
+    // bottom inset left the last lines / chevron painting over the artwork.
+    .episode-hero.is-desc-expanded::before
+        bottom: 8px
 
 @media (prefers-reduced-motion: reduce)
     .episode-backdrop.is-kenburns .episode-backdrop__motion

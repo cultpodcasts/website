@@ -2,6 +2,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
 import { HERO_DESC_GROW } from "../src/app/homepage-hero/hero-desc-layout";
 import { SearchEngine } from "../src/app/search-engine.enum";
+import { expectExpandedContained, itemHeroContainment } from "./hero-desc-containment";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
@@ -248,6 +249,36 @@ test.describe("item page hero description (#703)", () => {
 			await expect(desc(page)).toHaveClass(/is-clamped/);
 			await expect(toggle(page)).toHaveCount(0);
 			await expect(page.locator("app-hero-description .hero-desc__fade")).toHaveCount(0);
+		});
+
+		test(`${item.name} page: short description has no expander`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await openItem(page, item, SHORT_DESC);
+			await expect(desc(page)).toHaveText(SHORT_DESC);
+			await expect(toggle(page)).toHaveCount(0);
+		});
+
+		test(`${item.name} page: tall description shows the expander`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await openItem(page, item, VERY_LONG_DESC);
+			await expect(toggle(page)).toBeVisible();
+			await expect(toggle(page)).toHaveAttribute("aria-expanded", "false");
+			await expect(desc(page)).not.toHaveClass(/is-expanded/);
+		});
+
+		test(`${item.name} page: tall description expanded is contained in the card (no overflow over the art or following content)`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await openItem(page, item, VERY_LONG_DESC);
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			await expect(page.locator(".episode-billboard")).toHaveClass(/is-desc-expanded/);
+			await expectExpandedContained(page, itemHeroContainment);
+			const contained = await page.evaluate(() => {
+				const b = document.querySelector(".episode-billboard").getBoundingClientRect();
+				const h = document.querySelector(".episode-hero").getBoundingClientRect();
+				return h.bottom <= b.bottom + 1 && h.top >= b.top - 1;
+			});
+			expect(contained, "expanded hero overflows the billboard").toBe(true);
 		});
 
 		test(`${item.name}: an Azure hit stays unclamped with no expander (#702)`, async ({ page }) => {

@@ -2,7 +2,9 @@
   [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
 
   <div class="episode-billboard" #billboard
+    [class.is-desc-expanded]="descExpanded()"
     [style.align-items]="heroTopLockPx() != null ? 'flex-start' : null"
+    [style.min-height.px]="billboardMinPx()"
     [class.has-art-aspect]="backdropAspect() != null"
     [style.--hero-art-aspect]="backdropAspect() ?? null">
 
@@ -50,7 +52,7 @@
       }
     </div>
 
-    <div class="episode-hero" #hero [style.margin-top.px]="heroTopLockPx()">
+    <div class="episode-hero" #hero [class.is-desc-expanded]="descExpanded()" [style.margin-top.px]="heroTopLockPx()">
       <p class="hero-show">
         <!-- HERO-KND-001: news / TV / film only. Omit empty podcast host (eats flex gap). -->
         @if (showsKindBadge()) {

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
+import { expectExpandedContained, homepageContainment } from "./hero-desc-containment";
 
 /**
  * Homepage hero description: per-layout clamp, the icon expander, and
@@ -952,4 +953,33 @@ test.describe("homepage hero description", () => {
 			await expectCollapsedAgain(page, collapsed);
 		});
 	}
+});
+
+test.describe("homepage hero description expander (containment)", () => {
+	test("homepage hero: short description has no expander", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, SHORT_DESC);
+		await page.goto("/");
+		await expect(desc(page)).toBeVisible();
+		await expect(desc(page)).toHaveText(SHORT_DESC);
+		await expect(toggle(page)).toHaveCount(0);
+	});
+
+	test("homepage hero: tall description shows the expander", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, VERY_LONG_DESC);
+		await page.goto("/");
+		await expect(toggle(page)).toBeVisible();
+		await expect(toggle(page)).toHaveAttribute("aria-expanded", "false");
+		await expect(desc(page)).not.toHaveClass(/is-expanded/);
+	});
+
+	test("homepage hero: tall description expanded is contained in the card (no overflow over the art or following content)", async ({ page }) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await fakeApi(page, VERY_LONG_DESC);
+		await page.goto("/");
+		await toggle(page).click();
+		await expect(desc(page)).toHaveClass(/is-expanded/);
+		await expectExpandedContained(page, homepageContainment);
+	});
 });

@@ -45,6 +45,12 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
     expect(slice).not.toMatch(/overflow:\s*hidden/);
   });
 
+  it('grows the billboard with an expanded description so overflow:hidden cannot clip the card', () => {
+    expect(shellSass).toMatch(/\.episode-billboard\n[\s\S]*?overflow:\s*hidden/);
+    expect(shellSass).toMatch(/&\.is-desc-expanded\n\s+height:\s*auto/);
+    expect(shellSass).toMatch(/\.episode-hero\.is-desc-expanded::before\n\s+bottom:\s*8px/);
+  });
+
   it('#703: leaves the D1 clamp to app-hero-description (no six-line --d1 rule in the shell)', () => {
     expect(shellSass).not.toMatch(/\.episode-hero__desc--d1/);
     expect(shellSass).not.toMatch(/line-clamp:\s*6/);
@@ -124,7 +130,7 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
   });
 
   describe('HERO-DSC-005 hero top pin', () => {
-    type Shell = { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null };
+    type Shell = { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null; billboardMinPx(): number | null };
     afterEach(() => vi.restoreAllMocks());
 
     /** happy-dom applies no component Sass or layout: fake the billboard's CSS anchor and the boxes. */
@@ -136,10 +142,10 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
       const real = window.getComputedStyle.bind(window);
       vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, pseudo?: string | null) =>
         el === billboard
-          ? ({ alignItems, paddingTop: '56px', borderTopWidth: '0px' } as CSSStyleDeclaration)
+          ? ({ alignItems, paddingTop: '56px', borderTopWidth: '0px', paddingBottom: '0px', borderBottomWidth: '0px' } as CSSStyleDeclaration)
           : real(el, pseudo));
-      vi.spyOn(billboard, 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
-      vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({ top: 400 } as DOMRect);
+      vi.spyOn(billboard, 'getBoundingClientRect').mockReturnValue({ top: 100, bottom: 820 } as DOMRect);
+      vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({ top: 400, bottom: 980 } as DOMRect);
       return { fixture, billboard, hero, shell: fixture.componentInstance as unknown as Shell };
     }
 
@@ -151,10 +157,12 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
       expect(shell.heroTopLockPx()).toBe(244);
       expect(billboard.style.alignItems).toBe('flex-start');
       expect(hero.style.marginTop).toBe('244px');
+      expect(shell.billboardMinPx()).toBe(880);
 
       shell.onDescExpandedChange(false);
       await fixture.whenStable();
       expect(shell.heroTopLockPx()).toBeNull();
+      expect(shell.billboardMinPx()).toBeNull();
       expect(billboard.style.alignItems).toBe('');
       expect(hero.style.marginTop).toBe('');
     });

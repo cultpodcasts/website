@@ -32,7 +32,7 @@ import { QueueButtonComponent } from '../queue-button/queue-button.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, ElementRef, inject, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input, output, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, ChangeDetectionStrategy, signal, computed, effect, afterRenderEffect, PLATFORM_ID, input, output, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
@@ -176,7 +176,14 @@ export class PlayableDetailShellComponent {
    * the hero's top stays where it was and the hero grows down. Null: normal CSS layout.
    */
   protected readonly heroTopLockPx = signal<number | null>(null);
-  private descExpanded = false;
+  /** True while the description is expanded (class + billboard growth). */
+  protected readonly descExpanded = signal(false);
+  /**
+   * Expanded, the billboard's min-height grows to contain the hero (title, 60vh scroller,
+   * chips, actions). Otherwise `.episode-billboard { overflow: hidden }` clips the copy or
+   * lets it paint over the artwork outside `.episode-hero::before`.
+   */
+  protected readonly billboardMinPx = signal<number | null>(null);
   private resizeFrame = 0;
   private backdropAspectToken = 0;
   private motionQuery: MediaQueryList | undefined;
@@ -194,6 +201,13 @@ export class PlayableDetailShellComponent {
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
       window.addEventListener('resize', this.onResize, { passive: true });
+      afterRenderEffect(() => {
+        this.descExpanded();
+        this.heroTopLockPx();
+        this.billboardRef();
+        this.heroRef();
+        this.fitExpandedBillboard();
+      });
       this.destroyRef.onDestroy(() => {
         window.removeEventListener('resize', this.onResize);
         if (this.resizeFrame) {
@@ -444,8 +458,11 @@ export class PlayableDetailShellComponent {
    * billboard: pin the hero at its collapsed top (flex-start + margin-top) so it grows down, not up.
    */
   protected onDescExpandedChange(expanded: boolean): void {
-    this.descExpanded = expanded;
+    this.descExpanded.set(expanded);
     this.heroTopLockPx.set(expanded ? this.measureHeroTopLock() : null);
+    if (!expanded) {
+      this.billboardMinPx.set(null);
+    }
   }
 
   /**
@@ -473,18 +490,43 @@ export class PlayableDetailShellComponent {
   }
 
   /**
+   * Grow the billboard so the expanded hero (and its ::before card) fully contains the
+   * description, instead of clipping or painting over the artwork.
+   */
+  private fitExpandedBillboard(): void {
+    if (!isPlatformBrowser(this.platformId) || !this.descExpanded()) {
+      if (this.billboardMinPx() != null) {
+        this.billboardMinPx.set(null);
+      }
+      return;
+    }
+    const billboard = this.billboardRef()?.nativeElement;
+    const hero = this.heroRef()?.nativeElement;
+    if (!billboard || !hero) {
+      return;
+    }
+    const style = getComputedStyle(billboard);
+    const pad = (Number.parseFloat(style.paddingBottom) || 0) + (Number.parseFloat(style.borderBottomWidth) || 0);
+    const need = Math.ceil(hero.getBoundingClientRect().bottom - billboard.getBoundingClientRect().top + pad);
+    if (need > 0 && this.billboardMinPx() !== need) {
+      this.billboardMinPx.set(need);
+    }
+  }
+
+  /**
    * Resize while expanded (as the homepage, HERO-DSC-005 holds until the next real collapse):
    * keep the pin, re-measured from the hero's current top next frame (padding may change with
    * the width); a width that stacks the billboard drops it (top-anchored by CSS).
    */
   private readonly onResize = (): void => {
-    if (!this.descExpanded || this.resizeFrame) {
+    if (!this.descExpanded() || this.resizeFrame) {
       return;
     }
     this.resizeFrame = requestAnimationFrame(() => {
       this.resizeFrame = 0;
-      if (this.descExpanded) {
+      if (this.descExpanded()) {
         this.heroTopLockPx.set(this.measureHeroTopLock());
+        this.fitExpandedBillboard();
       }
     });
   };
