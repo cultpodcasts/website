@@ -13,7 +13,7 @@ homepage hero's clamp and expander ([homepage-hero.md](homepage-hero.md), HERO-D
 | Collapse | Back to the clamp with the first line at the top (scroll reset). A new item (text change) collapses. |
 | Accessibility | `aria-expanded`, `aria-controls` (the text's id), labels "Expand description" / "Collapse description". Expanded text is focusable for keyboard scrolling. |
 | Azure (#702) | Azure and missing-engine hits keep the 180-character card text, unclamped, with no expander. |
-| D1 cap | `D1_SEARCH_DESCRIPTION_SIZE` (5,000 characters) still clips the long tail before it reaches the DOM. |
+| No D1 character cap | Like the homepage hero, D1 descriptions are never cut by characters: `formatSearchDescription` returns the full trimmed text for D1 (a 50k-character description is all there when expanded and scrolls inside). Only the line clamp limits the collapsed view. |
 
 Labels, icons and the overflow rule are shared with the homepage hero (`hero-description.ts`:
 `HeroDescToggleLabel`, `HeroDescToggleIcon`, `clampOverflows`).

@@ -123,8 +123,9 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
     expect(host.querySelector('.hero-desc__text')?.classList.contains('is-clamped')).toBe(true);
   });
 
-  it('passes the D1 description through the D1 character cap, not the Azure 180', async () => {
-    const long = 'word '.repeat(400).trim();
+  it('#703: passes a D1 description through in full (no character cap, like the homepage), not the Azure 180', async () => {
+    const long = 'word '.repeat(12_000).trim();
+    expect(long.length).toBeGreaterThan(50_000);
     const result = { ...playable(SearchEngine.D1), episodeDescription: long };
     const host = await renderDesc(result);
     expect(host.querySelector('.hero-desc__text')?.textContent).toBe(long);

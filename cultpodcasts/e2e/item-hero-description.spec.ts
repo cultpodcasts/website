@@ -11,6 +11,7 @@ import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
  *   expanded shows the full text, scrolls inside past 60vh, keeps the same wrap (HERO-DSC-006) and
  *   moves the chevron into its own band under the text (HERO-DSC-003); collapse restores the clamp.
  * - No expander when the text fits; Azure hits stay unclamped with no expander (#702).
+ * - No character cap on D1 text (like the homepage): a 50k-character description is all there.
  * Made-up shows, titles and descriptions only. Set HERO_SCREENS_DIR to save screenshots.
  */
 
@@ -27,6 +28,10 @@ const MEDIUM_DESC = Array.from({ length: 6 }, (_, i) =>
 	`Synthetic item sentence ${i + 1} describes an invented episode at some considerable length.`
 ).join(" ");
 const SHORT_DESC = "Short synthetic description.";
+/** 50k+ characters (production D1 max is ~51k): never cut by characters (#703), all of it scrolls inside. */
+const HUGE_DESC = Array.from({ length: 560 }, (_, i) =>
+	`Invented paragraph ${i + 1}: synthetic notes at https://news.example.test/invented/story-${i + 1}?ref=item and more.`
+).join(" ");
 
 const kinds = [
 	{ name: "podcast episode", kind: "Episode", id: "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd", title: "Pilot", parent: "Show",
@@ -182,6 +187,32 @@ test.describe("item page hero description (#703)", () => {
 				expect(Math.abs(again.clientHeight - collapsed.clientHeight), "collapsed height drifted").toBeLessThanOrEqual(1);
 			});
 		}
+
+		test(`${item.name}: a 50k-character D1 description is all there when expanded (no character cap) and scrolls inside to its last word`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			expect(HUGE_DESC.length).toBeGreaterThan(50_000);
+			await openItem(page, item, HUGE_DESC);
+			await expect(desc(page)).toHaveText(HUGE_DESC);
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			const expanded = await box(page);
+			expect(expanded.clientHeight, "expanded past the 60vh cap").toBeLessThanOrEqual(expanded.vh * 0.6 + 1);
+			expect(expanded.scrollHeight, "50k text should scroll inside").toBeGreaterThan(expanded.clientHeight * 10);
+			// Scroll to the end: the last sentence is reachable inside the box, the page did not grow by 50k of text.
+			const end = await desc(page).evaluate((d) => {
+				d.scrollTo(0, d.scrollHeight);
+				const r = d.getBoundingClientRect();
+				const range = document.createRange();
+				const node = d.firstChild!;
+				range.setStart(node, node.textContent!.length - 1);
+				range.setEnd(node, node.textContent!.length);
+				const last = range.getBoundingClientRect();
+				return { atEnd: Math.abs(d.scrollTop + d.clientHeight - d.scrollHeight) <= 1, lastInside: last.bottom <= r.bottom + 1 && last.top >= r.top - 1, pageH: document.documentElement.scrollHeight };
+			});
+			expect(end.atEnd, "scroller did not reach the end").toBe(true);
+			expect(end.lastInside, "last character not visible at the end of the scroller").toBe(true);
+			expect(end.pageH, "the page grew with the text instead of scrolling inside").toBeLessThan(expanded.scrollHeight);
+		});
 
 		test(`${item.name}: medium text expands in full (no inner scroll)`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });

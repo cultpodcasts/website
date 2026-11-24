@@ -1,4 +1,5 @@
-import { formatSearchDescription, parseSearchEngine, SEARCH_DESCRIPTION_SIZE, D1_SEARCH_DESCRIPTION_SIZE } from './search-description';
+import * as searchDescription from './search-description';
+import { formatSearchDescription, parseSearchEngine, SEARCH_DESCRIPTION_SIZE } from './search-description';
 import { SearchEngine } from './search-engine.enum';
 
 describe('formatSearchDescription', () => {
@@ -45,18 +46,25 @@ describe('formatSearchDescription', () => {
     expect(formatSearchDescription(text, null)).toBe(`${'y'.repeat(SEARCH_DESCRIPTION_SIZE)}\u2026`);
   });
 
-  it('does not clamp a description between the Azure and D1 caps when the engine is d1', () => {
+  it('does not cut a description past the Azure cap when the engine is d1', () => {
     const text = 'A reasonably long D1 description that would be cut at the Azure cap. '.repeat(3).trimEnd();
     expect(text.length).toBeGreaterThan(SEARCH_DESCRIPTION_SIZE);
-    expect(text.length).toBeLessThanOrEqual(D1_SEARCH_DESCRIPTION_SIZE);
     expect(formatSearchDescription(text, SearchEngine.D1)).toBe(text);
   });
 
-  it('caps D1 copy at the D1 size then mid-word ellipsis', () => {
-    const prefix = 'x'.repeat(D1_SEARCH_DESCRIPTION_SIZE - 9);
-    const full = `${prefix} Salt Lake City extra copy that exceeds the D1 cap`;
-    expect(full.length).toBeGreaterThan(D1_SEARCH_DESCRIPTION_SIZE);
-    expect(formatSearchDescription(full, SearchEngine.D1)).toBe(`${prefix} Salt\u2026`);
+  it('#703: never caps D1 copy, like the homepage hero (50k+ characters pass through in full)', () => {
+    const full = Array.from({ length: 900 }, (_, i) => `Synthetic sentence ${i + 1} with a mid-word Salt Lake City tail.`).join(' ');
+    expect(full.length).toBeGreaterThan(50_000);
+    expect(formatSearchDescription(full, SearchEngine.D1)).toBe(full);
+  });
+
+  it('D1: trims surrounding whitespace only (homepage featuredDesc), keeping ASCII periods as sent', () => {
+    expect(formatSearchDescription('  Full D1 text...  \n', SearchEngine.D1)).toBe('Full D1 text...');
+  });
+
+  it('#703: there is no D1 character cap to configure', () => {
+    expect('D1_SEARCH_DESCRIPTION_SIZE' in searchDescription).toBe(false);
+    expect('searchDescriptionSize' in searchDescription).toBe(false);
   });
 });
 
