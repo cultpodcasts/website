@@ -10,7 +10,7 @@
     <p class="selected" role="status">Film: {{ film.name ?? film.id }}. Move to film adds this {{ item }} to it.</p>
     } @else if (severalExact()) {
     <p class="merge-note" role="status">
-        Several films are called "{{ nameText() }}". Pick one. Move to film adds this {{ item }} to the film you pick.
+        Several films are called "{{ nameToCreate() }}". Pick one. Move to film adds this {{ item }} to the film you pick.
     </p>
     } @else {
     <p class="warning">
@@ -21,7 +21,7 @@
     <p class="error recent">This {{ item }} was released in the last few days, so the indexer may add it back to the {{ source }}. Check the {{ source }} after the next index and remove any copy.</p>
     }
     @if (canMergeIntoExisting && searched()) {
-    <p class="selected" role="status">No film is called "{{ nameText() }}". Move to film creates one.</p>
+    <p class="selected" role="status">No film is called "{{ nameToCreate() }}". Move to film creates one.</p>
     }
     }
     @if (data.hasUnsavedChanges) {

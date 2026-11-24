@@ -34,6 +34,12 @@ export const RECENT_RELEASE_DAYS = 3;
 
 const MAX_IDENTITY_ROUNDS = 4;
 
+/** Non-exact catalogue rows to show. Exact-name rows are not capped (`SuggestOptions.allExactNames`). */
+const FILM_SUGGEST_LIMIT = 10;
+
+const CATALOGUE_UNAVAILABLE =
+  'The film catalogue could not be loaded. Paste a film id to add this episode to an existing film.';
+
 export function releasedWithinDays(release: Date | string | null | undefined, days: number, now: Date): boolean {
   if (!release) {
     return false;
@@ -59,10 +65,12 @@ export function filmsNamed<T extends { label: string; value: string }>(query: st
  * Confirms and sends the curator "Move to film" command for one podcast episode, or for one news report when
  * `newsReportId` is set (RPP #1368: same body, identity prompt and outcome, POST /newsreport/{id}/film).
  *
- * For a podcast episode there is one name field (RPP #1525). It searches catalogue films by title. One film with
- * that exact name is selected, and Move to film merges into it (`{ filmId }`, RPP #1522). Several films with that
- * name must be picked. No match creates a new film. A pasted film id is a merge. News reports only create a film:
- * merging into an existing one is not supported for them.
+ * For a podcast episode there is one name field (RPP #1525). It searches catalogue films by the name a new film
+ * would be given (the typed title, or the episode title when the field is blank or unchanged). Move to film stays
+ * disabled until that lookup has settled. One film with that exact name is selected, and Move to film merges into
+ * it (`{ filmId }`, RPP #1522). Several films with that name must be picked. No match creates a new film. A pasted
+ * film id is a merge and can be sent without waiting. If the catalogue cannot be loaded, create stays disabled and
+ * a film id can still be pasted. News reports only create a film: merging into an existing one is not supported.
  */
 @Component({
   selector: 'app-move-episode-to-film-dialog',
@@ -96,6 +104,10 @@ export class MoveEpisodeToFilmDialogComponent {
   readonly severalExact = signal(false);
   /** A title search has finished (so "no film has this name" is not shown before the answer). */
   readonly searched = signal(false);
+  /** The lookup for the current text has finished. A pasted film id counts as settled. */
+  private readonly lookupSettled = signal(false);
+  /** The suggestions corpus failed to load, so an empty result is not "no such film". */
+  private readonly suggestionsUnavailable = signal(false);
   private readonly injector = inject(Injector);
   private suggestionsService: SearchSuggestionsService | null = null;
   private queryVersion = 0;
@@ -138,39 +150,55 @@ export class MoveEpisodeToFilmDialogComponent {
     const text = value.trim();
     this.error.set(null);
     this.severalExact.set(false);
+    this.searched.set(false);
     if (GUID.test(text)) {
       this.queryVersion++;
+      this.suggestionsUnavailable.set(false);
       this.existingFilm.set({ id: text.toLowerCase(), name: null });
       this.films.set([]);
-      this.searched.set(false);
+      this.lookupSettled.set(true);
       return;
     }
     this.existingFilm.set(null);
+    this.suggestionsUnavailable.set(false);
+    this.lookupSettled.set(false);
     const version = ++this.queryVersion;
-    if (text.length < 2) {
+    const lookup = this.createdName(text);
+    if (lookup.length === 0) {
       this.films.set([]);
-      this.searched.set(false);
+      this.lookupSettled.set(true);
       return;
     }
     let found: Suggestion[] = [];
+    let unavailable = false;
     try {
-      found = await this.suggestions.suggest(text, 10, 'film');
+      found = await this.suggestions.suggest(lookup, FILM_SUGGEST_LIMIT, 'film', { allExactNames: true });
+      unavailable = this.suggestions.corpusLoadFailed();
     } catch (e) {
       console.error('Film suggestions failed; a film id can still be pasted.', e);
+      unavailable = true;
     }
     if (version !== this.queryVersion) {
+      return;
+    }
+    if (unavailable) {
+      this.films.set([]);
+      this.suggestionsUnavailable.set(true);
+      this.lookupSettled.set(true);
+      this.error.set(CATALOGUE_UNAVAILABLE);
       return;
     }
     const withId = found.filter(film => !!film.itemId);
     this.films.set(withId);
     this.searched.set(true);
-    const exact = filmsNamed(text, withId);
+    const exact = filmsNamed(lookup, withId);
     if (exact.length === 1) {
       const film = exact[0];
       this.existingFilm.set({ id: film.itemId!, name: film.value });
     } else {
       this.severalExact.set(exact.length > 1);
     }
+    this.lookupSettled.set(true);
   }
 
   onFilmSelected(event: MatAutocompleteSelectedEvent): void {
@@ -198,6 +226,9 @@ export class MoveEpisodeToFilmDialogComponent {
     if (this.severalExact()) {
       return false;
     }
+    if (this.canMergeIntoExisting && (!this.lookupSettled() || this.suggestionsUnavailable())) {
+      return false;
+    }
     return !this.hasInvalidTitle();
   }
 
@@ -210,7 +241,19 @@ export class MoveEpisodeToFilmDialogComponent {
   /** The title to send: null keeps the episode title on the server. */
   requestTitle(): string | null {
     const value = this.nameText();
-    return value.length === 0 || value === (this.data.episodeTitle ?? '').trim() ? null : value;
+    const episode = (this.data.episodeTitle ?? '').trim();
+    return value.length === 0 || value === episode ? null : value;
+  }
+
+  /** Name a new film is given: the typed override, or the episode title when the field is blank or unchanged. */
+  nameToCreate(): string {
+    return this.createdName(this.nameText());
+  }
+
+  private createdName(typed: string): string {
+    const value = typed.trim();
+    const episode = (this.data.episodeTitle ?? '').trim();
+    return value.length === 0 || value === episode ? episode : value;
   }
 
   /** Released inside the Indexer's look-back, so the next index may re-add it to the podcast (RPP #1068). */
