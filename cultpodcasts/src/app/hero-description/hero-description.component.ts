@@ -9,6 +9,7 @@ import {
   inject,
   input,
   linkedSignal,
+  output,
   PLATFORM_ID,
   signal,
   viewChild,
@@ -54,6 +55,11 @@ export class HeroDescriptionComponent {
     source: () => ({ text: this.text(), clamped: this.clamped() }),
     computation: () => false,
   });
+  /**
+   * Emits the new state on a user toggle, before it renders, so the host can measure the
+   * collapsed layout first (the item page keeps the hero's top in place, HERO-DSC-005).
+   */
+  readonly expandedChange = output<boolean>();
   protected readonly overflows = signal(false);
   /** Shown while overflowing, and always while expanded (it must stay to collapse again). */
   protected readonly showToggle = computed(() => this.clamped() && (this.overflows() || this.expanded()));
@@ -103,6 +109,7 @@ export class HeroDescriptionComponent {
         element.scrollTop = 0;
       }
     }
+    this.expandedChange.emit(expanding);
     this.expanded.set(expanding);
   }
 

@@ -123,6 +123,17 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
     expect(host.querySelector('.hero-desc__text')?.classList.contains('is-clamped')).toBe(true);
   });
 
+  it('HERO-DSC-005: collapsing (or a server render) never pins the hero top', async () => {
+    const fixture = await renderShell(playable(SearchEngine.D1), true);
+    const shell = fixture.componentInstance as unknown as { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null };
+    shell.onDescExpandedChange(true);
+    expect(shell.heroTopLockPx()).toBeNull();
+    shell.onDescExpandedChange(false);
+    expect(shell.heroTopLockPx()).toBeNull();
+    const hero = (fixture.nativeElement as HTMLElement).querySelector('.episode-hero') as HTMLElement;
+    expect(hero.style.marginTop).toBe('');
+  });
+
   it('#703: passes a D1 description through in full (no character cap, like the homepage), not the Azure 180', async () => {
     const long = 'word '.repeat(12_000).trim();
     expect(long.length).toBeGreaterThan(50_000);

@@ -10,6 +10,7 @@ homepage hero's clamp and expander ([homepage-hero.md](homepage-hero.md), HERO-D
 | Clamp | 5 lines wide, 4 at <=1280px, 3 at <=700px (same as the homepage hero). |
 | Expander | Only when the text overflows the clamp. Round 32px `expand_more` button on the last visible line, bottom-right of the text column, over a fade. |
 | Expanded | Clamp off; the full text shows up to 60vh and the rest scrolls inside. Same column width, so nothing re-wraps. The `expand_less` button sits in a 40px band under the text and never covers a line. |
+| Hero top (HERO-DSC-005) | On the wide, bottom-anchored billboard the hero's top stays put when expanding and the hero grows down (the shell pins it with `align-items: flex-start` + `margin-top` measured before the expanded state renders, via `(expandedChange)`). Stacked layouts are top-anchored already. Collapse, a new item or a resize drops the pin. |
 | Collapse | Back to the clamp with the first line at the top (scroll reset). A new item (text change) collapses. |
 | Accessibility | `aria-expanded`, `aria-controls` (the text's id), labels "Expand description" / "Collapse description". Expanded text is focusable for keyboard scrolling. |
 | Azure (#702) | Azure and missing-engine hits keep the 180-character card text, unclamped, with no expander. |

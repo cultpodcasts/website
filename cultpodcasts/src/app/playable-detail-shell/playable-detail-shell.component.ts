@@ -32,7 +32,7 @@ import { QueueButtonComponent } from '../queue-button/queue-button.component';
 import { canPlayEpisode, playActionLabel, startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { languageFlagBadgeForEpisode } from '../language-flag';
-import { Component, DestroyRef, inject, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input, output } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, ChangeDetectionStrategy, signal, computed, effect, PLATFORM_ID, input, output, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { catalogueParentLink } from '../catalogue-links';
@@ -170,6 +170,13 @@ export class PlayableDetailShellComponent {
   private lastRelatedKey: string | undefined;
   private lastAkaPlayableId: string | undefined;
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly billboardRef = viewChild<ElementRef<HTMLElement>>('billboard');
+  private readonly heroRef = viewChild<ElementRef<HTMLElement>>('hero');
+  /**
+   * Expanded description on the bottom-anchored wide billboard (HERO-DSC-005, as on the homepage):
+   * the hero's top stays where it was and the hero grows down. Null: normal CSS layout.
+   */
+  protected readonly heroTopLockPx = signal<number | null>(null);
   private backdropAspectToken = 0;
   private motionQuery: MediaQueryList | undefined;
   private gpuQuery: MediaQueryList | undefined;
@@ -185,7 +192,9 @@ export class PlayableDetailShellComponent {
       this.syncMotionFlags();
       this.motionQuery.addEventListener('change', this.onMotionQueryChange);
       this.gpuQuery.addEventListener('change', this.onMotionQueryChange);
+      window.addEventListener('resize', this.onResize, { passive: true });
       this.destroyRef.onDestroy(() => {
+        window.removeEventListener('resize', this.onResize);
         this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
         this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
       });
@@ -202,6 +211,8 @@ export class PlayableDetailShellComponent {
       }
       this.lastAkaPlayableId = id;
       this.alsoKnownAsExpanded.set(false);
+      // A new item renders its description collapsed (app-hero-description resets on new text).
+      this.heroTopLockPx.set(null);
     });
 
     effect(() => {
@@ -425,4 +436,34 @@ export class PlayableDetailShellComponent {
         { duration: 10000, data: { postEpisodeDialogResponse: result, podcastId: result?.response?.podcastId, episodeId } });
     });
   }
+
+  /**
+   * Called before the description's new state renders. Expanding on the bottom-anchored wide
+   * billboard: pin the hero at its collapsed top (flex-start + margin-top) so it grows down, not up.
+   */
+  protected onDescExpandedChange(expanded: boolean): void {
+    if (!expanded) {
+      this.heroTopLockPx.set(null);
+      return;
+    }
+    const billboard = this.billboardRef()?.nativeElement;
+    const hero = this.heroRef()?.nativeElement;
+    if (!isPlatformBrowser(this.platformId) || !billboard || !hero) {
+      return;
+    }
+    const style = getComputedStyle(billboard);
+    if (style.alignItems !== 'flex-end') {
+      // Stacked layouts are top-anchored already.
+      return;
+    }
+    const top = hero.getBoundingClientRect().top - billboard.getBoundingClientRect().top;
+    this.heroTopLockPx.set(Math.max(0, top - (Number.parseFloat(style.paddingTop) || 0) - (Number.parseFloat(style.borderTopWidth) || 0)));
+  }
+
+  /** The lock is measured for one width; a resize drops it back to the CSS layout. */
+  private readonly onResize = (): void => {
+    if (this.heroTopLockPx() != null) {
+      this.heroTopLockPx.set(null);
+    }
+  };
 }

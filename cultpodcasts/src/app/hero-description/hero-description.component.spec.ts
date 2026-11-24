@@ -137,6 +137,25 @@ describe('HeroDescriptionComponent', () => {
       expect(fixture.componentInstance.expanded()).toBe(false);
     });
 
+    it('emits expandedChange before the new state renders (host measures the collapsed layout)', async () => {
+      await fakeOverflow(true);
+      const seen: { value: boolean; expandedClass: boolean }[] = [];
+      fixture.componentInstance.expandedChange.subscribe((value) =>
+        seen.push({ value, expandedClass: desc().classList.contains('is-expanded') }));
+      toggle()!.click();
+      await fixture.whenStable();
+      toggle()!.click();
+      await fixture.whenStable();
+      expect(seen).toEqual([
+        { value: true, expandedClass: false },
+        { value: false, expandedClass: true },
+      ]);
+    });
+
+    it('HERO-DSC-003: the expanded chevron sits inside its 40px band', () => {
+      expect(descSass).toMatch(/\.hero-desc__wrap\.is-expanded \.hero-desc__toggle\n\s+bottom:\s*4px/);
+    });
+
     it('does not bubble the toggle click to the hero', async () => {
       await fakeOverflow(true);
       let bubbled = false;
