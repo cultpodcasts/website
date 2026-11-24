@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   DestroyRef,
   ElementRef,
   inject,
@@ -16,15 +17,15 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { HERO_DESC_GROW } from '../homepage-hero/hero-desc-layout';
 import { clampOverflows, heroDescToggleIcon, heroDescToggleLabel } from './hero-description';
-
-let nextId = 0;
 
 /**
  * Item page hero description with the homepage hero's clamp and expander (HERO-DSC-001/003):
  * clamped to 5 lines wide, 4 at <=1280px and 3 at <=700px; when the text overflows, a round
  * chevron sits on the last visible line over a fade. Expanded, the clamp is off, the text shows
- * in full up to 60vh (the rest scrolls inside) and the chevron moves to its own band under it.
+ * in full up to HERO_DESC_GROW.maxVh (60vh; the rest scrolls inside) and the chevron moves to
+ * its own HERO_DESC_GROW.toggleBandPx band under it.
  *
  * `clamped` false renders plain text with no clamp and no expander (Azure hits, #702).
  * Contract: docs/item-hero-description.md.
@@ -38,6 +39,9 @@ let nextId = 0;
   host: {
     '[class.is-clamped]': 'clamped()',
     '[class.is-expanded]': 'expanded()',
+    // Same band and cap as the homepage expander (HERO_DESC_GROW); the Sass reads these.
+    '[style.--hero-desc-band]': 'toggleBandCss',
+    '[style.--hero-desc-max-h]': 'maxHeightCss',
   },
 })
 export class HeroDescriptionComponent {
@@ -47,7 +51,10 @@ export class HeroDescriptionComponent {
   /** Apply the clamp + expander. False: plain text, never a toggle. */
   readonly clamped = input(true);
 
-  protected readonly descId = `hero-desc-${++nextId}`;
+  /** Id of the text (`aria-controls`). Fixed per page, so SSR and hydration render the same id. */
+  readonly descId = input('item-hero-desc');
+  protected readonly toggleBandCss = `${HERO_DESC_GROW.toggleBandPx}px`;
+  protected readonly maxHeightCss = `${HERO_DESC_GROW.maxVh * 100}vh`;
   private readonly descRef = viewChild<ElementRef<HTMLElement>>('desc');
 
   /** Back to collapsed whenever the text (another item) or the clamp mode changes. */
@@ -56,10 +63,12 @@ export class HeroDescriptionComponent {
     computation: () => false,
   });
   /**
-   * Emits the new state on a user toggle, before it renders, so the host can measure the
-   * collapsed layout first (the item page keeps the hero's top in place, HERO-DSC-005).
+   * Every expanded-state change. A user toggle emits before the new state renders, so the host
+   * can measure the collapsed layout first (the item page keeps the hero's top, HERO-DSC-005);
+   * a reset (new text or clamp mode) emits `false` once it has happened.
    */
   readonly expandedChange = output<boolean>();
+  private lastEmitted = false;
   protected readonly overflows = signal(false);
   /** Shown while overflowing, and always while expanded (it must stay to collapse again). */
   protected readonly showToggle = computed(() => this.clamped() && (this.overflows() || this.expanded()));
@@ -67,6 +76,14 @@ export class HeroDescriptionComponent {
   protected readonly toggleIcon = computed(() => heroDescToggleIcon(this.expanded()));
 
   constructor() {
+    // Resets come from the linkedSignal (new text / clamp mode): report them too.
+    effect(() => {
+      const expanded = this.expanded();
+      if (expanded !== this.lastEmitted) {
+        this.emitExpanded(expanded);
+      }
+    });
+
     afterRenderEffect(() => {
       this.text();
       this.clamped();
@@ -109,8 +126,13 @@ export class HeroDescriptionComponent {
         element.scrollTop = 0;
       }
     }
-    this.expandedChange.emit(expanding);
+    this.emitExpanded(expanding);
     this.expanded.set(expanding);
+  }
+
+  private emitExpanded(expanded: boolean): void {
+    this.lastEmitted = expanded;
+    this.expandedChange.emit(expanded);
   }
 
   /** Browser only: does the collapsed text overflow its clamp? Kept as-is while expanded. */

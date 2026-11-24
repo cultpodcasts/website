@@ -1,5 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { GuidService } from "../src/app/guid.service";
+import { HERO_DESC_GROW } from "../src/app/homepage-hero/hero-desc-layout";
+import { SearchEngine } from "../src/app/search-engine.enum";
 import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
 
 /**
@@ -51,18 +53,14 @@ const layouts = [
 	{ name: "mobile", width: 390, height: 844, lines: 3 },
 ] as const;
 
-/** Chevron band under the expanded description (HERO-DSC-003), as on the homepage. */
-const TOGGLE_BAND = 40;
-
-enum Engine {
-	Azure = "azure",
-	D1 = "d1",
-}
+/** Chevron band and expanded cap: the homepage's own constants (HERO-DSC-002 / 003). */
+const TOGGLE_BAND = HERO_DESC_GROW.toggleBandPx;
+const MAX_VH = HERO_DESC_GROW.maxVh;
 
 const json = (route: Route, body: unknown) =>
 	route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
 
-async function fakeSearch(page: Page, item: Kind, description: string, engine: Engine): Promise<void> {
+async function fakeSearch(page: Page, item: Kind, description: string, engine: SearchEngine): Promise<void> {
 	const doc = {
 		id: item.id,
 		title: item.title,
@@ -93,7 +91,7 @@ async function fakeSearch(page: Page, item: Kind, description: string, engine: E
 const desc = (page: Page) => page.locator("app-hero-description .hero-desc__text");
 const toggle = (page: Page) => page.locator("app-hero-description button.hero-desc__toggle");
 
-async function openItem(page: Page, item: Kind, description: string, engine = Engine.D1): Promise<void> {
+async function openItem(page: Page, item: Kind, description: string, engine = SearchEngine.D1): Promise<void> {
 	await fakeSearch(page, item, description, engine);
 	await page.goto(item.path(item.id));
 	await expect(page.locator("h1.episode-hero__title")).toHaveText(item.title);
@@ -164,7 +162,7 @@ test.describe("item page hero description (#703)", () => {
 				const expanded = await box(page);
 				expect(Math.abs(expanded.top - collapsed.top), "description top moved").toBeLessThanOrEqual(1);
 				expect(expanded.clientHeight, "expanded did not grow").toBeGreaterThan(collapsed.clientHeight + expanded.lineH);
-				expect(expanded.clientHeight, "expanded past the 60vh cap").toBeLessThanOrEqual(expanded.vh * 0.6 + 1);
+				expect(expanded.clientHeight, "expanded past the maxVh cap").toBeLessThanOrEqual(expanded.vh * MAX_VH + 1);
 				expect(expanded.scrollHeight, "very long text should scroll inside").toBeGreaterThan(expanded.clientHeight);
 				// HERO-DSC-006: same column, so expanding never re-wraps.
 				expect(Math.abs(expanded.width - collapsed.width), "text column width changed").toBeLessThanOrEqual(1);
@@ -196,7 +194,7 @@ test.describe("item page hero description (#703)", () => {
 			await toggle(page).click();
 			await expect(desc(page)).toHaveClass(/is-expanded/);
 			const expanded = await box(page);
-			expect(expanded.clientHeight, "expanded past the 60vh cap").toBeLessThanOrEqual(expanded.vh * 0.6 + 1);
+			expect(expanded.clientHeight, "expanded past the maxVh cap").toBeLessThanOrEqual(expanded.vh * MAX_VH + 1);
 			expect(expanded.scrollHeight, "50k text should scroll inside").toBeGreaterThan(expanded.clientHeight * 10);
 			// Scroll to the end: the last sentence is reachable inside the box, the page did not grow by 50k of text.
 			const end = await desc(page).evaluate((d) => {
@@ -214,6 +212,25 @@ test.describe("item page hero description (#703)", () => {
 			expect(end.pageH, "the page grew with the text instead of scrolling inside").toBeLessThan(expanded.scrollHeight);
 		});
 
+		test(`${item.name}: resizing while expanded keeps it expanded and the hero top pinned (HERO-DSC-005)`, async ({ page }) => {
+			await page.setViewportSize({ width: 1440, height: 900 });
+			await openItem(page, item, VERY_LONG_DESC);
+			const heroTop = () => page.evaluate(() => {
+				const b = document.querySelector(".episode-billboard")!.getBoundingClientRect();
+				return document.querySelector(".episode-hero")!.getBoundingClientRect().top - b.top;
+			});
+			const collapsedTop = await heroTop();
+			await toggle(page).click();
+			await expect(desc(page)).toHaveClass(/is-expanded/);
+			expect(Math.abs((await heroTop()) - collapsedTop), "expand moved the hero top").toBeLessThanOrEqual(1);
+			for (const width of [1600, 1366]) {
+				await page.setViewportSize({ width, height: 900 });
+				await expect(desc(page)).toHaveClass(/is-expanded/);
+				await expect(toggle(page)).toHaveAttribute("aria-expanded", "true");
+				await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+				expect(Math.abs((await heroTop()) - collapsedTop), `hero top moved after resizing to ${width}`).toBeLessThanOrEqual(1);
+			}
+		});
 		test(`${item.name}: medium text expands in full (no inner scroll)`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await openItem(page, item, MEDIUM_DESC);
@@ -235,7 +252,7 @@ test.describe("item page hero description (#703)", () => {
 
 		test(`${item.name}: an Azure hit stays unclamped with no expander (#702)`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });
-			await openItem(page, item, VERY_LONG_DESC, Engine.Azure);
+			await openItem(page, item, VERY_LONG_DESC, SearchEngine.Azure);
 			await expect(desc(page)).not.toHaveClass(/is-clamped/);
 			await expect(toggle(page)).toHaveCount(0);
 			const text = (await desc(page).textContent()) ?? "";

@@ -25,8 +25,9 @@
     max-width: 100%
     font-size: var(--hero-desc-font)
     // Expanded (HERO-DSC-003): the chevron gets its own band under the scrolling text.
+    // Band height: HERO_DESC_GROW.toggleBandPx (host binding; 40px fallback).
     &.is-expanded
-        padding-bottom: 40px
+        padding-bottom: var(--hero-desc-band, 40px)
 
 .hero-desc__text
     margin: 0
@@ -50,7 +51,8 @@
         display: block
         -webkit-line-clamp: unset
         line-clamp: none
-        max-height: 60vh
+        // Cap: HERO_DESC_GROW.maxVh (host binding; 60vh fallback).
+        max-height: var(--hero-desc-max-h, 60vh)
         overflow-x: hidden
         overflow-y: auto
         overscroll-behavior: contain
@@ -84,6 +86,6 @@
         width: 20px
         height: 20px
 
-// Expanded (HERO-DSC-003): centred in its 40px band under the text, inside the band.
+// Expanded (HERO-DSC-003): centred in its band under the text, inside the band.
 .hero-desc__wrap.is-expanded .hero-desc__toggle
-    bottom: 4px
+    bottom: calc((var(--hero-desc-band, 40px) - 32px) / 2)

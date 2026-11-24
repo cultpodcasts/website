@@ -6,6 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { HeroDescriptionComponent } from './hero-description.component';
 import { HeroDescToggleIcon, HeroDescToggleLabel } from './hero-description';
+import { HERO_DESC_GROW } from '../homepage-hero/hero-desc-layout';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const descSass = readFileSync(join(here, 'hero-description.component.sass'), 'utf8').replaceAll('\r\n', '\n');
@@ -34,9 +35,9 @@ describe('HeroDescriptionComponent Sass contracts (homepage parity, #703)', () =
 
   it('HERO-DSC-001 / 003: inline chevron at the bottom-right; expanded gets a 40px band and scrolls inside past 60vh', () => {
     expect(descSass).toMatch(/\.hero-desc__wrap\n\s+position:\s*relative/);
-    expect(descSass).toMatch(/\.hero-desc__wrap\n[\s\S]*?&\.is-expanded\n\s+padding-bottom:\s*40px/);
+    expect(descSass).toMatch(/\.hero-desc__wrap\n[\s\S]*?&\.is-expanded\n\s+padding-bottom:\s*var\(--hero-desc-band, 40px\)/);
     expect(descSass).toMatch(/\.hero-desc__toggle\n\s+position:\s*absolute\n\s+right:\s*0\n\s+bottom:/);
-    expect(descSass).toMatch(/&\.is-clamped\.is-expanded\n[\s\S]*?max-height:\s*60vh[\s\S]*?overflow-y:\s*auto/);
+    expect(descSass).toMatch(/&\.is-clamped\.is-expanded\n[\s\S]*?max-height:\s*var\(--hero-desc-max-h, 60vh\)[\s\S]*?overflow-y:\s*auto/);
   });
 });
 
@@ -92,7 +93,8 @@ describe('HeroDescriptionComponent', () => {
       expect(button.getAttribute('aria-label')).toBe(HeroDescToggleLabel.Expand);
       expect(button.getAttribute('aria-expanded')).toBe('false');
       expect(button.getAttribute('aria-controls')).toBe(desc().id);
-      expect(desc().id).toMatch(/^hero-desc-\d+$/);
+      // Fixed per page (SSR-stable), overridable by the host.
+      expect(desc().id).toBe('item-hero-desc');
       expect(button.querySelector('mat-icon')?.textContent?.trim()).toBe(HeroDescToggleIcon.Expand);
       expect(desc().hasAttribute('tabindex')).toBe(false);
     });
@@ -152,8 +154,30 @@ describe('HeroDescriptionComponent', () => {
       ]);
     });
 
-    it('HERO-DSC-003: the expanded chevron sits inside its 40px band', () => {
-      expect(descSass).toMatch(/\.hero-desc__wrap\.is-expanded \.hero-desc__toggle\n\s+bottom:\s*4px/);
+    it('HERO-DSC-003: band and cap come from HERO_DESC_GROW (same as the homepage); the expanded chevron is centred in the band', () => {
+      expect(root().style.getPropertyValue('--hero-desc-band')).toBe(`${HERO_DESC_GROW.toggleBandPx}px`);
+      expect(root().style.getPropertyValue('--hero-desc-max-h')).toBe(`${HERO_DESC_GROW.maxVh * 100}vh`);
+      expect(descSass).toMatch(/\.hero-desc__wrap\.is-expanded \.hero-desc__toggle\n\s+bottom:\s*calc\(\(var\(--hero-desc-band, 40px\) - 32px\) \/ 2\)/);
+    });
+
+    it('emits false when a new text resets an expanded description (no stale host state)', async () => {
+      await fakeOverflow(true);
+      const seen: boolean[] = [];
+      fixture.componentInstance.expandedChange.subscribe((value) => seen.push(value));
+      toggle()!.click();
+      await fixture.whenStable();
+      fixture.componentRef.setInput('text', `${LONG} Edited.`);
+      await fixture.whenStable();
+      expect(seen).toEqual([true, false]);
+      expect(fixture.componentInstance.expanded()).toBe(false);
+    });
+
+    it('does not emit on a text change while collapsed', async () => {
+      const seen: boolean[] = [];
+      fixture.componentInstance.expandedChange.subscribe((value) => seen.push(value));
+      fixture.componentRef.setInput('text', `${LONG} Edited.`);
+      await fixture.whenStable();
+      expect(seen).toEqual([]);
     });
 
     it('does not bubble the toggle click to the hero', async () => {
@@ -171,6 +195,21 @@ describe('HeroDescriptionComponent', () => {
     expect(desc().classList.contains('is-clamped')).toBe(false);
     expect(root().classList.contains('is-clamped')).toBe(false);
     expect(toggle()).toBeNull();
+  });
+
+  it('takes a host descId for the text id and aria-controls', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [HeroDescriptionComponent],
+      providers: [provideZonelessChangeDetection(), { provide: PLATFORM_ID, useValue: 'browser' }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(HeroDescriptionComponent);
+    fixture.componentRef.setInput('text', LONG);
+    fixture.componentRef.setInput('descId', 'custom-desc');
+    await fixture.whenStable();
+    await fakeOverflow(true);
+    expect(desc().id).toBe('custom-desc');
+    expect(toggle()!.getAttribute('aria-controls')).toBe('custom-desc');
   });
 
   it('server render: no expander until the browser measures', async () => {

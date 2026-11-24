@@ -119,7 +119,6 @@ export class PlayableDetailShellComponent {
   });
   /** News / TV / film only — empty podcast host must not sit in the series flex row. */
   protected readonly showsKindBadge = computed(() => contentKindIcon(this.playable()?.contentKind) != null);
-  protected readonly SearchEngine = SearchEngine;
   /** D1 hits carry the full description: homepage clamp + expander. Azure / missing engine: unchanged (#702). */
   protected readonly descriptionClamped = computed(() => this.playable().searchEngine === SearchEngine.D1);
   protected readonly displayCatalogName = displayCatalogName;
@@ -177,6 +176,8 @@ export class PlayableDetailShellComponent {
    * the hero's top stays where it was and the hero grows down. Null: normal CSS layout.
    */
   protected readonly heroTopLockPx = signal<number | null>(null);
+  private descExpanded = false;
+  private resizeFrame = 0;
   private backdropAspectToken = 0;
   private motionQuery: MediaQueryList | undefined;
   private gpuQuery: MediaQueryList | undefined;
@@ -195,6 +196,9 @@ export class PlayableDetailShellComponent {
       window.addEventListener('resize', this.onResize, { passive: true });
       this.destroyRef.onDestroy(() => {
         window.removeEventListener('resize', this.onResize);
+        if (this.resizeFrame) {
+          cancelAnimationFrame(this.resizeFrame);
+        }
         this.motionQuery?.removeEventListener('change', this.onMotionQueryChange);
         this.gpuQuery?.removeEventListener('change', this.onMotionQueryChange);
       });
@@ -211,8 +215,6 @@ export class PlayableDetailShellComponent {
       }
       this.lastAkaPlayableId = id;
       this.alsoKnownAsExpanded.set(false);
-      // A new item renders its description collapsed (app-hero-description resets on new text).
-      this.heroTopLockPx.set(null);
     });
 
     effect(() => {
@@ -442,28 +444,48 @@ export class PlayableDetailShellComponent {
    * billboard: pin the hero at its collapsed top (flex-start + margin-top) so it grows down, not up.
    */
   protected onDescExpandedChange(expanded: boolean): void {
-    if (!expanded) {
-      this.heroTopLockPx.set(null);
-      return;
-    }
+    this.descExpanded = expanded;
+    this.heroTopLockPx.set(expanded ? this.measureHeroTopLock() : null);
+  }
+
+  /**
+   * The hero's current top inside the billboard's content box, when the billboard is
+   * bottom-anchored (its own CSS `align-items: flex-end`, ignoring the pin). Null otherwise
+   * (stacked layouts are top-anchored already) or off the browser.
+   */
+  private measureHeroTopLock(): number | null {
     const billboard = this.billboardRef()?.nativeElement;
     const hero = this.heroRef()?.nativeElement;
     if (!isPlatformBrowser(this.platformId) || !billboard || !hero) {
-      return;
+      return null;
     }
+    const pinned = billboard.style.alignItems;
+    billboard.style.alignItems = '';
     const style = getComputedStyle(billboard);
-    if (style.alignItems !== 'flex-end') {
-      // Stacked layouts are top-anchored already.
-      return;
+    const anchored = style.alignItems === 'flex-end';
+    billboard.style.alignItems = pinned;
+    if (!anchored) {
+      return null;
     }
+    const px = (value: string) => Number.parseFloat(value) || 0;
     const top = hero.getBoundingClientRect().top - billboard.getBoundingClientRect().top;
-    this.heroTopLockPx.set(Math.max(0, top - (Number.parseFloat(style.paddingTop) || 0) - (Number.parseFloat(style.borderTopWidth) || 0)));
+    return Math.max(0, top - px(style.paddingTop) - px(style.borderTopWidth));
   }
 
-  /** The lock is measured for one width; a resize drops it back to the CSS layout. */
+  /**
+   * Resize while expanded (as the homepage, HERO-DSC-005 holds until the next real collapse):
+   * keep the pin, re-measured from the hero's current top next frame (padding may change with
+   * the width); a width that stacks the billboard drops it (top-anchored by CSS).
+   */
   private readonly onResize = (): void => {
-    if (this.heroTopLockPx() != null) {
-      this.heroTopLockPx.set(null);
+    if (!this.descExpanded || this.resizeFrame) {
+      return;
     }
+    this.resizeFrame = requestAnimationFrame(() => {
+      this.resizeFrame = 0;
+      if (this.descExpanded) {
+        this.heroTopLockPx.set(this.measureHeroTopLock());
+      }
+    });
   };
 }

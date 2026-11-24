@@ -7,7 +7,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { ODataService } from '../odata.service';
 import { PlayerService } from '../player.service';
@@ -51,14 +51,14 @@ describe('PlayableDetailShellComponent Sass contracts', () => {
   });
 });
 
-async function renderShell(playable: SearchResult, withDescription = false) {
+async function renderShell(playable: SearchResult, withDescription = false, platform: 'server' | 'browser' = 'server') {
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [PlayableDetailShellComponent],
     providers: [
       provideZonelessChangeDetection(),
       provideRouter([]),
-      { provide: PLATFORM_ID, useValue: 'server' },
+      { provide: PLATFORM_ID, useValue: platform },
       { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } },
       { provide: AuthServiceWrapper, useValue: { roles: of([] as string[]) } },
       { provide: MatSnackBar, useValue: { open: () => undefined } },
@@ -123,15 +123,56 @@ describe('PlayableDetailShellComponent description clamp (#702 / #703)', () => {
     expect(host.querySelector('.hero-desc__text')?.classList.contains('is-clamped')).toBe(true);
   });
 
-  it('HERO-DSC-005: collapsing (or a server render) never pins the hero top', async () => {
-    const fixture = await renderShell(playable(SearchEngine.D1), true);
-    const shell = fixture.componentInstance as unknown as { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null };
-    shell.onDescExpandedChange(true);
-    expect(shell.heroTopLockPx()).toBeNull();
-    shell.onDescExpandedChange(false);
-    expect(shell.heroTopLockPx()).toBeNull();
-    const hero = (fixture.nativeElement as HTMLElement).querySelector('.episode-hero') as HTMLElement;
-    expect(hero.style.marginTop).toBe('');
+  describe('HERO-DSC-005 hero top pin', () => {
+    type Shell = { onDescExpandedChange(v: boolean): void; heroTopLockPx(): number | null };
+    afterEach(() => vi.restoreAllMocks());
+
+    /** happy-dom applies no component Sass or layout: fake the billboard's CSS anchor and the boxes. */
+    async function renderPinnable(alignItems: string) {
+      const fixture = await renderShell(playable(SearchEngine.D1), true, 'browser');
+      const root = fixture.nativeElement as HTMLElement;
+      const billboard = root.querySelector('.episode-billboard') as HTMLElement;
+      const hero = root.querySelector('.episode-hero') as HTMLElement;
+      const real = window.getComputedStyle.bind(window);
+      vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, pseudo?: string | null) =>
+        el === billboard
+          ? ({ alignItems, paddingTop: '56px', borderTopWidth: '0px' } as CSSStyleDeclaration)
+          : real(el, pseudo));
+      vi.spyOn(billboard, 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+      vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue({ top: 400 } as DOMRect);
+      return { fixture, billboard, hero, shell: fixture.componentInstance as unknown as Shell };
+    }
+
+    it('expanding on the bottom-anchored billboard pins the hero at its collapsed top (flex-start + margin-top)', async () => {
+      const { fixture, billboard, hero, shell } = await renderPinnable('flex-end');
+      shell.onDescExpandedChange(true);
+      await fixture.whenStable();
+      // 400 - 100 (billboard top) - 56 (padding-top).
+      expect(shell.heroTopLockPx()).toBe(244);
+      expect(billboard.style.alignItems).toBe('flex-start');
+      expect(hero.style.marginTop).toBe('244px');
+
+      shell.onDescExpandedChange(false);
+      await fixture.whenStable();
+      expect(shell.heroTopLockPx()).toBeNull();
+      expect(billboard.style.alignItems).toBe('');
+      expect(hero.style.marginTop).toBe('');
+    });
+
+    it('stacked (top-anchored) billboards are never pinned', async () => {
+      const { fixture, hero, shell } = await renderPinnable('stretch');
+      shell.onDescExpandedChange(true);
+      await fixture.whenStable();
+      expect(shell.heroTopLockPx()).toBeNull();
+      expect(hero.style.marginTop).toBe('');
+    });
+
+    it('a server render never pins', async () => {
+      const fixture = await renderShell(playable(SearchEngine.D1), true);
+      const shell = fixture.componentInstance as unknown as Shell;
+      shell.onDescExpandedChange(true);
+      expect(shell.heroTopLockPx()).toBeNull();
+    });
   });
 
   it('#703: passes a D1 description through in full (no character cap, like the homepage), not the Azure 180', async () => {

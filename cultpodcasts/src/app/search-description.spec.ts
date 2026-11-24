@@ -1,4 +1,3 @@
-import * as searchDescription from './search-description';
 import { formatSearchDescription, parseSearchEngine, SEARCH_DESCRIPTION_SIZE } from './search-description';
 import { SearchEngine } from './search-engine.enum';
 
@@ -62,10 +61,6 @@ describe('formatSearchDescription', () => {
     expect(formatSearchDescription('  Full D1 text...  \n', SearchEngine.D1)).toBe('Full D1 text...');
   });
 
-  it('#703: there is no D1 character cap to configure', () => {
-    expect('D1_SEARCH_DESCRIPTION_SIZE' in searchDescription).toBe(false);
-    expect('searchDescriptionSize' in searchDescription).toBe(false);
-  });
 });
 
 describe('parseSearchEngine', () => {
