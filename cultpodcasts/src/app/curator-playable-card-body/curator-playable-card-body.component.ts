@@ -34,9 +34,9 @@ export class CuratorPlayableCardBodyComponent {
   readonly loadingBluesky = input(false);
   readonly statusActionLoading = input(false);
 
-  /** Wire `PersonDto` guests mapped to the UI `Person` (person-dto.util). */
   /** Same tooltip text discovery review uses: the term and field that triggered each subject. */
   protected readonly subjectReasons = computed(() => subjectMatchReasons(this.episode().matches));
+  /** Wire `PersonDto` guests mapped to the UI `Person` (person-dto.util). */
   protected readonly guestPeople = computed(() => peopleFromDto(this.episode().guestPeople));
   protected readonly guestSuggestions = computed(() => personMatchesFromDto(this.episode().guestSuggestions));
 
