@@ -32,7 +32,7 @@ import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-resp
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
 import { presentCatalogueIndexResult } from '../catalogue-index-from-dialog';
 import { CatalogueIndexDialogResult } from '../catalogue-index-response.interface';
-import { hubParentLabel } from '../catalogue-hub';
+import { hubParentLabel, hubPathCommands } from '../catalogue-hub';
 import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dialog.component';
 import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
 import { notifyPodcastIndexDialogResult } from '../podcast-index-from-dialog';
@@ -678,7 +678,7 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
     );
     dialogRef.afterClosed().subscribe(result => {
       presentCatalogueIndexResult(this.snackBar, result, hubParentLabel('news'), name, () => {
-        void this.router.navigate(['/news', name]);
+        void this.router.navigate(hubPathCommands('news', name));
       });
     });
   }

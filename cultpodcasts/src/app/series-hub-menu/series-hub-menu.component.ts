@@ -199,5 +199,3 @@ export class SeriesHubMenuComponent {
     });
   }
 }
-
-export { notIndexableMessage } from "../catalogue-index-from-dialog";
