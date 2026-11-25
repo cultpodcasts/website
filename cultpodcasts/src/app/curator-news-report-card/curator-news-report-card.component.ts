@@ -45,6 +45,8 @@ export class CuratorNewsReportCardComponent {
   readonly promoted = input(false);
   readonly titleAsLink = input(true);
   readonly showDeleteEpisode = input(false);
+  /** Review list only. Outgoing and the public item page leave this off. */
+  readonly showIndexNewsOrg = input(false);
   readonly authRoles = input<readonly string[]>([]);
   readonly updating = input(false);
   readonly loadingSubjectName = input<string | null>(null);
@@ -59,6 +61,8 @@ export class CuratorNewsReportCardComponent {
   readonly post = output<ApiEpisode>();
   /** Opens the parent (news outlet / TV show) editor, like Edit Podcast on a podcast episode card. */
   readonly editParent = output<EditCatalogueParentDialogData>();
+  /** News organisation name to index (POST /newsorganisation/index/{name}). */
+  readonly indexNewsOrg = output<string>();
   readonly deleteEpisode = output<{ episodeId: string }>();
   readonly promoteToggle = output<ApiEpisode>();
   readonly removeSubject = output<{ episode: ApiEpisode; subject: string }>();

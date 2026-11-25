@@ -217,6 +217,29 @@ test.describe("news report / TV episode curator edit", () => {
 		await expect(page.getByText("News report updated")).toBeVisible();
 	});
 
+	test("the review list Index News Org posts the outlet index route and Review opens the hub", async ({ page }) => {
+		const row = {
+			id: reportId, title: "Bulletin", displayTitle: "Bulletin", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			explicit: false, release: "2026-01-02T00:00:00Z", duration: "00:06:30", subjects: ["Politics"],
+			contentKind: "NewsReport", podcastName: "Desk", parentId: outletId, parentName: "Desk"
+		};
+		await page.route(`**/episode/${reportId}`, (route) => json(route, row));
+		let indexPosts = 0;
+		await page.route("**/newsorganisation/index/Desk", async (route) => {
+			expect(route.request().method()).toBe("POST");
+			indexPosts++;
+			await json(route, { indexedItemIds: ["a", "b"], searchIndexerState: "Executed" });
+		});
+		await page.goto(`/episodes/${encodeURIComponent(JSON.stringify([reportId]))}`);
+		await page.getByRole("button", { name: "News report actions" }).click();
+		await page.getByRole("menuitem", { name: "Index News Org" }).click();
+		const snack = page.locator("mat-snack-bar-container");
+		await expect(snack).toContainText("News Outlet indexed. 2 items updated.");
+		expect(indexPosts).toBe(1);
+		await snack.getByRole("button", { name: "Review" }).click();
+		await expect(page).toHaveURL(/\/news\/Desk$/);
+	});
+
 	test("the news report page Edit opens the news report dialog, not the podcast editor", async ({ page }) => {
 		const sink: { body?: unknown } = {};
 		await fakeLookups(page);

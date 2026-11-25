@@ -30,6 +30,9 @@ import { CuratorPlayableCardComponent } from '../curator-playable-card/curator-p
 import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
 import { EpisodePublishResponseSnackbarComponent } from '../episode-publish-response-snackbar/episode-publish-response-snackbar.component';
 import { PostEpisodeDialogResponse } from '../post-episode-dialog-response.interface';
+import { presentCatalogueIndexResult } from '../catalogue-index-from-dialog';
+import { CatalogueIndexDialogResult } from '../catalogue-index-response.interface';
+import { hubParentLabel, hubPathCommands } from '../catalogue-hub';
 import { IndexDialogComponent, IndexDialogData } from '../index-dialog/index-dialog.component';
 import { PodcastIndexDialogResult } from '../index-podcast-response.interface';
 import { notifyPodcastIndexDialogResult } from '../podcast-index-from-dialog';
@@ -664,6 +667,19 @@ export class EpisodesApiComponent implements AfterViewInit, OnChanges {
       } else if (result?.noChange) {
         let snackBarRef = this.snackBar.open("No change", "Ok", { duration: 3000 });
       }
+    });
+  }
+
+  indexNewsOrg(name: string) {
+    const data: IndexDialogData = { kind: 'catalogueParent', hub: 'news', name };
+    const dialogRef = this.dialog.open<IndexDialogComponent, IndexDialogData, CatalogueIndexDialogResult>(
+      IndexDialogComponent,
+      { disableClose: true, autoFocus: true, data }
+    );
+    dialogRef.afterClosed().subscribe(result => {
+      presentCatalogueIndexResult(this.snackBar, result, hubParentLabel('news'), name, () => {
+        void this.router.navigate(hubPathCommands('news', name));
+      });
     });
   }
 
