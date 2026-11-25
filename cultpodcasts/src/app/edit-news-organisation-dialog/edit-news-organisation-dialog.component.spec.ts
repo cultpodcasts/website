@@ -29,12 +29,6 @@ import { EditNewsOrganisationDialogComponent } from './edit-news-organisation-di
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
   model(): NewsOrganisationEditModel | null;
-  defaultSubjects(): string[];
-  filteredIgnoredSubjects(): string[];
-  languages(): Record<string, string>;
-  includeTitleRegexPresets(): { name: string; pattern: string }[];
-  applyIncludeTitleRegexPreset(pattern: string): void;
-  applyTitleRegexPreset(pattern: string): void;
   selectedTabIndex: { (): number; set(index: number): void };
   save(): Promise<void>; notFound(): boolean; saveError(): boolean; saveErrorMessage(): string; appleIdInvalid(): boolean; minimumDurationInvalid(): boolean; publicationDelayInvalid(): boolean };
 
