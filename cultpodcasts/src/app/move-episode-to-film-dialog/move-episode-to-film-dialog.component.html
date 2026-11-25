@@ -1,7 +1,18 @@
 <h2 mat-dialog-title>Move to film</h2>
 
 <mat-dialog-content>
-    @if (mode() === 'new') {
+    @if (existingFilm(); as film) {
+    <p class="merge-note">
+        This {{ item }} is another copy of a film already in the catalogue. Its links the film doesn't have
+        are added to the film, its subjects are added, and the {{ item }} is removed. Old {{ item }} links redirect to the film.
+        The film's title and details stay as they are.
+    </p>
+    <p class="selected" role="status">Film: {{ film.name ?? film.id }}. Move to film adds this {{ item }} to it.</p>
+    } @else if (severalExact()) {
+    <p class="merge-note" role="status">
+        Several films are called "{{ nameToCreate() }}". Pick one. Move to film adds this {{ item }} to the film you pick.
+    </p>
+    } @else {
     <p class="warning">
         This removes the {{ item }} from its {{ source }} and makes it a film. The film keeps the {{ item }} id,
         links, subjects and posted state. The {{ source }} stays. Old {{ item }} links redirect to the film.
@@ -9,46 +20,34 @@
     @if (isRecentlyReleased()) {
     <p class="error recent">This {{ item }} was released in the last few days, so the indexer may add it back to the {{ source }}. Check the {{ source }} after the next index and remove any copy.</p>
     }
+    @if (canMergeIntoExisting && searched()) {
+    <p class="selected" role="status">No film is called "{{ nameToCreate() }}". Move to film creates one.</p>
+    }
     }
     @if (data.hasUnsavedChanges) {
     <p class="error unsaved">Your unsaved changes in the {{ item }} editor will be discarded. Submit them first to keep them.</p>
     }
     @if (canMergeIntoExisting) {
-    <mat-button-toggle-group class="mode" [value]="mode()" (change)="setMode($event.value)" [disabled]="isSending()"
-        aria-label="New or existing film">
-        <mat-button-toggle value="new">New film</mat-button-toggle>
-        <mat-button-toggle value="existing">Existing film</mat-button-toggle>
-    </mat-button-toggle-group>
-    }
-    @if (mode() === 'existing') {
-    <p class="merge-note">
-        Use this when the {{ item }} is another copy of a film already in the catalogue. Its links the film doesn't have
-        are added to the film, its subjects are added, and the {{ item }} is removed. Old {{ item }} links redirect to the film.
-        The film's title and details stay as they are.
-    </p>
     <mat-form-field class="full-width">
-        <mat-label>Existing film</mat-label>
-        <input type="text" matInput class="existing-film" [formControl]="filmQuery" [matAutocomplete]="filmAuto"
-            [readonly]="isSending()" autocomplete="off" aria-label="Existing film">
+        <mat-label>Film</mat-label>
+        <input type="text" matInput class="film-name" [formControl]="title" [matAutocomplete]="filmAuto"
+            [readonly]="isSending()" autocomplete="off" aria-label="Film">
         <mat-autocomplete #filmAuto="matAutocomplete" [displayWith]="displayFilm" (optionSelected)="onFilmSelected($event)">
             @for (film of films(); track film.itemId) {
             <mat-option [value]="film">{{ film.label }}</mat-option>
             }
         </mat-autocomplete>
-        <mat-hint>Type a film name to pick it, or paste a film id</mat-hint>
+        <mat-hint>Type a film name to find it, or paste a film id</mat-hint>
     </mat-form-field>
-    @if (existingFilm(); as film) {
-    <p class="selected" role="status">Film: {{ film.name ?? film.id }}</p>
-    }
     } @else {
     <mat-form-field class="full-width">
         <mat-label>Film title</mat-label>
         <input type="text" matInput [formControl]="title" [readonly]="isSending()">
         <mat-hint>Defaults to the {{ item }} title</mat-hint>
     </mat-form-field>
-    @if (hasInvalidTitle()) {
-    <p class="error">A film title cannot contain '/'</p>
     }
+    @if (hasInvalidTitle() && !existingFilm()) {
+    <p class="error">A film title cannot contain '/'</p>
     }
     @if (error()) {
     <p class="error">{{error()}}</p>
@@ -60,5 +59,5 @@
 
 <mat-dialog-actions>
     <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
-    <button type="button" matButton="filled" [disabled]="!canSend()" (click)="move()">{{ mode() === 'existing' ? 'Merge into film' : 'Move to film' }}</button>
+    <button type="button" matButton="filled" [disabled]="!canSend()" (click)="move()">Move to film</button>
 </mat-dialog-actions>

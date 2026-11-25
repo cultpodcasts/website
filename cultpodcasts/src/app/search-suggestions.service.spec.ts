@@ -80,6 +80,54 @@ describe('SearchSuggestionsService', () => {
         expect(results.some(r => r.type === 'podcast' && r.value === 'Behind the Bastards')).toBe(true);
     });
 
+    it('returns an empty list when the corpus fails to load and records the failure', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const pending = service.suggest('sci');
+        httpMock.expectOne(suggestionsUrl).flush('fail', { status: 503, statusText: 'Unavailable' });
+
+        await expect(pending).resolves.toEqual([]);
+        expect(service.corpusLoadFailed()).toBe(true);
+
+        const again = service.suggest('sci');
+        httpMock.expectOne(suggestionsUrl).flush(corpus);
+        const results = await again;
+        expect(results.some(row => row.value === 'Scientology')).toBe(true);
+        expect(service.corpusLoadFailed()).toBe(false);
+        errorSpy.mockRestore();
+    });
+
+    it('keeps every exact name when asked, including past the limit', async () => {
+        const ids = Array.from({ length: 11 }, (_, index) =>
+            `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`);
+        const entries = [
+            ...ids.map(id => ({
+                type: 'film' as const,
+                canonical: 'Shared Title',
+                searchText: 'shared title',
+                id
+            })),
+            {
+                type: 'film' as const,
+                canonical: 'Shared Title Extra',
+                searchText: 'shared title extra',
+                id: '00000000-0000-4000-8000-ffffffffffff'
+            }
+        ];
+        const cappedPending = service.suggest('shared title', 10, 'film');
+        httpMock.expectOne(suggestionsUrl).flush({
+            generatedAtUtc: new Date('2026-11-01T00:00:00Z'),
+            entries
+        });
+        const capped = await cappedPending;
+        expect(capped.filter(row => row.value === 'Shared Title')).toHaveLength(10);
+
+        const all = await service.suggest('shared title', 10, 'film', { allExactNames: true });
+        const exact = all.filter(row => row.value === 'Shared Title');
+        expect(exact).toHaveLength(11);
+        expect(exact.map(row => row.itemId).sort()).toEqual([...ids].sort());
+        expect(all.some(row => row.value === 'Shared Title Extra')).toBe(true);
+    });
+
     it('limits matches to the requested type when a type filter is passed', async () => {
         const pending = service.suggest('in', 8, 'podcast');
         flushCorpus();

@@ -12,6 +12,15 @@ import { environment } from './../environments/environment';
 
 const DEFAULT_LIMIT = 8;
 
+/** `suggest` options. The search bar omits these and keeps an empty list when the corpus fails to load. */
+export interface SuggestOptions {
+  /**
+   * Keep every row whose name equals the query, past `limit`.
+   * Other matches stay capped at `limit` (move-to-film: eleven films can share one name).
+   */
+  allExactNames?: boolean;
+}
+
 /**
  * Loads the flat, pre-normalized typeahead index from GET /search-suggestions
  * (R2 via the API worker; see docs/search-suggestions.md) and ranks matches.
@@ -21,6 +30,16 @@ const DEFAULT_LIMIT = 8;
 export class SearchSuggestionsService {
   private http = inject(HttpClient);
   private corpusPromise: Promise<SuggestionIndexEntry[]> | undefined;
+  /** Set when the last corpus load failed. Cleared on the next successful load. */
+  private loadFailed = false;
+
+  /**
+   * True when the suggestions corpus failed to load.
+   * `suggest` still returns `[]` so the search bar's typeahead stays an empty list.
+   */
+  corpusLoadFailed(): boolean {
+    return this.loadFailed;
+  }
 
   private loadIndex(): Promise<SuggestionIndexEntry[]> {
     if (!this.corpusPromise) {
@@ -28,10 +47,14 @@ export class SearchSuggestionsService {
       this.corpusPromise = firstValueFrom(
         this.http.get<SuggestionsCorpus>(url)
       )
-        .then(corpus => Array.isArray(corpus?.entries) ? corpus.entries : [])
+        .then(corpus => {
+          this.loadFailed = false;
+          return Array.isArray(corpus?.entries) ? corpus.entries : [];
+        })
         .catch(e => {
           console.error('Failed to load search suggestions corpus.', e);
           this.corpusPromise = undefined;
+          this.loadFailed = true;
           return [] as SuggestionIndexEntry[];
         });
     }
@@ -46,7 +69,8 @@ export class SearchSuggestionsService {
   async suggest(
     query: string,
     limit: number = DEFAULT_LIMIT,
-    type?: SuggestionType
+    type?: SuggestionType,
+    options?: SuggestOptions
   ): Promise<Suggestion[]> {
     const term = query.trim().toLowerCase();
     if (term.length === 0) {
@@ -76,11 +100,21 @@ export class SearchSuggestionsService {
       }
     }
 
-    return [...best.values()]
-      .sort((a, b) => a.rank - b.rank || a.suggestion.label.length - b.suggestion.label.length)
-      .slice(0, limit)
-      .map(r => r.suggestion);
+    const ranked = [...best.values()]
+      .sort((a, b) => a.rank - b.rank || a.suggestion.label.length - b.suggestion.label.length);
+    const picked = options?.allExactNames
+      ? [
+          ...ranked.filter(row => isExactName(row.suggestion, term)),
+          ...ranked.filter(row => !isExactName(row.suggestion, term)).slice(0, limit)
+        ]
+      : ranked.slice(0, limit);
+    return picked.map(r => r.suggestion);
   }
+}
+
+function isExactName(suggestion: Suggestion, term: string): boolean {
+  return suggestion.label.trim().toLowerCase() === term
+    || suggestion.value.trim().toLowerCase() === term;
 }
 
 /** exact=0/2, prefix=1/3, contains=4/5; alias rows use the higher band. -1 = no match. */

@@ -6,8 +6,15 @@ import { of, throwError } from 'rxjs';
 import { AmbiguousIdentityAnswer } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
+import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
-import { MoveEpisodeToFilmDialogComponent, mergeErrorMessage, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
+import { MoveEpisodeToFilmDialogComponent, filmsNamed, mergeErrorMessage, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
+
+/** Lets a catalogue lookup finish: suggest resolves, then onName continues. */
+async function settleLookup(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 describe('MoveEpisodeToFilmDialogComponent', () => {
   let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
@@ -41,7 +48,11 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
         provideZonelessChangeDetection(),
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: MAT_DIALOG_DATA, useValue: data },
-        { provide: CurationSubmitService, useValue: { postEpisodeToFilm: postEpisodeToFilm } }
+        { provide: CurationSubmitService, useValue: { postEpisodeToFilm: postEpisodeToFilm } },
+        {
+          provide: SearchSuggestionsService,
+          useValue: { suggest: vi.fn(async () => []), preload: vi.fn(), corpusLoadFailed: () => false }
+        }
       ]
     })
       // MatDialogModule (imported by the component) provides its own MatDialog, so override it everywhere.
@@ -56,6 +67,7 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
     fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await settleLookup();
   });
 
   it('does not send anything until Move to film is pressed, and Cancel closes moved:false', () => {
@@ -109,6 +121,7 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
       .mockReturnValueOnce(of({ status: 200, body: { identityDecision } }))
       .mockReturnValueOnce(of({ status: 200, body: { cancelled: true } }));
     component.title.setValue('  Synthetic Override  ');
+    await settleLookup();
     mockIdentityAnswer({ decision: 'cancel' });
 
     await component.move();
@@ -175,6 +188,7 @@ describe('MoveEpisodeToFilmDialogComponent', () => {
   it('sends a trimmed override title and closes with the film name from the response', async () => {
     postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: 'episode-1', name: 'Synthetic Film' } }));
     component.title.setValue('  Synthetic Film  ');
+    await settleLookup();
 
     await component.move();
 
@@ -316,13 +330,14 @@ describe('MoveEpisodeToFilmDialogComponent for a news report', () => {
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: true, filmId: 'report-1', name: 'Synthetic Film' });
   });
 
-  it('does not offer Existing film for a news report (RPP #1522 is podcast episodes only)', () => {
-    component.setMode('existing');
+  it('does not search or merge for a news report (RPP #1522 is podcast episodes only)', () => {
     fixture.detectChanges();
 
     expect(component.canMergeIntoExisting).toBe(false);
-    expect(component.mode()).toBe('new');
-    expect((fixture.nativeElement as HTMLElement).querySelector('mat-button-toggle-group')).toBeNull();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('mat-button-toggle-group')).toBeNull();
+    expect(el.querySelector('input.film-name')).toBeNull();
+    expect(el.querySelector('mat-label')?.textContent).toContain('Film title');
   });
 
   it('words the warning and errors for a news report', async () => {
@@ -337,12 +352,13 @@ describe('MoveEpisodeToFilmDialogComponent for a news report', () => {
   });
 });
 
-describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
+describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
   let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
   let component: MoveEpisodeToFilmDialogComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let postEpisodeToFilm: ReturnType<typeof vi.fn>;
   let suggest: ReturnType<typeof vi.fn>;
+  let corpusLoadFailed: ReturnType<typeof vi.fn>;
   const manicId = '925e2a11-668f-4dfa-a78d-57dd4de0051f';
   const data: MoveEpisodeToFilmDialogData = {
     podcastId: 'podcast-1',
@@ -355,6 +371,7 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
     dialogRef = { close: vi.fn() };
     postEpisodeToFilm = vi.fn();
     suggest = vi.fn(async () => [manicSuggestion, { value: 'No id', label: 'No id' }]);
+    corpusLoadFailed = vi.fn(() => false);
     await TestBed.configureTestingModule({
       imports: [MoveEpisodeToFilmDialogComponent],
       providers: [
@@ -362,7 +379,7 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: CurationSubmitService, useValue: { postEpisodeToFilm } },
-        { provide: SearchSuggestionsService, useValue: { suggest, preload: vi.fn() } }
+        { provide: SearchSuggestionsService, useValue: { suggest, preload: vi.fn(), corpusLoadFailed } }
       ]
     })
       .overrideProvider(MatDialog, { useValue: { open: vi.fn() } })
@@ -371,70 +388,149 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
     fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await settleLookup();
   });
 
   function pick(film = manicSuggestion) {
     component.onFilmSelected({ option: { value: film } } as never);
   }
 
-  it('starts on New film; Existing film shows the film picker and a disabled Merge into film until a film is picked', () => {
-    expect(component.mode()).toBe('new');
-    component.setMode('existing');
-    fixture.detectChanges();
-
+  it('has no New / Existing toggle; one film name field searches the catalogue', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('input.existing-film')).not.toBeNull();
-    const button = Array.from(el.querySelectorAll('button')).find(b => b.textContent?.includes('Merge into film'));
+    expect(el.querySelector('mat-button-toggle-group')).toBeNull();
+    expect(el.querySelector('input.film-name')).not.toBeNull();
+    expect(el.textContent).not.toContain('Existing film');
+    const button = Array.from(el.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Move to film');
     expect(button).toBeDefined();
-    expect(button!.disabled).toBe(true);
-    expect(component.canSend()).toBe(false);
   });
 
-  it('hides the New-film warning and recent-release indexer warning in Existing film mode, and shows only the merge note', () => {
+  it('selects the one film whose name matches and hides the new-film warning', async () => {
+    await component.onName('Manic');
+    fixture.detectChanges();
+
+    expect(suggest).toHaveBeenCalledWith('Manic', 10, 'film', { allExactNames: true });
+    expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.warning')).toBeNull();
+    expect(el.querySelector('.merge-note')?.textContent).toContain('another copy of a film already in the catalogue');
+    expect(el.querySelector('.selected')?.textContent).toContain('Manic');
+  });
+
+  it('hides the recent-release warning once a matching film is selected', async () => {
     const recent = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
     recent.componentInstance.data = { ...data, release: new Date(Date.now() - 60 * 60 * 1000).toISOString() };
     recent.detectChanges();
+    expect((recent.nativeElement as HTMLElement).querySelector('.recent')?.textContent).toContain('indexer');
 
-    const newEl = recent.nativeElement as HTMLElement;
-    expect(newEl.querySelector('.warning')?.textContent).toContain('keeps the episode id');
-    expect(newEl.querySelector('.recent')?.textContent).toContain('indexer');
-    expect(newEl.querySelector('.merge-note')).toBeNull();
-
-    recent.componentInstance.setMode('existing');
+    await recent.componentInstance.onName('Manic');
     recent.detectChanges();
 
-    const existingEl = recent.nativeElement as HTMLElement;
-    expect(existingEl.querySelector('.warning')).toBeNull();
-    expect(existingEl.querySelector('.recent')).toBeNull();
-    expect(existingEl.querySelector('.merge-note')?.textContent).toContain('another copy of a film already in the catalogue');
+    expect((recent.nativeElement as HTMLElement).querySelector('.recent')).toBeNull();
   });
 
-  it('suggests films by name (only ones with an id) and a pick enables the merge', async () => {
-    component.setMode('existing');
+  it('does not auto-select a partial name, and Move to film creates a film', async () => {
+    await component.onName('Man');
+    fixture.detectChanges();
 
-    await component.onFilmQuery('Man');
+    expect(component.films()).toEqual([manicSuggestion]);
+    expect(component.existingFilm()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.selected')?.textContent).toContain('creates one');
+    expect(component.canSend()).toBe(true);
+  });
+
+  it('asks for a pick when several films share the exact name, and will not create another', async () => {
+    const other = { value: 'Manic', label: 'Manic', itemId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' };
+    suggest.mockResolvedValue([manicSuggestion, other]);
+
+    await component.onName('Manic');
+    fixture.detectChanges();
+
+    expect(component.existingFilm()).toBeNull();
+    expect(component.severalExact()).toBe(true);
+    expect(component.canSend()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Several films are called');
+  });
+
+  it('a picked suggestion merges, including when the typed name was only a partial match', async () => {
+    await component.onName('Man');
     pick();
 
-    expect(suggest).toHaveBeenCalledWith('Man', 10, 'film');
-    expect(component.films()).toEqual([manicSuggestion]);
     expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
     expect(component.canSend()).toBe(true);
   });
 
   it('takes a pasted film id as the pick without querying suggestions', async () => {
-    component.setMode('existing');
+    suggest.mockClear();
 
-    await component.onFilmQuery(manicId.toUpperCase());
+    await component.onName(manicId.toUpperCase());
 
     expect(component.existingFilm()).toEqual({ id: manicId, name: null });
+    expect(component.canSend()).toBe(true);
     expect(suggest).not.toHaveBeenCalled();
+  });
+
+  it('a blank field looks up the episode title and merges when that name is an exact film', async () => {
+    const film = { value: data.episodeTitle, label: data.episodeTitle, itemId: manicId };
+    suggest.mockResolvedValue([film]);
+    component.title.setValue('', { emitEvent: false });
+
+    await component.onName('');
+
+    expect(suggest).toHaveBeenLastCalledWith(data.episodeTitle, 10, 'film', { allExactNames: true });
+    expect(component.existingFilm()).toEqual({ id: manicId, name: data.episodeTitle });
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: data.episodeTitle } }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+  });
+
+  it('will not create a film when the catalogue fails to load, and a pasted film id still merges', async () => {
+    corpusLoadFailed.mockReturnValue(true);
+    suggest.mockResolvedValue([]);
+
+    await component.onName('Manic');
+    fixture.detectChanges();
+
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect(component.error()).toBe(
+      'The film catalogue could not be loaded. Paste a film id to add this episode to an existing film.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+
+    corpusLoadFailed.mockReturnValue(false);
+    await component.onName(manicId);
+
+    expect(component.canSend()).toBe(true);
+    expect(component.error()).toBeNull();
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: 'Manic' } }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+  });
+
+  it('offers every exact-name film when more than ten share that name', async () => {
+    const films = Array.from({ length: 11 }, (_, index) => ({
+      value: 'Manic',
+      label: 'Manic',
+      itemId: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
+    }));
+    suggest.mockResolvedValue(films);
+
+    await component.onName('Manic');
+
+    expect(suggest).toHaveBeenCalledWith('Manic', 10, 'film', { allExactNames: true });
+    expect(component.films().map(film => film.itemId)).toEqual(films.map(film => film.itemId));
+    expect(component.severalExact()).toBe(true);
+    expect(component.canSend()).toBe(false);
   });
 
   it('POSTs only { filmId } and closes merged with the film from the response', async () => {
     postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: 'Manic' } }));
-    component.title.setValue('Ignored title');
-    component.setMode('existing');
-    pick();
+    await component.onName('Manic');
 
     await component.move();
 
@@ -445,8 +541,7 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
   it("shows the server's 409 text (film already has another YouTube link, #1411) and stays open", async () => {
     const error = "Film 'Manic' already has a different youtube link (https://www.youtube.com/watch?v=VCRf_qazO9s). A film holds one link per service until multiple YouTube links are supported (#1411).";
     postEpisodeToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { filmId: manicId, name: 'Manic', error } })));
-    component.setMode('existing');
-    pick();
+    await component.onName('Manic');
 
     await component.move();
 
@@ -455,17 +550,24 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
     expect(dialogRef.close).not.toHaveBeenCalled();
   });
 
-  it('a New film name clash (409 naming the film) switches to Existing film with that film picked', async () => {
+  it('a create that clashes on the name selects that film so the next click merges', async () => {
     postEpisodeToFilm.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { filmId: manicId, name: 'Manic', error: 'A film with this name already exists' } })));
-    component.title.setValue('Manic');
+    component.title.setValue('Manic', { emitEvent: false });
 
     await component.move();
 
     expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { title: 'Manic' });
-    expect(component.mode()).toBe('existing');
     expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
-    expect(component.error()).toContain('Merge into film');
+    expect(component.error()).toContain('It is selected');
     expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('matches a film on its label or its canonical name', () => {
+    expect(filmsNamed('manic', [manicSuggestion])).toEqual([manicSuggestion]);
+    expect(filmsNamed('Other', [{ ...manicSuggestion, value: 'Other', label: 'Shown' }])).toEqual([
+      { ...manicSuggestion, value: 'Other', label: 'Shown' }
+    ]);
+    expect(filmsNamed('Ma', [manicSuggestion])).toEqual([]);
   });
 
   it('maps merge errors: 409/400 use the server text, 404 and others a fixed hint', () => {
@@ -474,5 +576,82 @@ describe('MoveEpisodeToFilmDialogComponent Existing film (RPP #1522)', () => {
     expect(mergeErrorMessage(new HttpErrorResponse({ status: 409 }))).toContain('different link');
     expect(mergeErrorMessage(new HttpErrorResponse({ status: 404 }))).toContain('not found');
     expect(mergeErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
+  });
+});
+
+describe('MoveEpisodeToFilmDialogComponent waits for the catalogue lookup', () => {
+  let fixture: ComponentFixture<MoveEpisodeToFilmDialogComponent>;
+  let component: MoveEpisodeToFilmDialogComponent;
+  let postEpisodeToFilm: ReturnType<typeof vi.fn>;
+  let resolveSuggest: (films: Suggestion[]) => void;
+  const filmId = '925e2a11-668f-4dfa-a78d-57dd4de0051f';
+  const data: MoveEpisodeToFilmDialogData = {
+    podcastId: 'podcast-1',
+    episodeId: 'episode-1',
+    episodeTitle: 'Synthetic Film'
+  };
+  const exact: Suggestion = { type: 'film', value: 'Synthetic Film', label: 'Synthetic Film', itemId: filmId };
+
+  beforeEach(async () => {
+    postEpisodeToFilm = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [MoveEpisodeToFilmDialogComponent],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: CurationSubmitService, useValue: { postEpisodeToFilm } },
+        {
+          provide: SearchSuggestionsService,
+          useValue: {
+            preload: vi.fn(),
+            corpusLoadFailed: () => false,
+            suggest: () => new Promise<Suggestion[]>(resolve => { resolveSuggest = resolve; })
+          }
+        }
+      ]
+    })
+      .overrideProvider(MatDialog, { useValue: { open: vi.fn() } })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(MoveEpisodeToFilmDialogComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    resolveSuggest?.([]);
+  });
+
+  it('does not POST while suggest is unresolved, then merges the exact film once it settles', async () => {
+    fixture.detectChanges();
+
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+
+    resolveSuggest([exact]);
+    await settleLookup();
+
+    expect(component.existingFilm()).toEqual({ id: filmId, name: 'Synthetic Film' });
+    expect(component.canSend()).toBe(true);
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId, name: 'Synthetic Film' } }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledTimes(1);
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId });
+  });
+
+  it('a pasted film id can send while the name lookup is still running', async () => {
+    expect(component.canSend()).toBe(false);
+
+    await component.onName(filmId);
+
+    expect(component.existingFilm()).toEqual({ id: filmId, name: null });
+    expect(component.canSend()).toBe(true);
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
   });
 });
