@@ -2,6 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { OverlayContainer } from '@angular/cdk/overlay';
+import { By } from '@angular/platform-browser';
+import { MatTooltip } from '@angular/material/tooltip';
 import { ApiEpisode } from '../api-episode.interface';
 import { playableCuratorActionLabel } from '../content-kind-label';
 import { CuratorPlayableCardComponent } from './curator-playable-card.component';
@@ -92,6 +94,26 @@ describe('CuratorPlayableCardComponent', () => {
     }
     fixture.detectChanges();
   }
+
+  it('explains a review subject with the term that matched, the same way discovery review does', async () => {
+    render(row('Episode', {
+      subjects: ['Qanon'],
+      matches: [{ subject: 'Qanon', term: 'QAnon', source: 'Description' }],
+    }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const tooltip = fixture.debugElement.query(By.directive(MatTooltip)).injector.get(MatTooltip);
+    expect(tooltip.message).toBe('matched "QAnon" in description');
+    expect(tooltip.disabled).toBe(false);
+  });
+
+  it('leaves a review subject as a plain chip when the episode recorded no match terms', async () => {
+    render(row('Episode', { subjects: ['Qanon'], matches: [] }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const tooltip = fixture.debugElement.query(By.directive(MatTooltip)).injector.get(MatTooltip);
+    expect(tooltip.disabled).toBe(true);
+  });
 
   it('renders the film card for Film contentKind', () => {
     render(row('Film'));

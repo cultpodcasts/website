@@ -6,6 +6,7 @@ import { EpisodeGuestsComponent } from '../episode-guests/episode-guests.compone
 import { EpisodePodcastLinksComponent } from '../episode-podcast-links/episode-podcast-links.component';
 import { EpisodeStatusComponent } from '../episode-status/episode-status.component';
 import { peopleFromDto, personMatchesFromDto } from '../person-dto.util';
+import { subjectMatchReasons } from '../subject-match-reasons';
 import { SubjectsComponent } from '../subjects/subjects.component';
 
 /** Shared curator card middle: description, subjects, guests, platforms, status. No contentKind branching. */
@@ -33,6 +34,8 @@ export class CuratorPlayableCardBodyComponent {
   readonly loadingBluesky = input(false);
   readonly statusActionLoading = input(false);
 
+  /** Same tooltip text discovery review uses: the term and field that triggered each subject. */
+  protected readonly subjectReasons = computed(() => subjectMatchReasons(this.episode().matches));
   /** Wire `PersonDto` guests mapped to the UI `Person` (person-dto.util). */
   protected readonly guestPeople = computed(() => peopleFromDto(this.episode().guestPeople));
   protected readonly guestSuggestions = computed(() => personMatchesFromDto(this.episode().guestSuggestions));

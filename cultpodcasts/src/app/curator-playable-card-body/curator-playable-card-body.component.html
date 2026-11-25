@@ -4,7 +4,7 @@
   </div>
   @if (episode().subjects?.length) {
   <div class="curator-card__subjects">
-    <app-subjects [subjects]="episode().subjects!" [showHidden]="true" [editable]="true"
+    <app-subjects [subjects]="episode().subjects!" [reasons]="subjectReasons()" [showHidden]="true" [editable]="true"
       [disabled]="updating()" [loadingSubjectName]="loadingSubjectName()"
       (removeSubject)="removeSubject.emit($event)"></app-subjects>
   </div>
