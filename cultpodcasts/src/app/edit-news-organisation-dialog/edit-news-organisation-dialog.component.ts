@@ -2,57 +2,39 @@ import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, inject
 import { HttpErrorResponse } from "@angular/common/http";
 import { FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
-import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatIconModule } from "@angular/material/icon";
-import { MatMenuModule } from "@angular/material/menu";
-import { MatSelectModule } from "@angular/material/select";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTabsModule } from "@angular/material/tabs";
-import { TextFieldModule } from "@angular/cdk/text-field";
-import { KeyValuePipe } from "@angular/common";
 import { firstValueFrom, forkJoin } from "rxjs";
 import { ambiguousCandidateFromCatalogueParent } from "../ambiguous-name-candidate";
 import { hubParentLabel } from "../catalogue-hub";
 import { NewsOrganisationDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
 import { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "../catalogue-parent-edit-dialog-data";
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
-import { effectiveYouTubeIndexingHints, formatIndexingHintInstant } from "../youtube-indexing-hints.util";
+import { effectiveYouTubeIndexingHints } from "../youtube-indexing-hints.util";
 import {
   AdditionalYouTubeChannelRow,
   additionalYouTubeChannelsError,
   NewsOrganisationEditModel,
   newsOrganisationChanges,
   newsOrganisationEditModel,
-  historyDateText,
-  includeTitleRegexBlocksIndexAllEpisodes,
   isValidAppleIdText,
   isValidDurationText,
-  releaseAuthorityOptions,
   removesCatalogueParent,
   subjectOptions
 } from "../catalogue-parent-edit";
 import { catalogueParentSaveError } from "../catalogue-parent-save-error";
-import { ConfirmComponent } from "../confirm/confirm.component";
+import { CatalogueParentEditor } from "../catalogue-parent-editor";
+import { confirmCatalogueParentRemoval, forceFullCatalogueParentYouTubeWalk, loadNamedCatalogueParent } from "../catalogue-parent-edit-flow";
+import { CatalogueParentFieldsComponent } from "../catalogue-parent-fields/catalogue-parent-fields.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { buildPodcastLanguageOptions } from "../language-options.util";
-import { NamedRegexPreset } from "../regex-presets.interface";
 import { RegexPresetsService } from "../regex-presets.service";
-import { parseAmbiguousPodcastIds } from "../parse-ambiguous-podcast-ids";
-import {
-  filterSubjectsByTerm,
-  noCompareFunction,
-  PODCAST_DETAILS_TAB_INDEX,
-  PODCAST_META_TAB_INDEX,
-  PODCAST_REGEXS_TAB_INDEX,
-  youTubeChannelIgnoredHint,
-  youTubePlaylistReplacesChannel
-} from "../podcast-form.util";
-import { resolveAmbiguousEditRows } from "../resolve-ambiguous-edit-rows";
-import { applySubjectFilterKey, filterKeepingSelectedInOrder, isDesktopSubjectTypingEnabled } from "../subject-filter.util";
+import { PODCAST_DETAILS_TAB_INDEX, PODCAST_META_TAB_INDEX } from "../podcast-form.util";
 import { YOU_TUBE_PLAYLIST_NOT_FOUND, youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
 /**
@@ -67,21 +49,17 @@ import { YOU_TUBE_PLAYLIST_NOT_FOUND, youtubePlaylistEditError } from "../youtub
   selector: "app-edit-news-organisation-dialog",
   imports: [
     FormsModule,
-    KeyValuePipe,
     MatButtonModule,
-    MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatMenuModule,
     MatProgressSpinnerModule,
-    MatSelectModule,
     MatTabsModule,
-    TextFieldModule
+    CatalogueParentFieldsComponent
   ],
   templateUrl: "./edit-news-organisation-dialog.component.html",
-  styleUrl: "./edit-news-organisation-dialog.component.sass",
+  styleUrl: "../catalogue-parent-edit-dialog.sass",
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditNewsOrganisationDialogComponent {
@@ -91,11 +69,11 @@ export class EditNewsOrganisationDialogComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly regexPresetsService = inject(RegexPresetsService);
+  protected editor!: CatalogueParentEditor;
   private readonly injector = inject(Injector);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly label = hubParentLabel("news");
-  protected readonly releaseAuthorityOptions = releaseAuthorityOptions;
   protected readonly isLoading = signal(true);
   protected readonly isSending = signal(false);
   protected readonly notFound = signal(false);
@@ -164,32 +142,22 @@ export class EditNewsOrganisationDialogComponent {
   protected readonly playlistHistory = signal<PlaylistIdHistoryEntry[]>([]);
   protected readonly indexingHints = signal<YouTubeIndexingHints | null>(null);
   protected readonly clearingIndexingHints = signal(false);
-  protected readonly formatHintInstant = formatIndexingHintInstant;
-  protected readonly historyDateText = historyDateText;
-  protected readonly youTubePlaylistReplacesChannel = youTubePlaylistReplacesChannel;
-  protected readonly youTubeChannelIgnoredHint = youTubeChannelIgnoredHint;
   protected readonly itemNoun = "reports";
-  protected readonly enableDesktopSubjectTypingFilter = isDesktopSubjectTypingEnabled();
-  protected readonly noCompareFunction = noCompareFunction;
-  protected readonly defaultSubjects = signal<string[]>([]);
-  protected readonly ignoredSubjects = signal<string[]>([]);
-  protected readonly defaultSubjectFilterTerm = signal("");
-  protected readonly ignoredSubjectsFilterTerm = signal("");
-  protected readonly languages = signal<Record<string, string>>({});
   protected readonly selectedTabIndex = signal(0);
-  protected readonly highlightIncludeTitleRegex = signal(false);
-  protected readonly includeTitleRegexBlocksIndexAllEpisodes = includeTitleRegexBlocksIndexAllEpisodes;
-  protected readonly titleRegexPresets = signal<NamedRegexPreset[]>([]);
-  protected readonly descriptionRegexPresets = signal<NamedRegexPreset[]>([]);
-  protected readonly includeTitleRegexPresets = signal<NamedRegexPreset[]>([]);
-  private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
   private original: NewsOrganisationDto | null = null;
 
   constructor() {
-    const presets = this.regexPresetsService.loadRegexPresets();
-    this.titleRegexPresets.set(presets.title);
-    this.descriptionRegexPresets.set(presets.description);
-    this.includeTitleRegexPresets.set(presets.includeTitle);
+    this.editor = new CatalogueParentEditor(
+      this.regexPresetsService,
+      () => this.data.name,
+      this.selectedTabIndex,
+      (next) => {
+        const current = this.model();
+        if (current) {
+          this.model.set({ ...current, ...next });
+        }
+      }
+    );
     void this.load();
   }
 
@@ -208,9 +176,9 @@ export class EditNewsOrganisationDialogComponent {
       const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
       this.model.set(newsOrganisationEditModel(dto));
-      this.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
-      this.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
-      this.languages.set(buildPodcastLanguageOptions(resp.languages));
+      this.editor.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
+      this.editor.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
+      this.editor.languages.set(buildPodcastLanguageOptions(resp.languages));
       this.playlistHistory.set(dto.youTubePlaylistIdHistory ?? []);
       this.indexingHints.set(dto.youTubeIndexingHints ?? null);
     } catch (error) {
@@ -228,46 +196,30 @@ export class EditNewsOrganisationDialogComponent {
    * Cancel closes the edit dialog. Returns null when closed or unrecoverable.
    */
   private async resolveParentDto(): Promise<NewsOrganisationDto | null> {
-    try {
-      return await firstValueFrom(this.curation.getCatalogueParent("news", this.data.name));
-    } catch (error) {
-      if (!(error instanceof HttpErrorResponse) || error.status !== 409) {
-        throw error;
-      }
-      const ids = parseAmbiguousPodcastIds(error.error);
-      if (!ids) {
-        this.conflict.set(true);
-        this.isInError.set(true);
-        return null;
-      }
-      const outcome = await resolveAmbiguousEditRows(
-        ids,
-        async (id) => {
-          try {
-            return await firstValueFrom(this.curation.getCatalogueParent("news", id));
-          } catch {
-            return null;
-          }
-        },
-        this.dialog,
-        this.data.name,
-        {
-          toCandidate: ambiguousCandidateFromCatalogueParent,
-          title: `Choose ${this.label.toLowerCase()}`,
-          itemNounPlural: "news outlets"
+    const loaded = await loadNamedCatalogueParent({
+      loadByName: async () => (await firstValueFrom(this.curation.getCatalogueParent("news", this.data.name))) as NewsOrganisationDto,
+      loadById: async (id) => {
+        try {
+          return (await firstValueFrom(this.curation.getCatalogueParent("news", id))) as NewsOrganisationDto;
+        } catch {
+          return null;
         }
-      );
-      if (outcome.kind === "unrecoverable") {
-        this.conflict.set(true);
-        this.isInError.set(true);
-        return null;
-      }
-      if (outcome.kind === "cancelled") {
-        this.dialogRef.close({ closed: true });
-        return null;
-      }
-      return outcome.row;
+      },
+      dialog: this.dialog,
+      name: this.data.name,
+      title: `Choose ${this.label.toLowerCase()}`,
+      itemNounPlural: "news outlets",
+      toCandidate: ambiguousCandidateFromCatalogueParent,
+      onCancelled: () => this.dialogRef.close({ closed: true })
+    });
+    if (loaded.kind === "loaded") {
+      return loaded.row;
     }
+    if (loaded.kind === "unrecoverable") {
+      this.conflict.set(true);
+      this.isInError.set(true);
+    }
+    return null;
   }
 
   /**
@@ -353,142 +305,23 @@ export class EditNewsOrganisationDialogComponent {
     if (!this.original || this.clearingIndexingHints() || !this.displayIndexingHints()) {
       return;
     }
-    const closed = await firstValueFrom(
-      this.dialog
-        .open(ConfirmComponent, {
-          data: {
-            title: "Force full YouTube walk?",
-            question:
-              "Clear indexing hints for this playlist? The next indexing pass will walk the whole playlist and write fresh hints."
-          }
-        })
-        .afterClosed()
-    );
-    if ((closed as { result?: boolean } | undefined)?.result !== true) {
-      return;
-    }
-    this.clearingIndexingHints.set(true);
-    try {
-      const id = this.original.id;
-      await firstValueFrom(
-        this.curation.patchCatalogueParent("news", id, {
-          clearYouTubeIndexingHints: true
-        })
-      );
-      // CQRS: acknowledgement is not the read model — re-GET and bind hints.
-      const refreshed = await firstValueFrom(this.curation.getCatalogueParent("news", id));
-      const hints = refreshed.youTubeIndexingHints ?? null;
-      this.indexingHints.set(hints);
-      this.original = { ...this.original, youTubeIndexingHints: hints };
-      if (hints != null) {
-        this.snackBar.open("Could not clear indexing hints.", "Ok", { duration: 8000 });
-        return;
-      }
-      this.snackBar.open("Indexing hints cleared. Next pass will do a full walk.", "Ok", { duration: 8000 });
-    } catch {
-      this.snackBar.open("Could not clear indexing hints.", "Ok", { duration: 8000 });
-    } finally {
-      this.clearingIndexingHints.set(false);
-    }
-  }
-
-  /** Removing cascades to every report / episode, so it takes an explicit Yes. Restoring stays one step. */
-  private async confirmRemove(): Promise<boolean> {
-    const closed = await firstValueFrom(
-      this.dialog
-        .open(ConfirmComponent, {
-          data: {
-            title: `Remove ${this.label.toLowerCase()}?`,
-            question: `"${this.data.name}" and all of its ${this.itemNoun} will be hidden from the site. Remove it?`
-          }
-        })
-        .afterClosed()
-    );
-    return (closed as { result?: boolean } | undefined)?.result === true;
-  }
-
-  protected onDefaultSubjectDropdownOpenChange(opened: boolean): void {
-    if (!opened) {
-      this.defaultSubjectFilterTerm.set("");
-    }
-  }
-
-  protected onIgnoredSubjectsDropdownOpenChange(opened: boolean): void {
-    if (!opened) {
-      this.ignoredSubjectsFilterTerm.set("");
-    }
-  }
-
-  protected onDefaultSubjectDropdownKeydown(event: KeyboardEvent): void {
-    applySubjectFilterKey(event, this.defaultSubjectFilterTerm, this.enableDesktopSubjectTypingFilter);
-  }
-
-  protected onIgnoredSubjectsDropdownKeydown(event: KeyboardEvent): void {
-    applySubjectFilterKey(event, this.ignoredSubjectsFilterTerm, this.enableDesktopSubjectTypingFilter);
-  }
-
-  protected filteredDefaultSubjects(): string[] {
-    return filterSubjectsByTerm(this.defaultSubjects(), this.defaultSubjectFilterTerm());
-  }
-
-  protected filteredIgnoredSubjects(): string[] {
-    const selected = new Set(this.model()?.ignoredSubjects ?? []);
-    return filterKeepingSelectedInOrder(this.ignoredSubjects(), this.ignoredSubjectsFilterTerm(), selected);
-  }
-
-  protected onIncludeTitleRegexChange(value: string): void {
-    const model = this.model();
-    if (!model) {
-      return;
-    }
-    if (includeTitleRegexBlocksIndexAllEpisodes(value) && model.indexAllEpisodes) {
-      model.indexAllEpisodes = false;
-      this.model.set({ ...model });
-    }
-  }
-
-  protected applyTitleRegexPreset(pattern: string): void {
-    const model = this.model();
-    if (!model) {
-      return;
-    }
-    model.titleRegex = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
-    this.model.set({ ...model });
-  }
-
-  protected applyDescriptionRegexPreset(pattern: string): void {
-    const model = this.model();
-    if (!model) {
-      return;
-    }
-    model.descriptionRegex = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
-    this.model.set({ ...model });
-  }
-
-  protected applyIncludeTitleRegexPreset(pattern: string): void {
-    const model = this.model();
-    if (!model) {
-      return;
-    }
-    const value = this.regexPresetsService.resolveRegexPlaceholders(pattern, this.data.name);
-    model.episodeIncludeTitleRegex = value;
-    this.model.set({ ...model });
-    this.onIncludeTitleRegexChange(value);
-  }
-
-  protected goToIncludeTitleRegex(): void {
-    this.selectedTabIndex.set(PODCAST_REGEXS_TAB_INDEX);
-    this.highlightIncludeTitleRegex.set(true);
-    if (this.highlightIncludeTitleTimer) {
-      clearTimeout(this.highlightIncludeTitleTimer);
-    }
-    this.highlightIncludeTitleTimer = setTimeout(() => {
-      this.highlightIncludeTitleRegex.set(false);
-      this.highlightIncludeTitleTimer = undefined;
-    }, 2500);
-    queueMicrotask(() => {
-      document.getElementById("episode-include-title-regex-field")?.querySelector("input")?.focus();
+    const result = await forceFullCatalogueParentYouTubeWalk({
+      hub: "news",
+      parentId: this.original.id,
+      dialog: this.dialog,
+      curation: this.curation,
+      snackBar: this.snackBar,
+      clearing: this.clearingIndexingHints
     });
+    if (result.kind === "refreshed") {
+      this.indexingHints.set(result.hints);
+      this.original = { ...this.original, youTubeIndexingHints: result.hints };
+    }
+  }
+
+  /** Removing cascades to every report, so it takes an explicit Yes. Restoring stays one step. */
+  private confirmRemove(): Promise<boolean> {
+    return confirmCatalogueParentRemoval(this.dialog, this.label, this.data.name, this.itemNoun);
   }
 
   protected close(): void {

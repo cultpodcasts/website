@@ -31,12 +31,14 @@ import { EditTvShowDialogComponent } from './edit-tv-show-dialog.component';
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
   model(): CatalogueParentEditModel | null;
-  defaultSubjects(): string[];
-  filteredIgnoredSubjects(): string[];
-  languages(): Record<string, string>;
-  includeTitleRegexPresets(): { name: string; pattern: string }[];
-  applyIncludeTitleRegexPreset(pattern: string): void;
-  applyTitleRegexPreset(pattern: string): void;
+  editor: {
+    defaultSubjects(): string[];
+    filteredIgnoredSubjects(model: CatalogueParentEditModel | null): string[];
+    languages(): Record<string, string>;
+    includeTitleRegexPresets(): { name: string; pattern: string }[];
+    applyIncludeTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
+    applyTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
+  };
   lookUpIdentity(): Promise<void>;
   identityLookupMessage(): string;
   clearIdentityField(field: 'imdbId' | 'tvdbId' | 'tmdbId'): void;
@@ -583,9 +585,9 @@ describe('EditTvShowDialogComponent', () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly', defaultSubject: 'Gone', ignoredSubjects: ['Sport'], language: null });
     await settle();
-    expect(dialog.defaultSubjects()).toEqual(['Gone', 'Arts', 'Sport']);
-    expect(dialog.filteredIgnoredSubjects()).toEqual(['Sport', 'Arts']);
-    expect(dialog.languages()).toEqual({ unset: 'No Language', fr: 'French' });
+    expect(dialog.editor.defaultSubjects()).toEqual(['Gone', 'Arts', 'Sport']);
+    expect(dialog.editor.filteredIgnoredSubjects(dialog.model())).toEqual(['Sport', 'Arts']);
+    expect(dialog.editor.languages()).toEqual({ unset: 'No Language', fr: 'French' });
     const model = dialog.model()!;
     expect(model.language).toBe('unset');
     model.defaultSubject = 'Arts';
@@ -602,13 +604,13 @@ describe('EditTvShowDialogComponent', () => {
     const dialog = create();
     await loadWith({ id: showId, name: 'Nightly', indexAllEpisodes: true });
     await settle();
-    const includePreset = dialog.includeTitleRegexPresets().find(
+    const includePreset = dialog.editor.includeTitleRegexPresets().find(
       x => x.name === 'Exclude Introducing / You Might Also Like');
     expect(includePreset).toBeTruthy();
-    dialog.applyIncludeTitleRegexPreset(includePreset!.pattern);
+    dialog.editor.applyIncludeTitleRegexPreset(dialog.model(), includePreset!.pattern);
     expect(dialog.model()!.episodeIncludeTitleRegex).toBe(includePreset!.pattern);
     expect(dialog.model()!.indexAllEpisodes).toBe(false);
-    dialog.applyTitleRegexPreset("^(?'title'.*?)(?'suffix' \\| {podcastName})?$");
+    dialog.editor.applyTitleRegexPreset(dialog.model(), "^(?'title'.*?)(?'suffix' \\| {podcastName})?$");
     expect(dialog.model()!.titleRegex).toBe("^(?'title'.*?)(?'suffix' \\| Nightly)?$");
   });
 
