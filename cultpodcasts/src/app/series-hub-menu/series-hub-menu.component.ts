@@ -11,6 +11,7 @@ import { AuthServiceWrapper } from "../auth-service-wrapper.class";
 import { CatalogueHub, hubParentKind, hubParentLabel, hubPathCommands } from "../catalogue-hub";
 import { openCatalogueParentEditDialog } from "../catalogue-parent-edit-dialog";
 import { CatalogueIndexDialogResult } from "../catalogue-index-response.interface";
+import { presentCatalogueIndexResult } from "../catalogue-index-from-dialog";
 import { indexStateMessage } from "../catalogue-index-state-message";
 import {
   RenameCatalogueParentDialogComponent,
@@ -19,7 +20,6 @@ import {
 } from "../rename-catalogue-parent-dialog/rename-catalogue-parent-dialog.component";
 import { SendPodcastComponent } from "../send-podcast/send-podcast.component";
 import { IndexDialogComponent, IndexDialogData } from "../index-dialog/index-dialog.component";
-import { SearchIndexerState } from "@cultpodcasts/contracts";
 import { ShareMode } from "../share-mode.enum";
 import { SubmitDialogResponse } from "../submit-dialog-response.interface";
 import { parseSubmitDialogUrl } from "../submit-ingest-ux";
@@ -91,42 +91,10 @@ export class SeriesHubMenuComponent {
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
-        if (result?.updated) {
-          const count = result.itemIds?.length ?? 0;
-          if (count === 0) {
-            this.snackBar.open(`${label} indexed. Nothing new`, "Ok", { duration: 10000 });
-            return;
-          }
-          const searchNote = result.searchIndexerState === SearchIndexerState.Failure ? ` ${indexStateMessage(result.searchIndexerState)}` : "";
-          const items = `${count} item${count > 1 ? "s" : ""}`;
-          const ref = this.snackBar.open(
-            result.enrichOnly
-              ? `${label} is not auto-indexed, so only Spotify / Apple links were looked up. ${items} updated.${searchNote}`
-              : `${label} indexed. ${items} updated.${searchNote}`,
-            "Review",
-            { duration: 10000 }
-          );
-          ref.onAction().subscribe(() => {
-            void this.router.navigate(hubPathCommands(this.hub(), name));
-            this.indexed.emit();
-          });
-        } else if (result?.notIndexable) {
-          this.snackBar.open(notIndexableMessage(label, result), "Ok", { duration: 10000 });
-        } else if (result?.notFound) {
-          this.snackBar.open(`${label} not found`, "Ok", { duration: 10000 });
-        } else if (result?.ambiguous) {
-          this.snackBar.open(`More than one ${label.toLowerCase()} is called "${name}". Nothing was indexed.`, "Ok", { duration: 10000 });
-        } else if (result?.enrichFailed) {
-          this.snackBar.open(
-            `${label} is not auto-indexed, so only Spotify / Apple links were looked up, but the lookup failed or was rate-limited. Try again later.`,
-            "Ok",
-            { duration: 10000 }
-          );
-        } else if (result?.unavailable) {
-          this.snackBar.open(`${label} indexing is unavailable right now. Try again later.`, "Ok", { duration: 10000 });
-        } else if (result?.timedOut) {
-          this.snackBar.open(`${label} indexing ran out of time. Anything it saved will appear shortly; try again later.`, "Ok", { duration: 10000 });
-        }
+        presentCatalogueIndexResult(this.snackBar, result, label, name, () => {
+          void this.router.navigate(hubPathCommands(this.hub(), name));
+          this.indexed.emit();
+        });
       });
   }
 
@@ -232,18 +200,4 @@ export class SeriesHubMenuComponent {
   }
 }
 
-/** The toast for a 400 from the outlet / show index: says why it was not indexed (RPP #1400). */
-export function notIndexableMessage(label: string, result: CatalogueIndexDialogResult): string {
-  switch (result.reason) {
-    case "Removed":
-      return `${label} not indexed: it is removed`;
-    case "NotAutoIndexed":
-      return `${label} not indexed: it is not auto-indexed and has no Spotify or Apple id to look links up from`;
-    case "NothingToEnrich":
-      return `${label} is not auto-indexed, so only Spotify / Apple links were looked up. No recent item gained one`;
-    case "SourcePodcastStillExists":
-      return `${label} not indexable (its podcast still exists)`;
-    default:
-      return result.message ? `${label} not indexed: ${result.message}` : `${label} not indexable`;
-  }
-}
+export { notIndexableMessage } from "../catalogue-index-from-dialog";

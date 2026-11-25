@@ -198,6 +198,41 @@ describe('CuratorPlayableCardComponent', () => {
     });
   }
 
+  it('offers Index News Org on a NewsReport review row and emits the outlet name', async () => {
+    const episode = row('NewsReport', { parentName: 'Synthetic Desk' });
+    render(episode, podcastAdminFlags);
+    const emissions: string[] = [];
+    fixture.componentInstance.indexNewsOrg.subscribe(v => emissions.push(v));
+    const labels = await openOverflowMenu();
+    expect(labels).toContain('Index News Org');
+    expect(labels).not.toContain('Index Podcast');
+    const items = Array.from(
+      overlay.getContainerElement().querySelectorAll('button[mat-menu-item], .mat-mdc-menu-item')
+    );
+    const match = items.find(el => (el.querySelector('span')?.textContent?.trim() ?? '') === 'Index News Org');
+    expect(match).toBeTruthy();
+    (match as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(emissions).toEqual(['Synthetic Desk']);
+  });
+
+  it('hides Index News Org when the review-list index flag is off', async () => {
+    render(row('NewsReport', { parentName: 'Synthetic Desk' }), {
+      authRoles: ['Curator'],
+      showIndexPodcast: false,
+    });
+    const labels = await openOverflowMenu();
+    expect(labels).toContain('Edit News Outlet');
+    expect(labels).not.toContain('Index News Org');
+  });
+
+  it('does not offer Index News Org on a TV episode', async () => {
+    render(row('TvShowEpisode', { parentName: 'Synthetic Nightly' }), podcastAdminFlags);
+    const labels = await openOverflowMenu();
+    expect(labels).not.toContain('Index News Org');
+  });
+
   it('offers no parent edit on a Film row (a film has no separate parent)', async () => {
     render(row('Film'), podcastAdminFlags);
     const labels = await openOverflowMenu();

@@ -22,6 +22,12 @@
       <mat-icon>edit</mat-icon>
       <span>{{ parentEditLabel() }}</span>
     </button>
+    @if (showIndexNewsOrg() && parent.hub === 'news') {
+    <button mat-menu-item (click)="indexNewsOrg.emit(parent.name)">
+      <mat-icon>refresh</mat-icon>
+      <span>Index News Org</span>
+    </button>
+    }
     }
     @if (isAdmin() && showDeleteEpisode()) {
     <button [disabled]="episode().tweeted" mat-menu-item
