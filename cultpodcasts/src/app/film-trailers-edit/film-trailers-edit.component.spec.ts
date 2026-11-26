@@ -65,6 +65,9 @@ describe('FilmTrailersEditComponent', () => {
       await fixture.whenStable();
     }
     expect(trailers.length).toBe(0);
-    expect(fixture.nativeElement.querySelector('.empty')?.textContent).toContain('Attach as trailer');
+    const empty = fixture.nativeElement.querySelector('.empty')?.textContent as string;
+    expect(empty).toContain('Catalogue tab');
+    expect(empty).toContain('"Attach as trailer"');
+    expect(empty).toContain('Pick this film there');
   });
 });

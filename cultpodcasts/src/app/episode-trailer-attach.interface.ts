@@ -39,4 +39,6 @@ export interface AttachTrailerDialogClose {
   attached: boolean;
   filmId?: string;
   name?: string;
+  /** True when this attach created the film (no film had the name), so the film page is a new, mostly empty film. */
+  filmCreated?: boolean;
 }
