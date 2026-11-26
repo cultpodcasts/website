@@ -5,6 +5,8 @@ export interface CatalogueIdentityIds {
   imdbId?: string | null;
   tmdbId?: number | null;
   tvdbId?: number | null;
+  /** Proposed film release from TMDB (`yyyy` or `yyyy-MM-dd`) when the match is a film (RPP #1410). */
+  release?: string | null;
 }
 
 export interface CatalogueIdentityLookupRequest {
