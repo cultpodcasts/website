@@ -4,6 +4,7 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { EpisodePost } from '../episode-post.interface';
 import { CurationSubmitService } from '../curation-submit.service';
+import { staleKeepListMessage } from '../youtube-keep-list';
 
 @Component({
   selector: 'app-edit-episode-send',
@@ -31,7 +32,8 @@ export class EditEpisodeSendComponent {
       error: e => {
         this.isSending.set(false);
         this.sendError.set(true);
-        const message = e?.status === 400 ? e?.error?.message : null;
+        const keepList = e?.status === 409 ? staleKeepListMessage(e, 'episode') : null;
+        const message = e?.status === 400 ? e?.error?.message : keepList;
         this.errorMessage.set(typeof message === 'string' && message.trim() ? message : null);
         console.error(e);
       }

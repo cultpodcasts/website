@@ -23,6 +23,16 @@ describe('EditEpisodeSendComponent', () => {
     expect(component.errorMessage()).toBe('A rejected split-off stays removed.');
   });
 
+  it('shows the close-and-reopen message when the episode PATCH returns 409 for an unexpected YouTube id', () => {
+    const component = failWith({
+      status: 409,
+      error: { unexpectedAdditionalYouTubeIds: ['VCRf_qazO9s'] }
+    });
+
+    expect(component.sendError()).toBe(true);
+    expect(component.errorMessage()).toContain('added to this episode');
+  });
+
   it('keeps only the generic error for other failures', () => {
     const component = failWith({ status: 500, error: { message: 'boom' } });
 

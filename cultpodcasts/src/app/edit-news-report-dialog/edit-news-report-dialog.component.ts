@@ -17,6 +17,7 @@ import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-ed
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { PlayableEditFormValue, playableFieldsChanges } from '../playable-edit-form.util';
 import { NewsReportChangeRequest, NewsReportDto } from '../playable-edit.interface';
+import { patchWithYouTubeKeepList } from '../youtube-keep-list';
 
 export interface EditNewsReportDialogData {
   reportId: string;
@@ -85,7 +86,13 @@ export class EditNewsReportDialogComponent extends PlayableEditDialogBase<NewsRe
   }
 
   protected patch(id: string, changes: NewsReportChangeRequest) {
-    return this.curation.patchNewsReport(id, changes);
+    return patchWithYouTubeKeepList(
+      changes,
+      this.original?.additionalYouTube,
+      this.curation.getNewsReport(id),
+      () => this.curation.patchNewsReport(id, changes),
+      'news report'
+    );
   }
 
   protected changes(original: NewsReportDto, value: PlayableEditFormValue): NewsReportChangeRequest {

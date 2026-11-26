@@ -7,6 +7,7 @@ import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-ed
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { PlayableEditFormValue, tvShowEpisodeChanges } from '../playable-edit-form.util';
 import { TvShowEpisodeChangeRequest, TvShowEpisodeDto } from '../playable-edit.interface';
+import { patchWithYouTubeKeepList } from '../youtube-keep-list';
 
 export interface EditTvShowEpisodeDialogData {
   episodeId: string;
@@ -38,7 +39,13 @@ export class EditTvShowEpisodeDialogComponent extends PlayableEditDialogBase<TvS
   }
 
   protected patch(id: string, changes: TvShowEpisodeChangeRequest) {
-    return this.curation.patchTvShowEpisode(id, changes);
+    return patchWithYouTubeKeepList(
+      changes,
+      this.original?.additionalYouTube,
+      this.curation.getTvShowEpisode(id),
+      () => this.curation.patchTvShowEpisode(id, changes),
+      'TV episode'
+    );
   }
 
   protected changes(original: TvShowEpisodeDto, value: PlayableEditFormValue): TvShowEpisodeChangeRequest {

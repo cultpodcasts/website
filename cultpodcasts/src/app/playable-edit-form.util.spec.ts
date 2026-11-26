@@ -40,6 +40,49 @@ describe('playable edit form', () => {
     expect(form.controls.imdbId).toBeUndefined();
   });
 
+  it('sends an additional YouTube keep-list for a news report, with the ids the form loaded', () => {
+    const dto = report({
+      additionalYouTube: [
+        { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', channelName: 'Desk', title: 'Manic' }
+      ]
+    });
+    const form = buildPlayableEditForm(dto, 'news');
+    expect(form.controls.additionalYouTube).toBeTruthy();
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({});
+    form.controls.additionalYouTube!.removeAt(0);
+    expect(playableFieldsChanges(dto, form.getRawValue())).toEqual({
+      additionalYouTube: [],
+      expectedAdditionalYouTubeIds: ['GSIPAfDO_ec']
+    });
+    const promote = buildPlayableEditForm(dto, 'news');
+    promote.controls.promoteYouTubeId!.setValue('GSIPAfDO_ec');
+    expect(playableFieldsChanges(dto, promote.getRawValue())).toEqual({ promoteYouTubeId: 'GSIPAfDO_ec' });
+  });
+
+  it('a TV episode change includes the same additional YouTube keep-list', () => {
+    const dto: TvShowEpisodeDto = {
+      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      title: 'Part',
+      description: 'Synthetic episode',
+      release: '2026-01-02',
+      duration: '0:44:00',
+      explicit: false,
+      ignored: false,
+      removed: false,
+      posted: false,
+      tweeted: false,
+      blueskyPosted: false,
+      subjects: [],
+      tvShowId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      additionalYouTube: [
+        { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic' }
+      ]
+    };
+    const form = buildPlayableEditForm(dto, 'tv');
+    form.controls.promoteYouTubeId!.setValue('GSIPAfDO_ec');
+    expect(tvShowEpisodeChanges(dto, form.getRawValue())).toEqual({ promoteYouTubeId: 'GSIPAfDO_ec' });
+  });
+
   it('sends nothing when nothing changed (including the normalised hash tag and English)', () => {
     const dto = report({ hashTag: 'desk', language: 'en' });
     const form = buildPlayableEditForm(dto);

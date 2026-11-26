@@ -25,4 +25,13 @@ export interface EpisodePost {
     hashTag?: string | null;
     lang?: string;
     guests?: string[];
+    /**
+     * Additional YouTube uploads to keep, in display order (RPP #1526). Existing entries are identified by
+     * `youTubeId`; a new entry is added from a YouTube `url`. Omitted entries are removed; `[]` removes all.
+     */
+    additionalYouTube?: { youTubeId?: string; url?: string; title?: string; channelName?: string }[];
+    /** Additional YouTube ids this editor last saw. Sent with `additionalYouTube`. */
+    expectedAdditionalYouTubeIds?: string[];
+    /** Swap this additional YouTube id into the primary YouTube link. */
+    promoteYouTubeId?: string;
 }

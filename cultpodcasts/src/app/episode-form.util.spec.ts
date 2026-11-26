@@ -532,6 +532,27 @@ describe('episode-form.util', () => {
       expect(getEpisodeChanges(prev, now)).toEqual({ hashTag: '#ABC #XYZ' });
     });
 
+    it('sends an additional YouTube keep-list and a promote on the episode PATCH', () => {
+      const prev = baseEpisode({
+        additionalYouTube: [
+          { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic', channelName: 'Desk' }
+        ]
+      });
+      const rows = [{ youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic', channelName: 'Desk' }];
+      const same: EpisodeFormUpdate = { ...prev, additionalYouTubeEdits: rows, promoteYouTubeId: '' };
+      expect(getEpisodeChanges(prev, same)).toEqual({});
+      expect(getEpisodeChanges(prev, {
+        ...same,
+        additionalYouTubeEdits: [{ youTubeId: '', url: 'https://www.youtube.com/watch?v=VCRf_qazO9s', title: '', channelName: 'Real Stories' }]
+      })).toEqual({
+        additionalYouTube: [{ url: 'https://www.youtube.com/watch?v=VCRf_qazO9s', channelName: 'Real Stories' }],
+        expectedAdditionalYouTubeIds: ['GSIPAfDO_ec']
+      });
+      expect(getEpisodeChanges(prev, { ...same, promoteYouTubeId: 'GSIPAfDO_ec' })).toEqual({
+        promoteYouTubeId: 'GSIPAfDO_ec'
+      });
+    });
+
     it('clears hashTag when emptied', () => {
       const prev = baseEpisode({ hashTag: '#ABC' });
       const now = baseEpisode({ hashTag: null });

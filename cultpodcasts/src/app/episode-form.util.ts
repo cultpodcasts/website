@@ -16,6 +16,7 @@ import { comparePeopleBySortKey } from './person-sort';
 import { Subject } from './subject.interface';
 import { filterKeepingSelectedInOrder } from './subject-filter.util';
 import { ensureHashPrefix, hashPrefixedTagValidator } from './podcast-form.util';
+import { newYouTubeAlternateGroup, youTubeAlternateChangeFields } from './playable-edit-form.util';
 
 /**
  * Pure helpers shared by add-episode-dialog and edit-episode-dialog.
@@ -157,6 +158,12 @@ export interface EpisodeFormUpdate {
   hashTag?: string | null;
   lang?: string | null;
   guests?: string[] | null;
+  /**
+   * Rows from the Also on YouTube tab. Named apart from `ApiEpisode.additionalYouTube` so a loaded episode is still
+   * an {@link EpisodeFormUpdate}. Omitted by callers that do not edit that list.
+   */
+  additionalYouTubeEdits?: { youTubeId: string; url: string; title: string; channelName: string }[];
+  promoteYouTubeId?: string;
 }
 
 /** Maps default Spotify/Apple/YouTube fields plus a free URL list onto urls + services. */
@@ -283,6 +290,17 @@ export function buildEpisodeForm(episode: ApiEpisode): FormGroup<EpisodeForm> {
     youtube: new FormControl(episode.urls?.youtube || null),
     youtubeImage: new FormControl(episode.images?.youtube || null),
     additionalUrls: additionalUrlControls(episode),
+    additionalYouTube: new FormArray(
+      (episode.additionalYouTube ?? []).map(item =>
+        newYouTubeAlternateGroup(
+          item.youTubeId,
+          item.url == null ? '' : item.url.toString(),
+          item.title ?? '',
+          item.channelName ?? ''
+        )
+      )
+    ),
+    promoteYouTubeId: new FormControl('', { nonNullable: true }),
     subjects: new FormControl(episode.subjects, { nonNullable: true }),
     searchTerms: new FormControl(episode.searchTerms || null),
     hashTag: new FormControl(ensureHashPrefix(episode.hashTag) || null, {
@@ -591,6 +609,11 @@ export function getEpisodeChanges(prev: ApiEpisode, now: EpisodeFormUpdate): Epi
     changes.lang = next === 'unset' ? '' : next;
   }
   if (!isSameStringArray(prev.guests, now.guests)) changes.guests = now.guests ?? undefined;
+  Object.assign(changes, youTubeAlternateChangeFields(
+    { additionalYouTube: prev.additionalYouTube },
+    now.additionalYouTubeEdits,
+    now.promoteYouTubeId
+  ));
   return changes;
 }
 

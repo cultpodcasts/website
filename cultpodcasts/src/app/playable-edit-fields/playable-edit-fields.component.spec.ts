@@ -388,7 +388,7 @@ describe('PlayableEditFieldsComponent catalogueTab', () => {
     const fixture = TestBed.createComponent(CatalogueTabHostComponent);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
-    expect(tabLabels(root)).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Catalogue']);
+    expect(tabLabels(root)).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Catalogue']);
     expect(root.querySelector('.synthetic-catalogue-content')).toBeNull();
     Array.from(root.querySelectorAll<HTMLElement>('[role="tab"]')).find((t) => (t.textContent ?? '').trim() === 'Catalogue')!.click();
     for (let i = 0; i < 5; i++) {
@@ -428,6 +428,6 @@ describe('PlayableEditFieldsComponent catalogueTab', () => {
     tv.componentRef.setInput('variant', 'tv');
     tv.detectChanges();
     expect(tabLabels(tv.nativeElement as HTMLElement)).toEqual(
-      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Identity']);
+      ['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Identity']);
   });
 });
