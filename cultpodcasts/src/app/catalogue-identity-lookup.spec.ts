@@ -3,8 +3,10 @@ import { of, throwError } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import {
   applyIdentityIds,
+  applyProposedFilmRelease,
   filmReleaseYear,
-  runCatalogueIdentityLookup
+  runCatalogueIdentityLookup,
+  shouldReplaceFilmRelease
 } from './catalogue-identity-lookup';
 import { CatalogueIdentityLookupResponse } from './catalogue-identity-lookup.interface';
 import { AmbiguousIdentityAnswer, AmbiguousIdentityPrompt } from './ambiguous-identity-dialog/ambiguous-identity-dialog.component';
@@ -30,6 +32,27 @@ describe('filmReleaseYear', () => {
     expect(filmReleaseYear('2021')).toBe(2021);
     expect(filmReleaseYear('2021-06-15')).toBe(2021);
     expect(filmReleaseYear('')).toBeUndefined();
+  });
+});
+
+describe('applyProposedFilmRelease', () => {
+  it('fills a blank release from the proposed identity date', () => {
+    expect(applyProposedFilmRelease('', '1981-10-04')).toEqual({
+      release: '1981-10-04',
+      changed: true
+    });
+  });
+
+  it('replaces an upload-year release more than one year after the identity', () => {
+    expect(applyProposedFilmRelease('2025-01-20', '1981-10-04')).toEqual({
+      release: '1981-10-04',
+      changed: true
+    });
+  });
+
+  it('keeps a same-year curator date', () => {
+    expect(applyProposedFilmRelease('1981-06-01', '1981-10-04')).toEqual({ changed: false });
+    expect(shouldReplaceFilmRelease('1982-01-01', 1981)).toBe(false);
   });
 });
 
