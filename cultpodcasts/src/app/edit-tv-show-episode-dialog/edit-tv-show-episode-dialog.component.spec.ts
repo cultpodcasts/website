@@ -100,7 +100,7 @@ describe('EditTvShowEpisodeDialogComponent', () => {
     expect(dialog.parentName()).toBe('Nightly');
     expect(dialog.defaultSubject()).toBeNull();
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Identity']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Identity']);
     expect(dialog.form()!.getRawValue()).toEqual(expect.objectContaining({
       imdbId: 'tt0000001',
       tvdbId: '',
@@ -109,6 +109,27 @@ describe('EditTvShowEpisodeDialogComponent', () => {
       guests: ['Ann Example'],
       hashTag: '#nightly'
     }));
+  });
+
+  it('re-reads the episode before PATCHing an additional YouTube keep-list', async () => {
+    const loaded = {
+      ...synthetic,
+      additionalYouTube: [
+        { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic', channelName: 'Nightly' }
+      ]
+    };
+    const dialog = await load(loaded);
+    dialog.form()!.controls.additionalYouTube!.at(0).controls.title.setValue('Renamed');
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/tvshowepisode/${episodeId}`))).flush(loaded);
+    const patch = await expectSoon(api(`/tvshowepisode/${episodeId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      additionalYouTube: [{ youTubeId: 'GSIPAfDO_ec', title: 'Renamed' }],
+      expectedAdditionalYouTubeIds: ['GSIPAfDO_ec']
+    });
+    patch.flush({}, { status: 202, statusText: 'Accepted' });
+    await saving;
+    expect(close).toHaveBeenCalled();
   });
 
   it('PATCHes playable fields, blueskyPosted and identity changes together', async () => {

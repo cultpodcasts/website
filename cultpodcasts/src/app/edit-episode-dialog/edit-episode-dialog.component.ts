@@ -70,6 +70,8 @@ import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-tr
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { MoveEpisodeToTvShowDialogClose, MoveEpisodeToTvShowDialogData } from '../episode-tv-show-move.interface';
 import { SELECT_REORDER } from '../select-reorder';
+import { FilmYouTubeAlternatesEditComponent } from '../film-youtube-alternates-edit/film-youtube-alternates-edit.component';
+import { staleYouTubeAlternatesMessage } from '../youtube-keep-list';
 
 @Component({
   selector: 'app-edit-episode-dialog',
@@ -89,7 +91,8 @@ import { SELECT_REORDER } from '../select-reorder';
     MatCheckboxModule,
     KeyValuePipe,
     MatDividerModule,
-    MatIconModule
+    MatIconModule,
+    FilmYouTubeAlternatesEditComponent
   ],
   templateUrl: './edit-episode-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -110,6 +113,8 @@ export class EditEpisodeDialogComponent {
   readonly podcastName = signal<string>("");
   readonly isLoading = signal<boolean>(true);
   readonly isInError = signal<boolean>(false);
+  /** Stale additional-YouTube keep-list, shown instead of opening the save dialog. */
+  readonly submitError = signal('');
   /** RPP #1484: the loaded episode's approval status (null means approved, as on every ordinary episode). */
   readonly approvalStatus = signal<ApprovalStatusDto | null>(null);
   protected readonly ApprovalStatusDto = ApprovalStatusDto;
@@ -385,6 +390,8 @@ export class EditEpisodeDialogComponent {
         hashTag: form.controls.hashTag.value?.trim() || null,
         lang: form.controls.lang.value,
         guests: form.controls.guests.value,
+        additionalYouTubeEdits: form.controls.additionalYouTube.getRawValue(),
+        promoteYouTubeId: form.controls.promoteYouTubeId.value,
       };
       applyEpisodeFormServiceFields(form, update);
       var changes = getEpisodeChanges(this.originalEpisode!, update);
@@ -396,10 +403,48 @@ export class EditEpisodeDialogComponent {
       }
       if (Object.keys(changes).length == 0) {
         this.dialogRef.close({ noChange: true, podcastId: this.podcastId });
+      } else if (changes.additionalYouTube !== undefined) {
+        void this.sendAfterYouTubeKeepListCheck(changes);
       } else {
+        this.submitError.set('');
         this.send(this.originalEpisode?.podcastId!, this.episodeId, changes);
       }
     }
+  }
+
+  /**
+   * Additional YouTube is a keep-list: an upload attached after this dialog loaded is not in the list, so sending
+   * it would drop that upload. Re-read the episode and stay open when it has an id this dialog never saw.
+   */
+  private async sendAfterYouTubeKeepListCheck(changes: EpisodePost): Promise<void> {
+    const known = new Set((this.originalEpisode?.additionalYouTube ?? []).map(item => item.youTubeId));
+    try {
+      const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: `https://api.cultpodcasts.com/`,
+          scope: 'curate'
+        }
+      }));
+      const headers = new HttpHeaders().set('Authorization', 'Bearer ' + token);
+      const episodeEndpoint = new URL(
+        `/episode/${encodeURIComponent(this.podcastIdentifier)}/${this.episodeId}`,
+        environment.api
+      ).toString();
+      const latest = await firstValueFrom(this.http.get<ApiEpisode>(episodeEndpoint, { headers }));
+      const added = (latest.additionalYouTube ?? []).filter(item => !known.has(item.youTubeId));
+      if (added.length > 0) {
+        this.submitError.set(staleYouTubeAlternatesMessage(added.length, 'episode'));
+        this.cdr.markForCheck();
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+      this.submitError.set('Could not check additional YouTube uploads before saving');
+      this.cdr.markForCheck();
+      return;
+    }
+    this.submitError.set('');
+    this.send(this.originalEpisode?.podcastId!, this.episodeId, changes);
   }
 
   send(podcastId: string, episodeId: string, changes: EpisodePost) {

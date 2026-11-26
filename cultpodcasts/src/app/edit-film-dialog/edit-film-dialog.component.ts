@@ -9,6 +9,7 @@ import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-ed
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { filmChanges, PlayableEditFormValue } from '../playable-edit-form.util';
 import { FilmChangeRequest, FilmDto } from '../playable-edit.interface';
+import { staleYouTubeAlternatesMessage as sharedStaleYouTubeAlternatesMessage } from '../youtube-keep-list';
 
 export interface EditFilmDialogData {
   filmId: string;
@@ -111,8 +112,7 @@ export function staleTrailersMessage(added: number): string {
 }
 
 export function staleYouTubeAlternatesMessage(added: number): string {
-  return `${added === 1 ? 'An additional YouTube upload was' : `${added} additional YouTube uploads were`} added to this film after the editor opened. ` +
-    'Close and reopen the film to edit them.';
+  return sharedStaleYouTubeAlternatesMessage(added, 'film');
 }
 
 export function staleKeepListMessage(error: HttpErrorResponse): string {

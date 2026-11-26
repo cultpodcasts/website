@@ -44,6 +44,8 @@ export interface PlayableFieldsDto {
   /** People matched from title/description who are not already in `guests`. */
   guestSuggestions?: PersonMatch[] | null;
   services?: Record<string, { url?: string; image?: string; lang?: string }> | null;
+  /** Extra YouTube uploads in display order (RPP #1411 / #1526). Omitted when there are none. */
+  additionalYouTube?: YouTubeAlternateDto[] | null;
 }
 
 export interface NewsReportDto extends PlayableFieldsDto {
@@ -77,8 +79,6 @@ export interface FilmDto extends PlayableFieldsDto {
   tmdbId?: number | null;
   /** In display order; omitted when the film has none. */
   trailers?: FilmTrailer[] | null;
-  /** Extra YouTube uploads in display order (RPP #1411). Omitted when the film has none. */
-  additionalYouTube?: YouTubeAlternateDto[] | null;
   /** Image from the film's identity (TMDB), used when no service has one (RedditPodcastPoster#1430). */
   image?: string | null;
   /**
@@ -119,6 +119,15 @@ export interface PlayableFieldsChangeRequest {
    * (Api #193 / cultpodcasts-api 2.10.4+). Absolute http(s) only; Azure 400s before apply.
    */
   services?: Record<string, { url?: string; image?: string }>;
+  /**
+   * Additional YouTube uploads to keep, in display order (RPP #1411 / #1526). Existing entries are identified by
+   * `youTubeId`; a new entry is added from a YouTube `url`. Omitted entries are removed; `[]` removes all.
+   */
+  additionalYouTube?: { youTubeId?: string; url?: string; title?: string; channelName?: string }[];
+  /** Additional YouTube ids this editor last saw. Sent with `additionalYouTube`. A 409 when a stored id is missing. */
+  expectedAdditionalYouTubeIds?: string[];
+  /** Swap this additional YouTube id into the primary YouTube link. */
+  promoteYouTubeId?: string;
 }
 
 export type NewsReportChangeRequest = PlayableFieldsChangeRequest;
@@ -155,15 +164,6 @@ export interface FilmChangeRequest extends Omit<PlayableFieldsChangeRequest, 'ti
    * id that is not in this list, so a stale keep-list cannot delete it.
    */
   expectedTrailerIds?: string[];
-  /**
-   * Additional YouTube uploads to keep, in display order (RPP #1411). Existing entries are identified by
-   * `youTubeId`; a new entry is added from a YouTube `url`. Omitted entries are removed; `[]` removes all.
-   */
-  additionalYouTube?: { youTubeId?: string; url?: string; title?: string; channelName?: string }[];
-  /** Additional YouTube ids this editor last saw. Sent with `additionalYouTube`. A 409 when a stored id is missing. */
-  expectedAdditionalYouTubeIds?: string[];
-  /** Swap this additional YouTube id into the primary `services.youtube` link. */
-  promoteYouTubeId?: string;
 }
 
 export interface EditPlayableDialogResponse {

@@ -138,7 +138,8 @@
     <mat-tab label="Also on YouTube">
         <app-film-youtube-alternates-edit
             [alternates]="f.controls.additionalYouTube"
-            [promoteYouTubeId]="f.controls.promoteYouTubeId"></app-film-youtube-alternates-edit>
+            [promoteYouTubeId]="f.controls.promoteYouTubeId"
+            [scope]="variant() === 'film' ? 'film' : 'item'"></app-film-youtube-alternates-edit>
     </mat-tab>
     }
     <mat-tab label="Guests">

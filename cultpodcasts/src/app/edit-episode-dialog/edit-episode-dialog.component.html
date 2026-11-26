@@ -6,6 +6,9 @@
     } @else if (isInError()) {
     <p id="error">An error occurred</p>
     } @else {
+    @if (submitError()) {
+    <p id="submit-error" class="submit-error">{{submitError()}}</p>
+    }
     <form id="edit" [formGroup]="form()!" (ngSubmit)="onSubmit()">
         <mat-tab-group>
             <mat-tab label="Details">
@@ -255,6 +258,12 @@
                     </button>
                 </mat-form-field>
                 }
+            </mat-tab>
+            <mat-tab label="Also on YouTube">
+                <app-film-youtube-alternates-edit
+                    [alternates]="form()!.controls.additionalYouTube"
+                    [promoteYouTubeId]="form()!.controls.promoteYouTubeId"
+                    scope="item"></app-film-youtube-alternates-edit>
             </mat-tab>
             <mat-tab label="Guests">
                 <mat-form-field class="full-width">
