@@ -72,6 +72,10 @@
           <mat-icon class="material-symbols-outlined">search_check</mat-icon>
           <span>Review Outgoing</span>
         </a>
+        <a mat-menu-item (click)="openSplitOffsAwaitingApproval()">
+          <mat-icon class="material-symbols-outlined">call_split</mat-icon>
+          <span>Split-offs awaiting approval</span>
+        </a>
       </mat-menu>
       <mat-menu #profileAdmin="matMenu">
         <a (click)="runSearchIndexer()" mat-menu-item>
@@ -174,6 +178,10 @@
       <a mat-menu-item (click)="openReviewOutgoing()">
         <mat-icon class="material-symbols-outlined">search_check</mat-icon>
         <span>Review Outgoing</span>
+      </a>
+      <a mat-menu-item (click)="openSplitOffsAwaitingApproval()">
+        <mat-icon class="material-symbols-outlined">call_split</mat-icon>
+        <span>Split-offs awaiting approval</span>
       </a>
     </mat-menu>
     <mat-menu #moreAdmin="matMenu">

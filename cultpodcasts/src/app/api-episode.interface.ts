@@ -8,7 +8,7 @@ import type { WithDates } from './contract-dates';
 export type ApprovalDecision = 'Approve' | 'Reject';
 
 /**
- * Curator episode read model (`GET /episode/:id`, `GET /episode/:podcastName/:episodeId`, `GET /episodes/outgoing`):
+ * Curator episode read model (`GET /episode/:id`, `GET /episode/:podcastName/:episodeId`, `GET /episodes/outgoing`, `GET /episodes/awaiting-approval`):
  * the generated `Api.Dtos.EpisodeDto` (RedditPodcastPoster#1502) with `release` as the `Date` that
  * {@link JsonDateInterceptor} produces.
  */

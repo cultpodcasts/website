@@ -4,6 +4,7 @@ describe('isAuthClientOnlyPath', () => {
   it('matches curator and signed-in-only routes', () => {
     expect(isAuthClientOnlyPath('/discovery')).toBe(true);
     expect(isAuthClientOnlyPath('/outgoingEpisodes')).toBe(true);
+    expect(isAuthClientOnlyPath('/split-offs')).toBe(true);
     expect(isAuthClientOnlyPath('/bookmarks')).toBe(true);
     expect(isAuthClientOnlyPath('/unauthorised')).toBe(true);
     expect(isAuthClientOnlyPath('/episodes/abc')).toBe(true);
