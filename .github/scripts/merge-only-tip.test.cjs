@@ -1,109 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
+const { createRepo } = require('./git-graph-fake.cjs');
 const m = require('./merge-only-tip.cjs');
-
-const sha1 = (s) => crypto.createHash('sha1').update(String(s)).digest('hex');
-
-// In-memory git graph + the slice of octokit the module uses (git.getCommit and
-// repos.compareCommitsWithBasehead), with GitHub's three-dot compare semantics.
-function createRepo() {
-  const commits = new Map();
-  const branches = {};
-  let seq = 0;
-  const add = (parents, tree) => {
-    const id = sha1(`commit-${++seq}`);
-    commits.set(id, { parents, tree, seq });
-    return id;
-  };
-  const ancestors = (id) => {
-    const out = new Set();
-    const stack = [id];
-    while (stack.length) {
-      const cur = stack.pop();
-      if (out.has(cur)) continue;
-      out.add(cur);
-      stack.push(...commits.get(cur).parents);
-    }
-    return out;
-  };
-  const mergeBase = (a, b) => {
-    const bs = ancestors(b);
-    const common = [...ancestors(a)].filter((x) => bs.has(x));
-    return common.sort((x, y) => commits.get(y).seq - commits.get(x).seq)[0];
-  };
-  const diff = (from, to) => {
-    const files = [];
-    for (const p of new Set([...Object.keys(from), ...Object.keys(to)]).values()) {
-      if (from[p] === to[p]) continue;
-      if (to[p] === undefined) files.push({ filename: p, status: 'removed', sha: sha1(from[p]) });
-      else if (from[p] === undefined) files.push({ filename: p, status: 'added', sha: sha1(to[p]) });
-      else files.push({ filename: p, status: 'modified', sha: sha1(to[p]) });
-    }
-    return files.sort((a, b) => a.filename.localeCompare(b.filename));
-  };
-  const resolve = (name) => branches[name] || name;
-
-  const repo = {
-    commits, branches, calls: [],
-    root: (tree) => add([], { ...tree }),
-    // A single-parent commit applying path -> content (null deletes).
-    commit(parent, changes) {
-      const tree = { ...commits.get(parent).tree };
-      for (const [p, c] of Object.entries(changes)) { if (c === null) delete tree[p]; else tree[p] = c; }
-      return add([parent], tree);
-    },
-    // A clean three-way merge. `tamper` edits the resulting tree (an evil merge).
-    merge(first, second, tamper = {}) {
-      const baseTree = commits.get(mergeBase(first, second)).tree;
-      const a = commits.get(first).tree;
-      const b = commits.get(second).tree;
-      const tree = {};
-      for (const p of new Set([...Object.keys(baseTree), ...Object.keys(a), ...Object.keys(b)])) {
-        let v;
-        if (a[p] === b[p]) v = a[p];
-        else if (a[p] === baseTree[p]) v = b[p];
-        else if (b[p] === baseTree[p]) v = a[p];
-        else v = `conflict:${p}`;
-        if (v !== undefined) tree[p] = v;
-      }
-      for (const [p, c] of Object.entries(tamper)) { if (c === null) delete tree[p]; else tree[p] = c; }
-      return add([first, second], tree);
-    },
-    octopus(first, second, third) {
-      return add([first, second, third], { ...commits.get(first).tree });
-    },
-  };
-  repo.github = {
-    rest: {
-      git: {
-        getCommit: async ({ commit_sha }) => {
-          repo.calls.push(['getCommit', commit_sha]);
-          if (repo.failGetCommit) throw new Error('502 Bad Gateway');
-          if (!commits.has(commit_sha)) throw new Error('404');
-          return { data: { parents: commits.get(commit_sha).parents.map((sha) => ({ sha })) } };
-        },
-      },
-      repos: {
-        compareCommitsWithBasehead: async ({ basehead, per_page = 30, page = 1 }) => {
-          repo.calls.push(['compare', basehead, page]);
-          const [b, h] = basehead.split('...').map(resolve);
-          const bAnc = ancestors(b);
-          const hAnc = ancestors(h);
-          let status = 'diverged';
-          if (b === h) status = 'identical';
-          else if (bAnc.has(h)) status = 'behind';
-          else if (hAnc.has(b)) status = 'ahead';
-          const files = diff(commits.get(mergeBase(b, h)).tree, commits.get(h).tree);
-          const start = (page - 1) * per_page;
-          return { data: { status, files: files.slice(start, start + per_page) } };
-        },
-      },
-    },
-  };
-  return repo;
-}
 
 // main: root -> m1; feature branch forks at root with one commit on a PR-only file.
 function scenario() {
@@ -138,38 +37,62 @@ test('deltaMatchesBaseSide: order independent; any difference in file, status or
   assert.equal(m.deltaMatchesBaseSide([{ ...x, previous_filename: 'w' }], [x]), false);
 });
 
-test('listCompareFiles: collects every page and reports a short list as complete', async () => {
-  const files = Array.from({ length: 250 }, (_, i) => ({ filename: `f${i}` }));
-  const github = { rest: { repos: { compareCommitsWithBasehead: async ({ page, per_page }) => ({ data: { files: files.slice((page - 1) * per_page, page * per_page) } }) } } };
-  const r = await m.listCompareFiles(github, 'o', 'r', 'a...b');
-  assert.equal(r.files.length, 250);
+// A GitHub compare returns at most 300 files, on page 1 only (page 2+ come back empty), whatever
+// per_page says. These doubles mirror that, so a clipped listing looks exactly like the real one.
+const githubReturning = (files, extra = {}) => ({
+  rest: { repos: { compareCommitsWithBasehead: async ({ page = 1 }) => ({ data: { files: page === 1 ? files.slice(0, 300) : [], ...extra } }) } },
+});
+const nFiles = (n) => Array.from({ length: n }, (_, i) => ({ filename: `f${i}` }));
+
+test('listCompareFiles: a listing under the 300 file cap is complete (299 files)', async () => {
+  const r = await m.listCompareFiles(githubReturning(nFiles(299)), 'o', 'r', 'a...b');
+  assert.equal(r.files.length, 299);
   assert.equal(r.truncated, false);
 });
 
-test('listCompareFiles: reaching the 300 file cap is treated as truncated', async () => {
-  const files = Array.from({ length: 400 }, (_, i) => ({ filename: `f${i}` }));
-  const github = { rest: { repos: { compareCommitsWithBasehead: async ({ page, per_page }) => ({ data: { files: files.slice((page - 1) * per_page, page * per_page) } }) } } };
-  const r = await m.listCompareFiles(github, 'o', 'r', 'a...b');
+test('listCompareFiles: a listing of exactly 300 files may be clipped, so it is truncated', async () => {
+  const r = await m.listCompareFiles(githubReturning(nFiles(300)), 'o', 'r', 'a...b');
+  assert.equal(r.files.length, 300);
   assert.equal(r.truncated, true);
 });
 
-test('listCompareFiles: an API that ignores paging (repeated entries) is treated as truncated', async () => {
-  const same = Array.from({ length: 100 }, (_, i) => ({ filename: `f${i}` }));
-  const github = { rest: { repos: { compareCommitsWithBasehead: async () => ({ data: { files: same } }) } } };
-  const r = await m.listCompareFiles(github, 'o', 'r', 'a...b');
+test('listCompareFiles: a 390 file range clipped to 300 by GitHub is truncated', async () => {
+  const r = await m.listCompareFiles(githubReturning(nFiles(390)), 'o', 'r', 'a...b');
+  assert.equal(m.COMPARE_FILE_CAP, 300);
+  assert.equal(r.files.length, 300);
   assert.equal(r.truncated, true);
 });
 
-test('listCompareFiles: a missing files array is an empty, complete listing', async () => {
-  const github = { rest: { repos: { compareCommitsWithBasehead: async () => ({ data: {} }) } } };
+test('listCompareFiles: makes one request and never pages files', async () => {
+  const calls = [];
+  const github = { rest: { repos: { compareCommitsWithBasehead: async (a) => { calls.push(a); return { data: { files: nFiles(300) } }; } } } };
+  await m.listCompareFiles(github, 'o', 'r', 'a...b');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].basehead, 'a...b');
+});
+
+test('listCompareFiles: no files array on a changed range fails closed (truncated)', async () => {
+  const github = { rest: { repos: { compareCommitsWithBasehead: async () => ({ data: { status: 'ahead' } }) } } };
+  assert.deepEqual(await m.listCompareFiles(github, 'o', 'r', 'a...b'), { files: [], truncated: true });
+  const none = { rest: { repos: { compareCommitsWithBasehead: async () => ({ data: {} }) } } };
+  assert.equal((await m.listCompareFiles(none, 'o', 'r', 'a...b')).truncated, true);
+});
+
+test('listCompareFiles: an identical range with no files array is an empty, complete listing', async () => {
+  const github = { rest: { repos: { compareCommitsWithBasehead: async () => ({ data: { status: 'identical' } }) } } };
   assert.deepEqual(await m.listCompareFiles(github, 'o', 'r', 'a...b'), { files: [], truncated: false });
+});
+
+test('listCompareFiles: an empty files array on a changed range (e.g. an empty merge) is complete', async () => {
+  const r = await m.listCompareFiles(githubReturning([], { status: 'ahead' }), 'o', 'r', 'a...b');
+  assert.deepEqual(r, { files: [], truncated: false });
 });
 
 test('assessMergeOnlyHop: a clean merge of main into the PR branch is merge-only', async () => {
   const { repo, feature, main1 } = scenario();
   const merge = repo.merge(feature, main1);
   const r = await m.assessMergeOnlyHop(hopArgs(repo, merge));
-  assert.deepEqual(r, { ok: true, firstParent: feature, secondParent: main1, files: 1 });
+  assert.deepEqual(r, { ok: true, firstParent: feature, secondParent: main1, files: 1, paths: ['src/a.txt'] });
 });
 
 test('assessMergeOnlyHop: a merge that brings in several main commits and deletions and additions is merge-only', async () => {
@@ -182,6 +105,27 @@ test('assessMergeOnlyHop: a merge that brings in several main commits and deleti
   assert.equal(r.files, 3);
 });
 
+test('assessMergeOnlyHop: reports the merged-in paths (renames under both names), sorted; an empty merge has none', async () => {
+  const { repo, feature, main1 } = scenario();
+  const main2 = repo.commit(main1, { 'src/b.txt': null, 'docs/new.md': 'n' });
+  repo.branches.main = main2;
+  const merge = repo.merge(feature, main2);
+  const r = await m.assessMergeOnlyHop(hopArgs(repo, merge));
+  assert.deepEqual(r.paths, ['docs/new.md', 'src/a.txt', 'src/b.txt']);
+  const again = await m.assessMergeOnlyHop(hopArgs(repo, repo.merge(merge, main2)));
+  assert.deepEqual(again.paths, []);
+});
+
+test('walkMergeOnlyChain: every hop carries its merged-in paths', async () => {
+  const { repo, feature, main1 } = scenario();
+  const first = repo.merge(feature, main1);
+  const main2 = repo.commit(main1, { 'docs/new.md': 'n' });
+  repo.branches.main = main2;
+  const second = repo.merge(first, main2);
+  const r = await m.walkMergeOnlyChain({ ...hopArgs(repo, second), headSha: second, classify: (sha) => (sha === feature ? 'stop' : null) });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.hops.map((h) => h.paths), [['docs/new.md'], ['src/a.txt']]);
+});
 test('assessMergeOnlyHop: merging main when the PR already contains it (empty merge) is merge-only', async () => {
   const { repo, feature, main1 } = scenario();
   const first = repo.merge(feature, main1);
@@ -264,28 +208,46 @@ test('assessMergeOnlyHop: both sides making the identical change to a file still
   assert.match(r.reason, /same files/);
 });
 
-test('assessMergeOnlyHop: a truncated base-side listing fails closed', async () => {
+// Main moves on by `extra` generated files on top of the scenario's one-file change (src/a.txt).
+function staleBranch(extra) {
   const { repo, feature } = scenario();
   const bulk = {};
-  for (let i = 0; i < 350; i++) bulk[`gen/f${i}.txt`] = `v${i}`;
+  for (let i = 0; i < extra; i++) bulk[`gen/f${String(i).padStart(4, '0')}.txt`] = `v${i}`;
   const main = repo.commit(repo.branches.main, bulk);
   repo.branches.main = main;
+  return { repo, feature, main };
+}
+
+test('assessMergeOnlyHop: a truncated base-side listing fails closed (390 files, clipped to 300 by GitHub)', async () => {
+  const { repo, feature, main } = staleBranch(389);
   const r = await m.assessMergeOnlyHop(hopArgs(repo, repo.merge(feature, main)));
   assert.equal(r.ok, false);
   assert.match(r.reason, /truncated/);
 });
 
-test('assessMergeOnlyHop: a large but complete listing (under the cap) is verified', async () => {
-  const { repo, feature } = scenario();
-  const bulk = {};
-  for (let i = 0; i < 150; i++) bulk[`gen/f${i}.txt`] = `v${i}`;
-  const main = repo.commit(repo.branches.main, bulk);
-  repo.branches.main = main;
+test('assessMergeOnlyHop: a base side of exactly 300 files (the cap) fails closed', async () => {
+  const { repo, feature, main } = staleBranch(299);
   const r = await m.assessMergeOnlyHop(hopArgs(repo, repo.merge(feature, main)));
-  assert.equal(r.ok, true);
-  assert.equal(r.files, 151);
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /truncated/);
 });
 
+test('assessMergeOnlyHop: a large but complete listing (299 files, under the cap) is verified', async () => {
+  const { repo, feature, main } = staleBranch(298);
+  const r = await m.assessMergeOnlyHop(hopArgs(repo, repo.merge(feature, main)));
+  assert.equal(r.ok, true);
+  assert.equal(r.files, 299);
+});
+
+test('assessMergeOnlyHop: an evil file hidden past the 300 file cut fails closed', async () => {
+  // Base side and delta are both clipped to the same first 300 paths; the hand-added file sorts
+  // after the cut, so only the truncation guard can catch it.
+  const { repo, feature, main } = staleBranch(389);
+  const merge = repo.merge(feature, main, { 'zzz/evil.txt': 'x' });
+  const r = await m.assessMergeOnlyHop(hopArgs(repo, merge));
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /truncated/);
+});
 test('assessMergeOnlyHop: invalid sha or missing base ref fails without calling the API', async () => {
   const { repo, feature, main1 } = scenario();
   const merge = repo.merge(feature, main1);
