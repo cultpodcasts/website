@@ -66,7 +66,7 @@ import { filmPageCommands, tvShowEpisodePageCommands } from '../catalogue-links'
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { MoveEpisodeToFilmDialogClose, MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 import { AttachTrailerDialogClose, AttachTrailerDialogData } from '../episode-trailer-attach.interface';
-import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
+import { AttachTrailerDialogComponent, attachedAsTrailerMessage } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { MoveEpisodeToTvShowDialogClose, MoveEpisodeToTvShowDialogData } from '../episode-tv-show-move.interface';
 import { SELECT_REORDER } from '../select-reorder';
@@ -258,7 +258,7 @@ export class EditEpisodeDialogComponent {
           return;
         }
         this.dialogRef.close({ attachedAsTrailer: true, podcastId: this.podcastId });
-        this.snackBar.open("Attached as trailer", "Ok", { duration: 10000 });
+        this.snackBar.open(attachedAsTrailerMessage(result), "Ok", { duration: 10000 });
         if (result.name && result.filmId) {
           this.router.navigate(filmPageCommands(result.name, result.filmId));
         }

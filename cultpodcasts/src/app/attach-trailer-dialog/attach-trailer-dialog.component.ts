@@ -258,7 +258,8 @@ export class AttachTrailerDialogComponent {
           this.dialogRef.close({
             attached: true,
             filmId: outcome?.filmId ?? undefined,
-            name: outcome?.name ?? name
+            name: outcome?.name ?? name,
+            ...(outcome?.filmCreated ? { filmCreated: true } : {})
           });
           return;
         }
@@ -305,15 +306,22 @@ export function pickedFilmAnnouncement(label: string): string {
   return `Film picked: ${label}.`;
 }
 
+/** The snackbar after an attach: a created film is new, with no release date or main video until Edit film adds them. */
+export function attachedAsTrailerMessage(result: AttachTrailerDialogClose): string {
+  return result.filmCreated
+    ? 'Film created and episode attached as its trailer. Add its release date and video in Edit film.'
+    : 'Attached as trailer';
+}
+
 export function attachErrorMessage(e: HttpErrorResponse): string {
   const body = e.error as { error?: string } | null | undefined;
   switch (e.status) {
     case 400:
       return body?.error ?? 'The episode cannot be attached as a trailer.';
     case 404:
-      return body?.error ?? 'The episode or film was not found. The episode may already be a trailer.';
+      return body?.error ?? 'The episode or film was not found. The episode may already be a trailer of a film.';
     case 409:
-      return body?.error ?? 'This episode is already a trailer of another film.';
+      return body?.error ?? 'This episode is already a trailer of another film, or is being attached right now. Try again shortly.';
     default:
       return 'An error occurred attaching the trailer. Sending again resumes an interrupted attach.';
   }
