@@ -9,7 +9,7 @@ import { ApiEpisode } from '../api-episode.interface';
 import { FeatureSwitchService } from '../feature-switch-service';
 import { filmPageCommands, tvShowEpisodePageCommands } from '../catalogue-links';
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
-import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
+import { AttachTrailerDialogComponent, attachedAsTrailerMessage } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { EditEpisodeDialogComponent } from './edit-episode-dialog.component';
 
@@ -182,6 +182,16 @@ describe('EditEpisodeDialogComponent curator moves', () => {
       expect(dialogRef.close).toHaveBeenCalledWith({ attachedAsTrailer: true, podcastId });
       expect(snackBarOpen).toHaveBeenCalledWith('Attached as trailer', 'Ok', { duration: 10000 });
       expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('#663: a created film is announced as new, with its missing release date and video pointed at Edit film', () => {
+      component.attachAsTrailer();
+      finish({ attached: true, filmId, name: 'Faderhuset', filmCreated: true });
+
+      expect(snackBarOpen).toHaveBeenCalledWith(attachedAsTrailerMessage({ attached: true, filmCreated: true }), 'Ok', { duration: 10000 });
+      expect(attachedAsTrailerMessage({ attached: true, filmCreated: true }))
+        .toBe('Film created and episode attached as its trailer. Add its release date and video in Edit film.');
+      expect(navigate).toHaveBeenCalledWith(filmPageCommands('Faderhuset', filmId));
     });
 
     it('does nothing when the dialog is cancelled', () => {
