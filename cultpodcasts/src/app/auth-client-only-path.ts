@@ -5,6 +5,7 @@
 export function isAuthClientOnlyPath(pathname: string): boolean {
   return pathname === '/discovery'
     || pathname === '/outgoingEpisodes'
+    || pathname === '/split-offs'
     || pathname === '/bookmarks'
     || pathname === '/unauthorised'
     || pathname.startsWith('/episodes/');

@@ -13,6 +13,7 @@ import { SearchComponent } from './search/search.component';
 import { SubjectComponent } from './subject/subject.component';
 import { EpisodesComponent } from './episodes/episodes.component';
 import { OutgoingEpisodesComponent } from './outgoing-episodes/outgoing-episodes.component';
+import { SplitOffsAwaitingApprovalComponent } from './split-offs-awaiting-approval/split-offs-awaiting-approval.component';
 import { HomeComponent } from './home/home.component';
 import { BookmarksComponent } from './bookmarks/bookmarks.component';
 import { FilmPageComponent } from './film-page/film-page.component';
@@ -51,6 +52,7 @@ export const routes: Routes = [
   { path: 'discovery-submissions/:id', loadComponent: () => import('./discovery-supervision/discovery-submission-detail.component').then(m => m.DiscoverySubmissionDetailComponent), canActivate: [hasRoleGuard], data: { roles: ["SupervisedCurator", "Supervisor", "Admin"] }, title: "Discovery Submission" },
   { path: 'episodes/:episodeIds', component: EpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Review Episodes" },
   { path: 'outgoingEpisodes', component: OutgoingEpisodesComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Outgoing Episodes" },
+  { path: 'split-offs', component: SplitOffsAwaitingApprovalComponent, canActivate: [hasRoleGuard], data: { roles: ["Curator"] }, title: "Split-offs awaiting approval" },
   { path: 'unauthorised', component: UnauthorisedComponent, title: "Unauthorised" },
   { path: 'bookmarks', component: BookmarksComponent, canActivate: [isUserGuard], title: 'My Bookmarks' }
 ];
