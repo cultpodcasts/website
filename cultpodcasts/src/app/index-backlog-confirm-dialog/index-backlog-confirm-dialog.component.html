@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Index backlog</h2>
+
+<mat-dialog-content>
+    @if (isCounting()) {
+    <p>Counting the episodes on {{ podcastName }}…</p>
+    <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
+    } @else if (errorMessage(); as message) {
+    <p>{{ message }}</p>
+    } @else if (canConfirm()) {
+    <p>
+        {{ newEpisodesLabel() }} will be ingested from the back catalogue of {{ podcastName }}.
+        @if (preview()!.ignoredEpisodeCount > 0) {
+        {{ preview()!.ignoredEpisodeCount }} of them will be added as ignored.
+        }
+    </p>
+    <p>Index backlog now?</p>
+    } @else {
+    <p>Nothing new to ingest: every episode found for {{ podcastName }} is already in the catalogue or filtered out.</p>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    @if (canConfirm()) {
+    <button mat-raised-button (click)="cancel()">Cancel</button>
+    <button mat-raised-button (click)="confirm()">Index backlog</button>
+    } @else {
+    <button mat-raised-button [disabled]="isCounting()" (click)="cancel()">Close</button>
+    }
+</mat-dialog-actions>

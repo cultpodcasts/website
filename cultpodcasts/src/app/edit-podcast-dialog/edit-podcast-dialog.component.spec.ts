@@ -5,10 +5,12 @@ import { TestBed } from '@angular/core/testing';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of } from 'rxjs';
+import { Router } from '@angular/router';
+import { ReplaySubject, Subject, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { IndexBacklogConfirmDialogComponent } from '../index-backlog-confirm-dialog/index-backlog-confirm-dialog.component';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { Podcast } from '../podcast.interface';
 import { EditPodcastDialogComponent } from './edit-podcast-dialog.component';
@@ -22,6 +24,8 @@ type Internals = {
   isInError(): boolean;
   isLoading(): boolean;
   indexBacklog(): void;
+  isAdmin(): boolean;
+  selectedTabIndex: { set(index: number): void };
 };
 
 /** Polls for one request to `url`; match() removes what it returns, so keep the first hit. */
@@ -69,6 +73,8 @@ describe('EditPodcastDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
   let dialogOpen: ReturnType<typeof vi.fn>;
   let snackOpen: ReturnType<typeof vi.fn>;
+  let snackAction: Subject<void>;
+  let roles: ReplaySubject<string[]>;
   const podcastName = 'Nightly Desk';
   const getUrl = new URL(`/podcast/${encodeURIComponent(podcastName)}`, environment.api).toString();
   const subjectsUrl = new URL('/subjects', environment.api).toString();
@@ -77,7 +83,10 @@ describe('EditPodcastDialogComponent', () => {
   beforeEach(async () => {
     close = vi.fn();
     dialogOpen = vi.fn(() => ({ afterClosed: () => of(undefined) }));
-    snackOpen = vi.fn();
+    snackAction = new Subject<void>();
+    snackOpen = vi.fn(() => ({ onAction: () => snackAction.asObservable() }));
+    roles = new ReplaySubject<string[]>(1);
+    roles.next(['Curator', 'Admin']);
     await TestBed.configureTestingModule({
       imports: [EditPodcastDialogComponent],
       providers: [
@@ -90,7 +99,7 @@ describe('EditPodcastDialogComponent', () => {
         { provide: MatSnackBar, useValue: { open: snackOpen } },
         {
           provide: AuthServiceWrapper,
-          useValue: { authService: { getAccessTokenSilently: () => of('test-token') } }
+          useValue: { authService: { getAccessTokenSilently: () => of('test-token') }, roles }
         }
       ]
     })
@@ -110,29 +119,96 @@ describe('EditPodcastDialogComponent', () => {
     return fixture.componentInstance as unknown as Internals;
   }
 
-  it('indexBacklog opens IndexDialog for the podcast name and snacks the result', () => {
-    dialogOpen.mockReturnValue({
-      afterClosed: () => of({ updated: true, episodeIds: ['p/e'] })
-    });
+  it('indexBacklog (admin) confirms the count first, then opens IndexDialog for the podcast name', () => {
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of(true) })
+      .mockReturnValueOnce({ afterClosed: () => of({ updated: true, episodeIds: ['p/e'] }) });
     const fixture = TestBed.createComponent(EditPodcastDialogComponent);
     const sut = fixture.componentInstance;
     sut.podcastName = 'Clothesline Desk';
 
     sut.indexBacklog();
 
-    expect(dialogOpen).toHaveBeenCalledWith(
-      IndexDialogComponent,
-      expect.objectContaining({
-        data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true }
-      })
-    );
-    expect(snackOpen).toHaveBeenCalledWith(
-      'Podcast Indexed. 1 episode updated',
-      'Ok',
-      { duration: 10000 }
+    expect(dialogOpen.mock.calls[0][0]).toBe(IndexBacklogConfirmDialogComponent);
+    expect(dialogOpen.mock.calls[0][1].data).toEqual({ podcastName: 'Clothesline Desk' });
+    expect(dialogOpen.mock.calls[1][0]).toBe(IndexDialogComponent);
+    expect(dialogOpen.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true } })
     );
   });
 
+  it('indexBacklog offers Review after the index and opens the updated episodes from it', () => {
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of(true) })
+      .mockReturnValueOnce({ afterClosed: () => of({ updated: true, episodeIds: ['p/e'] }) });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const sut = TestBed.createComponent(EditPodcastDialogComponent).componentInstance;
+    sut.podcastName = 'Clothesline Desk';
+
+    sut.indexBacklog();
+    expect(snackOpen).toHaveBeenCalledWith(
+      'Podcast Indexed. 1 episode updated',
+      'Review',
+      { duration: 10000 }
+    );
+    expect(navigate).not.toHaveBeenCalled();
+    snackAction.next();
+
+    expect(navigate).toHaveBeenCalledWith(['/episodes', JSON.stringify(['p/e'])]);
+  });
+
+  it('indexBacklog does nothing more when the admin cancels the confirmation', () => {
+    dialogOpen.mockReturnValueOnce({ afterClosed: () => of(false) });
+    const sut = TestBed.createComponent(EditPodcastDialogComponent).componentInstance;
+    sut.podcastName = 'Clothesline Desk';
+
+    sut.indexBacklog();
+
+    expect(dialogOpen).toHaveBeenCalledTimes(1);
+    expect(snackOpen).not.toHaveBeenCalled();
+  });
+
+  it('indexBacklog does nothing for a curator who is not an admin', () => {
+    roles.next(['Curator']);
+    const sut = TestBed.createComponent(EditPodcastDialogComponent).componentInstance as unknown as Internals;
+    sut.podcastName = 'Clothesline Desk';
+
+    sut.indexBacklog();
+
+    expect(sut.isAdmin()).toBe(false);
+    expect(dialogOpen).not.toHaveBeenCalled();
+  });
+
+  describe('Index backlog now button', () => {
+    async function openFlagsTab(): Promise<HTMLElement> {
+      const fixture = TestBed.createComponent(EditPodcastDialogComponent);
+      fixture.detectChanges();
+      (await expectSoon(getUrl)).flush(syntheticPodcast({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', name: podcastName }));
+      (await expectSoon(subjectsUrl)).flush([{ name: 'Arts' }]);
+      (await expectSoon(languagesUrl)).flush({ en: 'English' });
+      await settle();
+      (fixture.componentInstance as unknown as Internals).selectedTabIndex.set(1);
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('is shown to an admin', async () => {
+      const host = await openFlagsTab();
+
+      expect(host.querySelector('button.index-backlog')).not.toBeNull();
+    });
+
+    it('is hidden from a curator who is not an admin', async () => {
+      roles.next(['Curator']);
+
+      const host = await openFlagsTab();
+
+      expect(host.querySelector('.flags')).not.toBeNull();
+      expect(host.querySelector('button.index-backlog')).toBeNull();
+    });
+  });
   it('on 409 loads each id, lets the curator pick, then binds the chosen podcast', async () => {
     const firstId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const secondId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
