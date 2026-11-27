@@ -117,15 +117,70 @@ describe('IndexBacklogConfirmDialogComponent', () => {
     expect(Array.from(host.querySelectorAll('button')).map(b => b.textContent?.trim())).toEqual(['Close']);
   });
 
-  it('shows the timeout words and only Close when the count runs out of time', async () => {
+  async function failWith(status: number, statusText: string) {
     const { fixture, request } = await open();
-    request.flush({ reason: 'TimedOut' }, { status: 504, statusText: 'Gateway Timeout' });
+    request.flush({}, { status, statusText });
+    await settle();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(host.querySelectorAll('button'));
+    return { host, buttons, labels: buttons.map(b => b.textContent?.trim()) };
+  }
+
+  it('offers Cancel and Index backlog with "Count unavailable - index anyway?" when the count times out (504)', async () => {
+    const { host, labels } = await failWith(504, 'Gateway Timeout');
+
+    expect(host.textContent).toContain('Counting the episodes ran out of time');
+    expect(host.textContent).toContain('Count unavailable - index anyway?');
+    expect(labels).toEqual(['Cancel', 'Index backlog']);
+  });
+
+  it('offers Cancel and Index backlog when the count fails with a server error (500)', async () => {
+    const { host, labels } = await failWith(500, 'Internal Server Error');
+
+    expect(host.textContent).toContain('The episodes could not be counted');
+    expect(host.textContent).toContain('Count unavailable - index anyway?');
+    expect(labels).toEqual(['Cancel', 'Index backlog']);
+  });
+
+  it('offers Cancel and Index backlog when the count fails without a response (network error)', async () => {
+    const { fixture, request } = await open();
+    request.error(new ProgressEvent('error'));
     await settle();
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.textContent).toContain('Counting the episodes ran out of time');
-    expect(Array.from(host.querySelectorAll('button')).map(b => b.textContent?.trim())).toEqual(['Close']);
+    expect(host.textContent).toContain('Count unavailable - index anyway?');
+    expect(Array.from(host.querySelectorAll('button')).map(b => b.textContent?.trim())).toEqual(['Cancel', 'Index backlog']);
+  });
+
+  it('closes true on Index backlog after a timed-out count so the admin can still start the index', async () => {
+    const { buttons } = await failWith(504, 'Gateway Timeout');
+    buttons.find(b => b.textContent?.trim() === 'Index backlog')!.click();
+    expect(close).toHaveBeenCalledWith(true);
+  });
+
+  it('closes false on Cancel after a timed-out count so nothing is indexed', async () => {
+    const { buttons } = await failWith(504, 'Gateway Timeout');
+    buttons.find(b => b.textContent?.trim() === 'Cancel')!.click();
+    expect(close).toHaveBeenCalledWith(false);
+    expect(close).not.toHaveBeenCalledWith(true);
+  });
+
+  it('offers only Close when the podcast cannot be indexed (400)', async () => {
+    const { host, labels } = await failWith(400, 'Bad Request');
+
+    expect(host.textContent).toContain('cannot be indexed');
+    expect(host.textContent).not.toContain('index anyway');
+    expect(labels).toEqual(['Close']);
+  });
+
+  it('offers only Close when the podcast is not found (404)', async () => {
+    const { host, labels } = await failWith(404, 'Not Found');
+
+    expect(host.textContent).toContain('Podcast not found.');
+    expect(host.textContent).not.toContain('index anyway');
+    expect(labels).toEqual(['Close']);
   });
 
   it('maps each failed dry run to words the admin can act on', () => {

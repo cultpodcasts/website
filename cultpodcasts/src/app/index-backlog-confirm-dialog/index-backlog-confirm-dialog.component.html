@@ -6,6 +6,9 @@
     <mat-spinner style="margin:0 auto;" mode="indeterminate"></mat-spinner>
     } @else if (errorMessage(); as message) {
     <p>{{ message }}</p>
+    @if (countUnavailable()) {
+    <p>Count unavailable - index anyway?</p>
+    }
     } @else if (canConfirm()) {
     <p>
         {{ newEpisodesLabel() }} will be ingested from the back catalogue of {{ podcastName }}.
