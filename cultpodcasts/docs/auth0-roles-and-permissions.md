@@ -112,7 +112,7 @@ Human catalogue editors.
 
 | Area | Behaviour |
 |------|-----------|
-| **Route guards** | `hasRoleGuard` with `data.roles: ["Curator"]` — `/discovery`, `/episodes/:episodeIds`, `/outgoingEpisodes`. |
+| **Route guards** | `hasRoleGuard` with `data.roles: ["Curator"]` — `/discovery`, `/episodes/:episodeIds`, `/outgoingEpisodes`, `/split-offs` (split-offs awaiting approval; loads `GET /episodes/awaiting-approval` with a fresh `curate` token per load). |
 | **Toolbar** | Discovery link, Curate submenu (Create Subject, Review Outgoing). |
 | **Submit UX** | Full submit-url flows including lookup, Series picker, **podcast-page drop/attach** (Curator-only — binds episode to an existing catalogue row via `podcastId`), page-attach confirm, post-submit Add/Edit Episode dialogs. |
 | **Inline curation** | Homepage hero pin/promote; subject/podcast/episode edit entry points; discovery badge (`GET /discovery-info` with `curate`). |
