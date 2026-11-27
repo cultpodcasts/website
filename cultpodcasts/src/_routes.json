@@ -10,6 +10,7 @@
 		"/search/*",
 		"/outgoingEpisodes",
 		"/discovery",
+		"/split-offs",
 		"/episodes/*",
 		"/unauthorised"
 	],

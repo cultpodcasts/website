@@ -33,9 +33,14 @@
           @if (episode.release) {
           <span> · {{ episode.release | date:'mediumDate' }}</span>
           }
+          @if (episode.removed) {
+          <span class="split-off__removed"> · Removed</span>
+          }
         </p>
       </div>
-      <button mat-stroked-button type="button" class="approve-or-reject" (click)="review(episode)">
+      <button mat-stroked-button type="button" class="approve-or-reject"
+        [attr.aria-label]="'Approve or reject ' + (episode.displayTitle || episode.title)"
+        (click)="review(episode)">
         Approve or reject
       </button>
     </li>
