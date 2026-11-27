@@ -1,6 +1,6 @@
 /** Flat match-index shape of `assets/search-suggestions.json`.
  * One row per searchable string (subject name, each subject alias, each podcast,
- * TV show, news organisation and film name).
+ * TV show, news organisation and film name, plus each film's IMDb / TMDB id when present).
  * Associated-subjects are deliberately excluded — see docs/search-suggestions.md. */
 
 export type SuggestionType = 'subject' | 'podcast' | 'tvShow' | 'newsOrganisation' | 'film';
@@ -12,7 +12,7 @@ export interface SuggestionIndexEntry {
   canonical: string;
   /** Lowercased text matched against the query (name or alias). */
   searchText: string;
-  /** Present when this row indexes a subject alias (original casing for UI). */
+  /** Present when this row indexes a subject alias or a film IMDb / TMDB id (original casing). */
   alias?: string;
   /** Item id (guid). Films carry it because film names can repeat; omitted otherwise. */
   id?: string;
