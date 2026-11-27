@@ -6,8 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, defaultIfEmpty, defer, map, switchMap, take, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApiEpisode } from '../api-episode.interface';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
@@ -35,13 +34,12 @@ export class SplitOffsAwaitingApprovalComponent {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthServiceWrapper);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly siteService = inject(SiteService);
-  private token = '';
+  private readonly loadRequests = new Subject<void>();
 
   constructor() {
     this.siteService.setQuery(null);
@@ -52,9 +50,12 @@ export class SplitOffsAwaitingApprovalComponent {
       return;
     }
 
-    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      void this.authoriseAndLoad();
-    });
+    // A new request cancels the one in flight, so a slow earlier response never overwrites a later one.
+    this.loadRequests.pipe(
+      switchMap(() => this.fetchAwaitingApproval()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe();
+    this.load();
   }
 
   protected review(episode: ApiEpisode): void {
@@ -78,42 +79,43 @@ export class SplitOffsAwaitingApprovalComponent {
   }
 
   protected reset(): void {
-    void this.authoriseAndLoad();
-  }
-
-  private async authoriseAndLoad(): Promise<void> {
-    this.isLoading.set(true);
-    this.error.set(false);
-    try {
-      this.token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
-        authorizationParams: {
-          audience: 'https://api.cultpodcasts.com/',
-          scope: 'curate'
-        }
-      })) ?? '';
-      this.load();
-    } catch (err) {
-      this.isLoading.set(false);
-      this.error.set(true);
-      console.error(err);
-    }
+    this.load();
   }
 
   private load(): void {
+    this.loadRequests.next();
+  }
+
+  /** Gets a fresh access token for every load, then the list. Failures are shown, never thrown. */
+  private fetchAwaitingApproval(): Observable<ApiEpisode[]> {
     this.isLoading.set(true);
-    const headers = new HttpHeaders().set('Authorization', 'Bearer ' + this.token);
+    this.error.set(false);
     const url = new URL('/episodes/awaiting-approval', environment.api).toString();
-    this.http.get<ApiEpisode[]>(url, { headers, observe: 'response' }).subscribe({
-      next: resp => {
+    // defer: a synchronous throw from the token call is caught below instead of ending the load stream.
+    return defer(() => this.auth.authService.getAccessTokenSilently({
+      authorizationParams: {
+        audience: 'https://api.cultpodcasts.com/',
+        scope: 'curate'
+      }
+    })).pipe(
+      take(1),
+      defaultIfEmpty(''),
+      switchMap(token => {
+        const headers = new HttpHeaders().set('Authorization', 'Bearer ' + (token ?? ''));
+        return this.http.get<ApiEpisode[]>(url, { headers, observe: 'response' });
+      }),
+      map(resp => resp.body ?? []),
+      tap(list => {
         this.isLoading.set(false);
         this.error.set(false);
-        this.episodes.set(resp.body ?? []);
-      },
-      error: err => {
+        this.episodes.set(list);
+      }),
+      catchError(err => {
         this.isLoading.set(false);
         this.error.set(true);
         console.error(err);
-      }
-    });
+        return EMPTY;
+      })
+    );
   }
 }
