@@ -8,7 +8,15 @@ import { CurationSubmitService } from '../curation-submit.service';
 import { MoveEpisodeToFilmDialogData } from '../episode-film-move.interface';
 import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
-import { MoveEpisodeToFilmDialogComponent, filmsNamed, mergeErrorMessage, moveErrorMessage, releasedWithinDays } from './move-episode-to-film-dialog.component';
+import {
+  MoveEpisodeToFilmDialogComponent,
+  filmsMatchingExternalId,
+  filmsNamed,
+  isFilmExternalIdPaste,
+  mergeErrorMessage,
+  moveErrorMessage,
+  releasedWithinDays
+} from './move-episode-to-film-dialog.component';
 
 /** Lets a catalogue lookup finish: suggest resolves, then onName continues. */
 async function settleLookup(): Promise<void> {
@@ -495,7 +503,7 @@ describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
     expect(component.canSend()).toBe(false);
     expect(component.searched()).toBe(false);
     expect(component.error()).toBe(
-      'The film catalogue could not be loaded. Paste a film id to add this episode to an existing film.');
+      'The film catalogue could not be loaded. Paste a film GUID to add this episode to an existing film.');
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
     await component.move();
     expect(postEpisodeToFilm).not.toHaveBeenCalled();
@@ -510,6 +518,97 @@ describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
     await component.move();
 
     expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+  });
+
+  it('takes a pasted IMDb id as that film and POSTs { filmId } (RPP #1534)', async () => {
+    const imdbId = 'tt1234567';
+    suggest.mockResolvedValue([{
+      type: 'film',
+      value: 'Manic',
+      label: 'Manic',
+      itemId: manicId,
+      matchedAlias: imdbId
+    }]);
+
+    await component.onName(imdbId);
+
+    expect(suggest).toHaveBeenCalledWith(imdbId, 10, 'film', { allExactNames: true });
+    expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
+    expect(component.canSend()).toBe(true);
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: 'Manic' } }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+  });
+
+  it('takes a pasted TMDB id as that film and POSTs { filmId } (RPP #1534)', async () => {
+    const tmdbId = '550';
+    suggest.mockResolvedValue([{
+      type: 'film',
+      value: 'Manic',
+      label: 'Manic',
+      itemId: manicId,
+      matchedAlias: tmdbId
+    }]);
+
+    await component.onName(tmdbId);
+
+    expect(suggest).toHaveBeenCalledWith(tmdbId, 10, 'film', { allExactNames: true });
+    expect(component.existingFilm()).toEqual({ id: manicId, name: 'Manic' });
+    postEpisodeToFilm.mockReturnValue(of({ status: 202, body: { filmId: manicId, name: 'Manic' } }));
+
+    await component.move();
+
+    expect(postEpisodeToFilm).toHaveBeenCalledWith('podcast-1', 'episode-1', { filmId: manicId });
+  });
+
+  it('prefers an exact film title over a TMDB id when both would match', async () => {
+    const titled = { value: '550', label: '550', itemId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' };
+    const byTmdb = {
+      type: 'film' as const,
+      value: 'Manic',
+      label: 'Manic',
+      itemId: manicId,
+      matchedAlias: '550'
+    };
+    suggest.mockResolvedValue([titled, byTmdb]);
+
+    await component.onName('550');
+
+    expect(component.existingFilm()).toEqual({ id: titled.itemId, name: '550' });
+  });
+
+  it('does not create a film when a pasted IMDb id has no catalogue match', async () => {
+    suggest.mockResolvedValue([]);
+    component.title.setValue('tt9999999', { emitEvent: false });
+
+    await component.onName('tt9999999');
+    fixture.detectChanges();
+
+    expect(component.existingFilm()).toBeNull();
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect(component.error()).toBe('No catalogue film matches this IMDb or TMDB id.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+  });
+
+  it('does not create a film when a pasted TMDB id has no catalogue match', async () => {
+    suggest.mockResolvedValue([{ value: 'Other', label: 'Other', itemId: manicId }]);
+    component.title.setValue('99901', { emitEvent: false });
+
+    await component.onName('99901');
+    fixture.detectChanges();
+
+    expect(component.existingFilm()).toBeNull();
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect(component.error()).toBe('No catalogue film matches this IMDb or TMDB id.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
   });
 
   it('offers every exact-name film when more than ten share that name', async () => {
@@ -568,6 +667,16 @@ describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
       { ...manicSuggestion, value: 'Other', label: 'Shown' }
     ]);
     expect(filmsNamed('Ma', [manicSuggestion])).toEqual([]);
+  });
+
+  it('matches a film on a pasted IMDb or TMDB alias and recognises those paste shapes', () => {
+    const byImdb = { ...manicSuggestion, matchedAlias: 'tt7654321' };
+    expect(filmsMatchingExternalId('tt7654321', [byImdb])).toEqual([byImdb]);
+    expect(filmsMatchingExternalId('tt0000000', [byImdb])).toEqual([]);
+    expect(isFilmExternalIdPaste('tt1234567')).toBe(true);
+    expect(isFilmExternalIdPaste('550')).toBe(true);
+    expect(isFilmExternalIdPaste('Manic')).toBe(false);
+    expect(isFilmExternalIdPaste(manicId)).toBe(false);
   });
 
   it('maps merge errors: 409/400 use the server text, 404 and others a fixed hint', () => {

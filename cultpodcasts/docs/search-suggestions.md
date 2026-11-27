@@ -10,7 +10,7 @@ Published to R2 key `search-suggestions` and served as **GET `/search-suggestion
 - **Podcasts**: `name` only (non-removed podcasts)
 - **TV shows**: `name` only (non-removed)
 - **News organisations**: `name` only (non-removed)
-- **Films**: `name` plus the film `id` (non-removed, non-ignored). Film names can repeat, so the id is what tells two films apart.
+- **Films**: `name` plus the film `id` (non-removed, non-ignored), and when present an extra row per IMDb id (`tt…`) and TMDB id (same shape as a subject alias row). Film names can repeat, so the id is what tells two films apart.
 
 Stored as a **flat, pre-normalized match index** (one row per searchable string) so the search box does not re-lowercase nested fields on every keystroke:
 
@@ -23,7 +23,9 @@ Stored as a **flat, pre-normalized match index** (one row per searchable string)
     { "type": "podcast", "canonical": "IndoctriNation", "searchText": "indoctrination" },
     { "type": "tvShow", "canonical": "Example Nightly", "searchText": "example nightly" },
     { "type": "newsOrganisation", "canonical": "Example Desk", "searchText": "example desk" },
-    { "type": "film", "canonical": "Example Film", "searchText": "example film", "id": "00112233-4455-4677-8899-aabbccddeeff" }
+    { "type": "film", "canonical": "Example Film", "searchText": "example film", "id": "00112233-4455-4677-8899-aabbccddeeff" },
+    { "type": "film", "canonical": "Example Film", "searchText": "tt1234567", "alias": "tt1234567", "id": "00112233-4455-4677-8899-aabbccddeeff" },
+    { "type": "film", "canonical": "Example Film", "searchText": "550", "alias": "550", "id": "00112233-4455-4677-8899-aabbccddeeff" }
   ]
 }
 ```
@@ -33,7 +35,7 @@ Stored as a **flat, pre-normalized match index** (one row per searchable string)
 | `type` | `subject`, `podcast`, `tvShow`, `newsOrganisation` or `film`. Unknown values are kept and open `/search/{canonical}` |
 | `canonical` | Name used for navigation/search (never a display-only alias) |
 | `searchText` | **Already lowercase** — matched with `===` / `startsWith` / `includes` |
-| `alias` | Optional; original casing when this row indexes a subject alias |
+| `alias` | Optional; original casing when this row indexes a subject alias or a film IMDb / TMDB id |
 | `id` | Optional; the item's guid. Always set on film rows, omitted otherwise. In the UI it is `Suggestion.itemId` (not `id`, because the submit dialog uses `'id' in value` to spot a `SimplePodcast`) |
 
 No episode data, no writes to Cosmos, no `AssociatedSubjects`.

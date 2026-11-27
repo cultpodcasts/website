@@ -168,6 +168,51 @@ describe('SearchSuggestionsService', () => {
             expect(named.map(r => r.itemId).sort()).toEqual([filmA, filmB]);
         });
 
+        it('matches a film IMDb or TMDB id row and keeps the film id (RPP #1534)', async () => {
+            const withIds: SuggestionsCorpus = {
+                generatedAtUtc: new Date('2026-10-21T00:00:00Z'),
+                entries: [
+                    {
+                        type: 'film',
+                        canonical: 'Synthetic Film',
+                        searchText: 'synthetic film',
+                        id: filmA
+                    },
+                    {
+                        type: 'film',
+                        canonical: 'Synthetic Film',
+                        searchText: 'tt1234567',
+                        alias: 'tt1234567',
+                        id: filmA
+                    },
+                    {
+                        type: 'film',
+                        canonical: 'Synthetic Film',
+                        searchText: '550',
+                        alias: '550',
+                        id: filmA
+                    }
+                ]
+            };
+            const imdbPending = service.suggest('tt1234567', 20, 'film');
+            httpMock.expectOne(suggestionsUrl).flush(withIds);
+            const imdb = await imdbPending;
+            expect(imdb).toEqual([expect.objectContaining({
+                type: 'film',
+                value: 'Synthetic Film',
+                itemId: filmA,
+                matchedAlias: 'tt1234567'
+            })]);
+
+            const tmdb = await service.suggest('550', 20, 'film');
+            expect(tmdb).toEqual([expect.objectContaining({
+                type: 'film',
+                value: 'Synthetic Film',
+                itemId: filmA,
+                matchedAlias: '550'
+            })]);
+        });
+
         it('tolerates a film row without an id', async () => {
             const pending = service.suggest('no id', 20);
             httpMock.expectOne(suggestionsUrl).flush(kindsCorpus);
