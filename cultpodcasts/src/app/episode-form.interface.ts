@@ -1,4 +1,5 @@
 import { FormArray, FormControl, FormGroup } from "@angular/forms";
+import type { YouTubeAlternateEditGroup } from "./playable-edit-form.util";
 
 export interface AdditionalServiceForm {
     url: FormControl<string>,
@@ -23,6 +24,10 @@ export interface EpisodeForm {
     youtube: FormControl<URL | null | string>,
     youtubeImage: FormControl<URL | null | string>,
     additionalUrls: FormArray<FormGroup<AdditionalServiceForm>>,
+    /** Additional YouTube uploads to keep (RPP #1526). */
+    additionalYouTube: FormArray<YouTubeAlternateEditGroup>,
+    /** YouTube id of an additional upload to swap into the primary link. */
+    promoteYouTubeId: FormControl<string>,
     subjects: FormControl<string[]>,
     searchTerms: FormControl<string | null>,
     hashTag: FormControl<string | null>,

@@ -42,6 +42,8 @@ export class CuratorPlayableCardComponent {
   /** News report / TV episode cards: open the news outlet / TV show editor. */
   readonly editParent = output<EditCatalogueParentDialogData>();
   readonly indexPodcast = output<string>();
+  /** News report on the review list: index that report's news organisation. */
+  readonly indexNewsOrg = output<string>();
   readonly deleteEpisode = output<{ podcastId?: string; episodeId: string; contentKind?: string | null }>();
   readonly promoteToggle = output<ApiEpisode>();
   readonly removeSubject = output<{ episode: ApiEpisode; subject: string }>();

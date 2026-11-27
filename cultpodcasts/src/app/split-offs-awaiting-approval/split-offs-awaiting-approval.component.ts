@@ -1,0 +1,119 @@
+import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, DestroyRef, PLATFORM_ID, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { ApiEpisode } from '../api-episode.interface';
+import { AuthServiceWrapper } from '../auth-service-wrapper.class';
+import { EditEpisodeDialogComponent } from '../edit-episode-dialog/edit-episode-dialog.component';
+import { EditEpisodeDialogResponse } from '../edit-episode-dialog-response.interface';
+import { episodeEditResultMessage } from '../social-retract-result';
+import { SiteService } from '../site.service';
+
+/**
+ * Curator list of split-offs whose approval status is awaiting approval (RPP #1491).
+ * Approve and reject live on the episode editor, the same place a snackbar review opens.
+ */
+@Component({
+  selector: 'app-split-offs-awaiting-approval',
+  imports: [MatProgressBarModule, MatButtonModule, DatePipe],
+  templateUrl: './split-offs-awaiting-approval.component.html',
+  styleUrl: './split-offs-awaiting-approval.component.sass',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { ngSkipHydration: 'true' },
+})
+export class SplitOffsAwaitingApprovalComponent {
+  protected readonly episodes = signal<ApiEpisode[] | undefined>(undefined);
+  protected readonly error = signal(false);
+  protected readonly isLoading = signal(true);
+
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthServiceWrapper);
+  private readonly http = inject(HttpClient);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly siteService = inject(SiteService);
+  private token = '';
+
+  constructor() {
+    this.siteService.setQuery(null);
+    this.siteService.setPodcast(null);
+    this.siteService.setSubject(null);
+
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      void this.authoriseAndLoad();
+    });
+  }
+
+  protected review(episode: ApiEpisode): void {
+    const dialogRef = this.dialog.open<EditEpisodeDialogComponent, unknown, EditEpisodeDialogResponse>(
+      EditEpisodeDialogComponent,
+      {
+        data: { podcastIdentifier: episode.podcastId, episodeId: episode.id },
+        disableClose: true,
+        autoFocus: true,
+        width: '90%'
+      });
+    dialogRef.afterClosed().subscribe(result => {
+      const message = episodeEditResultMessage(result);
+      if (message) {
+        this.snackBar.open(message, 'Ok', { duration: result?.updated ? 10000 : 3000 });
+      }
+      if (result?.updated) {
+        this.load();
+      }
+    });
+  }
+
+  protected reset(): void {
+    void this.authoriseAndLoad();
+  }
+
+  private async authoriseAndLoad(): Promise<void> {
+    this.isLoading.set(true);
+    this.error.set(false);
+    try {
+      this.token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
+        authorizationParams: {
+          audience: 'https://api.cultpodcasts.com/',
+          scope: 'curate'
+        }
+      })) ?? '';
+      this.load();
+    } catch (err) {
+      this.isLoading.set(false);
+      this.error.set(true);
+      console.error(err);
+    }
+  }
+
+  private load(): void {
+    this.isLoading.set(true);
+    const headers = new HttpHeaders().set('Authorization', 'Bearer ' + this.token);
+    const url = new URL('/episodes/awaiting-approval', environment.api).toString();
+    this.http.get<ApiEpisode[]>(url, { headers, observe: 'response' }).subscribe({
+      next: resp => {
+        this.isLoading.set(false);
+        this.error.set(false);
+        this.episodes.set(resp.body ?? []);
+      },
+      error: err => {
+        this.isLoading.set(false);
+        this.error.set(true);
+        console.error(err);
+      }
+    });
+  }
+}

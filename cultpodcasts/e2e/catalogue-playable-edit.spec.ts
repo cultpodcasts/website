@@ -181,7 +181,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await snack.getByRole("button", { name: "Edit" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit News Report" })).toBeVisible();
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Catalogue"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Also on YouTube", "Guests", "Catalogue"]);
 		await expect(dialog.locator("#parent-name")).toHaveText("Desk");
 		await dialog.getByLabel("Title").fill("Bulletin (edited)");
 		await shot(page, "news-edit-details");
@@ -215,6 +215,29 @@ test.describe("news report / TV episode curator edit", () => {
 			language: "fr"
 		});
 		await expect(page.getByText("News report updated")).toBeVisible();
+	});
+
+	test("the review list Index News Org posts the outlet index route and Review opens the hub", async ({ page }) => {
+		const row = {
+			id: reportId, title: "Bulletin", displayTitle: "Bulletin", description: "Synthetic", posted: false, tweeted: false, ignored: false, removed: false,
+			explicit: false, release: "2026-01-02T00:00:00Z", duration: "00:06:30", subjects: ["Politics"],
+			contentKind: "NewsReport", podcastName: "Desk", parentId: outletId, parentName: "Desk"
+		};
+		await page.route(`**/episode/${reportId}`, (route) => json(route, row));
+		let indexPosts = 0;
+		await page.route("**/newsorganisation/index/Desk", async (route) => {
+			expect(route.request().method()).toBe("POST");
+			indexPosts++;
+			await json(route, { indexedItemIds: ["a", "b"], searchIndexerState: "Executed" });
+		});
+		await page.goto(`/episodes/${encodeURIComponent(JSON.stringify([reportId]))}`);
+		await page.getByRole("button", { name: "News report actions" }).click();
+		await page.getByRole("menuitem", { name: "Index News Org" }).click();
+		const snack = page.locator("mat-snack-bar-container");
+		await expect(snack).toContainText("News Outlet indexed. 2 items updated.");
+		expect(indexPosts).toBe(1);
+		await snack.getByRole("button", { name: "Review" }).click();
+		await expect(page).toHaveURL(/\/news\/Desk$/);
 	});
 
 	test("the news report page Edit opens the news report dialog, not the podcast editor", async ({ page }) => {
@@ -251,7 +274,7 @@ test.describe("news report / TV episode curator edit", () => {
 		await page.getByRole("menuitem", { name: "Edit TV Episode" }).click();
 		const dialog = page.locator("mat-dialog-container");
 		await expect(dialog.getByRole("heading", { name: "Edit TV Episode" })).toBeVisible();
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Identity"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Also on YouTube", "Guests", "Identity"]);
 		await expect(dialog.locator("#parent-name")).toHaveText("Nightly");
 		await dialog.getByLabel("Description").fill("Edited synthetic description");
 		await shot(page, "tv-edit-details");
@@ -306,7 +329,7 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 		const dialog = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Edit Episode" }) });
 		await expect(dialog.getByRole("heading", { name: "Edit Episode" })).toBeVisible();
 		await expect(dialog.locator("mat-dialog-actions button")).toHaveText(["Close", "Submit"]);
-		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Guests", "Catalogue"]);
+		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Also on YouTube", "Guests", "Catalogue"]);
 		await shot(page, "episode-edit-details");
 		await dialog.getByRole("tab", { name: "Catalogue" }).click();
 		await expect(dialog.getByRole("tabpanel").getByRole("button")).toHaveText(["Move to film", "Attach as trailer", "Move to TV show"]);
@@ -314,10 +337,55 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 		await dialog.getByRole("button", { name: "Move to film" }).click();
 		const confirm = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Move to film" }) });
 		await expect(confirm).toBeVisible();
+		await expect(confirm.getByRole("button", { name: "New film" })).toHaveCount(0);
+		await expect(confirm.getByRole("button", { name: "Existing film" })).toHaveCount(0);
+		await expect(confirm.getByRole("combobox", { name: "Film" })).toBeVisible();
 		await confirm.getByRole("button", { name: "Cancel" }).click();
 		await expect(confirm).toHaveCount(0);
 		await expect(dialog.getByRole("heading", { name: "Edit Episode" })).toBeVisible();
 		expect(writes).toEqual([]);
+	});
+
+	test("a film with the episode's name is selected, and Move to film merges into it", async ({ page }) => {
+		await fakeLookups(page);
+		await page.route("**/search-suggestions", (route) => json(route, {
+			generatedAtUtc: "2026-11-14T00:00:00Z",
+			entries: [{
+				type: "film",
+				canonical: "Pilot",
+				searchText: "pilot",
+				id: filmId
+			}]
+		}));
+		let moveBody: unknown;
+		await page.route(`**/episode/${podcastId}/${podcastEpisodeId}/film`, async (route) => {
+			moveBody = route.request().postDataJSON();
+			await json(route, { filmId, name: "Pilot" }, 202);
+		});
+		await page.route(`**/episode/Show/${podcastEpisodeId}`, (route) =>
+			json(route, {
+				...playable,
+				id: podcastEpisodeId,
+				title: "Pilot",
+				release: "2026-01-02T00:00:00Z",
+				bluesky: false,
+				urls: {},
+				images: {}
+			}));
+		await page.route(`**/podcast/Show/${podcastEpisodeId}`, (route) => json(route, { id: podcastId, name: "Show", defaultSubject: "Politics" }));
+		await page.goto(`/podcast/${encodeURIComponent("Show")}/${guids.toBase64(podcastEpisodeId)}`);
+		await expect(page.getByRole("heading", { name: "Pilot" })).toBeVisible();
+		await page.getByRole("button", { name: "Episode actions" }).click();
+		await page.getByRole("menuitem", { name: "Edit Episode" }).click();
+		const editor = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Edit Episode" }) });
+		await editor.getByRole("tab", { name: "Catalogue" }).click();
+		await editor.getByRole("button", { name: "Move to film" }).click();
+		const confirm = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Move to film" }) });
+		await expect(confirm.getByRole("status")).toContainText("Film: Pilot");
+		await expect(confirm.getByText("makes it a film")).toHaveCount(0);
+		await confirm.getByRole("button", { name: "Move to film" }).click();
+		await expect.poll(() => moveBody).toEqual({ filmId });
+		await expect(confirm).toHaveCount(0);
 	});
 });
 

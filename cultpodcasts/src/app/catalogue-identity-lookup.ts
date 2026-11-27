@@ -98,6 +98,39 @@ export function applyIdentityIds(
   return next;
 }
 
+/**
+ * Apply a proposed film release from Look Up when the control is blank or looks like a platform
+ * upload datetime (stored year more than one year after the identity year). Same-year curator
+ * dates are kept (RPP #1410).
+ */
+export function applyProposedFilmRelease(
+  currentRelease: string | null | undefined,
+  proposedRelease: string | null | undefined
+): { release?: string; changed: boolean } {
+  const proposed = (proposedRelease ?? '').trim();
+  if (!proposed) {
+    return { changed: false };
+  }
+  const identityYear = filmReleaseYear(proposed);
+  if (identityYear == null) {
+    return { changed: false };
+  }
+  const current = (currentRelease ?? '').trim();
+  if (!current || shouldReplaceFilmRelease(current, identityYear)) {
+    return { release: proposed, changed: true };
+  }
+  return { changed: false };
+}
+
+/** True when the stored release year is missing or more than one year after the identity year. */
+export function shouldReplaceFilmRelease(
+  currentRelease: string | null | undefined,
+  identityYear: number
+): boolean {
+  const storedYear = filmReleaseYear(currentRelease);
+  return storedYear == null || storedYear > identityYear + 1;
+}
+
 /** Year from a film release control (`yyyy` or `yyyy-MM-dd`). */
 export function filmReleaseYear(release: string | null | undefined): number | undefined {
   const trimmed = (release ?? '').trim();

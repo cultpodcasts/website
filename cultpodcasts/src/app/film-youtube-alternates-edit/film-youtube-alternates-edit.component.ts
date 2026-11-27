@@ -8,9 +8,9 @@ import { hasNonEmptyUrlValue, openExternalUrl } from '../episode-form.util';
 import { newYouTubeAlternateGroup, YouTubeAlternateEditGroup } from '../playable-edit-form.util';
 
 /**
- * Edit film: additional YouTube uploads in display order (RPP #1411). Keep, reorder, add a URL, remove, or
- * promote one into the primary YouTube link. A removed entry is gone from the film; the primary is unchanged
- * unless this editor promotes.
+ * Additional YouTube uploads in display order (RPP #1411 / #1526). Keep, reorder, add a URL, remove, or
+ * promote one into the primary YouTube link. A removed entry is dropped from the keep-list; the primary is
+ * unchanged unless this editor promotes. Films, news reports, TV episodes and podcast episodes share this editor.
  */
 @Component({
   selector: 'app-film-youtube-alternates-edit',
@@ -22,6 +22,8 @@ import { newYouTubeAlternateGroup, YouTubeAlternateEditGroup } from '../playable
 export class FilmYouTubeAlternatesEditComponent {
   readonly alternates = input.required<FormArray<YouTubeAlternateEditGroup>>();
   readonly promoteYouTubeId = input.required<FormControl<string>>();
+  /** Film empty copy mentions Move to film. Other editors use the short hint. */
+  readonly scope = input<'film' | 'item'>('film');
   protected readonly hasNonEmptyUrlValue = hasNonEmptyUrlValue;
   protected readonly openExternalUrl = openExternalUrl;
 

@@ -16,6 +16,7 @@ import { firstValueFrom } from 'rxjs';
 import subjectNamesConfig from '../hoisted-subject-names.json';
 import {
   applyIdentityIds,
+  applyProposedFilmRelease,
   filmReleaseYear,
   runCatalogueIdentityLookup
 } from '../catalogue-identity-lookup';
@@ -289,6 +290,7 @@ export class PlayableEditFieldsComponent implements OnInit {
     imdbId?: string | null;
     tmdbId?: number | null;
     tvdbId?: number | null;
+    release?: string | null;
   }): boolean {
     const form = this.form();
     const filled = applyIdentityIds(
@@ -311,7 +313,16 @@ export class PlayableEditFieldsComponent implements OnInit {
       form.controls.tvdbId.setValue(filled.tvdbId);
       form.controls.tvdbId.markAsDirty();
     }
-    return filled.changed;
+    let releaseChanged = false;
+    if (this.film() && form.controls.release) {
+      const proposed = applyProposedFilmRelease(form.controls.release.value, ids.release);
+      if (proposed.changed && proposed.release != null) {
+        form.controls.release.setValue(proposed.release);
+        form.controls.release.markAsDirty();
+        releaseChanged = true;
+      }
+    }
+    return filled.changed || releaseChanged;
   }
 
   private async patchParentBlanks(parentIds: {

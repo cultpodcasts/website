@@ -229,6 +229,10 @@ export class ToolbarComponent {
     this.router.navigate(["/outgoingEpisodes"], { onSameUrlNavigation: 'reload' })
   }
 
+  openSplitOffsAwaitingApproval() {
+    this.router.navigate(["/split-offs"], { onSameUrlNavigation: 'reload' })
+  }
+
   runSearchIndexer() {
     const dialogRef = this.dialog.open<RunSearchIndexerComponent, any, { message?: string, indexerState?: IndexerState }>(RunSearchIndexerComponent, {
       disableClose: true,

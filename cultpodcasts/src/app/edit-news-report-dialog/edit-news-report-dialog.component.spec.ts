@@ -120,7 +120,7 @@ describe('EditNewsReportDialogComponent', () => {
     expect(dialog.languages()).toEqual({ unset: 'English', fr: 'French' });
     expect(dialog.subjectNames()).toEqual(['Politics', 'Sport']);
     const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Catalogue']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Catalogue']);
     expect((fixture.nativeElement as HTMLElement).querySelector('#parent-name')?.textContent).toBe('Desk');
   });
 
@@ -182,6 +182,50 @@ describe('EditNewsReportDialogComponent', () => {
     });
     patch.flush({ searchIndexerState: 'Executed' }, { status: 202, statusText: 'Accepted' });
     await saving;
+  });
+
+  it('does not send a stale additional YouTube list when an upload was added after the dialog opened', async () => {
+    const loaded = {
+      ...synthetic,
+      additionalYouTube: [
+        { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic', channelName: 'Desk' }
+      ]
+    };
+    const dialog = await load(loaded);
+    dialog.form()!.controls.additionalYouTube!.removeAt(0);
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/newsreport/${reportId}`))).flush({
+      ...loaded,
+      additionalYouTube: [
+        ...loaded.additionalYouTube,
+        { youTubeId: 'VCRf_qazO9s', url: 'https://www.youtube.com/watch?v=VCRf_qazO9s', title: 'Later', channelName: 'Desk' }
+      ]
+    });
+    await saving;
+    expect(dialog.submitError()).toContain('added to this news report');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('shows the close-and-reopen message when the report PATCH returns 409 for an unexpected YouTube id', async () => {
+    const loaded = {
+      ...synthetic,
+      additionalYouTube: [
+        { youTubeId: 'GSIPAfDO_ec', url: 'https://www.youtube.com/watch?v=GSIPAfDO_ec', title: 'Manic', channelName: 'Desk' }
+      ]
+    };
+    const dialog = await load(loaded);
+    dialog.form()!.controls.additionalYouTube!.removeAt(0);
+    const saving = dialog.onSubmit();
+    (await expectSoon(api(`/newsreport/${reportId}`))).flush(loaded);
+    const patch = await expectSoon(api(`/newsreport/${reportId}`), 'PATCH');
+    expect(patch.request.body).toEqual({
+      additionalYouTube: [],
+      expectedAdditionalYouTubeIds: ['GSIPAfDO_ec']
+    });
+    patch.flush({ unexpectedAdditionalYouTubeIds: ['VCRf_qazO9s'] }, { status: 409, statusText: 'Conflict' });
+    await saving;
+    expect(dialog.submitError()).toContain('added to this news report');
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('closes with noChange and sends nothing when the form is untouched', async () => {
@@ -265,7 +309,7 @@ describe('EditNewsReportDialogComponent', () => {
     try {
       await load();
       const tabs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="tab"]')).map((t) => t.textContent?.trim());
-      expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests']);
+      expect(tabs).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests']);
       expect((fixture.nativeElement as HTMLElement).querySelector('.catalogue-actions')).toBeNull();
     } finally {
       environment.catalogueParentCuration = flags;

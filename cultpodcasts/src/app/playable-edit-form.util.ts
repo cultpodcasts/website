@@ -71,9 +71,9 @@ export interface PlayableEditForm {
   links?: FormArray<PlayableServiceLinkGroup>;
   /** Film: the trailers to keep, in display order, each with an editable title. */
   trailers?: FormArray<FilmTrailerEditGroup>;
-  /** Film: additional YouTube uploads to keep, in display order (RPP #1411). */
+  /** News / TV / film: additional YouTube uploads to keep, in display order (RPP #1411 / #1526). */
   additionalYouTube?: FormArray<YouTubeAlternateEditGroup>;
-  /** Film: YouTube id of an additional upload to swap into the primary link. */
+  /** News / TV / film: YouTube id of an additional upload to swap into the primary link. */
   promoteYouTubeId?: FormControl<string>;
 }
 
@@ -347,12 +347,6 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
     controls.trailers = new FormArray(
       (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
     );
-    controls.additionalYouTube = new FormArray(
-      (film.additionalYouTube ?? []).map(item =>
-        newYouTubeAlternateGroup(item.youTubeId, uriText(item.url), item.title ?? '', item.channelName ?? '')
-      )
-    );
-    controls.promoteYouTubeId = new FormControl('', { nonNullable: true });
     controls.alternativeTitles = new FormControl((film.alternativeTitles ?? []).join('\n'), { nonNullable: true });
     controls.image = new FormControl(uriText(film.image), { nonNullable: true });
   } else if (variant === 'tv') {
@@ -370,6 +364,12 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
       validators: [tmdbIdTextValidator]
     });
   }
+  controls.additionalYouTube = new FormArray(
+    (dto.additionalYouTube ?? []).map(item =>
+      newYouTubeAlternateGroup(item.youTubeId, uriText(item.url), item.title ?? '', item.channelName ?? '')
+    )
+  );
+  controls.promoteYouTubeId = new FormControl('', { nonNullable: true });
   return new FormGroup<PlayableEditForm>(controls);
 }
 
@@ -413,7 +413,33 @@ export function playableFieldsChanges(
     const services = playableServiceChanges(previous.services, next.links);
     if (services) changes.services = services;
   }
+  Object.assign(changes, youTubeAlternateChangeFields(previous, next.additionalYouTube, next.promoteYouTubeId));
   return changes;
+}
+
+/**
+ * Keep-list / promote fields for additional YouTube. Unchanged list and a blank promote are omitted.
+ * `expectedAdditionalYouTubeIds` is the list this editor loaded, so a later upload is a 409 instead of a delete.
+ */
+export function youTubeAlternateChangeFields(
+  previous: { additionalYouTube?: { youTubeId: string; title?: string | null; channelName?: string | null }[] | null },
+  nextAdditional: readonly { youTubeId: string; url: string; title: string; channelName: string }[] | undefined,
+  promoteYouTubeId: string | undefined
+): Pick<PlayableFieldsChangeRequest, 'additionalYouTube' | 'expectedAdditionalYouTubeIds' | 'promoteYouTubeId'> {
+  const fields: Pick<PlayableFieldsChangeRequest, 'additionalYouTube' | 'expectedAdditionalYouTubeIds' | 'promoteYouTubeId'> = {};
+  if (nextAdditional === undefined && promoteYouTubeId === undefined) {
+    return fields;
+  }
+  const list = nextAdditional === undefined ? null : filmYouTubeAlternateChanges(previous, nextAdditional);
+  const promote = (promoteYouTubeId ?? '').trim();
+  if (list) {
+    fields.additionalYouTube = list;
+    fields.expectedAdditionalYouTubeIds = (previous.additionalYouTube ?? []).map(item => item.youTubeId);
+  }
+  if (promote) {
+    fields.promoteYouTubeId = promote;
+  }
+  return fields;
 }
 
 /** Playable fields plus the Identity tab ids (omit = unchanged; `imdbId: ''`, `tvdbId: 0`, `tmdbId: 0` clear). */
@@ -467,7 +493,7 @@ export function filmChanges(
     const image = next.image.trim();
     if (image !== uriText(previous.image).trim()) film.image = image;
   }
-  // `services` already folded into playableFieldsChanges when links change.
+  // `services` and additional YouTube are already folded into playableFieldsChanges.
   if (next.trailers !== undefined) {
     const trailers = filmTrailerChanges(previous, next.trailers);
     if (trailers) {
@@ -475,19 +501,6 @@ export function filmChanges(
       // The ids this form was built from, not the keep-list. A trailer attached after that is absent here, and the
       // server rejects the patch instead of deleting it.
       film.expectedTrailerIds = (previous.trailers ?? []).map(trailer => trailer.id);
-    }
-  }
-  if (next.additionalYouTube !== undefined || next.promoteYouTubeId !== undefined) {
-    const list = next.additionalYouTube === undefined
-      ? null
-      : filmYouTubeAlternateChanges(previous, next.additionalYouTube);
-    const promote = (next.promoteYouTubeId ?? '').trim();
-    if (list) {
-      film.additionalYouTube = list;
-      film.expectedAdditionalYouTubeIds = (previous.additionalYouTube ?? []).map(item => item.youTubeId);
-    }
-    if (promote) {
-      film.promoteYouTubeId = promote;
     }
   }
   return film;
@@ -571,9 +584,9 @@ export function filmTrailerChanges(
   });
 }
 
-/** The film `additionalYouTube` patch (keep / order / add-by-url / rename), or null when unchanged. */
+/** The `additionalYouTube` patch (keep / order / add-by-url / rename), or null when unchanged. */
 export function filmYouTubeAlternateChanges(
-  previous: FilmDto,
+  previous: { additionalYouTube?: { youTubeId: string; title?: string | null; channelName?: string | null }[] | null },
   next: readonly { youTubeId: string; url: string; title: string; channelName: string }[]
 ): { youTubeId?: string; url?: string; title?: string; channelName?: string }[] | null {
   const before = previous.additionalYouTube ?? [];

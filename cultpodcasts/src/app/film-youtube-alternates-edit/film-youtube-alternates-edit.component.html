@@ -51,5 +51,9 @@
     Add YouTube URL
 </button>
 @if (alternates().length === 0) {
+@if (scope() === 'film') {
 <p class="empty">No additional YouTube uploads. Add a URL, or use Move to film on an episode that has a different YouTube copy of this film.</p>
+} @else {
+<p class="empty">No additional YouTube uploads. Add a YouTube URL.</p>
+}
 }

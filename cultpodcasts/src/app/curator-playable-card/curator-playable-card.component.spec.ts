@@ -2,6 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { OverlayContainer } from '@angular/cdk/overlay';
+import { By } from '@angular/platform-browser';
+import { MatTooltip } from '@angular/material/tooltip';
 import { ApiEpisode } from '../api-episode.interface';
 import { playableCuratorActionLabel } from '../content-kind-label';
 import { CuratorPlayableCardComponent } from './curator-playable-card.component';
@@ -92,6 +94,26 @@ describe('CuratorPlayableCardComponent', () => {
     }
     fixture.detectChanges();
   }
+
+  it('explains a review subject with the term that matched, the same way discovery review does', async () => {
+    render(row('Episode', {
+      subjects: ['Qanon'],
+      matches: [{ subject: 'Qanon', term: 'QAnon', source: 'Description' }],
+    }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const tooltip = fixture.debugElement.query(By.directive(MatTooltip)).injector.get(MatTooltip);
+    expect(tooltip.message).toBe('matched "QAnon" in description');
+    expect(tooltip.disabled).toBe(false);
+  });
+
+  it('leaves a review subject as a plain chip when the episode recorded no match terms', async () => {
+    render(row('Episode', { subjects: ['Qanon'], matches: [] }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const tooltip = fixture.debugElement.query(By.directive(MatTooltip)).injector.get(MatTooltip);
+    expect(tooltip.disabled).toBe(true);
+  });
 
   it('renders the film card for Film contentKind', () => {
     render(row('Film'));
@@ -197,6 +219,41 @@ describe('CuratorPlayableCardComponent', () => {
       expect(labels).not.toContain(label);
     });
   }
+
+  it('offers Index News Org on a NewsReport review row and emits the outlet name', async () => {
+    const episode = row('NewsReport', { parentName: 'Synthetic Desk' });
+    render(episode, podcastAdminFlags);
+    const emissions: string[] = [];
+    fixture.componentInstance.indexNewsOrg.subscribe(v => emissions.push(v));
+    const labels = await openOverflowMenu();
+    expect(labels).toContain('Index News Org');
+    expect(labels).not.toContain('Index Podcast');
+    const items = Array.from(
+      overlay.getContainerElement().querySelectorAll('button[mat-menu-item], .mat-mdc-menu-item')
+    );
+    const match = items.find(el => (el.querySelector('span')?.textContent?.trim() ?? '') === 'Index News Org');
+    expect(match).toBeTruthy();
+    (match as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(emissions).toEqual(['Synthetic Desk']);
+  });
+
+  it('hides Index News Org when the review-list index flag is off', async () => {
+    render(row('NewsReport', { parentName: 'Synthetic Desk' }), {
+      authRoles: ['Curator'],
+      showIndexPodcast: false,
+    });
+    const labels = await openOverflowMenu();
+    expect(labels).toContain('Edit News Outlet');
+    expect(labels).not.toContain('Index News Org');
+  });
+
+  it('does not offer Index News Org on a TV episode', async () => {
+    render(row('TvShowEpisode', { parentName: 'Synthetic Nightly' }), podcastAdminFlags);
+    const labels = await openOverflowMenu();
+    expect(labels).not.toContain('Index News Org');
+  });
 
   it('offers no parent edit on a Film row (a film has no separate parent)', async () => {
     render(row('Film'), podcastAdminFlags);

@@ -160,7 +160,7 @@ describe('EditEpisodeDialogComponent layout', () => {
 
   it('adds a Catalogue tab after Guests holding Move to film, Attach as trailer and Move to TV show', async () => {
     await loadAndFlush();
-    expect(texts('[role="tab"]')).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Guests', 'Catalogue']);
+    expect(texts('[role="tab"]')).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Catalogue']);
     await openCatalogueTab();
     expect(texts('.catalogue-actions button')).toEqual(['Move to film', 'Attach as trailer', 'Move to TV show']);
   });

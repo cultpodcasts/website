@@ -6,12 +6,12 @@ const sourceLabels: Record<SubjectMatch['source'], string> = {
     PodcastDefault: 'podcast default'
 };
 
-function describe(match: SubjectMatch): string {
+function describe(match: { term: string; source: string }): string {
     if (match.source === 'PodcastDefault') {
         return 'podcast default subject';
     }
     const field = Object.hasOwn(sourceLabels, match.source)
-        ? sourceLabels[match.source]
+        ? sourceLabels[match.source as SubjectMatch['source']]
         : String(match.source).toLowerCase();
     return match.term ? `matched "${match.term}" in ${field}` : `matched in ${field}`;
 }
@@ -23,7 +23,7 @@ function describe(match: SubjectMatch): string {
  * so callers fall back to plain chips.
  */
 export function subjectMatchReasons(
-    matches: SubjectMatch[] | null | undefined
+    matches: readonly { subject: string; term: string; source: string }[] | null | undefined
 ): Record<string, string> | null {
     if (!matches?.length) {
         return null;
