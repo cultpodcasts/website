@@ -503,7 +503,7 @@ describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
     expect(component.canSend()).toBe(false);
     expect(component.searched()).toBe(false);
     expect(component.error()).toBe(
-      'The film catalogue could not be loaded. Paste a film, IMDb or TMDB id to add this episode to an existing film.');
+      'The film catalogue could not be loaded. Paste a film GUID to add this episode to an existing film.');
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
     await component.move();
     expect(postEpisodeToFilm).not.toHaveBeenCalled();
@@ -577,6 +577,38 @@ describe('MoveEpisodeToFilmDialogComponent film match (RPP #1525)', () => {
     await component.onName('550');
 
     expect(component.existingFilm()).toEqual({ id: titled.itemId, name: '550' });
+  });
+
+  it('does not create a film when a pasted IMDb id has no catalogue match', async () => {
+    suggest.mockResolvedValue([]);
+    component.title.setValue('tt9999999', { emitEvent: false });
+
+    await component.onName('tt9999999');
+    fixture.detectChanges();
+
+    expect(component.existingFilm()).toBeNull();
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect(component.error()).toBe('No catalogue film matches this IMDb or TMDB id.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
+  });
+
+  it('does not create a film when a pasted TMDB id has no catalogue match', async () => {
+    suggest.mockResolvedValue([{ value: 'Other', label: 'Other', itemId: manicId }]);
+    component.title.setValue('99901', { emitEvent: false });
+
+    await component.onName('99901');
+    fixture.detectChanges();
+
+    expect(component.existingFilm()).toBeNull();
+    expect(component.canSend()).toBe(false);
+    expect(component.searched()).toBe(false);
+    expect(component.error()).toBe('No catalogue film matches this IMDb or TMDB id.');
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('creates one');
+    await component.move();
+    expect(postEpisodeToFilm).not.toHaveBeenCalled();
   });
 
   it('offers every exact-name film when more than ten share that name', async () => {

@@ -39,7 +39,10 @@ const MAX_IDENTITY_ROUNDS = 4;
 const FILM_SUGGEST_LIMIT = 10;
 
 const CATALOGUE_UNAVAILABLE =
-  'The film catalogue could not be loaded. Paste a film, IMDb or TMDB id to add this episode to an existing film.';
+  'The film catalogue could not be loaded. Paste a film GUID to add this episode to an existing film.';
+
+const UNRESOLVED_EXTERNAL_ID =
+  'No catalogue film matches this IMDb or TMDB id.';
 
 export function releasedWithinDays(release: Date | string | null | undefined, days: number, now: Date): boolean {
   if (!release) {
@@ -98,9 +101,9 @@ export function isFilmExternalIdPaste(text: string): boolean {
  * disabled until that lookup has settled. One film with that exact name is selected, and Move to film merges into
  * it (`{ filmId }`, RPP #1522). Several films with that name must be picked. No match creates a new film. A pasted
  * film GUID is a merge and can be sent without waiting. A pasted IMDb (`tt…`) or TMDB id resolves via search
- * suggestions to that film and merges the same way (RPP #1534). If the catalogue cannot be loaded, create stays
- * disabled and a film GUID can still be pasted. News reports only create a film: merging into an existing one is
- * not supported.
+ * suggestions to that film and merges the same way (RPP #1534); an unresolved external id does not create a film
+ * titled `tt…` / digits. If the catalogue cannot be loaded, create stays disabled and a film GUID can still be
+ * pasted. News reports only create a film: merging into an existing one is not supported.
  */
 @Component({
   selector: 'app-move-episode-to-film-dialog',
@@ -221,15 +224,21 @@ export class MoveEpisodeToFilmDialogComponent {
     }
     const withId = found.filter(film => !!film.itemId);
     this.films.set(withId);
-    this.searched.set(true);
     // Title match wins over an IMDb/TMDB alias when both apply (e.g. a film titled with digits).
     const exactName = filmsNamed(lookup, withId);
     const exact = exactName.length > 0 ? exactName : filmsMatchingExternalId(lookup, withId);
     if (exact.length === 1) {
       const film = exact[0];
       this.existingFilm.set({ id: film.itemId!, name: film.value });
+      this.searched.set(true);
+    } else if (exact.length > 1) {
+      this.severalExact.set(true);
+      this.searched.set(true);
+    } else if (externalIdPaste) {
+      // Unresolved IMDb/TMDB must not create a film titled tt… / digits (GUID parity: merge or nothing).
+      this.error.set(UNRESOLVED_EXTERNAL_ID);
     } else {
-      this.severalExact.set(exact.length > 1);
+      this.searched.set(true);
     }
     this.lookupSettled.set(true);
   }
@@ -260,6 +269,10 @@ export class MoveEpisodeToFilmDialogComponent {
       return false;
     }
     if (this.canMergeIntoExisting && (!this.lookupSettled() || this.suggestionsUnavailable())) {
+      return false;
+    }
+    // Unresolved IMDb/TMDB paste: merge only when matched; never create titled tt… / digits.
+    if (this.canMergeIntoExisting && isFilmExternalIdPaste(this.nameText())) {
       return false;
     }
     return !this.hasInvalidTitle();
