@@ -11,6 +11,10 @@ import { PlayerService } from "../player.service";
 import { SearchResult } from "../search-result.interface";
 import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
 import { catalogueHubFilter } from "../playable-search-hit";
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
+import { HttpTestingController, provideHttpClientTesting } from "@angular/common/http/testing";
+import { authInterceptor } from "../auth.interceptor";
+import { environment } from "../../environments/environment";
 
 describe("SeriesHubComponent", () => {
   let oData: { getEntitiesWithFacets: ReturnType<typeof vi.fn> };
@@ -60,7 +64,7 @@ describe("SeriesHubComponent", () => {
     fragment = null;
   });
 
-  async function createHub(hub: "tv" | "news"): Promise<ComponentFixture<SeriesHubComponent>> {
+  async function createHub(hub: "tv" | "news", roles: string[] = []): Promise<ComponentFixture<SeriesHubComponent>> {
     scrolled = new Subject<void>();
     routeSnapshot = { fragment, params: { slug: "Nightly" }, queryParams: {} };
     routeFragment = new BehaviorSubject<string | null>(fragment);
@@ -70,11 +74,16 @@ describe("SeriesHubComponent", () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: AuthServiceWrapper, useValue: { roles: of([]) } },
+        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClientTesting(),
+        {
+          provide: AuthServiceWrapper,
+          useValue: { roles: of(roles), authService: { getAccessTokenSilently: () => of("test-token") } }
+        },
         { provide: ODataService, useValue: oData },
         {
           provide: PlayerService,
-          useValue: { play: () => undefined, episode: () => undefined, mode: () => "dock" },
+          useValue: { play: () => undefined, episode: () => undefined, mode: () => "dock", queuedKeys: () => new Set<string>() },
         },
         { provide: ScrollDispatcher, useValue: { scrolled: () => scrolled.asObservable() } },
         { provide: InfiniteScrollStrategy, useClass: InfiniteScrollStrategy },
@@ -255,6 +264,101 @@ describe("SeriesHubComponent", () => {
     };
     expect(emptyIdent.identityEpisode()).toBeUndefined();
   });
+  describe("TV show Trailers and extras rail (RPP #1412)", () => {
+    const showUrl = new URL("/tvshow/Nightly", environment.api).toString();
+    const showId = "9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d";
+    const teaser = { id: "t1", title: "Synthetic Teaser", url: "https://www.youtube.com/watch?v=synthetic01", duration: "0:02:11" };
+    const clip = { id: "t2", title: "Synthetic Clip", url: "https://archive.org/details/synthetic-clip", duration: "0:00:45" };
+
+    async function settle(fixture: ComponentFixture<SeriesHubComponent>): Promise<HTMLElement> {
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    async function renderTv(roles: string[], hits: SearchResult[] = [entity("1")]) {
+      oData = {
+        getEntitiesWithFacets: vi.fn().mockReturnValue(of(page({ entities: hits, count: hits.length }))),
+      };
+      const fixture = await createHub("tv", roles);
+      await settle(fixture);
+      return { fixture, http: TestBed.inject(HttpTestingController) };
+    }
+
+    function trailerTitles(el: HTMLElement): (string | undefined)[] {
+      return Array.from(el.querySelectorAll("app-film-trailer-card .episode-poster__episode")).map(t => t.textContent?.trim());
+    }
+
+    function menu(fixture: ComponentFixture<SeriesHubComponent>) {
+      return fixture.debugElement.query((el) => el.name === "app-series-hub-menu");
+    }
+
+    it("shows the rail to a curator on a TV hub, below the heading and toolbar and above the episode grid", async () => {
+      const { fixture, http } = await renderTv(["Curator"]);
+      http.expectOne(showUrl).flush({ id: showId, name: "Nightly", trailers: [teaser, clip] });
+      const el = await settle(fixture);
+
+      expect(trailerTitles(el)).toEqual(["Synthetic Teaser", "Synthetic Clip"]);
+      const toolbar = el.querySelector(".browse-toolbar")!;
+      const rail = el.querySelector("app-tv-show-trailers")!;
+      const grid = el.querySelector(".browse-grid")!;
+      expect(toolbar.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(rail.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it("makes no show request and renders no rail for anyone who is not a curator", async () => {
+      const { fixture, http } = await renderTv([]);
+      const el = await settle(fixture);
+
+      http.expectNone(showUrl);
+      expect(el.querySelector("app-episode-rail")).toBeNull();
+    });
+
+    it("never renders the rail, or reads a TV show, on a news hub", async () => {
+      oData = { getEntitiesWithFacets: vi.fn().mockReturnValue(of(page({ entities: [entity("1", "news")] }))) };
+      const fixture = await createHub("news", ["Curator"]);
+      const el = await settle(fixture);
+
+      expect(el.querySelector("app-tv-show-trailers")).toBeNull();
+      TestBed.inject(HttpTestingController).expectNone(showUrl);
+    });
+
+    it("reloads the rail when the hub menu reports the show was edited", async () => {
+      const { fixture, http } = await renderTv(["Curator"]);
+      http.expectOne(showUrl).flush({ id: showId, name: "Nightly", trailers: [teaser, clip] });
+      let el = await settle(fixture);
+      expect(trailerTitles(el)).toEqual(["Synthetic Teaser", "Synthetic Clip"]);
+
+      menu(fixture).triggerEventHandler("edited");
+      await settle(fixture);
+      http.expectOne(showUrl).flush({ id: showId, name: "Nightly", trailers: [clip] });
+      el = await settle(fixture);
+
+      expect(trailerTitles(el)).toEqual(["Synthetic Clip"]);
+    });
+
+    it("lists the trailers of a show that has no episodes, after the empty-state message, and reloads them after an edit", async () => {
+      const { fixture, http } = await renderTv(["Curator"], []);
+      http.expectOne(showUrl).flush({ id: showId, name: "Nightly", trailers: [teaser] });
+      let el = await settle(fixture);
+
+      expect(el.textContent).toContain('There were no results for "Nightly"');
+      expect(trailerTitles(el)).toEqual(["Synthetic Teaser"]);
+      const message = el.querySelector(".browse-empty")!;
+      const rail = el.querySelector("app-tv-show-trailers")!;
+      expect(message.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(message.contains(rail)).toBe(false);
+
+      menu(fixture).triggerEventHandler("edited");
+      await settle(fixture);
+      http.expectOne(showUrl).flush({ id: showId, name: "Nightly", trailers: [teaser, clip] });
+      el = await settle(fixture);
+
+      expect(trailerTitles(el)).toEqual(["Synthetic Teaser", "Synthetic Clip"]);
+    });
+  });
+
   describe("subject chips in the URL fragment", () => {
     const subjects = [{ value: "Topic X", count: 2 }, { value: "Topic Y", count: 1 }];
 

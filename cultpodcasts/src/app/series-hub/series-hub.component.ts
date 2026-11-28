@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked } from "@angular/core";
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal, untracked, viewChild } from "@angular/core";
 import { Location } from "@angular/common";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { skip } from "rxjs";
@@ -20,6 +20,7 @@ import { InfiniteScrollStrategy } from "../infinite-scroll-strategy";
 import { ActivatedRoute, Router } from "@angular/router";
 import { SeriesHubMenuComponent, SeriesHubSort, seriesHubSortNewest } from "../series-hub-menu/series-hub-menu.component";
 import { EpisodeLinksComponent } from "../episode-links/episode-links.component";
+import { TvShowTrailersComponent } from "../tv-show-trailers/tv-show-trailers.component";
 import { identityServiceLinks } from "../identity-service-links";
 import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, subjectsFragment, writeUrlFragment } from "../browse-filter-params";
 
@@ -32,6 +33,7 @@ import { FragmentHistory, keepOffered, readSubjectsFromFragment, routePathKey, s
     BrowseFacetScrollerDirective,
     SeriesHubMenuComponent,
     EpisodeLinksComponent,
+    TvShowTrailersComponent,
   ],
   templateUrl: "./series-hub.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +52,8 @@ export class SeriesHubComponent {
   /** Newest / oldest first from the hub menu. Not kept in the URL (the podcast page does the same). */
   protected readonly sort = signal<SeriesHubSort>(seriesHubSortNewest);
   protected readonly displayCatalogName = displayCatalogName;
+  /** The TV show's Trailers and extras rail (curator-only, RPP #1412); refreshed when the show was edited. */
+  private readonly tvShowTrailers = viewChild(TvShowTrailersComponent);
   protected readonly playerService = inject(PlayerService);
   protected readonly itemNoun = computed(() => this.hub() === "news" ? "report" : "episode");
   /** First TV result that has series identity ids, never falling back to an episode's own ids. */
@@ -215,6 +219,11 @@ export class SeriesHubComponent {
   /** After a curator's Index → Review: reload the list (and facets) with the current sort and filters. */
   protected reload(): void {
     this.load(this.seriesName(), this.hub(), true, true);
+  }
+
+  /** After the curator saved the show in the hub menu: its trailers may have changed. */
+  protected showEdited(): void {
+    this.tvShowTrailers()?.reload();
   }
 
   clearSubjects(): void {
