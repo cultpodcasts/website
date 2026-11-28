@@ -14,6 +14,7 @@ import {
 } from './podcast-kind-transfer-response.interface';
 import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
+import { FilmCreateRequest, FilmCreateResponse } from './film-create.interface';
 import { EpisodeTrailerAttachRequest, EpisodeTrailerAttachResponse } from './episode-trailer-attach.interface';
 import { EpisodeTvShowMoveRequest, EpisodeTvShowMoveResponse } from './episode-tv-show-move.interface';
 import {
@@ -97,6 +98,18 @@ export class CurationSubmitService {
       `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/film`,
       environment.api).toString();
     return this.http.post<EpisodeFilmMoveResponse>(url, request, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /**
+   * Curator: create an empty film from a TMDB / IMDb identity or a title (RPP #1413). 202 = created (`{ filmId, name }`
+   * only: GET `film/{id}` for the rest); 200 = identity prompt or cancelled (nothing written).
+   */
+  postFilm(request: FilmCreateRequest) {
+    const url = new URL('/film', environment.api).toString();
+    return this.http.post<FilmCreateResponse>(url, request, {
       context: this.curateContext(),
       observe: 'response'
     });

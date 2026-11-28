@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>New film from TMDB/IMDb</h2>
+
+<mat-dialog-content>
+    <p class="note">
+        Creates an empty film in the catalogue: no episode and no main video. Use it for a film whose trailer
+        is uploaded first, then attach the trailer from the episode with Attach as trailer.
+    </p>
+    <mat-form-field class="full-width">
+        <mat-label>IMDb or TMDB id</mat-label>
+        <input type="text" matInput class="film-external-id" [formControl]="externalId" [readonly]="isSending()"
+            (input)="onInput()" autocomplete="off" aria-label="IMDb or TMDB id">
+        <mat-hint>An IMDb title id (tt1234567) or a TMDB movie id (digits)</mat-hint>
+    </mat-form-field>
+    @if (hasInvalidId()) {
+    <p class="error">Enter an IMDb title id like tt1234567, or a TMDB movie id (digits only)</p>
+    }
+    <mat-form-field class="full-width">
+        <mat-label>Film title</mat-label>
+        <input type="text" matInput class="film-title" [formControl]="title" [readonly]="isSending()"
+            (input)="onInput()" autocomplete="off" aria-label="Film title">
+        <mat-hint>With an id this renames the film. With no id the title is looked up</mat-hint>
+    </mat-form-field>
+    @if (hasInvalidTitle()) {
+    <p class="error">A film title cannot contain '/'</p>
+    }
+    @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (existingFilm(); as film) {
+    <p class="selected" role="status">Existing film: {{ film.name ?? film.id }}</p>
+    }
+    @if (isSending()) {
+    <mat-spinner class="spinner" mode="indeterminate" diameter="40"></mat-spinner>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
+    @if (existingFilm()) {
+    <button type="button" matButton="tonal" class="open-existing" (click)="openExisting()">Open existing film</button>
+    }
+    <button type="button" matButton="filled" class="create-film" [disabled]="!canSend()" (click)="create()">Create film</button>
+</mat-dialog-actions>

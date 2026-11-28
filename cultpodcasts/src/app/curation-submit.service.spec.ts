@@ -56,6 +56,20 @@ describe('CurationSubmitService', () => {
     expect(body.ids?.imdbId).toBe('tt0000001');
   });
 
+  it('POSTs /film with the request body and curate scope, and returns the 202 acknowledgement only', async () => {
+    const filmId = '11111111-2222-4333-8444-555555555555';
+    const pending = firstValueFrom(service.postFilm({ tmdbId: 278, title: 'Synthetic Film' }));
+    const req = httpMock.expectOne(new URL('/film', environment.api).toString());
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ tmdbId: 278, title: 'Synthetic Film' });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer test-token');
+    req.flush({ filmId, name: 'Synthetic Film' }, { status: 202, statusText: 'Accepted' });
+    const resp = await pending;
+    expect(resp.status).toBe(202);
+    expect(resp.body).toEqual({ filmId, name: 'Synthetic Film' });
+  });
+
   it('POSTs /podcast/{id}/kind body { targetKind } with curate interceptor', async () => {
     const podcastId = 'Show A';
     const pending = firstValueFrom(service.postPodcastKind(podcastId, CatalogueParentKind.TvShow));
