@@ -62,7 +62,7 @@ export class TvShowTrailersComponent {
     if (!name.trim()) {
       return;
     }
-    this.loading = this.curation.getTvShow(name).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.loading = this.curation.getCatalogueParent('tv', name).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (show) => this.show.set({ id: show.id, name: show.name || name, trailers: show.trailers ?? [] }),
       // A missing or ambiguous name, or a failed read, just shows no rail: the page itself is unaffected.
       error: () => this.show.set(null),

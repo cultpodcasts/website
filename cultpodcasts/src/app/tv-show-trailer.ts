@@ -1,3 +1,4 @@
+import { filmIdFromTrailerId, httpUrl } from './film-trailer';
 import { SearchResult } from './search-result.interface';
 import { resolveServiceKey } from './service-catalog';
 
@@ -24,8 +25,8 @@ export const TV_SHOW_TRAILER_CONTENT_KIND = 'TvShowTrailer';
 
 /** `{tvShowId}:trailer:{n}` → the TV show id. Null when `id` is not a TV show trailer id. */
 export function tvShowIdFromTrailerId(id: string): string | null {
-  const match = /^(.+):trailer:\d+$/.exec(id);
-  return match?.[1] || null;
+  // The same `{parentId}:trailer:{n}` shape as a film trailer id.
+  return filmIdFromTrailerId(id);
 }
 
 /** `0:02:11` or `00:02:11.99` → `00:02:11`, the search `duration` format the cards expect. Unknown text is ''. */
@@ -36,18 +37,6 @@ export function tvShowTrailerSearchDuration(value: string | null | undefined): s
   }
   const hours = Number(match[1] ?? 0) * 24 + Number(match[2]);
   return `${String(hours).padStart(2, '0')}:${match[3]}:${match[4]}`;
-}
-
-function httpUrl(value: string | URL | null | undefined): URL | undefined {
-  if (!value) {
-    return undefined;
-  }
-  try {
-    const url = value instanceof URL ? value : new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /**

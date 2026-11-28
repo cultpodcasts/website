@@ -26,13 +26,13 @@ describe('AttachTvShowTrailerDialogComponent', () => {
   let component: AttachTvShowTrailerDialogComponent;
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let postEpisodeAsTvShowTrailer: ReturnType<typeof vi.fn>;
-  let getTvShow: ReturnType<typeof vi.fn>;
+  let getCatalogueParent: ReturnType<typeof vi.fn>;
   let suggest: ReturnType<typeof vi.fn>;
 
   async function create(data: Partial<AttachTvShowTrailerDialogData> = {}) {
     dialogRef = { close: vi.fn() };
     postEpisodeAsTvShowTrailer = vi.fn();
-    getTvShow = vi.fn();
+    getCatalogueParent = vi.fn();
     suggest = vi.fn(async () => [show, { ...show, label: 'Synthetic Show (alias)' }]);
     await TestBed.configureTestingModule({
       imports: [AttachTvShowTrailerDialogComponent],
@@ -48,7 +48,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
             ...data
           }
         },
-        { provide: CurationSubmitService, useValue: { postEpisodeAsTvShowTrailer, getTvShow } },
+        { provide: CurationSubmitService, useValue: { postEpisodeAsTvShowTrailer, getCatalogueParent } },
         { provide: SearchSuggestionsService, useValue: { preload: vi.fn(), suggest } }
       ]
     }).compileComponents();
@@ -68,7 +68,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
     expect(component.target()).toBeNull();
     await component.attach();
     expect(postEpisodeAsTvShowTrailer).not.toHaveBeenCalled();
-    expect(getTvShow).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
   });
 
   it('does not ask for suggestions for a pasted id or a one-character query, and keeps typing after a failed suggest', async () => {
@@ -91,21 +91,21 @@ describe('AttachTvShowTrailerDialogComponent', () => {
 
     await component.attach();
 
-    expect(getTvShow).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
     expect(postEpisodeAsTvShowTrailer).toHaveBeenCalledWith('podcast-1', 'episode-1', { tvShowId: showId });
     expect(dialogRef.close).toHaveBeenCalledWith({ attached: true, tvShowId: showId, tvShowName: 'Synthetic Show' });
   });
 
   it('resolves a picked name to the show id first, then sends a trimmed override title', async () => {
     await create();
-    getTvShow.mockReturnValue(of({ id: showId, name: 'Synthetic Show' }));
+    getCatalogueParent.mockReturnValue(of({ id: showId, name: 'Synthetic Show' }));
     postEpisodeAsTvShowTrailer.mockReturnValue(accepted({ tvShowId: showId, tvShowName: 'Synthetic Show' }));
     component.showQuery.setValue('Synthetic Show');
     component.title.setValue('  Synthetic Teaser  ');
 
     await component.attach();
 
-    expect(getTvShow).toHaveBeenCalledWith('Synthetic Show');
+    expect(getCatalogueParent).toHaveBeenCalledWith('tv', 'Synthetic Show');
     expect(postEpisodeAsTvShowTrailer).toHaveBeenCalledWith('podcast-1', 'episode-1', { tvShowId: showId, title: 'Synthetic Teaser' });
     expect(dialogRef.close).toHaveBeenCalledWith({ attached: true, tvShowId: showId, tvShowName: 'Synthetic Show' });
   });
@@ -113,7 +113,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
   it('attaches nothing and says to tick Create when the picked name matches no show', async () => {
     await create();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    getTvShow.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    getCatalogueParent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     component.showQuery.setValue('Unknown Show');
 
     await component.attach();
@@ -128,7 +128,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
   it('attaches nothing and asks for the id when two shows share the picked name', async () => {
     await create();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    getTvShow.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    getCatalogueParent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
     component.showQuery.setValue('Synthetic Show');
 
     await component.attach();
@@ -146,7 +146,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
     expect(component.isCreatingShow()).toBe(true);
     await component.attach();
 
-    expect(getTvShow).not.toHaveBeenCalled();
+    expect(getCatalogueParent).not.toHaveBeenCalled();
     expect(postEpisodeAsTvShowTrailer).toHaveBeenCalledWith('podcast-1', 'episode-1', {
       createShow: true,
       tvShowName: 'New Show',
@@ -227,6 +227,12 @@ describe('AttachTvShowTrailerDialogComponent', () => {
     await create({ hasUnsavedChanges: true });
 
     expect(fixture.nativeElement.querySelector('.unsaved')?.textContent).toContain('unsaved changes');
+  });
+
+  it('warns the curator that TV show trailers are only visible to curators for now', async () => {
+    await create();
+
+    expect(fixture.nativeElement.querySelector('.curator-only')?.textContent).toContain('only shown to curators');
   });
 
   describe('messages', () => {

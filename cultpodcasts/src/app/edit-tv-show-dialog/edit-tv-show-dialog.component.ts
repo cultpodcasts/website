@@ -284,14 +284,16 @@ export class EditTvShowDialogComponent {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    if (this.trailers.invalid) {
-      // A blank trailer title is omitted from the patch (the server would keep the old one), so Save is blocked.
+    const trailers = tvShowTrailerChanges(this.original, this.trailers.getRawValue());
+    if (trailers && this.trailers.invalid) {
+      // A blank trailer title is omitted from the patch (the server would keep the old one), so a save that changes the
+      // trailers is blocked. Untouched trailers never block: a stored trailer without a title must not make the show
+      // un-saveable for an unrelated edit.
       this.trailers.markAllAsTouched();
       this.selectedTabIndex.set(TV_SHOW_TRAILERS_TAB_INDEX);
       return;
     }
     const changes: TvShowChangeRequest = catalogueParentChanges(this.original, model, true);
-    const trailers = tvShowTrailerChanges(this.original, this.trailers.getRawValue());
     if (trailers) {
       changes.trailers = trailers;
       // The ids this editor loaded, not the keep-list: a trailer attached since is absent here, so the server refuses

@@ -17,10 +17,8 @@ import {
   EpisodeTvShowTrailerAttachRequest,
   EpisodeTvShowTrailerAttachResponse
 } from '../episode-tv-show-trailer-attach.interface';
-import { defaultPublisher } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { SearchSuggestionsService } from '../search-suggestions.service';
-
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { defaultPublisher, isGuid } from '../tv-show-target.util';
 
 /** Where the trailer goes: a show id, a show to create (or join, by name), or an existing show named but not yet resolved to an id. */
 export type TvShowTrailerTarget =
@@ -68,7 +66,7 @@ export class AttachTvShowTrailerDialogComponent {
   private readonly publisherValue: () => string;
   private readonly titleValue: () => string;
   /** The query is a pasted TV show id rather than a name. */
-  readonly isShowId = computed(() => GUID.test(this.queryValue().trim()));
+  readonly isShowId = computed(() => isGuid(this.queryValue().trim()));
   readonly hasInvalidName = computed(() => !this.isShowId() && this.queryValue().includes('/'));
   readonly isCreatingShow = computed(() => !this.isShowId() && this.createShowValue());
   /** The target, or null while there is no valid one. */
@@ -90,7 +88,7 @@ export class AttachTvShowTrailerDialogComponent {
     this.error.set(null);
     const version = ++this.queryVersion;
     let found: { value: string }[] = [];
-    if (text.length >= 2 && !GUID.test(text)) {
+    if (text.length >= 2 && !isGuid(text)) {
       try {
         found = await this.suggestions.suggest(text, 10, 'tvShow');
       } catch (e) {
@@ -171,7 +169,7 @@ export class AttachTvShowTrailerDialogComponent {
         };
       case 'name': {
         try {
-          const show = await firstValueFrom(this.curationSubmit.getTvShow(target.tvShowName));
+          const show = await firstValueFrom(this.curationSubmit.getCatalogueParent("tv", target.tvShowName));
           return { tvShowId: show.id, ...withTitle };
         } catch (e) {
           this.error.set(resolveTvShowErrorMessage(e as HttpErrorResponse));

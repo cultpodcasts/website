@@ -19,8 +19,8 @@ import { FilmTrailerEditGroup } from '../playable-edit-form.util';
 })
 export class FilmTrailersEditComponent {
   readonly trailers = input.required<FormArray<FilmTrailerEditGroup>>();
-  /** What holds the trailers, for the empty-list hint: a film (default) or a TV show (RPP #1412). */
-  readonly parent = input<'film' | 'TV show'>('film');
+  /** What holds the trailers, for the empty-list hint: a film (default) or a TV show, `'tv'` (RPP #1412). This component and its card serve both; the Film names are historical. */
+  readonly parent = input<'film' | 'tv'>('film');
 
   move(index: number, by: -1 | 1): void {
     const target = index + by;

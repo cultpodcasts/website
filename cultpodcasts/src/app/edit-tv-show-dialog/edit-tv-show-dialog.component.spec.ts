@@ -321,6 +321,20 @@ describe('EditTvShowDialogComponent', () => {
       expect(dialog.trailers.at(1).controls.title.touched).toBe(true);
       expect(close).not.toHaveBeenCalled();
     });
+
+    it('does not block an unrelated edit because a stored trailer has no title', async () => {
+      const { dialog } = await loadShow([{ ...stored[0], title: '' }, stored[1]]);
+      expect(dialog.trailers.invalid).toBe(true);
+      dialog.model()!.publisher = 'Network Two';
+
+      const done = dialog.save();
+      const req = await expectSoon(patchUrl);
+
+      expect(req.request.body).toEqual({ publisher: 'Network Two' });
+      req.flush(null, { status: 202, statusText: 'Accepted' });
+      await done;
+      expect(close).toHaveBeenCalledWith({ updated: true });
+    });
   });
 
   it('Flags tab has the checkboxes without helper text and without Skip Enriching From YouTube', async () => {

@@ -77,7 +77,7 @@ describe('CurationSubmitService', () => {
   });
 
   it('GETs /tvshow/{identifier} with curate scope and returns the show with its trailers', async () => {
-    const pending = firstValueFrom(service.getTvShow('Synthetic / Show'));
+    const pending = firstValueFrom(service.getCatalogueParent('tv', 'Synthetic / Show'));
     const req = httpMock.expectOne(new URL('/tvshow/' + encodeURIComponent('Synthetic / Show'), environment.api).toString());
     expect(req.request.method).toBe('GET');
     expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');

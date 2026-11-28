@@ -1,7 +1,4 @@
 <app-site-loading [active]="isLoading() || isSubsequentLoading()" [label]="loadingLabel()" />
-@if (hub() === "tv") {
-<app-tv-show-trailers [showName]="seriesName()" />
-}
 @if (isLoading() && results().length === 0) {
 <app-browse-loading-skeleton />
 } @else if (count() > 0) {
@@ -39,6 +36,10 @@
     }
   </div>
 
+  @if (hub() === "tv") {
+  <app-tv-show-trailers [showName]="seriesName()" />
+  }
+
   <div class="browse-grid">
     @for (result of results(); track result.id) {
     <app-catalogue-card [episode]="result" [showRelease]="true" (play)="playEpisode($event)" />
@@ -61,4 +62,7 @@
   <h2>There were no results for "{{ displayCatalogName(seriesName()) }}"</h2>
   <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sortable]="false" (indexed)="reload()" (edited)="showEdited()" />
 </section>
+@if (hub() === "tv") {
+<app-tv-show-trailers [showName]="seriesName()" />
+}
 }

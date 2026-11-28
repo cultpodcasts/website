@@ -146,15 +146,6 @@ export class CurationSubmitService {
     });
   }
 
-  /**
-   * Curator GET of a TV show by guid or route-form name: the shared fields plus its `trailers` (RPP #1412). The only
-   * source of a show's trailers: a TV show has no search document.
-   */
-  getTvShow(identifier: string) {
-    const url = new URL(`/tvshow/${encodeURIComponent(identifier)}`, environment.api).toString();
-    return this.http.get<TvShowDto>(url, { context: this.curateContext() });
-  }
-
   /** Curator: move one podcast episode into an existing or new TV show with the same id (the episode row is then deleted). */
   postEpisodeToTvShow(podcastId: string, episodeId: string, request: EpisodeTvShowMoveRequest) {
     const url = new URL(
@@ -251,12 +242,17 @@ export class CurationSubmitService {
   }
 
   /**
-   * GET a news outlet / TV show by guid or route-form name (curate). A news outlet is a {@link NewsOrganisationDto}
-   * (shared fields plus its additional YouTube channels); a TV show has only the shared fields.
+   * GET a news outlet / TV show by guid or route-form name (curate): the one read path for both. A news outlet is a
+   * {@link NewsOrganisationDto} (shared fields plus its additional YouTube channels). A TV show is a
+   * {@link TvShowDto}: the shared fields plus its `trailers` (RPP #1412), which have no other source because a TV show
+   * has no search document. A hub known only as a {@link CatalogueHub} gets the shared fields.
    */
-  getCatalogueParent(hub: CatalogueHub, identifier: string) {
+  getCatalogueParent(hub: 'tv', identifier: string): Observable<TvShowDto>;
+  getCatalogueParent(hub: 'news', identifier: string): Observable<NewsOrganisationDto>;
+  getCatalogueParent(hub: CatalogueHub, identifier: string): Observable<CatalogueParentDto | NewsOrganisationDto | TvShowDto>;
+  getCatalogueParent(hub: CatalogueHub, identifier: string): Observable<CatalogueParentDto | NewsOrganisationDto | TvShowDto> {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(identifier)}`, environment.api).toString();
-    return this.http.get<CatalogueParentDto | NewsOrganisationDto>(url, { context: this.curateContext() });
+    return this.http.get<CatalogueParentDto | NewsOrganisationDto | TvShowDto>(url, { context: this.curateContext() });
   }
 
   /** Edit-time Identity tab probe (does not write Cosmos). */

@@ -59,7 +59,7 @@ describe('FilmTrailersEditComponent', () => {
   });
 
   it('explains how to add a trailer to a TV show when it has none', async () => {
-    fixture.componentRef.setInput('parent', 'TV show');
+    fixture.componentRef.setInput('parent', 'tv');
     trailers.clear();
     fixture.detectChanges();
     await fixture.whenStable();
