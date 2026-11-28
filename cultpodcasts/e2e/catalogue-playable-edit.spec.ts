@@ -6,7 +6,7 @@ import { catalogueE2eOrigin as appOrigin } from "./catalogue-origin";
  * News report / TV episode / film curator edit against real routes with a faked API (synthetic data only):
  * hub submit → snackbar Review + Edit (Review → `/episodes`), the news report page Edit, the TV episode page Edit,
  * and for films the film page Edit, the toolbar submit snackbar and the review page row. Also the podcast Edit
- * Episode dialog's Catalogue tab (Move to film / Attach as trailer / Move to TV show).
+ * Episode dialog's Catalogue tab (Move to film / Attach as trailer / Attach as TV trailer/clip / Move to TV show).
  * Set CATALOGUE_EDIT_SCREENSHOTS=dir to save PR screenshots.
  */
 const guids = new GuidService();
@@ -332,7 +332,7 @@ test.describe("podcast Edit Episode Catalogue tab", () => {
 		await expect(dialog.getByRole("tab")).toHaveText(["Details", "Flags", "Urls", "Meta", "Images", "Also on YouTube", "Guests", "Catalogue"]);
 		await shot(page, "episode-edit-details");
 		await dialog.getByRole("tab", { name: "Catalogue" }).click();
-		await expect(dialog.getByRole("tabpanel").getByRole("button")).toHaveText(["Move to film", "Attach as trailer", "Move to TV show"]);
+		await expect(dialog.getByRole("tabpanel").getByRole("button")).toHaveText(["Move to film", "Attach as trailer", "Attach as TV trailer/clip", "Move to TV show"]);
 		await shot(page, "episode-edit-catalogue");
 		await dialog.getByRole("button", { name: "Move to film" }).click();
 		const confirm = page.locator("mat-dialog-container").filter({ has: page.getByRole("heading", { name: "Move to film" }) });

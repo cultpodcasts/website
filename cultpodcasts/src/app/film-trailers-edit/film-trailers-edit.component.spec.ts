@@ -58,6 +58,18 @@ describe('FilmTrailersEditComponent', () => {
     expect(trailers.dirty).toBe(true);
   });
 
+  it('explains how to add a trailer to a TV show when it has none', async () => {
+    fixture.componentRef.setInput('parent', 'tv');
+    trailers.clear();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const empty = fixture.nativeElement.querySelector('.empty')?.textContent as string;
+    expect(empty).toContain('Catalogue tab');
+    expect(empty).toContain('"Attach as TV trailer/clip"');
+    expect(empty).toContain('Pick this TV show there');
+    expect(empty).not.toContain('film');
+  });
+
   it('explains how to add a trailer when there are none', async () => {
     for (let i = 0; i < 2; i++) {
       (fixture.nativeElement.querySelector('button[aria-label="Remove trailer"]') as HTMLButtonElement).click();
