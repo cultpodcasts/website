@@ -258,6 +258,18 @@ describe('SeriesHubMenuComponent', () => {
     expect(sendSubmit).not.toHaveBeenCalled();
   });
 
+  it('emits edited only when the editor saved, so a TV show reloads its trailers (RPP #1412)', () => {
+    const { fixture, menu } = create('tv', 'Nightly');
+    const edited = vi.fn();
+    fixture.componentInstance.edited.subscribe(edited);
+
+    for (const result of [{ updated: true }, { noChange: true }, { closed: true }, undefined]) {
+      dialogOpen.mockReturnValueOnce({ afterClosed: () => of(result) });
+      menu.edit();
+    }
+
+    expect(edited).toHaveBeenCalledTimes(1);
+  });
   it('opens the edit and rename dialogs with the hub and name', () => {
     const tv = create('tv', 'Nightly');
     tv.menu.edit();

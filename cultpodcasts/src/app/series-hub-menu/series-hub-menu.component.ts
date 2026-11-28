@@ -55,6 +55,8 @@ export class SeriesHubMenuComponent {
   readonly sortable = input(true);
   /** After an index, when the curator picks Review: the hub reloads its list. */
   readonly indexed = output<void>();
+  /** After the curator saved the outlet / show in the editor (a TV show's trailers may have changed). */
+  readonly edited = output<void>();
 
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -101,7 +103,11 @@ export class SeriesHubMenuComponent {
   protected edit(): void {
     openCatalogueParentEditDialog(this.dialog, this.snackBar, { hub: this.hub(), name: this.seriesName() })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe();
+      .subscribe((result) => {
+        if (result?.updated) {
+          this.edited.emit();
+        }
+      });
   }
 
   protected rename(): void {

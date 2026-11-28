@@ -1,4 +1,5 @@
 import { SearchIndexerState } from "@cultpodcasts/contracts";
+import { TvShowTrailer } from "./tv-show-trailer";
 import { YouTubeIndexingHints } from "./youtube-indexing-hints.interface";
 
 /**
@@ -130,6 +131,28 @@ export type CatalogueParentChangeRequest = Partial<
  */
 export type NewsOrganisationChangeRequest = CatalogueParentChangeRequest &
   Pick<NewsOrganisationYouTubeChannelsDto, "additionalYouTubeChannels">;
+
+/**
+ * The TV show's trailers (RPP #1412), on the `GET tvshow/{identifier}` body only. A news organisation has none.
+ * A show with no trailers omits the field.
+ */
+export interface TvShowTrailersDto {
+  trailers?: TvShowTrailer[] | null;
+}
+
+/** GET /tvshow/{identifier}: the shared fields plus the show's trailers. */
+export type TvShowDto = CatalogueParentDto & TvShowTrailersDto;
+
+/**
+ * PATCH /tvshow/{id} body: the shared fields plus the trailer keep-list. `trailers` are the trailers to keep, in order,
+ * each with an optional rename; the rest are removed. `expectedTrailerIds` are the trailer ids the editor saw: the
+ * server answers 409 with `unexpectedTrailerIds` (nothing saved) when the show holds a trailer that is not listed, so
+ * a stale keep-list never deletes a trailer attached since the editor loaded. Send both together.
+ */
+export type TvShowChangeRequest = CatalogueParentChangeRequest & {
+  trailers?: { id: string; title?: string }[];
+  expectedTrailerIds?: string[];
+};
 
 /** POST /newsorganisation/name/{identifier} or /tvshow/name/{identifier} (admin). */
 export interface CatalogueParentRenameRequest {

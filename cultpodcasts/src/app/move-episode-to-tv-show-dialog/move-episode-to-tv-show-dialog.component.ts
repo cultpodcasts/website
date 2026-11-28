@@ -18,16 +18,7 @@ import {
 } from '../episode-tv-show-move.interface';
 import { RECENT_RELEASE_DAYS, releasedWithinDays } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { SearchSuggestionsService } from '../search-suggestions.service';
-
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** BBC catch-all podcasts whose programmes become shows published by BBC. */
-const BBC_PODCAST = /^bbc( three)?$/i;
-
-/** The publisher a new show defaults to for an episode of this podcast. */
-export function defaultPublisher(podcastName: string | null | undefined): string {
-  return BBC_PODCAST.test((podcastName ?? '').trim()) ? 'BBC' : '';
-}
+import { defaultPublisher, isGuid } from '../tv-show-target.util';
 
 /**
  * Confirms and sends the curator "Move to TV show" command for one podcast episode, or for one news report when
@@ -68,7 +59,7 @@ export class MoveEpisodeToTvShowDialogComponent {
   private readonly publisherValue: () => string;
   private readonly titleValue: () => string;
   /** The query is a pasted TV show id rather than a name. */
-  readonly isShowId = computed(() => GUID.test(this.queryValue().trim()));
+  readonly isShowId = computed(() => isGuid(this.queryValue().trim()));
   readonly hasInvalidName = computed(() => !this.isShowId() && this.queryValue().includes('/'));
   readonly isCreatingShow = computed(() => !this.isShowId() && this.createShowValue());
   /** The request body, or null while there is no valid target. */
@@ -92,7 +83,7 @@ export class MoveEpisodeToTvShowDialogComponent {
     const text = value.trim();
     this.error.set(null);
     const version = ++this.queryVersion;
-    const found = text.length < 2 || GUID.test(text) ? [] : await this.suggestions.suggest(text, 10, 'tvShow');
+    const found = text.length < 2 || isGuid(text) ? [] : await this.suggestions.suggest(text, 10, 'tvShow');
     if (version === this.queryVersion) {
       this.shows.set([...new Set(found.map(show => show.value))]);
     }
