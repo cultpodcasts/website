@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { FormArray } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,6 +12,8 @@ import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentEditModel } from '../catalogue-parent-edit';
+import { FilmTrailerEditGroup } from '../playable-edit-form.util';
+import { staleTvShowTrailersMessage } from '../tv-show-trailer';
 import { JsonDateInterceptor } from '../json-date.interceptor';
 import {
   CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
@@ -26,7 +29,7 @@ import {
   YOU_TUBE_PLAYLIST_NOT_FOUND_MESSAGE,
   YOU_TUBE_PLAYLIST_OWNER_LOOKUP_FAILED_MESSAGE
 } from '../youtube-playlist-edit-error';
-import { EditTvShowDialogComponent } from './edit-tv-show-dialog.component';
+import { EditTvShowDialogComponent, TV_SHOW_TRAILERS_TAB_INDEX } from './edit-tv-show-dialog.component';
 
 const showId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 type Internals = {
@@ -39,6 +42,7 @@ type Internals = {
     applyIncludeTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
     applyTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
   };
+  trailers: FormArray<FilmTrailerEditGroup>;
   lookUpIdentity(): Promise<void>;
   identityLookupMessage(): string;
   clearIdentityField(field: 'imdbId' | 'tvdbId' | 'tmdbId'): void;
@@ -167,6 +171,158 @@ describe('EditTvShowDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true });
   });
 
+  describe('trailers (RPP #1412)', () => {
+    const stored = [
+      { id: 't1', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' },
+      { id: 't2', title: 'Synthetic Clip', url: 'https://archive.org/details/synthetic-clip', duration: '0:00:45' },
+      { id: 't3', title: 'Synthetic Extra', url: 'https://example.org/extra', duration: '0:01:00' }
+    ];
+
+    async function loadShow(trailers: object[] | null = stored) {
+      const fixture = TestBed.createComponent(EditTvShowDialogComponent);
+      fixture.detectChanges();
+      await loadWith({ id: showId, name: 'Nightly', ...(trailers ? { trailers } : {}) });
+      await settle();
+      return { fixture, dialog: fixture.componentInstance as unknown as Internals };
+    }
+
+    it('lists the show\'s trailers on a Trailers tab, one editable title each', async () => {
+      const { fixture, dialog } = await loadShow();
+
+      expect(dialog.trailers.getRawValue()).toEqual([
+        { id: 't1', title: 'Synthetic Teaser' },
+        { id: 't2', title: 'Synthetic Clip' },
+        { id: 't3', title: 'Synthetic Extra' }
+      ]);
+      await showTab(fixture, 'Trailers');
+      const inputs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('app-film-trailers-edit input')) as HTMLInputElement[];
+      expect(inputs.map(i => i.value)).toEqual(['Synthetic Teaser', 'Synthetic Clip', 'Synthetic Extra']);
+    });
+
+    it('tells a show with no trailers how to attach one', async () => {
+      const { fixture, dialog } = await loadShow(null);
+
+      expect(dialog.trailers.length).toBe(0);
+      await showTab(fixture, 'Trailers');
+      const empty = (fixture.nativeElement as HTMLElement).querySelector('app-film-trailers-edit .empty')?.textContent as string;
+      expect(empty).toContain('"Attach as TV trailer/clip"');
+      expect(empty).toContain('Pick this TV show there');
+    });
+
+    it('PATCHes the kept trailers in the new order with a rename, and the ids it loaded as expectedTrailerIds', async () => {
+      const { dialog } = await loadShow();
+      const [first, , third] = dialog.trailers.controls;
+      dialog.trailers.clear();
+      dialog.trailers.push(third);
+      dialog.trailers.push(first);
+      first.controls.title.setValue('  Renamed Teaser ');
+
+      const done = dialog.save();
+      const req = await expectSoon(patchUrl);
+
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({
+        trailers: [{ id: 't3', title: 'Synthetic Extra' }, { id: 't1', title: 'Renamed Teaser' }],
+        expectedTrailerIds: ['t1', 't2', 't3']
+      });
+      req.flush(null, { status: 202, statusText: 'Accepted' });
+      await done;
+      expect(close).toHaveBeenCalledWith({ updated: true });
+    });
+
+    it('a removed trailer is left out of the keep-list but stays in expectedTrailerIds, so the server can tell it was seen', async () => {
+      const { dialog } = await loadShow();
+      dialog.trailers.removeAt(1);
+
+      const done = dialog.save();
+      const req = await expectSoon(patchUrl);
+
+      expect(req.request.body).toEqual({
+        trailers: [{ id: 't1', title: 'Synthetic Teaser' }, { id: 't3', title: 'Synthetic Extra' }],
+        expectedTrailerIds: ['t1', 't2', 't3']
+      });
+      req.flush(null, { status: 202, statusText: 'Accepted' });
+      await done;
+    });
+
+    it('removing every trailer sends an empty keep-list', async () => {
+      const { dialog } = await loadShow();
+      dialog.trailers.clear();
+
+      const done = dialog.save();
+      const req = await expectSoon(patchUrl);
+
+      expect(req.request.body).toEqual({ trailers: [], expectedTrailerIds: ['t1', 't2', 't3'] });
+      req.flush(null, { status: 202, statusText: 'Accepted' });
+      await done;
+    });
+
+    it('sends no trailer fields when only another field changed, so a trailer attached since is never at risk', async () => {
+      const { dialog } = await loadShow();
+      dialog.model()!.publisher = 'Network Two';
+
+      const done = dialog.save();
+      const req = await expectSoon(patchUrl);
+
+      expect(req.request.body).toEqual({ publisher: 'Network Two' });
+      req.flush(null, { status: 202, statusText: 'Accepted' });
+      await done;
+    });
+
+    it('closes with noChange and sends nothing when the trailers are untouched', async () => {
+      const { dialog } = await loadShow();
+
+      await dialog.save();
+
+      expect(close).toHaveBeenCalledWith({ noChange: true });
+    });
+
+    it('a 409 naming trailers attached since the editor opened saves nothing and says so, keeping the edits', async () => {
+      const { fixture, dialog } = await loadShow();
+      dialog.trailers.removeAt(0);
+
+      const done = dialog.save();
+      (await expectSoon(patchUrl)).flush(
+        { message: 'Trailers changed', unexpectedTrailerIds: ['t9'] },
+        { status: 409, statusText: 'Conflict' }
+      );
+      await done;
+      fixture.detectChanges();
+
+      expect(dialog.saveError()).toBe(true);
+      expect(dialog.saveErrorMessage()).toBe(staleTvShowTrailersMessage(1));
+      expect((fixture.nativeElement as HTMLElement).querySelector('#error')?.textContent?.trim()).toBe(staleTvShowTrailersMessage(1));
+      expect(dialog.trailers.getRawValue().map(t => t.id)).toEqual(['t2', 't3']);
+      expect(close).not.toHaveBeenCalled();
+    });
+
+    it('a 409 about something else still shows its own conflict message, not the trailer one', async () => {
+      const { dialog } = await loadShow();
+      dialog.trailers.removeAt(0);
+
+      const done = dialog.save();
+      (await expectSoon(patchUrl)).flush(
+        { message: 'spotifyId is already used by another show', ids: [showId] },
+        { status: 409, statusText: 'Conflict' }
+      );
+      await done;
+
+      expect(dialog.saveErrorMessage()).toContain('spotifyId is already used by another show');
+    });
+
+    it('blocks Save on a blank trailer title and opens the Trailers tab', async () => {
+      const { dialog } = await loadShow();
+      dialog.trailers.at(1).controls.title.setValue('   ');
+
+      await dialog.save();
+
+      TestBed.inject(HttpTestingController).expectNone(patchUrl);
+      expect(dialog.selectedTabIndex()).toBe(TV_SHOW_TRAILERS_TAB_INDEX);
+      expect(dialog.trailers.at(1).controls.title.touched).toBe(true);
+      expect(close).not.toHaveBeenCalled();
+    });
+  });
+
   it('Flags tab has the checkboxes without helper text and without Skip Enriching From YouTube', async () => {
     const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
@@ -181,17 +337,18 @@ describe('EditTvShowDialogComponent', () => {
     expect(fixture.debugElement.queryAll(By.css('.flags .hint')).length).toBe(0);
   });
 
-  it('TV show tabs follow the podcast edit dialog order, with Identity last', async () => {
+  it('TV show tabs follow the podcast edit dialog order, with Identity then Trailers last', async () => {
     const fixture = TestBed.createComponent(EditTvShowDialogComponent);
     fixture.detectChanges();
     await loadWith({ id: showId, name: 'Nightly' });
     await settle();
     fixture.detectChanges();
     const tabs = tabLabels(fixture);
-    expect(tabs).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs', 'Identity']);
+    expect(tabs).toEqual(['Details', 'Flags', 'Subjects', 'Social', 'Meta', 'Regexs', 'Identity', 'Trailers']);
     expect(tabs.indexOf('Meta')).toBe(PODCAST_META_TAB_INDEX);
     expect(tabs.indexOf('Regexs')).toBe(PODCAST_REGEXS_TAB_INDEX);
     expect(tabs.indexOf('Identity')).toBe(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
+    expect(tabs.indexOf('Trailers')).toBe(TV_SHOW_TRAILERS_TAB_INDEX);
   });
 
   it('keeps a stored skipEnrichingFromYouTube out of the PATCH when other flags change', async () => {

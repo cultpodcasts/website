@@ -16,6 +16,7 @@ import { CatalogueParentKind } from './catalogue-parent-kind.enum';
 import { EpisodeFilmMoveRequest, EpisodeFilmMoveResponse } from './episode-film-move.interface';
 import { EpisodeTrailerAttachRequest, EpisodeTrailerAttachResponse } from './episode-trailer-attach.interface';
 import { EpisodeTvShowMoveRequest, EpisodeTvShowMoveResponse } from './episode-tv-show-move.interface';
+import { EpisodeTvShowTrailerAttachRequest, EpisodeTvShowTrailerAttachResponse } from './episode-tv-show-trailer-attach.interface';
 import {
   FilmApiDto,
   FilmChangeRequest,
@@ -33,6 +34,8 @@ import {
   CatalogueParentDto,
   NewsOrganisationChangeRequest,
   NewsOrganisationDto,
+  TvShowChangeRequest,
+  TvShowDto,
   CatalogueParentRenameRequest,
   CatalogueParentRenameResponse
 } from './catalogue-parent.interface';
@@ -126,6 +129,30 @@ export class CurationSubmitService {
       context: this.curateContext(),
       observe: 'response'
     });
+  }
+
+  /**
+   * Curator: attach one podcast episode as a trailer / clip of a TV show, by `tvShowId`, or by `createShow` + `tvShowName`
+   * (the show with that name, created when none has it; RPP #1412). 202 = attached (a command outcome, not the show);
+   * the episode row is then deleted.
+   */
+  postEpisodeAsTvShowTrailer(podcastId: string, episodeId: string, request: EpisodeTvShowTrailerAttachRequest) {
+    const url = new URL(
+      `/episode/${encodeURIComponent(podcastId)}/${encodeURIComponent(episodeId)}/tvshow-trailer`,
+      environment.api).toString();
+    return this.http.post<EpisodeTvShowTrailerAttachResponse>(url, request, {
+      context: this.curateContext(),
+      observe: 'response'
+    });
+  }
+
+  /**
+   * Curator GET of a TV show by guid or route-form name: the shared fields plus its `trailers` (RPP #1412). The only
+   * source of a show's trailers: a TV show has no search document.
+   */
+  getTvShow(identifier: string) {
+    const url = new URL(`/tvshow/${encodeURIComponent(identifier)}`, environment.api).toString();
+    return this.http.get<TvShowDto>(url, { context: this.curateContext() });
   }
 
   /** Curator: move one podcast episode into an existing or new TV show with the same id (the episode row is then deleted). */
@@ -241,7 +268,7 @@ export class CurationSubmitService {
   }
 
   /** PATCH a news outlet / TV show by guid (curate): 202, empty body. */
-  patchCatalogueParent(hub: CatalogueHub, id: string, body: CatalogueParentChangeRequest | NewsOrganisationChangeRequest) {
+  patchCatalogueParent(hub: CatalogueHub, id: string, body: CatalogueParentChangeRequest | NewsOrganisationChangeRequest | TvShowChangeRequest) {
     const url = new URL(`/${hubApiRoot(hub)}/${encodeURIComponent(id)}`, environment.api).toString();
     return this.http.patch(url, body, {
       context: this.curateContext(),

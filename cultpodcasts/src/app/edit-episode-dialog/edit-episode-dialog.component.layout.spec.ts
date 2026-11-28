@@ -10,6 +10,7 @@ import { environment } from '../../environments/environment';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { AttachTrailerDialogComponent } from '../attach-trailer-dialog/attach-trailer-dialog.component';
+import { AttachTvShowTrailerDialogComponent } from '../attach-tv-show-trailer-dialog/attach-tv-show-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { EditEpisodeDialogComponent } from './edit-episode-dialog.component';
 
@@ -158,18 +159,18 @@ describe('EditEpisodeDialogComponent layout', () => {
     expect(texts('mat-dialog-actions button')).toEqual(['Close', 'Submit']);
   });
 
-  it('adds a Catalogue tab after Guests holding Move to film, Attach as trailer and Move to TV show', async () => {
+  it('adds a Catalogue tab after Guests holding Move to film, Attach as trailer, Attach as TV trailer/clip and Move to TV show', async () => {
     await loadAndFlush();
     expect(texts('[role="tab"]')).toEqual(['Details', 'Flags', 'Urls', 'Meta', 'Images', 'Also on YouTube', 'Guests', 'Catalogue']);
     await openCatalogueTab();
-    expect(texts('.catalogue-actions button')).toEqual(['Move to film', 'Attach as trailer', 'Move to TV show']);
+    expect(texts('.catalogue-actions button')).toEqual(['Move to film', 'Attach as trailer', 'Attach as TV trailer/clip', 'Move to TV show']);
   });
 
   it('describes each move by its hint, which says it takes the episode out of the podcast', async () => {
     await loadAndFlush();
     await openCatalogueTab();
     const buttons = Array.from(el().querySelectorAll<HTMLButtonElement>('.catalogue-actions button'));
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(4);
     for (const button of buttons) {
       const id = button.getAttribute('aria-describedby');
       expect(id).toBeTruthy();
@@ -183,6 +184,7 @@ describe('EditEpisodeDialogComponent layout', () => {
   it.each([
     ['.move-to-film', MoveEpisodeToFilmDialogComponent],
     ['.attach-trailer', AttachTrailerDialogComponent],
+    ['.attach-tv-show-trailer', AttachTvShowTrailerDialogComponent],
     ['.move-to-tv-show', MoveEpisodeToTvShowDialogComponent]
   ] as const)('%s on the Catalogue tab opens its confirming dialog and does not submit or close', async (selector, dialog) => {
     await loadAndFlush();

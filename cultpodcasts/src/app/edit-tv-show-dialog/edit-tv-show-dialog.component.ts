@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
 import { HttpErrorResponse } from "@angular/common/http";
-import { FormsModule } from "@angular/forms";
+import { FormArray, FormsModule } from "@angular/forms";
 import { MatButtonModule } from "@angular/material/button";
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from "@angular/material/dialog";
 import { MatFormFieldModule } from "@angular/material/form-field";
@@ -13,7 +13,7 @@ import { firstValueFrom, forkJoin } from "rxjs";
 import { ambiguousCandidateFromCatalogueParent } from "../ambiguous-name-candidate";
 import { hubParentLabel } from "../catalogue-hub";
 import { applyIdentityIds, runCatalogueIdentityLookup } from "../catalogue-identity-lookup";
-import { CatalogueParentDto, PlaylistIdHistoryEntry } from "../catalogue-parent.interface";
+import { PlaylistIdHistoryEntry, TvShowChangeRequest, TvShowDto } from "../catalogue-parent.interface";
 import { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "../catalogue-parent-edit-dialog-data";
 import { YouTubeIndexingHints } from "../youtube-indexing-hints.interface";
 import { effectiveYouTubeIndexingHints } from "../youtube-indexing-hints.util";
@@ -32,9 +32,10 @@ import { catalogueParentSaveError } from "../catalogue-parent-save-error";
 import { CatalogueParentEditor } from "../catalogue-parent-editor";
 import { confirmCatalogueParentRemoval, forceFullCatalogueParentYouTubeWalk, loadNamedCatalogueParent } from "../catalogue-parent-edit-flow";
 import { CatalogueParentFieldsComponent } from "../catalogue-parent-fields/catalogue-parent-fields.component";
+import { FilmTrailersEditComponent } from "../film-trailers-edit/film-trailers-edit.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { openExternalUrl } from "../episode-form.util";
-import { imdbTitleUrl, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-form.util";
+import { FilmTrailerEditGroup, imdbTitleUrl, newFilmTrailerGroup, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-form.util";
 import { buildPodcastLanguageOptions } from "../language-options.util";
 import { RegexPresetsService } from "../regex-presets.service";
 import {
@@ -42,7 +43,11 @@ import {
   PODCAST_DETAILS_TAB_INDEX,
   PODCAST_META_TAB_INDEX
 } from "../podcast-form.util";
+import { staleTvShowTrailersError, tvShowTrailerChanges } from "../tv-show-trailer";
 import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
+
+/** The Trailers tab sits after Identity, so the shared tab indexes above stay valid (RPP #1412). */
+export const TV_SHOW_TRAILERS_TAB_INDEX = CATALOGUE_PARENT_IDENTITY_TAB_INDEX + 1;
 
 export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from "../catalogue-parent-edit-dialog-data";
 
@@ -50,7 +55,7 @@ export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from
  * Curator edit of a TV show (PATCH, RPP #1053). Same tabbed layout as the podcast edit dialog:
  * Details (service ids, YouTube publication delay), Flags (Index All Episodes, Bypass Short Episode Checking, Always
  * promote as hero, Ignore All Episodes; Skip Enriching From YouTube is podcast-only), Subjects, Social, Meta (incl.
- * release authority and minimum duration), Regexs, and Identity.
+ * release authority and minimum duration), Regexs, Identity and Trailers (rename, reorder, remove; RPP #1412).
  * Rename is a separate admin dialog. Default/ignored subjects and language use the podcast dialog's selects.
  */
 @Component({
@@ -64,7 +69,8 @@ export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from
     MatInputModule,
     MatProgressSpinnerModule,
     MatTabsModule,
-    CatalogueParentFieldsComponent
+    CatalogueParentFieldsComponent,
+    FilmTrailersEditComponent
   ],
   templateUrl: "./edit-tv-show-dialog.component.html",
   styleUrl: "../catalogue-parent-edit-dialog.sass",
@@ -115,7 +121,9 @@ export class EditTvShowDialogComponent {
   protected readonly clearingIndexingHints = signal(false);
   protected readonly itemNoun = "episodes";
   protected readonly selectedTabIndex = signal(0);
-  private original: CatalogueParentDto | null = null;
+  private original: TvShowDto | null = null;
+  /** The show's trailers to keep, in display order, each with an editable title (the Trailers tab). */
+  protected readonly trailers = new FormArray<FilmTrailerEditGroup>([]);
 
   constructor() {
     this.editor = new CatalogueParentEditor(
@@ -147,6 +155,11 @@ export class EditTvShowDialogComponent {
       const subjectNames = resp.subjects.map((subject) => subject.name);
       this.original = dto;
       this.model.set(catalogueParentEditModel(dto));
+      this.trailers.clear();
+      for (const trailer of dto.trailers ?? []) {
+        this.trailers.push(newFilmTrailerGroup(trailer.id, trailer.title ?? ""));
+      }
+      this.trailers.markAsPristine();
       this.editor.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
       this.editor.ignoredSubjects.set(subjectOptions(dto.ignoredSubjects ?? [], subjectNames));
       this.editor.languages.set(buildPodcastLanguageOptions(resp.languages));
@@ -166,7 +179,7 @@ export class EditTvShowDialogComponent {
    * GET by hub name; on 409 load each id and let the curator pick (same picker as submit).
    * Cancel closes the edit dialog. Returns null when closed or unrecoverable.
    */
-  private async resolveParentDto(): Promise<CatalogueParentDto | null> {
+  private async resolveParentDto(): Promise<TvShowDto | null> {
     const loaded = await loadNamedCatalogueParent({
       loadByName: () => firstValueFrom(this.curation.getCatalogueParent("tv", this.data.name)),
       loadById: async (id) => {
@@ -271,7 +284,20 @@ export class EditTvShowDialogComponent {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    const changes = catalogueParentChanges(this.original, model, true);
+    if (this.trailers.invalid) {
+      // A blank trailer title is omitted from the patch (the server would keep the old one), so Save is blocked.
+      this.trailers.markAllAsTouched();
+      this.selectedTabIndex.set(TV_SHOW_TRAILERS_TAB_INDEX);
+      return;
+    }
+    const changes: TvShowChangeRequest = catalogueParentChanges(this.original, model, true);
+    const trailers = tvShowTrailerChanges(this.original, this.trailers.getRawValue());
+    if (trailers) {
+      changes.trailers = trailers;
+      // The ids this editor loaded, not the keep-list: a trailer attached since is absent here, so the server refuses
+      // (409, nothing saved) instead of deleting a trailer the curator has not seen.
+      changes.expectedTrailerIds = (this.original.trailers ?? []).map((trailer) => trailer.id);
+    }
     if (Object.keys(changes).length === 0) {
       this.dialogRef.close({ noChange: true });
       return;
@@ -290,9 +316,12 @@ export class EditTvShowDialogComponent {
       }
       this.saveError.set(true);
     } catch (error) {
-      const playlist = youtubePlaylistEditError(error);
-      const refused = playlist ? undefined : catalogueParentSaveError(error);
-      if (playlist) {
+      const stale = staleTvShowTrailersError(error);
+      const playlist = stale ? undefined : youtubePlaylistEditError(error);
+      const refused = stale || playlist ? undefined : catalogueParentSaveError(error);
+      if (stale) {
+        this.saveErrorMessage.set(stale);
+      } else if (playlist) {
         // Retryable 503: form stays mounted and Save remains enabled (Save-as-retry; podcast send uses an explicit Try again).
         this.saveErrorMessage.set(playlist.message);
       } else if (refused) {

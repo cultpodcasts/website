@@ -56,6 +56,35 @@ describe('CurationSubmitService', () => {
     expect(body.ids?.imdbId).toBe('tt0000001');
   });
 
+  it('POSTs /episode/{podcastId}/{episodeId}/tvshow-trailer with the show id and curate scope (RPP #1412)', async () => {
+    const pending = firstValueFrom(service.postEpisodeAsTvShowTrailer('podcast 1', 'episode-1', { tvShowId: 'show-1', title: 'Synthetic Teaser' }));
+    const req = httpMock.expectOne(new URL('/episode/podcast%201/episode-1/tvshow-trailer', environment.api).toString());
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ tvShowId: 'show-1', title: 'Synthetic Teaser' });
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ tvShowId: 'show-1', tvShowName: 'Synthetic Show' }, { status: 202, statusText: 'Accepted' });
+    const resp = await pending;
+    expect(resp.status).toBe(202);
+    expect(resp.body?.tvShowName).toBe('Synthetic Show');
+  });
+
+  it('POSTs the tvshow-trailer createShow form with the name and publisher, sent as given', async () => {
+    const pending = firstValueFrom(service.postEpisodeAsTvShowTrailer('podcast-1', 'episode-1', { createShow: true, tvShowName: 'New Show', publisher: 'Synthetic Network' }));
+    const req = httpMock.expectOne(new URL('/episode/podcast-1/episode-1/tvshow-trailer', environment.api).toString());
+    expect(req.request.body).toEqual({ createShow: true, tvShowName: 'New Show', publisher: 'Synthetic Network' });
+    req.flush({ tvShowId: 'show-2', tvShowName: 'New Show', showCreated: true }, { status: 202, statusText: 'Accepted' });
+    expect((await pending).body?.showCreated).toBe(true);
+  });
+
+  it('GETs /tvshow/{identifier} with curate scope and returns the show with its trailers', async () => {
+    const pending = firstValueFrom(service.getTvShow('Synthetic / Show'));
+    const req = httpMock.expectOne(new URL('/tvshow/' + encodeURIComponent('Synthetic / Show'), environment.api).toString());
+    expect(req.request.method).toBe('GET');
+    expect(req.request.context.get(AUTH_SCOPE)).toBe('curate');
+    req.flush({ id: 'show-1', name: 'Synthetic / Show', trailers: [{ id: 't1', title: 'Synthetic Teaser', url: 'https://www.youtube.com/watch?v=synthetic01', duration: '0:02:11' }] });
+    const show = await pending;
+    expect(show.trailers?.map(trailer => trailer.id)).toEqual(['t1']);
+  });
   it('POSTs /podcast/{id}/kind body { targetKind } with curate interceptor', async () => {
     const podcastId = 'Show A';
     const pending = firstValueFrom(service.postPodcastKind(podcastId, CatalogueParentKind.TvShow));

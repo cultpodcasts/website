@@ -1,4 +1,7 @@
 <app-site-loading [active]="isLoading() || isSubsequentLoading()" [label]="loadingLabel()" />
+@if (hub() === "tv") {
+<app-tv-show-trailers [showName]="seriesName()" />
+}
 @if (isLoading() && results().length === 0) {
 <app-browse-loading-skeleton />
 } @else if (count() > 0) {
@@ -11,7 +14,7 @@
       @if (hub() === "tv" && identityEpisode(); as identityEpisode) {
       <app-episode-links class="browse-identity" [episode]="identityEpisode" [showShare]="false" identityKind="tv-show" [includeStreaming]="false" />
       }
-      <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" (indexed)="reload()" />
+      <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sort]="sort()" (sortChange)="setSort($event)" (indexed)="reload()" (edited)="showEdited()" />
     </div>
 
     @if (facets().subjects && facets().subjects!.length > 0) {
@@ -56,6 +59,6 @@
 } @else if (count() === 0 && !isLoading()) {
 <section class="browse-empty">
   <h2>There were no results for "{{ displayCatalogName(seriesName()) }}"</h2>
-  <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sortable]="false" (indexed)="reload()" />
+  <app-series-hub-menu [hub]="hub()" [seriesName]="seriesName()" [sortable]="false" (indexed)="reload()" (edited)="showEdited()" />
 </section>
 }
