@@ -12,6 +12,7 @@
     "test:watch": "ng test --watch",
     "test:e2e": "playwright test",
     "test:e2e:catalogue": "playwright test -c playwright.catalogue.config.ts",
+    "test:e2e:item-hero-desc": "playwright test -c playwright.catalogue.config.ts e2e/item-hero-description.spec.ts",
     "test:e2e:hero-layout": "playwright test e2e/hero-layout.spec.ts e2e/hero-layout-expand.spec.ts",
     "test:e2e:chrome-search": "playwright test e2e/chrome-search-layout.spec.ts",
     "test:e2e:submit-url": "playwright test e2e/submit-url-flows.spec.ts e2e/submit-url-flows.tour.spec.ts",
@@ -25,7 +26,8 @@
     "dev": "ng serve --configuration development",
     "generate:svg-icons": "node ./tools/generate-svg-icon-literals.mjs",
     "deps:check": "node ./tools/check-dependency-updates.mjs",
-    "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs"
+    "auth0:sync-staging-urls": "node ./tools/sync-auth0-staging-urls.mjs",
+    "test:e2e:hero-desc-real": "playwright test -c playwright.catalogue.config.ts e2e/hero-desc-real-payloads.spec.ts"
   },
   "private": true,
   "engines": {

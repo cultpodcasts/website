@@ -1,7 +1,10 @@
 <section id="results" class="episode"
   [class.episode--playing]="!!playerService.episode() && playerService.mode() === 'dock'">
 
-  <div class="episode-billboard"
+  <div class="episode-billboard" #billboard
+    [class.is-desc-expanded]="descExpanded()"
+    [style.align-items]="heroTopLockPx() != null ? 'flex-start' : null"
+    [style.height.px]="billboardLockPx()"
     [class.has-art-aspect]="backdropAspect() != null"
     [style.--hero-art-aspect]="backdropAspect() ?? null">
 
@@ -49,7 +52,7 @@
       }
     </div>
 
-    <div class="episode-hero">
+    <div class="episode-hero" #hero [class.is-desc-expanded]="descExpanded()" [style.margin-top.px]="heroTopLockPx()">
       <p class="hero-show">
         <!-- HERO-KND-001: news / TV / film only. Omit empty podcast host (eats flex gap). -->
         @if (showsKindBadge()) {
@@ -89,7 +92,11 @@
         }
       </p>
 
-      <p class="episode-hero__desc" [class.episode-hero__desc--d1]="playable().searchEngine === SearchEngine.D1">{{ playable().episodeDescription | searchDescription:playable().searchEngine }}</p>
+      <!-- Homepage hero clamp + expander for D1's full descriptions; Azure text stays as before (#702). -->
+      <app-hero-description class="episode-hero__desc"
+        [text]="playable().episodeDescription | searchDescription:playable().searchEngine"
+        [clamped]="descriptionClamped()"
+        (expandedChange)="onDescExpandedChange($event)" />
 
       @if (visibleSubjects().length > 0) {
       <div class="episode-hero__subjects" aria-label="Subjects">

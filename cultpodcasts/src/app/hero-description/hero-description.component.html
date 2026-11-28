@@ -1,0 +1,16 @@
+<!-- Same expander as the homepage hero (HERO-DSC-001 / 003): inline on the last visible line over a
+     fade; expanded, in its own band under the scrolling text so it never covers a line. -->
+<div class="hero-desc__wrap" [class.is-expanded]="expanded()">
+  <p class="hero-desc__text" #desc [id]="descId()" [class.is-clamped]="clamped()" [class.is-expanded]="expanded()"
+    [style.height.px]="expandDescPx()" [style.max-height.px]="expandDescPx()"
+    [attr.tabindex]="expanded() ? 0 : null">{{ text() }}</p>
+  @if (showToggle()) {
+  @if (!expanded()) {
+  <span class="hero-desc__fade" aria-hidden="true"></span>
+  }
+  <button type="button" mat-icon-button class="hero-desc__toggle" [attr.aria-label]="toggleLabel()"
+    [attr.aria-expanded]="expanded()" [attr.aria-controls]="descId()" (click)="toggle($event)">
+    <mat-icon>{{ toggleIcon() }}</mat-icon>
+  </button>
+  }
+</div>

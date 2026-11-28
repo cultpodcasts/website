@@ -1,0 +1,91 @@
+// Item page hero description: the homepage hero's clamp and expander
+// (homepage-hero.component.sass .billboard__desc*, HERO-DSC-001 / 003 / 006).
+// Font size, colour and max-width come from the host (.episode-hero__desc).
+:host
+    --hero-desc-lines: 5
+    --hero-desc-font: 1.05rem
+    --hero-desc-line-height: 1.45
+    // Room the expander takes at the end of the last visible line (button + fade lead-in).
+    --hero-desc-toggle-room: calc(32px + 1.25em)
+    display: block
+
+@media screen and (max-width: 1280px)
+    :host
+        --hero-desc-lines: 4
+
+@media screen and (max-width: 700px)
+    :host
+        --hero-desc-lines: 3
+
+// Positioning box for the inline expander: shrinks to the text so the button lands at the
+// end of the text column, not the far edge of the hero.
+.hero-desc__wrap
+    position: relative
+    width: fit-content
+    max-width: 100%
+    font-size: var(--hero-desc-font)
+    // Expanded (HERO-DSC-003): the chevron gets its own band under the scrolling text.
+    // Band height: HERO_DESC_GROW.toggleBandPx (host binding; 40px fallback).
+    &.is-expanded
+        padding-bottom: var(--hero-desc-band, 40px)
+
+.hero-desc__text
+    margin: 0
+    // Unclamped (Azure, #702): same box as before, the host's line-height applies.
+    &.is-clamped
+        line-height: var(--hero-desc-line-height)
+        display: -webkit-box
+        -webkit-box-orient: vertical
+        -webkit-line-clamp: var(--hero-desc-lines)
+        line-clamp: var(--hero-desc-lines)
+        overflow: hidden
+        // Long unbroken URLs (show notes) wrap inside the column.
+        overflow-wrap: anywhere
+        // HERO-DSC-006: the same column width in both states (gutter for the expanded
+        // scrollbar), so expanding never re-wraps a line.
+        box-sizing: border-box
+        scrollbar-gutter: stable
+        padding-right: 16px
+    // Expanded: clamp off, full text up to 60vh (the homepage card's cap), the rest scrolls inside.
+    &.is-clamped.is-expanded
+        display: block
+        -webkit-line-clamp: unset
+        line-clamp: none
+        // Cap: HERO_DESC_GROW.maxVh (host binding; 60vh fallback).
+        max-height: var(--hero-desc-max-h, 60vh)
+        overflow-x: hidden
+        overflow-y: auto
+        overscroll-behavior: contain
+
+// Fades the end of the last visible line under the expander, so the button never sits on text.
+.hero-desc__fade
+    position: absolute
+    right: 0
+    bottom: 0
+    width: var(--hero-desc-toggle-room)
+    height: calc(var(--hero-desc-line-height) * var(--hero-desc-font))
+    background: linear-gradient(90deg, #0b0b0b00, #0b0b0b 1.1em)
+    pointer-events: none
+
+// Same icon button as the homepage hero: 32px hit target, 20px icon, dark blurred backing.
+// Collapsed: bottom-right of the text box, centred on the last visible line.
+.hero-desc__toggle
+    position: absolute
+    right: 0
+    bottom: calc((var(--hero-desc-line-height) * var(--hero-desc-font) - 32px) / 2)
+    width: 32px
+    height: 32px
+    padding: 0
+    color: var(--nflx-on-media, #fff)
+    background-color: color-mix(in srgb, #000 55%, transparent)
+    border: 1px solid rgba(255, 255, 255, .22)
+    box-sizing: border-box
+    backdrop-filter: blur(2px)
+    .mat-icon
+        font-size: 20px
+        width: 20px
+        height: 20px
+
+// Expanded (HERO-DSC-003): centred in its band under the text, inside the band.
+.hero-desc__wrap.is-expanded .hero-desc__toggle
+    bottom: calc((var(--hero-desc-band, 40px) - 32px) / 2)

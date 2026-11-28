@@ -33,6 +33,7 @@ import { contentKindIcon } from '../content-kind-label';
 import { releaseDateLabel } from '../release-label';
 import { ViewerLocaleService } from '../viewer-locale';
 import { expandedDescLayout, HERO_DESC_GROW, measureCollapsedDesc, type HeroDescExpandMetrics, type HeroDescLayout } from './hero-desc-layout';
+import { clampOverflows, heroDescToggleIcon, heroDescToggleLabel } from '../hero-description/hero-description';
 
 /** Paths are chosen by the homepage list. This hero only renders them. */
 export interface HomepageHeroSlide extends HomepageEpisode {
@@ -107,14 +108,14 @@ export class HomepageHeroComponent {
   /** Collapsed description is cut by the per-layout clamp (browser-measured; false on the server). */
   protected readonly descOverflows = signal(false);
   protected readonly showDescToggle = computed(() => this.descOverflows() || this.descExpanded());
+  protected readonly descToggleLabel = computed(() => heroDescToggleLabel(this.descExpanded()));
+  protected readonly descToggleIcon = computed(() => heroDescToggleIcon(this.descExpanded()));
   private readonly heroDesc = viewChild<ElementRef<HTMLElement>>('heroDesc');
   /**
-   * Wide only (HERO-WID-001): collapsed desc lines that keep the docked card inside the
-   * hero band, so the hero does not grow and the card stays bottom-anchored. Null = the
-   * Sass default (5). Never below {@link HomepageHeroComponent.wideMinDescLines}.
+   * Previously a unique homepage override for HERO-WID-001 (5 → 2). Always null now:
+   * clamp lines come from the shared 5 / 4 (≤1280) / 3 (≤700) Sass rules.
    */
   protected readonly descFitLines = signal<number | null>(null);
-  private static readonly wideMinDescLines = 2;
   /**
    * Expanded description (HERO-DSC-002): the hero keeps its collapsed height (`heroH`, locked
    * inline) and the card grows downward from its collapsed top, overlaying what follows the hero.
@@ -285,8 +286,11 @@ export class HomepageHeroComponent {
       }
       descSlideId = id;
       untracked(() => {
-        // A previous slide's description must not carry a scroll offset into this one.
+        // A previous slide's description must not carry a scroll offset, overflow
+        // flag or wide line-fit into this one (short slides would keep the expander).
         this.resetDescScroll();
+        this.descOverflows.set(false);
+        this.descFitLines.set(null);
         if (this.descExpanded()) {
           this.collapseDesc();
           this.syncHeroPaused();
@@ -300,7 +304,6 @@ export class HomepageHeroComponent {
       this.featured();
       this.featuredDesc();
       this.descExpanded();
-      this.descFitLines();
       this.heroDesc();
       this.measureDescOverflow();
     });
@@ -753,47 +756,19 @@ export class HomepageHeroComponent {
       return;
     }
     this.fitWideDesc(element);
-    this.descOverflows.set(element.scrollHeight - element.clientHeight > 1);
+    this.descOverflows.set(clampOverflows(element));
   }
 
   /**
-   * Wide (docked card at the bottom of the hero, HERO-WID-001): the hero is a fixed band
-   * (`min-height`) with the card at its flex-end. A tall card (3-line title + 5 desc lines +
-   * chips) used to grow the hero instead, pushing its bottom (card, pager)
-   * down and below the fold. Collapsed: pick the most lines (5 → 2) that still fit the band.
-   * Expanded follows HERO-DSC-002 (band kept, card grows down from its top, desc scrolls
-   * inside); collapsing returns to the band. Stacked layouts: no override.
+   * Clamp rules are shared with item pages and search (5 / 4 at ≤1280 / 3 at ≤700).
+   * The previous unique homepage fit (HERO-WID-001, 5 → 2) made the same episode
+   * clamp to 3 lines with an expander on the homepage and 5 lines with no expander
+   * on the episode page. Line reduction is no longer applied.
    */
-  private fitWideDesc(desc: HTMLElement): void {
-    const billboard = desc.closest<HTMLElement>('.billboard');
-    const card = desc.closest<HTMLElement>('.billboard__content');
-    const wide = typeof window.matchMedia === 'function'
-      && window.matchMedia('(min-width: 1281px)').matches;
-    if (!wide || !billboard || !card) {
+  private fitWideDesc(_desc: HTMLElement): void {
+    if (this.descFitLines() !== null) {
       this.descFitLines.set(null);
-      return;
     }
-    const hero = getComputedStyle(billboard);
-    const px = (value: string) => Number.parseFloat(value) || 0;
-    const naturalLines = Math.round(px(hero.getPropertyValue('--hero-desc-lines'))) || 5;
-    const lineHeight = px(getComputedStyle(desc).lineHeight);
-    if (lineHeight <= 0) {
-      return;
-    }
-    const padding = px(hero.paddingTop) + px(hero.paddingBottom);
-    const band = px(hero.minHeight) - padding;
-    // The card hangs past the bottom padding by its negative margin (docked overhang).
-    const cardOuter = (height: number) => height + px(getComputedStyle(card).marginBottom);
-    const textLines = Math.round(desc.scrollHeight / lineHeight);
-    // Card height without the description. The expander sits inline on the last
-    // visible line (HERO-DSC-001), so it adds no height of its own.
-    const rest = card.offsetHeight - desc.clientHeight;
-    const needFor = (lines: number) => cardOuter(rest + Math.min(textLines, lines) * lineHeight);
-    let lines = naturalLines;
-    while (lines > HomepageHeroComponent.wideMinDescLines && needFor(lines) > band + 0.5) {
-      lines--;
-    }
-    this.descFitLines.set(lines === naturalLines ? null : lines);
   }
 
   private scrollActiveHeroDotIntoView(
@@ -1095,15 +1070,14 @@ export class HomepageHeroComponent {
 
   private startHeroCycle(): void {
     this.stopHeroCycle();
-    if (!isPlatformBrowser(this.platformId) || this.reduceMotion) {
+    if (!isPlatformBrowser(this.platformId)) {
       this.heroImageReady.set(true);
       return;
     }
-    if (this.slides().length < 2) {
-      this.beginHeroImageGate();
+    this.beginHeroImageGate();
+    if (this.reduceMotion || this.slides().length < 2) {
       return;
     }
-    this.beginHeroImageGate();
     this.scheduleHeroAdvance();
   }
 
