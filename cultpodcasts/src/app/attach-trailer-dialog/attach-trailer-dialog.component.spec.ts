@@ -11,11 +11,11 @@ import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import {
   AttachTrailerDialogComponent,
-  attachErrorMessage,
   attachedAsTrailerMessage,
   createFilmAnnouncement,
   pickedFilmAnnouncement
 } from './attach-trailer-dialog.component';
+import { attachTrailerErrorMessage } from '../trailer-target';
 
 const filmId = '9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d';
 const film: Suggestion = { type: 'film', value: 'Synthetic Film', label: 'Synthetic Film', itemId: filmId };
@@ -145,7 +145,7 @@ describe('AttachTrailerDialogComponent', () => {
     component.attach();
     await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
 
-    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(component.selected()).toEqual({ kind: 'create', name: 'Faderhuset' });
     expect(postEpisodeAsTrailerCreatingFilm).toHaveBeenCalledWith('podcast-1', 'episode-1',
       { createFilm: true, filmName: 'Faderhuset' });
     expect(postEpisodeAsTrailer).not.toHaveBeenCalled();
@@ -265,7 +265,7 @@ describe('AttachTrailerDialogComponent', () => {
     (document.querySelector('mat-option.create-film-option') as HTMLElement).click();
     await fixture.whenStable();
 
-    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(component.selected()).toEqual({ kind: 'create', name: 'Faderhuset' });
     expect(input.value).toBe('Faderhuset');
     const selected = fixture.nativeElement.querySelector('.selected.create') as HTMLElement;
     expect(selected.getAttribute('role')).toBe('status');
@@ -283,7 +283,7 @@ describe('AttachTrailerDialogComponent', () => {
     option.click();
     await fixture.whenStable();
 
-    expect(component.selected()).toEqual({ id: filmId, name: 'Synthetic Film' });
+    expect(component.selected()).toEqual({ kind: 'id', id: filmId, name: 'Synthetic Film' });
     expect(attachButton().disabled).toBe(false);
   });
 
@@ -374,6 +374,8 @@ describe('AttachTrailerDialogComponent', () => {
     expect(dialogRef.close).toHaveBeenCalledWith({ attached: false });
   });
 });
+
+const attachErrorMessage = (e: HttpErrorResponse) => attachTrailerErrorMessage(e, 'film');
 
 describe('attachErrorMessage', () => {
   it('explains a 500 as resumable', () => {

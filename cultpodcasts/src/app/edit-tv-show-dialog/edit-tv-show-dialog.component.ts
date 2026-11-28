@@ -32,10 +32,10 @@ import { catalogueParentSaveError } from "../catalogue-parent-save-error";
 import { CatalogueParentEditor } from "../catalogue-parent-editor";
 import { confirmCatalogueParentRemoval, forceFullCatalogueParentYouTubeWalk, loadNamedCatalogueParent } from "../catalogue-parent-edit-flow";
 import { CatalogueParentFieldsComponent } from "../catalogue-parent-fields/catalogue-parent-fields.component";
-import { FilmTrailersEditComponent } from "../film-trailers-edit/film-trailers-edit.component";
+import { TrailersEditComponent } from "../trailers-edit/trailers-edit.component";
 import { CurationSubmitService } from "../curation-submit.service";
 import { openExternalUrl } from "../episode-form.util";
-import { FilmTrailerEditGroup, imdbTitleUrl, newFilmTrailerGroup, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-form.util";
+import { TrailerEditGroup, imdbTitleUrl, newTrailerGroup, tmdbTvShowUrl, tvdbSeriesUrl } from "../playable-edit-form.util";
 import { buildPodcastLanguageOptions } from "../language-options.util";
 import { RegexPresetsService } from "../regex-presets.service";
 import {
@@ -43,7 +43,7 @@ import {
   PODCAST_DETAILS_TAB_INDEX,
   PODCAST_META_TAB_INDEX
 } from "../podcast-form.util";
-import { staleTvShowTrailersError, tvShowTrailerChanges } from "../tv-show-trailer";
+import { staleTrailersError, trailerChanges } from "../trailer";
 import { youtubePlaylistEditError } from "../youtube-playlist-edit-error";
 
 /** The Trailers tab sits after Identity, so the shared tab indexes above stay valid (RPP #1412). */
@@ -70,7 +70,7 @@ export { EditCatalogueParentDialogData, EditCatalogueParentDialogResponse } from
     MatProgressSpinnerModule,
     MatTabsModule,
     CatalogueParentFieldsComponent,
-    FilmTrailersEditComponent
+    TrailersEditComponent
   ],
   templateUrl: "./edit-tv-show-dialog.component.html",
   styleUrl: "../catalogue-parent-edit-dialog.sass",
@@ -123,7 +123,7 @@ export class EditTvShowDialogComponent {
   protected readonly selectedTabIndex = signal(0);
   private original: TvShowDto | null = null;
   /** The show's trailers to keep, in display order, each with an editable title (the Trailers tab). */
-  protected readonly trailers = new FormArray<FilmTrailerEditGroup>([]);
+  protected readonly trailers = new FormArray<TrailerEditGroup>([]);
 
   constructor() {
     this.editor = new CatalogueParentEditor(
@@ -157,7 +157,7 @@ export class EditTvShowDialogComponent {
       this.model.set(catalogueParentEditModel(dto));
       this.trailers.clear();
       for (const trailer of dto.trailers ?? []) {
-        this.trailers.push(newFilmTrailerGroup(trailer.id, trailer.title ?? ""));
+        this.trailers.push(newTrailerGroup(trailer.id, trailer.title ?? ""));
       }
       this.trailers.markAsPristine();
       this.editor.defaultSubjects.set(subjectOptions([dto.defaultSubject ?? ""], subjectNames));
@@ -284,7 +284,7 @@ export class EditTvShowDialogComponent {
       this.selectedTabIndex.set(CATALOGUE_PARENT_IDENTITY_TAB_INDEX);
       return;
     }
-    const trailers = tvShowTrailerChanges(this.original, this.trailers.getRawValue());
+    const trailers = trailerChanges(this.original, this.trailers.getRawValue());
     if (trailers && this.trailers.invalid) {
       // A blank trailer title is omitted from the patch (the server would keep the old one), so a save that changes the
       // trailers is blocked. Untouched trailers never block: a stored trailer without a title must not make the show
@@ -318,7 +318,7 @@ export class EditTvShowDialogComponent {
       }
       this.saveError.set(true);
     } catch (error) {
-      const stale = staleTvShowTrailersError(error);
+      const stale = staleTrailersError(error, "tv");
       const playlist = stale ? undefined : youtubePlaylistEditError(error);
       const refused = stale || playlist ? undefined : catalogueParentSaveError(error);
       if (stale) {

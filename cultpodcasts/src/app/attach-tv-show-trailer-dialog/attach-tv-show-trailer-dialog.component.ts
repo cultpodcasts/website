@@ -18,13 +18,8 @@ import {
   EpisodeTvShowTrailerAttachResponse
 } from '../episode-tv-show-trailer-attach.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
+import { attachTrailerErrorMessage, SuggestionQueryGuard, TrailerTarget, trailerTargetFromText } from '../trailer-target';
 import { defaultPublisher, isGuid } from '../tv-show-target.util';
-
-/** Where the trailer goes: a show id, a show to create (or join, by name), or an existing show named but not yet resolved to an id. */
-export type TvShowTrailerTarget =
-  | { kind: 'id'; tvShowId: string }
-  | { kind: 'create'; tvShowName: string; publisher?: string }
-  | { kind: 'name'; tvShowName: string };
 
 /**
  * Confirms and sends the curator "Attach as TV trailer/clip" command for one podcast episode (RPP #1412), the TV twin
@@ -70,10 +65,10 @@ export class AttachTvShowTrailerDialogComponent {
   readonly hasInvalidName = computed(() => !this.isShowId() && this.queryValue().includes('/'));
   readonly isCreatingShow = computed(() => !this.isShowId() && this.createShowValue());
   /** The target, or null while there is no valid one. */
-  readonly target = computed<TvShowTrailerTarget | null>(() => this.buildTarget());
+  readonly target = computed<TrailerTarget | null>(() => this.buildTarget());
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
-  private queryVersion = 0;
+  private readonly queries = new SuggestionQueryGuard();
 
   constructor() {
     this.publisher = new FormControl<string>(defaultPublisher(this.data.podcastName), { nonNullable: true });
@@ -86,7 +81,7 @@ export class AttachTvShowTrailerDialogComponent {
   async onShowQuery(value: string): Promise<void> {
     const text = value.trim();
     this.error.set(null);
-    const version = ++this.queryVersion;
+    const version = this.queries.begin();
     let found: { value: string }[] = [];
     if (text.length >= 2 && !isGuid(text)) {
       try {
@@ -95,7 +90,7 @@ export class AttachTvShowTrailerDialogComponent {
         console.error('TV show suggestions failed; a typed name can still be attached.', e);
       }
     }
-    if (version === this.queryVersion) {
+    if (this.queries.isLatest(version)) {
       this.shows.set([...new Set(found.map(show => show.value))]);
     }
   }
@@ -106,19 +101,11 @@ export class AttachTvShowTrailerDialogComponent {
     return value.length === 0 || value === (this.data.episodeTitle ?? '').trim() ? undefined : value;
   }
 
-  private buildTarget(): TvShowTrailerTarget | null {
-    const text = this.queryValue().trim();
-    if (text.length === 0 || this.hasInvalidName()) {
-      return null;
-    }
-    if (this.isShowId()) {
-      return { kind: 'id', tvShowId: text.toLowerCase() };
-    }
-    if (this.isCreatingShow()) {
-      const publisher = this.publisherValue().trim();
-      return { kind: 'create', tvShowName: text, ...(publisher ? { publisher } : {}) };
-    }
-    return { kind: 'name', tvShowName: text };
+  private buildTarget(): TrailerTarget | null {
+    return trailerTargetFromText(this.queryValue(), {
+      create: this.isCreatingShow(),
+      publisher: this.publisherValue()
+    });
   }
 
   async attach(): Promise<void> {
@@ -141,35 +128,35 @@ export class AttachTvShowTrailerDialogComponent {
       this.dialogRef.close({
         attached: true,
         tvShowId: outcome?.tvShowId ?? request.tvShowId,
-        tvShowName: outcome?.tvShowName ?? (target.kind === 'id' ? undefined : target.tvShowName),
+        tvShowName: outcome?.tvShowName ?? (target.kind === 'id' ? undefined : target.name),
         ...(outcome?.showCreated ? { showCreated: true } : {})
       });
     } catch (e) {
       this.isSending.set(false);
-      this.error.set(attachTvShowTrailerErrorMessage(e as HttpErrorResponse));
+      this.error.set(attachTrailerErrorMessage(e as HttpErrorResponse, 'tv'));
       console.error(e);
     }
   }
 
   /** The POST body. A picked name is resolved to the show's id first; null (with the error set) when it cannot be. */
   private async buildRequest(
-    target: TvShowTrailerTarget,
+    target: TrailerTarget,
     title: string | undefined
   ): Promise<EpisodeTvShowTrailerAttachRequest | null> {
     const withTitle = title ? { title } : {};
     switch (target.kind) {
       case 'id':
-        return { tvShowId: target.tvShowId, ...withTitle };
+        return { tvShowId: target.id, ...withTitle };
       case 'create':
         return {
           createShow: true,
-          tvShowName: target.tvShowName,
+          tvShowName: target.name,
           ...(target.publisher ? { publisher: target.publisher } : {}),
           ...withTitle
         };
       case 'name': {
         try {
-          const show = await firstValueFrom(this.curationSubmit.getCatalogueParent("tv", target.tvShowName));
+          const show = await firstValueFrom(this.curationSubmit.getCatalogueParent("tv", target.name));
           return { tvShowId: show.id, ...withTitle };
         } catch (e) {
           this.error.set(resolveTvShowErrorMessage(e as HttpErrorResponse));
@@ -201,19 +188,5 @@ export function resolveTvShowErrorMessage(e: HttpErrorResponse): string {
       return 'More than one TV show has this name. Paste the id of the TV show to attach to.';
     default:
       return 'The TV show could not be looked up. Nothing was attached.';
-  }
-}
-
-export function attachTvShowTrailerErrorMessage(e: HttpErrorResponse): string {
-  const body = e.error as { error?: string } | null | undefined;
-  switch (e.status) {
-    case 400:
-      return body?.error ?? 'The episode cannot be attached as a TV trailer/clip.';
-    case 404:
-      return body?.error ?? 'The episode or TV show was not found. The episode may already be a trailer of a TV show.';
-    case 409:
-      return body?.error ?? 'This episode is already a trailer of another TV show, or is being attached right now. Try again shortly.';
-    default:
-      return 'An error occurred attaching the TV trailer/clip. Sending again resumes an interrupted attach.';
   }
 }

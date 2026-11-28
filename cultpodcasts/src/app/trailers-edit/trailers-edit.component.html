@@ -19,9 +19,5 @@
 </div>
 }
 @if (trailers().length === 0) {
-@if (parent() === 'tv') {
-<p class="empty">No trailers. To add one, open a podcast episode's editor, go to the Catalogue tab and use "Attach as TV trailer/clip". Pick this TV show there.</p>
-} @else {
-<p class="empty">No trailers. To add one, open a podcast episode's editor, go to the Catalogue tab and use "Attach as trailer". Pick this film there.</p>
-}
+<p class="empty">No trailers. To add one, open a podcast episode's editor, go to the Catalogue tab and use "Attach as {{ labels().attach }}". Pick this {{ labels().noun }} there.</p>
 }

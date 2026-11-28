@@ -1,23 +1,12 @@
 import { SearchResult } from './search-result.interface';
 import { resolveServiceKey } from './service-catalog';
+import { displayDuration, httpUrl } from './trailer';
 
 /**
- * Film trailers. The curator GET `film/{id}` has full trailer objects; the film search document has one
- * `{duration}|{url}|{title}` token per trailer (RPP `FilmTrailerSearchToken`), in display order. The title is last
- * and may itself contain `|`, so a token splits on its first two `|` only.
+ * Film trailers on the public side. The film search document has one `{duration}|{url}|{title}` token per trailer (RPP
+ * `FilmTrailerSearchToken`), in display order. The title is last and may itself contain `|`, so a token splits on its
+ * first two `|` only. The `Trailer` type (curator GET) is shared with TV shows: see `trailer.ts`.
  */
-export interface FilmTrailer {
-  /** Id of the episode the trailer was attached from. */
-  id: string;
-  title: string;
-  /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
-  url: string | URL;
-  image?: string | URL | null;
-  /** UTC instant; `JsonDateInterceptor` turns it into a `Date`. */
-  release?: Date | null;
-  /** `h:mm:ss`. */
-  duration: string;
-}
 
 /** One trailer as listed on the film page (from the search document). */
 export interface FilmTrailerLink {
@@ -31,12 +20,6 @@ export interface FilmTrailerLink {
 
 /** `contentKind` of a trailer card on the film page's Trailers rail (see catalogue-card). Not an RPP kind. */
 export const FILM_TRAILER_CONTENT_KIND = 'FilmTrailer';
-
-/** `{filmId}:trailer:{n}` → the film id. Null when `id` is not a trailer id. */
-export function filmIdFromTrailerId(id: string): string | null {
-  const match = /^(.+):trailer:\d+$/.exec(id);
-  return match?.[1] || null;
-}
 
 /**
  * A trailer as a rail card. The search token has only duration, URL and title, so: the id is made up (unique per
@@ -64,16 +47,6 @@ export function filmTrailerEpisode(
   };
 }
 
-/** The trailer's own page (the URL from its token): where its card title links, in a new tab. */
-export function filmTrailerUrl(episode: { services?: SearchResult['services'] }): string | undefined {
-  for (const service of Object.values(episode.services ?? {})) {
-    if (service?.url) {
-      return service.url.toString();
-    }
-  }
-  return undefined;
-}
-
 /** Parses the search document's `trailers` tokens. Malformed tokens and non-http(s) URLs are skipped. */
 export function parseFilmTrailerTokens(tokens: readonly string[] | null | undefined): FilmTrailerLink[] {
   const links: FilmTrailerLink[] = [];
@@ -97,29 +70,3 @@ export function parseFilmTrailerTokens(tokens: readonly string[] | null | undefi
   return links;
 }
 
-/** The http(s) URL for the text or URL, or undefined for anything else (`javascript:`, malformed, empty). Shared with TV show trailers. */
-export function httpUrl(value: string | URL | null | undefined): URL | undefined {
-  if (!value) {
-    return undefined;
-  }
-  try {
-    const url = value instanceof URL ? value : new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** `00:02:11.9910000` → `2:11`; `01:02:03` → `1:02:03`; a day part (`1.02:00:00`) is kept as hours. */
-export function displayDuration(value: string): string {
-  const match = /^(?:(\d+)\.)?(\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec(value.trim());
-  if (!match) {
-    return '';
-  }
-  const hours = Number(match[1] ?? 0) * 24 + Number(match[2]);
-  const minutes = Number(match[3]);
-  const seconds = match[4];
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}`
-    : `${minutes}:${seconds}`;
-}

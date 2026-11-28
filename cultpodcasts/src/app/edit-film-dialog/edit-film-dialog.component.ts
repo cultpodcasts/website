@@ -9,6 +9,7 @@ import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-ed
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { filmChanges, PlayableEditFormValue } from '../playable-edit-form.util';
 import { FilmChangeRequest, FilmDto } from '../playable-edit.interface';
+import { staleTrailersMessage } from '../trailer';
 import { staleYouTubeAlternatesMessage as sharedStaleYouTubeAlternatesMessage } from '../youtube-keep-list';
 
 export interface EditFilmDialogData {
@@ -74,7 +75,7 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
             return throwError(() => new HttpErrorResponse({
               status: 400,
               statusText: 'Trailers changed',
-              error: { message: staleTrailersMessage(added.length) }
+              error: { message: staleTrailersMessage(added.length, 'film') }
             }));
           }
         }
@@ -106,11 +107,6 @@ export class EditFilmDialogComponent extends PlayableEditDialogBase<FilmDto, Fil
   }
 }
 
-export function staleTrailersMessage(added: number): string {
-  return `${added === 1 ? 'A trailer was' : `${added} trailers were`} attached to this film after the editor opened. ` +
-    'Close and reopen the film to edit its trailers.';
-}
-
 export function staleYouTubeAlternatesMessage(added: number): string {
   return sharedStaleYouTubeAlternatesMessage(added, 'film');
 }
@@ -122,11 +118,11 @@ export function staleKeepListMessage(error: HttpErrorResponse): string {
   }
   const trailerIds = error.error?.unexpectedTrailerIds;
   if (Array.isArray(trailerIds) && trailerIds.length > 0) {
-    return staleTrailersMessage(trailerIds.length);
+    return staleTrailersMessage(trailerIds.length, 'film');
   }
   const message = typeof error.error?.message === 'string' ? error.error.message.trim() : '';
   if (message) {
     return message;
   }
-  return staleTrailersMessage(1);
+  return staleTrailersMessage(1, 'film');
 }

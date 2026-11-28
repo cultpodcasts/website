@@ -22,20 +22,15 @@ import {
 import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import { promptAmbiguousIdentity } from '../submit-language-identity-prompts';
-
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import {
+  attachTrailerErrorMessage,
+  creatableParentName,
+  idTargetFromText,
+  SuggestionQueryGuard,
+  TrailerTarget
+} from '../trailer-target';
 
 const MAX_IDENTITY_ROUNDS = 4;
-
-/**
- * A film picked in the dialog: from the suggestions (name + id), a pasted film id (no name yet), or a film to create
- * by name (`create`, no id): the server attaches to the film with that name, creating it when none has it (RPP #1418).
- */
-export interface AttachTrailerFilm {
-  id: string | null;
-  name: string | null;
-  create?: boolean;
-}
 
 /** The autocomplete option value for 'Create film "<name>"' (a film suggestion is a {@link Suggestion}). */
 export interface CreateFilmOption {
@@ -47,12 +42,6 @@ export const CREATE_FILM_OPTION: CreateFilmOption = { createFilm: true };
 
 function isCreateOption(value: unknown): value is CreateFilmOption {
   return !!value && typeof value === 'object' && (value as CreateFilmOption).createFilm === true;
-}
-
-/** A typed name that can become a new film: at least 2 characters, not a film id, no '/'. */
-export function creatableFilmName(text: string): string | null {
-  const name = text.trim();
-  return name.length >= 2 && !GUID.test(name) && !name.includes('/') ? name : null;
 }
 
 /**
@@ -96,7 +85,8 @@ export class AttachTrailerDialogComponent {
   readonly filmQuery = new FormControl<string>('', { nonNullable: true });
   readonly title: FormControl<string>;
   readonly films = signal<Suggestion[]>([]);
-  readonly selected = signal<AttachTrailerFilm | null>(null);
+  /** The film picked: a suggestion (id + name), a pasted id, or 'Create film' (a name, no id; RPP #1418). */
+  readonly selected = signal<TrailerTarget | null>(null);
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
   /** The typed name to offer as 'Create film "…"': no film suggestion has it, it is not an id, and has no '/'. */
@@ -104,7 +94,7 @@ export class AttachTrailerDialogComponent {
   readonly createOption = CREATE_FILM_OPTION;
   private readonly identityDialog = inject(MatDialog);
   private readonly announcer = inject(LiveAnnouncer);
-  private queryVersion = 0;
+  private readonly queries = new SuggestionQueryGuard();
 
   constructor() {
     this.title = new FormControl<string>(this.data.episodeTitle ?? '', { nonNullable: true });
@@ -124,10 +114,10 @@ export class AttachTrailerDialogComponent {
   async onFilmQuery(value: string): Promise<void> {
     const text = value.trim();
     this.error.set(null);
-    this.selected.set(GUID.test(text) ? { id: text.toLowerCase(), name: null } : null);
-    const name = creatableFilmName(text);
+    this.selected.set(idTargetFromText(text));
+    const name = creatableParentName(text);
     this.createName.set(name);
-    const version = ++this.queryVersion;
+    const version = this.queries.begin();
     if (!name) {
       this.films.set([]);
       return;
@@ -138,7 +128,7 @@ export class AttachTrailerDialogComponent {
     } catch (e) {
       console.error('Film suggestions failed; Create film stays available.', e);
     }
-    if (version === this.queryVersion) {
+    if (this.queries.isLatest(version)) {
       const films = found.filter(film => !!film.itemId);
       this.films.set(films);
       const exact = films.some(film => film.value.trim().toLowerCase() === name.toLowerCase());
@@ -153,7 +143,7 @@ export class AttachTrailerDialogComponent {
       return;
     }
     this.error.set(null);
-    this.selected.set({ id: null, name, create: true });
+    this.selected.set({ kind: 'create', name });
     void this.announcer.announce(createFilmAnnouncement(name), 'polite');
   }
 
@@ -168,7 +158,7 @@ export class AttachTrailerDialogComponent {
     if (!film?.itemId) {
       return;
     }
-    this.selected.set({ id: film.itemId, name: film.value });
+    this.selected.set({ kind: 'id', id: film.itemId, name: film.value });
     this.createName.set(null);
     this.filmQuery.setValue(film.label, { emitEvent: false });
     void this.announcer.announce(pickedFilmAnnouncement(film.label), 'polite');
@@ -196,8 +186,11 @@ export class AttachTrailerDialogComponent {
     if (this.isSending() || !film) {
       return;
     }
-    if (film.create || !film.id) {
-      void this.createAndAttach(film.name ?? '');
+    if (film.kind === 'create') {
+      void this.createAndAttach(film.name);
+      return;
+    }
+    if (film.kind !== 'id') {
       return;
     }
     const filmId = film.id;
@@ -210,12 +203,12 @@ export class AttachTrailerDialogComponent {
           this.dialogRef.close({
             attached: true,
             filmId: body?.filmId ?? filmId,
-            name: body?.name ?? film.name ?? undefined
+            name: body?.name ?? film.name
           });
         },
         error: (e: HttpErrorResponse) => {
           this.isSending.set(false);
-          this.error.set(attachErrorMessage(e));
+          this.error.set(attachTrailerErrorMessage(e, 'film'));
           console.error(e);
         }
       });
@@ -271,7 +264,7 @@ export class AttachTrailerDialogComponent {
       this.error.set('Identity lookup stopped after too many prompts.');
     } catch (e) {
       this.isSending.set(false);
-      this.error.set(attachErrorMessage(e as HttpErrorResponse));
+      this.error.set(attachTrailerErrorMessage(e as HttpErrorResponse, 'film'));
       console.error(e);
     }
   }
@@ -311,18 +304,4 @@ export function attachedAsTrailerMessage(result: AttachTrailerDialogClose): stri
   return result.filmCreated
     ? 'Film created and episode attached as its trailer. Add its release date and video in Edit film.'
     : 'Attached as trailer';
-}
-
-export function attachErrorMessage(e: HttpErrorResponse): string {
-  const body = e.error as { error?: string } | null | undefined;
-  switch (e.status) {
-    case 400:
-      return body?.error ?? 'The episode cannot be attached as a trailer.';
-    case 404:
-      return body?.error ?? 'The episode or film was not found. The episode may already be a trailer of a film.';
-    case 409:
-      return body?.error ?? 'This episode is already a trailer of another film, or is being attached right now. Try again shortly.';
-    default:
-      return 'An error occurred attaching the trailer. Sending again resumes an interrupted attach.';
-  }
 }

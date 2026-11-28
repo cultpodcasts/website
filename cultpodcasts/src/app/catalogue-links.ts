@@ -1,6 +1,7 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
-import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
-import { TV_SHOW_TRAILER_CONTENT_KIND, tvShowIdFromTrailerId } from "./tv-show-trailer";
+import { FILM_TRAILER_CONTENT_KIND } from "./film-trailer";
+import { TV_SHOW_TRAILER_CONTENT_KIND } from "./tv-show-trailer";
+import { trailerParentId } from "./trailer";
 import { YOUTUBE_ALTERNATE_CONTENT_KIND, itemIdFromYouTubeAlternateId } from "./youtube-alternate";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
@@ -218,7 +219,7 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
  * do not invent a podcast URL that contains the synthetic id.
  */
 function filmTrailerPage(item: CatalogueItem): string[] | null {
-  const filmId = filmIdFromTrailerId(item.id);
+  const filmId = trailerParentId(item.id);
   const title = item.podcastName?.trim() ?? "";
   if (!filmId || !title) {
     return null;
@@ -232,7 +233,7 @@ function filmTrailerPage(item: CatalogueItem): string[] | null {
  */
 function tvShowTrailerPage(item: CatalogueItem): string[] | null {
   const name = item.podcastName?.trim() ?? "";
-  if (!tvShowIdFromTrailerId(item.id) || !name) {
+  if (!trailerParentId(item.id) || !name) {
     return null;
   }
   return ["/tv", name];
