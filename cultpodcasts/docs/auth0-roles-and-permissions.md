@@ -19,7 +19,7 @@ Roles and permissions are assigned in Auth0 (API `https://api.cultpodcasts.com/`
 |------------|---------------------|-------|
 | **Submitter** | `submit` | URL ingest only — no curation UI |
 | **Curator** | `curate` (often also `submit`) | Discovery, episode/podcast/subject curation |
-| **Admin** | `admin` (often also `curate`) | Operational tools — indexer, homepage publish, title rules, languages, discovery schedule, episode delete |
+| **Admin** | `admin` (often also `curate`) | Operational tools — indexer, homepage publish, title rules, languages, discovery schedule, episode delete, podcast backlog index (and its dry-run preview) |
 | **SupervisedCurator** | `curate` **+** `curate:supervised` | Curator whose discovery submits are held for supervisor review (e.g. the AI discovery user). Also assign **Curator**. |
 | **Supervisor** | `supervise` | Reviews, reworks and applies supervised discovery submissions |
 
@@ -85,8 +85,8 @@ Does **not** include admin-only ops (search reindex, homepage R2 publish, title-
 
 | Layer | Gate |
 |-------|------|
-| **Worker** | `permission: "admin"` on `/searchindex/run`, `/publish/homepage`, `/supported-languages*`, `/title-casing-rules/*`, `/discovery-schedule`, `/pushsubscription`, `/podcast/name/:name` (rename), episode **DELETE** routes. |
-| **Azure** | `PublishController`, `SearchIndexController`, `SupportedLanguagesController`, `TitleCasingRulesController`, `DiscoveryScheduleController`, `PushSubscriptionController`, `EpisodeController` delete, `PodcastController` rename. |
+| **Worker** | `permission: "admin"` on `POST /podcast/index/:name/backlog` + `GET /podcast/index/:name/backlog/preview` (Edit/Add podcast **Index backlog now**, RPP #1433), `/searchindex/run`, `/publish/homepage`, `/supported-languages*`, `/title-casing-rules/*`, `/discovery-schedule`, `/pushsubscription`, `/podcast/name/:name` (rename), episode **DELETE** routes. |
+| **Azure** | `PublishController`, `SearchIndexController`, `SupportedLanguagesController`, `TitleCasingRulesController`, `DiscoveryScheduleController`, `PushSubscriptionController`, `EpisodeController` delete, `PodcastController` rename, `IndexBacklog` + `PreviewIndexBacklog`. |
 | **UI** | **`Admin`** role — Admin toolbar menu; `getAccessTokenSilently` with scope **`admin`**. |
 
 ---
