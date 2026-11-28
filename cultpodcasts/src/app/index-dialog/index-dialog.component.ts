@@ -19,7 +19,7 @@ export type IndexDialogResult = PodcastIndexDialogResult | CatalogueIndexDialogR
 
 /**
  * The curator "Index" progress dialog. Opens with `MAT_DIALOG_DATA` naming the podcast or catalogue parent
- * to index. POSTs `{}` with a `curate` token and closes with the outcome; an unexpected error stays open
+ * to index. POSTs `{}` with a `curate` token (`admin` for a podcast backlog index) and closes with the outcome; an unexpected error stays open
  * with a Close button.
  */
 @Component({
@@ -58,6 +58,7 @@ export class IndexDialogComponent {
       `/podcast/index/${encodeURIComponent(podcastName)}` + (backlog ? '/backlog' : '');
     return this.post<IndexPodcastResponse, PodcastIndexDialogResult>(
       path,
+      backlog ? 'admin' : 'curate',
       body => ({ updated: true, episodeIds: body?.indexedEpisodes?.map(x => `${x.podcastId}/${x.episodeId}`) }),
       e =>
         e.status === 400 ? { podcastNotAutoIndex: true }
@@ -70,6 +71,7 @@ export class IndexDialogComponent {
   private indexCatalogueParent(hub: CatalogueHub, name: string) {
     return this.post<CatalogueIndexResponse, CatalogueIndexDialogResult>(
       `/${hubApiRoot(hub)}/index/${encodeURIComponent(name)}`,
+      'curate',
       (body): CatalogueIndexDialogResult => ({
         updated: true,
         itemIds: body?.indexedItemIds ?? [],
@@ -92,6 +94,7 @@ export class IndexDialogComponent {
 
   private async post<TBody, TResult extends IndexDialogResult>(
     path: string,
+    scope: 'curate' | 'admin',
     onOk: (body: TBody | null) => TResult,
     onError: (e: HttpErrorResponse) => TResult | undefined
   ): Promise<void> {
@@ -99,7 +102,7 @@ export class IndexDialogComponent {
       const token = await firstValueFrom(this.auth.authService.getAccessTokenSilently({
         authorizationParams: {
           audience: `https://api.cultpodcasts.com/`,
-          scope: 'curate'
+          scope
         }
       }));
       let headers: HttpHeaders = new HttpHeaders();

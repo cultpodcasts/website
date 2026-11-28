@@ -1,5 +1,10 @@
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import {
+  IndexBacklogConfirmDialogComponent,
+  IndexBacklogConfirmDialogData
+} from './index-backlog-confirm-dialog/index-backlog-confirm-dialog.component';
 import { IndexDialogComponent, IndexDialogData } from './index-dialog/index-dialog.component';
 import { PodcastIndexDialogResult } from './index-podcast-response.interface';
 
@@ -26,21 +31,60 @@ export function openPodcastIndexDialog(
 }
 
 /**
+ * Admin backlog index: first shows how many episodes the full walk would ingest (a dry run, nothing is saved),
+ * and only on Confirm runs the backlog Index. Cancel (or closing the confirmation) does nothing.
+ * When the index finishes, the snackbar offers Review, which opens the updated episodes (#1433).
+ */
+export function confirmAndIndexPodcastBacklog(
+  dialog: MatDialog,
+  snackBar: MatSnackBar,
+  router: Router,
+  podcastName: string
+): void {
+  dialog
+    .open<IndexBacklogConfirmDialogComponent, IndexBacklogConfirmDialogData, boolean>(
+      IndexBacklogConfirmDialogComponent,
+      { autoFocus: true, data: { podcastName } }
+    )
+    .afterClosed()
+    .subscribe(confirmed => {
+      if (confirmed !== true) {
+        return;
+      }
+      openPodcastIndexDialog(dialog, podcastName, { backlog: true })
+        .afterClosed()
+        .subscribe(result => {
+          notifyPodcastIndexDialogResult(snackBar, result, episodeIds => {
+            void router.navigate(['/episodes', JSON.stringify(episodeIds)]);
+          });
+        });
+    });
+}
+
+/**
  * Snackbar for Index dialog closes that are not hub `updated` + Review navigation:
  * Edit/Add backlog, and hub Index non-success outcomes (including 409/504).
+ * When `onReview` is given and episodes were updated, the action is Review and it calls `onReview` with their ids.
  */
 export function notifyPodcastIndexDialogResult(
   snackBar: MatSnackBar,
-  result: PodcastIndexDialogResult | undefined
+  result: PodcastIndexDialogResult | undefined,
+  onReview?: (episodeIds: string[]) => void
 ): void {
   if (!result) {
     return;
   }
   if (result.updated) {
     let message = 'Podcast Indexed';
-    if (result.episodeIds && result.episodeIds.length > 0) {
-      const n = result.episodeIds.length;
+    const episodeIds = result.episodeIds ?? [];
+    if (episodeIds.length > 0) {
+      const n = episodeIds.length;
       message += `. ${n} episode${n > 1 ? 's' : ''} updated`;
+    }
+    if (onReview && episodeIds.length > 0) {
+      const ref = snackBar.open(message, 'Review', { duration: 10000 });
+      ref.onAction().subscribe(() => onReview(episodeIds));
+      return;
     }
     snackBar.open(message, 'Ok', { duration: 10000 });
     return;

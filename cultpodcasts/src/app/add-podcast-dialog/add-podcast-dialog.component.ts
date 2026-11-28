@@ -1,4 +1,6 @@
-import { Component, Inject, ChangeDetectionStrategy, signal, WritableSignal } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy, computed, inject, signal, WritableSignal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -28,7 +30,7 @@ import { filterKeepingSelectedInOrder } from '../subject-filter.util';
 import { buildPodcastLanguageOptions } from '../language-options.util';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { EditPodcastDialogResponse } from '../edit-podcast-dialog-response.interface';
-import { notifyPodcastIndexDialogResult, openPodcastIndexDialog } from '../podcast-index-from-dialog';
+import { confirmAndIndexPodcastBacklog } from '../podcast-index-from-dialog';
 import { confirmAndTransferPodcastKind } from '../podcast-transfer-from-dialog';
 import {
   buildPodcastFormControls,
@@ -98,6 +100,10 @@ export class AddPodcastDialogComponent {
   protected readonly CatalogueParentKind = CatalogueParentKind;
   private indexAllIncludeTitleSync: { unsubscribe: () => void } | undefined;
   private highlightIncludeTitleTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly router = inject(Router);
+  private readonly authRoles = toSignal(inject(AuthServiceWrapper).roles, { initialValue: [] as string[] });
+  /** Index backlog now is admin only: a full walk spends provider quota and writes the whole back catalogue (#1433). */
+  readonly isAdmin = computed(() => this.authRoles().includes('Admin'));
 
   constructor(
     private auth: AuthServiceWrapper,
@@ -329,12 +335,10 @@ export class AddPodcastDialogComponent {
 
   indexBacklog() {
     const name = this.indexBacklogName();
-    if (!name) {
+    if (!name || !this.isAdmin()) {
       return;
     }
-    openPodcastIndexDialog(this.dialog, name, { backlog: true }).afterClosed().subscribe(result => {
-      notifyPodcastIndexDialogResult(this.snackBar, result);
-    });
+    confirmAndIndexPodcastBacklog(this.dialog, this.snackBar, this.router, name);
   }
 
   async transferKind() {
