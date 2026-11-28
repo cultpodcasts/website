@@ -68,6 +68,10 @@
           <mat-icon class="material-symbols-outlined">add</mat-icon>
           <span>Create Subject</span>
         </a>
+        <a mat-menu-item class="menu-create-film" (click)="openCreateFilm()">
+          <mat-icon class="material-symbols-outlined">movie</mat-icon>
+          <span>New film from TMDB/IMDb</span>
+        </a>
         <a mat-menu-item (click)="openReviewOutgoing()">
           <mat-icon class="material-symbols-outlined">search_check</mat-icon>
           <span>Review Outgoing</span>
@@ -174,6 +178,10 @@
       <a mat-menu-item (click)="openSubmitSubject()">
         <mat-icon class="material-symbols-outlined">add</mat-icon>
         <span>Create Subject</span>
+      </a>
+      <a mat-menu-item class="menu-create-film" (click)="openCreateFilm()">
+        <mat-icon class="material-symbols-outlined">movie</mat-icon>
+        <span>New film from TMDB/IMDb</span>
       </a>
       <a mat-menu-item (click)="openReviewOutgoing()">
         <mat-icon class="material-symbols-outlined">search_check</mat-icon>
