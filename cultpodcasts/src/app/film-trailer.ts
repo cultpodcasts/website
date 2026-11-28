@@ -97,9 +97,13 @@ export function parseFilmTrailerTokens(tokens: readonly string[] | null | undefi
   return links;
 }
 
-function httpUrl(text: string): URL | undefined {
+/** The http(s) URL for the text or URL, or undefined for anything else (`javascript:`, malformed, empty). Shared with TV show trailers. */
+export function httpUrl(value: string | URL | null | undefined): URL | undefined {
+  if (!value) {
+    return undefined;
+  }
   try {
-    const url = new URL(text);
+    const url = value instanceof URL ? value : new URL(value);
     return url.protocol === 'https:' || url.protocol === 'http:' ? url : undefined;
   } catch {
     return undefined;

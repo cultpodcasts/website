@@ -11,6 +11,7 @@ import { filmPageCommands, tvShowEpisodePageCommands } from '../catalogue-links'
 import { MoveEpisodeToFilmDialogComponent } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
 import { AttachTrailerDialogComponent, attachedAsTrailerMessage } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
+import { AttachTvShowTrailerDialogComponent } from '../attach-tv-show-trailer-dialog/attach-tv-show-trailer-dialog.component';
 import { EditEpisodeDialogComponent } from './edit-episode-dialog.component';
 
 const podcastId = '3c1d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f';
@@ -131,6 +132,65 @@ describe('EditEpisodeDialogComponent curator moves', () => {
       component.originalEpisode = undefined;
 
       component.moveToTvShow();
+
+      expect(open).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('attachAsTvShowTrailer', () => {
+    it('opens the attach dialog with the episode and podcast, flagging unsaved changes as none', () => {
+      component.attachAsTvShowTrailer();
+
+      expect(open).toHaveBeenCalledWith(AttachTvShowTrailerDialogComponent, expect.objectContaining({
+        disableClose: true,
+        data: {
+          podcastId,
+          podcastName: 'Synthetic Podcast',
+          episodeId,
+          episodeTitle: 'Synthetic Episode Title',
+          hasUnsavedChanges: false
+        }
+      }));
+    });
+
+    it('on attach closes with attachedAsTvShowTrailer, says so and opens the TV show page by its name', () => {
+      component.attachAsTvShowTrailer();
+      finish({ attached: true, tvShowId: showId, tvShowName: 'Synthetic Show' });
+
+      expect(dialogRef.close).toHaveBeenCalledWith({ attachedAsTvShowTrailer: true, podcastId });
+      expect(snackBarOpen).toHaveBeenCalledWith('Attached as TV trailer/clip', 'Ok', { duration: 10000 });
+      expect(navigate).toHaveBeenCalledWith(['/tv', 'Synthetic Show']);
+    });
+
+    it('a created show is announced as new', () => {
+      component.attachAsTvShowTrailer();
+      finish({ attached: true, tvShowId: showId, tvShowName: 'New Show', showCreated: true });
+
+      expect(snackBarOpen).toHaveBeenCalledWith('TV show created and episode attached as its trailer/clip.', 'Ok', { duration: 10000 });
+      expect(navigate).toHaveBeenCalledWith(['/tv', 'New Show']);
+    });
+
+    it('closes without navigating when the response has no show name', () => {
+      component.attachAsTvShowTrailer();
+      finish({ attached: true, tvShowId: showId });
+
+      expect(dialogRef.close).toHaveBeenCalledWith({ attachedAsTvShowTrailer: true, podcastId });
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, { attached: false }])('does nothing when the dialog is cancelled (%o)', result => {
+      component.attachAsTvShowTrailer();
+      finish(result);
+
+      expect(dialogRef.close).not.toHaveBeenCalled();
+      expect(snackBarOpen).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('does not open the dialog before the episode has loaded', () => {
+      component.originalEpisode = undefined;
+
+      component.attachAsTvShowTrailer();
 
       expect(open).not.toHaveBeenCalled();
     });

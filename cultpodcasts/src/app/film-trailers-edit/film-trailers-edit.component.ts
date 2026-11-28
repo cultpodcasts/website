@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { FilmTrailerEditGroup } from '../playable-edit-form.util';
 
 /**
- * Edit film: the film's trailers in display order. Rename, reorder or remove; a removed trailer is gone from the film
+ * Edit film or Edit TV show: the parent's trailers in display order. Rename, reorder or remove; a removed trailer is gone from the film
  * (its old short link still opens the film). Trailers are added from the episode editor ("Attach as trailer").
  */
 @Component({
@@ -19,6 +19,8 @@ import { FilmTrailerEditGroup } from '../playable-edit-form.util';
 })
 export class FilmTrailersEditComponent {
   readonly trailers = input.required<FormArray<FilmTrailerEditGroup>>();
+  /** What holds the trailers, for the empty-list hint: a film (default) or a TV show, `'tv'` (RPP #1412). This component and its card serve both; the Film names are historical. */
+  readonly parent = input<'film' | 'tv'>('film');
 
   move(index: number, by: -1 | 1): void {
     const target = index + by;

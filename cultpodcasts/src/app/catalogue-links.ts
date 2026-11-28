@@ -1,5 +1,6 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
 import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
+import { TV_SHOW_TRAILER_CONTENT_KIND, tvShowIdFromTrailerId } from "./tv-show-trailer";
 import { YOUTUBE_ALTERNATE_CONTENT_KIND, itemIdFromYouTubeAlternateId } from "./youtube-alternate";
 import { GuidService } from "./guid.service";
 import { HomepageEpisode } from "./homepage-episode.interface";
@@ -74,6 +75,9 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] | null {
       // A trailer has no page. The film page is the only site link, and it uses the film id,
       // never the synthetic `{filmId}:trailer:{n}` id. Null when the title or film id is missing.
       return filmTrailerPage(item);
+    case TV_SHOW_TRAILER_CONTENT_KIND:
+      // Same for a TV show trailer: the show's hub is the only site link, never the synthetic `{tvShowId}:trailer:{n}` id.
+      return tvShowTrailerPage(item);
     case YOUTUBE_ALTERNATE_CONTENT_KIND:
       // An alternate has no page. The owning item's page is the only site link, and it uses that
       // item's id, never the synthetic `{itemId}:youtube-alternate:{n}` id.
@@ -96,6 +100,7 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
     item.contentKind === "TvShowEpisode" ||
     item.contentKind === "NewsReport" ||
     item.contentKind === FILM_TRAILER_CONTENT_KIND ||
+    item.contentKind === TV_SHOW_TRAILER_CONTENT_KIND ||
     item.contentKind === YOUTUBE_ALTERNATE_CONTENT_KIND
   ) {
     return cataloguePageUrl(cataloguePlayableLink(item), siteOrigin);
@@ -108,7 +113,8 @@ function cataloguePageUrl(page: string[] | null, siteOrigin: string): string | n
     return null;
   }
   const [root, slug, id] = page;
-  return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+  // A TV show trailer links to the show hub (`/tv/{name}`), which has no short id.
+  return new URL(id ? `${root}/${encodeURIComponent(slug)}/${id}` : `${root}/${encodeURIComponent(slug)}`, siteOrigin).toString();
 }
 
 /**
@@ -193,6 +199,8 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
       return null;
     case FILM_TRAILER_CONTENT_KIND:
       return filmTrailerPage(item);
+    case TV_SHOW_TRAILER_CONTENT_KIND:
+      return tvShowTrailerPage(item);
     case YOUTUBE_ALTERNATE_CONTENT_KIND:
       return youTubeAlternateParentLink(item);
     case "TvShowEpisode":
@@ -216,6 +224,18 @@ function filmTrailerPage(item: CatalogueItem): string[] | null {
     return null;
   }
   return filmPageCommands(title, filmId);
+}
+
+/**
+ * TV show hub for a TV show trailer (RPP #1412). `podcastName` is the show name (the hub slug). Null when the name is
+ * missing or the id is not `{tvShowId}:trailer:{n}`, so callers do not invent a podcast URL that contains the synthetic id.
+ */
+function tvShowTrailerPage(item: CatalogueItem): string[] | null {
+  const name = item.podcastName?.trim() ?? "";
+  if (!tvShowIdFromTrailerId(item.id) || !name) {
+    return null;
+  }
+  return ["/tv", name];
 }
 
 /**

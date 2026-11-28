@@ -84,6 +84,31 @@ describe("catalogue links", () => {
     expect(catalogueParentLink(unparsed)).toBeNull();
   });
 
+  it("links a TV show trailer to its show hub and keeps the synthetic id out of the route (RPP #1412)", () => {
+    const trailer = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "TvShowTrailer",
+      episodeTitle: "Synthetic Teaser",
+      podcastName: "Synthetic Show",
+    };
+    expect(cataloguePlayableLink(trailer)).toEqual(["/tv", "Synthetic Show"]);
+    expect(catalogueParentLink(trailer)).toEqual(["/tv", "Synthetic Show"]);
+  });
+
+  it("gives a TV show trailer no page when the show name is missing or the id is not a trailer id", () => {
+    const trailer = {
+      ...item,
+      id: `${id}:trailer:0`,
+      contentKind: "TvShowTrailer",
+      podcastName: "Synthetic Show",
+    };
+    expect(cataloguePlayableLink({ ...trailer, podcastName: "   " })).toBeNull();
+    expect(catalogueParentLink({ ...trailer, podcastName: "" })).toBeNull();
+    expect(cataloguePlayableLink({ ...trailer, id: "not-a-trailer" })).toBeNull();
+    expect(catalogueParentLink({ ...trailer, id: "not-a-trailer" })).toBeNull();
+  });
+
   it("links an Also-on-YouTube card to its owning item and keeps the synthetic id out of the route", () => {
     const filmAlt = {
       ...item,
@@ -342,6 +367,19 @@ describe("catalogue links", () => {
       expect(url).toBe(`${origin}/film/One%20Off/${guids.toCatalogueShortId(id, "Film")}`);
       expect(url).not.toContain(":trailer:");
       expect(url.startsWith(shortner)).toBe(false);
+    });
+
+    it("shares a TV show trailer as the show hub, not through the shortener (RPP #1412)", () => {
+      const trailer = {
+        ...item,
+        id: `${id}:trailer:0`,
+        contentKind: "TvShowTrailer",
+        podcastName: "Synthetic Show",
+      };
+      const url = catalogueShareUrl(trailer, origin, shortner);
+      expect(url).toBe(`${origin}/tv/Synthetic%20Show`);
+      expect(catalogueShareUrl({ ...trailer, podcastName: "" }, origin, shortner)).toBeNull();
+      expect(catalogueShareUrl({ ...trailer, id: "not-a-trailer" }, origin, shortner)).toBeNull();
     });
 
     it("shares nothing when a film trailer has no film title or film id", () => {

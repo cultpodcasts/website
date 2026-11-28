@@ -69,6 +69,9 @@ import { AttachTrailerDialogClose, AttachTrailerDialogData } from '../episode-tr
 import { AttachTrailerDialogComponent, attachedAsTrailerMessage } from '../attach-trailer-dialog/attach-trailer-dialog.component';
 import { MoveEpisodeToTvShowDialogComponent } from '../move-episode-to-tv-show-dialog/move-episode-to-tv-show-dialog.component';
 import { MoveEpisodeToTvShowDialogClose, MoveEpisodeToTvShowDialogData } from '../episode-tv-show-move.interface';
+import { AttachTvShowTrailerDialogComponent, attachedAsTvShowTrailerMessage } from '../attach-tv-show-trailer-dialog/attach-tv-show-trailer-dialog.component';
+import { AttachTvShowTrailerDialogClose, AttachTvShowTrailerDialogData } from '../episode-tv-show-trailer-attach.interface';
+import { hubPathCommands } from '../catalogue-hub';
 import { SELECT_REORDER } from '../select-reorder';
 import { FilmYouTubeAlternatesEditComponent } from '../film-youtube-alternates-edit/film-youtube-alternates-edit.component';
 import { staleYouTubeAlternatesMessage } from '../youtube-keep-list';
@@ -261,6 +264,36 @@ export class EditEpisodeDialogComponent {
         this.snackBar.open(attachedAsTrailerMessage(result), "Ok", { duration: 10000 });
         if (result.name && result.filmId) {
           this.router.navigate(filmPageCommands(result.name, result.filmId));
+        }
+      });
+  }
+
+  /**
+   * Curator: attach this one episode to a TV show as a trailer / clip (creating the show if none has the name), then open
+   * the TV show page, which lists its trailers (RPP #1412).
+   */
+  attachAsTvShowTrailer() {
+    if (!this.podcastId || !this.originalEpisode) {
+      return;
+    }
+    const data: AttachTvShowTrailerDialogData = {
+      podcastId: this.podcastId,
+      podcastName: this.podcastName(),
+      episodeId: this.episodeId,
+      episodeTitle: this.originalEpisode.title,
+      hasUnsavedChanges: this.form()?.dirty ?? false
+    };
+    this.dialog.open<AttachTvShowTrailerDialogComponent, AttachTvShowTrailerDialogData, AttachTvShowTrailerDialogClose>(
+      AttachTvShowTrailerDialogComponent, { data: data, disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
+      .afterClosed()
+      .subscribe(result => {
+        if (!result?.attached) {
+          return;
+        }
+        this.dialogRef.close({ attachedAsTvShowTrailer: true, podcastId: this.podcastId });
+        this.snackBar.open(attachedAsTvShowTrailerMessage(result), "Ok", { duration: 10000 });
+        if (result.tvShowName) {
+          this.router.navigate(hubPathCommands('tv', result.tvShowName));
         }
       });
   }
