@@ -6,12 +6,14 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { of } from 'rxjs';
+import { Router } from '@angular/router';
+import { ReplaySubject, Subject, of } from 'rxjs';
 import { AddPodcastForm } from '../add-podcast-form.interface';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentKind } from '../catalogue-parent-kind.enum';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import { IndexBacklogConfirmDialogComponent } from '../index-backlog-confirm-dialog/index-backlog-confirm-dialog.component';
 import { IndexDialogComponent } from '../index-dialog/index-dialog.component';
 import { Podcast } from '../podcast.interface';
 import { TransferPodcastKindSendComponent } from '../transfer-podcast-kind-send/transfer-podcast-kind-send.component';
@@ -21,12 +23,17 @@ describe('AddPodcastDialogComponent', () => {
   let dialogOpen: ReturnType<typeof vi.fn>;
   let close: ReturnType<typeof vi.fn>;
   let snackOpen: ReturnType<typeof vi.fn>;
+  let snackAction: Subject<void>;
+  let roles: ReplaySubject<string[]>;
   const podcastId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
   beforeEach(async () => {
     dialogOpen = vi.fn(() => ({ afterClosed: () => of(undefined) }));
     close = vi.fn();
-    snackOpen = vi.fn();
+    snackAction = new Subject<void>();
+    snackOpen = vi.fn(() => ({ onAction: () => snackAction.asObservable() }));
+    roles = new ReplaySubject<string[]>(1);
+    roles.next(['Curator', 'Admin']);
     await TestBed.configureTestingModule({
       imports: [AddPodcastDialogComponent],
       providers: [
@@ -42,7 +49,7 @@ describe('AddPodcastDialogComponent', () => {
         { provide: MatSnackBar, useValue: { open: snackOpen } },
         {
           provide: AuthServiceWrapper,
-          useValue: { authService: { getAccessTokenSilently: () => of('test-token') } }
+          useValue: { authService: { getAccessTokenSilently: () => of('test-token') }, roles }
         }
       ]
     })
@@ -54,29 +61,64 @@ describe('AddPodcastDialogComponent', () => {
       .compileComponents();
   });
 
-  it('indexBacklog opens IndexDialog for the create-time podcast name', () => {
-    dialogOpen.mockReturnValue({
-      afterClosed: () => of({ updated: true, episodeIds: ['p/1', 'p/2'] })
-    });
+  it('indexBacklog (admin) confirms the count first, then opens IndexDialog for the create-time podcast name', () => {
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of(true) })
+      .mockReturnValueOnce({ afterClosed: () => of({ updated: true, episodeIds: ['p/1', 'p/2'] }) });
     const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
 
     sut.indexBacklog();
 
-    expect(dialogOpen).toHaveBeenCalledWith(
-      IndexDialogComponent,
-      expect.objectContaining({
-        data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true }
-      })
-    );
-    expect(snackOpen).toHaveBeenCalledWith(
-      'Podcast Indexed. 2 episodes updated',
-      'Ok',
-      { duration: 10000 }
+    expect(dialogOpen.mock.calls[0][0]).toBe(IndexBacklogConfirmDialogComponent);
+    expect(dialogOpen.mock.calls[0][1].data).toEqual({ podcastName: 'Clothesline Desk' });
+    expect(dialogOpen.mock.calls[1][0]).toBe(IndexDialogComponent);
+    expect(dialogOpen.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true } })
     );
   });
 
+  it('indexBacklog offers Review after the index and opens the updated episodes from it', () => {
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of(true) })
+      .mockReturnValueOnce({ afterClosed: () => of({ updated: true, episodeIds: ['p/1', 'p/2'] }) });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
+
+    sut.indexBacklog();
+    expect(snackOpen).toHaveBeenCalledWith(
+      'Podcast Indexed. 2 episodes updated',
+      'Review',
+      { duration: 10000 }
+    );
+    snackAction.next();
+
+    expect(navigate).toHaveBeenCalledWith(['/episodes', JSON.stringify(['p/1', 'p/2'])]);
+  });
+
+  it('indexBacklog does nothing more when the admin cancels the confirmation', () => {
+    dialogOpen.mockReturnValueOnce({ afterClosed: () => of(undefined) });
+    const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
+
+    sut.indexBacklog();
+
+    expect(dialogOpen).toHaveBeenCalledTimes(1);
+    expect(snackOpen).not.toHaveBeenCalled();
+  });
+
+  it('indexBacklog does nothing for a curator who is not an admin', () => {
+    roles.next(['Curator']);
+    const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
+
+    sut.indexBacklog();
+
+    expect(sut.isAdmin()).toBe(false);
+    expect(dialogOpen).not.toHaveBeenCalled();
+  });
+
   it('indexBacklog keeps IndexDialog on persisted name when form rename is dirty', () => {
-    dialogOpen.mockReturnValue({ afterClosed: () => of(undefined) });
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of(true) })
+      .mockReturnValueOnce({ afterClosed: () => of(undefined) });
     const sut = TestBed.createComponent(AddPodcastDialogComponent).componentInstance;
     sut.originalPodcast = { name: 'Clothesline Desk' } as Podcast;
     sut.form.set(new FormGroup({
@@ -85,14 +127,11 @@ describe('AddPodcastDialogComponent', () => {
 
     sut.indexBacklog();
 
-    expect(dialogOpen).toHaveBeenCalledWith(
-      IndexDialogComponent,
-      expect.objectContaining({
-        data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true }
-      })
+    expect(dialogOpen.mock.calls[0][1].data).toEqual({ podcastName: 'Clothesline Desk' });
+    expect(dialogOpen.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ data: { kind: 'podcast', name: 'Clothesline Desk', backlog: true } })
     );
   });
-
   it('transferKind confirms then opens TransferPodcastKindSend and closes transferred', async () => {
     const submit = vi.fn();
     dialogOpen

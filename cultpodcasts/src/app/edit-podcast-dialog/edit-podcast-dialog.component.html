@@ -67,9 +67,11 @@
                     <mat-checkbox [formControl]="form()!.controls.removed">Removed</mat-checkbox>
                     <div class="flag-row">
                         <mat-checkbox [formControl]="form()!.controls.indexAllEpisodes">Index All Episodes</mat-checkbox>
+                        @if (isAdmin()) {
                         <button type="button" matButton="outlined" class="index-backlog"
                             [disabled]="!indexBacklogName()"
                             (click)="indexBacklog()">Index backlog now</button>
+                        }
                         @if (indexAllOverriddenByIncludeTitle()) {
                         <button type="button" class="flag-hint" (click)="goToIncludeTitleRegex()">
                             Overridden by Episode Include Title Regex

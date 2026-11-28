@@ -10,9 +10,11 @@ import { IndexDialogComponent, IndexDialogData } from './index-dialog.component'
 
 describe('IndexDialogComponent', () => {
   let close: ReturnType<typeof vi.fn>;
+  let getAccessTokenSilently: ReturnType<typeof vi.fn>;
 
   async function configure(data: IndexDialogData) {
     close = vi.fn();
+    getAccessTokenSilently = vi.fn(() => of('test-token'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -23,7 +25,7 @@ describe('IndexDialogComponent', () => {
         provideHttpClientTesting(),
         { provide: MatDialogRef, useValue: { close } },
         { provide: MAT_DIALOG_DATA, useValue: data },
-        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently: () => of('test-token') } } }
+        { provide: AuthServiceWrapper, useValue: { authService: { getAccessTokenSilently } } }
       ]
     }).compileComponents();
   }
@@ -60,6 +62,25 @@ describe('IndexDialogComponent', () => {
     expect(close).toHaveBeenCalledWith({ updated: true, episodeIds: ['p/e'] });
   });
 
+  it('asks for an admin token for the backlog index and a curate token for the hub index', async () => {
+    await configure({ kind: 'podcast', name: 'Show', backlog: true });
+    TestBed.createComponent(IndexDialogComponent);
+    await settle();
+    expectPost('/podcast/index/Show/backlog').flush({ indexedEpisodes: [], indexStatus: 'Performed' });
+    await settle();
+    expect(getAccessTokenSilently).toHaveBeenCalledWith(
+      expect.objectContaining({ authorizationParams: expect.objectContaining({ scope: 'admin' }) })
+    );
+
+    await configure({ kind: 'podcast', name: 'Show' });
+    TestBed.createComponent(IndexDialogComponent);
+    await settle();
+    expectPost('/podcast/index/Show').flush({ indexedEpisodes: [], indexStatus: 'Performed' });
+    await settle();
+    expect(getAccessTokenSilently).toHaveBeenCalledWith(
+      expect.objectContaining({ authorizationParams: expect.objectContaining({ scope: 'curate' }) })
+    );
+  });
   it('maps a podcast 400 and 404 as before', async () => {
     await configure({ kind: 'podcast', name: 'Show' });
     TestBed.createComponent(IndexDialogComponent);
