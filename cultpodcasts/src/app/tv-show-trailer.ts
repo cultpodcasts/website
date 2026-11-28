@@ -1,43 +1,15 @@
-import { filmIdFromTrailerId, httpUrl } from './film-trailer';
 import { SearchResult } from './search-result.interface';
 import { resolveServiceKey } from './service-catalog';
+import { httpUrl, Trailer, trailerSearchDuration } from './trailer';
 
 /**
- * A trailer, teaser or clip attached to a TV show (RPP #1412, `docs/tv-show-trailers.md`). Same JSON shape as a film
- * trailer. A TV show has no search document, so trailers come only from the curator `GET tvshow/{id}`
- * (`trailers`, in display order) and are not public.
+ * TV show trailers on the rail (RPP #1412, `docs/tv-show-trailers.md`). The `Trailer` type, keep-list diff and stale
+ * guard are shared with films: see `trailer.ts`. A TV show has no search document, so trailers come only from the
+ * curator `GET tvshow/{id}` (`trailers`, in display order) and are not public.
  */
-export interface TvShowTrailer {
-  /** Id of the episode the trailer was attached from. */
-  id: string;
-  title: string;
-  /** Absolute URLs arrive as `URL` objects (json-url.interceptor). */
-  url: string | URL;
-  image?: string | URL | null;
-  /** UTC instant; `JsonDateInterceptor` turns it into a `Date`. */
-  release?: Date | null;
-  /** `h:mm:ss`. */
-  duration: string;
-}
 
 /** `contentKind` of a trailer card on the TV show page's Trailers rail (see catalogue-card). Not an RPP kind. */
 export const TV_SHOW_TRAILER_CONTENT_KIND = 'TvShowTrailer';
-
-/** `{tvShowId}:trailer:{n}` → the TV show id. Null when `id` is not a TV show trailer id. */
-export function tvShowIdFromTrailerId(id: string): string | null {
-  // The same `{parentId}:trailer:{n}` shape as a film trailer id.
-  return filmIdFromTrailerId(id);
-}
-
-/** `0:02:11` or `00:02:11.99` → `00:02:11`, the search `duration` format the cards expect. Unknown text is ''. */
-export function tvShowTrailerSearchDuration(value: string | null | undefined): string {
-  const match = /^(?:(\d+)\.)?(\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/.exec((value ?? '').trim());
-  if (!match) {
-    return '';
-  }
-  const hours = Number(match[1] ?? 0) * 24 + Number(match[2]);
-  return `${String(hours).padStart(2, '0')}:${match[3]}:${match[4]}`;
-}
 
 /**
  * A trailer as a rail card (the TV twin of `filmTrailerEpisode`): the id is made up (`{tvShowId}:trailer:{n}`, unique
@@ -46,7 +18,7 @@ export function tvShowTrailerSearchDuration(value: string | null | undefined): s
  * show name for the player dock. Null when the trailer has no usable http(s) URL.
  */
 export function tvShowTrailerEpisode(
-  trailer: TvShowTrailer,
+  trailer: Trailer,
   tvShowId: string,
   index: number,
   showName = ''
@@ -64,7 +36,7 @@ export function tvShowTrailerEpisode(
     episodeTitle: trailer.title,
     episodeDescription: '',
     release,
-    duration: tvShowTrailerSearchDuration(trailer.duration),
+    duration: trailerSearchDuration(trailer.duration),
     services: { [key]: { url, ...(image ? { image } : {}) } },
     contentKind: TV_SHOW_TRAILER_CONTENT_KIND,
   };
@@ -72,7 +44,7 @@ export function tvShowTrailerEpisode(
 
 /** The rail cards for a show's trailers, in display order; trailers with no usable URL are skipped. */
 export function tvShowTrailerEpisodes(
-  trailers: readonly TvShowTrailer[] | null | undefined,
+  trailers: readonly Trailer[] | null | undefined,
   tvShowId: string,
   showName = ''
 ): SearchResult[] {
@@ -84,42 +56,4 @@ export function tvShowTrailerEpisodes(
     }
   });
   return episodes;
-}
-
-/**
- * The TV show `trailers` patch (keep / order / rename), or null when the list and titles are unchanged. A blank title
- * keeps the stored one on the server, so it is sent as `{ id }` only.
- */
-export function tvShowTrailerChanges(
-  previous: { trailers?: readonly { id: string; title?: string | null }[] | null },
-  next: readonly { id: string; title: string }[]
-): { id: string; title?: string }[] | null {
-  const before = previous.trailers ?? [];
-  const unchanged = before.length === next.length &&
-    before.every((trailer, index) => trailer.id === next[index].id && (trailer.title ?? '') === next[index].title.trim());
-  if (unchanged) {
-    return null;
-  }
-  return next.map(trailer => {
-    const title = trailer.title.trim();
-    return title ? { id: trailer.id, title } : { id: trailer.id };
-  });
-}
-
-export function staleTvShowTrailersMessage(added: number): string {
-  return `${added === 1 ? 'A trailer was' : `${added} trailers were`} attached to this TV show after the editor opened. ` +
-    'Nothing was saved. Close and reopen the TV show to edit its trailers.';
-}
-
-/**
- * The 409 body of a TV show PATCH that carried a stale trailer keep-list: `unexpectedTrailerIds` names the trailers the
- * editor never saw. Returns the curator message, or undefined when the error is not that conflict.
- */
-export function staleTvShowTrailersError(error: unknown): string | undefined {
-  const response = error as { status?: unknown; error?: { unexpectedTrailerIds?: unknown } | null } | null;
-  if (response?.status !== 409) {
-    return undefined;
-  }
-  const ids = response.error?.unexpectedTrailerIds;
-  return Array.isArray(ids) && ids.length > 0 ? staleTvShowTrailersMessage(ids.length) : undefined;
 }

@@ -31,13 +31,13 @@
         }
     </mat-form-field>
     @if (selected(); as film) {
-    <div class="selected" [class.create]="film.create" role="status">
-        <mat-icon aria-hidden="true">{{ film.create ? 'add_circle' : 'check_circle' }}</mat-icon>
+    <div class="selected" [class.create]="film.kind === 'create'" role="status">
+        <mat-icon aria-hidden="true">{{ film.kind === 'create' ? 'add_circle' : 'check_circle' }}</mat-icon>
         <div class="selected-text">
-            @if (film.create) {
+            @if (film.kind === 'create') {
             <span class="selected-label">New film: {{ film.name }}</span>
             <span class="selected-detail">A new film is created with this trailer. It has no release date or main video until you add them in Edit film. If a film already has this name, the trailer joins it.</span>
-            } @else {
+            } @else if (film.kind === 'id') {
             <span class="selected-label">Film: {{ film.name ?? film.id }}</span>
             }
         </div>

@@ -7,7 +7,8 @@ import { of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
-import { EditFilmDialogComponent, staleTrailersMessage } from './edit-film-dialog.component';
+import { EditFilmDialogComponent } from './edit-film-dialog.component';
+import { staleTrailersMessage } from '../trailer';
 
 const filmId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const api = (path: string) => new URL(path, environment.api).toString();
@@ -170,7 +171,7 @@ describe('EditFilmDialogComponent', () => {
     });
     await saving;
     // No PATCH (verify() in afterEach fails on one), the dialog stays open and says why.
-    expect(dialog.submitError()).toBe(staleTrailersMessage(1));
+    expect(dialog.submitError()).toBe(staleTrailersMessage(1, 'film'));
     expect(close).not.toHaveBeenCalled();
   });
 
@@ -231,7 +232,7 @@ describe('EditFilmDialogComponent', () => {
       { status: 409, statusText: 'Conflict' }
     );
     await saving;
-    expect(dialog.submitError()).toBe(staleTrailersMessage(1));
+    expect(dialog.submitError()).toBe(staleTrailersMessage(1, 'film'));
     expect(close).not.toHaveBeenCalled();
   });
 

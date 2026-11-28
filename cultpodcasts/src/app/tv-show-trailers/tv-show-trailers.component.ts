@@ -7,7 +7,8 @@ import { EpisodeRailComponent } from '../episode-rail/episode-rail.component';
 import { startEpisodePlayback } from '../episode-embed';
 import { PlayerService } from '../player.service';
 import { SearchDisplayEpisode } from '../search-result-links';
-import { TvShowTrailer, tvShowTrailerEpisodes } from '../tv-show-trailer';
+import { Trailer } from '../trailer';
+import { tvShowTrailerEpisodes } from '../tv-show-trailer';
 
 /**
  * The TV show page's Trailers and extras rail (RPP #1412): the trailers, teasers and clips attached to the show from
@@ -36,7 +37,7 @@ export class TvShowTrailersComponent {
   readonly showName = input.required<string>();
 
   protected readonly isCurator = computed(() => this.roles().includes('Curator'));
-  private readonly show = signal<{ id: string; name: string; trailers: readonly TvShowTrailer[] } | null>(null);
+  private readonly show = signal<{ id: string; name: string; trailers: readonly Trailer[] } | null>(null);
   protected readonly episodes = computed(() => {
     const show = this.show();
     return show ? tvShowTrailerEpisodes(show.trailers, show.id, show.name) : [];

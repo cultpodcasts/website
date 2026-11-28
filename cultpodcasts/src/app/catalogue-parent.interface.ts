@@ -1,5 +1,5 @@
 import { SearchIndexerState } from "@cultpodcasts/contracts";
-import { TvShowTrailer } from "./tv-show-trailer";
+import { Trailer } from "./trailer";
 import { YouTubeIndexingHints } from "./youtube-indexing-hints.interface";
 
 /**
@@ -137,7 +137,7 @@ export type NewsOrganisationChangeRequest = CatalogueParentChangeRequest &
  * A show with no trailers omits the field.
  */
 export interface TvShowTrailersDto {
-  trailers?: TvShowTrailer[] | null;
+  trailers?: Trailer[] | null;
 }
 
 /** GET /tvshow/{identifier}: the shared fields plus the show's trailers. */

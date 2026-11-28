@@ -1,6 +1,7 @@
 import { AbstractControl, FormArray, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { episodeLanguageFormValue } from './language-options.util';
 import { ensureHashPrefix, hashPrefixedTagValidator } from './podcast-form.util';
+import { trailerChanges } from './trailer';
 import {
   FilmChangeRequest,
   FilmDto,
@@ -69,8 +70,8 @@ export interface PlayableEditForm {
    * naming). Always built by `buildPlayableEditForm`; optional on the type so non-playable form consumers stay compatible.
    */
   links?: FormArray<PlayableServiceLinkGroup>;
-  /** Film: the trailers to keep, in display order, each with an editable title. */
-  trailers?: FormArray<FilmTrailerEditGroup>;
+  /** Film / TV show: the trailers to keep, in display order, each with an editable title. */
+  trailers?: FormArray<TrailerEditGroup>;
   /** News / TV / film: additional YouTube uploads to keep, in display order (RPP #1411 / #1526). */
   additionalYouTube?: FormArray<YouTubeAlternateEditGroup>;
   /** News / TV / film: YouTube id of an additional upload to swap into the primary link. */
@@ -83,7 +84,7 @@ export type PlayableServiceLinkGroup = FormGroup<{
   image: FormControl<string>;
 }>;
 
-export type FilmTrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
+export type TrailerEditGroup = FormGroup<{ id: FormControl<string>; title: FormControl<string> }>;
 
 export type YouTubeAlternateEditGroup = FormGroup<{
   youTubeId: FormControl<string>;
@@ -234,14 +235,14 @@ export function newPlayableLinkGroup(
 }
 
 /**
- * Like `Validators.required`, but whitespace-only counts as empty. Needed because `filmTrailerChanges` trims and
+ * Like `Validators.required`, but whitespace-only counts as empty. Needed because `trailerChanges` trims and
  * omits blank titles (`{ id }` only), so spaces-only would otherwise look savable while the server keeps the old title.
  */
 export function requiredTrimmed(control: AbstractControl): ValidationErrors | null {
   return String(control.value ?? '').trim() ? null : { required: true };
 }
 
-export function newFilmTrailerGroup(id: string, title: string): FilmTrailerEditGroup {
+export function newTrailerGroup(id: string, title: string): TrailerEditGroup {
   return new FormGroup({
     id: new FormControl(id, { nonNullable: true }),
     // Required (trim-aware): a blank/whitespace title is omitted from the patch (server keeps the old one).
@@ -345,7 +346,7 @@ export function buildPlayableEditForm(dto: PlayableFieldsDto, variant: PlayableE
       validators: [tmdbIdTextValidator]
     });
     controls.trailers = new FormArray(
-      (film.trailers ?? []).map(trailer => newFilmTrailerGroup(trailer.id, trailer.title ?? ''))
+      (film.trailers ?? []).map(trailer => newTrailerGroup(trailer.id, trailer.title ?? ''))
     );
     controls.alternativeTitles = new FormControl((film.alternativeTitles ?? []).join('\n'), { nonNullable: true });
     controls.image = new FormControl(uriText(film.image), { nonNullable: true });
@@ -495,7 +496,7 @@ export function filmChanges(
   }
   // `services` and additional YouTube are already folded into playableFieldsChanges.
   if (next.trailers !== undefined) {
-    const trailers = filmTrailerChanges(previous, next.trailers);
+    const trailers = trailerChanges(previous, next.trailers);
     if (trailers) {
       film.trailers = trailers;
       // The ids this form was built from, not the keep-list. A trailer attached after that is absent here, and the
@@ -565,23 +566,6 @@ export function playableServiceChanges(
     if (!afterUrl.has(key)) changes[key] = { url: '', image: '' };
   }
   return Object.keys(changes).length > 0 ? changes : null;
-}
-
-/** The film `trailers` patch (keep / order / rename), or null when the list and titles are unchanged. */
-export function filmTrailerChanges(
-  previous: FilmDto,
-  next: readonly { id: string; title: string }[]
-): { id: string; title?: string }[] | null {
-  const before = previous.trailers ?? [];
-  const unchanged = before.length === next.length &&
-    before.every((trailer, index) => trailer.id === next[index].id && (trailer.title ?? '') === next[index].title.trim());
-  if (unchanged) {
-    return null;
-  }
-  return next.map(trailer => {
-    const title = trailer.title.trim();
-    return title ? { id: trailer.id, title } : { id: trailer.id };
-  });
 }
 
 /** The `additionalYouTube` patch (keep / order / add-by-url / rename), or null when unchanged. */

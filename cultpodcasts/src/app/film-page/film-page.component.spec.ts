@@ -164,7 +164,7 @@ describe('FilmPageComponent', () => {
       const shellHost = child.nativeElement as HTMLElement;
       const rail = shellHost.querySelector('section.episode app-film-trailers app-episode-rail');
       expect(rail?.querySelector('.rail__title')?.textContent?.trim()).toBe('Trailers');
-      expect(rail?.querySelectorAll('app-film-trailer-card').length).toBe(1);
+      expect(rail?.querySelectorAll('app-trailer-card').length).toBe(1);
       expect(child.componentInstance.emitCuratorEdit()).toBe(true);
 
       const open = TestBed.inject(MatDialog).open as ReturnType<typeof vi.fn>;

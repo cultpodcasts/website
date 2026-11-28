@@ -26,7 +26,7 @@ import { CurationSubmitService } from '../curation-submit.service';
 import { EditPersonDialogComponent } from '../edit-person-dialog/edit-person-dialog.component';
 import { FilmImagesEditComponent } from '../film-images-edit/film-images-edit.component';
 import { FilmLinksEditComponent } from '../film-links-edit/film-links-edit.component';
-import { FilmTrailersEditComponent } from '../film-trailers-edit/film-trailers-edit.component';
+import { TrailersEditComponent } from '../trailers-edit/trailers-edit.component';
 import { FilmYouTubeAlternatesEditComponent } from '../film-youtube-alternates-edit/film-youtube-alternates-edit.component';
 import {
   applyGuestSelection,
@@ -82,7 +82,7 @@ export interface ParentIdentityFilled {
     MatTabsModule,
     FilmLinksEditComponent,
     FilmImagesEditComponent,
-    FilmTrailersEditComponent,
+    TrailersEditComponent,
     FilmYouTubeAlternatesEditComponent
   ],
   templateUrl: './playable-edit-fields.component.html',

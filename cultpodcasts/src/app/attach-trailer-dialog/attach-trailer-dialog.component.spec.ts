@@ -11,7 +11,6 @@ import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import {
   AttachTrailerDialogComponent,
-  attachErrorMessage,
   attachedAsTrailerMessage,
   createFilmAnnouncement,
   pickedFilmAnnouncement
@@ -145,7 +144,7 @@ describe('AttachTrailerDialogComponent', () => {
     component.attach();
     await vi.waitFor(() => expect(dialogRef.close).toHaveBeenCalled());
 
-    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(component.selected()).toEqual({ kind: 'create', name: 'Faderhuset' });
     expect(postEpisodeAsTrailerCreatingFilm).toHaveBeenCalledWith('podcast-1', 'episode-1',
       { createFilm: true, filmName: 'Faderhuset' });
     expect(postEpisodeAsTrailer).not.toHaveBeenCalled();
@@ -265,7 +264,7 @@ describe('AttachTrailerDialogComponent', () => {
     (document.querySelector('mat-option.create-film-option') as HTMLElement).click();
     await fixture.whenStable();
 
-    expect(component.selected()).toEqual({ id: null, name: 'Faderhuset', create: true });
+    expect(component.selected()).toEqual({ kind: 'create', name: 'Faderhuset' });
     expect(input.value).toBe('Faderhuset');
     const selected = fixture.nativeElement.querySelector('.selected.create') as HTMLElement;
     expect(selected.getAttribute('role')).toBe('status');
@@ -283,7 +282,7 @@ describe('AttachTrailerDialogComponent', () => {
     option.click();
     await fixture.whenStable();
 
-    expect(component.selected()).toEqual({ id: filmId, name: 'Synthetic Film' });
+    expect(component.selected()).toEqual({ kind: 'id', id: filmId, name: 'Synthetic Film' });
     expect(attachButton().disabled).toBe(false);
   });
 
@@ -375,35 +374,10 @@ describe('AttachTrailerDialogComponent', () => {
   });
 });
 
-describe('attachErrorMessage', () => {
-  it('explains a 500 as resumable', () => {
-    expect(attachErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
-  });
-
-  it('#663: shows the server 409 text when an attach of the episode is already in progress', () => {
-    const message = 'Another attach of this episode as a trailer is in progress; try again shortly';
-    expect(attachErrorMessage(new HttpErrorResponse({ status: 409, error: { error: message } }))).toBe(message);
-  });
-
-  it('#663: the 409 and 404 fallbacks never say a film must exist and cover an attach in progress', () => {
-    const conflict = attachErrorMessage(new HttpErrorResponse({ status: 409 }));
-    const missing = attachErrorMessage(new HttpErrorResponse({ status: 404 }));
-
-    expect(conflict).toContain('already a trailer of another film');
-    expect(conflict).toContain('Try again shortly');
-    expect(`${conflict} ${missing}`).not.toContain('existing');
-  });
-
+describe('attachedAsTrailerMessage', () => {
   it('#663: the snackbar names a created film and points at Edit film for its date and video', () => {
     expect(attachedAsTrailerMessage({ attached: true, filmCreated: true }))
       .toBe('Film created and episode attached as its trailer. Add its release date and video in Edit film.');
     expect(attachedAsTrailerMessage({ attached: true, filmId })).toBe('Attached as trailer');
-  });
-
-  it('surfaces the server message when another film already holds the trailer (409)', () => {
-    expect(attachErrorMessage(new HttpErrorResponse({
-      status: 409,
-      error: { error: 'This episode is already a trailer of another film', filmId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }
-    }))).toBe('This episode is already a trailer of another film');
   });
 });

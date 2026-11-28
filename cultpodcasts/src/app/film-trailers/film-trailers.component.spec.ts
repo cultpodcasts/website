@@ -41,7 +41,7 @@ describe('FilmTrailersComponent', () => {
     ]);
 
     expect(el.querySelector('app-episode-rail .rail__title')?.textContent?.trim()).toBe('Trailers');
-    const cards = Array.from(el.querySelectorAll('app-film-trailer-card'));
+    const cards = Array.from(el.querySelectorAll('app-trailer-card'));
     expect(cards.length).toBe(2);
     const titles = cards.map(card => card.querySelector('.episode-poster__episode')?.textContent?.trim());
     expect(titles).toEqual(['Synthetic Teaser', 'Synthetic Clip']);
@@ -49,7 +49,7 @@ describe('FilmTrailersComponent', () => {
 
   it('gives a YouTube trailer its thumbnail, duration and Watch button', async () => {
     const el = await render(['00:02:11|https://www.youtube.com/watch?v=synthetic01|Synthetic Teaser']);
-    const card = el.querySelector('app-film-trailer-card') as HTMLElement;
+    const card = el.querySelector('app-trailer-card') as HTMLElement;
 
     expect(card.querySelector('img')?.getAttribute('src')).toBe('https://i.ytimg.com/vi/synthetic01/hqdefault.jpg');
     expect(card.querySelector('.episode-poster__badge--duration')?.textContent?.trim()).toBe('0:02:11');
@@ -75,7 +75,7 @@ describe('FilmTrailersComponent', () => {
 
   it('links a trailer the site cannot play to its page, with a placeholder image', async () => {
     const el = await render(['00:01:00|https://synthetic-video.example/watch/1|Synthetic Elsewhere']);
-    const card = el.querySelector('app-film-trailer-card') as HTMLElement;
+    const card = el.querySelector('app-trailer-card') as HTMLElement;
 
     expect(card.querySelector('button.episode-poster__cta')).toBeNull();
     expect(card.querySelector('.episode-poster__placeholder')).toBeTruthy();

@@ -64,14 +64,14 @@ describe('TvShowTrailersComponent', () => {
     const el = await flushShow({ id: showId, name: 'Synthetic Show', trailers });
 
     expect(el.querySelector('app-episode-rail .rail__title')?.textContent?.trim()).toBe('Trailers and extras');
-    const cards = Array.from(el.querySelectorAll('app-film-trailer-card'));
+    const cards = Array.from(el.querySelectorAll('app-trailer-card'));
     expect(cards.map(card => card.querySelector('.episode-poster__episode')?.textContent?.trim()))
       .toEqual(['Synthetic Teaser', 'Synthetic Clip']);
   });
 
   it('gives a YouTube trailer its thumbnail, duration and Watch button, and a plain Trailer byline with the TV icon', async () => {
     const el = await flushShow({ id: showId, name: 'Synthetic Show', trailers });
-    const card = el.querySelector('app-film-trailer-card') as HTMLElement;
+    const card = el.querySelector('app-trailer-card') as HTMLElement;
 
     expect(card.querySelector('img')?.getAttribute('src')).toBe('https://i.ytimg.com/vi/synthetic01/hqdefault.jpg');
     expect(card.querySelector('.episode-poster__badge--duration')?.textContent?.trim()).toBe('0:02:11');
@@ -84,7 +84,7 @@ describe('TvShowTrailersComponent', () => {
 
   it('opens a non-streaming trailer on its own page in a new tab', async () => {
     const el = await flushShow({ id: showId, name: 'Synthetic Show', trailers });
-    const link = el.querySelectorAll('app-film-trailer-card')[1].querySelector('a[href="https://archive.org/details/synthetic-clip"]');
+    const link = el.querySelectorAll('app-trailer-card')[1].querySelector('a[href="https://archive.org/details/synthetic-clip"]');
 
     expect(link).toBeTruthy();
   });
@@ -107,7 +107,7 @@ describe('TvShowTrailersComponent', () => {
       trailers: [{ ...trailers[0], url: 'javascript:alert(1)' }, trailers[1]]
     });
 
-    expect(Array.from(el.querySelectorAll('app-film-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
+    expect(Array.from(el.querySelectorAll('app-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
       .toEqual(['Synthetic Clip']);
   });
 
@@ -122,7 +122,7 @@ describe('TvShowTrailersComponent', () => {
 
   it('clears the rail when the curator signs out, and reads the show when they sign in', async () => {
     let el = await flushShow({ id: showId, name: 'Synthetic Show', trailers });
-    expect(el.querySelectorAll('app-film-trailer-card').length).toBe(2);
+    expect(el.querySelectorAll('app-trailer-card').length).toBe(2);
 
     roles.next([]);
     el = await settle();
@@ -132,7 +132,7 @@ describe('TvShowTrailersComponent', () => {
     await settle();
     http.expectOne(showUrl('Synthetic Show')).flush({ id: showId, name: 'Synthetic Show', trailers: [trailers[0]] });
     el = await settle();
-    expect(el.querySelectorAll('app-film-trailer-card').length).toBe(1);
+    expect(el.querySelectorAll('app-trailer-card').length).toBe(1);
   });
 
   it('reads the new show when the name changes, ignoring the answer for the old one', async () => {
@@ -144,20 +144,20 @@ describe('TvShowTrailersComponent', () => {
     http.expectOne(showUrl('Other Show')).flush({ id: showId, name: 'Other Show', trailers: [trailers[1]] });
     const el = await settle();
 
-    expect(Array.from(el.querySelectorAll('app-film-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
+    expect(Array.from(el.querySelectorAll('app-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
       .toEqual(['Synthetic Clip']);
   });
 
   it('reload() reads the show again so an edit shows at once', async () => {
     let el = await flushShow({ id: showId, name: 'Synthetic Show', trailers });
-    expect(el.querySelectorAll('app-film-trailer-card').length).toBe(2);
+    expect(el.querySelectorAll('app-trailer-card').length).toBe(2);
 
     fixture.componentInstance.reload();
     await settle();
     http.expectOne(showUrl('Synthetic Show')).flush({ id: showId, name: 'Synthetic Show', trailers: [trailers[1]] });
     el = await settle();
 
-    expect(Array.from(el.querySelectorAll('app-film-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
+    expect(Array.from(el.querySelectorAll('app-trailer-card .episode-poster__episode')).map(t => t.textContent?.trim()))
       .toEqual(['Synthetic Clip']);
   });
 });

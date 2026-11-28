@@ -1,16 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { FilmTrailerCardComponent } from './film-trailer-card.component';
+import { TrailerCardComponent } from './trailer-card.component';
 import { PlayerService } from '../player.service';
 import { filmTrailerEpisode, parseFilmTrailerTokens } from '../film-trailer';
 
-describe('FilmTrailerCardComponent', () => {
-  let fixture: ComponentFixture<FilmTrailerCardComponent>;
+describe('TrailerCardComponent', () => {
+  let fixture: ComponentFixture<TrailerCardComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FilmTrailerCardComponent],
+      imports: [TrailerCardComponent],
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
@@ -18,7 +18,7 @@ describe('FilmTrailerCardComponent', () => {
         PlayerService,
       ],
     }).compileComponents();
-    fixture = TestBed.createComponent(FilmTrailerCardComponent);
+    fixture = TestBed.createComponent(TrailerCardComponent);
   });
 
   function show(token: string): HTMLElement {

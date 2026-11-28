@@ -1,5 +1,5 @@
 import type { EpisodeUpdateResponse } from '@cultpodcasts/contracts';
-import { FilmTrailer } from './film-trailer';
+import { Trailer } from './trailer';
 import { Person } from './person.interface';
 import { PersonMatch } from './person-match.interface';
 
@@ -78,7 +78,7 @@ export interface FilmDto extends PlayableFieldsDto {
   imdbId?: string | null;
   tmdbId?: number | null;
   /** In display order; omitted when the film has none. */
-  trailers?: FilmTrailer[] | null;
+  trailers?: Trailer[] | null;
   /** Image from the film's identity (TMDB), used when no service has one (RedditPodcastPoster#1430). */
   image?: string | null;
   /**

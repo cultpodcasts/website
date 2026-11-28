@@ -287,7 +287,7 @@ describe("SeriesHubComponent", () => {
     }
 
     function trailerTitles(el: HTMLElement): (string | undefined)[] {
-      return Array.from(el.querySelectorAll("app-film-trailer-card .episode-poster__episode")).map(t => t.textContent?.trim());
+      return Array.from(el.querySelectorAll("app-trailer-card .episode-poster__episode")).map(t => t.textContent?.trim());
     }
 
     function menu(fixture: ComponentFixture<SeriesHubComponent>) {
