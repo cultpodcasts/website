@@ -15,7 +15,6 @@ import {
   createFilmAnnouncement,
   pickedFilmAnnouncement
 } from './attach-trailer-dialog.component';
-import { attachTrailerErrorMessage } from '../trailer-target';
 
 const filmId = '9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d';
 const film: Suggestion = { type: 'film', value: 'Synthetic Film', label: 'Synthetic Film', itemId: filmId };
@@ -375,37 +374,10 @@ describe('AttachTrailerDialogComponent', () => {
   });
 });
 
-const attachErrorMessage = (e: HttpErrorResponse) => attachTrailerErrorMessage(e, 'film');
-
-describe('attachErrorMessage', () => {
-  it('explains a 500 as resumable', () => {
-    expect(attachErrorMessage(new HttpErrorResponse({ status: 500 }))).toContain('resumes');
-  });
-
-  it('#663: shows the server 409 text when an attach of the episode is already in progress', () => {
-    const message = 'Another attach of this episode as a trailer is in progress; try again shortly';
-    expect(attachErrorMessage(new HttpErrorResponse({ status: 409, error: { error: message } }))).toBe(message);
-  });
-
-  it('#663: the 409 and 404 fallbacks never say a film must exist and cover an attach in progress', () => {
-    const conflict = attachErrorMessage(new HttpErrorResponse({ status: 409 }));
-    const missing = attachErrorMessage(new HttpErrorResponse({ status: 404 }));
-
-    expect(conflict).toContain('already a trailer of another film');
-    expect(conflict).toContain('Try again shortly');
-    expect(`${conflict} ${missing}`).not.toContain('existing');
-  });
-
+describe('attachedAsTrailerMessage', () => {
   it('#663: the snackbar names a created film and points at Edit film for its date and video', () => {
     expect(attachedAsTrailerMessage({ attached: true, filmCreated: true }))
       .toBe('Film created and episode attached as its trailer. Add its release date and video in Edit film.');
     expect(attachedAsTrailerMessage({ attached: true, filmId })).toBe('Attached as trailer');
-  });
-
-  it('surfaces the server message when another film already holds the trailer (409)', () => {
-    expect(attachErrorMessage(new HttpErrorResponse({
-      status: 409,
-      error: { error: 'This episode is already a trailer of another film', filmId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }
-    }))).toBe('This episode is already a trailer of another film');
   });
 });

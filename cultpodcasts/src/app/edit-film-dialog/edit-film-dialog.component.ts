@@ -9,7 +9,7 @@ import { PlayableEditFieldsComponent } from '../playable-edit-fields/playable-ed
 import { PlayableEditDialogBase } from '../playable-edit-dialog.base';
 import { filmChanges, PlayableEditFormValue } from '../playable-edit-form.util';
 import { FilmChangeRequest, FilmDto } from '../playable-edit.interface';
-import { staleTrailersMessage } from '../trailer';
+import { staleTrailersMessage, unexpectedTrailerCount } from '../trailer';
 import { staleYouTubeAlternatesMessage as sharedStaleYouTubeAlternatesMessage } from '../youtube-keep-list';
 
 export interface EditFilmDialogData {
@@ -116,9 +116,9 @@ export function staleKeepListMessage(error: HttpErrorResponse): string {
   if (Array.isArray(youTubeIds) && youTubeIds.length > 0) {
     return staleYouTubeAlternatesMessage(youTubeIds.length);
   }
-  const trailerIds = error.error?.unexpectedTrailerIds;
-  if (Array.isArray(trailerIds) && trailerIds.length > 0) {
-    return staleTrailersMessage(trailerIds.length, 'film');
+  const trailerCount = unexpectedTrailerCount(error);
+  if (trailerCount > 0) {
+    return staleTrailersMessage(trailerCount, 'film');
   }
   const message = typeof error.error?.message === 'string' ? error.error.message.trim() : '';
   if (message) {

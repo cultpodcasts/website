@@ -4,17 +4,17 @@ import { TV_SHOW_TRAILER_CONTENT_KIND } from "./tv-show-trailer";
 import { trailerParentId } from "./trailer";
 import { YOUTUBE_ALTERNATE_CONTENT_KIND, itemIdFromYouTubeAlternateId } from "./youtube-alternate";
 import { GuidService } from "./guid.service";
+import { GUID_PATTERN, isGuidText } from "./guid-text";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
 
 type CatalogueItem = HomepageEpisode | SearchResult;
 
 const shortIds = new GuidService();
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** True when `id` is a canonical 8-4-4-4-12 GUID (any case). */
 export function isGuid(id: string | null | undefined): id is string {
-  return !!id && GUID.test(id);
+  return isGuidText(id);
 }
 
 /**
@@ -31,7 +31,7 @@ export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEp
  * the podcast page's GUID URL 301s to). Anything that is not a GUID passes through unchanged.
  */
 export function podcastEpisodeShortPageId(id: string): string {
-  return id && GUID.test(id) ? shortIds.toBase64(id) : id;
+  return id && GUID_PATTERN.test(id) ? shortIds.toBase64(id) : id;
 }
 
 export function podcastEpisodePageCommands(podcastName: string, id: string): string[] {
@@ -44,7 +44,7 @@ export function podcastEpisodePageCommands(podcastName: string, id: string): str
  * Moved Film, TV, and News ids are handled first by movedKindRedirect.
  */
 export function podcastEpisodeShortIdRedirect(currentPath: string, podcastName: string, query: string): string | null {
-  if (!podcastName || !query || !GUID.test(query)) {
+  if (!podcastName || !query || !GUID_PATTERN.test(query)) {
     return null;
   }
   const target = `/podcast/${encodeURIComponent(podcastName)}/${shortIds.toBase64(query)}`;

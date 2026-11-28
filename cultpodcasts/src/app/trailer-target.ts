@@ -1,21 +1,21 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TRAILER_PARENT_LABELS, TrailerParentKind } from './trailer';
-import { isGuid } from './tv-show-target.util';
+import { isGuidText } from './guid-text';
 
 /**
  * Where an episode's trailer goes, shared by the film "Attach as trailer" and TV show "Attach as TV trailer/clip"
  * dialogs: a parent id (picked from the suggestions, with its name, or pasted), a parent to create (or join, by name),
  * or an existing parent named but not yet resolved to an id.
  */
-export type TrailerTarget =
-  | { kind: 'id'; id: string; name?: string }
-  | { kind: 'create'; name: string; publisher?: string }
-  | { kind: 'name'; name: string };
+export type IdTrailerTarget = { kind: 'id'; id: string; name?: string };
+export type CreateTrailerTarget = { kind: 'create'; name: string; publisher?: string };
+export type NameTrailerTarget = { kind: 'name'; name: string };
+export type TrailerTarget = IdTrailerTarget | CreateTrailerTarget | NameTrailerTarget;
 
 /** A pasted parent id (any case) as an id target, or null when the text is not a GUID. */
-export function idTargetFromText(text: string): TrailerTarget | null {
+export function idTargetFromText(text: string): IdTrailerTarget | null {
   const trimmed = text.trim();
-  return isGuid(trimmed) ? { kind: 'id', id: trimmed.toLowerCase() } : null;
+  return isGuidText(trimmed) ? { kind: 'id', id: trimmed.toLowerCase() } : null;
 }
 
 /**
@@ -47,7 +47,7 @@ export function trailerTargetFromText(
 /** A typed name that can become a new parent from a suggestion list: at least 2 characters, not an id, no '/'. */
 export function creatableParentName(text: string): string | null {
   const name = text.trim();
-  return name.length >= 2 && !isGuid(name) && !name.includes('/') ? name : null;
+  return name.length >= 2 && !isGuidText(name) && !name.includes('/') ? name : null;
 }
 
 /**

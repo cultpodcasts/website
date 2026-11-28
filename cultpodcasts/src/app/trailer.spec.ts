@@ -10,7 +10,8 @@ import {
   trailerChanges,
   trailerParentId,
   trailerSearchDuration,
-  trailerUrl
+  trailerUrl,
+  unexpectedTrailerCount
 } from './trailer';
 
 const parentId = '9a8b7c6d-5e4f-4a3b-9c2d-1e0f2a3b4c5d';
@@ -150,6 +151,17 @@ describe('trailer (shared by films and TV shows)', () => {
       ['null', null]
     ])('is undefined for %s', (_name, error) => {
       expect(staleTrailersError(error, 'film')).toBeUndefined();
+    });
+  });
+
+  describe('unexpectedTrailerCount', () => {
+    it('counts the ids a 409 body names and is 0 for anything that is not a non-empty id list', () => {
+      expect(unexpectedTrailerCount(new HttpErrorResponse({ status: 409, error: { unexpectedTrailerIds: ['x', 'y'] } }))).toBe(2);
+      expect(unexpectedTrailerCount(new HttpErrorResponse({ status: 409, error: { unexpectedTrailerIds: [] } }))).toBe(0);
+      expect(unexpectedTrailerCount(new HttpErrorResponse({ status: 409, error: { unexpectedTrailerIds: 'x' } }))).toBe(0);
+      expect(unexpectedTrailerCount(new HttpErrorResponse({ status: 409, error: { message: 'Owned elsewhere' } }))).toBe(0);
+      expect(unexpectedTrailerCount(new HttpErrorResponse({ status: 409 }))).toBe(0);
+      expect(unexpectedTrailerCount(null)).toBe(0);
     });
   });
 });

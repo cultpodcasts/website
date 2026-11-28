@@ -27,7 +27,8 @@ import {
   creatableParentName,
   idTargetFromText,
   SuggestionQueryGuard,
-  TrailerTarget
+  CreateTrailerTarget,
+  IdTrailerTarget
 } from '../trailer-target';
 
 const MAX_IDENTITY_ROUNDS = 4;
@@ -86,7 +87,7 @@ export class AttachTrailerDialogComponent {
   readonly title: FormControl<string>;
   readonly films = signal<Suggestion[]>([]);
   /** The film picked: a suggestion (id + name), a pasted id, or 'Create film' (a name, no id; RPP #1418). */
-  readonly selected = signal<TrailerTarget | null>(null);
+  readonly selected = signal<IdTrailerTarget | CreateTrailerTarget | null>(null);
   readonly isSending = signal(false);
   readonly error = signal<string | null>(null);
   /** The typed name to offer as 'Create film "…"': no film suggestion has it, it is not an id, and has no '/'. */
@@ -188,9 +189,6 @@ export class AttachTrailerDialogComponent {
     }
     if (film.kind === 'create') {
       void this.createAndAttach(film.name);
-      return;
-    }
-    if (film.kind !== 'id') {
       return;
     }
     const filmId = film.id;

@@ -121,10 +121,18 @@ export function staleTrailersMessage(added: number, parent: TrailerParentKind): 
  * trailers the editor never saw. Returns the curator message, or undefined when the error is not that conflict.
  */
 export function staleTrailersError(error: unknown, parent: TrailerParentKind): string | undefined {
-  const response = error as { status?: unknown; error?: { unexpectedTrailerIds?: unknown } | null } | null;
-  if (response?.status !== 409) {
+  if ((error as { status?: unknown } | null)?.status !== 409) {
     return undefined;
   }
-  const ids = response.error?.unexpectedTrailerIds;
-  return Array.isArray(ids) && ids.length > 0 ? staleTrailersMessage(ids.length, parent) : undefined;
+  const count = unexpectedTrailerCount(error);
+  return count > 0 ? staleTrailersMessage(count, parent) : undefined;
+}
+
+/**
+ * How many trailers a 409 body names in `unexpectedTrailerIds` (the trailers the editor never saw): 0 when the member
+ * is missing, not a list or empty. The one reader of that member, so film and TV show cannot drift apart.
+ */
+export function unexpectedTrailerCount(error: unknown): number {
+  const ids = (error as { error?: { unexpectedTrailerIds?: unknown } | null } | null)?.error?.unexpectedTrailerIds;
+  return Array.isArray(ids) ? ids.length : 0;
 }

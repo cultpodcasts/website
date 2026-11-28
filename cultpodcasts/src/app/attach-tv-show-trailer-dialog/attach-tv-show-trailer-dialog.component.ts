@@ -19,7 +19,8 @@ import {
 } from '../episode-tv-show-trailer-attach.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import { attachTrailerErrorMessage, SuggestionQueryGuard, TrailerTarget, trailerTargetFromText } from '../trailer-target';
-import { defaultPublisher, isGuid } from '../tv-show-target.util';
+import { isGuidText } from '../guid-text';
+import { defaultPublisher } from '../tv-show-target.util';
 
 /**
  * Confirms and sends the curator "Attach as TV trailer/clip" command for one podcast episode (RPP #1412), the TV twin
@@ -61,7 +62,7 @@ export class AttachTvShowTrailerDialogComponent {
   private readonly publisherValue: () => string;
   private readonly titleValue: () => string;
   /** The query is a pasted TV show id rather than a name. */
-  readonly isShowId = computed(() => isGuid(this.queryValue().trim()));
+  readonly isShowId = computed(() => isGuidText(this.queryValue().trim()));
   readonly hasInvalidName = computed(() => !this.isShowId() && this.queryValue().includes('/'));
   readonly isCreatingShow = computed(() => !this.isShowId() && this.createShowValue());
   /** The target, or null while there is no valid one. */
@@ -83,7 +84,7 @@ export class AttachTvShowTrailerDialogComponent {
     this.error.set(null);
     const version = this.queries.begin();
     let found: { value: string }[] = [];
-    if (text.length >= 2 && !isGuid(text)) {
+    if (text.length >= 2 && !isGuidText(text)) {
       try {
         found = await this.suggestions.suggest(text, 10, 'tvShow');
       } catch (e) {
