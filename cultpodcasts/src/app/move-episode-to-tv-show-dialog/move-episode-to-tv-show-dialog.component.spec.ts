@@ -9,7 +9,6 @@ import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import {
   MoveEpisodeToTvShowDialogComponent,
-  defaultPublisher,
   moveToTvShowErrorMessage
 } from './move-episode-to-tv-show-dialog.component';
 
@@ -190,13 +189,6 @@ describe('MoveEpisodeToTvShowDialogComponent', () => {
 
     expect(postEpisodeToTvShow).not.toHaveBeenCalled();
     expect(dialogRef.close).toHaveBeenCalledWith({ moved: false });
-  });
-});
-
-describe('defaultPublisher', () => {
-  it('is blank for other podcasts', () => {
-    expect(defaultPublisher('Synthetic Podcast')).toBe('');
-    expect(defaultPublisher(null)).toBe('');
   });
 });
 

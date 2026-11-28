@@ -16,4 +16,10 @@ export interface PodcastIndexDialogResult {
     timedOut?: boolean;
 }
 
-
+/** The admin dry run of a backlog index: what GET /podcast/index/{name}/backlog/preview answers (RPP #1433). */
+export interface IndexBacklogPreviewResponse {
+    /** Episodes not yet in the catalogue that the backlog index would ingest. */
+    newEpisodeCount: number;
+    /** How many of those would be ingested as ignored. */
+    ignoredEpisodeCount: number;
+}

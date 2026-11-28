@@ -1,0 +1,8 @@
+@if (episodes().length > 0) {
+<app-episode-rail class="tv-show-trailers"
+  title="Trailers and extras"
+  [episodes]="episodes()"
+  [displayTitle]="true"
+  [playingEpisodeId]="playingEpisodeId()"
+  (play)="play($event)" />
+}

@@ -1,18 +1,20 @@
 import { CatalogueParentKind } from "./catalogue-parent-kind.enum";
-import { FILM_TRAILER_CONTENT_KIND, filmIdFromTrailerId } from "./film-trailer";
+import { FILM_TRAILER_CONTENT_KIND } from "./film-trailer";
+import { TV_SHOW_TRAILER_CONTENT_KIND } from "./tv-show-trailer";
+import { trailerParentId } from "./trailer";
 import { YOUTUBE_ALTERNATE_CONTENT_KIND, itemIdFromYouTubeAlternateId } from "./youtube-alternate";
 import { GuidService } from "./guid.service";
+import { GUID_PATTERN, isGuidText } from "./guid-text";
 import { HomepageEpisode } from "./homepage-episode.interface";
 import { SearchResult } from "./search-result.interface";
 
 type CatalogueItem = HomepageEpisode | SearchResult;
 
 const shortIds = new GuidService();
-const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** True when `id` is a canonical 8-4-4-4-12 GUID (any case). */
 export function isGuid(id: string | null | undefined): id is string {
-  return !!id && GUID.test(id);
+  return isGuidText(id);
 }
 
 /**
@@ -29,7 +31,7 @@ export function catalogueShortPageId(id: string, contentKind: "Film" | "TvShowEp
  * the podcast page's GUID URL 301s to). Anything that is not a GUID passes through unchanged.
  */
 export function podcastEpisodeShortPageId(id: string): string {
-  return id && GUID.test(id) ? shortIds.toBase64(id) : id;
+  return id && GUID_PATTERN.test(id) ? shortIds.toBase64(id) : id;
 }
 
 export function podcastEpisodePageCommands(podcastName: string, id: string): string[] {
@@ -42,7 +44,7 @@ export function podcastEpisodePageCommands(podcastName: string, id: string): str
  * Moved Film, TV, and News ids are handled first by movedKindRedirect.
  */
 export function podcastEpisodeShortIdRedirect(currentPath: string, podcastName: string, query: string): string | null {
-  if (!podcastName || !query || !GUID.test(query)) {
+  if (!podcastName || !query || !GUID_PATTERN.test(query)) {
     return null;
   }
   const target = `/podcast/${encodeURIComponent(podcastName)}/${shortIds.toBase64(query)}`;
@@ -74,6 +76,9 @@ export function cataloguePlayableLink(item: CatalogueItem): string[] | null {
       // A trailer has no page. The film page is the only site link, and it uses the film id,
       // never the synthetic `{filmId}:trailer:{n}` id. Null when the title or film id is missing.
       return filmTrailerPage(item);
+    case TV_SHOW_TRAILER_CONTENT_KIND:
+      // Same for a TV show trailer: the show's hub is the only site link, never the synthetic `{tvShowId}:trailer:{n}` id.
+      return tvShowTrailerPage(item);
     case YOUTUBE_ALTERNATE_CONTENT_KIND:
       // An alternate has no page. The owning item's page is the only site link, and it uses that
       // item's id, never the synthetic `{itemId}:youtube-alternate:{n}` id.
@@ -96,6 +101,7 @@ export function catalogueShareUrl(item: CatalogueItem, siteOrigin: string, short
     item.contentKind === "TvShowEpisode" ||
     item.contentKind === "NewsReport" ||
     item.contentKind === FILM_TRAILER_CONTENT_KIND ||
+    item.contentKind === TV_SHOW_TRAILER_CONTENT_KIND ||
     item.contentKind === YOUTUBE_ALTERNATE_CONTENT_KIND
   ) {
     return cataloguePageUrl(cataloguePlayableLink(item), siteOrigin);
@@ -108,7 +114,8 @@ function cataloguePageUrl(page: string[] | null, siteOrigin: string): string | n
     return null;
   }
   const [root, slug, id] = page;
-  return new URL(`${root}/${encodeURIComponent(slug)}/${id}`, siteOrigin).toString();
+  // A TV show trailer links to the show hub (`/tv/{name}`), which has no short id.
+  return new URL(id ? `${root}/${encodeURIComponent(slug)}/${id}` : `${root}/${encodeURIComponent(slug)}`, siteOrigin).toString();
 }
 
 /**
@@ -193,6 +200,8 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
       return null;
     case FILM_TRAILER_CONTENT_KIND:
       return filmTrailerPage(item);
+    case TV_SHOW_TRAILER_CONTENT_KIND:
+      return tvShowTrailerPage(item);
     case YOUTUBE_ALTERNATE_CONTENT_KIND:
       return youTubeAlternateParentLink(item);
     case "TvShowEpisode":
@@ -210,12 +219,24 @@ export function catalogueParentLink(item: CatalogueItem | undefined): string[] |
  * do not invent a podcast URL that contains the synthetic id.
  */
 function filmTrailerPage(item: CatalogueItem): string[] | null {
-  const filmId = filmIdFromTrailerId(item.id);
+  const filmId = trailerParentId(item.id);
   const title = item.podcastName?.trim() ?? "";
   if (!filmId || !title) {
     return null;
   }
   return filmPageCommands(title, filmId);
+}
+
+/**
+ * TV show hub for a TV show trailer (RPP #1412). `podcastName` is the show name (the hub slug). Null when the name is
+ * missing or the id is not `{tvShowId}:trailer:{n}`, so callers do not invent a podcast URL that contains the synthetic id.
+ */
+function tvShowTrailerPage(item: CatalogueItem): string[] | null {
+  const name = item.podcastName?.trim() ?? "";
+  if (!trailerParentId(item.id) || !name) {
+    return null;
+  }
+  return ["/tv", name];
 }
 
 /**
