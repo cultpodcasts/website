@@ -79,7 +79,7 @@ test("the film page shows its trailers as a rail of cards above the More on rail
 
 	const rail = page.locator("app-film-trailers app-episode-rail");
 	await expect(rail.locator(".rail__title")).toHaveText("Trailers");
-	const cards = rail.locator("app-film-trailer-card");
+	const cards = rail.locator("app-trailer-card");
 	await expect(cards).toHaveCount(3);
 	await expect(cards.locator(".episode-poster__episode")).toHaveText([
 		"Synthetic Teaser: The Book Group",

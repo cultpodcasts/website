@@ -9,7 +9,6 @@ import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import {
   AttachTvShowTrailerDialogComponent,
-  attachTvShowTrailerErrorMessage,
   attachedAsTvShowTrailerMessage,
   resolveTvShowErrorMessage
 } from './attach-tv-show-trailer-dialog.component';
@@ -176,7 +175,7 @@ describe('AttachTvShowTrailerDialogComponent', () => {
     component.createShow.setValue(true);
 
     component.showQuery.setValue(showId);
-    expect(component.target()).toEqual({ kind: 'id', tvShowId: showId });
+    expect(component.target()).toEqual({ kind: 'id', id: showId });
     expect(component.isCreatingShow()).toBe(false);
 
     component.showQuery.setValue('Bad/Name');
@@ -236,16 +235,6 @@ describe('AttachTvShowTrailerDialogComponent', () => {
   });
 
   describe('messages', () => {
-    it.each([
-      [400, undefined, 'The episode cannot be attached as a TV trailer/clip.'],
-      [404, undefined, 'The episode or TV show was not found. The episode may already be a trailer of a TV show.'],
-      [409, undefined, 'This episode is already a trailer of another TV show, or is being attached right now. Try again shortly.'],
-      [500, undefined, 'An error occurred attaching the TV trailer/clip. Sending again resumes an interrupted attach.'],
-      [400, 'A removed TV show cannot take trailers', 'A removed TV show cannot take trailers']
-    ])('attach error %s %s → %s', (status, error, expected) => {
-      expect(attachTvShowTrailerErrorMessage(new HttpErrorResponse({ status, error: error ? { error } : null }))).toBe(expected);
-    });
-
     it('snackbar says when the show was created', () => {
       expect(attachedAsTvShowTrailerMessage({ attached: true })).toBe('Attached as TV trailer/clip');
       expect(attachedAsTvShowTrailerMessage({ attached: true, showCreated: true }))

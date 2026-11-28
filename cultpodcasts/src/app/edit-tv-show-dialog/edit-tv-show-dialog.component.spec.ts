@@ -12,8 +12,8 @@ import { environment } from '../../environments/environment';
 import { authInterceptor } from '../auth.interceptor';
 import { AuthServiceWrapper } from '../auth-service-wrapper.class';
 import { CatalogueParentEditModel } from '../catalogue-parent-edit';
-import { FilmTrailerEditGroup } from '../playable-edit-form.util';
-import { staleTvShowTrailersMessage } from '../tv-show-trailer';
+import { TrailerEditGroup } from '../playable-edit-form.util';
+import { staleTrailersMessage } from '../trailer';
 import { JsonDateInterceptor } from '../json-date.interceptor';
 import {
   CATALOGUE_PARENT_IDENTITY_TAB_INDEX,
@@ -42,7 +42,7 @@ type Internals = {
     applyIncludeTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
     applyTitleRegexPreset(model: CatalogueParentEditModel | null, pattern: string): void;
   };
-  trailers: FormArray<FilmTrailerEditGroup>;
+  trailers: FormArray<TrailerEditGroup>;
   lookUpIdentity(): Promise<void>;
   identityLookupMessage(): string;
   clearIdentityField(field: 'imdbId' | 'tvdbId' | 'tmdbId'): void;
@@ -195,7 +195,7 @@ describe('EditTvShowDialogComponent', () => {
         { id: 't3', title: 'Synthetic Extra' }
       ]);
       await showTab(fixture, 'Trailers');
-      const inputs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('app-film-trailers-edit input')) as HTMLInputElement[];
+      const inputs = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('app-trailers-edit input')) as HTMLInputElement[];
       expect(inputs.map(i => i.value)).toEqual(['Synthetic Teaser', 'Synthetic Clip', 'Synthetic Extra']);
     });
 
@@ -204,7 +204,7 @@ describe('EditTvShowDialogComponent', () => {
 
       expect(dialog.trailers.length).toBe(0);
       await showTab(fixture, 'Trailers');
-      const empty = (fixture.nativeElement as HTMLElement).querySelector('app-film-trailers-edit .empty')?.textContent as string;
+      const empty = (fixture.nativeElement as HTMLElement).querySelector('app-trailers-edit .empty')?.textContent as string;
       expect(empty).toContain('"Attach as TV trailer/clip"');
       expect(empty).toContain('Pick this TV show there');
     });
@@ -290,8 +290,8 @@ describe('EditTvShowDialogComponent', () => {
       fixture.detectChanges();
 
       expect(dialog.saveError()).toBe(true);
-      expect(dialog.saveErrorMessage()).toBe(staleTvShowTrailersMessage(1));
-      expect((fixture.nativeElement as HTMLElement).querySelector('#error')?.textContent?.trim()).toBe(staleTvShowTrailersMessage(1));
+      expect(dialog.saveErrorMessage()).toBe(staleTrailersMessage(1, 'tv'));
+      expect((fixture.nativeElement as HTMLElement).querySelector('#error')?.textContent?.trim()).toBe(staleTrailersMessage(1, 'tv'));
       expect(dialog.trailers.getRawValue().map(t => t.id)).toEqual(['t2', 't3']);
       expect(close).not.toHaveBeenCalled();
     });

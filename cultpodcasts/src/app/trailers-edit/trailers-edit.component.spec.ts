@@ -1,23 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { FormArray } from '@angular/forms';
-import { FilmTrailerEditGroup, newFilmTrailerGroup } from '../playable-edit-form.util';
-import { FilmTrailersEditComponent } from './film-trailers-edit.component';
+import { TrailerEditGroup, newTrailerGroup } from '../playable-edit-form.util';
+import { TrailersEditComponent } from './trailers-edit.component';
 
-describe('FilmTrailersEditComponent', () => {
-  let fixture: ComponentFixture<FilmTrailersEditComponent>;
-  let trailers: FormArray<FilmTrailerEditGroup>;
+describe('TrailersEditComponent', () => {
+  let fixture: ComponentFixture<TrailersEditComponent>;
+  let trailers: FormArray<TrailerEditGroup>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FilmTrailersEditComponent],
+      imports: [TrailersEditComponent],
       providers: [provideZonelessChangeDetection()],
     }).compileComponents();
     trailers = new FormArray([
-      newFilmTrailerGroup('t1', 'Synthetic Teaser'),
-      newFilmTrailerGroup('t2', 'Synthetic Clip'),
+      newTrailerGroup('t1', 'Synthetic Teaser'),
+      newTrailerGroup('t2', 'Synthetic Clip'),
     ]);
-    fixture = TestBed.createComponent(FilmTrailersEditComponent);
+    fixture = TestBed.createComponent(TrailersEditComponent);
     fixture.componentRef.setInput('trailers', trailers);
     fixture.detectChanges();
     await fixture.whenStable();
