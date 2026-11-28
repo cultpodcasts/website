@@ -134,6 +134,31 @@ describe('ToolbarComponent New film from TMDB/IMDb', () => {
     expect(navigate).toHaveBeenCalledWith(filmPageCommands('Synthetic Film', filmId));
   });
 
+  it('warns that a created film is not in search yet and still opens the film hub', async () => {
+    const fixture = await openWith(['Curator'], {
+      created: true,
+      failureIndexing: true,
+      filmId,
+      name: 'Synthetic Film'
+    });
+
+    fixture.componentInstance.openCreateFilm();
+
+    expect(snackOpen).toHaveBeenCalledWith(
+      expect.stringContaining('not in search yet'),
+      'Ok', { duration: 10000 });
+    expect(navigate).toHaveBeenCalledWith(filmPageCommands('Synthetic Film', filmId));
+  });
+
+  it('does nothing when a created close omits the film name', async () => {
+    const fixture = await openWith(['Curator'], { created: true, filmId });
+
+    fixture.componentInstance.openCreateFilm();
+
+    expect(snackOpen).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('does nothing when the dialog is cancelled or dismissed', async () => {
     const cancelled = await openWith(['Curator'], { created: false });
     cancelled.componentInstance.openCreateFilm();

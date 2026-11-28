@@ -36,7 +36,7 @@
 
 <mat-dialog-actions>
     <button type="button" matButton="text" [disabled]="isSending()" (click)="cancel()">Cancel</button>
-    @if (existingFilm()) {
+    @if (existingFilm()?.name) {
     <button type="button" matButton="tonal" class="open-existing" (click)="openExisting()">Open existing film</button>
     }
     <button type="button" matButton="filled" class="create-film" [disabled]="!canSend()" (click)="create()">Create film</button>

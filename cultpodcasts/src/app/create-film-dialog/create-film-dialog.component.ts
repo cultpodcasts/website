@@ -10,7 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { AmbiguousIdentityPrompt } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import { CreateFilmDialogClose, FilmCreateRequest, FilmCreateResponse } from '../film-create.interface';
-import { isFilmExternalIdPaste } from '../move-episode-to-film-dialog/move-episode-to-film-dialog.component';
+import { isFilmExternalIdPaste } from '../film-external-id.util';
 import { imdbIdPattern } from '../playable-edit-form.util';
 import { promptAmbiguousIdentity } from '../submit-language-identity-prompts';
 
@@ -107,10 +107,16 @@ export class CreateFilmDialogComponent {
     if (!this.canSend()) {
       return;
     }
-    let body = buildFilmCreateRequest(this.externalId.value, this.title.value)!;
+    // Guard before body build / POST so a double-click cannot fire two creates.
     this.isSending.set(true);
     this.error.set(null);
     this.existingFilm.set(null);
+    const built = buildFilmCreateRequest(this.externalId.value, this.title.value);
+    if (!built) {
+      this.isSending.set(false);
+      return;
+    }
+    let body = built;
     try {
       for (let round = 0; round < MAX_IDENTITY_ROUNDS; round++) {
         const resp = await firstValueFrom(this.curationSubmit.postFilm(body));
@@ -134,11 +140,18 @@ export class CreateFilmDialogComponent {
           continue;
         }
         // Contract: 202 = created; 200 = identity/cancelled gate only (nothing written).
+        // Require filmId + a navigable name (outcome or request title) — never close as success without them.
         if (resp.status === 202) {
+          const name = outcome?.name ?? body.title ?? undefined;
+          if (!outcome?.filmId || !name) {
+            this.isSending.set(false);
+            this.error.set('Unexpected response while creating the film.');
+            return;
+          }
           this.dialogRef.close({
             created: true,
-            filmId: outcome?.filmId ?? undefined,
-            name: outcome?.name ?? body.title ?? undefined
+            filmId: outcome.filmId,
+            name
           });
           return;
         }
@@ -158,12 +171,17 @@ export class CreateFilmDialogComponent {
   private onError(err: HttpErrorResponse, sent: FilmCreateRequest): void {
     const outcome = err?.error as FilmCreateResponse | null | undefined;
     if (err?.status === 500 && outcome?.failureIndexing && outcome.filmId) {
+      const name = outcome.name ?? sent.title ?? undefined;
+      if (!name) {
+        this.error.set('Unexpected response while creating the film.');
+        return;
+      }
       // The film exists; only the search push failed. Do not leave the curator on a create that would now 409.
       this.dialogRef.close({
         created: true,
         failureIndexing: true,
         filmId: outcome.filmId,
-        name: outcome.name ?? sent.title ?? undefined
+        name
       });
       return;
     }
@@ -176,10 +194,10 @@ export class CreateFilmDialogComponent {
   /** Closes on the film that already has the identity or name, so the page can open it. */
   openExisting(): void {
     const film = this.existingFilm();
-    if (!film) {
+    if (!film?.name) {
       return;
     }
-    this.dialogRef.close({ created: false, existing: true, filmId: film.id, name: film.name ?? undefined });
+    this.dialogRef.close({ created: false, existing: true, filmId: film.id, name: film.name });
   }
 
   private async answerIdentity(

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { AmbiguousIdentityAnswer } from '../ambiguous-identity-dialog/ambiguous-identity-dialog.component';
 import { CurationSubmitService } from '../curation-submit.service';
 import {
@@ -112,6 +112,59 @@ describe('CreateFilmDialogComponent', () => {
     expect(postFilm).toHaveBeenCalledTimes(1);
     expect(postFilm).toHaveBeenCalledWith({ tmdbId: 278 });
     expect(dialogRef.close).toHaveBeenCalledWith({ created: true, filmId, name: 'Synthetic Film' });
+  });
+
+  it('ignores a second create while the first POST is in flight', async () => {
+    const pending = new Subject<{ status: number; body: unknown }>();
+    postFilm.mockReturnValueOnce(pending.asObservable());
+    component.externalId.setValue('278');
+
+    const first = component.create();
+    expect(component.isSending()).toBe(true);
+
+    await component.create();
+
+    expect(postFilm).toHaveBeenCalledTimes(1);
+    pending.next({ status: 202, body: { filmId, name: 'Synthetic Film' } });
+    pending.complete();
+    await first;
+    expect(dialogRef.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the dialog open on a 202 that omits filmId', async () => {
+    postFilm.mockReturnValueOnce(of({ status: 202, body: { name: 'Synthetic Film' } }));
+    component.externalId.setValue('278');
+
+    await component.create();
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+    expect(component.error()).toBe('Unexpected response while creating the film.');
+  });
+
+  it('falls back to the request title for the close name when the 202 omits name', async () => {
+    postFilm.mockReturnValueOnce(of({ status: 202, body: { filmId } }));
+    component.externalId.setValue('278');
+    component.title.setValue('Synthetic Override');
+
+    await component.create();
+
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      created: true,
+      filmId,
+      name: 'Synthetic Override'
+    });
+  });
+
+  it('keeps the dialog open on a 202 with filmId but no name and no request title', async () => {
+    postFilm.mockReturnValueOnce(of({ status: 202, body: { filmId } }));
+    component.externalId.setValue('278');
+
+    await component.create();
+
+    expect(dialogRef.close).not.toHaveBeenCalled();
+    expect(component.isSending()).toBe(false);
+    expect(component.error()).toBe('Unexpected response while creating the film.');
   });
 
   it('posts an IMDb id with a title override', async () => {

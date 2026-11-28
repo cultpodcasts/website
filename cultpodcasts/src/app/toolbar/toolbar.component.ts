@@ -235,11 +235,11 @@ export class ToolbarComponent {
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
-        if (!result || !(result.created || result.existing) || !result.filmId) {
+        if (!result || !(result.created || result.existing) || !result.filmId || !result.name) {
           return;
         }
         this.snackBar.open(createFilmMessage(result), "Ok", { duration: 10000 });
-        this.router.navigate(filmPageCommands(result.name ?? 'film', result.filmId));
+        this.router.navigate(filmPageCommands(result.name, result.filmId));
       });
   }
 
