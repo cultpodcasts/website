@@ -17,10 +17,12 @@ import {
   MoveEpisodeToFilmDialogClose,
   MoveEpisodeToFilmDialogData
 } from '../episode-film-move.interface';
-import { imdbIdPattern, int32Max } from '../playable-edit-form.util';
+import { isFilmExternalIdPaste } from '../film-external-id.util';
 import { Suggestion } from '../search-suggestions.interface';
 import { SearchSuggestionsService } from '../search-suggestions.service';
 import { promptAmbiguousIdentity } from '../submit-language-identity-prompts';
+
+export { isFilmExternalIdPaste };
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -78,18 +80,6 @@ export function filmsMatchingExternalId<T extends { matchedAlias?: string }>(
     return [];
   }
   return films.filter(film => (film.matchedAlias ?? '').trim().toLowerCase() === id);
-}
-
-/** True when the text is an IMDb title id (`tt…`) or a positive TMDB movie id (digits within int32). */
-export function isFilmExternalIdPaste(text: string): boolean {
-  const trimmed = text.trim();
-  if (imdbIdPattern.test(trimmed)) {
-    return true;
-  }
-  if (!/^[1-9]\d*$/.test(trimmed) || trimmed.length > 10) {
-    return false;
-  }
-  return Number(trimmed) <= int32Max;
 }
 
 /**

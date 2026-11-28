@@ -28,6 +28,9 @@ import { SupportedLanguagesComponent } from '../supported-languages/supported-la
 import { TitleCasingRulesComponent } from '../title-casing-rules/title-casing-rules.component';
 import { LanguageIgnoredSubjectsComponent } from '../language-ignored-subjects/language-ignored-subjects.component';
 import { IndexerState } from '../indexer-state.interface';
+import { CreateFilmDialogComponent, createFilmMessage } from '../create-film-dialog/create-film-dialog.component';
+import { CreateFilmDialogClose } from '../film-create.interface';
+import { filmPageCommands } from '../catalogue-links';
 import { SubmitUrlOriginResponseSnackbarComponent } from '../submit-url-origin-response-snackbar/submit-url-origin-response-snackbar.component';
 import { MatBadgeModule } from '@angular/material/badge';
 import { Share } from '../share.interface';
@@ -223,6 +226,21 @@ export class ToolbarComponent {
         component.markSubmitError();
       }
     });
+  }
+
+  /** Curator: create an empty film from an IMDb / TMDB id or title (RPP #1413), then open its film page. */
+  openCreateFilm() {
+    this.dialog.open<CreateFilmDialogComponent, undefined, CreateFilmDialogClose>(
+      CreateFilmDialogComponent, { disableClose: true, autoFocus: true, width: '90%', maxWidth: '600px' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (!result || !(result.created || result.existing) || !result.filmId || !result.name) {
+          return;
+        }
+        this.snackBar.open(createFilmMessage(result), "Ok", { duration: 10000 });
+        this.router.navigate(filmPageCommands(result.name, result.filmId));
+      });
   }
 
   openReviewOutgoing() {
